@@ -87,6 +87,7 @@ type WorkspaceConfig struct {
 	Env       map[string]string           `yaml:"env,omitempty"`
 	Agents    map[string]AgentAliasConfig `yaml:"agents,omitempty"`
 	GitHub    *GitHubSettings             `yaml:"github,omitempty"`
+	Wrike     *WrikeSettings              `yaml:"wrike,omitempty"`
 	Plugins   PluginsConfig               `yaml:"plugins,omitempty"`
 }
 
@@ -120,6 +121,13 @@ type GitHubCommentsSettings struct {
 	OnPlanDone      bool `yaml:"on_plan_done"`      // Post summary of planned implementation
 	OnImplementDone bool `yaml:"on_implement_done"` // Post changelog with files changed
 	OnPRCreated     bool `yaml:"on_pr_created"`     // Post PR link
+}
+
+// WrikeSettings holds Wrike provider configuration
+type WrikeSettings struct {
+	Token  string `yaml:"token,omitempty"`  // Wrike API token (env vars take priority)
+	Host   string `yaml:"host,omitempty"`   // API base URL override (default: https://www.wrike.com/api/v4)
+	Folder string `yaml:"folder,omitempty"` // Default folder ID for task lookup
 }
 
 // AgentAliasConfig defines a user-defined agent alias that wraps an existing agent
