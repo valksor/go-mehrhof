@@ -24,9 +24,12 @@ test: ## Run tests with coverage
 	go test -v -cover ./...
 
 coverage: ## Run tests with race detection and coverage profile
-	go test -race -covermode atomic -coverprofile=covprofile ./...
+	@go test -race -covermode atomic -coverprofile=covprofile.tmp ./...
+	@grep -v testutil covprofile.tmp > covprofile || true
+	@rm covprofile.tmp
 
 coverage-html: coverage ## Generate HTML coverage report
+	@mkdir -p .coverage
 	go tool cover -html=covprofile -o .coverage/coverage.html
 
 lint: ## Run linter (golangci-lint)
