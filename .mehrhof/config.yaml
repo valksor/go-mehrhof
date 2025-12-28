@@ -1,0 +1,45 @@
+# Task workspace configuration
+# Edit this file to customize task behavior
+# Run 'task init' to regenerate with defaults
+
+git:
+  auto_commit: true
+  commit_prefix: "[{key}]"
+  branch_pattern: "{type}/{key}--{slug}"
+  sign_commits: false
+agent:
+  default: claude
+  timeout: 300
+  max_retries: 3
+workflow:
+  auto_init: true
+  session_retention_days: 30
+
+# Environment variables passed to agents (filtered by agent name prefix)
+# Prefix is stripped when passed: CLAUDE_FOO=bar -> FOO=bar
+# Example:
+# env:
+#     CLAUDE_ANTHROPIC_API_KEY: your-key  # passed to claude as ANTHROPIC_API_KEY
+
+# User-defined agent aliases
+# Aliases wrap existing agents with custom environment variables
+# Use 'mehr agents list' to see all available agents
+# Example:
+# agents:
+#     glm:
+#         extends: claude                      # base agent to wrap
+#         description: "Claude with GLM key" # shown in 'mehr agents list'
+#         env:
+#             ANTHROPIC_API_KEY: "${GLM_API_KEY}"  # ${VAR} references system env
+#     glm-fast:
+#         extends: glm                         # aliases can extend other aliases
+#         description: "GLM with lower tokens"
+#         env:
+#             MAX_TOKENS: "2048"
+
+# Plugins
+# Enable plugins from .mehrhof/plugins/ or ~/.mehrhof/plugins/
+# Use 'mehr plugins list' to see discovered plugins
+plugins:
+  enabled:
+    - link

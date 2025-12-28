@@ -1,0 +1,16 @@
+version: "1"
+name: "link"
+type: "provider"
+description: "Load task content from any URL (web pages, GitHub issues, Pastebin, etc.)"
+protocol: "1"
+
+executable:
+  command: ["python3", "./link-provider.py"]
+
+provider:
+  name: "link"
+  schemes: ["link", "url"]
+  priority: 30
+  capabilities:
+    - read
+    - snapshot
