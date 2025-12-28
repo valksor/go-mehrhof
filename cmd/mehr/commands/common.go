@@ -14,6 +14,7 @@ import (
 	"github.com/valksor/go-mehrhof/internal/provider/directory"
 	"github.com/valksor/go-mehrhof/internal/provider/file"
 	"github.com/valksor/go-mehrhof/internal/provider/github"
+	"github.com/valksor/go-mehrhof/internal/provider/wrike"
 )
 
 // dedupStdout is the shared deduplicating writer for verbose output.
@@ -45,6 +46,7 @@ func initializeConductor(ctx context.Context, opts ...conductor.Option) (*conduc
 	file.Register(cond.GetProviderRegistry())
 	directory.Register(cond.GetProviderRegistry())
 	github.Register(cond.GetProviderRegistry())
+	wrike.Register(cond.GetProviderRegistry())
 
 	// Register standard agents
 	if err := claude.Register(cond.GetAgentRegistry()); err != nil {

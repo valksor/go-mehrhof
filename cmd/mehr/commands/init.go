@@ -23,6 +23,9 @@ func init() {
 }
 
 func runInit(cmd *cobra.Command, args []string) error {
+	out := cmd.OutOrStdout()
+	errOut := cmd.ErrOrStderr()
+
 	// Try to find git root, fall back to current directory
 	workDir, err := os.Getwd()
 	if err != nil {
@@ -55,22 +58,22 @@ func runInit(cmd *cobra.Command, args []string) error {
 		if err := ws.SaveConfig(cfg); err != nil {
 			return fmt.Errorf("create config file: %w", err)
 		}
-		fmt.Printf("Created config file: %s\n", ws.ConfigPath())
+		_, _ = fmt.Fprintf(out, "Created config file: %s\n", ws.ConfigPath())
 	} else {
-		fmt.Printf("Config file already exists: %s\n", ws.ConfigPath())
+		_, _ = fmt.Fprintf(out, "Config file already exists: %s\n", ws.ConfigPath())
 	}
 
 	// Create .env template if it doesn't exist
 	envPath := filepath.Join(ws.TaskRoot(), ".env")
 	if _, err := os.Stat(envPath); os.IsNotExist(err) {
 		if err := createEnvTemplate(envPath); err != nil {
-			fmt.Fprintf(os.Stderr, "warning: failed to create .env template: %v\n", err)
+			_, _ = fmt.Fprintf(errOut, "warning: failed to create .env template: %v\n", err)
 		} else {
-			fmt.Printf("Created .env template: %s\n", envPath)
+			_, _ = fmt.Fprintf(out, "Created .env template: %s\n", envPath)
 		}
 	}
 
-	fmt.Printf("Workspace initialized in %s\n", root)
+	_, _ = fmt.Fprintf(out, "Workspace initialized in %s\n", root)
 	return nil
 }
 
