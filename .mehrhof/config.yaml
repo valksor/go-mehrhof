@@ -33,7 +33,6 @@ agents:
             ANTHROPIC_API_KEY: "${ZAI_API_KEY}"  # ${VAR} references system env
             ANTHROPIC_BASE_URL: "https://api.z.ai/api/anthropic"
             API_TIMEOUT_MS: "3000000"
-            ANTHROPIC_DEFAULT_HAIKU_MODEL: "glm-4.7"
 #     glm-fast:
 #         extends: glm                         # aliases can extend other aliases
 #         description: "GLM with lower tokens"
