@@ -7,6 +7,7 @@ Mehrhof uses configuration files at different levels.
 | File                       | Location            | Purpose                 |
 | -------------------------- | ------------------- | ----------------------- |
 | `.mehrhof/config.yaml`     | Project `.mehrhof/` | Workspace configuration |
+| `.mehrhof/.env`            | Project `.mehrhof/` | Secrets (gitignored)    |
 | `~/.mehrhof/settings.json` | Home directory      | User preferences        |
 | `~/.mehrhof/plugins/`      | Home directory      | Global plugins          |
 
@@ -134,6 +135,62 @@ env:
 
 This allows configuring multiple agents without conflicts.
 
+## Environment File (.env)
+
+Store secrets locally without committing them to git.
+
+**Location:** `.mehrhof/.env` (gitignored)
+
+```bash
+# API keys for agents
+ANTHROPIC_API_KEY=sk-ant-...
+GLM_API_KEY=your-glm-key
+
+# GitHub token
+GITHUB_TOKEN=ghp_...
+
+# Custom keys for aliases
+MY_CUSTOM_API_KEY=secret-value
+```
+
+### How it works
+
+1. `.env` is loaded at CLI startup, before any other initialization
+2. Variables become available to `${VAR}` syntax in `config.yaml`
+3. **System environment variables take priority** over `.env` values
+
+### Usage with Agent Aliases
+
+Reference `.env` variables in your agent aliases:
+
+```yaml
+# .mehrhof/config.yaml
+agents:
+  glm:
+    extends: claude
+    env:
+      ANTHROPIC_API_KEY: "${GLM_API_KEY}" # Reads from .env
+```
+
+```bash
+# .mehrhof/.env
+GLM_API_KEY=sk-ant-your-secret-key
+```
+
+### Priority Order
+
+1. System environment variables (highest)
+2. `.env` file values
+3. Defaults
+
+This allows CI/CD to inject secrets without modifying `.env`.
+
+### Security
+
+- File is created with `0600` permissions (owner read/write only)
+- Automatically added to `.gitignore` by `mehr init`
+- Never commit this file to version control
+
 ## User Settings
 
 Persistent user preferences stored as JSON.
@@ -197,6 +254,7 @@ Creates:
 
 - `.mehrhof/` directory
 - `.mehrhof/config.yaml` with defaults
+- `.mehrhof/.env` template for secrets
 - Updates `.gitignore`
 
 ## Best Practices
@@ -211,7 +269,8 @@ Creates:
 
 ```
 .mehrhof/work/          # Task data
-.mehrhof/.active_task
+.mehrhof/.env           # Secrets
+.active_task
 ```
 
 ### Team Configuration
