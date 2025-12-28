@@ -99,6 +99,29 @@ func FormatSpecificationStatusWithIcon(status string) string {
 	return GetSpecificationStatusIcon(status) + " " + FormatSpecificationStatus(status)
 }
 
-// WaitingState constant for backward compatibility
-// Deprecated: Use workflow.StateWaiting directly
-const WaitingState = "waiting"
+// Color-aware formatting functions
+
+// FormatStateColored returns a colored state display name.
+func FormatStateColored(state workflow.State) string {
+	displayName := FormatState(state)
+	return ColorState(string(state), displayName)
+}
+
+// FormatStateStringColored returns a colored state display name from a string.
+func FormatStateStringColored(state string) string {
+	displayName := FormatStateString(state)
+	return ColorState(state, displayName)
+}
+
+// FormatSpecificationStatusColored returns a colored specification status.
+func FormatSpecificationStatusColored(status string) string {
+	displayName := FormatSpecificationStatus(status)
+	return ColorSpecStatus(status, displayName)
+}
+
+// FormatSpecificationStatusWithIconColored returns colored "icon status" format.
+func FormatSpecificationStatusWithIconColored(status string) string {
+	icon := GetSpecificationStatusIcon(status)
+	name := FormatSpecificationStatusColored(status)
+	return icon + " " + name
+}

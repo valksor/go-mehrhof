@@ -203,8 +203,29 @@ func TestSpecificationStatusMapsCompleteness(t *testing.T) {
 	}
 }
 
-func TestWaitingStateConstant(t *testing.T) {
-	if WaitingState != "waiting" {
-		t.Errorf("WaitingState = %q, want %q", WaitingState, "waiting")
+// TestColoredFormatFunctions tests the new color-aware formatting functions
+func TestFormatStateColored(t *testing.T) {
+	// Disable colors for predictable test output
+	SetColorsEnabled(false)
+	defer SetColorsEnabled(true)
+
+	tests := []struct {
+		name  string
+		state workflow.State
+		want  string
+	}{
+		{"idle", workflow.StateIdle, "Ready"},
+		{"planning", workflow.StatePlanning, "Planning"},
+		{"done", workflow.StateDone, "Completed"},
+		{"failed", workflow.StateFailed, "Failed"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := FormatStateColored(tt.state)
+			if got != tt.want {
+				t.Errorf("FormatStateColored(%q) = %q, want %q", tt.state, got, tt.want)
+			}
+		})
 	}
 }
