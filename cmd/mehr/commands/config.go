@@ -20,10 +20,10 @@ var configCmd = &cobra.Command{
 var configValidateCmd = &cobra.Command{
 	Use:   "validate",
 	Short: "Validate configuration files",
-	Long: `Validate workspace (.mehrhof/config.yaml) and app (.env) configuration.
+	Long: `Validate workspace configuration (.mehrhof/config.yaml).
 
 Performs the following checks:
-  - YAML/env syntax validity
+  - YAML syntax validity
   - Required fields and valid enum values
   - Agent alias circular dependencies
   - Undefined agent references
@@ -31,29 +31,21 @@ Performs the following checks:
   - Plugin configuration
 
 Examples:
-  mehr config validate                    # Validate all config
-  mehr config validate --workspace-only   # Only workspace config
-  mehr config validate --app-only         # Only app config
+  mehr config validate                    # Validate workspace config
   mehr config validate --strict           # Treat warnings as errors
   mehr config validate --format json      # JSON output for CI`,
 	RunE: runConfigValidate,
 }
 
 var (
-	validateWorkspaceOnly bool
-	validateAppOnly       bool
-	validateStrict        bool
-	validateFormat        string
+	validateStrict bool
+	validateFormat string
 )
 
 func init() {
 	rootCmd.AddCommand(configCmd)
 	configCmd.AddCommand(configValidateCmd)
 
-	configValidateCmd.Flags().BoolVar(&validateWorkspaceOnly, "workspace-only", false,
-		"Only validate workspace config (.mehrhof/config.yaml)")
-	configValidateCmd.Flags().BoolVar(&validateAppOnly, "app-only", false,
-		"Only validate app config (.env files)")
 	configValidateCmd.Flags().BoolVar(&validateStrict, "strict", false,
 		"Treat warnings as errors (exit code 1 if warnings present)")
 	configValidateCmd.Flags().StringVar(&validateFormat, "format", "text",
@@ -75,15 +67,13 @@ func runConfigValidate(cmd *cobra.Command, args []string) error {
 
 	// Create validator
 	validator := validation.New(wd, validation.Options{
-		Strict:        validateStrict,
-		WorkspaceOnly: validateWorkspaceOnly,
-		AppOnly:       validateAppOnly,
+		Strict: validateStrict,
 	})
 	validator.SetBuiltInAgents(builtInAgents)
 
 	// Print header
 	if validateFormat == "text" {
-		fmt.Println("Validating configuration...")
+		fmt.Println("Validating workspace configuration...")
 		fmt.Println()
 	}
 

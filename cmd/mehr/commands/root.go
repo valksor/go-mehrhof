@@ -15,7 +15,6 @@ import (
 )
 
 var (
-	cfg      *config.Config
 	settings *config.Settings
 
 	// Global flags
@@ -33,38 +32,22 @@ workflows. Tasks can be sourced from files, directories, or external providers.`
 	SilenceUsage:  true,
 	SilenceErrors: true,
 	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
-		ctx := cmd.Context()
-
-		// Configure logging
+		// Configure logging from CLI flag
 		log.Configure(log.Options{
 			Verbose: verbose,
 		})
 
-		// Initialize color output
+		// Initialize color output from CLI flag (also respects NO_COLOR env)
 		display.InitColors(noColor)
 
-		// Load configuration
+		// Load settings (user preferences)
 		var err error
-		cfg, err = config.Load(ctx)
-		if err != nil {
-			return fmt.Errorf("load config: %w", err)
-		}
-
-		// Apply flag overrides
-		if verbose {
-			cfg.UI.Verbose = true
-		}
-		if noColor {
-			cfg.UI.Color = false
-		}
-
-		// Load settings
 		settings, err = config.LoadSettings()
 		if err != nil {
 			return fmt.Errorf("load settings: %w", err)
 		}
 
-		log.Debug("configuration loaded", "verbose", verbose)
+		log.Debug("initialized", "verbose", verbose)
 		return nil
 	},
 }
@@ -88,11 +71,6 @@ func Execute() error {
 func init() {
 	rootCmd.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false, "Enable verbose output")
 	rootCmd.PersistentFlags().BoolVar(&noColor, "no-color", false, "Disable color output")
-}
-
-// GetConfig returns the loaded configuration
-func GetConfig() *config.Config {
-	return cfg
 }
 
 // GetSettings returns the loaded settings

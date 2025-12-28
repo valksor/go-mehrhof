@@ -2,10 +2,12 @@ package commands
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/spf13/cobra"
 
 	"github.com/valksor/go-mehrhof/internal/conductor"
+	"github.com/valksor/go-mehrhof/internal/storage"
 )
 
 var (
@@ -88,7 +90,7 @@ func runStart(cmd *cobra.Command, args []string) error {
 
 	// Build conductor options
 	opts := []conductor.Option{
-		conductor.WithVerbose(cfg.UI.Verbose),
+		conductor.WithVerbose(verbose),
 		conductor.WithCreateBranch(createBranch),
 		conductor.WithUseWorktree(startWorktree),
 		conductor.WithAutoInit(true),
@@ -112,9 +114,13 @@ func runStart(cmd *cobra.Command, args []string) error {
 		opts = append(opts, conductor.WithStepAgent("dialogue", startAgentDialogue))
 	}
 
-	// Pass default provider from config
-	if cfg.Providers.Default != "" {
-		opts = append(opts, conductor.WithDefaultProvider(cfg.Providers.Default))
+	// Pass default provider from workspace config
+	if wd, err := os.Getwd(); err == nil {
+		if ws, err := storage.OpenWorkspace(wd); err == nil {
+			if wsCfg, err := ws.LoadConfig(); err == nil && wsCfg.Providers.Default != "" {
+				opts = append(opts, conductor.WithDefaultProvider(wsCfg.Providers.Default))
+			}
+		}
 	}
 
 	// Naming override options

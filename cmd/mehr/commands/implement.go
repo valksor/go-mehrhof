@@ -45,7 +45,7 @@ func runImplement(cmd *cobra.Command, args []string) error {
 
 	// Build conductor options
 	opts := []conductor.Option{
-		conductor.WithVerbose(cfg.UI.Verbose),
+		conductor.WithVerbose(verbose),
 		conductor.WithDryRun(implementDryRun),
 	}
 
@@ -55,7 +55,7 @@ func runImplement(cmd *cobra.Command, args []string) error {
 	}
 
 	// Use deduplicating stdout in verbose mode to suppress duplicate lines
-	if cfg.UI.Verbose {
+	if verbose {
 		opts = append(opts, conductor.WithStdout(getDeduplicatingStdout()))
 	}
 
@@ -72,7 +72,7 @@ func runImplement(cmd *cobra.Command, args []string) error {
 	}
 
 	// Set up event handlers
-	if cfg.UI.Verbose {
+	if verbose {
 		w := cond.GetStdout()
 		cond.GetEventBus().SubscribeAll(func(e events.Event) {
 			switch e.Type {
@@ -114,7 +114,7 @@ func runImplement(cmd *cobra.Command, args []string) error {
 		spinnerMsg = "Implementing code (dry-run)..."
 	}
 
-	if cfg.UI.Verbose {
+	if verbose {
 		if implementDryRun {
 			fmt.Println(display.InfoMsg("Implementing (dry-run)..."))
 		} else {
@@ -145,7 +145,7 @@ func runImplement(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	if cfg.UI.Verbose {
+	if verbose {
 		fmt.Println()
 		if implementDryRun {
 			fmt.Println(display.SuccessMsg("Implementation preview finished"))

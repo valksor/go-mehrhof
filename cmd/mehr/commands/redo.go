@@ -28,7 +28,7 @@ func runRedo(cmd *cobra.Command, args []string) error {
 	ctx := cmd.Context()
 
 	// Initialize conductor with standard providers and agents
-	cond, err := initializeConductor(ctx, conductor.WithVerbose(cfg.UI.Verbose))
+	cond, err := initializeConductor(ctx, conductor.WithVerbose(verbose))
 	if err != nil {
 		return err
 	}

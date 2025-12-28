@@ -52,7 +52,7 @@ func runTalk(cmd *cobra.Command, args []string) error {
 
 	// Build conductor options
 	opts := []conductor.Option{
-		conductor.WithVerbose(cfg.UI.Verbose),
+		conductor.WithVerbose(verbose),
 	}
 
 	// Per-step agent override

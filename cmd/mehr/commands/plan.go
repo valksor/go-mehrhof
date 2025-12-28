@@ -71,7 +71,7 @@ func runPlan(cmd *cobra.Command, args []string) error {
 
 	// Build conductor options
 	opts := []conductor.Option{
-		conductor.WithVerbose(cfg.UI.Verbose),
+		conductor.WithVerbose(verbose),
 		conductor.WithIncludeFullContext(planFullContext),
 	}
 
@@ -81,7 +81,7 @@ func runPlan(cmd *cobra.Command, args []string) error {
 	}
 
 	// Use deduplicating stdout in verbose mode to suppress duplicate lines
-	if cfg.UI.Verbose {
+	if verbose {
 		opts = append(opts, conductor.WithStdout(getDeduplicatingStdout()))
 	}
 
@@ -104,7 +104,7 @@ func runPlan(cmd *cobra.Command, args []string) error {
 	}
 
 	// Set up progress callback
-	if cfg.UI.Verbose {
+	if verbose {
 		w := cond.GetStdout()
 		cond.GetEventBus().SubscribeAll(func(e events.Event) {
 			switch e.Type {
@@ -131,7 +131,7 @@ func runPlan(cmd *cobra.Command, args []string) error {
 
 	// Run planning with spinner in non-verbose mode
 	var planErr error
-	if cfg.UI.Verbose {
+	if verbose {
 		fmt.Println(display.InfoMsg("Planning..."))
 		planErr = cond.RunPlanning(ctx)
 	} else {
@@ -184,7 +184,7 @@ func runPlan(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	if cfg.UI.Verbose {
+	if verbose {
 		fmt.Println()
 		fmt.Println(display.SuccessMsg("Planning complete!"))
 	}

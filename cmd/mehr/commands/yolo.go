@@ -78,7 +78,7 @@ func runYolo(cmd *cobra.Command, args []string) error {
 	// Build conductor options with yolo mode enabled
 	// Always use deduplicating stdout for yolo since it displays progress unconditionally
 	opts := []conductor.Option{
-		conductor.WithVerbose(cfg.UI.Verbose),
+		conductor.WithVerbose(verbose),
 		conductor.WithCreateBranch(createBranch),
 		conductor.WithUseWorktree(yoloWorktree),
 		conductor.WithAutoInit(true),
@@ -115,7 +115,7 @@ func runYolo(cmd *cobra.Command, args []string) error {
 				}
 			}
 		case events.TypeFileChanged:
-			if cfg.UI.Verbose {
+			if verbose {
 				if path, ok := e.Data["path"].(string); ok {
 					op, _ := e.Data["operation"].(string)
 					_, err := fmt.Fprintf(w, "  [%s] %s\n", op, path)
@@ -125,7 +125,7 @@ func runYolo(cmd *cobra.Command, args []string) error {
 				}
 			}
 		case events.TypeCheckpoint:
-			if cfg.UI.Verbose {
+			if verbose {
 				if num, ok := e.Data["checkpoint"].(int); ok {
 					_, err := fmt.Fprintf(w, "  Checkpoint #%d created\n", num)
 					if err != nil {
