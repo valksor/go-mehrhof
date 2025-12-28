@@ -56,6 +56,13 @@ workflows. Tasks can be sourced from files, directories, or external providers.`
 		}
 
 		log.Debug("initialized", "verbose", verbose)
+
+		// Async update check (non-blocking, doesn't slow startup)
+		// Skip for the 'update' command itself to avoid redundant checks
+		if cmd.Name() != "update" && shouldCheckForUpdates(settings) {
+			go checkForUpdatesInBackground(cmd.Context())
+		}
+
 		return nil
 	},
 }
