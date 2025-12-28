@@ -131,7 +131,7 @@ Legend: * = active task in main repo, → = current worktree
 ### Worktree vs Branch-Only
 
 | Feature          | `--worktree`   | `--branch` (default) |
-| ---------------- | -------------- | -------------------- |
+|------------------|----------------|----------------------|
 | Parallel tasks   | Yes            | No                   |
 | Isolation        | Full directory | Same directory       |
 | Branch switching | Not needed     | Required             |
@@ -513,7 +513,7 @@ mehr version
 These flags are available for all commands:
 
 | Flag            | Description                           | Default |
-| --------------- | ------------------------------------- | ------- |
+|-----------------|---------------------------------------|---------|
 | `-v, --verbose` | Enable verbose output (debug logging) | `false` |
 | `--no-color`    | Disable color output                  | `false` |
 
@@ -599,7 +599,7 @@ User-level settings are stored in `~/.mehrhof/settings.json`:
 Mehrhof uses standard environment variables and CLI flags instead of custom `MEHR_*` variables:
 
 | Variable            | Description                               |
-| ------------------- | ----------------------------------------- |
+|---------------------|-------------------------------------------|
 | `ANTHROPIC_API_KEY` | Claude API key (used by Claude CLI)       |
 | `GITHUB_TOKEN`      | GitHub API token for issue integration    |
 | `MEHR_GITHUB_TOKEN` | Alternative GitHub token (takes priority) |
@@ -756,7 +756,7 @@ Mehrhof supports plugins for extending functionality without recompilation. Plug
 ### Plugin Types
 
 | Type         | Purpose                  | Examples                       | Status |
-| ------------ | ------------------------ | ------------------------------ | ------ |
+|--------------|--------------------------|--------------------------------|--------|
 | **Provider** | Custom task sources      | Jira, YouTrack, Linear, Notion | Stable |
 | **Agent**    | Custom AI backends       | Local LLMs, Codex              | Stable |
 | **Workflow** | State machine extensions | Approval steps, notifications  | Stable |
@@ -817,7 +817,7 @@ plugins:
 For plugin development documentation, see `.mehrhof/plugins/docs/`:
 
 | Guide                 | Description                  |
-| --------------------- | ---------------------------- |
+|-----------------------|------------------------------|
 | `README.md`           | Getting started              |
 | `provider-plugins.md` | Create task source providers |
 | `agent-plugins.md`    | Create AI agent backends     |

@@ -3,17 +3,17 @@
 # Run 'task init' to regenerate with defaults
 
 git:
-  auto_commit: true
-  commit_prefix: "[{key}]"
-  branch_pattern: "{type}/{key}--{slug}"
-  sign_commits: false
+    auto_commit: true
+    commit_prefix: "[{key}]"
+    branch_pattern: "{type}/{key}--{slug}"
+    sign_commits: false
 agent:
-  default: claude
-  timeout: 300
-  max_retries: 3
+    default: glm
+    timeout: 300
+    max_retries: 3
 workflow:
-  auto_init: true
-  session_retention_days: 30
+    auto_init: true
+    session_retention_days: 30
 
 # Environment variables passed to agents (filtered by agent name prefix)
 # Prefix is stripped when passed: CLAUDE_FOO=bar -> FOO=bar
@@ -25,12 +25,15 @@ workflow:
 # Aliases wrap existing agents with custom environment variables
 # Use 'mehr agents list' to see all available agents
 # Example:
-# agents:
-#     glm:
-#         extends: claude                      # base agent to wrap
-#         description: "Claude with GLM key" # shown in 'mehr agents list'
-#         env:
-#             ANTHROPIC_API_KEY: "${GLM_API_KEY}"  # ${VAR} references system env
+agents:
+    glm:
+        extends: claude                      # base agent to wrap
+        description: "Claude with ZAI key" # shown in 'mehr agents list'
+        env:
+            ANTHROPIC_API_KEY: "${ZAI_API_KEY}"  # ${VAR} references system env
+            ANTHROPIC_BASE_URL: "https://api.z.ai/api/anthropic"
+            API_TIMEOUT_MS: "3000000"
+            ANTHROPIC_DEFAULT_HAIKU_MODEL: "glm-4.7"
 #     glm-fast:
 #         extends: glm                         # aliases can extend other aliases
 #         description: "GLM with lower tokens"
@@ -41,5 +44,5 @@ workflow:
 # Enable plugins from .mehrhof/plugins/ or ~/.mehrhof/plugins/
 # Use 'mehr plugins list' to see discovered plugins
 plugins:
-  enabled:
-    - link
+    enabled:
+        - link

@@ -10,3 +10,4 @@ bun.lock
 covprofile
 node_modules/
 package.json
+.mehrhof/.env
