@@ -221,7 +221,7 @@ mehr delete
 
 Options:
 
-- `--force` - Skip confirmation
+- `--yes` - Skip confirmation
 - `--keep-branch` - Only delete work directory
 - `--keep-work` - Only delete branch
 

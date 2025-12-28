@@ -287,7 +287,7 @@ mehr implement
 If you're many undos deep with contradictory notes:
 
 ```bash
-mehr delete --force
+mehr delete --yes
 # Rewrite task with lessons learned
 mehr start improved-task.md
 ```

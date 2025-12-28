@@ -1,12 +1,16 @@
 # Workflow Plugin Development
 
-> **Status: Experimental**
+> **Status: Implemented**
 >
-> Workflow plugins have scaffolding in place but are **not yet fully integrated** into the state machine. The JSON-RPC protocol, adapter code (`internal/plugin/workflow_adapter.go`), and all method signatures are implemented, but the hooks to register custom phases, guards, and effects with the conductor are incomplete.
->
-> This documentation describes the **intended API**. Once integration is complete, workflow plugins will work as described here. For now, use provider and agent plugins for production workloads.
+> Workflow plugins are now integrated into the state machine via the `MachineBuilder` pattern. Custom phases, guards, and effects are registered when plugins load, extending the base workflow dynamically.
 
 Workflow plugins extend Mehrhof's state machine with custom phases, guards, and effects. Use them for approval workflows, notifications, CI/CD integration, or custom validation steps.
+
+## Key Features
+
+- **Dynamic Phase Insertion**: Add custom phases using `after` or `before` to specify insertion points
+- **Plugin Guards**: Control transitions with custom guard conditions evaluated via JSON-RPC
+- **Critical Effects**: Mark effects as `critical: true` to block workflow on failure; non-critical effects log errors but continue
 
 ## Manifest Structure
 
@@ -31,8 +35,10 @@ workflow:
   effects:
     - name: "notifySlack"
       description: "Send Slack notification"
+      critical: false  # Non-critical: log errors but continue
     - name: "createJiraComment"
       description: "Add comment to Jira"
+      critical: true   # Critical: workflow fails if this effect fails
 
 env:
   SLACK_WEBHOOK:

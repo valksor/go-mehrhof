@@ -22,7 +22,7 @@ Use this when you want to discard work without merging.
 
 | Flag            | Short | Type | Default | Description              |
 | --------------- | ----- | ---- | ------- | ------------------------ |
-| `--force`       | `-f`  | bool | false   | Skip confirmation prompt |
+| `--yes`         | `-y`  | bool | false   | Skip confirmation prompt |
 | `--keep-branch` |       | bool | false   | Keep the git branch      |
 | `--keep-work`   |       | bool | false   | Keep the work directory  |
 
@@ -56,13 +56,13 @@ Deleting task...
 Task deleted.
 ```
 
-### Force Delete
+### Skip Confirmation
 
 ```bash
-mehr delete --force
+mehr delete --yes
 ```
 
-Skip confirmation prompt.
+Skip the confirmation prompt.
 
 ### Keep Branch
 
@@ -113,7 +113,7 @@ Branch deleted, work directory preserved.
 After deletion, start a new task:
 
 ```bash
-mehr delete --force
+mehr delete --yes
 mehr start task.md  # Fresh start
 ```
 

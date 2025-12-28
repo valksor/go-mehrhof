@@ -126,7 +126,7 @@ git checkout task/abc12345
 
 ```bash
 # Delete existing task
-mehr delete --force
+mehr delete --yes
 
 # Start fresh
 mehr start task.md
@@ -431,4 +431,4 @@ cat .mehrhof/work/*/sessions/*.yaml
 | Bad implementation | `mehr undo`                                        |
 | Merge conflict     | Resolve manually, `git add .`, `git commit`        |
 | Timeout            | `export MEHR_AGENT_TIMEOUT=600`                    |
-| Start fresh        | `mehr delete --force && mehr start task.md`        |
+| Start fresh        | `mehr delete --yes && mehr start task.md`        |

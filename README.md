@@ -448,16 +448,14 @@ Delete the current task without merging changes.
 mehr delete                 # Delete with confirmation
 mehr delete --yes           # Delete without confirmation
 mehr delete -y              # Same as --yes
-mehr delete --force         # Alias for --yes (backwards compatibility)
-mehr delete --keep-branch   # Only delete workspace, keep branch
-mehr delete --keep-work     # Only delete branch, keep workspace
+mehr delete --keep-branch   # Delete task but keep the git branch
+mehr delete --keep-work     # Delete branch but keep the work directory
 ```
 
 **Flags:**
 | Flag | Description | Default |
 |------|-------------|---------|
 | `-y, --yes` | Skip confirmation prompt | `false` |
-| `-f, --force` | Alias for --yes (backwards compatibility) | `false` |
 | `--keep-branch` | Keep the git branch | `false` |
 | `--keep-work` | Keep the work directory | `false` |
 
@@ -756,13 +754,13 @@ Mehrhof supports plugins for extending functionality without recompilation. Plug
 
 ### Plugin Types
 
-| Type         | Purpose                  | Examples                       | Status         |
-| ------------ | ------------------------ | ------------------------------ | -------------- |
-| **Provider** | Custom task sources      | Jira, YouTrack, Linear, Notion | Stable         |
-| **Agent**    | Custom AI backends       | Local LLMs, Codex              | Stable         |
-| **Workflow** | State machine extensions | Approval steps, notifications  | *Experimental* |
+| Type         | Purpose                  | Examples                       | Status |
+| ------------ | ------------------------ | ------------------------------ | ------ |
+| **Provider** | Custom task sources      | Jira, YouTrack, Linear, Notion | Stable |
+| **Agent**    | Custom AI backends       | Local LLMs, Codex              | Stable |
+| **Workflow** | State machine extensions | Approval steps, notifications  | Stable |
 
-> **Note:** Workflow plugins have scaffolding in place but are not yet fully integrated into the state machine. The API is defined and documented, but integration is incomplete. Use provider and agent plugins for production workloads.
+Workflow plugins support dynamic phase insertion (`after`/`before`), custom guards, and critical effects that can block workflow on failure.
 
 ### Using Plugins
 

@@ -4,11 +4,11 @@ Mehrhof supports a plugin system for extending functionality without recompilati
 
 ## Plugin Types
 
-| Type         | Purpose                  | Example Use Cases                | Status         |
-| ------------ | ------------------------ | -------------------------------- | -------------- |
-| **Provider** | Custom task sources      | Jira, YouTrack, Linear, Notion   | Stable         |
-| **Agent**    | Custom AI backends       | Local LLMs, Codex, custom models | Stable         |
-| **Workflow** | State machine extensions | Approval steps, notifications    | *Experimental* |
+| Type         | Purpose                  | Example Use Cases                | Status     |
+| ------------ | ------------------------ | -------------------------------- | ---------- |
+| **Provider** | Custom task sources      | Jira, YouTrack, Linear, Notion   | Stable     |
+| **Agent**    | Custom AI backends       | Local LLMs, Codex, custom models | Stable     |
+| **Workflow** | State machine extensions | Approval steps, notifications    | Stable     |
 
 ## Quick Start
 
@@ -154,19 +154,39 @@ mehr implement --agent accurate
 
 ## Workflow Plugins
 
-> **Experimental:** Workflow plugins have scaffolding in place but are not yet fully integrated into the state machine. The JSON-RPC protocol and adapter code exist, but the hooks to register custom phases, guards, and effects are incomplete. This documentation describes the intended API—use provider and agent plugins for production workloads.
-
-Workflow plugins extend the state machine with custom phases:
+Workflow plugins extend the state machine with custom phases, guards, and effects:
 
 ```
 idle → planning → [custom phase] → implementing → reviewing → [approval] → done
 ```
 
-Example use cases:
+### Features
+
+- **Dynamic Phase Insertion**: Add custom phases using `after` or `before` to specify insertion points
+- **Plugin Guards**: Control transitions with custom guard conditions evaluated via JSON-RPC
+- **Critical Effects**: Mark effects as `critical: true` to block workflow on failure
+
+### Example Use Cases
 
 - Manager approval before deployment
 - Security scan after implementation
 - Slack notifications on phase changes
+- Jira status updates on workflow transitions
+
+### Effect Criticality
+
+Effects can be marked as critical in the plugin manifest:
+
+```yaml
+effects:
+  - name: "notifySlack"
+    description: "Send notification"
+    critical: false  # Log errors but continue
+
+  - name: "updateJira"
+    description: "Update ticket status"
+    critical: true   # Workflow fails if this fails
+```
 
 ## Troubleshooting
 
