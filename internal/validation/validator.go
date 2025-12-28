@@ -6,15 +6,12 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/valksor/go-mehrhof/internal/config"
 	"github.com/valksor/go-mehrhof/internal/storage"
 )
 
 // Options configures validation behavior
 type Options struct {
-	Strict        bool // Treat warnings as errors
-	AppOnly       bool // Only validate app config
-	WorkspaceOnly bool // Only validate workspace config
+	Strict bool // Treat warnings as errors
 }
 
 // Validator validates configuration files
@@ -38,36 +35,16 @@ func (v *Validator) SetBuiltInAgents(names []string) {
 	v.builtInAgents = names
 }
 
-// Validate runs all configured validations and returns the combined result
+// Validate runs workspace validation and returns the result
 func (v *Validator) Validate(ctx context.Context) (*Result, error) {
 	result := NewResult()
 
-	// Validate workspace config unless app-only mode
-	if !v.opts.AppOnly {
-		wsResult, err := v.validateWorkspace()
-		if err != nil {
-			return nil, fmt.Errorf("workspace validation: %w", err)
-		}
-		result.Merge(wsResult)
+	// Validate workspace config
+	wsResult, err := v.validateWorkspace()
+	if err != nil {
+		return nil, fmt.Errorf("workspace validation: %w", err)
 	}
-
-	// Validate app config unless workspace-only mode
-	if !v.opts.WorkspaceOnly {
-		appResult, err := v.validateApp(ctx)
-		if err != nil {
-			return nil, fmt.Errorf("app validation: %w", err)
-		}
-		result.Merge(appResult)
-	}
-
-	// Cross-validation (only if both configs are being validated)
-	if !v.opts.AppOnly && !v.opts.WorkspaceOnly {
-		crossResult, err := v.validateCross(ctx)
-		if err != nil {
-			return nil, fmt.Errorf("cross validation: %w", err)
-		}
-		result.Merge(crossResult)
-	}
+	result.Merge(wsResult)
 
 	// In strict mode, warnings make the config invalid
 	if v.opts.Strict && result.Warnings > 0 {
@@ -104,49 +81,6 @@ func (v *Validator) validateWorkspace() (*Result, error) {
 
 	// Run workspace-specific validations
 	validateWorkspaceConfig(cfg, configPath, v.builtInAgents, result)
-
-	return result, nil
-}
-
-// validateApp validates the application configuration (.env files)
-func (v *Validator) validateApp(ctx context.Context) (*Result, error) {
-	result := NewResult()
-
-	// Load app config
-	cfg, err := config.Load(ctx)
-	if err != nil {
-		// Try to identify which .env file caused the error
-		result.AddError("ENV_LOAD_ERROR", fmt.Sprintf("Failed to load app config: %s", err), "", ".env")
-		return result, nil
-	}
-
-	// Run app-specific validations
-	validateAppConfig(cfg, result)
-
-	return result, nil
-}
-
-// validateCross performs cross-config validation
-func (v *Validator) validateCross(ctx context.Context) (*Result, error) {
-	result := NewResult()
-
-	ws, err := storage.OpenWorkspace(v.workspacePath)
-	if err != nil {
-		return result, nil // Skip cross-validation if workspace can't be opened
-	}
-
-	wsConfig, err := ws.LoadConfig()
-	if err != nil {
-		return result, nil // Skip if workspace config invalid
-	}
-
-	appConfig, err := config.Load(ctx)
-	if err != nil {
-		return result, nil // Skip if app config invalid
-	}
-
-	// Run cross-validation
-	validateCrossConfig(appConfig, wsConfig, v.builtInAgents, result)
 
 	return result, nil
 }
