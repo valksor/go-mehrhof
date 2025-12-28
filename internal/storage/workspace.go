@@ -79,13 +79,14 @@ func (w *Workspace) HasConfig() bool {
 
 // WorkspaceConfig holds workspace-specific configuration that users can customize
 type WorkspaceConfig struct {
-	Git      GitSettings                 `yaml:"git"`
-	Agent    AgentSettings               `yaml:"agent"`
-	Workflow WorkflowSettings            `yaml:"workflow"`
-	Env      map[string]string           `yaml:"env,omitempty"`
-	Agents   map[string]AgentAliasConfig `yaml:"agents,omitempty"`
-	GitHub   *GitHubSettings             `yaml:"github,omitempty"`
-	Plugins  PluginsConfig               `yaml:"plugins,omitempty"`
+	Git       GitSettings                 `yaml:"git"`
+	Agent     AgentSettings               `yaml:"agent"`
+	Workflow  WorkflowSettings            `yaml:"workflow"`
+	Providers ProvidersSettings           `yaml:"providers,omitempty"`
+	Env       map[string]string           `yaml:"env,omitempty"`
+	Agents    map[string]AgentAliasConfig `yaml:"agents,omitempty"`
+	GitHub    *GitHubSettings             `yaml:"github,omitempty"`
+	Plugins   PluginsConfig               `yaml:"plugins,omitempty"`
 }
 
 // PluginsConfig holds plugin-related configuration
@@ -158,6 +159,11 @@ type WorkflowSettings struct {
 	SessionRetentionDays int  `yaml:"session_retention_days"`
 }
 
+// ProvidersSettings holds provider-related configuration
+type ProvidersSettings struct {
+	Default string `yaml:"default,omitempty"` // Default provider for bare references (e.g., "file", "directory", "github")
+}
+
 // NewDefaultWorkspaceConfig creates a WorkspaceConfig with default values
 func NewDefaultWorkspaceConfig() *WorkspaceConfig {
 	return &WorkspaceConfig{
@@ -221,6 +227,17 @@ func (w *Workspace) SaveConfig(cfg *WorkspaceConfig) error {
 # Example:
 # env:
 #     CLAUDE_ANTHROPIC_API_KEY: your-key # passed to claude as ANTHROPIC_API_KEY
+`
+	}
+
+	// Add providers section comment if providers.default is empty
+	if cfg.Providers.Default == "" {
+		content += `
+# Provider settings
+# Set a default provider for bare task references (without scheme prefix)
+# Example:
+# providers:
+#     default: file    # "task.md" becomes "file:task.md"
 `
 	}
 
