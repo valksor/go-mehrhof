@@ -1,155 +1,167 @@
 # Configuration Overview
 
-Mehrhof uses a layered configuration system with sensible defaults. You can customize behavior through environment variables, configuration files, or command-line flags.
+Mehrhof uses a simple configuration system with sensible defaults. Configure behavior through workspace configuration files or command-line flags.
 
 ## Important: How Claude Integration Works
 
 Mehrhof calls Claude CLI as a subprocess. This means:
 
 - **Claude's settings** (API keys, model, etc.) are handled by Claude CLI itself
-- **Mehrhof's settings** (`MEHR_*` variables) control Mehrhof's behavior
-- Environment variables set in Mehrhof config are passed to Claude when it runs
+- **Mehrhof's settings** (workspace config, CLI flags) control Mehrhof's behavior
+- Environment variables in workspace config are passed to Claude when it runs
 
-## Configuration Priority
+## Configuration Methods
 
-Configuration is loaded from multiple sources. Later sources override earlier ones:
-
-```
-1. Built-in defaults     (lowest priority)
-2. User config          ~/.mehrhof/.env
-3. Project config       .env
-4. Local overrides      .env.local
-5. Environment vars     MEHR_* variables  (highest priority)
-```
+| Method               | Use Case               | Example                    |
+| -------------------- | ---------------------- | -------------------------- |
+| **CLI flags**        | Per-command overrides  | `mehr --verbose plan`      |
+| **Workspace config** | Project-level settings | `.mehrhof/config.yaml`     |
+| **User settings**    | Personal preferences   | `~/.mehrhof/settings.json` |
 
 ## Quick Reference
 
-| What             | How                             |
-| ---------------- | ------------------------------- |
-| Increase timeout | `export MEHR_AGENT_TIMEOUT=600` |
-| JSON output      | `export MEHR_UI_FORMAT=json`    |
-| Disable color    | `export MEHR_UI_COLOR=false`    |
+| What                  | How                                           |
+| --------------------- | --------------------------------------------- |
+| Verbose output        | `mehr --verbose <command>`                    |
+| Disable color         | `mehr --no-color <command>` or `NO_COLOR=1`   |
+| Set default agent     | `.mehrhof/config.yaml` → `agent.default`      |
+| Custom branch pattern | `.mehrhof/config.yaml` → `git.branch_pattern` |
 
-## Configuration Sections
+## Workspace Configuration
 
-### Agent
-
-Controls AI agent behavior:
-
-| Setting                 | Default | Description        |
-| ----------------------- | ------- | ------------------ |
-| `MEHR_AGENT_DEFAULT`    | claude  | Default agent      |
-| `MEHR_AGENT_TIMEOUT`    | 300     | Timeout in seconds |
-| `MEHR_AGENT_MAXRETRIES` | 3       | Retry attempts     |
-
-### Storage
-
-Controls data persistence:
-
-| Setting                             | Default  | Description           |
-| ----------------------------------- | -------- | --------------------- |
-| `MEHR_STORAGE_ROOT`                 | .mehrhof | Storage directory     |
-| `MEHR_STORAGE_MAXBLUEPRINTS`        | 100      | Max stored blueprints |
-| `MEHR_STORAGE_SESSIONRETENTIONDAYS` | 30       | Session log retention |
-
-### Git
-
-Controls version control integration:
-
-| Setting                  | Default        | Description           |
-| ------------------------ | -------------- | --------------------- |
-| `MEHR_GIT_AUTOCOMMIT`    | true           | Auto-commit changes   |
-| `MEHR_GIT_COMMITPREFIX`  | [task]         | Commit message prefix |
-| `MEHR_GIT_BRANCHPATTERN` | task/{task_id} | Branch name pattern   |
-
-### UI
-
-Controls output formatting:
-
-| Setting            | Default | Description               |
-| ------------------ | ------- | ------------------------- |
-| `MEHR_UI_COLOR`    | true    | Colored output            |
-| `MEHR_UI_FORMAT`   | text    | Output format (text/json) |
-| `MEHR_UI_VERBOSE`  | false   | Verbose output            |
-| `MEHR_UI_PROGRESS` | spinner | Progress style            |
-
-## Default Configuration
-
-Without any customization, Mehrhof uses:
+Project-level settings in `.mehrhof/config.yaml`:
 
 ```yaml
+git:
+  auto_commit: true
+  commit_prefix: "[{key}]"
+  branch_pattern: "{type}/{key}--{slug}"
+  sign_commits: false
+
 agent:
   default: claude
   timeout: 300
-  maxretries: 3
-  claude:
-    model: claude-sonnet-4-20250514
-    maxtokens: 8192
-    temperature: 0.7
+  max_retries: 3
 
-storage:
-  root: .mehrhof
-  maxblueprints: 100
-  sessionretentiondays: 30
+providers:
+  default: file # Allow bare references like "task.md"
 
-git:
-  autocommit: true
-  commitprefix: "[task]"
-  branchpattern: "task/{task_id}"
-  signcommits: false
+workflow:
+  auto_init: true
+  session_retention_days: 30
 
-ui:
-  color: true
-  format: text
-  verbose: false
-  progress: spinner
+# Environment variables passed to agents
+env:
+  ANTHROPIC_API_KEY: your-api-key-here
 ```
 
-## Viewing Current Configuration
+### Configuration Sections
 
-Configuration is applied at runtime. To verify settings:
+#### git
 
-```bash
-# Check specific variable
-echo $MEHR_AGENT_DEFAULT
+Controls version control integration:
 
-# Run with verbose flag
-mehr status --verbose
+| Setting          | Default                | Description                    |
+| ---------------- | ---------------------- | ------------------------------ |
+| `auto_commit`    | `true`                 | Auto-commit after operations   |
+| `commit_prefix`  | `[{key}]`              | Commit message prefix template |
+| `branch_pattern` | `{type}/{key}--{slug}` | Branch name pattern            |
+| `sign_commits`   | `false`                | GPG-sign commits               |
+
+#### agent
+
+Controls AI agent behavior:
+
+| Setting       | Default  | Description        |
+| ------------- | -------- | ------------------ |
+| `default`     | `claude` | Default agent      |
+| `timeout`     | `300`    | Timeout in seconds |
+| `max_retries` | `3`      | Retry attempts     |
+
+#### providers
+
+Controls task source behavior:
+
+| Setting   | Default | Description                          |
+| --------- | ------- | ------------------------------------ |
+| `default` | (none)  | Default provider for bare references |
+
+#### workflow
+
+Controls workflow behavior:
+
+| Setting                  | Default | Description               |
+| ------------------------ | ------- | ------------------------- |
+| `auto_init`              | `true`  | Auto-initialize workspace |
+| `session_retention_days` | `30`    | Keep sessions for N days  |
+
+## CLI Flags
+
+Global flags available on all commands:
+
+| Flag            | Description                           |
+| --------------- | ------------------------------------- |
+| `-v, --verbose` | Enable verbose output (debug logging) |
+| `--no-color`    | Disable colored output                |
+
+The `NO_COLOR` environment variable is also respected for disabling colors.
+
+## User Settings
+
+Personal preferences stored in `~/.mehrhof/settings.json`:
+
+```json
+{
+  "preferred_agent": "claude",
+  "target_branch": "main",
+  "last_provider": "file",
+  "recent_tasks": ["abc123", "def456"]
+}
 ```
+
+These are updated automatically as you use Mehrhof.
+
+## Standard Environment Variables
+
+Mehrhof respects these standard environment variables:
+
+| Variable            | Description                                |
+| ------------------- | ------------------------------------------ |
+| `NO_COLOR`          | Disable colored output (any value)         |
+| `ANTHROPIC_API_KEY` | Claude API key (used by Claude CLI)        |
+| `GITHUB_TOKEN`      | GitHub API token                           |
+| `MEHR_GITHUB_TOKEN` | GitHub token (alternative, takes priority) |
 
 ## Common Configurations
 
-### Development Environment
-
-For local development with extended timeouts:
-
-```bash
-# .env.local
-MEHR_AGENT_TIMEOUT=600
-MEHR_UI_VERBOSE=true
-```
-
 ### CI/CD Environment
 
-For automated pipelines:
+For automated pipelines, use CLI flags:
 
 ```bash
-export MEHR_UI_COLOR=false
-export MEHR_UI_FORMAT=json
-export MEHR_UI_PROGRESS=none
+mehr --no-color --verbose plan
+```
+
+Or set standard env vars:
+
+```bash
+export NO_COLOR=1
+mehr plan
 ```
 
 ### Team Settings
 
-Share project-level settings in `.env`:
+Share project-level settings in `.mehrhof/config.yaml`:
 
-```bash
-# .env (committed to repo)
-MEHR_GIT_COMMITPREFIX=[feature]
-MEHR_GIT_BRANCHPATTERN=feature/{task_id}
+```yaml
+git:
+  branch_pattern: "feature/{key}--{slug}"
+  commit_prefix: "[{key}]"
+
+providers:
+  default: file
 ```
 
 ## Next Steps
 
-- [Environment Variables](configuration/environment.md) - Complete variable reference
 - [Configuration Files](configuration/files.md) - File locations and formats

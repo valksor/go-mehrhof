@@ -1,71 +1,14 @@
 # Configuration Files
 
-Mehrhof uses several configuration files at different levels.
+Mehrhof uses configuration files at different levels.
 
 ## File Locations
 
-| File                       | Location            | Purpose                      |
-| -------------------------- | ------------------- | ---------------------------- |
-| `~/.mehrhof/.env`          | Home directory      | User-level defaults          |
-| `.env`                     | Project root        | Project-level settings       |
-| `.env.local`               | Project root        | Local overrides (gitignored) |
-| `.mehrhof/config.yaml`     | Project `.mehrhof/` | Workspace configuration      |
-| `~/.mehrhof/settings.json` | Home directory      | User preferences             |
-| `~/.mehrhof/plugins/`      | Home directory      | Global plugins               |
-
-## Priority Order
-
-Files are loaded in this order (later overrides earlier):
-
-```
-1. ~/.mehrhof/.env          (lowest)
-2. .env
-3. .env.local               (highest file)
-4. Environment variables    (highest overall)
-```
-
-## .env Files
-
-### Format
-
-Standard dotenv format:
-
-```bash
-# Comment
-KEY=value
-ANOTHER_KEY="value with spaces"
-```
-
-### Project .env
-
-Shared project settings (commit to repo):
-
-```bash
-# .env
-MEHR_GIT_COMMITPREFIX=[{key}]
-MEHR_GIT_BRANCHPATTERN={type}/{key}--{slug}
-MEHR_STORAGE_ROOT=.mehrhofs
-```
-
-### Local .env.local
-
-Personal overrides (add to .gitignore):
-
-```bash
-# .env.local
-MEHR_UI_VERBOSE=true
-MEHR_AGENT_TIMEOUT=600
-```
-
-### User ~/.mehrhof/.env
-
-User-level defaults across all projects:
-
-```bash
-# ~/.mehrhof/.env
-MEHR_AGENT_DEFAULT=claude
-MEHR_UI_COLOR=true
-```
+| File                       | Location            | Purpose                 |
+| -------------------------- | ------------------- | ----------------------- |
+| `.mehrhof/config.yaml`     | Project `.mehrhof/` | Workspace configuration |
+| `~/.mehrhof/settings.json` | Home directory      | User preferences        |
+| `~/.mehrhof/plugins/`      | Home directory      | Global plugins          |
 
 ## Workspace config.yaml
 
@@ -84,6 +27,9 @@ agent:
   default: claude
   timeout: 300
   max_retries: 3
+
+providers:
+  default: file # Allow bare references like "task.md"
 
 workflow:
   auto_init: true
@@ -151,6 +97,15 @@ Each step can specify:
 - `args` - CLI arguments for this step
 
 See [Agents - Per-Step Configuration](../concepts/agents.md#per-step-agent-configuration) for details.
+
+#### providers
+
+```yaml
+providers:
+  default: file # Default provider for bare references
+```
+
+With this set, you can use `mehr start task.md` instead of `mehr start file:task.md`.
 
 #### workflow
 
@@ -244,77 +199,35 @@ Creates:
 - `.mehrhof/config.yaml` with defaults
 - Updates `.gitignore`
 
-### Create .env.local
-
-```bash
-cat > .env.local << 'EOF'
-MEHR_UI_VERBOSE=true
-MEHR_AGENT_TIMEOUT=600
-EOF
-```
-
-### Create User Config
-
-```bash
-mkdir -p ~/.mehrhof
-cat > ~/.mehrhof/.env << 'EOF'
-MEHR_AGENT_DEFAULT=claude
-MEHR_UI_COLOR=true
-EOF
-```
-
 ## Best Practices
 
 ### What to Commit
 
 ```
-.env              # Shared project settings (no secrets!)
-.mehrhof/config.yaml # Workspace configuration
+.mehrhof/config.yaml    # Workspace configuration (no secrets!)
 ```
 
 ### What to Gitignore
 
 ```
-.env.local        # Personal overrides
-.mehrhof/work/       # Task data
+.mehrhof/work/          # Task data
 .mehrhof/.active_task
 ```
 
 ### Team Configuration
 
-Share non-sensitive settings in `.env`:
+Share non-sensitive settings in `.mehrhof/config.yaml`:
 
-```bash
-# .env - safe to commit
-MEHR_GIT_BRANCHPATTERN={type}/{key}--{slug}
-MEHR_GIT_COMMITPREFIX=[{key}]
-```
+```yaml
+git:
+  branch_pattern: "{type}/{key}--{slug}"
+  commit_prefix: "[{key}]"
 
-Keep personal overrides in `.env.local`:
-
-```bash
-# .env.local - not committed
-MEHR_UI_VERBOSE=true
+providers:
+  default: file
 ```
 
 ## Troubleshooting
-
-### Config Not Loading
-
-Check file exists and is readable:
-
-```bash
-ls -la .env .env.local
-```
-
-### Wrong Priority
-
-Environment variables always win:
-
-```bash
-# This overrides any file
-export MEHR_AGENT_TIMEOUT=600
-```
 
 ### YAML Syntax Errors
 
@@ -324,7 +237,12 @@ Validate config.yaml:
 cat .mehrhof/config.yaml | python -c "import yaml,sys; yaml.safe_load(sys.stdin)"
 ```
 
+Or use the validate command:
+
+```bash
+mehr config validate
+```
+
 ## See Also
 
-- [Environment Variables](configuration/environment.md) - All variables
 - [Configuration Overview](configuration/overview.md) - How config works

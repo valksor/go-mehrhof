@@ -94,11 +94,10 @@ claude "Hello"
 **Solution:**
 
 ```bash
-# Wait and retry (automatic)
-# Or increase timeout
-export MEHR_AGENT_TIMEOUT=600
-
-# Reduce concurrent usage
+# Wait and retry (automatic based on agent.timeout in config)
+# Or increase timeout in .mehrhof/config.yaml:
+# agent:
+#   timeout: 600
 ```
 
 ## Task Issues
@@ -111,7 +110,7 @@ export MEHR_AGENT_TIMEOUT=600
 
 ```bash
 # Start a new task
-mehr start task.md
+mehr start file:task.md
 
 # Or switch to existing task branch
 git branch -a | grep task/
@@ -129,7 +128,7 @@ git checkout task/abc12345
 mehr delete --yes
 
 # Start fresh
-mehr start task.md
+mehr start file:task.md
 ```
 
 ### "Cannot find task"
@@ -143,7 +142,7 @@ mehr start task.md
 ls .mehrhof/work/
 
 # If missing, start fresh
-mehr start task.md
+mehr start file:task.md
 ```
 
 ## Git Issues
@@ -269,11 +268,16 @@ mehr implement
 
 **Solution:**
 
-```bash
-# Increase timeout
-export MEHR_AGENT_TIMEOUT=900  # 15 minutes
+Increase timeout in `.mehrhof/config.yaml`:
 
-# Or break into smaller specs
+```yaml
+agent:
+  timeout: 900 # 15 minutes
+```
+
+Or break into smaller specs:
+
+```bash
 mehr talk "Focus on just the API handler first"
 mehr plan
 ```
@@ -310,7 +314,7 @@ mehr status
 # If truly at initial state, nothing to undo
 # Start fresh if needed
 mehr delete
-mehr start task.md
+mehr start file:task.md
 ```
 
 ### "Cannot redo: nothing to redo"
@@ -338,12 +342,10 @@ git checkout abc1234 -- path/to/file
 
 **Solution:**
 
-```bash
-# Increase timeout
-export MEHR_AGENT_TIMEOUT=600
+Increase timeout in config and use verbose mode to see progress:
 
-# Use verbose to see progress
-mehr plan --verbose
+```bash
+mehr --verbose plan
 ```
 
 ### "High memory usage"
@@ -355,28 +357,32 @@ mehr plan --verbose
 ```bash
 # Clean old sessions
 find .mehrhof/work/*/sessions/ -mtime +7 -delete
+```
 
-# Reduce session retention
-export MEHR_STORAGE_SESSIONRETENTIONDAYS=7
+Or configure retention in `.mehrhof/config.yaml`:
+
+```yaml
+workflow:
+  session_retention_days: 7
 ```
 
 ## Configuration Issues
 
 ### "Settings not applied"
 
-**Cause:** Environment variable not set or lower priority config overriding.
+**Cause:** Configuration not loaded or CLI flags overriding.
 
 **Solution:**
 
 ```bash
-# Check current value
-echo $MEHR_AGENT_DEFAULT
+# Validate config
+mehr config validate
 
-# Environment variables have highest priority
-export MEHR_AGENT_DEFAULT=claude
+# Check config file
+cat .mehrhof/config.yaml
 
-# Check .env.local for overrides
-cat .env.local
+# CLI flags override config settings
+mehr --verbose plan  # verbose always enabled
 ```
 
 ### "Invalid configuration"
@@ -387,11 +393,10 @@ cat .env.local
 
 ```bash
 # Validate YAML syntax
-cat .mehrhof/config.yaml | python -c "import yaml,sys; yaml.safe_load(sys.stdin)"
+mehr config validate
 
-# Check valid values
-# agent.default: claude
-# ui.format: text or json
+# Or manually check
+cat .mehrhof/config.yaml | python -c "import yaml,sys; yaml.safe_load(sys.stdin)"
 ```
 
 ## Getting Help
@@ -427,8 +432,8 @@ cat .mehrhof/work/*/sessions/*.yaml
 | ------------------ | -------------------------------------------------- |
 | Command not found  | `export PATH="$PATH:$(go env GOPATH)/bin"`         |
 | Claude not working | Ensure Claude CLI is installed: `claude --version` |
-| No active task     | `mehr start task.md`                               |
+| No active task     | `mehr start file:task.md`                          |
 | Bad implementation | `mehr undo`                                        |
 | Merge conflict     | Resolve manually, `git add .`, `git commit`        |
-| Timeout            | `export MEHR_AGENT_TIMEOUT=600`                    |
-| Start fresh        | `mehr delete --yes && mehr start task.md`        |
+| Timeout            | Increase `agent.timeout` in `.mehrhof/config.yaml` |
+| Start fresh        | `mehr delete --yes && mehr start file:task.md`     |

@@ -12,9 +12,9 @@ mehr plugins <subcommand> [flags]
 
 The `plugins` command group manages the plugin system. Plugins extend mehr with custom integrations without requiring recompilation:
 
-- **Providers**: Custom task sources (Jira, YouTrack, Linear) — *Stable*
-- **Agents**: Custom AI backends (Codex, Junie, custom models) — *Stable*
-- **Workflows**: Custom phases, guards, and effects — *Experimental*
+- **Providers**: Custom task sources (Jira, YouTrack, Linear) — _Stable_
+- **Agents**: Custom AI backends (Codex, Junie, custom models) — _Stable_
+- **Workflows**: Custom phases, guards, and effects — _Experimental_
 
 > **Note:** Workflow plugins have scaffolding in place but are not yet fully integrated into the state machine. Use provider and agent plugins for production workloads.
 

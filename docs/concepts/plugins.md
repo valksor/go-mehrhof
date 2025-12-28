@@ -4,11 +4,11 @@ Mehrhof supports a plugin system for extending functionality without recompilati
 
 ## Plugin Types
 
-| Type         | Purpose                  | Example Use Cases                | Status     |
-| ------------ | ------------------------ | -------------------------------- | ---------- |
-| **Provider** | Custom task sources      | Jira, YouTrack, Linear, Notion   | Stable     |
-| **Agent**    | Custom AI backends       | Local LLMs, Codex, custom models | Stable     |
-| **Workflow** | State machine extensions | Approval steps, notifications    | Stable     |
+| Type         | Purpose                  | Example Use Cases                | Status |
+| ------------ | ------------------------ | -------------------------------- | ------ |
+| **Provider** | Custom task sources      | Jira, YouTrack, Linear, Notion   | Stable |
+| **Agent**    | Custom AI backends       | Local LLMs, Codex, custom models | Stable |
+| **Workflow** | State machine extensions | Approval steps, notifications    | Stable |
 
 ## Quick Start
 
@@ -181,11 +181,11 @@ Effects can be marked as critical in the plugin manifest:
 effects:
   - name: "notifySlack"
     description: "Send notification"
-    critical: false  # Log errors but continue
+    critical: false # Log errors but continue
 
   - name: "updateJira"
     description: "Update ticket status"
-    critical: true   # Workflow fails if this fails
+    critical: true # Workflow fails if this fails
 ```
 
 ## Troubleshooting

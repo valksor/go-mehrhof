@@ -136,7 +136,7 @@ If implementation fails:
 ```
 Error: Implementation failed
 Reason: Agent timeout after 300 seconds
-Tip: Try increasing timeout with MEHR_AGENT_TIMEOUT=600
+Tip: Increase agent.timeout in .mehrhof/config.yaml
 ```
 
 No changes are applied on error. Your code remains unchanged.

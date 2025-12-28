@@ -32,7 +32,6 @@
 
 - Configuration
   - [Overview](configuration/overview.md)
-  - [Environment Variables](configuration/environment.md)
   - [Configuration Files](configuration/files.md)
 
 - Tutorials

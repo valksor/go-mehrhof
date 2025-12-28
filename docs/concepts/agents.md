@@ -61,12 +61,6 @@ agent:
   default: claude # or an alias name
 ```
 
-Or via environment variable:
-
-```bash
-export MEHR_AGENT_DEFAULT=claude
-```
-
 ## Agent Aliases
 
 Aliases let you create custom agents that wrap existing agents with specific environment variables and CLI arguments. This is useful for:
@@ -353,10 +347,19 @@ agent_env:
 
 ### General Settings
 
-| Setting     | Environment Variable    | Default       |
-| ----------- | ----------------------- | ------------- |
-| Timeout     | `MEHR_AGENT_TIMEOUT`    | 300 (seconds) |
-| Max Retries | `MEHR_AGENT_MAXRETRIES` | 3             |
+Configure agent behavior in `.mehrhof/config.yaml`:
+
+```yaml
+agent:
+  default: claude
+  timeout: 300 # seconds
+  max_retries: 3
+```
+
+| Setting     | Config Key          | Default       |
+| ----------- | ------------------- | ------------- |
+| Timeout     | `agent.timeout`     | 300 (seconds) |
+| Max Retries | `agent.max_retries` | 3             |
 
 ## How Agents Work
 
@@ -447,15 +450,16 @@ If Claude has issues, fix them in your Claude CLI configuration first.
 
 ### "Agent timeout"
 
-Increase the timeout:
+Increase the timeout in `.mehrhof/config.yaml`:
 
-```bash
-export MEHR_AGENT_TIMEOUT=600  # 10 minutes
+```yaml
+agent:
+  timeout: 600 # 10 minutes
 ```
 
 ### "Rate limited"
 
-The agent will retry automatically up to `MEHR_AGENT_MAXRETRIES` times. If issues persist, wait before retrying.
+The agent will retry automatically up to `agent.max_retries` times. If issues persist, wait before retrying.
 
 ### Verbose Output
 

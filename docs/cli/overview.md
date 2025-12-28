@@ -77,12 +77,7 @@ mehr finish               # Merge changes
 
 ## Output Formats
 
-By default, output is human-readable text. For scripting:
-
-```bash
-# JSON output (if supported)
-export MEHR_UI_FORMAT=json
-```
+By default, output is human-readable text. Some commands support JSON output via the `--format` flag.
 
 ## Exit Codes
 
@@ -92,9 +87,9 @@ export MEHR_UI_FORMAT=json
 | 1    | General error     |
 | 2    | Invalid arguments |
 
-## Environment Variables
+## Configuration
 
-See [Environment Variables](../configuration/environment.md) for configuration options.
+See [Configuration Overview](../configuration/overview.md) for workspace settings and CLI flags.
 
 ## Examples
 
