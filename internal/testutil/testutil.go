@@ -60,6 +60,12 @@ func WriteFileAndCommit(t *testing.T, dir, relativePath, content, message string
 	mustRunGit(t, dir, "commit", "-m", message)
 }
 
+// CreateTempGitRepoInDir initializes a git repository in an existing directory.
+func CreateTempGitRepoInDir(t *testing.T, dir string) {
+	t.Helper()
+	initGitRepo(t, dir)
+}
+
 // CreateTaskFile creates a task markdown file with the specified content.
 func CreateTaskFile(t *testing.T, dir, filename, title, description string) string {
 	t.Helper()
