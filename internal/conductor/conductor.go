@@ -32,6 +32,9 @@ type Conductor struct {
 	agents    *agent.Registry
 	plugins   *plugin.Registry
 
+	// Workflow plugin adapters (for lifecycle management)
+	workflowAdapters []*plugin.WorkflowAdapter
+
 	// Current state
 	activeTask *storage.ActiveTask
 	taskWork   *storage.TaskWork
@@ -1823,8 +1826,40 @@ func (c *Conductor) loadPlugins(ctx context.Context, cfg *storage.WorkspaceConfi
 	}
 
 	// Register workflow plugins (phases, guards, effects)
-	// Note: Workflow extension requires additional machine integration
-	// which is handled separately in the workflow package
+	workflowPlugins := c.plugins.Workflows()
+	if len(workflowPlugins) > 0 {
+		// Build a new machine with plugin extensions
+		builder := workflow.NewMachineBuilder()
+
+		for _, info := range workflowPlugins {
+			if info.Process == nil {
+				continue
+			}
+
+			adapter := plugin.NewWorkflowAdapter(info.Manifest, info.Process)
+
+			// Initialize adapter with plugin-specific config
+			pluginCfg := cfg.Plugins.Config[info.Manifest.Name]
+			if err := adapter.Initialize(ctx, pluginCfg); err != nil {
+				// Log warning but continue - don't fail if one plugin can't initialize
+				continue
+			}
+
+			// Store adapter for lifecycle management
+			c.workflowAdapters = append(c.workflowAdapters, adapter)
+
+			// Register phases with the machine builder
+			for _, phase := range adapter.BuildPhaseDefinitions() {
+				if err := builder.RegisterPhase(phase); err != nil {
+					// Log warning but continue
+					continue
+				}
+			}
+		}
+
+		// Replace the default machine with the configured one
+		c.machine = builder.Build(c.eventBus)
+	}
 
 	return nil
 }
