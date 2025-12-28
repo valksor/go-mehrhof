@@ -8,6 +8,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/valksor/go-mehrhof/internal/agent"
+	"github.com/valksor/go-mehrhof/internal/provider/file"
 	"github.com/valksor/go-mehrhof/internal/storage"
 	"github.com/valksor/go-mehrhof/internal/workflow"
 )
@@ -1030,4 +1032,187 @@ func TestCreateCheckpoint_WithChanges(t *testing.T) {
 			t.Errorf("event type = %q, want %q", event.Type, "checkpoint")
 		}
 	}
+}
+
+// TestStart_WithFileReference tests starting a task with a file:// reference
+func TestStart_WithFileReference(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping integration test in short mode")
+	}
+
+	tmpDir := t.TempDir()
+	ctx := context.Background()
+
+	// Create a task file with mock agent specified
+	taskContent := `---
+title: Test Task from File
+agent: mock
+---
+This is a test task description.
+`
+	taskPath := filepath.Join(tmpDir, "test-task.md")
+	if err := os.WriteFile(taskPath, []byte(taskContent), 0o644); err != nil {
+		t.Fatalf("WriteFile: %v", err)
+	}
+
+	// Create conductor
+	c, err := New(WithWorkDir(tmpDir), WithCreateBranch(false))
+	if err != nil {
+		t.Fatalf("New: %v", err)
+	}
+
+	// Register file provider
+	file.Register(c.GetProviderRegistry())
+
+	// Register mock agent
+	mockAgent := &mockAgent{name: "mock"}
+	if err := c.GetAgentRegistry().Register(mockAgent); err != nil {
+		t.Fatalf("Register mock agent: %v", err)
+	}
+
+	// Initialize
+	if err := c.Initialize(ctx); err != nil {
+		t.Fatalf("Initialize: %v", err)
+	}
+
+	// Start the task with absolute path
+	err = c.Start(ctx, "file:"+taskPath)
+	if err != nil {
+		t.Fatalf("Start: %v", err)
+	}
+
+	// Verify active task
+	activeTask := c.GetActiveTask()
+	if activeTask == nil {
+		t.Fatal("GetActiveTask returned nil")
+	}
+
+	// Verify task work exists
+	taskWork := c.GetTaskWork()
+	if taskWork == nil {
+		t.Fatal("GetTaskWork returned nil")
+	}
+
+	if taskWork.Metadata.Title != "Test Task from File" {
+		t.Errorf("task title = %q, want %q", taskWork.Metadata.Title, "Test Task from File")
+	}
+
+	// Verify agent was set
+	if taskWork.Agent.Name != "mock" {
+		t.Errorf("agent name = %q, want %q", taskWork.Agent.Name, "mock")
+	}
+}
+
+// TestStatus_Integration tests getting status when there's an active task
+func TestStatus_Integration(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	// Create workspace
+	ws, err := storage.OpenWorkspace(tmpDir)
+	if err != nil {
+		t.Fatalf("OpenWorkspace: %v", err)
+	}
+	if err := ws.EnsureInitialized(); err != nil {
+		t.Fatalf("EnsureInitialized: %v", err)
+	}
+
+	// Create task work
+	taskID := "status-test-123"
+	work, err := ws.CreateWork(taskID, storage.SourceInfo{
+		Type: "file",
+		Ref:  "task.md",
+	})
+	if err != nil {
+		t.Fatalf("CreateWork: %v", err)
+	}
+	work.Metadata.Title = "Status Test Task"
+	work.Metadata.ExternalKey = "STATUS-123"
+	if err := ws.SaveWork(work); err != nil {
+		t.Fatalf("SaveWork: %v", err)
+	}
+
+	// Create active task
+	activeTask := &storage.ActiveTask{
+		ID:      taskID,
+		Ref:     "file:task.md",
+		WorkDir: ".mehrhof/work/" + taskID,
+		State:   "implementing",
+		Branch:  "feature/status--test",
+		Started: time.Now(),
+	}
+	if err := ws.SaveActiveTask(activeTask); err != nil {
+		t.Fatalf("SaveActiveTask: %v", err)
+	}
+
+	// Create conductor
+	c, err := New(WithWorkDir(tmpDir))
+	if err != nil {
+		t.Fatalf("New: %v", err)
+	}
+
+	// Initialize - ignore agent detection errors
+	ctx := context.Background()
+	_ = c.Initialize(ctx)
+
+	// Get status
+	status, err := c.Status()
+	if err != nil {
+		t.Fatalf("Status: %v", err)
+	}
+
+	if status.TaskID != taskID {
+		t.Errorf("TaskID = %q, want %q", status.TaskID, taskID)
+	}
+	if status.Title != "Status Test Task" {
+		t.Errorf("Title = %q, want %q", status.Title, "Status Test Task")
+	}
+	if status.State != "implementing" {
+		t.Errorf("State = %q, want %q", status.State, "implementing")
+	}
+	if status.Branch != "feature/status--test" {
+		t.Errorf("Branch = %q, want %q", status.Branch, "feature/status--test")
+	}
+}
+
+// mockAgent is a minimal mock agent for integration testing
+type mockAgent struct {
+	name string
+}
+
+func (a *mockAgent) Name() string {
+	return a.name
+}
+
+func (a *mockAgent) Run(ctx context.Context, prompt string) (*agent.Response, error) {
+	return &agent.Response{
+		Summary:  "Mock response",
+		Messages: []string{"This is a mock agent response"},
+	}, nil
+}
+
+func (a *mockAgent) RunStream(ctx context.Context, prompt string) (<-chan agent.Event, <-chan error) {
+	eventCh := make(chan agent.Event, 1)
+	errCh := make(chan error, 1)
+
+	eventCh <- agent.Event{Type: agent.EventText, Text: "Mock response"}
+	close(eventCh)
+	close(errCh)
+
+	return eventCh, errCh
+}
+
+func (a *mockAgent) RunWithCallback(ctx context.Context, prompt string, cb agent.StreamCallback) (*agent.Response, error) {
+	return a.Run(ctx, prompt)
+}
+
+func (a *mockAgent) Available() error {
+	return nil
+}
+
+func (a *mockAgent) WithEnv(key, value string) agent.Agent {
+	return a
+}
+
+func (a *mockAgent) WithArgs(args ...string) agent.Agent {
+	return a
 }

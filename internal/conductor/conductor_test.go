@@ -2,6 +2,7 @@ package conductor
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"os"
 	"strings"
@@ -10,7 +11,9 @@ import (
 
 	"github.com/valksor/go-mehrhof/internal/agent"
 	"github.com/valksor/go-mehrhof/internal/events"
+	"github.com/valksor/go-mehrhof/internal/provider"
 	"github.com/valksor/go-mehrhof/internal/storage"
+	"github.com/valksor/go-mehrhof/internal/workflow"
 )
 
 func TestDefaultOptions(t *testing.T) {
@@ -1272,4 +1275,865 @@ func TestExtractExploredFiles(t *testing.T) {
 			}
 		})
 	}
+}
+
+// Test resolveAgentForTask - agent resolution with 7-level priority
+func TestResolveAgentForTask(t *testing.T) {
+	tests := []struct {
+		name             string
+		optsAgentName    string
+		taskAgentConfig  *provider.AgentConfig
+		workspaceDefault string
+		registerAgent    string
+		wantAgentName    string
+		wantSource       string
+		wantError        bool
+	}{
+		{
+			name:          "priority 1: CLI flag",
+			optsAgentName: "cli-agent",
+			registerAgent: "cli-agent",
+			wantAgentName: "cli-agent",
+			wantSource:    "cli",
+		},
+		{
+			name:          "priority 2: task frontmatter agent",
+			optsAgentName: "",
+			taskAgentConfig: &provider.AgentConfig{
+				Name: "task-agent",
+			},
+			registerAgent: "task-agent",
+			wantAgentName: "task-agent",
+			wantSource:    "task",
+		},
+		{
+			name:             "priority 3: workspace default",
+			optsAgentName:    "",
+			taskAgentConfig:  nil,
+			workspaceDefault: "workspace-agent",
+			registerAgent:    "workspace-agent",
+			wantAgentName:    "workspace-agent",
+			wantSource:       "workspace",
+		},
+		{
+			name:             "priority 4: auto-detect",
+			optsAgentName:    "",
+			taskAgentConfig:  nil,
+			workspaceDefault: "",
+			registerAgent:    "auto-agent",
+			wantAgentName:    "auto-agent",
+			wantSource:       "auto",
+		},
+		{
+			name:          "agent not found",
+			optsAgentName: "nonexistent",
+			registerAgent: "other-agent",
+			wantError:     true,
+		},
+		{
+			name:          "task config with env vars",
+			optsAgentName: "",
+			taskAgentConfig: &provider.AgentConfig{
+				Name: "task-agent",
+				Env: map[string]string{
+					"TEST_VAR": "test-value",
+				},
+				Args: []string{"--test-arg"},
+			},
+			registerAgent: "task-agent",
+			wantAgentName: "task-agent",
+			wantSource:    "task",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tmpDir := t.TempDir()
+
+			// Create workspace with config
+			ws, err := storage.OpenWorkspace(tmpDir)
+			if err != nil {
+				t.Fatalf("OpenWorkspace: %v", err)
+			}
+			if err := ws.EnsureInitialized(); err != nil {
+				t.Fatalf("EnsureInitialized: %v", err)
+			}
+
+			// Save workspace config with default agent
+			cfg, _ := ws.LoadConfig()
+			cfg.Agent.Default = tt.workspaceDefault
+			if err := ws.SaveConfig(cfg); err != nil {
+				t.Fatalf("SaveConfig: %v", err)
+			}
+
+			// Create conductor
+			c, err := New(WithWorkDir(tmpDir), WithAgent(tt.optsAgentName))
+			if err != nil {
+				t.Fatalf("New: %v", err)
+			}
+
+			// Set up workspace and agents
+			c.workspace = ws
+			c.taskAgentConfig = tt.taskAgentConfig
+
+			// Register test agent
+			if tt.registerAgent != "" && tt.registerAgent != "auto-agent" {
+				mockAgent := &testAgent{name: tt.registerAgent}
+				if err := c.agents.Register(mockAgent); err != nil {
+					t.Fatalf("Register agent: %v", err)
+				}
+			}
+			if tt.registerAgent == "auto-agent" {
+				mockAgent := &testAgent{name: "auto-agent"}
+				if err := c.agents.Register(mockAgent); err != nil {
+					t.Fatalf("Register agent: %v", err)
+				}
+			}
+
+			// Call resolveAgentForTask
+			gotAgent, gotSource, gotErr := c.resolveAgentForTask()
+
+			if tt.wantError {
+				if gotErr == nil {
+					t.Error("resolveAgentForTask() expected error, got nil")
+				}
+				return
+			}
+
+			if gotErr != nil {
+				t.Fatalf("resolveAgentForTask() unexpected error: %v", gotErr)
+			}
+
+			if gotAgent.Name() != tt.wantAgentName {
+				t.Errorf("agent name = %q, want %q", gotAgent.Name(), tt.wantAgentName)
+			}
+			if gotSource != tt.wantSource {
+				t.Errorf("source = %q, want %q", gotSource, tt.wantSource)
+			}
+		})
+	}
+}
+
+// Test resolveAgentForStep - per-step agent resolution with 7-level priority
+func TestResolveAgentForStep(t *testing.T) {
+	tests := []struct {
+		name            string
+		optsAgentName   string
+		optsStepAgents  map[string]string
+		taskAgentConfig *provider.AgentConfig
+		workspaceConfig *storage.WorkspaceConfig
+		step            workflow.Step
+		wantAgentName   string
+		wantSource      string
+		wantError       bool
+	}{
+		{
+			name:          "priority 1: CLI step-specific",
+			optsAgentName: "global-cli",
+			optsStepAgents: map[string]string{
+				"planning": "step-cli-agent",
+			},
+			taskAgentConfig: nil,
+			workspaceConfig: nil,
+			step:            workflow.StepPlanning,
+			wantAgentName:   "step-cli-agent",
+			wantSource:      "cli-step",
+		},
+		{
+			name:            "priority 2: CLI global",
+			optsAgentName:   "global-cli",
+			optsStepAgents:  nil,
+			taskAgentConfig: nil,
+			workspaceConfig: nil,
+			step:            workflow.StepPlanning,
+			wantAgentName:   "global-cli",
+			wantSource:      "cli",
+		},
+		{
+			name:           "priority 3: task step-specific",
+			optsAgentName:  "",
+			optsStepAgents: nil,
+			taskAgentConfig: &provider.AgentConfig{
+				Steps: map[string]provider.StepAgentConfig{
+					"planning": {
+						Name: "task-step-agent",
+						Env:  map[string]string{"STEP_VAR": "step-value"},
+						Args: []string{"--step-arg"},
+					},
+				},
+			},
+			workspaceConfig: nil,
+			step:            workflow.StepPlanning,
+			wantAgentName:   "task-step-agent",
+			wantSource:      "task-step",
+		},
+		{
+			name:           "priority 4: task default",
+			optsAgentName:  "",
+			optsStepAgents: nil,
+			taskAgentConfig: &provider.AgentConfig{
+				Name: "task-default-agent",
+				Env:  map[string]string{"TASK_VAR": "task-value"},
+				Args: []string{"--task-arg"},
+			},
+			workspaceConfig: nil,
+			step:            workflow.StepPlanning,
+			wantAgentName:   "task-default-agent",
+			wantSource:      "task",
+		},
+		{
+			name:            "priority 5: workspace step-specific",
+			optsAgentName:   "",
+			optsStepAgents:  nil,
+			taskAgentConfig: nil,
+			workspaceConfig: &storage.WorkspaceConfig{
+				Agent: storage.AgentSettings{
+					Steps: map[string]storage.StepAgentConfig{
+						"planning": {
+							Name: "workspace-step-agent",
+							Env:  map[string]string{"WS_STEP_VAR": "ws-step-value"},
+							Args: []string{"--ws-step-arg"},
+						},
+					},
+				},
+			},
+			step:          workflow.StepPlanning,
+			wantAgentName: "workspace-step-agent",
+			wantSource:    "workspace-step",
+		},
+		{
+			name:            "priority 6: workspace default",
+			optsAgentName:   "",
+			optsStepAgents:  nil,
+			taskAgentConfig: nil,
+			workspaceConfig: &storage.WorkspaceConfig{
+				Agent: storage.AgentSettings{
+					Default: "workspace-default-agent",
+				},
+			},
+			step:          workflow.StepPlanning,
+			wantAgentName: "workspace-default-agent",
+			wantSource:    "workspace",
+		},
+		{
+			name:            "agent not found",
+			optsAgentName:   "nonexistent",
+			optsStepAgents:  nil,
+			taskAgentConfig: nil,
+			workspaceConfig: nil,
+			step:            workflow.StepPlanning,
+			wantError:       true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tmpDir := t.TempDir()
+
+			// Create workspace
+			ws, err := storage.OpenWorkspace(tmpDir)
+			if err != nil {
+				t.Fatalf("OpenWorkspace: %v", err)
+			}
+			if err := ws.EnsureInitialized(); err != nil {
+				t.Fatalf("EnsureInitialized: %v", err)
+			}
+
+			// Save workspace config if provided
+			if tt.workspaceConfig != nil {
+				if err := ws.SaveConfig(tt.workspaceConfig); err != nil {
+					t.Fatalf("SaveConfig: %v", err)
+				}
+			}
+
+			// Create conductor with step agents
+			opts := []Option{WithWorkDir(tmpDir)}
+			if tt.optsAgentName != "" {
+				opts = append(opts, WithAgent(tt.optsAgentName))
+			}
+			for step, agent := range tt.optsStepAgents {
+				opts = append(opts, WithStepAgent(step, agent))
+			}
+			c, err := New(opts...)
+			if err != nil {
+				t.Fatalf("New: %v", err)
+			}
+
+			c.workspace = ws
+			c.taskAgentConfig = tt.taskAgentConfig
+
+			// Register agents based on test case
+			agentsToRegister := []string{
+				"step-cli-agent", "global-cli", "task-step-agent",
+				"task-default-agent", "workspace-step-agent",
+				"workspace-default-agent",
+			}
+			for _, name := range agentsToRegister {
+				mockAgent := &testAgent{name: name}
+				if err := c.agents.Register(mockAgent); err != nil {
+					t.Fatalf("Register agent %s: %v", name, err)
+				}
+			}
+
+			// Call resolveAgentForStep
+			gotResolution, gotErr := c.resolveAgentForStep(tt.step)
+
+			if tt.wantError {
+				if gotErr == nil {
+					t.Error("resolveAgentForStep() expected error, got nil")
+				}
+				return
+			}
+
+			if gotErr != nil {
+				t.Fatalf("resolveAgentForStep() unexpected error: %v", gotErr)
+			}
+
+			if gotResolution.Agent.Name() != tt.wantAgentName {
+				t.Errorf("agent name = %q, want %q", gotResolution.Agent.Name(), tt.wantAgentName)
+			}
+			if gotResolution.Source != tt.wantSource {
+				t.Errorf("source = %q, want %q", gotResolution.Source, tt.wantSource)
+			}
+		})
+	}
+}
+
+// Test registerAliasAgents - simple alias, chained aliases, circular dependency
+func TestRegisterAliasAgents(t *testing.T) {
+	tests := []struct {
+		name         string
+		registerBase []string // Base agents to register first
+		aliases      map[string]storage.AgentAliasConfig
+		wantError    bool
+		errorContain string
+		verifyAgents []string // Agents that should be registered
+	}{
+		{
+			name:         "no aliases",
+			registerBase: []string{"base"},
+			aliases:      map[string]storage.AgentAliasConfig{},
+			wantError:    false,
+			verifyAgents: []string{"base"},
+		},
+		{
+			name:         "simple alias",
+			registerBase: []string{"base"},
+			aliases: map[string]storage.AgentAliasConfig{
+				"alias1": {
+					Extends:     "base",
+					Description: "Simple alias",
+				},
+			},
+			wantError:    false,
+			verifyAgents: []string{"base", "alias1"},
+		},
+		{
+			name:         "chained aliases",
+			registerBase: []string{"base"},
+			aliases: map[string]storage.AgentAliasConfig{
+				"alias1": {
+					Extends: "base",
+				},
+				"alias2": {
+					Extends: "alias1",
+				},
+				"alias3": {
+					Extends: "alias2",
+				},
+			},
+			wantError:    false,
+			verifyAgents: []string{"base", "alias1", "alias2", "alias3"},
+		},
+		{
+			name:         "circular dependency",
+			registerBase: []string{"base"},
+			aliases: map[string]storage.AgentAliasConfig{
+				"alias1": {
+					Extends: "alias2",
+				},
+				"alias2": {
+					Extends: "alias1",
+				},
+			},
+			wantError:    true,
+			errorContain: "circular",
+		},
+		{
+			name:         "unknown base agent",
+			registerBase: []string{},
+			aliases: map[string]storage.AgentAliasConfig{
+				"alias1": {
+					Extends: "nonexistent",
+				},
+			},
+			wantError:    true,
+			errorContain: "unknown",
+		},
+		{
+			name:         "alias with env and args",
+			registerBase: []string{"base"},
+			aliases: map[string]storage.AgentAliasConfig{
+				"custom": {
+					Extends: "base",
+					Env: map[string]string{
+						"CUSTOM_VAR": "custom-value",
+					},
+					Args: []string{"--custom-arg"},
+				},
+			},
+			wantError:    false,
+			verifyAgents: []string{"base", "custom"},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			c, err := New()
+			if err != nil {
+				t.Fatalf("New: %v", err)
+			}
+
+			// Register base agents
+			for _, name := range tt.registerBase {
+				mockAgent := &testAgent{name: name}
+				if err := c.agents.Register(mockAgent); err != nil {
+					t.Fatalf("Register base agent %s: %v", name, err)
+				}
+			}
+
+			// Create workspace config with aliases
+			cfg := &storage.WorkspaceConfig{
+				Agents: tt.aliases,
+			}
+
+			// Call registerAliasAgents
+			gotErr := c.registerAliasAgents(cfg)
+
+			if tt.wantError {
+				if gotErr == nil {
+					t.Error("registerAliasAgents() expected error, got nil")
+					return
+				}
+				if tt.errorContain != "" && !strings.Contains(gotErr.Error(), tt.errorContain) {
+					t.Errorf("error = %q, want contain %q", gotErr.Error(), tt.errorContain)
+				}
+				return
+			}
+
+			if gotErr != nil {
+				t.Fatalf("registerAliasAgents() unexpected error: %v", gotErr)
+			}
+
+			// Verify agents are registered
+			for _, name := range tt.verifyAgents {
+				agent, err := c.agents.Get(name)
+				if err != nil {
+					t.Errorf("agent %q not registered: %v", name, err)
+				}
+				if agent != nil && agent.Name() != name {
+					t.Errorf("agent name = %q, want %q", agent.Name(), name)
+				}
+			}
+		})
+	}
+}
+
+// Test GetAgentForStep - cache hit/miss, persistence
+func TestGetAgentForStep(t *testing.T) {
+	tests := []struct {
+		name           string
+		existingStep   *storage.StepAgentInfo
+		registerAgents []string
+		wantAgentName  string
+		wantCached     bool
+	}{
+		{
+			name: "cache hit - returns persisted agent",
+			existingStep: &storage.StepAgentInfo{
+				Name: "cached-agent",
+				InlineEnv: map[string]string{
+					"CACHED_VAR": "cached-value",
+				},
+				Args: []string{"--cached-arg"},
+			},
+			registerAgents: []string{"cached-agent"},
+			wantAgentName:  "cached-agent",
+			wantCached:     true,
+		},
+		{
+			name:           "cache miss - resolves fresh",
+			existingStep:   nil,
+			registerAgents: []string{"fresh-agent"},
+			wantAgentName:  "fresh-agent",
+			wantCached:     false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tmpDir := t.TempDir()
+
+			// Create workspace
+			ws, err := storage.OpenWorkspace(tmpDir)
+			if err != nil {
+				t.Fatalf("OpenWorkspace: %v", err)
+			}
+			if err := ws.EnsureInitialized(); err != nil {
+				t.Fatalf("EnsureInitialized: %v", err)
+			}
+
+			// Create task work with step info
+			work, err := ws.CreateWork("test-task", storage.SourceInfo{
+				Type: "file",
+				Ref:  "task.md",
+			})
+			if err != nil {
+				t.Fatalf("CreateWork: %v", err)
+			}
+
+			if tt.existingStep != nil {
+				work.Agent.Steps = map[string]storage.StepAgentInfo{
+					"planning": *tt.existingStep,
+				}
+				if err := ws.SaveWork(work); err != nil {
+					t.Fatalf("SaveWork: %v", err)
+				}
+			}
+
+			// Create conductor
+			c, err := New(WithWorkDir(tmpDir), WithAgent("fresh-agent"))
+			if err != nil {
+				t.Fatalf("New: %v", err)
+			}
+
+			c.workspace = ws
+			c.taskWork = work
+
+			// Register agents
+			for _, name := range tt.registerAgents {
+				mockAgent := &testAgent{name: name}
+				if err := c.agents.Register(mockAgent); err != nil {
+					t.Fatalf("Register agent %s: %v", name, err)
+				}
+			}
+
+			// Call GetAgentForStep
+			gotAgent, gotErr := c.GetAgentForStep(workflow.StepPlanning)
+
+			if gotErr != nil {
+				t.Fatalf("GetAgentForStep() unexpected error: %v", gotErr)
+			}
+
+			if gotAgent.Name() != tt.wantAgentName {
+				t.Errorf("agent name = %q, want %q", gotAgent.Name(), tt.wantAgentName)
+			}
+		})
+	}
+}
+
+// Test resolveNaming - external key resolution, template expansion
+func TestResolveNaming(t *testing.T) {
+	tests := []struct {
+		name              string
+		workUnit          *provider.WorkUnit
+		taskID            string
+		optsExternalKey   string
+		workspaceConfig   *storage.WorkspaceConfig
+		wantBranchContain string
+		wantCommitPrefix  string
+	}{
+		{
+			name: "CLI external key override",
+			workUnit: &provider.WorkUnit{
+				Title:       "Test Feature",
+				ExternalKey: "WORKUNIT-123",
+				TaskType:    "feature",
+				Slug:        "test-feature",
+			},
+			taskID:          "task-abc",
+			optsExternalKey: "CLI-456",
+			workspaceConfig: &storage.WorkspaceConfig{
+				Git: storage.GitSettings{
+					BranchPattern: "feature/{key}--{slug}",
+					CommitPrefix:  "[{key}]",
+				},
+			},
+			wantBranchContain: "CLI-456",
+			wantCommitPrefix:  "[CLI-456]",
+		},
+		{
+			name: "workUnit external key",
+			workUnit: &provider.WorkUnit{
+				Title:       "Test Feature",
+				ExternalKey: "WORKUNIT-123",
+				TaskType:    "feature",
+				Slug:        "test-feature",
+			},
+			taskID: "task-abc",
+			workspaceConfig: &storage.WorkspaceConfig{
+				Git: storage.GitSettings{
+					BranchPattern: "feature/{key}--{slug}",
+					CommitPrefix:  "[{key}]",
+				},
+			},
+			wantBranchContain: "WORKUNIT-123",
+			wantCommitPrefix:  "[WORKUNIT-123]",
+		},
+		{
+			name: "fallback to taskID",
+			workUnit: &provider.WorkUnit{
+				Title:    "Test Feature",
+				TaskType: "feature",
+				Slug:     "test-feature",
+			},
+			taskID: "task-abc",
+			workspaceConfig: &storage.WorkspaceConfig{
+				Git: storage.GitSettings{
+					BranchPattern: "feature/{key}--{slug}",
+					CommitPrefix:  "[{key}]",
+				},
+			},
+			wantBranchContain: "task-abc",
+			wantCommitPrefix:  "[task-abc]",
+		},
+		{
+			name: "slug is generated from title",
+			workUnit: &provider.WorkUnit{
+				Title:       "A Very Long Feature Title That Needs Slugification",
+				ExternalKey: "KEY-123",
+				TaskType:    "feature",
+			},
+			taskID: "task-abc",
+			workspaceConfig: &storage.WorkspaceConfig{
+				Git: storage.GitSettings{
+					BranchPattern: "feature/{key}--{slug}",
+					CommitPrefix:  "[{key}]",
+				},
+			},
+			wantBranchContain: "KEY-123",
+			wantCommitPrefix:  "[KEY-123]",
+		},
+		{
+			name: "task type defaults to 'task'",
+			workUnit: &provider.WorkUnit{
+				Title:       "Test Feature",
+				ExternalKey: "KEY-123",
+			},
+			taskID: "task-abc",
+			workspaceConfig: &storage.WorkspaceConfig{
+				Git: storage.GitSettings{
+					BranchPattern: "{type}/{key}",
+					CommitPrefix:  "[{key}]",
+				},
+			},
+			wantBranchContain: "task/KEY-123",
+			wantCommitPrefix:  "[KEY-123]",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tmpDir := t.TempDir()
+
+			// Create workspace
+			ws, err := storage.OpenWorkspace(tmpDir)
+			if err != nil {
+				t.Fatalf("OpenWorkspace: %v", err)
+			}
+			if err := ws.EnsureInitialized(); err != nil {
+				t.Fatalf("EnsureInitialized: %v", err)
+			}
+
+			// Save workspace config
+			if tt.workspaceConfig != nil {
+				if err := ws.SaveConfig(tt.workspaceConfig); err != nil {
+					t.Fatalf("SaveConfig: %v", err)
+				}
+			}
+
+			// Create conductor
+			c, err := New(WithWorkDir(tmpDir), WithExternalKey(tt.optsExternalKey))
+			if err != nil {
+				t.Fatalf("New: %v", err)
+			}
+
+			c.workspace = ws
+
+			// Call resolveNaming
+			gotInfo := c.resolveNaming(tt.workUnit, tt.taskID)
+
+			if gotInfo == nil {
+				t.Fatal("resolveNaming() returned nil")
+			}
+
+			if !strings.Contains(gotInfo.branchName, tt.wantBranchContain) {
+				t.Errorf("branch name = %q, want contain %q", gotInfo.branchName, tt.wantBranchContain)
+			}
+
+			if gotInfo.commitPrefix != tt.wantCommitPrefix {
+				t.Errorf("commit prefix = %q, want %q", gotInfo.commitPrefix, tt.wantCommitPrefix)
+			}
+		})
+	}
+}
+
+// Test buildWorkUnit - WorkUnit construction with specifications
+func TestBuildWorkUnit_WithSpecs(t *testing.T) {
+	tests := []struct {
+		name           string
+		taskWork       *storage.TaskWork
+		specifications []int
+		wantSpecCount  int
+		wantID         string
+		wantTitle      string
+	}{
+		{
+			name:     "nil taskWork",
+			taskWork: nil,
+			wantID:   "",
+		},
+		{
+			name: "with specifications",
+			taskWork: &storage.TaskWork{
+				Version: "1",
+				Metadata: storage.WorkMetadata{
+					ID:          "task-123",
+					Title:       "Test Task",
+					ExternalKey: "KEY-123",
+				},
+				Source: storage.SourceInfo{
+					Ref:     "task.md",
+					Content: "task content",
+				},
+			},
+			specifications: []int{1, 2, 3},
+			wantSpecCount:  3,
+			wantID:         "task-123",
+			wantTitle:      "Test Task",
+		},
+		{
+			name: "without specifications",
+			taskWork: &storage.TaskWork{
+				Version: "1",
+				Metadata: storage.WorkMetadata{
+					ID:          "task-456",
+					Title:       "Another Task",
+					ExternalKey: "KEY-456",
+				},
+				Source: storage.SourceInfo{
+					Ref:     "another.md",
+					Content: "another content",
+				},
+			},
+			specifications: []int{},
+			wantSpecCount:  0,
+			wantID:         "task-456",
+			wantTitle:      "Another Task",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tmpDir := t.TempDir()
+
+			// Create workspace
+			ws, err := storage.OpenWorkspace(tmpDir)
+			if err != nil {
+				t.Fatalf("OpenWorkspace: %v", err)
+			}
+			if err := ws.EnsureInitialized(); err != nil {
+				t.Fatalf("EnsureInitialized: %v", err)
+			}
+
+			// Create task work and specifications
+			if tt.taskWork != nil {
+				work, err := ws.CreateWork(tt.taskWork.Metadata.ID, tt.taskWork.Source)
+				if err != nil {
+					t.Fatalf("CreateWork: %v", err)
+				}
+				work.Metadata = tt.taskWork.Metadata
+
+				// Save specifications
+				for _, num := range tt.specifications {
+					if err := ws.SaveSpecification(tt.taskWork.Metadata.ID, num, fmt.Sprintf("# Specification %d", num)); err != nil {
+						t.Fatalf("SaveSpecification: %v", err)
+					}
+				}
+
+				if err := ws.SaveWork(work); err != nil {
+					t.Fatalf("SaveWork: %v", err)
+				}
+				tt.taskWork = work
+			}
+
+			// Create conductor
+			c, err := New(WithWorkDir(tmpDir))
+			if err != nil {
+				t.Fatalf("New: %v", err)
+			}
+
+			c.workspace = ws
+			c.taskWork = tt.taskWork
+
+			// Call buildWorkUnit
+			gotWorkUnit := c.buildWorkUnit()
+
+			if tt.wantID == "" {
+				if gotWorkUnit != nil {
+					t.Error("buildWorkUnit() should return nil when taskWork is nil")
+				}
+				return
+			}
+
+			if gotWorkUnit == nil {
+				t.Fatal("buildWorkUnit() returned nil, expected non-nil")
+			}
+
+			if gotWorkUnit.ID != tt.wantID {
+				t.Errorf("ID = %q, want %q", gotWorkUnit.ID, tt.wantID)
+			}
+
+			if gotWorkUnit.Title != tt.wantTitle {
+				t.Errorf("Title = %q, want %q", gotWorkUnit.Title, tt.wantTitle)
+			}
+
+			if len(gotWorkUnit.Specifications) != tt.wantSpecCount {
+				t.Errorf("specifications count = %d, want %d", len(gotWorkUnit.Specifications), tt.wantSpecCount)
+			}
+		})
+	}
+}
+
+// testAgent is a minimal mock agent for testing
+type testAgent struct {
+	name string
+}
+
+func (a *testAgent) Name() string {
+	return a.name
+}
+
+func (a *testAgent) Run(ctx context.Context, prompt string) (*agent.Response, error) {
+	return &agent.Response{}, nil
+}
+
+func (a *testAgent) RunStream(ctx context.Context, prompt string) (<-chan agent.Event, <-chan error) {
+	return nil, nil
+}
+
+func (a *testAgent) RunWithCallback(ctx context.Context, prompt string, cb agent.StreamCallback) (*agent.Response, error) {
+	return &agent.Response{}, nil
+}
+
+func (a *testAgent) Available() error {
+	return nil
+}
+
+func (a *testAgent) WithEnv(key, value string) agent.Agent {
+	return a
+}
+
+func (a *testAgent) WithArgs(args ...string) agent.Agent {
+	return a
 }

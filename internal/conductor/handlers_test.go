@@ -541,3 +541,127 @@ func TestCreateCheckpointIfNeeded_NoChanges(t *testing.T) {
 		t.Error("createCheckpointIfNeeded should return nil when no changes")
 	}
 }
+
+func TestSaveCurrentSession(t *testing.T) {
+	tests := []struct {
+		name               string
+		currentSession     *storage.Session
+		currentSessionFile string
+		taskID             string
+		expectCleared      bool // whether session should be cleared
+	}{
+		{
+			name:               "nil current session - no-op",
+			currentSession:     nil,
+			currentSessionFile: "",
+			taskID:             "test-task",
+			expectCleared:      false,
+		},
+		{
+			name: "empty session file - no-op",
+			currentSession: &storage.Session{
+				Version: "1",
+				Kind:    "Session",
+				Metadata: storage.SessionMetadata{
+					StartedAt: time.Now(),
+				},
+			},
+			currentSessionFile: "",
+			taskID:             "test-task",
+			expectCleared:      false,
+		},
+		{
+			name: "session but nil file - no-op",
+			currentSession: &storage.Session{
+				Version: "1",
+				Kind:    "Session",
+				Metadata: storage.SessionMetadata{
+					StartedAt: time.Now(),
+				},
+			},
+			currentSessionFile: "",
+			taskID:             "test-task",
+			expectCleared:      false,
+		},
+		{
+			name: "valid session - saves and clears",
+			currentSession: &storage.Session{
+				Version: "1",
+				Kind:    "Session",
+				Metadata: storage.SessionMetadata{
+					StartedAt: time.Now(),
+					Type:      "planning",
+				},
+				Exchanges: []storage.Exchange{
+					{
+						Role:    "system",
+						Content: "You are helpful",
+					},
+				},
+			},
+			currentSessionFile: "2025-01-01T12-00-00-planning.yaml",
+			taskID:             "test-task",
+			expectCleared:      true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tmpDir := t.TempDir()
+
+			// Create workspace
+			ws, err := storage.OpenWorkspace(tmpDir)
+			if err != nil {
+				t.Fatalf("OpenWorkspace: %v", err)
+			}
+			if err := ws.EnsureInitialized(); err != nil {
+				t.Fatalf("EnsureInitialized: %v", err)
+			}
+
+			// Create task work
+			_, err = ws.CreateWork(tt.taskID, storage.SourceInfo{
+				Type: "file",
+				Ref:  "task.md",
+			})
+			if err != nil {
+				t.Fatalf("CreateWork: %v", err)
+			}
+
+			c, err := New(WithWorkDir(tmpDir))
+			if err != nil {
+				t.Fatalf("New: %v", err)
+			}
+
+			c.workspace = ws
+			c.currentSession = tt.currentSession
+			c.currentSessionFile = tt.currentSessionFile
+
+			// Call saveCurrentSession
+			c.saveCurrentSession(tt.taskID)
+
+			// Verify session state
+			if tt.expectCleared {
+				if c.currentSession != nil {
+					t.Error("currentSession should be nil after saveCurrentSession")
+				}
+				if c.currentSessionFile != "" {
+					t.Errorf("currentSessionFile should be empty after saveCurrentSession, got %q", c.currentSessionFile)
+				}
+
+				// Verify session was saved to workspace
+				sessions, err := ws.ListSessions(tt.taskID)
+				if err != nil {
+					t.Fatalf("ListSessions: %v", err)
+				}
+				if len(sessions) == 0 {
+					t.Error("expected session to be saved, but found none")
+				}
+			} else {
+				// Should not be cleared
+				if tt.currentSession != nil && c.currentSession == nil {
+					t.Error("currentSession should NOT be cleared when session file is empty")
+				}
+			}
+		})
+	}
+}
