@@ -25,6 +25,7 @@ const (
 	specsDirName    = "specifications"
 	sessionsDirName = "sessions"
 	configFileName  = "config.yaml"
+	envFileName     = ".env"
 )
 
 // Workspace manages task storage within a repository
@@ -340,6 +341,7 @@ func (w *Workspace) UpdateGitignore() error {
 	// Define entries to add
 	entries := []string{
 		taskDirName + "/work/",
+		taskDirName + "/" + envFileName,
 		activeTaskFile,
 	}
 
