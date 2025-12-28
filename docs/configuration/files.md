@@ -149,6 +149,9 @@ GLM_API_KEY=your-glm-key
 # GitHub token
 GITHUB_TOKEN=ghp_...
 
+# Wrike token
+WRIKE_TOKEN=your-wrike-token
+
 # Custom keys for aliases
 MY_CUSTOM_API_KEY=secret-value
 ```

@@ -749,6 +749,49 @@ github:
     on_pr_created: true # Post PR link
 ```
 
+### Wrike Provider
+
+Reads tasks from Wrike API v4.
+
+```bash
+mehr start wrike:1234567890                                  # Numeric ID with scheme
+mehr start wk:IEAAJXXXXXXXX                                  # API ID with short scheme
+mehr start wk:https://www.wrike.com/open.htm?id=1234567890   # Permalink URL
+```
+
+**Reference Formats:**
+
+| Format | Example |
+|--------|---------|
+| Scheme with numeric ID | `wrike:1234567890` |
+| Scheme with API ID | `wrike:IEAAJXXXXXXXX` |
+| Short scheme | `wk:1234567890` |
+| Permalink URL | `https://www.wrike.com/open.htm?id=1234567890` |
+
+**Features:**
+
+- Fetches task title, description, status, priority
+- Recursively fetches subtasks (max depth 5)
+- Downloads attachments and comments
+- Supports multiple ID formats: numeric, API ID, permalink
+
+**Token Resolution Priority:**
+
+1. `MEHR_WRIKE_TOKEN` environment variable
+2. `WRIKE_TOKEN` environment variable
+3. `.mehrhof/config.yaml` `wrike.token`
+
+**Configuration:**
+
+```yaml
+# .mehrhof/config.yaml
+wrike:
+  token: "${WRIKE_TOKEN}"  # Bearer token for Wrike API v4
+  host: "https://www.wrike.com/api/v4"  # Optional: override API base URL
+```
+
+Create API tokens at: https://www.wrike.com/frontend/apps/index.html#api
+
 ## Plugins
 
 Mehrhof supports plugins for extending functionality without recompilation. Plugins communicate via JSON-RPC 2.0 over stdin/stdout.
@@ -839,7 +882,8 @@ internal/
 ├── provider/       # Task source providers
 │   ├── file/       # File provider
 │   ├── directory/  # Directory provider
-│   └── github/     # GitHub issues provider
+│   ├── github/     # GitHub issues provider
+│   └── wrike/      # Wrike tasks provider
 ├── storage/        # YAML-based persistence
 ├── vcs/            # Git operations
 └── workflow/       # State machine engine
