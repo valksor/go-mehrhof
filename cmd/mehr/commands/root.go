@@ -32,6 +32,14 @@ workflows. Tasks can be sourced from files, directories, or external providers.`
 	SilenceUsage:  true,
 	SilenceErrors: true,
 	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
+		// Load .env file FIRST, before anything else
+		// This ensures env vars are available for all subsequent operations
+		if err := config.LoadDotEnvFromCwd(); err != nil {
+			// Log warning but don't fail - .env parsing errors should be reported
+			// but shouldn't prevent the command from running
+			fmt.Fprintf(os.Stderr, "warning: failed to load .mehrhof/.env: %v\n", err)
+		}
+
 		// Configure logging from CLI flag
 		log.Configure(log.Options{
 			Verbose: verbose,
