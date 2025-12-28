@@ -1,6 +1,10 @@
 package workflow
 
-import "context"
+import (
+	"context"
+	"fmt"
+	"log"
+)
 
 // EffectFunc is a side effect executed during a transition
 // Effects are executed by the conductor, not the state machine directly
@@ -61,4 +65,56 @@ func (r *EffectRegistry) Execute(ctx context.Context, effectType EffectType, wu 
 func (r *EffectRegistry) Has(effectType EffectType) bool {
 	_, ok := r.handlers[effectType]
 	return ok
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Critical Effects for Plugin Support
+// ─────────────────────────────────────────────────────────────────────────────
+
+// CriticalEffect wraps an EffectFunc with criticality metadata.
+// Critical effects must succeed for the workflow transition to complete.
+// Non-critical effects log errors but allow the workflow to continue.
+type CriticalEffect struct {
+	Name     string     // Effect name for logging and debugging
+	Fn       EffectFunc // The actual effect function
+	Critical bool       // If true, failure blocks the transition
+}
+
+// ExecuteEffects runs all effects in order.
+// Returns an error only if a critical effect fails.
+// Non-critical effect failures are logged but don't block the workflow.
+func ExecuteEffects(ctx context.Context, wu *WorkUnit, effects []CriticalEffect) error {
+	for _, eff := range effects {
+		if eff.Fn == nil {
+			continue
+		}
+
+		err := eff.Fn(ctx, wu)
+		if err != nil {
+			if eff.Critical {
+				return fmt.Errorf("critical effect %s failed: %w", eff.Name, err)
+			}
+			// Log non-critical effect failure but continue
+			log.Printf("workflow: non-critical effect %s failed: %v", eff.Name, err)
+		}
+	}
+	return nil
+}
+
+// WrapEffect wraps a simple EffectFunc as a non-critical CriticalEffect.
+func WrapEffect(name string, fn EffectFunc) CriticalEffect {
+	return CriticalEffect{
+		Name:     name,
+		Fn:       fn,
+		Critical: false,
+	}
+}
+
+// WrapCriticalEffect wraps an EffectFunc as a critical CriticalEffect.
+func WrapCriticalEffect(name string, fn EffectFunc) CriticalEffect {
+	return CriticalEffect{
+		Name:     name,
+		Fn:       fn,
+		Critical: true,
+	}
 }

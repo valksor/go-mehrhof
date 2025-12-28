@@ -24,6 +24,12 @@ type Machine struct {
 	// Undo/redo stacks
 	undoStack []string
 	redoStack []string
+
+	// Instance-level configuration (set by builder, or defaults to package-level globals)
+	stateRegistry     map[State]StateInfo
+	transitionTable   map[TransitionKey][]Transition
+	globalTransitions map[Event]State
+	phaseOrder        []State
 }
 
 // HistoryEntry records a state transition
@@ -33,7 +39,8 @@ type HistoryEntry struct {
 	Event Event
 }
 
-// NewMachine creates a new state machine
+// NewMachine creates a new state machine with default workflow configuration.
+// Use NewMachineBuilder().Build() for custom configurations.
 func NewMachine(eventBus *events.Bus) *Machine {
 	return &Machine{
 		state:     StateIdle,
@@ -42,6 +49,11 @@ func NewMachine(eventBus *events.Bus) *Machine {
 		history:   make([]HistoryEntry, 0),
 		undoStack: make([]string, 0),
 		redoStack: make([]string, 0),
+		// Use package-level defaults
+		stateRegistry:     StateRegistry,
+		transitionTable:   TransitionTable,
+		globalTransitions: GlobalTransitions,
+		phaseOrder:        PhaseStates,
 	}
 }
 
@@ -81,12 +93,13 @@ func (m *Machine) Dispatch(ctx context.Context, event Event) error {
 	from := m.state
 
 	// Check global transitions first (error, abort)
-	if to, ok := GetGlobalTransition(event); ok {
+	if to, ok := m.globalTransitions[event]; ok {
 		return m.transitionTo(ctx, from, to, event)
 	}
 
-	// Get possible transitions
-	transitions := GetTransitions(from, event)
+	// Get possible transitions from instance table
+	key := TransitionKey{From: from, Event: event}
+	transitions := m.transitionTable[key]
 	if len(transitions) == 0 {
 		return fmt.Errorf("no transition from %s on event %s", from, event)
 	}
@@ -109,12 +122,13 @@ func (m *Machine) CanDispatch(ctx context.Context, event Event) (bool, string) {
 	from := m.state
 
 	// Check global transitions
-	if _, ok := GetGlobalTransition(event); ok {
+	if _, ok := m.globalTransitions[event]; ok {
 		return true, ""
 	}
 
-	// Get possible transitions
-	transitions := GetTransitions(from, event)
+	// Get possible transitions from instance table
+	key := TransitionKey{From: from, Event: event}
+	transitions := m.transitionTable[key]
 	if len(transitions) == 0 {
 		return false, fmt.Sprintf("no transition from %s on event %s", from, event)
 	}
@@ -261,9 +275,26 @@ func (m *Machine) IsTerminal() bool {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 
-	info, ok := StateRegistry[m.state]
+	info, ok := m.stateRegistry[m.state]
 	if !ok {
 		return false
 	}
 	return info.Terminal
+}
+
+// GetStateInfo returns state metadata for the given state
+func (m *Machine) GetStateInfo(s State) (StateInfo, bool) {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	info, ok := m.stateRegistry[s]
+	return info, ok
+}
+
+// PhaseOrder returns the current phase order
+func (m *Machine) PhaseOrder() []State {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	result := make([]State, len(m.phaseOrder))
+	copy(result, m.phaseOrder)
+	return result
 }
