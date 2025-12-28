@@ -3,6 +3,7 @@ package commands
 import (
 	"fmt"
 	"os"
+	"strings"
 	"text/tabwriter"
 
 	"github.com/spf13/cobra"
@@ -85,8 +86,13 @@ func showWorktreeTask(ws *storage.Workspace, git *vcs.Git) error {
 	}
 
 	if active == nil {
-		fmt.Println("No task associated with this worktree.")
-		fmt.Println("\nThis worktree may have been created manually or the task was deleted.")
+		fmt.Print(display.ErrorWithSuggestions(
+			"No task associated with this worktree",
+			[]display.Suggestion{
+				{Command: "mehr start <reference>", Description: "Start a new task in this worktree"},
+				{Command: "mehr list --all", Description: "View all tasks in workspace"},
+			},
+		))
 		return nil
 	}
 
@@ -95,12 +101,12 @@ func showWorktreeTask(ws *storage.Workspace, git *vcs.Git) error {
 		return fmt.Errorf("load work: %w", err)
 	}
 
-	fmt.Printf("Worktree Task: %s\n", active.ID)
+	fmt.Printf("Worktree Task: %s\n", display.Bold(active.ID))
 	fmt.Printf("  Title:    %s\n", work.Metadata.Title)
 	if work.Metadata.ExternalKey != "" {
 		fmt.Printf("  Key:      %s\n", work.Metadata.ExternalKey)
 	}
-	fmt.Printf("  State:    %s - %s\n", display.FormatStateString(active.State), display.GetStateDescription(workflow.State(active.State)))
+	fmt.Printf("  State:    %s - %s\n", display.FormatStateStringColored(active.State), display.Muted(display.GetStateDescription(workflow.State(active.State))))
 	fmt.Printf("  Source:   %s\n", active.Ref)
 	fmt.Printf("  Worktree: %s\n", git.Root())
 	fmt.Printf("  Started:  %s\n", active.Started.Format("2006-01-02 15:04:05"))
@@ -160,8 +166,7 @@ func showWorktreeTask(ws *storage.Workspace, git *vcs.Git) error {
 
 func showActiveTask(ws *storage.Workspace, git *vcs.Git) error {
 	if !ws.HasActiveTask() {
-		fmt.Println("No active task.")
-		fmt.Println("\nUse 'mehr start <reference>' to register a new task.")
+		fmt.Print(display.NoActiveTaskError())
 		return nil
 	}
 
@@ -175,12 +180,12 @@ func showActiveTask(ws *storage.Workspace, git *vcs.Git) error {
 		return fmt.Errorf("load work: %w", err)
 	}
 
-	fmt.Printf("Active Task: %s\n", active.ID)
+	fmt.Printf("Active Task: %s\n", display.Bold(active.ID))
 	fmt.Printf("  Title:   %s\n", work.Metadata.Title)
 	if work.Metadata.ExternalKey != "" {
 		fmt.Printf("  Key:     %s\n", work.Metadata.ExternalKey)
 	}
-	fmt.Printf("  State:   %s - %s\n", display.FormatStateString(active.State), display.GetStateDescription(workflow.State(active.State)))
+	fmt.Printf("  State:   %s - %s\n", display.FormatStateStringColored(active.State), display.Muted(display.GetStateDescription(workflow.State(active.State))))
 	fmt.Printf("  Source:  %s\n", active.Ref)
 	fmt.Printf("  WorkDir: %s\n", active.WorkDir)
 	fmt.Printf("  Started: %s\n", active.Started.Format("2006-01-02 15:04:05"))
@@ -228,7 +233,7 @@ func showActiveTask(ws *storage.Workspace, git *vcs.Git) error {
 			summaryParts = append(summaryParts, fmt.Sprintf("%d draft", summary[storage.SpecificationStatusDraft]))
 		}
 		if len(summaryParts) > 0 {
-			fmt.Printf("  Summary: %s\n", joinStrings(summaryParts, ", "))
+			fmt.Printf("  Summary: %s\n", strings.Join(summaryParts, ", "))
 		}
 	} else {
 		fmt.Printf("\nNo specifications yet. Run 'mehr plan' to create them.\n")
@@ -337,17 +342,9 @@ func showAllTasks(ws *storage.Workspace, git *vcs.Git) error {
 	if err := w.Flush(); err != nil {
 		return fmt.Errorf("flush status table: %w", err)
 	}
-	return nil
-}
 
-// joinStrings joins strings with a separator
-func joinStrings(parts []string, sep string) string {
-	if len(parts) == 0 {
-		return ""
-	}
-	result := parts[0]
-	for i := 1; i < len(parts); i++ {
-		result += sep + parts[i]
-	}
-	return result
+	// Add legend for symbols
+	fmt.Println()
+	fmt.Println(display.Muted("Legend: * = active task"))
+	return nil
 }

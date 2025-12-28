@@ -10,6 +10,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/valksor/go-mehrhof/internal/config"
+	"github.com/valksor/go-mehrhof/internal/display"
 	"github.com/valksor/go-mehrhof/internal/log"
 )
 
@@ -38,6 +39,9 @@ workflows. Tasks can be sourced from files, directories, or external providers.`
 		log.Configure(log.Options{
 			Verbose: verbose,
 		})
+
+		// Initialize color output
+		display.InitColors(noColor)
 
 		// Load configuration
 		var err error

@@ -13,6 +13,7 @@ import (
 
 	"github.com/valksor/go-mehrhof/internal/agent"
 	"github.com/valksor/go-mehrhof/internal/conductor"
+	"github.com/valksor/go-mehrhof/internal/display"
 	"github.com/valksor/go-mehrhof/internal/events"
 	"github.com/valksor/go-mehrhof/internal/storage"
 )
@@ -92,7 +93,14 @@ func runPlan(cmd *cobra.Command, args []string) error {
 
 	// Check for active task
 	if cond.GetActiveTask() == nil {
-		return fmt.Errorf("no active task\nUse 'mehr start <reference>' to register a task first\nOr use 'mehr plan --new' for standalone planning")
+		fmt.Print(display.ErrorWithSuggestions(
+			"No active task",
+			[]display.Suggestion{
+				{Command: "mehr start <reference>", Description: "Register a task first"},
+				{Command: "mehr plan --new", Description: "Start standalone planning"},
+			},
+		))
+		return nil
 	}
 
 	// Set up progress callback
@@ -121,30 +129,47 @@ func runPlan(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("plan: %w", err)
 	}
 
-	// Run planning
-	fmt.Println("Planning...")
-	err = cond.RunPlanning(ctx)
+	// Run planning with spinner in non-verbose mode
+	var planErr error
+	if cfg.UI.Verbose {
+		fmt.Println(display.InfoMsg("Planning..."))
+		planErr = cond.RunPlanning(ctx)
+	} else {
+		spinner := display.NewSpinner("Creating specifications...")
+		spinner.Start()
+		planErr = cond.RunPlanning(ctx)
+		if planErr != nil && !errors.Is(planErr, conductor.ErrPendingQuestion) {
+			spinner.StopWithError("Planning failed")
+		} else if errors.Is(planErr, conductor.ErrPendingQuestion) {
+			spinner.Stop()
+		} else {
+			spinner.StopWithSuccess("Planning complete")
+		}
+	}
+	err = planErr
 
 	// Check if agent asked a question
 	if errors.Is(err, conductor.ErrPendingQuestion) {
 		q, loadErr := cond.GetWorkspace().LoadPendingQuestion(cond.GetActiveTask().ID)
 		if loadErr == nil && q != nil {
-			fmt.Printf("\n⚠ Agent has a question:\n\n")
-			fmt.Printf("  %s\n\n", q.Question)
+			fmt.Println()
+			fmt.Println(display.WarningMsg("Agent has a question:"))
+			fmt.Println()
+			fmt.Printf("  %s\n\n", display.Bold(q.Question))
 			if len(q.Options) > 0 {
-				fmt.Println("  Options:")
+				fmt.Println(display.Muted("  Options:"))
 				for i, opt := range q.Options {
-					fmt.Printf("    %d. %s", i+1, opt.Label)
+					fmt.Printf("    %s %s", display.Info(fmt.Sprintf("%d.", i+1)), opt.Label)
 					if opt.Description != "" {
-						fmt.Printf(" - %s", opt.Description)
+						fmt.Printf(" %s", display.Muted("- "+opt.Description))
 					}
 					fmt.Println()
 				}
 				fmt.Println()
 			}
-			fmt.Println("Answer with:")
-			fmt.Println("  mehr talk \"your answer\"")
-			fmt.Println("  mehr plan              (to continue after answering)")
+			fmt.Println(display.Muted("Answer with:"))
+			fmt.Printf("  %s\n", display.Cyan("mehr talk \"your answer\""))
+			fmt.Printf("  %s\n", display.Cyan("mehr plan")+" "+display.Muted("(to continue after answering)"))
 		}
 		return nil
 	}
@@ -159,12 +184,16 @@ func runPlan(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	fmt.Printf("\nPlanning complete!\n")
-	fmt.Printf("  Specifications created: %d\n", status.Specifications)
-	fmt.Printf("\nNext steps:\n")
-	fmt.Printf("  mehr status    - View mehr status and specifications\n")
-	fmt.Printf("  mehr talk      - Add notes or clarifications\n")
-	fmt.Printf("  mehr implement - Implement the specifications\n")
+	if cfg.UI.Verbose {
+		fmt.Println()
+		fmt.Println(display.SuccessMsg("Planning complete!"))
+	}
+	fmt.Printf("  Specifications created: %s\n", display.Bold(fmt.Sprintf("%d", status.Specifications)))
+	fmt.Println()
+	fmt.Println(display.Muted("Next steps:"))
+	fmt.Printf("  %s - View task status and specifications\n", display.Cyan("mehr status"))
+	fmt.Printf("  %s - Add notes or clarifications\n", display.Cyan("mehr talk"))
+	fmt.Printf("  %s - Implement the specifications\n", display.Cyan("mehr implement"))
 
 	return nil
 }

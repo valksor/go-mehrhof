@@ -7,6 +7,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/valksor/go-mehrhof/internal/conductor"
+	"github.com/valksor/go-mehrhof/internal/display"
 	"github.com/valksor/go-mehrhof/internal/events"
 )
 
@@ -66,7 +67,8 @@ func runImplement(cmd *cobra.Command, args []string) error {
 
 	// Check for active task
 	if cond.GetActiveTask() == nil {
-		return fmt.Errorf("no active task\nUse 'mehr start <reference>' to register a task first")
+		fmt.Print(display.NoActiveTaskError())
+		return nil
 	}
 
 	// Set up event handlers
@@ -105,14 +107,36 @@ func runImplement(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("implement: %w", err)
 	}
 
-	// Run implementation
+	// Run implementation with spinner in non-verbose mode
+	var implErr error
+	spinnerMsg := "Implementing code..."
 	if implementDryRun {
-		fmt.Println("Implementing (dry-run)...")
-	} else {
-		fmt.Println("Implementing...")
+		spinnerMsg = "Implementing code (dry-run)..."
 	}
-	if err := cond.RunImplementation(ctx); err != nil {
-		return fmt.Errorf("run implementation: %w", err)
+
+	if cfg.UI.Verbose {
+		if implementDryRun {
+			fmt.Println(display.InfoMsg("Implementing (dry-run)..."))
+		} else {
+			fmt.Println(display.InfoMsg("Implementing..."))
+		}
+		implErr = cond.RunImplementation(ctx)
+	} else {
+		spinner := display.NewSpinner(spinnerMsg)
+		spinner.Start()
+		implErr = cond.RunImplementation(ctx)
+		if implErr != nil {
+			spinner.StopWithError("Implementation failed")
+		} else {
+			if implementDryRun {
+				spinner.StopWithSuccess("Implementation preview complete")
+			} else {
+				spinner.StopWithSuccess("Implementation complete")
+			}
+		}
+	}
+	if implErr != nil {
+		return fmt.Errorf("run implementation: %w", implErr)
 	}
 
 	// Get status
@@ -121,19 +145,25 @@ func runImplement(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	if implementDryRun {
-		fmt.Printf("\nImplementation preview finished.\n")
-		fmt.Printf("  Checkpoints: %d\n", status.Checkpoints)
-		fmt.Println("\n  (Dry-run mode - no files were modified)")
-	} else {
-		fmt.Printf("\nImplementation complete!\n")
-		fmt.Printf("  Checkpoints: %d\n", status.Checkpoints)
+	if cfg.UI.Verbose {
+		fmt.Println()
+		if implementDryRun {
+			fmt.Println(display.SuccessMsg("Implementation preview finished"))
+		} else {
+			fmt.Println(display.SuccessMsg("Implementation complete!"))
+		}
 	}
-	fmt.Printf("\nNext steps:\n")
-	fmt.Printf("  mehr status    - View mehr status\n")
-	fmt.Printf("  mehr review    - Run code review\n")
-	fmt.Printf("  mehr undo      - Revert last changes\n")
-	fmt.Printf("  mehr finish    - Complete the task\n")
+	fmt.Printf("  Checkpoints: %s\n", display.Bold(fmt.Sprintf("%d", status.Checkpoints)))
+	if implementDryRun {
+		fmt.Println()
+		fmt.Println(display.Muted("  (Dry-run mode - no files were modified)"))
+	}
+	fmt.Println()
+	fmt.Println(display.Muted("Next steps:"))
+	fmt.Printf("  %s - View task status\n", display.Cyan("mehr status"))
+	fmt.Printf("  %s - Run code review\n", display.Cyan("mehr review"))
+	fmt.Printf("  %s - Revert last changes\n", display.Cyan("mehr undo"))
+	fmt.Printf("  %s - Complete the task\n", display.Cyan("mehr finish"))
 
 	return nil
 }
