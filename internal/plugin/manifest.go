@@ -99,6 +99,7 @@ type GuardConfig struct {
 type EffectConfig struct {
 	Name        string `yaml:"name"`
 	Description string `yaml:"description"`
+	Critical    bool   `yaml:"critical,omitempty"` // If true, effect failure blocks transition
 }
 
 // EnvVarSpec documents an expected environment variable.

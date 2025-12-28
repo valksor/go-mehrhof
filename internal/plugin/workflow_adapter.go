@@ -136,6 +136,16 @@ func (a *WorkflowAdapter) CreateEffectFunc(name string, data map[string]any) wor
 	}
 }
 
+// CreateCriticalEffect creates a workflow.CriticalEffect that calls this plugin's effect.
+// The critical flag is read from the effect info.
+func (a *WorkflowAdapter) CreateCriticalEffect(info EffectInfo, data map[string]any) workflow.CriticalEffect {
+	return workflow.CriticalEffect{
+		Name:     info.Name,
+		Critical: info.Critical,
+		Fn:       a.CreateEffectFunc(info.Name, data),
+	}
+}
+
 // Manifest returns the plugin manifest.
 func (a *WorkflowAdapter) Manifest() *Manifest {
 	return a.manifest
@@ -159,6 +169,7 @@ type PluginPhase struct {
 }
 
 // BuildPhases converts plugin phase definitions to PluginPhase structs.
+// Deprecated: Use BuildPhaseDefinitions for integration with MachineBuilder.
 func (a *WorkflowAdapter) BuildPhases() []PluginPhase {
 	var phases []PluginPhase
 
@@ -205,6 +216,65 @@ func (a *WorkflowAdapter) BuildPhases() []PluginPhase {
 	}
 
 	return phases
+}
+
+// BuildPhaseDefinitions converts plugin phase definitions to workflow.PhaseDefinition
+// for use with MachineBuilder.
+func (a *WorkflowAdapter) BuildPhaseDefinitions() []workflow.PhaseDefinition {
+	var phases []workflow.PhaseDefinition
+
+	for _, p := range a.phases {
+		// Create a unique state and events for this plugin phase
+		stateName := workflow.State("plugin_" + a.manifest.Name + "_" + p.Name)
+		entryEvent := workflow.Event("plugin_" + a.manifest.Name + "_" + p.Name + "_start")
+		exitEvent := workflow.Event("plugin_" + a.manifest.Name + "_" + p.Name + "_done")
+
+		phase := workflow.PhaseDefinition{
+			State:       stateName,
+			Description: p.Description,
+			EntryEvent:  entryEvent,
+			ExitEvent:   exitEvent,
+		}
+
+		// Determine insertion point
+		if p.After != "" {
+			phase.After = workflow.State(p.After)
+		}
+		if p.Before != "" {
+			phase.Before = workflow.State(p.Before)
+		}
+
+		// Build guards for this phase
+		for _, g := range a.guards {
+			// Check if this guard is associated with this phase
+			// (convention: guard name starts with phase name)
+			if len(g.Name) > len(p.Name) && g.Name[:len(p.Name)] == p.Name {
+				phase.Guards = append(phase.Guards, a.CreateGuardFunc(g.Name))
+			}
+		}
+
+		// Build effects for this phase (as CriticalEffects)
+		for _, e := range a.effects {
+			// Check if this effect is associated with this phase
+			if len(e.Name) > len(p.Name) && e.Name[:len(p.Name)] == p.Name {
+				phase.Effects = append(phase.Effects, a.CreateCriticalEffect(e, nil))
+			}
+		}
+
+		phases = append(phases, phase)
+	}
+
+	return phases
+}
+
+// GetEffectInfo returns effect info by name, if found.
+func (a *WorkflowAdapter) GetEffectInfo(name string) (EffectInfo, bool) {
+	for _, e := range a.effects {
+		if e.Name == name {
+			return e, true
+		}
+	}
+	return EffectInfo{}, false
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

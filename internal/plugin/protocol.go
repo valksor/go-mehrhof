@@ -298,6 +298,7 @@ type GuardInfo struct {
 type EffectInfo struct {
 	Name        string `json:"name"`
 	Description string `json:"description"`
+	Critical    bool   `json:"critical,omitempty"` // If true, effect failure blocks transition
 }
 
 // EvaluateGuardParams contains parameters for workflow.evaluateGuard.
