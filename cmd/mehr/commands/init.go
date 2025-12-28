@@ -3,6 +3,7 @@ package commands
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 
 	"github.com/spf13/cobra"
 	"github.com/valksor/go-mehrhof/internal/storage"
@@ -59,6 +60,31 @@ func runInit(cmd *cobra.Command, args []string) error {
 		fmt.Printf("Config file already exists: %s\n", ws.ConfigPath())
 	}
 
+	// Create .env template if it doesn't exist
+	envPath := filepath.Join(ws.TaskRoot(), ".env")
+	if _, err := os.Stat(envPath); os.IsNotExist(err) {
+		if err := createEnvTemplate(envPath); err != nil {
+			fmt.Fprintf(os.Stderr, "warning: failed to create .env template: %v\n", err)
+		} else {
+			fmt.Printf("Created .env template: %s\n", envPath)
+		}
+	}
+
 	fmt.Printf("Workspace initialized in %s\n", root)
 	return nil
+}
+
+func createEnvTemplate(path string) error {
+	template := `# Mehrhof environment variables
+# This file is gitignored - store secrets here safely.
+# System environment variables take priority over values defined here.
+
+# Example: API keys for agents
+# ANTHROPIC_API_KEY=sk-ant-...
+# GLM_API_KEY=your-key-here
+
+# Example: GitHub token
+# GITHUB_TOKEN=ghp_...
+`
+	return os.WriteFile(path, []byte(template), 0o600) // 0600 for secrets
 }
