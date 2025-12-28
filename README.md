@@ -330,11 +330,10 @@ See [Agent Aliases](#agent-aliases) for configuration details.
 
 ### `mehr config validate`
 
-Validate workspace (`.mehrhof/config.yaml`) and app (`.env`) configuration files.
+Validate workspace configuration (`.mehrhof/config.yaml`).
 
 ```bash
-mehr config validate                    # Validate all config
-mehr config validate --workspace-only   # Only workspace config
+mehr config validate                    # Validate workspace config
 mehr config validate --strict           # Treat warnings as errors
 mehr config validate --format json      # JSON output for CI
 ```
@@ -342,19 +341,16 @@ mehr config validate --format json      # JSON output for CI
 **Flags:**
 | Flag | Description | Default |
 |------|-------------|---------|
-| `--workspace-only` | Only validate workspace config | `false` |
-| `--app-only` | Only validate app config (.env) | `false` |
 | `--strict` | Treat warnings as errors | `false` |
 | `--format` | Output format: `text`, `json` | `text` |
 
 **Validations:**
 
-- YAML/env syntax errors
+- YAML syntax validity
 - Agent alias circular dependencies
 - Undefined agent references
-- Git pattern placeholders
-- Enum values and numeric ranges
-- Environment variable references
+- Git pattern template validity
+- Plugin configuration
 
 ---
 
@@ -600,12 +596,17 @@ User-level settings are stored in `~/.mehrhof/settings.json`:
 
 ### Environment Variables
 
-| Variable            | Description                | Default     |
-| ------------------- | -------------------------- | ----------- |
-| `ANTHROPIC_API_KEY` | Claude API key (required)  | -           |
-| `MEHR_AGENT`        | Default agent to use       | auto-detect |
-| `MEHR_TIMEOUT`      | Default timeout in minutes | 30          |
-| `MEHR_VERBOSE`      | Enable verbose output      | `false`     |
+Mehrhof uses standard environment variables and CLI flags instead of custom `MEHR_*` variables:
+
+| Variable            | Description                               |
+| ------------------- | ----------------------------------------- |
+| `ANTHROPIC_API_KEY` | Claude API key (used by Claude CLI)       |
+| `GITHUB_TOKEN`      | GitHub API token for issue integration    |
+| `MEHR_GITHUB_TOKEN` | Alternative GitHub token (takes priority) |
+| `NO_COLOR`          | Disable colored output (any value)        |
+
+For configuration, use `.mehrhof/config.yaml` (see Configuration section above).
+For runtime options, use CLI flags: `--verbose`, `--no-color`.
 
 ## Workflow
 

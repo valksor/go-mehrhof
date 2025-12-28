@@ -35,10 +35,10 @@ workflow:
   effects:
     - name: "notifySlack"
       description: "Send Slack notification"
-      critical: false  # Non-critical: log errors but continue
+      critical: false # Non-critical: log errors but continue
     - name: "createJiraComment"
       description: "Add comment to Jira"
-      critical: true   # Critical: workflow fails if this effect fails
+      critical: true # Critical: workflow fails if this effect fails
 
 env:
   SLACK_WEBHOOK:
