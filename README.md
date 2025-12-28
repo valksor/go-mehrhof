@@ -508,6 +508,50 @@ mehr version
 
 ---
 
+### `mehr update`
+
+Update mehr to the latest version from GitHub releases.
+
+```bash
+mehr update                    # Update to latest stable release
+mehr update --check            # Check for updates without installing
+mehr update --pre-release      # Include pre-release versions
+mehr update -y                 # Skip confirmation prompt
+```
+
+**Flags:**
+| Flag | Description | Default |
+|------|-------------|---------|
+| `-p, --pre-release` | Include pre-release versions | `false` |
+| `--check` | Check only, don't install | `false` |
+| `-y, --yes` | Skip confirmation prompt | `false` |
+
+**Update Process:**
+
+1. Checks for the latest release from GitHub
+2. Downloads the binary for your platform (linux-amd64, linux-arm64, darwin-amd64, darwin-arm64)
+3. Verifies checksum (if available in release)
+4. Replaces the current binary atomically
+5. Prompts you to restart mehr
+
+**Automatic Update Checks:**
+
+By default, mehr checks for updates on startup (once every 24 hours). If an update is available, you'll see a notification but the update won't be installed automatically.
+
+To disable automatic checks, add to `.mehrhof/config.yaml`:
+
+```yaml
+update:
+  enabled: false
+  check_interval: 168  # hours (default: 24)
+```
+
+**Permissions:**
+
+If mehr is installed in a system directory like `/usr/local/bin`, you may need to run `sudo mehr update` to have write permissions.
+
+---
+
 ### Global Flags
 
 These flags are available for all commands:
@@ -542,6 +586,10 @@ providers:
 workflow:
   auto_init: true
   session_retention_days: 30
+
+update:
+  enabled: true  # Enable automatic update checks on startup
+  check_interval: 24  # Hours between checks
 
 # Environment variables passed to agents
 env:

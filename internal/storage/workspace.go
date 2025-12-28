@@ -89,6 +89,7 @@ type WorkspaceConfig struct {
 	GitHub    *GitHubSettings             `yaml:"github,omitempty"`
 	Wrike     *WrikeSettings              `yaml:"wrike,omitempty"`
 	Plugins   PluginsConfig               `yaml:"plugins,omitempty"`
+	Update    UpdateSettings              `yaml:"update,omitempty"`
 }
 
 // PluginsConfig holds plugin-related configuration
@@ -168,6 +169,12 @@ type WorkflowSettings struct {
 	SessionRetentionDays int  `yaml:"session_retention_days"`
 }
 
+// UpdateSettings holds update-related configuration
+type UpdateSettings struct {
+	Enabled       bool `yaml:"enabled"`        // Enable automatic update checks
+	CheckInterval int  `yaml:"check_interval"` // Hours between checks (default: 24)
+}
+
 // ProvidersSettings holds provider-related configuration
 type ProvidersSettings struct {
 	Default string `yaml:"default,omitempty"` // Default provider for bare references (e.g., "file", "directory", "github")
@@ -190,6 +197,10 @@ func NewDefaultWorkspaceConfig() *WorkspaceConfig {
 		Workflow: WorkflowSettings{
 			AutoInit:             true,
 			SessionRetentionDays: 30,
+		},
+		Update: UpdateSettings{
+			Enabled:       true,
+			CheckInterval: 24,
 		},
 		Env: make(map[string]string),
 	}

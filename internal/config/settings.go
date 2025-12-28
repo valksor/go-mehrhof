@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"time"
 )
 
 // Settings holds user preferences that persist between sessions
@@ -19,6 +20,9 @@ type Settings struct {
 
 	// Recent task IDs (for quick access)
 	RecentTasks []string `json:"recent_tasks,omitempty"`
+
+	// LastUpdateCheck is the timestamp of the last update check
+	LastUpdateCheck time.Time `json:"last_update_check,omitempty"`
 }
 
 // SettingsPath returns the path to the settings file
