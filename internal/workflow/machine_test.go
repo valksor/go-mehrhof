@@ -554,7 +554,7 @@ func TestIsPhaseState(t *testing.T) {
 	}
 }
 
-func TestCanTalk(t *testing.T) {
+func TestCanChat(t *testing.T) {
 	tests := []struct {
 		state State
 		want  bool
@@ -573,9 +573,9 @@ func TestCanTalk(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(string(tt.state), func(t *testing.T) {
-			got := CanTalk(tt.state)
+			got := CanChat(tt.state)
 			if got != tt.want {
-				t.Errorf("CanTalk(%v) = %v, want %v", tt.state, got, tt.want)
+				t.Errorf("CanChat(%v) = %v, want %v", tt.state, got, tt.want)
 			}
 		})
 	}

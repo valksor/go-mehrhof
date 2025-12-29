@@ -65,7 +65,7 @@ type PhaseDefinition struct {
 	ExitEvent   Event            // Event to exit this phase (returns to normal flow)
 	Guards      []GuardFunc      // Guards for entering this phase
 	Effects     []CriticalEffect // Effects to execute on phase transitions
-	TalkAllowed bool             // Whether talk mode is available in this phase
+	ChatAllowed bool             // Whether chat mode is available in this phase
 }
 
 // RegisterPhase adds a custom phase to the workflow.
@@ -124,7 +124,7 @@ func (b *MachineBuilder) RegisterPhase(phase PhaseDefinition) error {
 		Description: phase.Description,
 		Terminal:    false,
 		Phase:       true, // Plugin phases are main phases
-		TalkAllowed: phase.TalkAllowed,
+		ChatAllowed: phase.ChatAllowed,
 	}
 
 	// Insert into phase order

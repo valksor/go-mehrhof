@@ -14,7 +14,7 @@ const (
 	StateWaiting      State = "waiting"      // Waiting for user answer to agent question
 
 	// Auxiliary states (entered during phases)
-	StateDialogue      State = "dialogue"      // Talk mode (available from any state)
+	StateDialogue      State = "dialogue"      // Chat mode (available from any state)
 	StateCheckpointing State = "checkpointing" // Creating git checkpoint
 	StateReverting     State = "reverting"     // Undo operation
 	StateRestoring     State = "restoring"     // Redo operation
@@ -36,7 +36,7 @@ const (
 	EventImplementDone Event = "implement_done" // Implementation completed
 	EventReviewDone    Event = "review_done"    // Review completed
 
-	// Dialogue (talk) - available from any non-terminal state
+	// Dialogue (chat) - available from any non-terminal state
 	EventDialogueStart Event = "dialogue_start"
 	EventDialogueEnd   Event = "dialogue_end"
 
@@ -75,7 +75,7 @@ type StateInfo struct {
 	Description string
 	Terminal    bool // No more transitions possible
 	Phase       bool // Is this a main phase state
-	TalkAllowed bool // Can enter talk mode from this state
+	ChatAllowed bool // Can enter chat mode from this state
 }
 
 // StateRegistry maps states to their metadata
@@ -85,77 +85,77 @@ var StateRegistry = map[State]StateInfo{
 		Description: "Task registered, awaiting action",
 		Terminal:    false,
 		Phase:       true,
-		TalkAllowed: true,
+		ChatAllowed: true,
 	},
 	StatePlanning: {
 		Name:        StatePlanning,
 		Description: "Agent creating specifications",
 		Terminal:    false,
 		Phase:       true,
-		TalkAllowed: false, // Can't talk during active planning
+		ChatAllowed: false, // Can't chat during active planning
 	},
 	StateImplementing: {
 		Name:        StateImplementing,
 		Description: "Agent implementing specifications",
 		Terminal:    false,
 		Phase:       true,
-		TalkAllowed: false, // Can't talk during active implementation
+		ChatAllowed: false, // Can't chat during active implementation
 	},
 	StateReviewing: {
 		Name:        StateReviewing,
 		Description: "Code review in progress",
 		Terminal:    false,
 		Phase:       true,
-		TalkAllowed: false,
+		ChatAllowed: false,
 	},
 	StateDone: {
 		Name:        StateDone,
 		Description: "Task completed",
 		Terminal:    true,
 		Phase:       true,
-		TalkAllowed: false,
+		ChatAllowed: false,
 	},
 	StateFailed: {
 		Name:        StateFailed,
 		Description: "Task failed with error",
 		Terminal:    false, // Changed to allow recovery via EventReset
 		Phase:       false,
-		TalkAllowed: false,
+		ChatAllowed: false,
 	},
 	StateWaiting: {
 		Name:        StateWaiting,
 		Description: "Waiting for user answer to agent question",
 		Terminal:    false,
 		Phase:       false,
-		TalkAllowed: true, // User can answer via talk
+		ChatAllowed: true, // User can answer via chat
 	},
 	StateDialogue: {
 		Name:        StateDialogue,
 		Description: "Conversation mode for adding notes",
 		Terminal:    false,
 		Phase:       false,
-		TalkAllowed: false,
+		ChatAllowed: false,
 	},
 	StateCheckpointing: {
 		Name:        StateCheckpointing,
 		Description: "Creating git checkpoint",
 		Terminal:    false,
 		Phase:       false,
-		TalkAllowed: false,
+		ChatAllowed: false,
 	},
 	StateReverting: {
 		Name:        StateReverting,
 		Description: "Undoing to previous checkpoint",
 		Terminal:    false,
 		Phase:       false,
-		TalkAllowed: false,
+		ChatAllowed: false,
 	},
 	StateRestoring: {
 		Name:        StateRestoring,
 		Description: "Redoing to next checkpoint",
 		Terminal:    false,
 		Phase:       false,
-		TalkAllowed: false,
+		ChatAllowed: false,
 	},
 }
 
@@ -165,10 +165,10 @@ func IsPhaseState(s State) bool {
 	return ok && info.Phase
 }
 
-// CanTalk returns true if talk mode can be entered from this state
-func CanTalk(s State) bool {
+// CanChat returns true if chat mode can be entered from this state
+func CanChat(s State) bool {
 	info, ok := StateRegistry[s]
-	return ok && info.TalkAllowed
+	return ok && info.ChatAllowed
 }
 
 // IsTerminal returns true if the state is terminal

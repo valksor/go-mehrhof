@@ -23,7 +23,7 @@ type TransitionKey struct {
 //	idle -> reviewing -> idle (review done)
 //	idle -> done (finish)
 //
-// User can enter dialogue (talk) from idle to add notes
+// User can enter dialogue (chat) from idle to add notes
 var TransitionTable = map[TransitionKey][]Transition{
 	// === Start: Register task ===
 	{StateIdle, EventStart}: {
@@ -96,7 +96,7 @@ var TransitionTable = map[TransitionKey][]Transition{
 		{From: StateFailed, Event: EventReset, To: StateIdle},
 	},
 
-	// === Dialogue (Talk) - from idle only ===
+	// === Dialogue (Chat) - from idle only ===
 	{StateIdle, EventDialogueStart}: {
 		{From: StateIdle, Event: EventDialogueStart, To: StateDialogue},
 	},
