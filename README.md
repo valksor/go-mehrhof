@@ -802,6 +802,51 @@ github:
     on_pr_created: true # Post PR link
 ```
 
+### Linear Provider
+
+Reads and manages issues from Linear.
+
+```bash
+mehr start linear:ENG-123                                        # Issue identifier
+mehr start ln:ENG-123                                           # Short scheme
+mehr start ln:https://linear.app/team/issue/ENG-123-title      # Issue URL
+```
+
+**Reference Formats:**
+
+| Format | Example |
+|--------|---------|
+| Scheme with identifier | `linear:ENG-123` |
+| Short scheme | `ln:ENG-123` |
+| Issue URL | `https://linear.app/team/issue/ENG-123-title` |
+
+**Features:**
+
+- Fetches issue title, description, status, priority, labels, assignees
+- Lists issues from teams with status filtering
+- Create new issues and update status
+- Add and remove labels, fetch and add comments
+- Export markdown snapshots with comments
+- Maps Linear states (Todo → Open, In Progress → In Progress, Done → Done)
+- Maps Linear priorities (Urgent → Critical, High → High, Medium → Normal)
+
+**Token Resolution Priority:**
+
+1. `MEHR_LINEAR_API_KEY` environment variable
+2. `LINEAR_API_KEY` environment variable
+3. `.mehrhof/config.yaml` `linear.token`
+
+**Configuration:**
+
+```yaml
+# .mehrhof/config.yaml
+linear:
+  token: "${LINEAR_API_KEY}"  # Linear API key
+  team: "ENG"                 # Optional: default team key for list/create
+```
+
+Create API tokens at: https://linear.app/settings/api
+
 ### Wrike Provider
 
 Reads and lists tasks from Wrike API v4.
@@ -845,6 +890,144 @@ wrike:
 ```
 
 Create API tokens at: https://www.wrike.com/frontend/apps/index.html#api
+
+### YouTrack Provider
+
+Reads and manages issues from YouTrack (Cloud or Server).
+
+```bash
+mehr start youtrack:ABC-123                                   # Issue ID with scheme
+mehr start yt:ABC-123                                        # Short scheme
+mehr start yt:https://company.myjetbrains.com/youtrack/issue/ABC-123  # Issue URL
+mehr start ABC-123                                           # Bare ID (auto-detected)
+```
+
+**Reference Formats:**
+
+| Format | Example |
+|--------|---------|
+| Scheme with ID | `youtrack:ABC-123` |
+| Short scheme | `yt:ABC-123` |
+| Issue URL | `https://company.myjetbrains.com/youtrack/issue/ABC-123` |
+| Bare ID | `ABC-123` (auto-detected if pattern matches) |
+
+**Features:**
+
+- **Read**: Fetches issue title, description, status, priority, tags, assignees, custom fields
+- **List**: Browse issues with query support, status/tag filtering, pagination
+- **Create**: Create new issues with project, priority, type
+- **Update Status**: Change issue state via custom field update
+- **Manage Tags**: Add/remove tags (YouTrack's label equivalent)
+- **Comments**: Fetch all comments and add new ones
+- **Attachments**: Download attachments from issues
+- **Snapshot**: Export issue content as markdown
+
+**State Mapping:**
+
+| Mehrhof Status | YouTrack States |
+|----------------|-----------------|
+| `open` | New, Submitted, To be done |
+| `in_progress` | In Progress, Active |
+| `review` | Code Review, Verification |
+| `done` | Fixed, Done, Completed, Verified, Resolved |
+| `closed` | Closed, Won't fix, Can't reproduce, Duplicate, Obsolete |
+
+**Priority Mapping:**
+
+| Mehrhof Priority | YouTrack Priority |
+|------------------|-------------------|
+| `critical` | Critical, Show-stopper, Urgent |
+| `high` | Major, High |
+| `normal` | Normal |
+| `low` | Minor, Low |
+
+**Token Resolution Priority:**
+
+1. `MEHR_YOUTRACK_TOKEN` environment variable
+2. `YOUTRACK_TOKEN` environment variable
+3. `.mehrhof/config.yaml` `youtrack.token`
+
+**Configuration:**
+
+```yaml
+# .mehrhof/config.yaml
+youtrack:
+  token: "${YOUTRACK_TOKEN}"  # Permanent token from YouTrack profile
+  host: "https://company.myjetbrains.com/youtrack"  # Optional: override host
+```
+
+Create permanent tokens at: https://company.myjetbrains.com/youtrack/settings/tokens
+
+### Notion
+
+The Notion provider integrates with Notion pages and databases to treat pages as tasks. It supports both individual page fetching and database querying with configurable property mappings.
+
+**Usage:**
+
+```bash
+mehr start notion:a1b2c3d4e5f678901234567890abcdef  # Page ID
+mehr start nt:a1b2c3d4e5f678901234567890abcdef     # Short scheme
+mehr start notion:https://www.notion.so/Page-Title-a1b2c3d4e5f678901234567890abcdef  # Notion URL
+```
+
+**Reference Formats:**
+
+| Format | Example |
+|--------|---------|
+| Scheme with ID | `notion:a1b2c3d4e5f678901234567890abcdef` |
+| Short scheme | `nt:a1b2c3d4e5f678901234567890abcdef` |
+| Page URL | `https://www.notion.so/Page-Title-a1b2c3d4e5f678901234567890abcdef` |
+| UUID with dashes | `a1b2c3d4-e5f6-7890-1234-567890abcdef` |
+
+**Features:**
+
+- **Read**: Fetches page title, content (blocks), status, labels, assignees
+- **List**: Query database pages with filters for status/labels, pagination
+- **Create**: Create new pages in databases with title, description, status, labels
+- **Update Status**: Change page status via configurable property
+- **Manage Labels**: Add/remove multi-select tags
+- **Comments**: Fetch page comments and add new ones
+- **Snapshot**: Export page content as markdown with metadata
+
+**Status Mapping:**
+
+| Mehrhof Status | Notion Status |
+|----------------|---------------|
+| `open` | Not Started, Backlog, To Do |
+| `in_progress` | In Progress, Started, Doing |
+| `review` | In Review, Review, Reviewing |
+| `done` | Done, Completed, Finished |
+| `closed` | Cancelled, Canceled, Archived |
+
+**Token Resolution Priority:**
+
+1. `MEHR_NOTION_TOKEN` environment variable
+2. `NOTION_TOKEN` environment variable
+3. `.mehrhof/config.yaml` `notion.token`
+
+**Configuration:**
+
+```yaml
+# .mehrhof/config.yaml
+notion:
+  token: "${NOTION_TOKEN}"           # Integration token from Notion
+  database_id: "abc123..."           # Optional: default database for list operations
+  status_property: "Status"          # Property name for status (default: Status)
+  description_property: "Description" # Property name for description
+  labels_property: "Tags"            # Multi-select property for labels (default: Tags)
+```
+
+Create integration tokens at: https://www.notion.so/my-integrations
+
+**Property Configuration:**
+
+Notion databases have customizable property names. The provider maps these through configuration:
+
+| Config | Description | Default |
+|--------|-------------|---------|
+| `status_property` | Name of status/select property | `Status` |
+| `description_property` | Name of rich_text property for description | `Description` |
+| `labels_property` | Name of multi_select property for tags/labels | `Tags` |
 
 ## Plugins
 
@@ -937,7 +1120,10 @@ internal/
 │   ├── file/       # File provider
 │   ├── directory/  # Directory provider
 │   ├── github/     # GitHub issues provider
-│   └── wrike/      # Wrike tasks provider
+│   ├── linear/     # Linear issues provider
+│   ├── notion/     # Notion pages provider
+│   ├── wrike/      # Wrike tasks provider
+│   └── youtrack/   # YouTrack issues provider
 ├── storage/        # YAML-based persistence
 ├── vcs/            # Git operations
 └── workflow/       # State machine engine
