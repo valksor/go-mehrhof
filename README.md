@@ -759,8 +759,13 @@ mehr start gh:5                        # Short alias
 
 **Features:**
 
+- **Read**: Fetches issue title, body, labels, assignees, comments
+- **List**: Browse repository issues with filters
+- **Create**: Create new GitHub issues
+- **Update Status**: Close/reopen issues
+- **Manage Labels**: Add/remove labels on issues
+- **PR Creation**: Create pull requests after implementation
 - Auto-detects repository from `git remote origin`
-- Fetches issue title, body, labels, and comments
 - Extracts linked issues (`#123` references) and images
 - Creates branches named `issue/{key}-{slug}` by default
 - Commits prefixed with `[#{key}]`
@@ -799,7 +804,7 @@ github:
 
 ### Wrike Provider
 
-Reads tasks from Wrike API v4.
+Reads and lists tasks from Wrike API v4.
 
 ```bash
 mehr start wrike:1234567890                                  # Numeric ID with scheme
@@ -818,9 +823,10 @@ mehr start wk:https://www.wrike.com/open.htm?id=1234567890   # Permalink URL
 
 **Features:**
 
-- Fetches task title, description, status, priority
+- Fetches task title, description, status, priority, permalink
 - Recursively fetches subtasks (max depth 5)
-- Downloads attachments and comments
+- Downloads attachments and comments (with automatic pagination)
+- Automatic retry with exponential backoff for rate limit errors
 - Supports multiple ID formats: numeric, API ID, permalink
 
 **Token Resolution Priority:**

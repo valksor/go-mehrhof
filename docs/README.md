@@ -21,7 +21,7 @@ Mehrhof is a CLI tool for AI-powered task automation. It orchestrates AI agents 
 
 - Markdown files describing requirements
 - Directories containing multiple task files
-- GitHub issues (with labels, comments, and linked issues)
+- GitHub issues (fetch, list, create, update status, manage labels, comments)
 - Standalone planning without formal tasks
 
 ## How It Works

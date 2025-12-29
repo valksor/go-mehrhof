@@ -40,6 +40,7 @@
   - [Recovering from Mistakes](tutorials/undo-mistakes.md)
 
 - Reference
+  - [Providers](reference/providers.md)
   - [Storage Structure](reference/storage.md)
   - [SPEC File Format](reference/spec-format.md)
   - [Troubleshooting](reference/troubleshooting.md)
