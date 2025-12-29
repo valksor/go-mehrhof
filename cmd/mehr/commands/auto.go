@@ -81,7 +81,7 @@ func runAuto(cmd *cobra.Command, args []string) error {
 		conductor.WithCreateBranch(createBranch),
 		conductor.WithUseWorktree(autoWorktree),
 		conductor.WithAutoInit(true),
-		conductor.WithYoloMode(true),
+		conductor.WithAutoMode(true),
 		conductor.WithSkipAgentQuestions(true),
 		conductor.WithMaxQualityRetries(autoMaxRetries),
 		conductor.WithStdout(getDeduplicatingStdout()),
@@ -140,7 +140,7 @@ func runAuto(cmd *cobra.Command, args []string) error {
 	fmt.Println()
 
 	// Build auto options
-	autoOpts := conductor.YoloOptions{
+	autoOpts := conductor.AutoOptions{
 		QualityTarget: autoQualityTarget,
 		MaxRetries:    autoMaxRetries,
 		SquashMerge:   !autoNoSquash,
@@ -155,7 +155,7 @@ func runAuto(cmd *cobra.Command, args []string) error {
 	}
 
 	// Run the full auto cycle
-	result, err := cond.RunYolo(ctx, reference, autoOpts)
+	result, err := cond.RunAuto(ctx, reference, autoOpts)
 	if err != nil {
 		fmt.Println()
 		fmt.Printf("Auto failed at: %s\n", result.FailedAt)

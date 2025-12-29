@@ -71,7 +71,7 @@ func runChat(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("no active task\nUse 'mehr start <reference>' to register a task first")
 	}
 
-	chatOpts := conductor.TalkOptions{
+	chatOpts := conductor.ChatOptions{
 		Continue:    chatContinue,
 		SessionFile: chatSession,
 	}
@@ -103,7 +103,7 @@ func runChat(cmd *cobra.Command, args []string) error {
 		}
 
 		fmt.Printf("Sending message...\n")
-		if err := cond.Talk(ctx, message, chatOpts); err != nil {
+		if err := cond.Chat(ctx, message, chatOpts); err != nil {
 			return fmt.Errorf("chat: %w", err)
 		}
 		fmt.Println("Note added to task.")
@@ -154,7 +154,7 @@ func runChat(cmd *cobra.Command, args []string) error {
 		default:
 		}
 
-		if err := cond.Talk(ctx, message, chatOpts); err != nil {
+		if err := cond.Chat(ctx, message, chatOpts); err != nil {
 			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 			continue
 		}
