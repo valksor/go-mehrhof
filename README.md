@@ -175,7 +175,7 @@ Start working on a task from a file, directory, or external provider.
 mehr start file:task.md              # From a markdown file (scheme required)
 mehr start dir:./tasks/              # From a directory with README.md
 mehr start --worktree file:task.md   # With separate worktree (for parallel tasks)
-mehr start --branch=false file:task.md  # Without creating a git branch
+mehr start --no-branch file:task.md  # Without creating a git branch
 ```
 
 **Provider Schemes:**
@@ -190,7 +190,8 @@ providers:
 | Flag | Description | Default |
 |------|-------------|---------|
 | `-a, --agent <name>` | Agent to use | auto-detect |
-| `-b, --branch` | Create git branch for the task (use `--branch=false` to disable) | `true` |
+| `-b, --branch` | Create git branch for the task | `true` |
+| `--no-branch` | Skip creating a git branch | `false` |
 | `-w, --worktree` | Create separate git worktree (enables parallel tasks) | `false` |
 | `-k, --key <key>` | External key for branch/commit naming (e.g., `FEATURE-123`) | auto-detect |
 | `-t, --template <name>` | Template to apply (bug-fix, feature, refactor, docs, test, chore) | - |
@@ -564,7 +565,8 @@ mehr auto --skip-quality file:task.md   # Skip quality checks entirely
 | Flag | Description | Default |
 |------|-------------|---------|
 | `-a, --agent <name>` | Agent to use | auto-detect |
-| `-b, --branch` | Create git branch for the task (use `--branch=false` to disable) | `true` |
+| `-b, --branch` | Create git branch for the task | `true` |
+| `--no-branch` | Skip creating a git branch | `false` |
 | `-w, --worktree` | Create a separate git worktree | `false` |
 | `--max-retries <n>` | Maximum quality check retry attempts | `3` |
 | `--skip-quality` | Skip quality checks entirely | `false` |

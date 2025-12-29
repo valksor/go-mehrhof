@@ -58,7 +58,8 @@ providers:
 | `--agent-implementing` |       | string |                        | Agent for implementation step                         |
 | `--agent-reviewing`    |       | string |                        | Agent for review step                                 |
 | `--agent-dialogue`     |       | string |                        | Agent for dialogue/talk step                          |
-| `--branch`             | `-b`  | bool   | true                   | Create a git branch (use `--branch=false` to disable) |
+| `--branch`             | `-b`  | bool   | true                   | Create a git branch |
+| `--no-branch`          |       | bool   | false                  | Skip creating a git branch |
 | `--worktree`           | `-w`  | bool   | false                  | Create a separate git worktree                        |
 | `--key`                | `-k`  | string | auto                   | External key for branch/commit naming                 |
 | `--commit-prefix`      |       | string | `[{key}]`              | Commit prefix template                                |
@@ -158,7 +159,7 @@ Task registered: a1b2c3d4
 ### Start Without Branch
 
 ```bash
-mehr start --branch=false task.md
+mehr start --no-branch task.md
 ```
 
 Work happens on the current branch. Useful for quick experiments.

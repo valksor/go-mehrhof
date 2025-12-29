@@ -49,7 +49,7 @@ Active Task: a1b2c3d4
 Specifications: 2
   ✓ specification-1: User login flow [done]
   ○ specification-2: Session management [implementing]
-  Summary: 1 completed, 1 in-progress
+  Summary: 1 completed, 1 implementing
 
 Checkpoints: 3
   - #1: Initial planning (abc12345)
