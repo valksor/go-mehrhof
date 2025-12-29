@@ -86,12 +86,12 @@ func runConfigValidate(cmd *cobra.Command, args []string) error {
 	// Output results
 	fmt.Print(result.Format(validateFormat))
 
-	// Exit code based on result
+	// Return error for exit code handling
 	if !result.Valid {
-		os.Exit(1)
+		return fmt.Errorf("validation failed")
 	}
 	if validateStrict && result.Warnings > 0 {
-		os.Exit(1)
+		return fmt.Errorf("validation failed: %d warning(s) in strict mode", result.Warnings)
 	}
 
 	return nil

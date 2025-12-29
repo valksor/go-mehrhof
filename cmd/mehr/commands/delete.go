@@ -59,8 +59,7 @@ func runDelete(cmd *cobra.Command, args []string) error {
 	// Check for active task
 	activeTask := cond.GetActiveTask()
 	if activeTask == nil {
-		fmt.Print(display.NoActiveTaskError())
-		return nil
+		return fmt.Errorf("no active task: use 'mehr start <reference>' to create a task or 'mehr list' to view existing tasks")
 	}
 
 	// Get status for display

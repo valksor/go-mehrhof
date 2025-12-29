@@ -37,49 +37,34 @@ func init() {
 }
 
 func runStatus(cmd *cobra.Command, args []string) error {
-	// Find workspace
-	cwd, err := os.Getwd()
+	// Resolve workspace root and git context
+	res, err := ResolveWorkspaceRoot()
 	if err != nil {
-		return fmt.Errorf("get working directory: %w", err)
+		return err
 	}
 
-	// Try to get git root but allow non-git directories
-	var root string
-	git, err := vcs.New(cwd)
-	if err == nil {
-		// If in a worktree, use main repo for storage
-		if git.IsWorktree() {
-			mainRepo, err := git.GetMainWorktreePath()
-			if err != nil {
-				return fmt.Errorf("get main repo from worktree: %w", err)
-			}
-			root = mainRepo
-		} else {
-			root = git.Root()
-		}
-	} else {
-		root = cwd
-	}
-
-	ws, err := storage.OpenWorkspace(root)
+	ws, err := storage.OpenWorkspace(res.Root)
 	if err != nil {
 		return fmt.Errorf("open workspace: %w", err)
 	}
 
 	if statusAll {
-		return showAllTasks(ws, git)
+		return showAllTasks(ws, res.Git)
 	}
 
 	// If in a worktree, auto-detect task from worktree path
-	if git != nil && git.IsWorktree() {
-		return showWorktreeTask(ws, git)
+	if res.IsWorktree {
+		return showWorktreeTask(ws, res.Git)
 	}
 
-	return showActiveTask(ws, git)
+	return showActiveTask(ws, res.Git)
 }
 
 func showWorktreeTask(ws *storage.Workspace, git *vcs.Git) error {
 	// Auto-detect task from current worktree
+	if git == nil {
+		return fmt.Errorf("not in a worktree")
+	}
 	active, err := ws.FindTaskByWorktreePath(git.Root())
 	if err != nil {
 		return fmt.Errorf("find task by worktree: %w", err)
@@ -241,8 +226,8 @@ func showActiveTask(ws *storage.Workspace, git *vcs.Git) error {
 
 	// Show checkpoints
 	if git != nil {
-		checkpoints, _ := git.ListCheckpoints(active.ID)
-		if len(checkpoints) > 0 {
+		checkpoints, err := git.ListCheckpoints(active.ID)
+		if err == nil && len(checkpoints) > 0 {
 			fmt.Printf("\nCheckpoints: %d\n", len(checkpoints))
 			for _, cp := range checkpoints {
 				fmt.Printf("  - #%d: %s (%s)\n", cp.Number, cp.Message, cp.ID[:8])

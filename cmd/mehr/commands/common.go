@@ -25,6 +25,7 @@ import (
 	"github.com/valksor/go-mehrhof/internal/provider/notion"
 	"github.com/valksor/go-mehrhof/internal/provider/wrike"
 	"github.com/valksor/go-mehrhof/internal/provider/youtrack"
+	"github.com/valksor/go-mehrhof/internal/vcs"
 )
 
 var (
@@ -215,29 +216,6 @@ func SetupVerboseEventHandlers(cond *conductor.Conductor) {
 	})
 }
 
-// RunWithSpinner runs the given function with a spinner in non-verbose mode.
-// In verbose mode, it runs without a spinner and prints the start message.
-func RunWithSpinner(verbose bool, startMsg, spinnerMsg, successMsg string, fn func() error) error {
-	if verbose {
-		fmt.Println(display.InfoMsg("%s", startMsg))
-		err := fn()
-		if err == nil {
-			fmt.Println(display.SuccessMsg("%s", successMsg))
-		}
-		return err
-	}
-
-	spinner := display.NewSpinner(spinnerMsg)
-	spinner.Start()
-	err := fn()
-	if err != nil {
-		spinner.StopWithError("Operation failed")
-	} else {
-		spinner.StopWithSuccess(successMsg)
-	}
-	return err
-}
-
 // PrintNextSteps prints common next steps after a command completes.
 func PrintNextSteps(steps ...string) {
 	fmt.Println()
@@ -246,6 +224,55 @@ func PrintNextSteps(steps ...string) {
 		fmt.Printf("  %s\n", display.Cyan(step))
 	}
 	fmt.Println()
+}
+
+// WorkspaceResolution holds the result of resolving the workspace root and git context.
+type WorkspaceResolution struct {
+	Root       string   // Workspace root directory (main repo path if in worktree)
+	Git        *vcs.Git // Git instance (nil if not in a git repository)
+	IsWorktree bool     // True if currently in a git worktree
+}
+
+// ResolveWorkspaceRoot resolves the workspace root directory and git context.
+// This function centralizes the common pattern of finding the workspace root
+// while handling git worktrees correctly.
+//
+// If in a git worktree, it returns the main repository path as the root.
+// If not in git, it returns the current working directory.
+// The git instance is only non-nil if successfully created.
+func ResolveWorkspaceRoot() (WorkspaceResolution, error) {
+	cwd, err := os.Getwd()
+	if err != nil {
+		return WorkspaceResolution{}, fmt.Errorf("get working directory: %w", err)
+	}
+
+	git, err := vcs.New(cwd)
+	if err != nil {
+		// Not in a git repository, use cwd as root
+		return WorkspaceResolution{
+			Root: cwd,
+			Git:  nil,
+		}, nil
+	}
+
+	// In a git repository - check if we're in a worktree
+	if git.IsWorktree() {
+		mainRepo, err := git.GetMainWorktreePath()
+		if err != nil {
+			return WorkspaceResolution{}, fmt.Errorf("get main repo from worktree: %w", err)
+		}
+		return WorkspaceResolution{
+			Root:       mainRepo,
+			Git:        git,
+			IsWorktree: true,
+		}, nil
+	}
+
+	// In main git repository
+	return WorkspaceResolution{
+		Root: git.Root(),
+		Git:  git,
+	}, nil
 }
 
 // printAgentEventTo prints meaningful content from agent events to the specified writer.

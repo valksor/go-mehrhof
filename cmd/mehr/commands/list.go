@@ -10,7 +10,6 @@ import (
 
 	"github.com/valksor/go-mehrhof/internal/display"
 	"github.com/valksor/go-mehrhof/internal/storage"
-	"github.com/valksor/go-mehrhof/internal/vcs"
 )
 
 var listCmd = &cobra.Command{
@@ -36,29 +35,13 @@ func init() {
 }
 
 func runList(cmd *cobra.Command, args []string) error {
-	// Find workspace
-	cwd, err := os.Getwd()
+	// Resolve workspace root and git context
+	res, err := ResolveWorkspaceRoot()
 	if err != nil {
-		return fmt.Errorf("get working directory: %w", err)
+		return err
 	}
 
-	// Try to get git root but allow non-git directories
-	var root string
-	git, err := vcs.New(cwd)
-	if err == nil {
-		// If in a worktree, use main repo for storage
-		if git.IsWorktree() {
-			mainRepo, err := git.GetMainWorktreePath()
-			if err != nil {
-				return fmt.Errorf("get main repo from worktree: %w", err)
-			}
-			root = mainRepo
-		} else {
-			root = git.Root()
-		}
-	} else {
-		root = cwd
-	}
+	root := res.Root // Capture for later use
 
 	ws, err := storage.OpenWorkspace(root)
 	if err != nil {
@@ -88,8 +71,8 @@ func runList(cmd *cobra.Command, args []string) error {
 
 	// Get current worktree path if we're in one
 	var currentWorktreePath string
-	if git != nil && git.IsWorktree() {
-		currentWorktreePath = git.Root()
+	if res.IsWorktree {
+		currentWorktreePath = res.Git.Root()
 	}
 
 	w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)

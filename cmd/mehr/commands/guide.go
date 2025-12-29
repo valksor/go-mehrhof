@@ -2,12 +2,10 @@ package commands
 
 import (
 	"fmt"
-	"os"
 
 	"github.com/spf13/cobra"
 
 	"github.com/valksor/go-mehrhof/internal/storage"
-	"github.com/valksor/go-mehrhof/internal/vcs"
 	"github.com/valksor/go-mehrhof/internal/workflow"
 )
 
@@ -26,31 +24,13 @@ func init() {
 }
 
 func runGuide(cmd *cobra.Command, args []string) error {
-	// Find workspace
-	cwd, err := os.Getwd()
+	// Resolve workspace root and git context
+	res, err := ResolveWorkspaceRoot()
 	if err != nil {
-		return fmt.Errorf("get working directory: %w", err)
+		return err
 	}
 
-	// Try to get git root but allow non-git directories
-	var root string
-	git, err := vcs.New(cwd)
-	if err == nil {
-		// If in a worktree, use main repo for storage
-		if git.IsWorktree() {
-			mainRepo, err := git.GetMainWorktreePath()
-			if err != nil {
-				return fmt.Errorf("get main repo from worktree: %w", err)
-			}
-			root = mainRepo
-		} else {
-			root = git.Root()
-		}
-	} else {
-		root = cwd
-	}
-
-	ws, err := storage.OpenWorkspace(root)
+	ws, err := storage.OpenWorkspace(res.Root)
 	if err != nil {
 		return fmt.Errorf("open workspace: %w", err)
 	}
@@ -58,9 +38,9 @@ func runGuide(cmd *cobra.Command, args []string) error {
 	// Check if in a worktree
 	var active *storage.ActiveTask
 	var work *storage.TaskWork
-	if git != nil && git.IsWorktree() {
+	if res.IsWorktree {
 		// Auto-detect task from current worktree
-		active, err = ws.FindTaskByWorktreePath(git.Root())
+		active, err = ws.FindTaskByWorktreePath(res.Git.Root())
 		if err != nil {
 			return fmt.Errorf("find task by worktree: %w", err)
 		}
