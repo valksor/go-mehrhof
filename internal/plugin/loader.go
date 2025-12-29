@@ -1,3 +1,25 @@
+// Package plugin provides runtime plugin support for the mehrhof task automation tool.
+//
+// Plugins are external processes that communicate via JSON-RPC 2.0 over stdin/stdout.
+// This allows extending mehrhof with custom providers, agents, and workflow components
+// without recompiling the main binary.
+//
+// Plugin types:
+//   - Provider plugins: Custom task sources (Jira, YouTrack, Linear, etc.)
+//   - Agent plugins: Custom AI backends
+//   - Workflow plugins: Custom phases, guards, and effects for the state machine
+//
+// Plugin discovery:
+//   - Global plugins: ~/.mehrhof/plugins/
+//   - Project-local plugins: .mehrhof/plugins/
+//
+// Thread safety:
+//   - The Loader is safe for concurrent use.
+//   - Individual Process methods are not thread-safe and should be called serially.
+//
+// Security:
+//   - Plugin executable paths are validated to prevent directory traversal.
+//   - Relative paths must be within the plugin directory.
 package plugin
 
 import (
@@ -6,40 +28,46 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log/slog"
 	"os"
 	"os/exec"
+	"path/filepath"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
 )
 
+const (
+	// defaultPluginBufferSize is the buffer size for plugin stdout/stderr
+	defaultPluginBufferSize = 1024 * 1024 // 1MB
+	// pluginStopTimeout is the maximum time to wait for a plugin to stop gracefully
+	pluginStopTimeout = 10 * time.Second
+)
+
 // Process represents a running plugin process.
 type Process struct {
-	manifest *Manifest
-	cmd      *exec.Cmd
 	stdin    io.WriteCloser
-	stdout   *bufio.Reader
 	stderr   io.ReadCloser
-
-	mu       sync.Mutex
-	reqID    atomic.Int64
+	ctx      context.Context
+	err      error
+	done     chan struct{}
+	cmd      *exec.Cmd
+	stdout   *bufio.Reader
+	cancel   context.CancelFunc
+	manifest *Manifest
 	pending  map[int64]chan *Response
 	streamCh chan json.RawMessage
-
-	started  bool
+	reqID    atomic.Int64
+	mu       sync.Mutex
 	stopping bool
-	done     chan struct{}
-	err      error
-
-	// ctx and cancel allow graceful shutdown of goroutines
-	ctx    context.Context
-	cancel context.CancelFunc
+	started  bool
 }
 
 // Loader manages plugin process lifecycle.
 type Loader struct {
-	mu        sync.RWMutex
 	processes map[string]*Process
+	mu        sync.RWMutex
 }
 
 // NewLoader creates a new plugin loader.
@@ -146,7 +174,25 @@ func startProcess(ctx context.Context, manifest *Manifest) (*Process, error) {
 		return nil, fmt.Errorf("no executable configured for plugin %s", manifest.Name)
 	}
 
-	cmd := exec.CommandContext(ctx, cmdArgs[0], cmdArgs[1:]...)
+	// Validate the executable path for security
+	// Ensure it's either an absolute path or a relative path within the plugin directory
+	execPath := cmdArgs[0]
+	if !filepath.IsAbs(execPath) {
+		// Relative path - must be within the plugin directory
+		if manifest.Dir == "" {
+			return nil, fmt.Errorf("plugin %s: relative executable path requires a valid plugin directory", manifest.Name)
+		}
+		execPath = filepath.Join(manifest.Dir, execPath)
+		// Clean the path to resolve any ".." components
+		execPath = filepath.Clean(execPath)
+		// Verify the resolved path is still within the plugin directory
+		rel, err := filepath.Rel(manifest.Dir, execPath)
+		if err != nil || strings.HasPrefix(rel, "..") {
+			return nil, fmt.Errorf("plugin %s: executable path %q escapes plugin directory", manifest.Name, cmdArgs[0])
+		}
+	}
+
+	cmd := exec.CommandContext(ctx, execPath, cmdArgs[1:]...)
 	cmd.Dir = manifest.Dir
 
 	// Inherit environment and add plugin-specific vars
@@ -177,7 +223,7 @@ func startProcess(ctx context.Context, manifest *Manifest) (*Process, error) {
 		manifest: manifest,
 		cmd:      cmd,
 		stdin:    stdin,
-		stdout:   bufio.NewReaderSize(stdout, 1024*1024), // 1MB buffer
+		stdout:   bufio.NewReaderSize(stdout, defaultPluginBufferSize),
 		stderr:   stderr,
 		pending:  make(map[int64]chan *Response),
 		done:     make(chan struct{}),
@@ -384,6 +430,12 @@ func (p *Process) Stream(ctx context.Context, method string, params any) (<-chan
 	out := make(chan json.RawMessage, 100)
 	go func() {
 		defer close(out)
+		// Drain remaining events on exit to prevent goroutine leak
+		defer func() {
+			for range streamCh {
+				// Drain any remaining events
+			}
+		}()
 		for {
 			select {
 			case event, ok := <-streamCh:
@@ -420,20 +472,33 @@ func (p *Process) Stop() error {
 		p.cancel()
 	}
 
-	// Try to send shutdown request (ignore errors)
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	// Try to send shutdown request - log error but continue with cleanup
+	ctx, cancel := context.WithTimeout(context.Background(), pluginStopTimeout)
 	defer cancel()
-	_, _ = p.Call(ctx, "shutdown", nil)
+	if _, err := p.Call(ctx, "shutdown", nil); err != nil {
+		slog.Warn("plugin shutdown request failed", "plugin", p.manifest.Name, "error", err)
+	}
 
 	// Close stdin to signal EOF
-	_ = p.stdin.Close()
-
-	// Explicitly close stdout and stderr pipes
-	if p.stdout != nil {
-		p.stdout.Reset(nil) // Reset underlying reader to release resources
+	if err := p.stdin.Close(); err != nil {
+		slog.Warn("failed to close plugin stdin", "plugin", p.manifest.Name, "error", err)
 	}
+
+	// Close stderr pipe
 	if p.stderr != nil {
-		_ = p.stderr.Close()
+		if err := p.stderr.Close(); err != nil {
+			slog.Warn("failed to close plugin stderr", "plugin", p.manifest.Name, "error", err)
+		}
+		p.stderr = nil
+	}
+
+	// Close stdout pipe - Reset(nil) doesn't close the underlying pipe,
+	// so we need to get the underlying reader and close it directly
+	if p.stdout != nil {
+		// bufio.Reader doesn't expose the underlying reader,
+		// but since we're stopping anyway, just set to nil
+		// The pipe will be closed when the process exits
+		p.stdout = nil
 	}
 
 	// Wait for process with timeout
@@ -442,15 +507,17 @@ func (p *Process) Stop() error {
 		done <- p.cmd.Wait()
 	}()
 
-	timer := time.NewTimer(10 * time.Second)
+	timer := time.NewTimer(pluginStopTimeout)
 	defer timer.Stop()
 
 	select {
 	case err := <-done:
 		return err
 	case <-timer.C:
-		// Force kill
-		_ = p.cmd.Process.Kill()
+		// Force kill - log error but still return wait result
+		if err := p.cmd.Process.Kill(); err != nil {
+			slog.Warn("failed to kill plugin process", "plugin", p.manifest.Name, "error", err)
+		}
 		// Wait returns immediately for killed process
 		return <-done
 	}

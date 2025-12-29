@@ -15,12 +15,12 @@ type PluginInfo struct {
 
 // Registry manages all discovered and loaded plugins.
 type Registry struct {
-	mu        sync.RWMutex
 	discovery *Discovery
 	loader    *Loader
 	plugins   map[string]*PluginInfo
-	enabled   map[string]bool // Explicit enablement list
+	enabled   map[string]bool
 	config    map[string]map[string]any
+	mu        sync.RWMutex
 }
 
 // NewRegistry creates a new plugin registry.

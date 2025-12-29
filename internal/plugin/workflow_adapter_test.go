@@ -9,10 +9,10 @@ import (
 
 func TestWorkUnitToMap(t *testing.T) {
 	tests := []struct {
-		name     string
 		wu       *workflow.WorkUnit
-		wantNil  bool
+		name     string
 		wantKeys []string
+		wantNil  bool
 	}{
 		{
 			name:    "nil work unit",
@@ -93,8 +93,8 @@ func TestGetEffectInfo(t *testing.T) {
 	tests := []struct {
 		name      string
 		effect    string
-		wantFound bool
 		wantDesc  string
+		wantFound bool
 	}{
 		{
 			name:      "existing effect",

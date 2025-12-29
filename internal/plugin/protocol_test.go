@@ -11,11 +11,11 @@ import (
 
 func TestNewRequest(t *testing.T) {
 	tests := []struct {
-		name     string
-		id       int64
-		method   string
 		params   any
+		name     string
+		method   string
 		wantJSON string
+		id       int64
 	}{
 		{
 			name:   "basic request with params",
@@ -229,8 +229,8 @@ func TestStreamEventTypeConstants(t *testing.T) {
 
 func TestResponse_JSONMarshal(t *testing.T) {
 	tests := []struct {
-		name string
 		resp Response
+		name string
 	}{
 		{
 			name: "successful response",

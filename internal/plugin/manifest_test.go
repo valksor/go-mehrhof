@@ -29,10 +29,10 @@ func TestPluginTypeConstants(t *testing.T) {
 
 func TestManifestValidate(t *testing.T) {
 	tests := []struct {
-		name      string
 		manifest  Manifest
-		wantErr   bool
+		name      string
 		errSubstr string
+		wantErr   bool
 	}{
 		{
 			name: "valid provider manifest",

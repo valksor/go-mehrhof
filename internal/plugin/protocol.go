@@ -9,10 +9,10 @@ import (
 
 // Request represents a JSON-RPC 2.0 request.
 type Request struct {
-	JSONRPC string `json:"jsonrpc"`
-	ID      int64  `json:"id"`
-	Method  string `json:"method"`
 	Params  any    `json:"params,omitempty"`
+	JSONRPC string `json:"jsonrpc"`
+	Method  string `json:"method"`
+	ID      int64  `json:"id"`
 }
 
 // NewRequest creates a new JSON-RPC request.
@@ -27,17 +27,17 @@ func NewRequest(id int64, method string, params any) *Request {
 
 // Response represents a JSON-RPC 2.0 response.
 type Response struct {
-	JSONRPC string          `json:"jsonrpc"`
-	ID      int64           `json:"id"`
-	Result  json.RawMessage `json:"result,omitempty"`
 	Error   *RPCError       `json:"error,omitempty"`
+	JSONRPC string          `json:"jsonrpc"`
+	Result  json.RawMessage `json:"result,omitempty"`
+	ID      int64           `json:"id"`
 }
 
 // RPCError represents a JSON-RPC 2.0 error.
 type RPCError struct {
-	Code    int    `json:"code"`
-	Message string `json:"message"`
 	Data    any    `json:"data,omitempty"`
+	Message string `json:"message"`
+	Code    int    `json:"code"`
 }
 
 func (e *RPCError) Error() string {
@@ -60,9 +60,9 @@ const (
 
 // Notification represents a JSON-RPC 2.0 notification (no ID, no response expected).
 type Notification struct {
+	Params  any    `json:"params,omitempty"`
 	JSONRPC string `json:"jsonrpc"`
 	Method  string `json:"method"`
-	Params  any    `json:"params,omitempty"`
 }
 
 // StreamEvent represents a streaming event from an agent plugin.
@@ -170,10 +170,10 @@ type PersonResult struct {
 
 // CommentResult represents a comment in plugin responses.
 type CommentResult struct {
+	CreatedAt time.Time    `json:"createdAt,omitempty"`
+	Author    PersonResult `json:"author,omitempty"`
 	ID        string       `json:"id"`
 	Body      string       `json:"body"`
-	Author    PersonResult `json:"author,omitempty"`
-	CreatedAt time.Time    `json:"createdAt,omitempty"`
 }
 
 // AttachmentResult represents an attachment in plugin responses.
@@ -193,12 +193,12 @@ type SourceInfoResult struct {
 
 // ListParams contains parameters for provider.list.
 type ListParams struct {
+	Options  map[string]any `json:"options,omitempty"`
 	Status   string         `json:"status,omitempty"`
-	Labels   []string       `json:"labels,omitempty"`
 	Assignee string         `json:"assignee,omitempty"`
+	Labels   []string       `json:"labels,omitempty"`
 	Limit    int            `json:"limit,omitempty"`
 	Offset   int            `json:"offset,omitempty"`
-	Options  map[string]any `json:"options,omitempty"`
 }
 
 // AddCommentParams contains parameters for provider.addComment.
@@ -226,9 +226,9 @@ type CreatePRParams struct {
 // PullRequestResult represents a pull request result.
 type PullRequestResult struct {
 	ID     string `json:"id"`
-	Number int    `json:"number"`
 	URL    string `json:"url"`
 	State  string `json:"state"`
+	Number int    `json:"number"`
 }
 
 // SnapshotParams contains parameters for provider.snapshot.
@@ -238,16 +238,16 @@ type SnapshotParams struct {
 
 // SnapshotResult represents a snapshot result.
 type SnapshotResult struct {
-	Content  string         `json:"content"`
 	Metadata map[string]any `json:"metadata,omitempty"`
+	Content  string         `json:"content"`
 }
 
 // Agent protocol types.
 
 // AgentInitResult contains the result of agent.init.
 type AgentInitResult struct {
-	Capabilities []string             `json:"capabilities"`
 	Metadata     *AgentMetadataResult `json:"metadata,omitempty"`
+	Capabilities []string             `json:"capabilities"`
 }
 
 // AgentMetadataResult represents agent metadata.
@@ -260,15 +260,15 @@ type AgentMetadataResult struct {
 
 // AgentAvailableResult contains the result of agent.available.
 type AgentAvailableResult struct {
-	Available bool   `json:"available"`
 	Error     string `json:"error,omitempty"`
+	Available bool   `json:"available"`
 }
 
 // AgentRunParams contains parameters for agent.run.
 type AgentRunParams struct {
-	Prompt  string            `json:"prompt"`
 	Env     map[string]string `json:"env,omitempty"`
 	Options map[string]any    `json:"options,omitempty"`
+	Prompt  string            `json:"prompt"`
 }
 
 // Workflow protocol types.
@@ -303,26 +303,26 @@ type EffectInfo struct {
 
 // EvaluateGuardParams contains parameters for workflow.evaluateGuard.
 type EvaluateGuardParams struct {
-	Name     string         `json:"name"`
 	WorkUnit map[string]any `json:"workUnit"`
+	Name     string         `json:"name"`
 }
 
 // EvaluateGuardResult contains the result of workflow.evaluateGuard.
 type EvaluateGuardResult struct {
-	Passed bool   `json:"passed"`
 	Reason string `json:"reason,omitempty"`
+	Passed bool   `json:"passed"`
 }
 
 // ExecuteEffectParams contains parameters for workflow.executeEffect.
 type ExecuteEffectParams struct {
-	Name     string         `json:"name"`
 	WorkUnit map[string]any `json:"workUnit"`
 	Data     map[string]any `json:"data,omitempty"`
+	Name     string         `json:"name"`
 }
 
 // ExecuteEffectResult contains the result of workflow.executeEffect.
 type ExecuteEffectResult struct {
-	Success bool           `json:"success"`
-	Error   string         `json:"error,omitempty"`
 	Data    map[string]any `json:"data,omitempty"`
+	Error   string         `json:"error,omitempty"`
+	Success bool           `json:"success"`
 }

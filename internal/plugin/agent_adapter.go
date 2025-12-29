@@ -258,9 +258,9 @@ func convertStreamEvent(e *StreamEvent) agent.Event {
 	case StreamEventToolUse:
 		event.Type = agent.EventToolUse
 		var tc struct {
+			Input       map[string]any `json:"input"`
 			Name        string         `json:"name"`
 			Description string         `json:"description"`
-			Input       map[string]any `json:"input"`
 		}
 		if err := json.Unmarshal(e.Data, &tc); err == nil {
 			event.ToolCall = &agent.ToolCall{
