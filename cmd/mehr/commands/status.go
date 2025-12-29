@@ -319,7 +319,7 @@ func showAllTasks(ws *storage.Workspace, git *vcs.Git) error {
 		if isActive {
 			active, _ := ws.LoadActiveTask()
 			if active != nil {
-				state = display.FormatStateString(active.State)
+				state = display.FormatStateStringColored(active.State)
 			}
 			activeMarker = "*"
 		}

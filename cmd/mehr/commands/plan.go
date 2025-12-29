@@ -4,17 +4,13 @@ import (
 	"bufio"
 	"errors"
 	"fmt"
-	"io"
-	"log"
 	"os"
 	"strings"
 
 	"github.com/spf13/cobra"
 
-	"github.com/valksor/go-mehrhof/internal/agent"
 	"github.com/valksor/go-mehrhof/internal/conductor"
 	"github.com/valksor/go-mehrhof/internal/display"
-	"github.com/valksor/go-mehrhof/internal/events"
 	"github.com/valksor/go-mehrhof/internal/storage"
 )
 
@@ -69,20 +65,15 @@ func runPlan(cmd *cobra.Command, args []string) error {
 		return runStandalonePlan(cmd)
 	}
 
-	// Build conductor options
-	opts := []conductor.Option{
-		conductor.WithVerbose(verbose),
-		conductor.WithIncludeFullContext(planFullContext),
-	}
+	// Build conductor options using helper
+	opts := BuildConductorOptions(CommandOptions{
+		Verbose:     verbose,
+		FullContext: planFullContext,
+	})
 
-	// Per-step agent override
+	// Per-step agent override for planning
 	if planAgentPlanning != "" {
 		opts = append(opts, conductor.WithStepAgent("planning", planAgentPlanning))
-	}
-
-	// Use deduplicating stdout in verbose mode to suppress duplicate lines
-	if verbose {
-		opts = append(opts, conductor.WithStdout(getDeduplicatingStdout()))
 	}
 
 	// Initialize conductor with standard providers and agents
@@ -92,36 +83,13 @@ func runPlan(cmd *cobra.Command, args []string) error {
 	}
 
 	// Check for active task
-	if cond.GetActiveTask() == nil {
-		fmt.Print(display.ErrorWithSuggestions(
-			"No active task",
-			[]display.Suggestion{
-				{Command: "mehr start <reference>", Description: "Register a task first"},
-				{Command: "mehr plan --new", Description: "Start standalone planning"},
-			},
-		))
+	if !RequireActiveTask(cond) {
 		return nil
 	}
 
-	// Set up progress callback
+	// Set up progress callback using helper
 	if verbose {
-		w := cond.GetStdout()
-		cond.GetEventBus().SubscribeAll(func(e events.Event) {
-			switch e.Type {
-			case events.TypeProgress:
-				if msg, ok := e.Data["message"].(string); ok {
-					_, err := fmt.Fprintf(w, "  %s\n", msg)
-					if err != nil {
-						log.Println(err)
-					}
-				}
-			case events.TypeAgentMessage:
-				if agentEvent, ok := e.Data["event"].(agent.Event); ok {
-					// Extract meaningful content from agent event
-					printAgentEventTo(w, agentEvent)
-				}
-			}
-		})
+		SetupVerboseEventHandlers(cond)
 	}
 
 	// Enter planning phase
@@ -189,11 +157,12 @@ func runPlan(cmd *cobra.Command, args []string) error {
 		fmt.Println(display.SuccessMsg("Planning complete!"))
 	}
 	fmt.Printf("  Specifications created: %s\n", display.Bold(fmt.Sprintf("%d", status.Specifications)))
-	fmt.Println()
-	fmt.Println(display.Muted("Next steps:"))
-	fmt.Printf("  %s - View task status and specifications\n", display.Cyan("mehr status"))
-	fmt.Printf("  %s - Add notes or clarifications\n", display.Cyan("mehr chat"))
-	fmt.Printf("  %s - Implement the specifications\n", display.Cyan("mehr implement"))
+
+	PrintNextSteps(
+		"mehr status - View task status and specifications",
+		"mehr chat - Add notes or clarifications",
+		"mehr implement - Implement the specifications",
+	)
 
 	return nil
 }
@@ -317,56 +286,4 @@ func runStandalonePlan(cmd *cobra.Command) error {
 	}
 
 	return nil
-}
-
-// printAgentEventTo prints meaningful content from agent events to the specified writer
-func printAgentEventTo(w io.Writer, e agent.Event) {
-	// Print text content if available
-	if e.Text != "" {
-		_, err := fmt.Fprint(w, e.Text)
-		if err != nil {
-			log.Println(err)
-		}
-	}
-
-	// Print tool call if available
-	if e.ToolCall != nil {
-		printToolCallTo(w, e.ToolCall)
-	}
-
-	// Also check tool_calls array for multiple tools
-	if toolCalls, ok := e.Data["tool_calls"].([]*agent.ToolCall); ok {
-		for _, tc := range toolCalls {
-			printToolCallTo(w, tc)
-		}
-	}
-
-	// Fallback: check for result in data
-	if e.Text == "" && e.ToolCall == nil {
-		if result, ok := e.Data["result"].(string); ok {
-			_, err := fmt.Fprint(w, result)
-			if err != nil {
-				log.Println(err)
-			}
-		}
-	}
-}
-
-// printToolCallTo prints a formatted tool call to the specified writer
-func printToolCallTo(w io.Writer, tc *agent.ToolCall) {
-	if tc == nil {
-		return
-	}
-
-	if tc.Description != "" {
-		_, err := fmt.Fprintf(w, "→ %s: %s\n", tc.Name, tc.Description)
-		if err != nil {
-			log.Println(err)
-		}
-	} else {
-		_, err := fmt.Fprintf(w, "→ %s\n", tc.Name)
-		if err != nil {
-			log.Println(err)
-		}
-	}
 }

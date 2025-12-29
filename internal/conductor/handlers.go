@@ -2,6 +2,7 @@ package conductor
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -14,8 +15,9 @@ import (
 	"github.com/valksor/go-mehrhof/internal/workflow"
 )
 
-// ErrPendingQuestion is returned when the agent asks a question
-var ErrPendingQuestion = fmt.Errorf("agent has a pending question")
+// ErrPendingQuestion is returned when the agent asks a question.
+// Using errors.New() instead of fmt.Errorf() ensures errors.Is() works reliably.
+var ErrPendingQuestion = errors.New("agent has a pending question")
 
 // ensureDirExists creates the directory for the given file path if it doesn't exist.
 // This is a helper to avoid code duplication when writing files.
