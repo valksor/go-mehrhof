@@ -106,7 +106,7 @@ export GLM_API_KEY="sk-ant-..."
 
 # Use the alias
 mehr start --agent glm file:task.md
-mehr yolo --agent glm-fast file:task.md
+mehr auto --agent glm-fast file:task.md
 ```
 
 ### How Aliases Work
@@ -187,7 +187,7 @@ Different workflow steps can use different agents. This is useful for optimizing
 | `planning`      | `mehr plan`      | Requirement analysis, specs |
 | `implementing`  | `mehr implement` | Code generation             |
 | `reviewing`     | `mehr review`    | Code review (agent-based)   |
-| `dialogue`      | `mehr talk`      | Interactive conversation    |
+| `dialogue`      | `mehr chat`      | Interactive conversation    |
 | `checkpointing` | (internal)       | Checkpoint summaries        |
 
 ### Workspace Configuration
@@ -234,7 +234,7 @@ Override per-step agents at runtime:
 mehr start --agent-planning claude file:task.md
 mehr plan --agent-planning claude
 mehr implement --agent-implementing claude-sonnet
-mehr talk --agent-dialogue claude
+mehr chat --agent-dialogue claude
 
 # --agent still overrides ALL steps
 mehr start --agent claude file:task.md  # Uses claude for everything
@@ -251,7 +251,7 @@ Available CLI flags by command:
 | `mehr plan`      | `--agent-planning`     | Planning step agent |
 | `mehr implement` | `--agent-implementing` | Implementation step |
 | `mehr review`    | `--agent-reviewing`    | Review step agent   |
-| `mehr talk`      | `--agent-dialogue`     | Dialogue step agent |
+| `mehr chat`      | `--agent-dialogue`     | Dialogue step agent |
 
 ### Per-Step Priority Resolution
 
@@ -316,7 +316,7 @@ This ensures consistent agent usage when resuming tasks across sessions.
 
 ### Agent Persistence
 
-Once a task starts, the agent choice is persisted in `work.yaml`. Subsequent commands (`plan`, `implement`, `talk`) automatically use the same agent:
+Once a task starts, the agent choice is persisted in `work.yaml`. Subsequent commands (`plan`, `implement`, `dialogue`) automatically use the same agent:
 
 ```bash
 mehr start file:task.md  # Agent resolved from frontmatter: glm
@@ -383,7 +383,7 @@ During `mehr implement`, the agent:
 
 ### Talk Mode
 
-During `mehr talk`, the agent:
+During `mehr chat`, the agent:
 
 1. Maintains conversation context
 2. Answers questions about the task

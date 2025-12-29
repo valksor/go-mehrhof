@@ -129,7 +129,7 @@ git:
 
 ### notes.md
 
-User notes accumulated through `mehr talk`:
+User notes accumulated through `mehr chat`:
 
 ```markdown
 # Notes
@@ -143,7 +143,7 @@ Use the existing HTTP router, don't create a new one.
 The handler should return JSON, not plain text.
 Make sure to set Content-Type header.
 
-## 2025-01-15 11:30:00 [talk]
+## 2025-01-15 11:30:00 [dialogue]
 
 Use dependency injection for the version service.
 ```
@@ -187,7 +187,7 @@ Agent conversation logs:
 ```
 sessions/
 ├── 2025-01-15T10-30-00-planning.yaml
-├── 2025-01-15T11-00-00-talk.yaml
+├── 2025-01-15T11-00-00-dialogue.yaml
 └── 2025-01-15T11-30-00-implementing.yaml
 ```
 

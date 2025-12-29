@@ -13,7 +13,7 @@ stateDiagram-v2
     implementing --> idle: code generated
     idle --> reviewing: mehr review
     reviewing --> idle: review complete
-    idle --> dialogue: mehr talk
+    idle --> dialogue: mehr chat
     dialogue --> idle: conversation ends
     idle --> done: mehr finish
     done --> [*]

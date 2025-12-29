@@ -116,7 +116,7 @@ mehr undo
 # Back to checkpoint 1
 
 # Add clarification
-mehr talk "Use a simpler approach without generics"
+mehr chat "Use a simpler approach without generics"
 
 # Try again
 mehr implement
@@ -171,7 +171,7 @@ These integrate with the checkpoint system.
 
 1. **Review before implementing** - Check SPEC files before `mehr implement`
 
-2. **Iterate with talk** - Add context with `mehr talk` before re-implementing
+2. **Iterate with talk** - Add context with `mehr chat` before re-implementing
 
 3. **Undo early** - If something's wrong, undo quickly before making more changes
 

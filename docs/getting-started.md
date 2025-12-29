@@ -135,10 +135,10 @@ This squash-merges your changes to the main branch and cleans up.
 
 ### Add Notes During Development
 
-Use `talk` to add context or ask questions:
+Use `dialogue` to add context or ask questions:
 
 ```bash
-mehr talk "Use the existing logger instead of fmt.Println"
+mehr chat "Use the existing logger instead of fmt.Println"
 ```
 
 ### Undo a Mistake

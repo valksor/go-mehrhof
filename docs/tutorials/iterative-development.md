@@ -58,7 +58,7 @@ git diff
 ### Use Talk Mode
 
 ```bash
-mehr talk "Use stateless JWT tokens, not sessions. Store nothing server-side."
+mehr chat "Use stateless JWT tokens, not sessions. Store nothing server-side."
 ```
 
 ### Undo and Retry
@@ -90,7 +90,7 @@ git diff
 ### Add More Context
 
 ```bash
-mehr talk "Token expiry should be 24 hours. Include refresh token with 7 day expiry."
+mehr chat "Token expiry should be 24 hours. Include refresh token with 7 day expiry."
 ```
 
 ### Iterate
@@ -111,7 +111,7 @@ grep -r "expir" --include="*.go"
 ### Interactive Discussion
 
 ```bash
-mehr talk
+mehr chat
 ```
 
 ```
@@ -145,32 +145,32 @@ mehr implement
 
 ```bash
 # Vague (less effective)
-mehr talk "Make it more secure"
+mehr chat "Make it more secure"
 
 # Specific (more effective)
-mehr talk "Add rate limiting: max 5 login attempts per minute per IP"
+mehr chat "Add rate limiting: max 5 login attempts per minute per IP"
 ```
 
 ### Explain Why
 
 ```bash
 # Just what
-mehr talk "Use Redis for token storage"
+mehr chat "Use Redis for token storage"
 
 # What and why (better)
-mehr talk "Use Redis for token storage because we need to invalidate tokens across multiple server instances"
+mehr chat "Use Redis for token storage because we need to invalidate tokens across multiple server instances"
 ```
 
 ### Reference Existing Code
 
 ```bash
-mehr talk "Use the same error response format as internal/api/errors.go"
+mehr chat "Use the same error response format as internal/api/errors.go"
 ```
 
 ### Ask Questions
 
 ```bash
-mehr talk "What's the best way to handle password reset tokens?"
+mehr chat "What's the best way to handle password reset tokens?"
 ```
 
 ## Workflow Summary
@@ -179,13 +179,13 @@ mehr talk "What's the best way to handle password reset tokens?"
 mehr start task.md
 mehr plan
 ├── Review specs
-├── mehr talk "refinement..."
+├── mehr chat "refinement..."
 └── mehr plan (if major changes)
 
 mehr implement
 ├── Review code
 ├── mehr undo
-├── mehr talk "adjustment..."
+├── mehr chat "adjustment..."
 └── mehr implement
 
 [Repeat until satisfied]
@@ -215,9 +215,9 @@ Basic description.
 Add details through talk:
 
 ```bash
-mehr talk "Also need input validation"
-mehr talk "Support both JSON and form-encoded requests"
-mehr talk "Log all auth attempts for audit"
+mehr chat "Also need input validation"
+mehr chat "Support both JSON and form-encoded requests"
+mehr chat "Log all auth attempts for audit"
 ```
 
 ### 3. Review Before Implementing
@@ -228,7 +228,7 @@ Always check specs before `mehr implement`:
 mehr plan
 cat .mehrhof/work/*/specifications/*.md
 # Looks wrong?
-mehr talk "Actually, change X to Y"
+mehr chat "Actually, change X to Y"
 mehr plan  # Regenerate
 ```
 
@@ -240,7 +240,7 @@ Undo is cheap. Don't hesitate:
 mehr implement
 # Not right
 mehr undo
-mehr talk "..."
+mehr chat "..."
 mehr implement
 # Still not right
 mehr undo
@@ -253,12 +253,12 @@ Notes accumulate. Keep them relevant:
 
 ```bash
 # Good: Specific, actionable
-mehr talk "Validate email format using regexp"
+mehr chat "Validate email format using regexp"
 
 # Avoid: Vague, contradictory over time
-mehr talk "Maybe use sessions"
-mehr talk "Actually use JWT"
-mehr talk "Or maybe sessions are fine"
+mehr chat "Maybe use sessions"
+mehr chat "Actually use JWT"
+mehr chat "Or maybe sessions are fine"
 ```
 
 ## When to Start Fresh
@@ -281,4 +281,4 @@ Consider this when:
 
 - [Recovering from Mistakes](tutorials/undo-mistakes.md) - Deep dive on undo/redo
 - [Your First Task](tutorials/first-task.md) - Basic workflow
-- [talk command](../cli/talk.md) - Talk reference
+- [talk command](../cli/chat.md) - Talk reference

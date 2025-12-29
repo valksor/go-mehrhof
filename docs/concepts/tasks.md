@@ -175,10 +175,10 @@ This creates a separate working directory:
 
 ## Task Notes
 
-Add context during development with `talk`:
+Add context during development with `dialogue`:
 
 ```bash
-mehr talk "Use the existing UserService instead of creating a new one"
+mehr chat "Use the existing UserService instead of creating a new one"
 ```
 
 Notes are saved to `.mehrhof/work/<id>/notes.md` and included in future AI prompts.
@@ -195,7 +195,7 @@ mehr plan
 # Creates: .mehrhof/work/abc12345/specifications/specification-1.md
 
 # 3. Add clarification
-mehr talk "The API should be REST, not GraphQL"
+mehr chat "The API should be REST, not GraphQL"
 # Updates: .mehrhof/work/abc12345/notes.md
 
 # 4. Implement

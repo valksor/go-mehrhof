@@ -88,7 +88,7 @@ agent:
 | `planning`      | Agent for `mehr plan`          |
 | `implementing`  | Agent for `mehr implement`     |
 | `reviewing`     | Agent for `mehr review`        |
-| `dialogue`      | Agent for `mehr talk`          |
+| `dialogue`      | Agent for `mehr chat`          |
 | `checkpointing` | Agent for checkpoint summaries |
 
 Each step can specify:
