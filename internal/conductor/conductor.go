@@ -1,3 +1,30 @@
+// Package conductor provides the main orchestration layer for the mehrhof task automation tool.
+//
+// The Conductor is a facade that combines workflow management, storage, VCS operations,
+// and AI agent coordination. It manages the complete lifecycle of tasks from creation
+// through planning, implementation, and completion.
+//
+// Key responsibilities:
+//   - Task lifecycle management (start, plan, implement, review, finish)
+//   - Git branch and worktree management for parallel tasks
+//   - Agent selection and configuration (with per-step agent overrides)
+//   - State machine orchestration via the workflow package
+//   - Event publishing and subscription for component decoupling
+//
+// Thread safety:
+//   - Most methods are not thread-safe and should be called from a single goroutine.
+//   - GetActiveTask() and GetTaskWork() return copies to avoid data races.
+//   - State changes are protected by an internal mutex.
+//
+// Usage:
+//
+//	c := conductor.New(
+//	    conductor.WithWorkDir("/path/to/repo"),
+//	    conductor.WithStdout(os.Stdout),
+//	)
+//	if err := c.Initialize(ctx); err != nil {
+//	    log.Fatal(err)
+//	}
 package conductor
 
 import (
@@ -103,17 +130,29 @@ func (c *Conductor) GetGit() *vcs.Git {
 }
 
 // GetActiveTask returns the current active task
+// Returns a copy to avoid data races; the caller cannot modify the internal state.
 func (c *Conductor) GetActiveTask() *storage.ActiveTask {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
-	return c.activeTask
+	if c.activeTask == nil {
+		return nil
+	}
+	// Return a copy to prevent caller from mutating internal state without lock
+	copy := *c.activeTask
+	return &copy
 }
 
 // GetTaskWork returns the current task work
+// Returns a copy to avoid data races; the caller cannot modify the internal state.
 func (c *Conductor) GetTaskWork() *storage.TaskWork {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
-	return c.taskWork
+	if c.taskWork == nil {
+		return nil
+	}
+	// Return a copy to prevent caller from mutating internal state without lock
+	copy := *c.taskWork
+	return &copy
 }
 
 // GetActiveAgent returns the active agent

@@ -143,7 +143,9 @@ func (c *Conductor) RunPlanning(ctx context.Context) error {
 	})
 	if err != nil {
 		c.activeTask.State = "idle"
-		_ = c.workspace.SaveActiveTask(c.activeTask)
+		if err := c.workspace.SaveActiveTask(c.activeTask); err != nil {
+			c.logError(fmt.Errorf("save active task after planning error: %w", err))
+		}
 		_ = c.machine.Dispatch(ctx, workflow.EventError)
 		return fmt.Errorf("agent planning: %w", err)
 	}
@@ -179,7 +181,9 @@ func (c *Conductor) RunPlanning(ctx context.Context) error {
 			// Dispatch EventWait to properly transition FSM to StateWaiting
 			_ = c.machine.Dispatch(ctx, workflow.EventWait)
 			c.activeTask.State = string(workflow.StateWaiting)
-			_ = c.workspace.SaveActiveTask(c.activeTask)
+			if err := c.workspace.SaveActiveTask(c.activeTask); err != nil {
+				c.logError(fmt.Errorf("save active task after pending question: %w", err))
+			}
 			return ErrPendingQuestion
 		}
 	}
@@ -273,7 +277,9 @@ func (c *Conductor) RunImplementation(ctx context.Context) error {
 	})
 	if err != nil {
 		c.activeTask.State = "idle"
-		_ = c.workspace.SaveActiveTask(c.activeTask)
+		if err := c.workspace.SaveActiveTask(c.activeTask); err != nil {
+			c.logError(fmt.Errorf("save active task after implementation error: %w", err))
+		}
 		_ = c.machine.Dispatch(ctx, workflow.EventError)
 		return fmt.Errorf("agent implementation: %w", err)
 	}
@@ -355,7 +361,9 @@ func (c *Conductor) RunReview(ctx context.Context) error {
 	})
 	if err != nil {
 		c.activeTask.State = "idle"
-		_ = c.workspace.SaveActiveTask(c.activeTask)
+		if err := c.workspace.SaveActiveTask(c.activeTask); err != nil {
+			c.logError(fmt.Errorf("save active task after review error: %w", err))
+		}
 		_ = c.machine.Dispatch(ctx, workflow.EventError)
 		return fmt.Errorf("agent review: %w", err)
 	}
@@ -403,12 +411,34 @@ func (c *Conductor) RunReview(ctx context.Context) error {
 // This provides an alternative to setting operation: delete in YAML blocks
 const DeleteFileSentinel = "__DELETE_FILE__"
 
+// validatePathInWorkspace ensures that a resolved path is within the workspace root.
+// This prevents path traversal attacks when applying file changes from AI agent output.
+func validatePathInWorkspace(resolved, root string) error {
+	// Get the relative path from root to resolved
+	rel, err := filepath.Rel(root, resolved)
+	if err != nil {
+		return fmt.Errorf("invalid path: %w", err)
+	}
+	// Check if the relative path starts with ".." which would escape the root
+	if strings.HasPrefix(rel, ".."+string(filepath.Separator)) || rel == ".." {
+		return fmt.Errorf("path outside workspace: %s", resolved)
+	}
+	return nil
+}
+
 // applyFiles writes agent file changes to disk
 func applyFiles(ctx context.Context, c *Conductor, files []agent.FileChange) error {
 	root := c.opts.WorkDir
 	if c.git != nil {
 		root = c.git.Root()
 	}
+
+	// Resolve symlinks in root path for accurate validation (handles macOS /var -> /private/var symlinks)
+	resolvedRoot := root
+	if res, err := filepath.EvalSymlinks(root); err == nil {
+		resolvedRoot = res
+	}
+	// If root doesn't exist yet, EvalSymlinks will fail, so we use root as-is
 
 	var stats struct {
 		created int
@@ -418,6 +448,19 @@ func applyFiles(ctx context.Context, c *Conductor, files []agent.FileChange) err
 
 	for _, fc := range files {
 		path := filepath.Join(root, fc.Path)
+
+		// Validate the path is within workspace (prevent path traversal attacks)
+		// Resolve symlinks in the target path and validate it stays within root
+		resolvedPath := path
+		if res, err := filepath.EvalSymlinks(path); err == nil {
+			resolvedPath = res
+		}
+		// Validate against both the original root and resolved root to handle symlinked paths
+		if err := validatePathInWorkspace(resolvedPath, root); err != nil {
+			if err := validatePathInWorkspace(resolvedPath, resolvedRoot); err != nil {
+				return fmt.Errorf("invalid file path %q: %w", fc.Path, err)
+			}
+		}
 
 		// Check for delete sentinel in content (alternative to operation: delete)
 		if fc.Content == DeleteFileSentinel {

@@ -17,10 +17,10 @@ import (
 
 func TestFormatSpecContent(t *testing.T) {
 	tests := []struct {
-		name     string
-		num      int
 		response *agent.Response
+		name     string
 		wantIn   []string
+		num      int
 	}{
 		{
 			name: "with summary only",

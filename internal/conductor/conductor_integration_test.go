@@ -790,10 +790,11 @@ func TestGetTaskWork_WithTask(t *testing.T) {
 
 	got := c.GetTaskWork()
 	if got == nil {
-		t.Error("GetTaskWork returned nil")
+		t.Fatal("GetTaskWork returned nil")
 	}
-	if got != work {
-		t.Error("GetTaskWork returned different work")
+	// GetTaskWork now returns a copy for thread safety, so compare values not pointers
+	if got.Metadata.ID != work.Metadata.ID {
+		t.Errorf("GetTaskWork returned different work ID: got %q, want %q", got.Metadata.ID, work.Metadata.ID)
 	}
 }
 

@@ -1742,10 +1742,10 @@ func TestRegisterAliasAgents(t *testing.T) {
 // Test GetAgentForStep - cache hit/miss, persistence
 func TestGetAgentForStep(t *testing.T) {
 	tests := []struct {
-		name           string
 		existingStep   *storage.StepAgentInfo
-		registerAgents []string
+		name           string
 		wantAgentName  string
+		registerAgents []string
 		wantCached     bool
 	}{
 		{
@@ -1981,12 +1981,12 @@ func TestResolveNaming(t *testing.T) {
 // Test buildWorkUnit - WorkUnit construction with specifications
 func TestBuildWorkUnit_WithSpecs(t *testing.T) {
 	tests := []struct {
-		name           string
 		taskWork       *storage.TaskWork
-		specifications []int
-		wantSpecCount  int
+		name           string
 		wantID         string
 		wantTitle      string
+		specifications []int
+		wantSpecCount  int
 	}{
 		{
 			name:     "nil taskWork",
