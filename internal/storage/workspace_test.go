@@ -1591,10 +1591,10 @@ func TestSpecStatusConstants(t *testing.T) {
 
 func TestGetEnvForAgent(t *testing.T) {
 	tests := []struct {
-		name      string
 		env       map[string]string
-		agentName string
 		want      map[string]string
+		name      string
+		agentName string
 	}{
 		{
 			name: "filters claude vars and strips prefix",

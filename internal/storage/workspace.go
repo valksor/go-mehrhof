@@ -4,6 +4,7 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"fmt"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -142,9 +143,9 @@ type AgentAliasConfig struct {
 
 // GitSettings holds git-related configuration
 type GitSettings struct {
-	AutoCommit    bool   `yaml:"auto_commit"`
 	CommitPrefix  string `yaml:"commit_prefix"`
 	BranchPattern string `yaml:"branch_pattern"`
+	AutoCommit    bool   `yaml:"auto_commit"`
 	SignCommits   bool   `yaml:"sign_commits"`
 }
 
@@ -424,15 +425,26 @@ func (w *Workspace) LoadActiveTask() (*ActiveTask, error) {
 	return &active, nil
 }
 
-// SaveActiveTask saves the active task reference
+// SaveActiveTask saves the active task reference using atomic write pattern
 func (w *Workspace) SaveActiveTask(active *ActiveTask) error {
 	data, err := yaml.Marshal(active)
 	if err != nil {
 		return fmt.Errorf("marshal active task: %w", err)
 	}
 
-	if err := os.WriteFile(w.ActiveTaskPath(), data, 0o644); err != nil {
+	// Use atomic write pattern: write to temp file, then rename
+	path := w.ActiveTaskPath()
+	tmpPath := path + ".tmp"
+	if err := os.WriteFile(tmpPath, data, 0o644); err != nil {
 		return fmt.Errorf("write active task: %w", err)
+	}
+	// Atomic rename is guaranteed to be atomic on POSIX systems
+	if err := os.Rename(tmpPath, path); err != nil {
+		// Clean up temp file on error, log if cleanup fails
+		if removeErr := os.Remove(tmpPath); removeErr != nil {
+			slog.Warn("failed to clean up temp file after rename error", "path", tmpPath, "error", removeErr)
+		}
+		return fmt.Errorf("save active task: %w", err)
 	}
 
 	return nil
@@ -530,7 +542,7 @@ func (w *Workspace) LoadWork(taskID string) (*TaskWork, error) {
 	return &work, nil
 }
 
-// SaveWork saves a task's work metadata
+// SaveWork saves a task's work metadata using atomic write pattern
 func (w *Workspace) SaveWork(work *TaskWork) error {
 	work.Metadata.UpdatedAt = time.Now()
 
@@ -541,8 +553,18 @@ func (w *Workspace) SaveWork(work *TaskWork) error {
 		return fmt.Errorf("marshal work: %w", err)
 	}
 
-	if err := os.WriteFile(workFile, data, 0o644); err != nil {
+	// Use atomic write pattern: write to temp file, then rename
+	tmpFile := workFile + ".tmp"
+	if err := os.WriteFile(tmpFile, data, 0o644); err != nil {
 		return fmt.Errorf("write work file: %w", err)
+	}
+	// Atomic rename is guaranteed to be atomic on POSIX systems
+	if err := os.Rename(tmpFile, workFile); err != nil {
+		// Clean up temp file on error, log if cleanup fails
+		if removeErr := os.Remove(tmpFile); removeErr != nil {
+			slog.Warn("failed to clean up temp file after rename error", "path", tmpFile, "error", removeErr)
+		}
+		return fmt.Errorf("save work: %w", err)
 	}
 
 	return nil
@@ -601,9 +623,12 @@ func (w *Workspace) AppendNote(taskID, content, state string) error {
 	}
 	newNote := fmt.Sprintf("\n## %s%s\n\n%s\n", timestamp, stateTag, content)
 
-	// Append
-	updated := string(existing) + newNote
-	return os.WriteFile(notesPath, []byte(updated), 0o644)
+	// Use strings.Builder for efficient concatenation
+	var b strings.Builder
+	b.Grow(len(existing) + len(newNote))
+	b.Write(existing)
+	b.WriteString(newNote)
+	return os.WriteFile(notesPath, []byte(b.String()), 0o644)
 }
 
 // ReadNotes reads the notes file content
@@ -1052,9 +1077,9 @@ type Plan struct {
 
 // PlanEntry represents an entry in the planning conversation
 type PlanEntry struct {
-	Role      string    `yaml:"role"` // user, assistant
-	Content   string    `yaml:"content"`
 	Timestamp time.Time `yaml:"timestamp"`
+	Role      string    `yaml:"role"`
+	Content   string    `yaml:"content"`
 }
 
 const (

@@ -1,3 +1,22 @@
+// Package vcs provides git operations for the mehrhof task automation tool.
+//
+// The Git type wraps common git operations needed for task management:
+//   - Branch creation and switching
+//   - Checkpoint creation for undo/redo functionality
+//   - Worktree management for parallel task execution
+//   - Status and diff operations
+//
+// Thread safety:
+//   - Git methods are safe for concurrent use as they don't maintain mutable state.
+//   - The Git value itself should not be copied after creation.
+//
+// Usage:
+//
+//	g, err := vcs.New("/path/to/repo")
+//	if err != nil {
+//	    log.Fatal(err)
+//	}
+//	branch, _ := g.CurrentBranch()
 package vcs
 
 import (
@@ -52,7 +71,8 @@ func findRepoRoot(path string) (string, error) {
 		return "", err
 	}
 
-	out, err := runGitCommand(absPath, "rev-parse", "--show-toplevel")
+	// Use background context for repo discovery (this is a fast local operation)
+	out, err := runGitCommandContext(context.Background(), absPath, "rev-parse", "--show-toplevel")
 	if err != nil {
 		return "", fmt.Errorf("not a git repository: %w", err)
 	}
@@ -270,19 +290,12 @@ func (g *Git) StashPop() error {
 // Note: This uses a background context and does not propagate cancellation.
 // For operations that need context cancellation or deadlines, use RunContext().
 func (g *Git) run(args ...string) (string, error) {
-	return runGitCommand(g.repoRoot, args...)
+	return runGitCommandContext(context.Background(), g.repoRoot, args...)
 }
 
 // RunContext executes a git command with context
 func (g *Git) RunContext(ctx context.Context, args ...string) (string, error) {
 	return runGitCommandContext(ctx, g.repoRoot, args...)
-}
-
-// runGitCommand executes a git command in the given directory.
-// Deprecated: Use runGitCommandContext with proper context propagation.
-// This function exists for compatibility but should be replaced.
-func runGitCommand(dir string, args ...string) (string, error) {
-	return runGitCommandContext(context.Background(), dir, args...)
 }
 
 // runGitCommandContext executes a git command with context

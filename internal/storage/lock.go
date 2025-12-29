@@ -11,8 +11,8 @@ import (
 // FileLock provides file-based locking for concurrent access.
 // Uses flock(2) for cross-process advisory locking.
 type FileLock struct {
-	path string
 	file *os.File
+	path string
 }
 
 // NewFileLock creates a new file lock for the given path.
