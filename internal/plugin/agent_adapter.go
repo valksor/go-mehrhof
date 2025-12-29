@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"time"
 
+	_maps "maps"
+
 	"github.com/valksor/go-mehrhof/internal/agent"
 )
 
@@ -98,18 +100,36 @@ func (a *AgentAdapter) RunStream(ctx context.Context, prompt string) (<-chan age
 			return
 		}
 
-		// Process stream events
-		for raw := range streamCh {
-			var streamEvent StreamEvent
-			if err := json.Unmarshal(raw, &streamEvent); err != nil {
-				continue // Skip malformed events
-			}
-
-			event := convertStreamEvent(&streamEvent)
-			eventCh <- event
-
-			if event.Type == agent.EventComplete {
+		// Process stream events with context cancellation
+		for {
+			select {
+			case <-ctx.Done():
+				errCh <- ctx.Err()
 				return
+			case raw, ok := <-streamCh:
+				if !ok {
+					// Stream closed normally
+					return
+				}
+
+				var streamEvent StreamEvent
+				if err := json.Unmarshal(raw, &streamEvent); err != nil {
+					continue // Skip malformed events
+				}
+
+				event := convertStreamEvent(&streamEvent)
+
+				// Check if we should send before blocking on channel
+				select {
+				case eventCh <- event:
+				case <-ctx.Done():
+					errCh <- ctx.Err()
+					return
+				}
+
+				if event.Type == agent.EventComplete {
+					return
+				}
 			}
 		}
 	}()
@@ -138,9 +158,9 @@ func (a *AgentAdapter) RunWithCallback(ctx context.Context, prompt string, cb ag
 
 // WithEnv adds an environment variable and returns a new agent with that env set.
 func (a *AgentAdapter) WithEnv(key, value string) agent.Agent {
-	newEnv := make(map[string]string, len(a.env)+1)
-	for k, v := range a.env {
-		newEnv[k] = v
+	newEnv := _maps.Clone(a.env)
+	if newEnv == nil {
+		newEnv = make(map[string]string, 1)
 	}
 	newEnv[key] = value
 

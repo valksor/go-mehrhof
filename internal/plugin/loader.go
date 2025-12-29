@@ -52,23 +52,46 @@ func NewLoader() *Loader {
 // Load starts a plugin process from a manifest.
 func (l *Loader) Load(ctx context.Context, manifest *Manifest) (*Process, error) {
 	l.mu.Lock()
-	defer l.mu.Unlock()
 
 	// Check if already loaded
-	if proc, ok := l.processes[manifest.Name]; ok {
+	proc, ok := l.processes[manifest.Name]
+	if ok {
 		if proc.started && !proc.stopping {
+			l.mu.Unlock()
 			return proc, nil
 		}
 		// Previous process is stopping, wait for it
-		<-proc.done
+		// Release lock before waiting to avoid blocking other operations
+		l.mu.Unlock()
+
+		select {
+		case <-proc.done:
+			// Process finished, proceed to load new one
+		case <-ctx.Done():
+			return nil, fmt.Errorf("waiting for plugin to stop: %w", ctx.Err())
+		}
+
+		// Re-acquire lock for the rest of the operation
+		l.mu.Lock()
 	}
 
+	// Re-check in case another goroutine loaded while we were waiting
+	if proc, ok := l.processes[manifest.Name]; ok {
+		if proc.started && !proc.stopping {
+			l.mu.Unlock()
+			return proc, nil
+		}
+	}
+
+	// Lock is now held for the startProcess call
 	proc, err := startProcess(ctx, manifest)
 	if err != nil {
+		l.mu.Unlock()
 		return nil, err
 	}
 
 	l.processes[manifest.Name] = proc
+	l.mu.Unlock()
 	return proc, nil
 }
 
@@ -268,6 +291,14 @@ func (p *Process) readStderr() {
 		// For now, we just discard it or could print for debugging
 		_ = scanner.Text()
 	}
+	if err := scanner.Err(); err != nil {
+		// Scanner error - log it via the process error field
+		p.mu.Lock()
+		if p.err == nil {
+			p.err = fmt.Errorf("stderr scanner error: %w", err)
+		}
+		p.mu.Unlock()
+	}
 }
 
 // Call sends a JSON-RPC request and waits for a response.
@@ -397,7 +428,15 @@ func (p *Process) Stop() error {
 	// Close stdin to signal EOF
 	_ = p.stdin.Close()
 
-	// Wait for process with timeout - use timer to avoid resource leak
+	// Explicitly close stdout and stderr pipes
+	if p.stdout != nil {
+		p.stdout.Reset(nil) // Reset underlying reader to release resources
+	}
+	if p.stderr != nil {
+		_ = p.stderr.Close()
+	}
+
+	// Wait for process with timeout
 	done := make(chan error, 1)
 	go func() {
 		done <- p.cmd.Wait()
@@ -412,6 +451,7 @@ func (p *Process) Stop() error {
 	case <-timer.C:
 		// Force kill
 		_ = p.cmd.Process.Kill()
+		// Wait returns immediately for killed process
 		return <-done
 	}
 }
