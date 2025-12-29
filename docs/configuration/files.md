@@ -108,6 +108,27 @@ providers:
 
 With this set, you can use `mehr start task.md` instead of `mehr start file:task.md`.
 
+#### cache
+
+Global caching configuration for providers that support it:
+
+```yaml
+cache:
+  enabled: true # Enable/disable caching globally (default: true)
+```
+
+**Provider-specific caching:**
+
+Individual providers may have their own cache settings. For example, the GitHub provider:
+
+```yaml
+github:
+  cache:
+    disabled: false # Disable caching for GitHub provider only
+```
+
+When both global and provider-specific settings exist, the provider-specific setting takes precedence.
+
 #### workflow
 
 ```yaml

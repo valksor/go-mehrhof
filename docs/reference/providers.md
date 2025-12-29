@@ -124,7 +124,21 @@ github:
     on_plan_done: true
     on_implement_done: true
     on_pr_created: true
+
+  # API caching (enabled by default)
+  cache:
+    disabled: false                # Set to true to disable caching
 ```
+
+### Caching
+
+The GitHub provider caches API responses to reduce rate limit usage and improve performance. Cached data includes:
+
+- **Issue details** - Cached for 5 minutes
+- **Comments** - Cached for 1 minute
+- **Repository metadata** (default branch) - Cached for 30 minutes
+
+Cache is automatically invalidated when data is modified (e.g., adding a comment invalidates the comments cache).
 
 ### Token Resolution
 
