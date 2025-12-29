@@ -13,6 +13,7 @@ import (
 var (
 	autoAgent         string
 	autoBranch        bool
+	autoNoBranch      bool
 	autoWorktree      bool
 	autoMaxRetries    int
 	autoNoPush        bool
@@ -52,7 +53,8 @@ func init() {
 	rootCmd.AddCommand(autoCmd)
 
 	autoCmd.Flags().StringVarP(&autoAgent, "agent", "a", "", "Agent to use (default: auto-detect)")
-	autoCmd.Flags().BoolVarP(&autoBranch, "branch", "b", true, "Create a git branch for this task (use --branch=false to disable)")
+	autoCmd.Flags().BoolVarP(&autoBranch, "branch", "b", true, "Create a git branch for this task")
+	autoCmd.Flags().BoolVar(&autoNoBranch, "no-branch", false, "Skip creating a git branch")
 	autoCmd.Flags().BoolVarP(&autoWorktree, "worktree", "w", false, "Create a separate git worktree")
 	autoCmd.Flags().IntVar(&autoMaxRetries, "max-retries", 3, "Maximum quality check retry attempts")
 	autoCmd.Flags().BoolVar(&autoNoPush, "no-push", false, "Don't push after merge")
@@ -68,8 +70,8 @@ func runAuto(cmd *cobra.Command, args []string) error {
 	reference := args[0]
 
 	// Determine branch behavior
-	// Worktree implies branch creation
-	createBranch := autoBranch
+	// Worktree implies branch creation, --no-branch explicitly disables it
+	createBranch := autoBranch && !autoNoBranch
 	if autoWorktree {
 		createBranch = true
 	}
@@ -99,7 +101,7 @@ func runAuto(cmd *cobra.Command, args []string) error {
 
 	// Check for existing task
 	if cond.GetActiveTask() != nil {
-		return fmt.Errorf("task already active: %s\nUse 'mehr delete --force' to clear it first", cond.GetActiveTask().ID)
+		return fmt.Errorf("task already active: %s\nUse 'mehr abandon' to clear it first, or 'mehr status' for details", cond.GetActiveTask().ID)
 	}
 
 	// Subscribe to events for progress display

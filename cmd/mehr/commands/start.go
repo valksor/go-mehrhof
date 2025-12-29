@@ -15,6 +15,7 @@ import (
 var (
 	startAgent         string
 	startBranch        bool
+	startNoBranch      bool
 	startWorktree      bool
 	startKey           string // External key override (e.g., "FEATURE-123")
 	startCommitPrefix  string // Commit prefix template override
@@ -29,11 +30,9 @@ var (
 )
 
 var startCmd = &cobra.Command{
-	Use:   "start <scheme:reference>",
+	Use:   "start <reference>",
 	Short: "Register a new task from a file or directory",
 	Long: `Register a new task from a file, directory, or external provider.
-
-IMPORTANT: You must specify a provider scheme prefix (e.g., file:, dir:).
 
 This command reads the source, creates a git branch, and registers
 the task as active. It does NOT run planning - use 'mehr plan' for that.
@@ -45,18 +44,24 @@ With --worktree, a separate git worktree is created for the task,
 allowing you to work in isolation without switching branches in your
 main repository.
 
+PROVIDER SCHEMES:
+  file:task.md         Read from a markdown file
+  dir:./tasks/         Read from a directory
+
+DEFAULT PROVIDER:
+  Configure a default provider in .mehrhof/config.yaml to skip the scheme:
+    providers:
+        default: file
+
+  Then bare references work too:
+    mehr start task.md              # Uses file: provider (if configured as default)
+
 Examples:
-  mehr start file:task.md              # Start from a markdown file
-  mehr start dir:./tasks/              # Start from a directory
-  mehr start --branch=false file:task.md  # Start without creating a branch
-  mehr start --worktree file:task.md   # Start with a separate worktree
-
-Or configure a default provider in .mehrhof/config.yaml:
-  providers:
-      default: file
-
-Then bare references will use that provider:
-  mehr start task.md              # Uses file: provider`,
+  mehr start file:task.md         # Start from a markdown file
+  mehr start dir:./tasks/         # Start from a directory
+  mehr start --no-branch task.md  # Start without creating a branch
+  mehr start --worktree task.md   # Start with a separate worktree
+  mehr start --template bug-fix file:task.md  # Apply bug-fix template`,
 	Args: cobra.ExactArgs(1),
 	RunE: runStart,
 }
@@ -65,7 +70,8 @@ func init() {
 	rootCmd.AddCommand(startCmd)
 
 	startCmd.Flags().StringVarP(&startAgent, "agent", "a", "", "Agent to use (default: auto-detect)")
-	startCmd.Flags().BoolVarP(&startBranch, "branch", "b", true, "Create a git branch for this task (use --branch=false to disable)")
+	startCmd.Flags().BoolVarP(&startBranch, "branch", "b", true, "Create a git branch for this task")
+	startCmd.Flags().BoolVar(&startNoBranch, "no-branch", false, "Skip creating a git branch")
 	startCmd.Flags().BoolVarP(&startWorktree, "worktree", "w", false, "Create a separate git worktree for this task")
 
 	// Naming override flags
@@ -115,8 +121,8 @@ func runStart(cmd *cobra.Command, args []string) error {
 	}
 
 	// Determine branch behavior
-	// Worktree implies branch creation
-	createBranch := startBranch
+	// Worktree implies branch creation, --no-branch explicitly disables it
+	createBranch := startBranch && !startNoBranch
 	if startWorktree {
 		createBranch = true
 	}
