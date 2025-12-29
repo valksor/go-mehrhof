@@ -217,8 +217,13 @@ func (m *Machine) transitionTo(ctx context.Context, from, to State, event Event)
 	// attempt to dispatch events.
 	if len(listeners) > 0 {
 		go func() {
-			// Acquire semaphore
-			m.listenerSem <- struct{}{}
+			// Acquire semaphore, respecting context cancellation
+			select {
+			case <-ctx.Done():
+				return // Context cancelled, don't run listeners
+			case m.listenerSem <- struct{}{}:
+				// Acquired semaphore, continue
+			}
 			// Ensure semaphore is released even if listener panics
 			defer func() {
 				if r := recover(); r != nil {

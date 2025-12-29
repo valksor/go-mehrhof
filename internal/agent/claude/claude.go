@@ -4,6 +4,8 @@ import (
 	"bufio"
 	"context"
 	"fmt"
+	"io"
+	"log"
 	"os"
 	"os/exec"
 	"time"
@@ -195,7 +197,11 @@ func (a *Agent) executeStream(ctx context.Context, prompt string, eventCh chan<-
 	}
 
 	// Read any stderr output
-	stderrBytes, _ := bufio.NewReader(stderr).ReadString('\n')
+	stderrBytes, err := bufio.NewReader(stderr).ReadString('\n')
+	if err != nil && err != io.EOF {
+		// Log but don't fail - stderr may not have content
+		log.Printf("warning: error reading stderr: %v", err)
+	}
 
 	// Wait for command to finish
 	if err := cmd.Wait(); err != nil {
