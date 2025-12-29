@@ -266,6 +266,6 @@ Task completed!
 
 ## Next Steps
 
-- [Iterative Development](tutorials/iterative-development.md) - Refine with talk mode
+- [Iterative Development](tutorials/iterative-development.md) - Refine with chat mode
 - [Recovering from Mistakes](tutorials/undo-mistakes.md) - Master undo/redo
 - [CLI Reference](../cli/overview.md) - All commands

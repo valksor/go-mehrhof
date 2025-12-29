@@ -25,7 +25,7 @@ stateDiagram-v2
 
 | State            | Description                       | Available Actions                                 |
 | ---------------- | --------------------------------- | ------------------------------------------------- |
-| **idle**         | Task registered, ready for action | plan, implement, review, talk, finish, undo, redo |
+| **idle**         | Task registered, ready for action | plan, implement, review, chat, finish, undo, redo |
 | **planning**     | AI creating specifications        | Wait for completion                               |
 | **implementing** | AI generating code                | Wait for completion                               |
 | **reviewing**    | Code review in progress           | Wait for completion                               |
@@ -35,7 +35,7 @@ stateDiagram-v2
 
 | State             | Description               |
 | ----------------- | ------------------------- |
-| **dialogue**      | Interactive talk session  |
+| **dialogue**      | Interactive chat session  |
 | **checkpointing** | Creating git checkpoint   |
 | **reverting**     | Undo in progress          |
 | **restoring**     | Redo in progress          |
@@ -144,7 +144,7 @@ Events trigger state transitions:
 | EventImplement     | Enter implementation    |
 | EventReview        | Enter code review       |
 | EventFinish        | Complete task           |
-| EventDialogueStart | Enter talk mode         |
+| EventDialogueStart | Enter chat mode         |
 | EventUndo/Redo     | Checkpoint operations   |
 | EventError         | Handle errors           |
 | EventAbort         | Abandon task            |
@@ -154,7 +154,7 @@ Events trigger state transitions:
 ```
 1. mehr start task.md     → idle (task registered)
 2. mehr plan              → planning → idle (specs created)
-3. [Review specs, maybe talk]
+3. [Review specs, maybe chat]
 4. mehr implement         → implementing → idle (code generated)
 5. [Review changes, maybe undo/redo]
 6. mehr review            → reviewing → idle (review done)

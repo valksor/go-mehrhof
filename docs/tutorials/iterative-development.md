@@ -55,7 +55,7 @@ git diff
 
 ## Round 2: Add Clarification
 
-### Use Talk Mode
+### Use Chat Mode
 
 ```bash
 mehr chat "Use stateless JWT tokens, not sessions. Store nothing server-side."
@@ -139,7 +139,7 @@ mehr undo
 mehr implement
 ```
 
-## Effective Talk Patterns
+## Effective Chat Patterns
 
 ### Be Specific
 
@@ -212,7 +212,7 @@ Basic description.
 
 ### 2. Build Up Context
 
-Add details through talk:
+Add details through chat:
 
 ```bash
 mehr chat "Also need input validation"

@@ -131,7 +131,7 @@ See [SPEC File Format](../reference/spec-format.md) for details.
 | planning     | Creating specifications |
 | implementing | Generating code         |
 | reviewing    | Running code review     |
-| dialogue     | Talk session active     |
+| dialogue     | Chat session active     |
 | done         | Completed and merged    |
 | failed       | Error occurred          |
 

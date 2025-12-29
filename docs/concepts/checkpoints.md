@@ -17,7 +17,7 @@ Checkpoints are created automatically after:
 
 - **Planning** - After SPEC files are generated
 - **Implementation** - After code changes are applied
-- **Talk sessions** - If files are modified
+- **Chat sessions** - If files are modified
 
 ## Checkpoint Structure
 
@@ -171,7 +171,7 @@ These integrate with the checkpoint system.
 
 1. **Review before implementing** - Check SPEC files before `mehr implement`
 
-2. **Iterate with talk** - Add context with `mehr chat` before re-implementing
+2. **Iterate with chat** - Add context with `mehr chat` before re-implementing
 
 3. **Undo early** - If something's wrong, undo quickly before making more changes
 

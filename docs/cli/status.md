@@ -136,7 +136,7 @@ Tasks in workspace:
 | planning     | Creating specifications |
 | implementing | Generating code         |
 | reviewing    | Running review          |
-| dialogue     | Talk session active     |
+| dialogue     | Chat session active     |
 | done         | Completed               |
 | failed       | Error occurred          |
 

@@ -381,7 +381,7 @@ During `mehr implement`, the agent:
 3. Generates or modifies code files
 4. Provides a summary of changes
 
-### Talk Mode
+### Chat Mode
 
 During `mehr chat`, the agent:
 
