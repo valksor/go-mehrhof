@@ -12,8 +12,8 @@ type CreateWorkUnitInput struct {
 	Title       string
 	Description string
 	Status      provider.Status
-	Labels      []string
 	AssigneeID  string
+	Labels      []string
 }
 
 // CreateWorkUnit creates a new Notion page

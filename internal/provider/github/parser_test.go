@@ -11,11 +11,11 @@ import (
 
 func TestParseReference(t *testing.T) {
 	tests := []struct {
+		want      *Ref
 		name      string
 		input     string
-		want      *Ref
-		wantErr   bool
 		errString string
+		wantErr   bool
 	}{
 		{
 			name:  "bare number",
@@ -430,9 +430,9 @@ func TestRefString(t *testing.T) {
 
 func TestWrapAPIError(t *testing.T) {
 	tests := []struct {
-		name        string
 		err         error
 		wantErr     error
+		name        string
 		wantNil     bool
 		wantWrapped bool
 	}{

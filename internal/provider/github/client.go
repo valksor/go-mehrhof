@@ -22,9 +22,9 @@ func ptr[T any](v T) *T {
 // Client wraps the GitHub API client
 type Client struct {
 	gh    *github.Client
+	cache *cache.Cache
 	owner string
 	repo  string
-	cache *cache.Cache
 }
 
 // NewClient creates a new GitHub API client

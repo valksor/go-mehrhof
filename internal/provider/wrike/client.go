@@ -291,6 +291,8 @@ func (c *Client) PostComment(ctx context.Context, taskID, text string) (*Comment
 
 // Task represents a Wrike task
 type Task struct {
+	CreatedDate time.Time `json:"createdDate"`
+	UpdatedDate time.Time `json:"updatedDate"`
 	ID          string    `json:"id"`
 	Title       string    `json:"title"`
 	Description string    `json:"description"`
@@ -298,25 +300,23 @@ type Task struct {
 	Priority    string    `json:"priority"`
 	Permalink   string    `json:"permalink"`
 	SubTaskIDs  []string  `json:"subTaskIds"`
-	CreatedDate time.Time `json:"createdDate"`
-	UpdatedDate time.Time `json:"updatedDate"`
 }
 
 // Comment represents a Wrike comment
 type Comment struct {
+	CreatedDate time.Time `json:"createdDate"`
+	UpdatedDate time.Time `json:"updatedDate"`
 	ID          string    `json:"id"`
 	Text        string    `json:"text"`
 	AuthorID    string    `json:"authorId"`
 	AuthorName  string    `json:"authorName,omitempty"`
-	CreatedDate time.Time `json:"createdDate"`
-	UpdatedDate time.Time `json:"updatedDate"`
 }
 
 // Attachment represents a Wrike attachment
 type Attachment struct {
+	CreatedDate time.Time `json:"createdDate"`
 	ID          string    `json:"id"`
 	Name        string    `json:"name"`
-	CreatedDate time.Time `json:"createdDate"`
 	Size        int64     `json:"size,omitempty"`
 }
 
@@ -326,8 +326,8 @@ type taskResponse struct {
 }
 
 type commentsResponse struct {
-	Data     []Comment `json:"data"`
 	NextPage string    `json:"nextPage,omitempty"`
+	Data     []Comment `json:"data"`
 }
 
 type commentResponse struct {
@@ -340,8 +340,8 @@ type attachmentsResponse struct {
 
 // httpError wraps an HTTP error for proper error handling
 type httpError struct {
-	code    int
 	message string
+	code    int
 }
 
 func (e *httpError) Error() string {

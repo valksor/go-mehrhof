@@ -48,8 +48,8 @@ func ResolveToken(configToken string) (string, error) {
 
 // graphqlRequest represents a GraphQL request
 type graphqlRequest struct {
-	Query     string         `json:"query"`
 	Variables map[string]any `json:"variables,omitempty"`
+	Query     string         `json:"query"`
 }
 
 // graphqlResponse represents a GraphQL response
@@ -227,11 +227,11 @@ func (c *Client) ListIssues(ctx context.Context, teamKey string, filters ListFil
 		var response struct {
 			Team struct {
 				Issues struct {
-					Nodes    []*Issue `json:"nodes"`
 					PageInfo struct {
 						HasNextPage bool   `json:"hasNextPage"`
 						EndCursor   string `json:"endCursor"`
 					} `json:"pageInfo"`
+					Nodes []*Issue `json:"nodes"`
 				} `json:"issues"`
 			} `json:"team"`
 		}
@@ -414,8 +414,8 @@ func (c *Client) AddComment(ctx context.Context, issueID, body string) (*Comment
 
 	var response struct {
 		CommentCreate struct {
-			Success bool     `json:"success"`
 			Comment *Comment `json:"comment"`
+			Success bool     `json:"success"`
 		} `json:"commentCreate"`
 	}
 
@@ -483,18 +483,18 @@ func (c *Client) GetComments(ctx context.Context, issueID string) ([]*Comment, e
 
 // Issue represents a Linear issue
 type Issue struct {
+	CreatedAt   time.Time `json:"createdAt"`
+	UpdatedAt   time.Time `json:"updatedAt"`
+	State       *State    `json:"state"`
+	Assignee    *User     `json:"assignee"`
+	Team        *Team     `json:"team"`
 	ID          string    `json:"id"`
 	Identifier  string    `json:"identifier"`
 	Title       string    `json:"title"`
 	Description string    `json:"description"`
-	State       *State    `json:"state"`
-	Priority    int       `json:"priority"`
-	Labels      []*Label  `json:"labels"`
-	Assignee    *User     `json:"assignee"`
-	CreatedAt   time.Time `json:"createdAt"`
-	UpdatedAt   time.Time `json:"updatedAt"`
 	URL         string    `json:"url"`
-	Team        *Team     `json:"team"`
+	Labels      []*Label  `json:"labels"`
+	Priority    int       `json:"priority"`
 }
 
 // State represents the state of an issue
@@ -526,29 +526,29 @@ type Team struct {
 
 // Comment represents a comment
 type Comment struct {
-	ID        string    `json:"id"`
-	Body      string    `json:"body"`
-	User      *User     `json:"user"`
 	CreatedAt time.Time `json:"createdAt"`
 	UpdatedAt time.Time `json:"updatedAt"`
+	User      *User     `json:"user"`
+	ID        string    `json:"id"`
+	Body      string    `json:"body"`
 }
 
 // CreateIssueInput represents the input for creating an issue
 type CreateIssueInput struct {
+	Priority    *int     `json:"priority,omitempty"`
 	TeamID      string   `json:"teamId,omitempty"`
 	Title       string   `json:"title"`
 	Description string   `json:"description,omitempty"`
 	AssigneeID  string   `json:"assigneeId,omitempty"`
-	LabelIDs    []string `json:"labelIds,omitempty"`
-	Priority    *int     `json:"priority,omitempty"`
 	StateID     string   `json:"stateId,omitempty"`
+	LabelIDs    []string `json:"labelIds,omitempty"`
 }
 
 // UpdateIssueInput represents the input for updating an issue
 type UpdateIssueInput struct {
+	Priority *int     `json:"priority,omitempty"`
 	StateID  string   `json:"stateId,omitempty"`
 	LabelIDs []string `json:"labelIds,omitempty"`
-	Priority *int     `json:"priority,omitempty"`
 }
 
 // ListFilters represents filters for listing issues
@@ -562,8 +562,8 @@ type ListFilters struct {
 
 // httpError wraps an HTTP error for proper error handling
 type httpError struct {
-	code    int
 	message string
+	code    int
 }
 
 func (e *httpError) Error() string {

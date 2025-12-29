@@ -24,8 +24,8 @@ var (
 
 // httpError represents an HTTP error with status code
 type httpError struct {
-	code    int
 	message string
+	code    int
 }
 
 func (e *httpError) Error() string {

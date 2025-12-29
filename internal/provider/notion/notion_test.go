@@ -339,8 +339,8 @@ func TestInfo(t *testing.T) {
 func TestBlocksToMarkdown(t *testing.T) {
 	tests := []struct {
 		name   string
-		blocks []Block
 		want   string
+		blocks []Block
 	}{
 		{
 			name:   "empty blocks",

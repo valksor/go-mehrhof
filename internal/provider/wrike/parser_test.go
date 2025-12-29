@@ -15,8 +15,8 @@ func TestParseReference(t *testing.T) {
 		input         string
 		wantTaskID    string
 		wantPermalink string
-		wantErr       bool
 		errContains   string
+		wantErr       bool
 	}{
 		{
 			name:       "wrike scheme with numeric ID",

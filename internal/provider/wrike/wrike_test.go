@@ -471,8 +471,8 @@ func TestProvider_Parse(t *testing.T) {
 		name        string
 		input       string
 		want        string
-		wantErr     bool
 		errContains string
+		wantErr     bool
 	}{
 		{
 			name:  "wrike scheme with numeric ID",

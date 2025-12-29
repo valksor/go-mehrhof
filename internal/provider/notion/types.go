@@ -4,13 +4,13 @@ import "time"
 
 // Page represents a Notion page
 type Page struct {
-	ID             string              `json:"id"`
 	CreatedTime    time.Time           `json:"created_time"`
 	LastEditedTime time.Time           `json:"last_edited_time"`
-	Archived       bool                `json:"archived"`
 	Properties     map[string]Property `json:"properties"`
-	URL            string              `json:"url"`
 	Parent         Parent              `json:"parent"`
+	ID             string              `json:"id"`
+	URL            string              `json:"url"`
+	Archived       bool                `json:"archived"`
 }
 
 // Parent represents the parent of a page or database
@@ -22,22 +22,22 @@ type Parent struct {
 
 // Property represents a Notion page property (various types)
 type Property struct {
-	ID          string           `json:"id"`
-	Type        string           `json:"type"`
+	People      *PeopleProp      `json:"people,omitempty"`
+	CheckBox    *bool            `json:"checkbox,omitempty"`
 	Title       *TitleProp       `json:"title,omitempty"`
 	RichText    *RichTextProp    `json:"rich_text,omitempty"`
 	Select      *SelectProp      `json:"select,omitempty"`
 	Status      *StatusProp      `json:"status,omitempty"`
+	Relation    *RelationProp    `json:"relation,omitempty"`
 	MultiSelect *MultiSelectProp `json:"multi_select,omitempty"`
+	Formula     *FormulaProp     `json:"formula,omitempty"`
 	Date        *DateProp        `json:"date,omitempty"`
-	People      *PeopleProp      `json:"people,omitempty"`
-	CheckBox    *bool            `json:"checkbox,omitempty"`
 	Number      *NumberProp      `json:"number,omitempty"`
 	URL         *string          `json:"url,omitempty"`
 	Email       *string          `json:"email,omitempty"`
 	PhoneNumber *string          `json:"phone_number,omitempty"`
-	Formula     *FormulaProp     `json:"formula,omitempty"`
-	Relation    *RelationProp    `json:"relation,omitempty"`
+	ID          string           `json:"id"`
+	Type        string           `json:"type"`
 }
 
 // TitleProp represents a title property
@@ -63,8 +63,8 @@ type RichText struct {
 
 // TextContent contains the actual text
 type TextContent struct {
-	Content string `json:"content"`
 	Link    *Link  `json:"link,omitempty"`
+	Content string `json:"content"`
 }
 
 // Link represents a URL link
@@ -74,12 +74,12 @@ type Link struct {
 
 // Annotations represents text formatting
 type Annotations struct {
+	Color         string `json:"color"`
 	Bold          bool   `json:"bold"`
 	Italic        bool   `json:"italic"`
 	Strikethrough bool   `json:"strikethrough"`
 	Underline     bool   `json:"underline"`
 	Code          bool   `json:"code"`
-	Color         string `json:"color"`
 }
 
 // SelectProp represents a select property
@@ -139,11 +139,11 @@ type RelationItem struct {
 
 // User represents a Notion user
 type User struct {
+	Person    *Person `json:"person,omitempty"`
 	ID        string  `json:"id"`
 	Name      string  `json:"name"`
 	AvatarURL string  `json:"avatar_url,omitempty"`
 	Type      string  `json:"type"`
-	Person    *Person `json:"person,omitempty"`
 }
 
 // Person represents user details
@@ -153,20 +153,20 @@ type Person struct {
 
 // Block represents a Notion block (page content)
 type Block struct {
-	ID               string          `json:"id"`
-	Type             string          `json:"type"`
-	HasOnly          bool            `json:"has_only"`
+	Heading3         *HeadingBlock   `json:"heading_3,omitempty"`
+	Divider          *DividerBlock   `json:"divider,omitempty"`
+	Callout          *CalloutBlock   `json:"callout,omitempty"`
 	Paragraph        *ParagraphBlock `json:"paragraph,omitempty"`
 	Heading1         *HeadingBlock   `json:"heading_1,omitempty"`
 	Heading2         *HeadingBlock   `json:"heading_2,omitempty"`
-	Heading3         *HeadingBlock   `json:"heading_3,omitempty"`
-	BulletedListItem *ListItemBlock  `json:"bulleted_list_item,omitempty"`
 	NumberedListItem *ListItemBlock  `json:"numbered_list_item,omitempty"`
+	BulletedListItem *ListItemBlock  `json:"bulleted_list_item,omitempty"`
+	Quote            *QuoteBlock     `json:"quote,omitempty"`
 	ToDo             *ToDoBlock      `json:"to_do,omitempty"`
 	Code             *CodeBlock      `json:"code,omitempty"`
-	Quote            *QuoteBlock     `json:"quote,omitempty"`
-	Divider          *DividerBlock   `json:"divider,omitempty"`
-	Callout          *CalloutBlock   `json:"callout,omitempty"`
+	Type             string          `json:"type"`
+	ID               string          `json:"id"`
+	HasOnly          bool            `json:"has_only"`
 }
 
 // ParagraphBlock represents a paragraph block
@@ -198,8 +198,8 @@ type ToDoBlock struct {
 // CodeBlock represents a code block
 type CodeBlock struct {
 	Type     string     `json:"type"`
-	RichText []RichText `json:"rich_text"`
 	Language string     `json:"language"`
+	RichText []RichText `json:"rich_text"`
 }
 
 // QuoteBlock represents a quote block
@@ -215,9 +215,9 @@ type DividerBlock struct {
 
 // CalloutBlock represents a callout block
 type CalloutBlock struct {
+	Icon     *Icon      `json:"icon,omitempty"`
 	Type     string     `json:"type"`
 	RichText []RichText `json:"rich_text"`
-	Icon     *Icon      `json:"icon,omitempty"`
 }
 
 // Icon represents an icon (emoji or file)
@@ -228,12 +228,12 @@ type Icon struct {
 
 // Comment represents a Notion comment
 type Comment struct {
-	ID             string        `json:"id"`
 	CreatedTime    time.Time     `json:"created_time"`
 	LastEditedTime time.Time     `json:"last_edited_time"`
 	CreatedBy      RichText      `json:"created_by"`
-	RichText       []RichText    `json:"rich_text"`
+	ID             string        `json:"id"`
 	Parent         CommentParent `json:"parent"`
+	RichText       []RichText    `json:"rich_text"`
 }
 
 // CommentParent represents the parent of a comment
@@ -243,17 +243,17 @@ type CommentParent struct {
 
 // Database represents a Notion database
 type Database struct {
-	ID         string              `json:"id"`
-	Title      []RichText          `json:"title"`
 	Properties map[string]Property `json:"properties"`
 	Parent     Parent              `json:"parent"`
+	ID         string              `json:"id"`
+	Title      []RichText          `json:"title"`
 }
 
 // DatabaseQueryRequest represents a database query request
 type DatabaseQueryRequest struct {
 	Filter      *Filter `json:"filter,omitempty"`
-	Sorts       []Sort  `json:"sorts,omitempty"`
 	StartCursor string  `json:"start_cursor,omitempty"`
+	Sorts       []Sort  `json:"sorts,omitempty"`
 	PageSize    int     `json:"page_size,omitempty"`
 }
 
@@ -300,29 +300,29 @@ type Sort struct {
 // DatabaseQueryResponse represents a database query response
 type DatabaseQueryResponse struct {
 	Object     string `json:"object"`
-	Results    []Page `json:"results"`
 	NextCursor string `json:"next_cursor,omitempty"`
+	Results    []Page `json:"results"`
 	HasMore    bool   `json:"has_more"`
 }
 
 // PageResponse represents a page response
 type PageResponse struct {
+	Page   *Page  `json:"-"`
 	Object string `json:"object"`
-	Page   *Page  `json:"-"` // Populated from unmarshaling
 }
 
 // CommentResponse represents a list of comments response
 type CommentResponse struct {
 	Object     string    `json:"object"`
-	Results    []Comment `json:"results"`
 	NextCursor string    `json:"next_cursor,omitempty"`
+	Results    []Comment `json:"results"`
 	HasMore    bool      `json:"has_more"`
 }
 
 // CreatePageInput represents input for creating a page
 type CreatePageInput struct {
-	Parent     Parent              `json:"parent"`
 	Properties map[string]Property `json:"properties"`
+	Parent     Parent              `json:"parent"`
 }
 
 // UpdatePageInput represents input for updating a page

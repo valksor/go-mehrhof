@@ -71,8 +71,8 @@ func TestProviderParse(t *testing.T) {
 		name        string
 		input       string
 		want        string
-		wantErr     bool
 		errContains string
+		wantErr     bool
 	}{
 		{
 			name:  "valid linear scheme reference",

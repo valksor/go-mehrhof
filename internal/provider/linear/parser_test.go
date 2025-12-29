@@ -15,10 +15,10 @@ func TestParseReference(t *testing.T) {
 		input       string
 		wantIssueID string
 		wantTeamKey string
-		wantNumber  int
 		wantURL     string
-		wantErr     bool
 		errContains string
+		wantNumber  int
+		wantErr     bool
 	}{
 		{
 			name:        "linear scheme with issue ID",
@@ -281,8 +281,8 @@ func TestExtractIssueID(t *testing.T) {
 func TestRefString(t *testing.T) {
 	tests := []struct {
 		name string
-		ref  Ref
 		want string
+		ref  Ref
 	}{
 		{
 			name: "with URL",

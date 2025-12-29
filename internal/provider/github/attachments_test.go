@@ -8,9 +8,9 @@ func TestExtractRepoFileLinks(t *testing.T) {
 	tests := []struct {
 		name      string
 		body      string
-		wantLen   int
 		wantIn    []string
 		wantNotIn []string
+		wantLen   int
 	}{
 		{
 			name:    "empty body",

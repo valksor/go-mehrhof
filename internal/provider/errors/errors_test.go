@@ -10,8 +10,8 @@ import (
 
 // mockHTTPError is a mock error that implements StatusCode()
 type mockHTTPError struct {
-	status int
 	msg    string
+	status int
 }
 
 func (e *mockHTTPError) Error() string {
@@ -24,8 +24,8 @@ func (e *mockHTTPError) StatusCode() int {
 
 // mockHTTPStatuser is a mock error that implements HTTPStatusCode()
 type mockHTTPStatuser struct {
-	status int
 	msg    string
+	status int
 }
 
 func (e *mockHTTPStatuser) Error() string {
@@ -83,10 +83,10 @@ func TestIsNetworkError(t *testing.T) {
 
 func TestWrapHTTPError(t *testing.T) {
 	tests := []struct {
-		name       string
 		err        error
-		provider   string
 		baseErrors map[int]error
+		name       string
+		provider   string
 		wantCode   ErrorCode
 	}{
 		{

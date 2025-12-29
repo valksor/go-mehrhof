@@ -70,10 +70,10 @@ type Comment struct {
 type Attachment struct {
 	ID       string `json:"id"`
 	Name     string `json:"name"`
-	Created  int64  `json:"created"`
-	Size     int64  `json:"size"`
 	MimeType string `json:"mimeType"`
 	URL      string `json:"url"`
+	Created  int64  `json:"created"`
+	Size     int64  `json:"size"`
 }
 
 // IssueLink represents a link to another issue

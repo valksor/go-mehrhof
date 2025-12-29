@@ -178,20 +178,20 @@ func TestMapGitHubAssignees(t *testing.T) {
 func TestInferTaskTypeFromLabels(t *testing.T) {
 	tests := []struct {
 		name   string
-		labels []string
 		want   string
+		labels []string
 	}{
-		{"bug label", []string{"bug"}, "fix"},
-		{"bugfix label", []string{"bugfix"}, "fix"},
-		{"feature label", []string{"feature"}, "feature"},
-		{"enhancement label", []string{"enhancement"}, "feature"},
-		{"docs label", []string{"docs"}, "docs"},
-		{"refactor label", []string{"refactor"}, "refactor"},
-		{"chore label", []string{"chore"}, "chore"},
-		{"test label", []string{"test"}, "test"},
-		{"unknown label", []string{"unknown"}, "issue"},
-		{"multiple labels with known type", []string{"bug", "other"}, "fix"},
-		{"empty labels", []string{}, "issue"},
+		{"bug label", "fix", []string{"bug"}},
+		{"bugfix label", "fix", []string{"bugfix"}},
+		{"feature label", "feature", []string{"feature"}},
+		{"enhancement label", "feature", []string{"enhancement"}},
+		{"docs label", "docs", []string{"docs"}},
+		{"refactor label", "refactor", []string{"refactor"}},
+		{"chore label", "chore", []string{"chore"}},
+		{"test label", "test", []string{"test"}},
+		{"unknown label", "issue", []string{"unknown"}},
+		{"multiple labels with known type", "fix", []string{"bug", "other"}},
+		{"empty labels", "issue", []string{}},
 	}
 
 	for _, tt := range tests {

@@ -232,8 +232,8 @@ func TestParseDiffStat(t *testing.T) {
 func TestGenerateChangeSummary(t *testing.T) {
 	tests := []struct {
 		name      string
-		exchanges []storage.Exchange
 		expected  string
+		exchanges []storage.Exchange
 	}{
 		{
 			name: "single file change",

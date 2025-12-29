@@ -24,14 +24,14 @@ func TestStatusConstants(t *testing.T) {
 
 func TestPriorityString(t *testing.T) {
 	tests := []struct {
-		priority Priority
 		want     string
+		priority Priority
 	}{
-		{PriorityLow, "low"},
-		{PriorityNormal, "normal"},
-		{PriorityHigh, "high"},
-		{PriorityCritical, "critical"},
-		{Priority(99), "normal"}, // unknown defaults to normal
+		{"low", PriorityLow},
+		{"normal", PriorityNormal},
+		{"high", PriorityHigh},
+		{"critical", PriorityCritical},
+		{"normal", Priority(99)}, // unknown defaults to normal
 	}
 
 	for _, tt := range tests {
@@ -472,9 +472,9 @@ func TestRegistryCreateNotFound(t *testing.T) {
 
 // mockIdentifier implements Identifier interface for testing
 type mockIdentifier struct {
-	matchResult bool
-	parseResult string
 	parseErr    error
+	parseResult string
+	matchResult bool
 }
 
 func (m *mockIdentifier) Match(input string) bool {
@@ -801,9 +801,9 @@ func containsHelper(s, substr string) bool {
 
 func TestConfigGetBool(t *testing.T) {
 	tests := []struct {
+		value    any
 		name     string
 		key      string
-		value    any
 		expected bool
 	}{
 		{

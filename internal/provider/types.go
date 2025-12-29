@@ -98,21 +98,21 @@ type Person struct {
 
 // Comment represents a comment on a work unit
 type Comment struct {
-	ID        string
-	Author    Person
-	Body      string
 	CreatedAt time.Time
 	UpdatedAt time.Time
+	Author    Person
+	ID        string
+	Body      string
 }
 
 // Attachment represents a file attachment
 type Attachment struct {
+	CreatedAt   time.Time
 	ID          string
 	Name        string
 	URL         string
 	ContentType string
 	Size        int64
-	CreatedAt   time.Time
 }
 
 // Capability identifies provider capabilities

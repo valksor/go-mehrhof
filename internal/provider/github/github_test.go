@@ -106,8 +106,8 @@ func TestMapGitHubState(t *testing.T) {
 func TestInferTypeFromLabels(t *testing.T) {
 	tests := []struct {
 		name   string
-		labels []*gh.Label
 		want   string
+		labels []*gh.Label
 	}{
 		{
 			name:   "bug label",
@@ -668,8 +668,8 @@ func TestProvider_Parse(t *testing.T) {
 		repo        string
 		input       string
 		want        string
-		wantErr     bool
 		errContains string
+		wantErr     bool
 	}{
 		{
 			name:  "explicit owner/repo",

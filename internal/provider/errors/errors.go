@@ -46,8 +46,8 @@ const (
 
 // BaseError is a typed error that can be identified by code.
 type BaseError struct {
-	Code ErrorCode
 	Msg  string
+	Code ErrorCode
 }
 
 func (e *BaseError) Error() string {
@@ -61,8 +61,8 @@ func NewBaseError(code ErrorCode, msg string) error {
 
 // ProviderError wraps an error with provider name for better error messages.
 type ProviderError struct {
-	Provider string
 	Err      error
+	Provider string
 }
 
 func (e *ProviderError) Error() string {

@@ -350,30 +350,30 @@ type IssueType struct {
 
 // Sprint represents an agile sprint
 type Sprint struct {
-	ID    int64  `json:"id"`
 	Name  string `json:"name"`
 	State string `json:"state"`
+	ID    int64  `json:"id"`
 }
 
 // Comment represents a Jira comment
 type Comment struct {
-	ID      string    `json:"id"`
-	Self    string    `json:"self"`
-	Body    string    `json:"body"`
 	Created time.Time `json:"created"`
 	Updated time.Time `json:"updated"`
 	Author  *User     `json:"author"`
+	ID      string    `json:"id"`
+	Self    string    `json:"self"`
+	Body    string    `json:"body"`
 }
 
 // Attachment represents a file attachment
 type Attachment struct {
+	Created  time.Time `json:"created"`
 	ID       string    `json:"id"`
 	Self     string    `json:"self"`
 	Filename string    `json:"filename"`
 	Content  string    `json:"content"`
 	MimeType string    `json:"mimeType"`
 	Size     int64     `json:"size"`
-	Created  time.Time `json:"created"`
 }
 
 // Transition represents a workflow transition
@@ -386,30 +386,30 @@ type Transition struct {
 type CreateIssueInput struct {
 	Fields struct {
 		Project     *Project   `json:"project"`
-		Summary     string     `json:"summary"`
-		Description string     `json:"description,omitempty"`
 		IssueType   *IssueType `json:"issuetype"`
 		Priority    *Priority  `json:"priority,omitempty"`
-		Labels      []string   `json:"labels,omitempty"`
 		Assignee    *User      `json:"assignee,omitempty"`
+		Summary     string     `json:"summary"`
+		Description string     `json:"description,omitempty"`
+		Labels      []string   `json:"labels,omitempty"`
 	} `json:"fields"`
 }
 
 // UpdateIssueInput represents the input for updating an issue
 type UpdateIssueInput struct {
 	Fields struct {
+		Priority *Priority `json:"priority,omitempty"`
 		Summary  string    `json:"summary,omitempty"`
 		Labels   []string  `json:"labels,omitempty"`
-		Priority *Priority `json:"priority,omitempty"`
 	} `json:"fields,omitempty"`
 }
 
 // SearchResponse represents Jira search results
 type SearchResponse struct {
+	Issues     []*Issue `json:"issues"`
 	StartAt    int      `json:"startAt"`
 	MaxResults int      `json:"maxResults"`
 	Total      int      `json:"total"`
-	Issues     []*Issue `json:"issues"`
 }
 
 // CreateIssueResponse represents the response from creating an issue
@@ -426,10 +426,10 @@ type TransitionsResponse struct {
 
 // CommentsResponse represents the response from getting comments
 type CommentsResponse struct {
+	Comments   []*Comment `json:"comments"`
 	StartAt    int        `json:"startAt"`
 	MaxResults int        `json:"maxResults"`
 	Total      int        `json:"total"`
-	Comments   []*Comment `json:"comments"`
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -438,8 +438,8 @@ type CommentsResponse struct {
 
 // httpError wraps an HTTP error for proper error handling
 type httpError struct {
-	code    int
 	message string
+	code    int
 }
 
 func (e *httpError) Error() string {

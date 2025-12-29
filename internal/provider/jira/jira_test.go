@@ -17,11 +17,11 @@ func TestParseReference(t *testing.T) {
 		input          string
 		wantIssueKey   string
 		wantProjectKey string
-		wantNumber     int
 		wantURL        string
 		wantBaseURL    string
-		wantErr        bool
 		errContains    string
+		wantNumber     int
+		wantErr        bool
 	}{
 		{
 			name:           "jira scheme with issue key",
@@ -323,8 +323,8 @@ func TestExtractIssueKey(t *testing.T) {
 func TestRefString(t *testing.T) {
 	tests := []struct {
 		name string
-		ref  Ref
 		want string
+		ref  Ref
 	}{
 		{
 			name: "with URL",
@@ -698,8 +698,8 @@ func TestMapJiraPriority(t *testing.T) {
 func TestMapProviderPriorityToJira(t *testing.T) {
 	tests := []struct {
 		name     string
-		priority provider.Priority
 		expected string
+		priority provider.Priority
 	}{
 		{
 			name:     "critical maps to Highest",
@@ -740,8 +740,8 @@ func TestMapProviderPriorityToJira(t *testing.T) {
 func TestInferTaskTypeFromLabels(t *testing.T) {
 	tests := []struct {
 		name     string
-		labels   []string
 		expected string
+		labels   []string
 	}{
 		{
 			name:     "bug label maps to fix",

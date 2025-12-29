@@ -113,8 +113,8 @@ func (c *Client) GetPageContent(ctx context.Context, pageID string) ([]Block, er
 
 	var blocks struct {
 		Object     string  `json:"object"`
-		Results    []Block `json:"results"`
 		NextCursor string  `json:"next_cursor,omitempty"`
+		Results    []Block `json:"results"`
 		HasMore    bool    `json:"has_more"`
 	}
 
@@ -284,8 +284,8 @@ func (c *Client) GetDatabase(ctx context.Context, databaseID string) (*Database,
 
 // httpError wraps an HTTP error for proper error handling
 type httpError struct {
-	code    int
 	message string
+	code    int
 }
 
 func (e *httpError) Error() string {

@@ -106,17 +106,17 @@ type PullRequestOptions struct {
 	SourceBranch string
 	TargetBranch string
 	Labels       []string
-	Draft        bool
 	Reviewers    []string
+	Draft        bool
 }
 
 // PullRequest represents a pull/merge request
 type PullRequest struct {
 	ID     string
-	Number int
 	URL    string
 	Title  string
-	State  string // open, closed, merged
+	State  string
+	Number int
 }
 
 // BranchLinker links work units to git branches
@@ -133,13 +133,13 @@ type WorkUnitCreator interface {
 
 // CreateWorkUnitOptions for creating a work unit
 type CreateWorkUnitOptions struct {
+	CustomFields map[string]any
 	Title        string
 	Description  string
+	ParentID     string
 	Labels       []string
 	Assignees    []string
 	Priority     Priority
-	ParentID     string // For subtasks
-	CustomFields map[string]any
 }
 
 // FullProvider is a comprehensive interface combining all capabilities
