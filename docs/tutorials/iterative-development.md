@@ -266,7 +266,7 @@ mehr chat "Or maybe sessions are fine"
 Sometimes it's better to start over:
 
 ```bash
-mehr delete --yes
+mehr abandon --yes
 # Rewrite task.md with better requirements
 mehr start task.md
 ```

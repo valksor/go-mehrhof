@@ -125,7 +125,7 @@ git checkout task/abc12345
 
 ```bash
 # Delete existing task
-mehr delete --yes
+mehr abandon --yes
 
 # Start fresh
 mehr start file:task.md
@@ -313,7 +313,7 @@ mehr status
 
 # If truly at initial state, nothing to undo
 # Start fresh if needed
-mehr delete
+mehr abandon
 mehr start file:task.md
 ```
 
@@ -436,4 +436,4 @@ cat .mehrhof/work/*/sessions/*.yaml
 | Bad implementation | `mehr undo`                                        |
 | Merge conflict     | Resolve manually, `git add .`, `git commit`        |
 | Timeout            | Increase `agent.timeout` in `.mehrhof/config.yaml` |
-| Start fresh        | `mehr delete --yes && mehr start file:task.md`     |
+| Start fresh        | `mehr abandon --yes && mehr start file:task.md`     |

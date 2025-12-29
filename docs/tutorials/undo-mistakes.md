@@ -287,7 +287,7 @@ mehr implement
 If you're many undos deep with contradictory notes:
 
 ```bash
-mehr delete --yes
+mehr abandon --yes
 # Rewrite task with lessons learned
 mehr start improved-task.md
 ```
@@ -301,7 +301,7 @@ mehr start improved-task.md
 | Accidental undo    | `mehr redo`                                             |
 | Lost redo          | `git reflog` → `git checkout <hash> -- file`            |
 | Partially bad      | Manual edit or selective checkout                       |
-| Too messy          | `mehr delete` → start fresh                             |
+| Too messy          | `mehr abandon` → start fresh                             |
 
 ## Next Steps
 

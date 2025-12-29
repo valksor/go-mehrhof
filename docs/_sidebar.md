@@ -31,7 +31,7 @@
   - [mehr templates](cli/templates.md)
   - [mehr cost](cli/cost.md)
   - [mehr undo/redo](cli/undo-redo.md)
-  - [mehr delete](cli/delete.md)
+  - [mehr abandon](cli/abandon.md)
   - [mehr version](cli/version.md)
 
 - Configuration

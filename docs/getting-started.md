@@ -160,7 +160,7 @@ mehr redo
 Abandon a task without merging:
 
 ```bash
-mehr delete
+mehr abandon
 ```
 
 ## Next Steps

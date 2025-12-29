@@ -216,7 +216,7 @@ mehr finish
 Delete a task without merging:
 
 ```bash
-mehr delete
+mehr abandon
 ```
 
 Options:

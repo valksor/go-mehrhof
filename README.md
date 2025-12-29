@@ -506,16 +506,16 @@ mehr finish --pr --pr-title "Fix bug"  # Custom PR title
 
 ---
 
-### `mehr delete`
+### `mehr abandon`
 
-Delete the current task without merging changes.
+Abandon the current task without merging changes.
 
 ```bash
-mehr delete                 # Delete with confirmation
-mehr delete --yes           # Delete without confirmation
-mehr delete -y              # Same as --yes
-mehr delete --keep-branch   # Delete task but keep the git branch
-mehr delete --keep-work     # Delete branch but keep the work directory
+mehr abandon                 # Abandon with confirmation
+mehr abandon --yes           # Abandon without confirmation
+mehr abandon -y              # Same as --yes
+mehr abandon --keep-branch   # Abandon task but keep the git branch
+mehr abandon --keep-work     # Abandon branch but keep the work directory
 ```
 
 **Flags:**
@@ -751,7 +751,7 @@ For runtime options, use CLI flags: `--verbose`, `--no-color`.
 - `mehr continue` - Resume work and see suggested next actions
 - `mehr undo` - Revert to previous checkpoint
 - `mehr redo` - Restore after undo
-- `mehr delete` - Abandon task without merging
+- `mehr abandon` - Abandon task without merging
 
 ## Task Storage
 
