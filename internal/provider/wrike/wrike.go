@@ -183,6 +183,34 @@ func (p *Provider) Snapshot(ctx context.Context, id string) (*provider.Snapshot,
 	}, nil
 }
 
+// ListTasks returns tasks from a folder or space
+// scopeType should be "folder" or "space"
+func (p *Provider) ListTasks(ctx context.Context, scopeType, scopeID string) ([]*provider.WorkUnit, error) {
+	var tasks []Task
+	var err error
+
+	switch scopeType {
+	case "folder":
+		tasks, err = p.client.GetTasksInFolder(ctx, scopeID)
+	case "space":
+		tasks, err = p.client.GetTasksInSpace(ctx, scopeID)
+	default:
+		return nil, fmt.Errorf("invalid scope type: %s (use 'folder' or 'space')", scopeType)
+	}
+
+	if err != nil {
+		return nil, err
+	}
+
+	result := make([]*provider.WorkUnit, 0, len(tasks))
+	for _, task := range tasks {
+		wu := p.taskToWorkUnit(&task)
+		result = append(result, wu)
+	}
+
+	return result, nil
+}
+
 // ──────────────────────────────────────────────────────────────────────────────
 // Helper functions
 // ──────────────────────────────────────────────────────────────────────────────
@@ -264,4 +292,40 @@ func buildMetadata(task *Task, subtasks []SubtaskInfo) map[string]any {
 	}
 
 	return metadata
+}
+
+// taskToWorkUnit converts a Task to a WorkUnit without fetching nested data
+// Used by ListTasks for efficiency when listing multiple tasks
+func (p *Provider) taskToWorkUnit(task *Task) *provider.WorkUnit {
+	// Extract numeric ID from permalink for ExternalKey
+	numericID := ExtractNumericID(task.Permalink)
+	if numericID == "" {
+		numericID = task.ID
+	}
+
+	return &provider.WorkUnit{
+		ID:          numericID,
+		ExternalID:  task.ID,
+		Provider:    ProviderName,
+		Title:       task.Title,
+		Description: task.Description,
+		Status:      mapStatus(task.Status),
+		Priority:    mapPriority(task.Priority),
+		Labels:      []string{},
+		Assignees:   []provider.Person{},
+		Comments:    nil,
+		Attachments: nil,
+		Subtasks:    task.SubTaskIDs,
+		Metadata:    buildMetadata(task, nil),
+		CreatedAt:   task.CreatedDate,
+		UpdatedAt:   task.UpdatedDate,
+		Source: provider.SourceInfo{
+			Type:      ProviderName,
+			Reference: task.Permalink,
+			SyncedAt:  time.Now(),
+		},
+		ExternalKey: numericID,
+		TaskType:    "task",
+		Slug:        naming.Slugify(task.Title, 50),
+	}
 }

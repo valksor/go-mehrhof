@@ -3,6 +3,7 @@ package wrike
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -15,6 +16,8 @@ import (
 const (
 	defaultBaseURL = "https://www.wrike.com/api/v4"
 	defaultTimeout = 30 * time.Second
+	maxRetries     = 3
+	initialBackoff = 1 * time.Second
 )
 
 // Config holds client configuration
@@ -107,10 +110,58 @@ func (c *Client) doRequest(ctx context.Context, method, path string, body io.Rea
 	return nil
 }
 
+// doRequestWithRetry performs an HTTP request with exponential backoff retry
+// Retries on rate limit errors (429) and service unavailable (503)
+func (c *Client) doRequestWithRetry(ctx context.Context, method, path string, body io.Reader, result any) error {
+	var lastErr error
+	backoff := initialBackoff
+
+	for attempt := 0; attempt <= maxRetries; attempt++ {
+		err := c.doRequest(ctx, method, path, body, result)
+		if err == nil {
+			return nil
+		}
+
+		lastErr = err
+
+		// Check if error is retryable
+		// 1. Check for specific error types (after wrapAPIError wrapping)
+		if errors.Is(err, ErrRateLimited) {
+			// Rate limited - retry
+		} else if errors.Is(err, ErrNetworkError) {
+			// Network error - retry
+		} else {
+			// 2. Check for unwrapped HTTP errors (before wrapAPIError)
+			var httpErr interface{ HTTPStatusCode() int }
+			if errors.As(err, &httpErr) {
+				statusCode := httpErr.HTTPStatusCode()
+				if statusCode != http.StatusTooManyRequests && statusCode != http.StatusServiceUnavailable {
+					return err // Not retryable
+				}
+			} else {
+				// Not a retryable error
+				return err
+			}
+		}
+
+		// Wait before retry (exponential backoff)
+		if attempt < maxRetries {
+			select {
+			case <-time.After(backoff):
+				backoff *= 2
+			case <-ctx.Done():
+				return ctx.Err()
+			}
+		}
+	}
+
+	return lastErr
+}
+
 // GetTask fetches a task by ID
 func (c *Client) GetTask(ctx context.Context, taskID string) (*Task, error) {
 	var response taskResponse
-	if err := c.doRequest(ctx, http.MethodGet, "/tasks/"+url.PathEscape(taskID), nil, &response); err != nil {
+	if err := c.doRequestWithRetry(ctx, http.MethodGet, "/tasks/"+url.PathEscape(taskID), nil, &response); err != nil {
 		return nil, err
 	}
 
@@ -122,49 +173,77 @@ func (c *Client) GetTask(ctx context.Context, taskID string) (*Task, error) {
 }
 
 // GetTaskByPermalink fetches a task by permalink URL
+// Extracts the numeric ID from the permalink and uses the standard task endpoint
 func (c *Client) GetTaskByPermalink(ctx context.Context, permalink string) (*Task, error) {
 	numericID := ExtractNumericID(permalink)
 	if numericID == "" {
 		return nil, fmt.Errorf("%w: invalid permalink format", ErrInvalidReference)
 	}
 
-	// Query by permalink
-	var response taskResponse
-	if err := c.doRequest(ctx, http.MethodGet, "/tasks?permalink="+url.QueryEscape(permalink), nil, &response); err != nil {
-		return nil, err
-	}
-
-	if len(response.Data) == 0 {
-		return nil, ErrTaskNotFound
-	}
-
-	return &response.Data[0], nil
+	// Use the extracted numeric ID directly with standard endpoint
+	// The Wrike API v4 doesn't document a ?permalink= query parameter,
+	// so we extract the numeric ID and use the standard /tasks/{id} endpoint
+	return c.GetTask(ctx, numericID)
 }
 
 // GetTasks fetches multiple tasks by IDs
 func (c *Client) GetTasks(ctx context.Context, taskIDs []string) ([]Task, error) {
 	var response taskResponse
-	if err := c.doRequest(ctx, http.MethodGet, "/tasks/"+url.PathEscape(strings.Join(taskIDs, ",")), nil, &response); err != nil {
+	if err := c.doRequestWithRetry(ctx, http.MethodGet, "/tasks/"+url.PathEscape(strings.Join(taskIDs, ",")), nil, &response); err != nil {
 		return nil, err
 	}
 
 	return response.Data, nil
 }
 
-// GetComments fetches comments for a task
-func (c *Client) GetComments(ctx context.Context, taskID string) ([]Comment, error) {
-	var response commentsResponse
-	if err := c.doRequest(ctx, http.MethodGet, "/tasks/"+url.PathEscape(taskID)+"/comments", nil, &response); err != nil {
+// GetTasksInFolder fetches all tasks in a folder
+func (c *Client) GetTasksInFolder(ctx context.Context, folderID string) ([]Task, error) {
+	var response taskResponse
+	if err := c.doRequestWithRetry(ctx, http.MethodGet, "/folders/"+url.PathEscape(folderID)+"/tasks", nil, &response); err != nil {
 		return nil, err
 	}
-
 	return response.Data, nil
+}
+
+// GetTasksInSpace fetches all tasks in a space
+func (c *Client) GetTasksInSpace(ctx context.Context, spaceID string) ([]Task, error) {
+	var response taskResponse
+	if err := c.doRequestWithRetry(ctx, http.MethodGet, "/spaces/"+url.PathEscape(spaceID)+"/tasks", nil, &response); err != nil {
+		return nil, err
+	}
+	return response.Data, nil
+}
+
+// GetComments fetches comments for a task with pagination support
+func (c *Client) GetComments(ctx context.Context, taskID string) ([]Comment, error) {
+	var allComments []Comment
+	path := "/tasks/" + url.PathEscape(taskID) + "/comments"
+
+	for {
+		var response commentsResponse
+		if err := c.doRequestWithRetry(ctx, http.MethodGet, path, nil, &response); err != nil {
+			if len(allComments) == 0 {
+				return nil, err
+			}
+			break // Return what we have on error after first page
+		}
+
+		allComments = append(allComments, response.Data...)
+
+		// Check if there's a next page
+		if response.NextPage == "" {
+			break
+		}
+		path = response.NextPage
+	}
+
+	return allComments, nil
 }
 
 // GetAttachments fetches attachments for a task
 func (c *Client) GetAttachments(ctx context.Context, taskID string) ([]Attachment, error) {
 	var response attachmentsResponse
-	if err := c.doRequest(ctx, http.MethodGet, "/tasks/"+url.PathEscape(taskID)+"/attachments", nil, &response); err != nil {
+	if err := c.doRequestWithRetry(ctx, http.MethodGet, "/tasks/"+url.PathEscape(taskID)+"/attachments", nil, &response); err != nil {
 		return nil, err
 	}
 
@@ -206,7 +285,7 @@ func (c *Client) PostComment(ctx context.Context, taskID, text string) (*Comment
 	}
 
 	var response commentResponse
-	if err := c.doRequest(ctx, http.MethodPost, "/tasks/"+url.PathEscape(taskID)+"/comments",
+	if err := c.doRequestWithRetry(ctx, http.MethodPost, "/tasks/"+url.PathEscape(taskID)+"/comments",
 		strings.NewReader(string(bodyBytes)), &response); err != nil {
 		return nil, err
 	}
@@ -259,7 +338,8 @@ type taskResponse struct {
 }
 
 type commentsResponse struct {
-	Data []Comment `json:"data"`
+	Data     []Comment `json:"data"`
+	NextPage string    `json:"nextPage,omitempty"`
 }
 
 type commentResponse struct {

@@ -234,9 +234,9 @@ func TestGetTask(t *testing.T) {
 func TestGetTaskByPermalink(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			// Check query parameter
-			if r.URL.Query().Get("permalink") != "https://www.wrike.com/open.htm?id=1234567890" {
-				t.Errorf("missing or incorrect permalink query parameter")
+			// Check that the endpoint is the standard task endpoint with extracted numeric ID
+			if r.URL.Path != "/tasks/1234567890" {
+				t.Errorf("unexpected path: %s, want /tasks/1234567890", r.URL.Path)
 			}
 
 			response := taskResponse{
@@ -527,6 +527,311 @@ func TestPostComment(t *testing.T) {
 		_, err := client.PostComment(context.Background(), "IEAAJTASKID", "Test")
 		if err == nil {
 			t.Error("expected error for empty response")
+		}
+	})
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// doRequestWithRetry tests
+// ──────────────────────────────────────────────────────────────────────────────
+
+func TestDoRequestWithRetry(t *testing.T) {
+	t.Run("retry on rate limit with eventual success", func(t *testing.T) {
+		attempts := 0
+		handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			attempts++
+			if attempts < 2 {
+				// First attempt: rate limited
+				w.WriteHeader(http.StatusTooManyRequests)
+				return
+			}
+			// Second attempt: success
+			response := taskResponse{
+				Data: []Task{
+					{
+						ID:          "IEAAJTASKID",
+						Title:       "Test Task",
+						Description: "Description",
+						Status:      "Active",
+						Priority:    "Normal",
+						Permalink:   "https://www.wrike.com/open.htm?id=1234567890",
+					},
+				},
+			}
+			_ = json.NewEncoder(w).Encode(response)
+		})
+
+		client, cleanup := setupMockServer(t, handler)
+		defer cleanup()
+
+		// Use a short timeout for testing
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+
+		var response taskResponse
+		err := client.doRequestWithRetry(ctx, http.MethodGet, "/tasks/IEAAJTASKID", nil, &response)
+		if err != nil {
+			t.Fatalf("doRequestWithRetry error = %v", err)
+		}
+
+		if attempts != 2 {
+			t.Errorf("expected 2 attempts, got %d", attempts)
+		}
+
+		if len(response.Data) != 1 {
+			t.Errorf("expected 1 task, got %d", len(response.Data))
+		}
+	})
+
+	t.Run("non-retryable error fails immediately", func(t *testing.T) {
+		attempts := 0
+		handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			attempts++
+			w.WriteHeader(http.StatusUnauthorized)
+		})
+
+		client, cleanup := setupMockServer(t, handler)
+		defer cleanup()
+
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+
+		var response taskResponse
+		err := client.doRequestWithRetry(ctx, http.MethodGet, "/tasks/IEAAJTASKID", nil, &response)
+		if err == nil {
+			t.Error("expected error for unauthorized")
+		}
+
+		if attempts != 1 {
+			t.Errorf("expected 1 attempt for non-retryable error, got %d", attempts)
+		}
+	})
+
+	t.Run("max retries exceeded", func(t *testing.T) {
+		handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(http.StatusTooManyRequests)
+		})
+
+		client, cleanup := setupMockServer(t, handler)
+		defer cleanup()
+
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+
+		var response taskResponse
+		err := client.doRequestWithRetry(ctx, http.MethodGet, "/tasks/IEAAJTASKID", nil, &response)
+		if err == nil {
+			t.Error("expected error after max retries")
+		}
+	})
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// GetTasksInFolder tests
+// ──────────────────────────────────────────────────────────────────────────────
+
+func TestGetTasksInFolder(t *testing.T) {
+	t.Run("success", func(t *testing.T) {
+		handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if r.URL.Path != "/folders/IEAAJFOLDERID/tasks" {
+				t.Errorf("unexpected path: %s", r.URL.Path)
+			}
+
+			response := taskResponse{
+				Data: []Task{
+					{
+						ID:          "IEAAJTASK1",
+						Title:       "Task 1",
+						Description: "Description 1",
+						Status:      "Active",
+						Priority:    "Normal",
+						Permalink:   "https://www.wrike.com/open.htm?id=1234567890",
+					},
+					{
+						ID:          "IEAAJTASK2",
+						Title:       "Task 2",
+						Description: "Description 2",
+						Status:      "Completed",
+						Priority:    "High",
+						Permalink:   "https://www.wrike.com/open.htm?id=1234567891",
+					},
+				},
+			}
+			_ = json.NewEncoder(w).Encode(response)
+		})
+
+		client, cleanup := setupMockServer(t, handler)
+		defer cleanup()
+
+		tasks, err := client.GetTasksInFolder(context.Background(), "IEAAJFOLDERID")
+		if err != nil {
+			t.Fatalf("GetTasksInFolder error = %v", err)
+		}
+
+		if len(tasks) != 2 {
+			t.Errorf("got %d tasks, want 2", len(tasks))
+		}
+
+		if tasks[0].Title != "Task 1" {
+			t.Errorf("tasks[0].Title = %q, want %q", tasks[0].Title, "Task 1")
+		}
+	})
+
+	t.Run("API error", func(t *testing.T) {
+		handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(http.StatusNotFound)
+		})
+
+		client, cleanup := setupMockServer(t, handler)
+		defer cleanup()
+
+		_, err := client.GetTasksInFolder(context.Background(), "IEAAJFOLDERID")
+		if err == nil {
+			t.Error("expected error for not found")
+		}
+	})
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// GetTasksInSpace tests
+// ──────────────────────────────────────────────────────────────────────────────
+
+func TestGetTasksInSpace(t *testing.T) {
+	t.Run("success", func(t *testing.T) {
+		handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if r.URL.Path != "/spaces/IEAAJSPACEID/tasks" {
+				t.Errorf("unexpected path: %s", r.URL.Path)
+			}
+
+			response := taskResponse{
+				Data: []Task{
+					{
+						ID:          "IEAAJTASK1",
+						Title:       "Space Task 1",
+						Description: "Description 1",
+						Status:      "Active",
+						Priority:    "Normal",
+						Permalink:   "https://www.wrike.com/open.htm?id=1234567890",
+					},
+				},
+			}
+			_ = json.NewEncoder(w).Encode(response)
+		})
+
+		client, cleanup := setupMockServer(t, handler)
+		defer cleanup()
+
+		tasks, err := client.GetTasksInSpace(context.Background(), "IEAAJSPACEID")
+		if err != nil {
+			t.Fatalf("GetTasksInSpace error = %v", err)
+		}
+
+		if len(tasks) != 1 {
+			t.Errorf("got %d tasks, want 1", len(tasks))
+		}
+
+		if tasks[0].Title != "Space Task 1" {
+			t.Errorf("tasks[0].Title = %q, want %q", tasks[0].Title, "Space Task 1")
+		}
+	})
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// GetComments with pagination tests
+// ──────────────────────────────────────────────────────────────────────────────
+
+func TestGetCommentsPagination(t *testing.T) {
+	t.Run("paginated comments", func(t *testing.T) {
+		callCount := 0
+		handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			callCount++
+			if callCount == 1 {
+				// First page with nextPage link
+				response := commentsResponse{
+					Data: []Comment{
+						{
+							ID:          "IEAAJCOMMENT1",
+							Text:        "First comment",
+							AuthorID:    "USER1",
+							AuthorName:  "Author One",
+							CreatedDate: time.Now(),
+							UpdatedDate: time.Now(),
+						},
+					},
+					NextPage: "/tasks/IEAAJTASKID/comments?page=2",
+				}
+				_ = json.NewEncoder(w).Encode(response)
+			} else {
+				// Second page without nextPage
+				response := commentsResponse{
+					Data: []Comment{
+						{
+							ID:          "IEAAJCOMMENT2",
+							Text:        "Second comment",
+							AuthorID:    "USER2",
+							AuthorName:  "Author Two",
+							CreatedDate: time.Now(),
+							UpdatedDate: time.Now(),
+						},
+					},
+				}
+				_ = json.NewEncoder(w).Encode(response)
+			}
+		})
+
+		client, cleanup := setupMockServer(t, handler)
+		defer cleanup()
+
+		comments, err := client.GetComments(context.Background(), "IEAAJTASKID")
+		if err != nil {
+			t.Fatalf("GetComments error = %v", err)
+		}
+
+		if callCount != 2 {
+			t.Errorf("expected 2 API calls for pagination, got %d", callCount)
+		}
+
+		if len(comments) != 2 {
+			t.Errorf("got %d comments, want 2", len(comments))
+		}
+
+		if comments[0].ID != "IEAAJCOMMENT1" {
+			t.Errorf("comments[0].ID = %q, want %q", comments[0].ID, "IEAAJCOMMENT1")
+		}
+
+		if comments[1].ID != "IEAAJCOMMENT2" {
+			t.Errorf("comments[1].ID = %q, want %q", comments[1].ID, "IEAAJCOMMENT2")
+		}
+	})
+
+	t.Run("single page comments", func(t *testing.T) {
+		handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			response := commentsResponse{
+				Data: []Comment{
+					{
+						ID:          "IEAAJCOMMENT1",
+						Text:        "Only comment",
+						AuthorID:    "USER1",
+						AuthorName:  "Author One",
+						CreatedDate: time.Now(),
+						UpdatedDate: time.Now(),
+					},
+				},
+				// No nextPage - this is the last page
+			}
+			_ = json.NewEncoder(w).Encode(response)
+		})
+
+		client, cleanup := setupMockServer(t, handler)
+		defer cleanup()
+
+		comments, err := client.GetComments(context.Background(), "IEAAJTASKID")
+		if err != nil {
+			t.Fatalf("GetComments error = %v", err)
+		}
+
+		if len(comments) != 1 {
+			t.Errorf("got %d comments, want 1", len(comments))
 		}
 	})
 }
