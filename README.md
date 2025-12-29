@@ -639,10 +639,11 @@ If mehr is installed in a system directory like `/usr/local/bin`, you may need t
 
 These flags are available for all commands:
 
-| Flag            | Description                           | Default |
-|-----------------|---------------------------------------|---------|
-| `-v, --verbose` | Enable verbose output (debug logging) | `false` |
-| `--no-color`    | Disable color output                  | `false` |
+| Flag            | Description                                 | Default |
+|-----------------|---------------------------------------------|---------|
+| `-v, --verbose` | Enable verbose output (debug logging)       | `false` |
+| `-q, --quiet`   | Suppress non-essential output               | `false` |
+| `--no-color`    | Disable color output                        | `false` |
 
 ## Configuration
 
