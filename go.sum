@@ -41,6 +41,8 @@ github.com/xanzy/go-gitlab v0.115.0/go.mod h1:5XCDtM7AM6WMKmfDdOiEpyRWUqui2iS9IL
 gitlab.com/gitlab-org/api/client-go v1.10.0 h1:VlB9gXQdG6w643lH53VduUHVnCWQG5Ty86VbXnyi70A=
 gitlab.com/gitlab-org/api/client-go v1.10.0/go.mod h1:U3QKvjbT1J1FrgLsA7w/XlhoBIendUqB4o3/Ht3UhEQ=
 go.yaml.in/yaml/v3 v3.0.4/go.mod h1:DhzuOOF2ATzADvBadXxruRBLzYTpT36CKvDb3+aBEFg=
+golang.org/x/mod v0.31.0 h1:HaW9xtz0+kOcWKwli0ZXy79Ix+UW/vOfmWI5QVd2tgI=
+golang.org/x/mod v0.31.0/go.mod h1:43JraMp9cGx1Rx3AqioxrbrhNsLl2l/iNAvuBkrezpg=
 golang.org/x/oauth2 v0.34.0 h1:hqK/t4AKgbqWkdkcAeI8XLmbK+4m4G5YeQRrmiotGlw=
 golang.org/x/oauth2 v0.34.0/go.mod h1:lzm5WQJQwKZ3nwavOZ3IS5Aulzxi68dUSgRHujetwEA=
 golang.org/x/sys v0.20.0 h1:Od9JTbYCk261bKm4M/mw7AklTlFYIa0bIp9BgSm1S8Y=
