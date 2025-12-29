@@ -10,15 +10,15 @@ import (
 )
 
 var (
-	deleteYes        bool
-	deleteKeepBranch bool
-	deleteKeepWork   bool
+	abandonYes        bool
+	abandonKeepBranch bool
+	abandonKeepWork   bool
 )
 
-var deleteCmd = &cobra.Command{
-	Use:   "delete",
-	Short: "Delete the current task without merging",
-	Long: `Delete the current task, its branch, and work directory without merging changes.
+var abandonCmd = &cobra.Command{
+	Use:   "abandon",
+	Short: "Abandon the current task without merging",
+	Long: `Abandon the current task, its branch, and work directory without merging changes.
 
 This is useful when you want to abandon a task completely, such as when:
 - The approach didn't work out
@@ -31,23 +31,23 @@ By default, this command:
 - Clears the active task reference
 
 Examples:
-  mehr delete                 # Delete with confirmation
-  mehr delete --yes           # Delete without confirmation
-  mehr delete -y              # Same as --yes
-  mehr delete --keep-branch   # Delete task but keep the git branch
-  mehr delete --keep-work     # Delete branch but keep the work directory`,
-	RunE: runDelete,
+  mehr abandon                 # Abandon with confirmation
+  mehr abandon --yes           # Abandon without confirmation
+  mehr abandon -y              # Same as --yes
+  mehr abandon --keep-branch   # Abandon task but keep the git branch
+  mehr abandon --keep-work     # Abandon branch but keep the work directory`,
+	RunE: runAbandon,
 }
 
 func init() {
-	rootCmd.AddCommand(deleteCmd)
+	rootCmd.AddCommand(abandonCmd)
 
-	deleteCmd.Flags().BoolVarP(&deleteYes, "yes", "y", false, "Skip confirmation prompt")
-	deleteCmd.Flags().BoolVar(&deleteKeepBranch, "keep-branch", false, "Keep the git branch")
-	deleteCmd.Flags().BoolVar(&deleteKeepWork, "keep-work", false, "Keep the work directory")
+	abandonCmd.Flags().BoolVarP(&abandonYes, "yes", "y", false, "Skip confirmation prompt")
+	abandonCmd.Flags().BoolVar(&abandonKeepBranch, "keep-branch", false, "Keep the git branch")
+	abandonCmd.Flags().BoolVar(&abandonKeepWork, "keep-work", false, "Keep the work directory")
 }
 
-func runDelete(cmd *cobra.Command, args []string) error {
+func runAbandon(cmd *cobra.Command, args []string) error {
 	ctx := cmd.Context()
 
 	// Initialize conductor with standard providers and agents
@@ -69,7 +69,7 @@ func runDelete(cmd *cobra.Command, args []string) error {
 	}
 
 	// Build confirmation prompt
-	promptLines := fmt.Sprintf("About to delete task: %s", status.TaskID)
+	promptLines := fmt.Sprintf("About to abandon task: %s", status.TaskID)
 	if status.Title != "" {
 		promptLines += fmt.Sprintf("\n  Title: %s", status.Title)
 	}
@@ -79,12 +79,12 @@ func runDelete(cmd *cobra.Command, args []string) error {
 	promptLines += fmt.Sprintf("\n  State: %s", status.State)
 	promptLines += fmt.Sprintf("\n  Specifications: %d", status.Specifications)
 
-	if !deleteKeepBranch && status.Branch != "" {
+	if !abandonKeepBranch && status.Branch != "" {
 		promptLines += "\n\nWARNING: This will delete the git branch and all uncommitted changes!"
 	}
 
 	// Confirmation prompt (unless --yes or --force)
-	confirmed, err := confirmAction(promptLines, deleteYes)
+	confirmed, err := confirmAction(promptLines, abandonYes)
 	if err != nil {
 		return err
 	}
@@ -95,16 +95,16 @@ func runDelete(cmd *cobra.Command, args []string) error {
 
 	// Build delete options
 	opts := conductor.DeleteOptions{
-		Force:       deleteYes,
-		KeepBranch:  deleteKeepBranch,
-		KeepWorkDir: deleteKeepWork,
+		Force:       abandonYes,
+		KeepBranch:  abandonKeepBranch,
+		KeepWorkDir: abandonKeepWork,
 	}
 
 	// Perform delete
 	if err := cond.Delete(ctx, opts); err != nil {
-		return fmt.Errorf("delete: %w", err)
+		return fmt.Errorf("abandon: %w", err)
 	}
 
-	fmt.Println(display.SuccessMsg("Task deleted successfully"))
+	fmt.Println(display.SuccessMsg("Task abandoned successfully"))
 	return nil
 }

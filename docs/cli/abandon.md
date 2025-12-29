@@ -1,16 +1,16 @@
-# mehr delete
+# mehr abandon
 
-Delete the current task without merging.
+Abandon the current task without merging.
 
 ## Synopsis
 
 ```bash
-mehr delete [flags]
+mehr abandon [flags]
 ```
 
 ## Description
 
-The `delete` command abandons the current task completely. It removes:
+The `abandon` command discards the current task completely. It removes:
 
 - The task branch (if created)
 - The work directory
@@ -28,10 +28,10 @@ Use this when you want to discard work without merging.
 
 ## Examples
 
-### Delete with Confirmation
+### Abandon with Confirmation
 
 ```bash
-mehr delete
+mehr abandon
 ```
 
 Output:
@@ -49,17 +49,17 @@ This will delete:
 
 Are you sure? [y/N] y
 
-Deleting task...
+Abandoning task...
   Switched to: main
   Branch deleted: task/a1b2c3d4
   Work directory removed
-Task deleted.
+Task abandoned.
 ```
 
 ### Skip Confirmation
 
 ```bash
-mehr delete --yes
+mehr abandon --yes
 ```
 
 Skip the confirmation prompt.
@@ -67,7 +67,7 @@ Skip the confirmation prompt.
 ### Keep Branch
 
 ```bash
-mehr delete --keep-branch
+mehr abandon --keep-branch
 ```
 
 Only remove the work directory. Branch remains for manual inspection.
@@ -75,7 +75,7 @@ Only remove the work directory. Branch remains for manual inspection.
 ### Keep Work Directory
 
 ```bash
-mehr delete --keep-work
+mehr abandon --keep-work
 ```
 
 Only delete the branch. Work directory remains for reference.
@@ -101,7 +101,7 @@ Branch preserved, everything else deleted.
 
 Branch deleted, work directory preserved.
 
-## When to Delete
+## When to Abandon
 
 - The approach didn't work out
 - Requirements changed significantly
@@ -110,14 +110,14 @@ Branch deleted, work directory preserved.
 
 ## Starting Fresh
 
-After deletion, start a new task:
+After abandoning, start a new task:
 
 ```bash
-mehr delete --yes
+mehr abandon --yes
 mehr start task.md  # Fresh start
 ```
 
-## Recovering Deleted Work
+## Recovering Abandoned Work
 
 ### If Branch Still Exists
 
@@ -144,7 +144,7 @@ Once deleted, work directory contents cannot be recovered through Mehrhof. Use f
 ### No Active Task
 
 ```
-Error: No active task to delete
+Error: No active task to abandon
 Start a task first with 'mehr start'
 ```
 
@@ -166,4 +166,4 @@ This appears to be a protected branch.
 
 - [finish](cli/finish.md) - Complete with merge
 - [start](cli/start.md) - Begin a new task
-- [undo-redo](cli/undo-redo.md) - Revert instead of delete
+- [undo-redo](cli/undo-redo.md) - Revert instead of abandon
