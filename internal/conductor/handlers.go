@@ -17,13 +17,29 @@ import (
 // ErrPendingQuestion is returned when the agent asks a question
 var ErrPendingQuestion = fmt.Errorf("agent has a pending question")
 
+// ensureDirExists creates the directory for the given file path if it doesn't exist.
+// This is a helper to avoid code duplication when writing files.
+func ensureDirExists(path string) error {
+	dir := filepath.Dir(path)
+	if dir == "" || dir == "." {
+		return nil
+	}
+	return os.MkdirAll(dir, 0o755)
+}
+
 // createCheckpointIfNeeded creates a git checkpoint if there are changes
 func (c *Conductor) createCheckpointIfNeeded(taskID, message string) *events.Event {
 	if c.git == nil || !c.activeTask.UseGit {
 		return nil
 	}
 
-	hasChanges, _ := c.git.HasChanges()
+	hasChanges, err := c.git.HasChanges()
+	if err != nil {
+		// If we can't determine changes, log but continue (treat as no changes)
+		// This allows checkpoint creation to fail gracefully
+		c.publishProgress(fmt.Sprintf("Warning: could not check git changes: %v", err), 0)
+		return nil
+	}
 	if !hasChanges {
 		return nil
 	}
@@ -82,7 +98,8 @@ func (c *Conductor) RunPlanning(ctx context.Context) error {
 
 	// NOTE: Errors from workspace reads below are ignored intentionally.
 	// Missing notes/specs are valid states (new task), so empty results are acceptable.
-	notes, _ := c.workspace.ReadNotes(taskID)
+	var notes string
+	notes, _ = c.workspace.ReadNotes(taskID)
 
 	// Get existing specifications (for iterative planning)
 	existingSpecifications, _ := c.workspace.GatherSpecificationsContent(taskID)
@@ -103,7 +120,7 @@ func (c *Conductor) RunPlanning(ctx context.Context) error {
 				pendingContext = pq.ContextSummary
 			}
 		}
-		// Clear the pending question (answer should be in notes via talk command)
+		// Clear the pending question (answer should be in notes via chat command)
 		_ = c.workspace.ClearPendingQuestion(taskID)
 	}
 
@@ -237,7 +254,7 @@ func (c *Conductor) RunImplementation(ctx context.Context) error {
 		return fmt.Errorf("get source content: %w", err)
 	}
 
-	// Get notes
+	// Get notes (missing notes is acceptable, returns empty string)
 	notes, _ := c.workspace.ReadNotes(taskID)
 
 	// Build implementation prompt with latest spec
@@ -408,9 +425,8 @@ func applyFiles(ctx context.Context, c *Conductor, files []agent.FileChange) err
 		switch fc.Operation {
 		case agent.FileOpCreate:
 			// Ensure directory exists
-			dir := filepath.Dir(path)
-			if err := os.MkdirAll(dir, 0o755); err != nil {
-				return fmt.Errorf("create directory %s: %w", dir, err)
+			if err := ensureDirExists(path); err != nil {
+				return fmt.Errorf("create directory for %s: %w", path, err)
 			}
 
 			// Write file
@@ -429,9 +445,8 @@ func applyFiles(ctx context.Context, c *Conductor, files []agent.FileChange) err
 
 		case agent.FileOpUpdate:
 			// Ensure directory exists
-			dir := filepath.Dir(path)
-			if err := os.MkdirAll(dir, 0o755); err != nil {
-				return fmt.Errorf("create directory %s: %w", dir, err)
+			if err := ensureDirExists(path); err != nil {
+				return fmt.Errorf("create directory for %s: %w", path, err)
 			}
 
 			// Write file

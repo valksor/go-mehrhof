@@ -101,7 +101,7 @@ func (c *Conductor) RunQuality(ctx context.Context, opts QualityOptions) (*Quali
 	if err != nil {
 		result.Passed = false
 		if !opts.AllowFailure {
-			return result, fmt.Errorf("quality check failed: %w\n\nOutput:\n%s", err, result.Output)
+			return result, fmt.Errorf("quality check failed\n\nOutput:\n%s\n\nTo fix:\n  1. Review the output above for specific issues\n  2. Fix the issues and run 'mehr implement' again\n  3. Or use 'mehr finish --skip-quality' to proceed", result.Output)
 		}
 	}
 

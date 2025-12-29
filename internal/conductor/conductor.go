@@ -80,6 +80,33 @@ func New(opts ...Option) (*Conductor, error) {
 	return c, nil
 }
 
+// applyAgentEnv applies environment variables to an agent instance.
+// It resolves any ${VAR} references in the env map and applies each key-value pair.
+// This is a helper to avoid code duplication across agent resolution logic.
+func applyAgentEnv(agentInst agent.Agent, env map[string]string) agent.Agent {
+	if len(env) == 0 {
+		return agentInst
+	}
+	resolvedEnv := agent.ResolveEnvReferences(env)
+	for k, v := range resolvedEnv {
+		agentInst = agentInst.WithEnv(k, v)
+	}
+	return agentInst
+}
+
+// readOptionalWorkspaceData reads optional workspace files, returning empty values
+// for any that don't exist. This is used for context gathering where missing files
+// are not errors.
+func (c *Conductor) readOptionalWorkspaceData(taskID string) (
+	sourceContent string, notes string, specs string, pendingQ *storage.PendingQuestion,
+) {
+	sourceContent, _ = c.workspace.GetSourceContent(taskID)
+	notes, _ = c.workspace.ReadNotes(taskID)
+	specs, _ = c.workspace.GatherSpecificationsContent(taskID)
+	pendingQ, _ = c.workspace.LoadPendingQuestion(taskID)
+	return sourceContent, notes, specs, pendingQ
+}
+
 // Initialize sets up the conductor for a repository
 func (c *Conductor) Initialize(ctx context.Context) error {
 	c.mu.Lock()
@@ -190,12 +217,7 @@ func (c *Conductor) Initialize(ctx context.Context) error {
 			}
 		} else {
 			// Re-apply inline env vars if stored
-			if len(c.taskWork.Agent.InlineEnv) > 0 {
-				resolvedEnv := agent.ResolveEnvReferences(c.taskWork.Agent.InlineEnv)
-				for k, v := range resolvedEnv {
-					agentInst = agentInst.WithEnv(k, v)
-				}
-			}
+			agentInst = applyAgentEnv(agentInst, c.taskWork.Agent.InlineEnv)
 			// Re-apply args if stored
 			if len(c.taskWork.Agent.Args) > 0 {
 				agentInst = agentInst.WithArgs(c.taskWork.Agent.Args...)
@@ -232,7 +254,7 @@ func (c *Conductor) Start(ctx context.Context, reference string) error {
 	// Reject starting new tasks from within a worktree
 	if c.git != nil && c.git.IsWorktree() {
 		mainRepo, _ := c.git.GetMainWorktreePath()
-		return fmt.Errorf("cannot start new task from inside a worktree\nRun this command from the main repository: %s", mainRepo)
+		return fmt.Errorf("this command must be run from the main repository; you are currently in a worktree, return to the main repository first: cd %s", mainRepo)
 	}
 
 	// Check for existing active task (only applies in main repo)
@@ -621,10 +643,7 @@ func (c *Conductor) Talk(ctx context.Context, message string, opts TalkOptions) 
 
 	// Build context-aware prompt for talk mode
 	// This ensures Claude has full awareness of the task when answering
-	sourceContent, _ := c.workspace.GetSourceContent(taskID)
-	notes, _ := c.workspace.ReadNotes(taskID)
-	specs, _ := c.workspace.GatherSpecificationsContent(taskID)
-	pendingQ, _ := c.workspace.LoadPendingQuestion(taskID)
+	sourceContent, notes, specs, pendingQ := c.readOptionalWorkspaceData(taskID)
 
 	prompt := buildTalkPrompt(c.taskWork.Metadata.Title, sourceContent, notes, specs, pendingQ, message)
 
@@ -1522,13 +1541,7 @@ func (c *Conductor) resolveAgentForTask() (agent.Agent, string, error) {
 
 	// Apply inline env vars and args from task if source is "task"
 	if source == "task" && c.taskAgentConfig != nil {
-		if len(c.taskAgentConfig.Env) > 0 {
-			// Resolve env references (${VAR} syntax)
-			resolvedEnv := agent.ResolveEnvReferences(c.taskAgentConfig.Env)
-			for k, v := range resolvedEnv {
-				agentInst = agentInst.WithEnv(k, v)
-			}
-		}
+		agentInst = applyAgentEnv(agentInst, c.taskAgentConfig.Env)
 		if len(c.taskAgentConfig.Args) > 0 {
 			agentInst = agentInst.WithArgs(c.taskAgentConfig.Args...)
 		}
@@ -1617,12 +1630,7 @@ func (c *Conductor) resolveAgentForStep(step workflow.Step) (*AgentResolution, e
 	}
 
 	// Apply inline env vars
-	if len(inlineEnv) > 0 {
-		resolvedEnv := agent.ResolveEnvReferences(inlineEnv)
-		for k, v := range resolvedEnv {
-			agentInst = agentInst.WithEnv(k, v)
-		}
-	}
+	agentInst = applyAgentEnv(agentInst, inlineEnv)
 
 	// Apply args
 	if len(args) > 0 {
@@ -1650,12 +1658,7 @@ func (c *Conductor) GetAgentForStep(step workflow.Step) (agent.Agent, error) {
 			agentInst, err := c.agents.Get(stepInfo.Name)
 			if err == nil {
 				// Re-apply inline env
-				if len(stepInfo.InlineEnv) > 0 {
-					resolvedEnv := agent.ResolveEnvReferences(stepInfo.InlineEnv)
-					for k, v := range resolvedEnv {
-						agentInst = agentInst.WithEnv(k, v)
-					}
-				}
+				agentInst = applyAgentEnv(agentInst, stepInfo.InlineEnv)
 				// Re-apply args
 				if len(stepInfo.Args) > 0 {
 					agentInst = agentInst.WithArgs(stepInfo.Args...)
