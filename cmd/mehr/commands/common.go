@@ -14,7 +14,10 @@ import (
 	"github.com/valksor/go-mehrhof/internal/provider/directory"
 	"github.com/valksor/go-mehrhof/internal/provider/file"
 	"github.com/valksor/go-mehrhof/internal/provider/github"
+	"github.com/valksor/go-mehrhof/internal/provider/linear"
+	"github.com/valksor/go-mehrhof/internal/provider/notion"
 	"github.com/valksor/go-mehrhof/internal/provider/wrike"
+	"github.com/valksor/go-mehrhof/internal/provider/youtrack"
 )
 
 // dedupStdout is the shared deduplicating writer for verbose output.
@@ -42,11 +45,14 @@ func initializeConductor(ctx context.Context, opts ...conductor.Option) (*conduc
 		return nil, fmt.Errorf("create conductor: %w", err)
 	}
 
-	// Register standard providers
+		// Register standard providers
 	file.Register(cond.GetProviderRegistry())
 	directory.Register(cond.GetProviderRegistry())
 	github.Register(cond.GetProviderRegistry())
 	wrike.Register(cond.GetProviderRegistry())
+	linear.Register(cond.GetProviderRegistry())
+	notion.Register(cond.GetProviderRegistry())
+	youtrack.Register(cond.GetProviderRegistry())
 
 	// Register standard agents
 	if err := claude.Register(cond.GetAgentRegistry()); err != nil {
