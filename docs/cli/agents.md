@@ -17,6 +17,7 @@ mehr agents list
 ```
 NAME      TYPE      EXTENDS  AVAILABLE  DESCRIPTION
 claude    built-in  -        yes        -
+codex     built-in  -        no         -
 glm       alias     claude   yes        Claude with GLM API key
 glm-fast  alias     glm      yes        GLM with lower token limit
 ```

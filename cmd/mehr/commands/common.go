@@ -12,6 +12,7 @@ import (
 
 	"github.com/valksor/go-mehrhof/internal/agent"
 	"github.com/valksor/go-mehrhof/internal/agent/claude"
+	"github.com/valksor/go-mehrhof/internal/agent/codex"
 	"github.com/valksor/go-mehrhof/internal/conductor"
 	"github.com/valksor/go-mehrhof/internal/display"
 	"github.com/valksor/go-mehrhof/internal/events"
@@ -69,6 +70,9 @@ func initializeConductor(ctx context.Context, opts ...conductor.Option) (*conduc
 	// Register standard agents
 	if err := claude.Register(cond.GetAgentRegistry()); err != nil {
 		return nil, fmt.Errorf("register claude agent: %w", err)
+	}
+	if err := codex.Register(cond.GetAgentRegistry()); err != nil {
+		return nil, fmt.Errorf("register codex agent: %w", err)
 	}
 
 	// Initialize the conductor (loads workspace, detects agent, etc.)

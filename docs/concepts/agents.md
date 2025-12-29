@@ -1,13 +1,13 @@
 # AI Agents
 
-Mehrhof orchestrates AI agents to help with planning and implementation. It delegates AI operations to external CLI tools - primarily Claude CLI.
+Mehrhof orchestrates AI agents to help with planning and implementation. It delegates AI operations to external CLI tools.
 
 ## How It Works
 
-Mehrhof doesn't connect to AI APIs directly. Instead, it calls Claude CLI as a subprocess. Whatever configuration you have for Claude will be used automatically.
+Mehrhof doesn't connect to AI APIs directly. Instead, it calls agent CLIs as subprocesses. Whatever configuration you have for the agent will be used automatically.
 
 ```
-User → mehr plan → Claude CLI → AI Response → Mehrhof processes output
+User → mehr plan → Agent CLI → AI Response → Mehrhof processes output
 ```
 
 ## Available Agents
@@ -24,6 +24,20 @@ Claude is the default AI agent. Mehrhof calls the `claude` CLI command.
 ```bash
 # Verify Claude works
 claude --version
+```
+
+### Codex
+
+Codex is an alternative AI agent. Mehrhof calls the `codex` CLI command.
+
+**Prerequisites:**
+
+- Codex CLI installed and configured
+- Your Codex settings (API keys, model preferences) already set up
+
+```bash
+# Verify Codex works
+codex --version
 ```
 
 ## Selecting an Agent
@@ -48,6 +62,7 @@ Output:
 ```
 NAME      TYPE      EXTENDS  AVAILABLE  DESCRIPTION
 claude    built-in  -        yes        -
+codex     built-in  -        no         -
 glm       alias     claude   yes        Claude with GLM API key
 ```
 
