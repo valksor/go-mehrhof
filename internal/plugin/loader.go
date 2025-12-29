@@ -30,6 +30,10 @@ type Process struct {
 	stopping bool
 	done     chan struct{}
 	err      error
+
+	// ctx and cancel allow graceful shutdown of goroutines
+	ctx    context.Context
+	cancel context.CancelFunc
 }
 
 // Loader manages plugin process lifecycle.
@@ -143,6 +147,9 @@ func startProcess(ctx context.Context, manifest *Manifest) (*Process, error) {
 		return nil, fmt.Errorf("create stderr pipe: %w", err)
 	}
 
+	// Create a context for this process that can be cancelled on shutdown
+	procCtx, procCancel := context.WithCancel(ctx)
+
 	proc := &Process{
 		manifest: manifest,
 		cmd:      cmd,
@@ -151,9 +158,12 @@ func startProcess(ctx context.Context, manifest *Manifest) (*Process, error) {
 		stderr:   stderr,
 		pending:  make(map[int64]chan *Response),
 		done:     make(chan struct{}),
+		ctx:      procCtx,
+		cancel:   procCancel,
 	}
 
 	if err := cmd.Start(); err != nil {
+		procCancel()
 		return nil, fmt.Errorf("start plugin %s: %w", manifest.Name, err)
 	}
 
@@ -173,6 +183,25 @@ func (p *Process) readResponses() {
 	defer close(p.done)
 
 	for {
+		// Check if context was cancelled (e.g., during Stop)
+		select {
+		case <-p.ctx.Done():
+			// Context cancelled, exit gracefully
+			p.mu.Lock()
+			for id, ch := range p.pending {
+				close(ch)
+				delete(p.pending, id)
+			}
+			if p.streamCh != nil {
+				close(p.streamCh)
+				p.streamCh = nil
+			}
+			p.mu.Unlock()
+			return
+		default:
+			// Continue reading
+		}
+
 		line, err := p.stdout.ReadBytes('\n')
 		if err != nil {
 			if err != io.EOF {
@@ -355,6 +384,11 @@ func (p *Process) Stop() error {
 	p.stopping = true
 	p.mu.Unlock()
 
+	// Signal goroutines to stop (unblocks ReadBytes)
+	if p.cancel != nil {
+		p.cancel()
+	}
+
 	// Try to send shutdown request (ignore errors)
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
@@ -363,16 +397,19 @@ func (p *Process) Stop() error {
 	// Close stdin to signal EOF
 	_ = p.stdin.Close()
 
-	// Wait for process with timeout
+	// Wait for process with timeout - use timer to avoid resource leak
 	done := make(chan error, 1)
 	go func() {
 		done <- p.cmd.Wait()
 	}()
 
+	timer := time.NewTimer(10 * time.Second)
+	defer timer.Stop()
+
 	select {
 	case err := <-done:
 		return err
-	case <-time.After(10 * time.Second):
+	case <-timer.C:
 		// Force kill
 		_ = p.cmd.Process.Kill()
 		return <-done

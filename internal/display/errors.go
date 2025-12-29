@@ -3,6 +3,9 @@ package display
 import (
 	"fmt"
 	"strings"
+
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 )
 
 // Suggestion represents a suggested action for error recovery.
@@ -68,7 +71,7 @@ func NoSpecificationsError() string {
 		"No specifications to implement",
 		[]Suggestion{
 			{Command: "mehr plan", Description: "Create implementation specifications"},
-			{Command: "mehr talk", Description: "Discuss the task with the agent"},
+			{Command: "mehr chat", Description: "Discuss the task with the agent"},
 		},
 	)
 }
@@ -129,8 +132,11 @@ func ProviderError(provider, message string) string {
 		)
 	}
 
+	// Flatten the error message - remove the nested "provider error" prefix
+	errorMsg := fmt.Sprintf("Failed to fetch from %s: %s", cases.Title(language.English).String(provider), message)
+
 	return ErrorWithSuggestions(
-		fmt.Sprintf("Provider '%s' error: %s", provider, message),
+		errorMsg,
 		suggestions,
 	)
 }
