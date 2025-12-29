@@ -21,6 +21,7 @@ type TaskWork struct {
 	Source   SourceInfo   `yaml:"source"`
 	Git      GitInfo      `yaml:"git,omitempty"`
 	Agent    AgentInfo    `yaml:"agent,omitempty"`
+	Costs    CostStats    `yaml:"costs,omitempty"`
 }
 
 // WorkMetadata holds task identification
@@ -138,6 +139,24 @@ type UsageInfo struct {
 	OutputTokens int     `yaml:"output_tokens"`
 	CachedTokens int     `yaml:"cached_tokens,omitempty"`
 	CostUSD      float64 `yaml:"cost_usd,omitempty"`
+}
+
+// CostStats tracks cumulative token/cost usage across all workflow steps
+type CostStats struct {
+	TotalInputTokens  int                      `yaml:"total_input_tokens"`
+	TotalOutputTokens int                      `yaml:"total_output_tokens"`
+	TotalCachedTokens int                      `yaml:"total_cached_tokens,omitempty"`
+	TotalCostUSD      float64                  `yaml:"total_cost_usd"`
+	ByStep            map[string]StepCostStats `yaml:"by_step,omitempty"`
+}
+
+// StepCostStats tracks usage for a specific workflow step
+type StepCostStats struct {
+	InputTokens  int     `yaml:"input_tokens"`
+	OutputTokens int     `yaml:"output_tokens"`
+	CachedTokens int     `yaml:"cached_tokens,omitempty"`
+	CostUSD      float64 `yaml:"cost_usd"`
+	Calls        int     `yaml:"calls"` // Number of agent calls in this step
 }
 
 // Exchange represents a single message in a session

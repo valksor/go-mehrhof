@@ -570,6 +570,36 @@ func (w *Workspace) SaveWork(work *TaskWork) error {
 	return nil
 }
 
+// AddUsage adds token usage stats to a task's work and saves it
+func (w *Workspace) AddUsage(taskID, step string, inputTokens, outputTokens, cachedTokens int, costUSD float64) error {
+	work, err := w.LoadWork(taskID)
+	if err != nil {
+		return fmt.Errorf("load work: %w", err)
+	}
+
+	// Initialize ByStep map if needed
+	if work.Costs.ByStep == nil {
+		work.Costs.ByStep = make(map[string]StepCostStats)
+	}
+
+	// Update totals
+	work.Costs.TotalInputTokens += inputTokens
+	work.Costs.TotalOutputTokens += outputTokens
+	work.Costs.TotalCachedTokens += cachedTokens
+	work.Costs.TotalCostUSD += costUSD
+
+	// Update step stats
+	stepStats := work.Costs.ByStep[step]
+	stepStats.InputTokens += inputTokens
+	stepStats.OutputTokens += outputTokens
+	stepStats.CachedTokens += cachedTokens
+	stepStats.CostUSD += costUSD
+	stepStats.Calls++
+	work.Costs.ByStep[step] = stepStats
+
+	return w.SaveWork(work)
+}
+
 // DeleteWork removes a work directory
 func (w *Workspace) DeleteWork(taskID string) error {
 	workPath := w.WorkPath(taskID)
