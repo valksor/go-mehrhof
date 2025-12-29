@@ -18,17 +18,19 @@ var statusAll bool
 
 var statusCmd = &cobra.Command{
 	Use:   "status",
-	Short: "Show the current state of active task(s)",
-	Long: `Show the current state of the active task(s).
+	Short: "Show detailed task state (specs, checkpoints, sessions)",
+	Long: `Show a detailed read-only view of the active task(s).
 
-This is a read-only view of:
+Displays comprehensive information about:
 - Task ID, title, state, and source reference
 - Specifications and their completion status
 - Git checkpoints for undo/redo
-- Session and token usage
+- Session history and token usage
 
-For context-aware next action suggestions, use 'mehr guide'.
-To auto-execute the next workflow step, use 'mehr continue --auto'.
+DIFFERENCES FROM OTHER COMMANDS:
+- 'mehr guide' - Quick, lightweight next-action suggestions
+- 'mehr continue' - Resume workflow with optional auto-execution
+- 'mehr status' - Detailed state inspection (this command)
 
 Examples:
   mehr status              # Show active task state

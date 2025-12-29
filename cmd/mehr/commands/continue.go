@@ -14,19 +14,17 @@ var continueAuto bool // Auto-execute the next logical step
 
 var continueCmd = &cobra.Command{
 	Use:   "continue",
-	Short: "Automatically continue to the next workflow step",
+	Short: "Resume workflow with optional auto-execution",
 	Long: `Continue to the next workflow step.
 
-This command helps you move forward with your task:
+This command is designed for resuming work on a task after a break:
 - Without --auto: Shows status and suggested next actions
-- With --auto: Executes the next logical step automatically
-
-Use this when returning to work on a task after a break.
+- With --auto: Automatically executes the next logical workflow step
 
 DIFFERENCES FROM OTHER COMMANDS:
-- 'mehr status' - Read-only view of current state
-- 'mehr guide' - Interactive suggestions (no auto-execution)
-- 'mehr continue' - Shows status + can auto-execute with --auto
+- 'mehr status' - Detailed state inspection (no execution capability)
+- 'mehr guide' - Quick suggestions only (no auto-execution)
+- 'mehr continue' - Status display + optional auto-execution (this command)
 
 Examples:
   mehr continue       # Show status and suggested next actions

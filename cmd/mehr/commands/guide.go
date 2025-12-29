@@ -11,18 +11,19 @@ import (
 
 var guideCmd = &cobra.Command{
 	Use:   "guide",
-	Short: "Show suggested next actions (interactive)",
-	Long: `Show context-aware suggestions for what to do next.
+	Short: "Suggest what to do next (lightweight, state-aware)",
+	Long: `Show context-aware suggestions for the next action.
 
-This command analyzes your current context (active task, state, specifications)
-and suggests the most appropriate next action.
+This is a lightweight command that quickly analyzes your current context
+(active task, state, specifications) and suggests the most appropriate
+next action without displaying verbose details.
 
 Works in both main repository and worktree environments.
 
 DIFFERENCES FROM OTHER COMMANDS:
-- 'mehr status' - Read-only view of current state (more detailed)
-- 'mehr continue' - Can auto-execute with --auto flag
-- 'mehr guide' - Lightweight suggestions only
+- 'mehr status' - Detailed state inspection with full specs/sessions/checkpoints
+- 'mehr continue' - Resume workflow with optional auto-execution
+- 'mehr guide' - Quick next-action suggestions (this command)
 
 Examples:
   mehr guide            # Show suggested next actions

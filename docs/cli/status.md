@@ -1,6 +1,6 @@
 # mehr status
 
-Show the status of tasks.
+Show detailed task state (specs, checkpoints, sessions).
 
 ## Synopsis
 
@@ -164,17 +164,22 @@ Or switch to an existing task branch:
 
 # mehr continue
 
-Show status and suggested next actions.
+Resume workflow with optional auto-execution.
 
 ## Synopsis
 
 ```bash
-mehr continue
+mehr continue [flags]
 ```
 
 ## Description
 
-The `continue` command is helpful when returning to work after a break. It shows the current status and suggests what to do next.
+The `continue` command is designed for resuming work on a task after a break. It shows the current status and suggests what to do next. With `--auto`, it automatically executes the next logical workflow step.
+
+**Flags:**
+| Flag    | Short | Type | Default | Description                             |
+| ------- | ----- | ---- | ------- | --------------------------------------- |
+| `--auto` | `-a`  | bool | false   | Auto-execute the next logical workflow step |
 
 ## Examples
 
@@ -256,6 +261,14 @@ mehr continue
 ```
 
 More contextual than `mehr status` with action suggestions.
+
+### Command Comparison
+
+| Command         | Purpose                                                  |
+| --------------- | -------------------------------------------------------- |
+| `mehr status`   | Detailed state inspection (specs, checkpoints, sessions)  |
+| `mehr guide`    | Quick, lightweight suggestions (no execution capability)  |
+| `mehr continue` | Status display with optional auto-execution capability    |
 
 ## See Also
 

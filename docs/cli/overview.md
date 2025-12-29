@@ -12,10 +12,11 @@ mehr <command> [flags]
 
 These flags work with any command:
 
-| Flag         | Short | Description            |
-| ------------ | ----- | ---------------------- |
-| `--verbose`  | `-v`  | Enable verbose output  |
-| `--no-color` |       | Disable colored output |
+| Flag         | Short | Description                      |
+| ------------ | ----- | -------------------------------- |
+| `--verbose`  | `-v`  | Enable verbose output            |
+| `--quiet`    | `-q`  | Suppress non-essential output    |
+| `--no-color` |       | Disable colored output           |
 
 ## Commands
 

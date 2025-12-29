@@ -120,11 +120,11 @@ State: implementing
 
 ## Comparison with Other Commands
 
-| Command         | Purpose                                              |
-| --------------- | ---------------------------------------------------- |
-| `mehr guide`    | Quick suggestions based on current state             |
-| `mehr status`   | Detailed status with file listings and metadata      |
-| `mehr continue` | Similar to guide, with additional context display    |
+| Command         | Purpose                                                        |
+| --------------- | -------------------------------------------------------------- |
+| `mehr guide`    | Quick, lightweight next-action suggestions                     |
+| `mehr status`   | Detailed state inspection (specs, checkpoints, sessions)        |
+| `mehr continue` | Status display with optional auto-execution (--auto flag)      |
 
 ## See Also
 

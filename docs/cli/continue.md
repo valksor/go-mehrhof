@@ -130,12 +130,13 @@ The suggested actions depend on the current task state:
 
 ## Difference from `mehr status`
 
-| Command         | Purpose                                              |
-| --------------- | ---------------------------------------------------- |
-| `mehr continue` | Quick overview with actionable suggestions           |
-| `mehr status`   | Detailed status with file listings and full metadata |
+| Command         | Purpose                                                  |
+| --------------- | -------------------------------------------------------- |
+| `mehr continue` | Status display with optional auto-execution capability   |
+| `mehr guide`    | Quick, lightweight suggestions (no execution capability) |
+| `mehr status`   | Detailed state inspection (read-only, full details)       |
 
-Use `continue` when you need guidance on what to do next. Use `status` when you need detailed information about the task state.
+Use `continue` when you want to resume work with optional auto-execution. Use `guide` for quick suggestions only. Use `status` for detailed state information.
 
 ## See Also
 
