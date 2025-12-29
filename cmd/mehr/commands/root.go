@@ -86,6 +86,24 @@ func Execute() error {
 func init() {
 	rootCmd.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false, "Enable verbose output")
 	rootCmd.PersistentFlags().BoolVar(&noColor, "no-color", false, "Disable color output")
+
+	// Register shell completions for common flags
+	registerCompletions()
+}
+
+// registerCompletions sets up custom completion functions for flags
+func registerCompletions() {
+	// Agent flag completions
+	agentFlags := []string{"agent", "agent-plan", "agent-implement", "agent-review", "agent-chat"}
+	for _, flag := range agentFlags {
+		if err := rootCmd.RegisterFlagCompletionFunc(flag, completeAgent); err != nil {
+			// Some flags might not exist in all commands, ignore errors
+			continue
+		}
+	}
+
+	// Workflow step completions
+	_ = rootCmd.RegisterFlagCompletionFunc("step", completeWorkflow) // May not exist in all commands
 }
 
 // GetSettings returns the loaded settings
