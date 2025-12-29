@@ -26,6 +26,7 @@ import (
 	"bufio"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"log/slog"
@@ -162,7 +163,7 @@ func (l *Loader) UnloadAll() error {
 		}
 	}
 	if len(errs) > 0 {
-		return fmt.Errorf("errors stopping plugins: %v", errs)
+		return errors.Join(errs...)
 	}
 	return nil
 }
