@@ -11,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	providererrors "github.com/valksor/go-mehrhof/internal/provider/errors"
 	"github.com/valksor/go-mehrhof/internal/provider/token"
 )
 
@@ -54,12 +55,8 @@ func NewClient(token, host string) *Client {
 //  2. WRIKE_TOKEN env var
 //  3. configToken (from config.yaml)
 func ResolveToken(configToken string) (string, error) {
-	tok, err := token.ResolveToken(token.Config("WRIKE", configToken).
+	return token.ResolveToken(token.Config("WRIKE", configToken).
 		WithEnvVars("WRIKE_TOKEN"))
-	if err != nil {
-		return "", ErrNoToken
-	}
-	return tok, nil
 }
 
 // doRequest performs an HTTP request to the Wrike API
@@ -117,9 +114,9 @@ func (c *Client) doRequestWithRetry(ctx context.Context, method, path string, bo
 
 		// Check if error is retryable
 		// 1. Check for specific error types (after wrapAPIError wrapping)
-		if errors.Is(err, ErrRateLimited) {
+		if errors.Is(err, providererrors.ErrRateLimited) {
 			// Rate limited - retry
-		} else if errors.Is(err, ErrNetworkError) {
+		} else if errors.Is(err, providererrors.ErrNetworkError) {
 			// Network error - retry
 		} else {
 			// 2. Check for unwrapped HTTP errors (before wrapAPIError)

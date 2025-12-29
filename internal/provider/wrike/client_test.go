@@ -8,6 +8,8 @@ import (
 	"os"
 	"testing"
 	"time"
+
+	"github.com/valksor/go-mehrhof/internal/provider/token"
 )
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -111,8 +113,8 @@ func TestResolveToken(t *testing.T) {
 		_ = os.Unsetenv("WRIKE_TOKEN")
 
 		_, err := ResolveToken("")
-		if err != ErrNoToken {
-			t.Errorf("error = %v, want %v", err, ErrNoToken)
+		if err != token.ErrNoToken {
+			t.Errorf("error = %v, want %v", err, token.ErrNoToken)
 		}
 	})
 }

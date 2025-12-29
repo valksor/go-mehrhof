@@ -2,47 +2,29 @@ package wrike
 
 import (
 	"errors"
-	"fmt"
-	"net"
 	"net/http"
+
+	providererrors "github.com/valksor/go-mehrhof/internal/provider/errors"
 )
 
-// Error types for the Wrike provider
+// Wrike-specific error types
 var (
-	ErrNoToken          = errors.New("wrike token not found")
 	ErrTaskNotFound     = errors.New("task not found")
-	ErrRateLimited      = errors.New("wrike api rate limit exceeded")
-	ErrNetworkError     = errors.New("network error communicating with wrike")
-	ErrUnauthorized     = errors.New("wrike token unauthorized or expired")
 	ErrInvalidReference = errors.New("invalid wrike reference")
 )
 
-// wrapAPIError converts HTTP errors to typed errors
+// wrapAPIError converts HTTP errors to typed errors.
+// Uses shared error types from provider/errors package for common cases.
 func wrapAPIError(err error) error {
 	if err == nil {
 		return nil
 	}
 
-	// Check for HTTP errors
-	var httpErr interface{ HTTPStatusCode() int }
-	if errors.As(err, &httpErr) {
-		switch httpErr.HTTPStatusCode() {
-		case http.StatusUnauthorized:
-			return fmt.Errorf("%w: %v", ErrUnauthorized, err)
-		case http.StatusForbidden:
-			return fmt.Errorf("%w: %v", ErrRateLimited, err)
-		case http.StatusNotFound:
-			return fmt.Errorf("%w: %v", ErrTaskNotFound, err)
-		case http.StatusTooManyRequests:
-			return fmt.Errorf("%w: %v", ErrRateLimited, err)
-		}
+	// Use shared HTTP error wrapping
+	// For 404, we want to return our specific ErrTaskNotFound
+	baseErrors := map[int]error{
+		http.StatusNotFound: ErrTaskNotFound,
 	}
 
-	// Check for network errors
-	var netErr net.Error
-	if errors.As(err, &netErr) {
-		return fmt.Errorf("%w: %v", ErrNetworkError, err)
-	}
-
-	return err
+	return providererrors.WrapHTTPError(err, "wrike", baseErrors)
 }
