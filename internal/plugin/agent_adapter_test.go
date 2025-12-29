@@ -359,3 +359,16 @@ func TestConvertStreamEvent_ToolCall(t *testing.T) {
 		t.Error("ToolCall.Input should not be nil")
 	}
 }
+
+func TestAgentAdapter_WithArgs(t *testing.T) {
+	manifest := &Manifest{Name: "test"}
+	adapter := NewAgentAdapter(manifest, nil)
+
+	// WithArgs is a no-op for plugin agents - returns same adapter
+	result := adapter.WithArgs("--arg1", "--arg2")
+
+	// Should return the same adapter (no-op)
+	if result != adapter {
+		t.Error("WithArgs should return the same adapter (no-op)")
+	}
+}
