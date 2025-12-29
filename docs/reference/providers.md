@@ -9,6 +9,7 @@ Providers are task sources that Mehrhof can read from and interact with. Each pr
 | **File** | `file:` | Local markdown files |
 | **Directory** | `dir:` | Local directories with markdown files |
 | **GitHub** | `github:`, `gh:` | GitHub issues |
+| **GitLab** | `gitlab:`, `gl:` | GitLab issues |
 | **Jira** | `jira:`, `j:` | Jira issues |
 | **Linear** | `linear:`, `ln:` | Linear issues |
 | **Notion** | `notion:`, `nt:` | Notion pages and databases |
@@ -171,6 +172,118 @@ The GitHub provider tries token sources in this order:
 | `chore` | `chore` |
 | `test` | `test` |
 | `ci` | `ci` |
+
+---
+
+## GitLab Provider
+
+**Schemes:** `gitlab:`, `gl:`
+
+**Capabilities:** `read`, `list`, `fetch_comments`, `comment`, `update_status`, `manage_labels`, `create_work_unit`, `download_attachment`, `snapshot`
+
+Interacts with GitLab issues for fully integrated task management. Works with both GitLab.com and self-hosted GitLab instances.
+
+### Usage
+
+```bash
+# By issue number (requires configured project)
+mehr start gitlab:123
+mehr plan gl:123
+
+# Explicit project path
+mehr start gitlab:group/project#456
+mehr plan gl:group/project#456
+
+# By project ID
+mehr start gitlab:12345#456  # project-id#issue-iid
+```
+
+### Configuration
+
+Configure in `.mehrhof/config.yaml`:
+
+```yaml
+gitlab:
+  token: "${GITLAB_TOKEN}"       # GitLab personal access token
+  host: "https://gitlab.com"     # Optional: defaults to gitlab.com
+  project_path: "group/project"  # Default project for operations
+  branch_pattern: "issue/{key}-{slug}"  # Branch naming
+  commit_prefix: "[#{key}]"      # Commit message prefix
+```
+
+For self-hosted GitLab instances:
+
+```yaml
+gitlab:
+  token: "${GITLAB_TOKEN}"
+  host: "https://gitlab.example.com"
+  project_path: "mygroup/myproject"
+```
+
+### Token Resolution
+
+The GitLab provider tries token sources in this order:
+
+1. `MEHR_GITLAB_TOKEN` environment variable
+2. `GITLAB_TOKEN` environment variable
+3. Token from `config.yaml`
+
+### Authentication
+
+Create a Personal Access Token in GitLab:
+- Navigate to **User Settings → Access Tokens**
+- Select scopes: `api`, `read_api`, `read_repository`
+- Use the token in your configuration or environment variable
+
+### Reference Formats
+
+| Format | Example |
+|--------|---------|
+| Scheme with IID | `gitlab:123` |
+| Short scheme | `gl:456` |
+| Explicit project path | `gitlab:group/project#123` |
+| Project ID with IID | `gitlab:12345#678` |
+
+### Features
+
+- **Issue Fetching**: Retrieves title, description, labels, assignees, comments
+- **Label Inference**: Maps labels to task types (`bug` → `fix`, `feature` → `feature`)
+- **Priority Inference**: Extracts priority from label names
+- **Linked Issues**: Detects `#123` references in issue description
+- **Status Updates**: Close/reopen issues
+- **Label Management**: Add or remove labels
+- **Issue Creation**: Create new GitLab issues
+- **Attachments**: Download file attachments
+- **Snapshots**: Export issue content as markdown
+- **Self-Hosted Support**: Works with GitLab self-hosted instances
+
+### Task Type Label Mapping
+
+| GitLab Label | Task Type |
+|--------------|-----------|
+| `bug`, `bugfix`, `fix` | `fix` |
+| `feature`, `enhancement` | `feature` |
+| `docs`, `documentation` | `docs` |
+| `refactor` | `refactor` |
+| `chore` | `chore` |
+| `test` | `test` |
+| `ci` | `ci` |
+
+### Status Mapping
+
+| GitLab State | Provider Status |
+|--------------|-----------------|
+| `opened` | Open |
+| `closed` | Closed |
+
+### Priority Label Mapping
+
+| GitLab Label | Provider Priority |
+|--------------|-------------------|
+| `critical`, `urgent` | Critical |
+| `priority:high`, `high-priority` | High |
+| `priority:low`, `low-priority` | Low |
+| *(no match)* | Normal |
 
 ---
 
@@ -577,6 +690,7 @@ Provider plugins communicate via JSON-RPC 2.0 over stdin/stdout. See the plugin 
 | File | `file:path/to/file.md` | `file:tasks/auth.md` |
 | Directory | `dir:path/to/directory` | `dir:./tasks` |
 | GitHub | `github:N` or `github:owner/repo#N` | `github:123`, `github:owner/repo#456` |
+| GitLab | `gitlab:N` or `gitlab:group/project#N` | `gitlab:123`, `gitlab:group/project#456` |
 | Jira | `jira:KEY-NUM` or URL | `jira:JIRA-123`, `jira:https://domain.atlassian.net/browse/...` |
 | Linear | `linear:TEAM-NUM` or URL | `linear:ENG-123`, `linear:https://linear.app/...` |
 | Notion | `notion:page-id` or URL | `notion:a1b2c3d4e5f6...`, `notion:https://notion.so/...` |
