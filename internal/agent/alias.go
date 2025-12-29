@@ -1,6 +1,11 @@
 package agent
 
-import "context"
+import (
+	"context"
+
+	_maps "maps"
+	_slices "slices"
+)
 
 // AliasAgent wraps an existing agent with pre-configured environment variables
 // and CLI arguments. This allows users to define custom agent configurations in
@@ -75,10 +80,7 @@ func (a *AliasAgent) Available() error {
 // WithEnv adds an additional environment variable to the alias.
 // This creates a new AliasAgent with the combined environment variables.
 func (a *AliasAgent) WithEnv(key, value string) Agent {
-	newEnv := make(map[string]string, len(a.env)+1)
-	for k, v := range a.env {
-		newEnv[k] = v
-	}
+	newEnv := _maps.Clone(a.env)
 	newEnv[key] = value
 	return &AliasAgent{
 		name:        a.name,
@@ -92,9 +94,7 @@ func (a *AliasAgent) WithEnv(key, value string) Agent {
 // WithArgs adds additional CLI arguments to the alias.
 // This creates a new AliasAgent with the combined arguments.
 func (a *AliasAgent) WithArgs(args ...string) Agent {
-	newArgs := make([]string, len(a.args), len(a.args)+len(args))
-	copy(newArgs, a.args)
-	newArgs = append(newArgs, args...)
+	newArgs := _slices.Concat(a.args, args)
 	return &AliasAgent{
 		name:        a.name,
 		description: a.description,

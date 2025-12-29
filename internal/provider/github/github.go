@@ -8,6 +8,7 @@ import (
 
 	gh "github.com/google/go-github/v67/github"
 
+	"github.com/valksor/go-mehrhof/internal/cache"
 	"github.com/valksor/go-mehrhof/internal/naming"
 	"github.com/valksor/go-mehrhof/internal/provider"
 )
@@ -21,6 +22,7 @@ type Provider struct {
 	owner  string
 	repo   string
 	config *Config
+	cache  *cache.Cache
 }
 
 // Config holds GitHub provider configuration
@@ -112,11 +114,18 @@ func New(ctx context.Context, cfg provider.Config) (any, error) {
 		Comments:      comments,
 	}
 
+	// Create cache (enabled by default, can be disabled via config or SetCache(nil))
+	providerCache := cache.New()
+	if cfg.GetBool("cache.disabled") {
+		providerCache.Disable()
+	}
+
 	return &Provider{
-		client: NewClient(resolvedToken, owner, repo),
+		client: NewClientWithCache(resolvedToken, owner, repo, providerCache),
 		owner:  owner,
 		repo:   repo,
 		config: config,
+		cache:  providerCache,
 	}, nil
 }
 
@@ -314,6 +323,17 @@ func (p *Provider) GetConfig() *Config {
 // GetClient returns the GitHub API client
 func (p *Provider) GetClient() *Client {
 	return p.client
+}
+
+// SetCache sets or replaces the cache for this provider and its client
+func (p *Provider) SetCache(c *cache.Cache) {
+	p.cache = c
+	p.client.SetCache(c)
+}
+
+// GetCache returns the cache for this provider
+func (p *Provider) GetCache() *cache.Cache {
+	return p.cache
 }
 
 // --- Helper functions ---

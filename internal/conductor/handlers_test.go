@@ -2,6 +2,8 @@ package conductor
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -463,6 +465,13 @@ func TestErrPendingQuestion(t *testing.T) {
 	}
 	if ErrPendingQuestion.Error() != "agent has a pending question" {
 		t.Errorf("ErrPendingQuestion.Error() = %q", ErrPendingQuestion.Error())
+	}
+
+	// Test that errors.Is() works correctly with the sentinel error.
+	// This is the key reason for using errors.New() instead of fmt.Errorf().
+	wrappedErr := fmt.Errorf("wrapped: %w", ErrPendingQuestion)
+	if !errors.Is(wrappedErr, ErrPendingQuestion) {
+		t.Error("errors.Is() should work with sentinel error")
 	}
 }
 

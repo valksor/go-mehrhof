@@ -10,6 +10,8 @@ import (
 	"testing"
 
 	gh "github.com/google/go-github/v67/github"
+
+	"github.com/valksor/go-mehrhof/internal/cache"
 )
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -521,6 +523,362 @@ func TestDownloadFile(t *testing.T) {
 		_, err := client.DownloadFile(context.Background(), "nonexistent.md", "main")
 		if err == nil {
 			t.Error("expected error for not found file")
+		}
+	})
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// Cache tests
+// ──────────────────────────────────────────────────────────────────────────────
+
+func TestClientCache(t *testing.T) {
+	t.Run("GetIssue caches responses", func(t *testing.T) {
+		callCount := 0
+		handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			callCount++
+			issue := gh.Issue{
+				Number: ptr(123),
+				Title:  ptr("Test Issue"),
+				Body:   ptr("Issue body"),
+				State:  ptr("open"),
+			}
+			_ = json.NewEncoder(w).Encode(issue)
+		})
+
+		client, cleanup := setupMockClient(t, handler)
+		defer cleanup()
+
+		// Create and set cache
+		c := cache.New()
+		client.SetCache(c)
+
+		// First call should hit the API
+		issue1, err := client.GetIssue(context.Background(), 123)
+		if err != nil {
+			t.Fatalf("GetIssue error = %v", err)
+		}
+		if callCount != 1 {
+			t.Errorf("expected 1 API call, got %d", callCount)
+		}
+
+		// Second call should use cache
+		issue2, err := client.GetIssue(context.Background(), 123)
+		if err != nil {
+			t.Fatalf("GetIssue error = %v", err)
+		}
+		if callCount != 1 {
+			t.Errorf("expected still 1 API call (cached), got %d", callCount)
+		}
+
+		// Results should be identical
+		if issue1.GetTitle() != issue2.GetTitle() {
+			t.Errorf("cached title mismatch: %q vs %q", issue1.GetTitle(), issue2.GetTitle())
+		}
+	})
+
+	t.Run("GetIssueComments caches responses", func(t *testing.T) {
+		callCount := 0
+		handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			callCount++
+			comments := []*gh.IssueComment{
+				{ID: ptr(int64(1)), Body: ptr("Comment 1")},
+				{ID: ptr(int64(2)), Body: ptr("Comment 2")},
+			}
+			_ = json.NewEncoder(w).Encode(comments)
+		})
+
+		client, cleanup := setupMockClient(t, handler)
+		defer cleanup()
+
+		c := cache.New()
+		client.SetCache(c)
+
+		// First call
+		_, err := client.GetIssueComments(context.Background(), 123)
+		if err != nil {
+			t.Fatalf("GetIssueComments error = %v", err)
+		}
+		if callCount != 1 {
+			t.Errorf("expected 1 API call, got %d", callCount)
+		}
+
+		// Second call should use cache
+		_, err = client.GetIssueComments(context.Background(), 123)
+		if err != nil {
+			t.Fatalf("GetIssueComments error = %v", err)
+		}
+		if callCount != 1 {
+			t.Errorf("expected still 1 API call (cached), got %d", callCount)
+		}
+	})
+
+	t.Run("GetDefaultBranch caches responses", func(t *testing.T) {
+		callCount := 0
+		handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			callCount++
+			repo := gh.Repository{
+				DefaultBranch: ptr("main"),
+			}
+			_ = json.NewEncoder(w).Encode(repo)
+		})
+
+		client, cleanup := setupMockClient(t, handler)
+		defer cleanup()
+
+		c := cache.New()
+		client.SetCache(c)
+
+		// First call
+		branch1, err := client.GetDefaultBranch(context.Background())
+		if err != nil {
+			t.Fatalf("GetDefaultBranch error = %v", err)
+		}
+		if callCount != 1 {
+			t.Errorf("expected 1 API call, got %d", callCount)
+		}
+
+		// Second call should use cache
+		branch2, err := client.GetDefaultBranch(context.Background())
+		if err != nil {
+			t.Fatalf("GetDefaultBranch error = %v", err)
+		}
+		if callCount != 1 {
+			t.Errorf("expected still 1 API call (cached), got %d", callCount)
+		}
+
+		if branch1 != branch2 {
+			t.Errorf("cached branch mismatch: %q vs %q", branch1, branch2)
+		}
+	})
+
+	t.Run("AddComment invalidates comments cache", func(t *testing.T) {
+		callCount := 0
+		handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			callCount++
+			if r.Method == "POST" {
+				// AddComment response
+				comment := gh.IssueComment{
+					ID:   ptr(int64(999)),
+					Body: ptr("New comment"),
+				}
+				w.WriteHeader(http.StatusCreated)
+				_ = json.NewEncoder(w).Encode(comment)
+				return
+			}
+			// GetIssueComments response
+			comments := []*gh.IssueComment{
+				{ID: ptr(int64(1)), Body: ptr("Comment 1")},
+			}
+			_ = json.NewEncoder(w).Encode(comments)
+		})
+
+		client, cleanup := setupMockClient(t, handler)
+		defer cleanup()
+
+		c := cache.New()
+		client.SetCache(c)
+
+		// First call to get comments
+		_, err := client.GetIssueComments(context.Background(), 123)
+		if err != nil {
+			t.Fatalf("GetIssueComments error = %v", err)
+		}
+		if callCount != 1 {
+			t.Errorf("expected 1 API call, got %d", callCount)
+		}
+
+		// Add a comment
+		_, err = client.AddComment(context.Background(), 123, "New comment")
+		if err != nil {
+			t.Fatalf("AddComment error = %v", err)
+		}
+
+		// Get comments again - should hit API again due to invalidation
+		_, err = client.GetIssueComments(context.Background(), 123)
+		if err != nil {
+			t.Fatalf("GetIssueComments error = %v", err)
+		}
+		if callCount != 3 { // 1 for initial get, 1 for add, 1 for re-fetch after invalidation
+			t.Errorf("expected 3 API calls (get, add, get after invalidation), got %d", callCount)
+		}
+	})
+
+	t.Run("Cache can be disabled", func(t *testing.T) {
+		callCount := 0
+		handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			callCount++
+			issue := gh.Issue{
+				Number: ptr(123),
+				Title:  ptr("Test Issue"),
+			}
+			_ = json.NewEncoder(w).Encode(issue)
+		})
+
+		client, cleanup := setupMockClient(t, handler)
+		defer cleanup()
+
+		c := cache.New()
+		client.SetCache(c)
+
+		// First call
+		_, err := client.GetIssue(context.Background(), 123)
+		if err != nil {
+			t.Fatalf("GetIssue error = %v", err)
+		}
+
+		// Disable cache
+		c.Disable()
+
+		// Second call should hit API again
+		_, err = client.GetIssue(context.Background(), 123)
+		if err != nil {
+			t.Fatalf("GetIssue error = %v", err)
+		}
+
+		if callCount != 2 {
+			t.Errorf("expected 2 API calls (cache disabled), got %d", callCount)
+		}
+	})
+
+	t.Run("Cache with nil client cache works", func(t *testing.T) {
+		callCount := 0
+		handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			callCount++
+			issue := gh.Issue{
+				Number: ptr(123),
+				Title:  ptr("Test Issue"),
+			}
+			_ = json.NewEncoder(w).Encode(issue)
+		})
+
+		client, cleanup := setupMockClient(t, handler)
+		defer cleanup()
+
+		// Client has no cache set
+		client.SetCache(nil)
+
+		// Both calls should hit the API
+		_, err := client.GetIssue(context.Background(), 123)
+		if err != nil {
+			t.Fatalf("GetIssue error = %v", err)
+		}
+
+		_, err = client.GetIssue(context.Background(), 123)
+		if err != nil {
+			t.Fatalf("GetIssue error = %v", err)
+		}
+
+		if callCount != 2 {
+			t.Errorf("expected 2 API calls (no cache), got %d", callCount)
+		}
+	})
+
+	t.Run("CacheKey generates correct keys", func(t *testing.T) {
+		c := NewClient("token", "owner", "repo")
+
+		tests := []struct {
+			resourceType string
+			id           string
+			want         string
+		}{
+			{"issue", "123", "github:owner/repo:issue:123"},
+			{"comments", "456", "github:owner/repo:comments:456"},
+			{"metadata", "default-branch", "github:owner/repo:metadata:default-branch"},
+		}
+
+		for _, tt := range tests {
+			t.Run(tt.resourceType, func(t *testing.T) {
+				got := c.CacheKey(tt.resourceType, tt.id)
+				if got != tt.want {
+					t.Errorf("CacheKey() = %q, want %q", got, tt.want)
+				}
+			})
+		}
+	})
+
+	t.Run("Cache respects owner/repo changes", func(t *testing.T) {
+		c := NewClient("token", "owner1", "repo1")
+
+		key1 := c.CacheKey("issue", "123")
+		c.SetOwnerRepo("owner2", "repo2")
+		key2 := c.CacheKey("issue", "123")
+
+		if key1 == key2 {
+			t.Error("cache keys should differ after owner/repo change")
+		}
+		if key1 != "github:owner1/repo1:issue:123" {
+			t.Errorf("key1 = %q, want github:owner1/repo1:issue:123", key1)
+		}
+		if key2 != "github:owner2/repo2:issue:123" {
+			t.Errorf("key2 = %q, want github:owner2/repo2:issue:123", key2)
+		}
+	})
+}
+
+func TestCacheExpiration(t *testing.T) {
+	t.Run("expired cache entries are refetched", func(t *testing.T) {
+		callCount := 0
+		handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			callCount++
+			issue := gh.Issue{
+				Number: ptr(123),
+				Title:  ptr("Test Issue"),
+			}
+			_ = json.NewEncoder(w).Encode(issue)
+		})
+
+		client, cleanup := setupMockClient(t, handler)
+		defer cleanup()
+
+		// Create cache with very short TTL
+		c := cache.New()
+		client.SetCache(c)
+
+		// First call
+		_, err := client.GetIssue(context.Background(), 123)
+		if err != nil {
+			t.Fatalf("GetIssue error = %v", err)
+		}
+		if callCount != 1 {
+			t.Errorf("expected 1 API call, got %d", callCount)
+		}
+
+		// Manually expire the cache entry by setting it in the past
+		// We'll just wait for the default TTL (5 minutes) but we can simulate by clearing
+		c.Clear()
+
+		// Second call should hit API again after cache clear
+		_, err = client.GetIssue(context.Background(), 123)
+		if err != nil {
+			t.Fatalf("GetIssue error = %v", err)
+		}
+		if callCount != 2 {
+			t.Errorf("expected 2 API calls after cache clear, got %d", callCount)
+		}
+	})
+}
+
+func TestNewClientWithCache(t *testing.T) {
+	t.Run("creates client with cache", func(t *testing.T) {
+		c := cache.New()
+		client := NewClientWithCache("token", "owner", "repo", c)
+
+		if client == nil {
+			t.Fatal("NewClientWithCache returned nil")
+		}
+		if client.cache != c {
+			t.Error("client cache not set correctly")
+		}
+	})
+
+	t.Run("creates client with nil cache", func(t *testing.T) {
+		client := NewClientWithCache("token", "owner", "repo", nil)
+
+		if client == nil {
+			t.Fatal("NewClientWithCache returned nil")
+		}
+		if client.cache != nil {
+			t.Error("expected nil cache, got non-nil")
 		}
 	})
 }

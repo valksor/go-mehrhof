@@ -8,9 +8,10 @@ import (
 	"io"
 	"net/http"
 	"net/url"
-	"os"
 	"strings"
 	"time"
+
+	"github.com/valksor/go-mehrhof/internal/provider/token"
 )
 
 const (
@@ -58,28 +59,14 @@ func NewClient(token, host string) *Client {
 	}
 }
 
-// ResolveToken finds the YouTrack token from multiple sources
+// ResolveToken finds the YouTrack token from multiple sources.
 // Priority order:
 //  1. MEHR_YOUTRACK_TOKEN env var
 //  2. YOUTRACK_TOKEN env var
 //  3. configToken (from config.yaml)
 func ResolveToken(configToken string) (string, error) {
-	// 1. Check MEHR_YOUTRACK_TOKEN
-	if token := os.Getenv("MEHR_YOUTRACK_TOKEN"); token != "" {
-		return token, nil
-	}
-
-	// 2. Check YOUTRACK_TOKEN
-	if token := os.Getenv("YOUTRACK_TOKEN"); token != "" {
-		return token, nil
-	}
-
-	// 3. Check config token
-	if configToken != "" {
-		return configToken, nil
-	}
-
-	return "", ErrNoToken
+	return token.ResolveToken(token.Config("YOUTRACK", configToken).
+		WithEnvVars("YOUTRACK_TOKEN"))
 }
 
 // GetIssue fetches an issue by readable ID (e.g., "ABC-123")

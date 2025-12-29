@@ -3,12 +3,15 @@ package github
 import (
 	"context"
 	"fmt"
-	"os"
 	"os/exec"
 	"strings"
+	"time"
 
 	"github.com/google/go-github/v67/github"
 	"golang.org/x/oauth2"
+
+	"github.com/valksor/go-mehrhof/internal/cache"
+	"github.com/valksor/go-mehrhof/internal/provider/token"
 )
 
 // ptr is a helper to create a pointer to a value
@@ -21,52 +24,54 @@ type Client struct {
 	gh    *github.Client
 	owner string
 	repo  string
+	cache *cache.Cache
 }
 
 // NewClient creates a new GitHub API client
 func NewClient(token, owner, repo string) *Client {
+	return NewClientWithCache(token, owner, repo, nil)
+}
+
+// NewClientWithCache creates a new GitHub API client with an optional cache
+func NewClientWithCache(token, owner, repo string, c *cache.Cache) *Client {
 	ts := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: token})
 	tc := oauth2.NewClient(context.Background(), ts)
 	return &Client{
 		gh:    github.NewClient(tc),
 		owner: owner,
 		repo:  repo,
+		cache: c,
 	}
 }
 
-// ResolveToken finds the GitHub token from multiple sources
+// SetCache sets or updates the cache for this client
+func (c *Client) SetCache(cache *cache.Cache) {
+	c.cache = cache
+}
+
+// CacheKey generates a namespaced cache key for this client
+func (c *Client) CacheKey(resourceType, id string) string {
+	return fmt.Sprintf("github:%s/%s:%s:%s", c.owner, c.repo, resourceType, id)
+}
+
+// ResolveToken finds the GitHub token from multiple sources.
 // Priority order:
 //  1. MEHR_GITHUB_TOKEN env var
 //  2. GITHUB_TOKEN env var
 //  3. configToken (from config.yaml)
 //  4. gh CLI auth token (via `gh auth token`)
 func ResolveToken(configToken string) (string, error) {
-	// 1. Check MEHR_GITHUB_TOKEN
-	if token := os.Getenv("MEHR_GITHUB_TOKEN"); token != "" {
-		return token, nil
-	}
-
-	// 2. Check GITHUB_TOKEN
-	if token := os.Getenv("GITHUB_TOKEN"); token != "" {
-		return token, nil
-	}
-
-	// 3. Check config token
-	if configToken != "" {
-		return configToken, nil
-	}
-
-	// 4. Try gh CLI
-	if token := getGHCLIToken(); token != "" {
-		return token, nil
-	}
-
-	return "", ErrNoToken
+	return token.ResolveToken(token.Config("GITHUB", configToken).
+		WithEnvVars("GITHUB_TOKEN").
+		WithCLIFallback(getGHCLIToken))
 }
 
 // getGHCLIToken attempts to get the token from the gh CLI
 func getGHCLIToken() string {
-	cmd := exec.Command("gh", "auth", "token")
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	cmd := exec.CommandContext(ctx, "gh", "auth", "token")
 	out, err := cmd.Output()
 	if err != nil {
 		return ""
@@ -76,15 +81,45 @@ func getGHCLIToken() string {
 
 // GetIssue fetches an issue by number
 func (c *Client) GetIssue(ctx context.Context, number int) (*github.Issue, error) {
+	key := c.CacheKey("issue", fmt.Sprintf("%d", number))
+
+	// Try cache first
+	if c.cache != nil && c.cache.Enabled() {
+		if val, ok := c.cache.Get(key); ok && val != nil {
+			if issue, ok := val.(*github.Issue); ok {
+				return issue, nil
+			}
+		}
+	}
+
+	// Cache miss or disabled, fetch from API
 	issue, _, err := c.gh.Issues.Get(ctx, c.owner, c.repo, number)
 	if err != nil {
 		return nil, wrapAPIError(err)
 	}
+
+	// Store in cache
+	if c.cache != nil && c.cache.Enabled() {
+		c.cache.Set(key, issue, cache.DefaultIssueTTL)
+	}
+
 	return issue, nil
 }
 
 // GetIssueComments fetches all comments on an issue
 func (c *Client) GetIssueComments(ctx context.Context, number int) ([]*github.IssueComment, error) {
+	key := c.CacheKey("comments", fmt.Sprintf("%d", number))
+
+	// Try cache first
+	if c.cache != nil && c.cache.Enabled() {
+		if val, ok := c.cache.Get(key); ok && val != nil {
+			if comments, ok := val.([]*github.IssueComment); ok {
+				return comments, nil
+			}
+		}
+	}
+
+	// Cache miss or disabled, fetch from API
 	opts := &github.IssueListCommentsOptions{
 		ListOptions: github.ListOptions{PerPage: 100},
 	}
@@ -101,6 +136,12 @@ func (c *Client) GetIssueComments(ctx context.Context, number int) ([]*github.Is
 		}
 		opts.Page = resp.NextPage
 	}
+
+	// Store in cache
+	if c.cache != nil && c.cache.Enabled() {
+		c.cache.Set(key, allComments, cache.DefaultCommentsTTL)
+	}
+
 	return allComments, nil
 }
 
@@ -112,6 +153,13 @@ func (c *Client) AddComment(ctx context.Context, number int, body string) (*gith
 	if err != nil {
 		return nil, wrapAPIError(err)
 	}
+
+	// Invalidate comments cache for this issue
+	if c.cache != nil {
+		key := c.CacheKey("comments", fmt.Sprintf("%d", number))
+		c.cache.Delete(key)
+	}
+
 	return comment, nil
 }
 
@@ -132,11 +180,30 @@ func (c *Client) CreatePullRequest(ctx context.Context, title, body, head, base 
 
 // GetDefaultBranch returns the repository's default branch
 func (c *Client) GetDefaultBranch(ctx context.Context) (string, error) {
+	key := c.CacheKey("metadata", "default-branch")
+
+	// Try cache first
+	if c.cache != nil && c.cache.Enabled() {
+		if val, ok := c.cache.Get(key); ok && val != nil {
+			if branch, ok := val.(string); ok {
+				return branch, nil
+			}
+		}
+	}
+
+	// Cache miss or disabled, fetch from API
 	repo, _, err := c.gh.Repositories.Get(ctx, c.owner, c.repo)
 	if err != nil {
 		return "", wrapAPIError(err)
 	}
-	return repo.GetDefaultBranch(), nil
+	branch := repo.GetDefaultBranch()
+
+	// Store in cache
+	if c.cache != nil && c.cache.Enabled() {
+		c.cache.Set(key, branch, cache.DefaultMetadataTTL)
+	}
+
+	return branch, nil
 }
 
 // DownloadFile downloads a file from the repository

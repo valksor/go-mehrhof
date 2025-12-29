@@ -8,9 +8,10 @@ import (
 	"io"
 	"net/http"
 	"net/url"
-	"os"
 	"strings"
 	"time"
+
+	"github.com/valksor/go-mehrhof/internal/provider/token"
 )
 
 const (
@@ -47,28 +48,18 @@ func NewClient(token, host string) *Client {
 	}
 }
 
-// ResolveToken finds the Wrike token from multiple sources
+// ResolveToken finds the Wrike token from multiple sources.
 // Priority order:
 //  1. MEHR_WRIKE_TOKEN env var
 //  2. WRIKE_TOKEN env var
 //  3. configToken (from config.yaml)
 func ResolveToken(configToken string) (string, error) {
-	// 1. Check MEHR_WRIKE_TOKEN
-	if token := os.Getenv("MEHR_WRIKE_TOKEN"); token != "" {
-		return token, nil
+	tok, err := token.ResolveToken(token.Config("WRIKE", configToken).
+		WithEnvVars("WRIKE_TOKEN"))
+	if err != nil {
+		return "", ErrNoToken
 	}
-
-	// 2. Check WRIKE_TOKEN
-	if token := os.Getenv("WRIKE_TOKEN"); token != "" {
-		return token, nil
-	}
-
-	// 3. Check config token
-	if configToken != "" {
-		return configToken, nil
-	}
-
-	return "", ErrNoToken
+	return tok, nil
 }
 
 // doRequest performs an HTTP request to the Wrike API

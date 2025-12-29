@@ -7,9 +7,10 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"os"
 	"strings"
 	"time"
+
+	"github.com/valksor/go-mehrhof/internal/provider/token"
 )
 
 const (
@@ -36,28 +37,14 @@ func NewClient(token string) *Client {
 	}
 }
 
-// ResolveToken finds the Notion token from multiple sources
+// ResolveToken finds the Notion token from multiple sources.
 // Priority order:
 //  1. MEHR_NOTION_TOKEN env var
 //  2. NOTION_TOKEN env var
 //  3. configToken (from config.yaml)
 func ResolveToken(configToken string) (string, error) {
-	// 1. Check MEHR_NOTION_TOKEN
-	if token := os.Getenv("MEHR_NOTION_TOKEN"); token != "" {
-		return token, nil
-	}
-
-	// 2. Check NOTION_TOKEN
-	if token := os.Getenv("NOTION_TOKEN"); token != "" {
-		return token, nil
-	}
-
-	// 3. Check config token
-	if configToken != "" {
-		return configToken, nil
-	}
-
-	return "", ErrNoToken
+	return token.ResolveToken(token.Config("NOTION", configToken).
+		WithEnvVars("NOTION_TOKEN"))
 }
 
 // doRequest performs an HTTP request to the Notion API

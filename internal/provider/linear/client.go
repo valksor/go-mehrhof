@@ -8,8 +8,9 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"os"
 	"time"
+
+	"github.com/valksor/go-mehrhof/internal/provider/token"
 )
 
 const (
@@ -35,28 +36,14 @@ func NewClient(token string) *Client {
 	}
 }
 
-// ResolveToken finds the Linear token from multiple sources
+// ResolveToken finds the Linear token from multiple sources.
 // Priority order:
 //  1. MEHR_LINEAR_API_KEY env var
 //  2. LINEAR_API_KEY env var
 //  3. configToken (from config.yaml)
 func ResolveToken(configToken string) (string, error) {
-	// 1. Check MEHR_LINEAR_API_KEY
-	if token := os.Getenv("MEHR_LINEAR_API_KEY"); token != "" {
-		return token, nil
-	}
-
-	// 2. Check LINEAR_API_KEY
-	if token := os.Getenv("LINEAR_API_KEY"); token != "" {
-		return token, nil
-	}
-
-	// 3. Check config token
-	if configToken != "" {
-		return configToken, nil
-	}
-
-	return "", ErrNoToken
+	return token.ResolveToken(token.Config("LINEAR", configToken).
+		WithEnvVars("LINEAR_API_KEY"))
 }
 
 // graphqlRequest represents a GraphQL request

@@ -10,9 +10,10 @@ import (
 	"io"
 	"net/http"
 	"net/url"
-	"os"
 	"strings"
 	"time"
+
+	"github.com/valksor/go-mehrhof/internal/provider/token"
 )
 
 const (
@@ -68,28 +69,14 @@ func (c *Client) SetBaseURL(baseURL string) {
 	}
 }
 
-// ResolveToken finds the Jira token from multiple sources
+// ResolveToken finds the Jira token from multiple sources.
 // Priority order:
 //  1. MEHR_JIRA_TOKEN env var
 //  2. JIRA_TOKEN env var
 //  3. configToken (from config.yaml)
 func ResolveToken(configToken string) (string, error) {
-	// 1. Check MEHR_JIRA_TOKEN
-	if token := os.Getenv("MEHR_JIRA_TOKEN"); token != "" {
-		return token, nil
-	}
-
-	// 2. Check JIRA_TOKEN
-	if token := os.Getenv("JIRA_TOKEN"); token != "" {
-		return token, nil
-	}
-
-	// 3. Check config token
-	if configToken != "" {
-		return configToken, nil
-	}
-
-	return "", ErrNoToken
+	return token.ResolveToken(token.Config("JIRA", configToken).
+		WithEnvVars("JIRA_TOKEN"))
 }
 
 // buildAPIURL constructs the full API URL for a given endpoint
