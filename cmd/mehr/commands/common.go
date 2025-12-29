@@ -14,6 +14,7 @@ import (
 	"github.com/valksor/go-mehrhof/internal/provider/directory"
 	"github.com/valksor/go-mehrhof/internal/provider/file"
 	"github.com/valksor/go-mehrhof/internal/provider/github"
+	"github.com/valksor/go-mehrhof/internal/provider/jira"
 	"github.com/valksor/go-mehrhof/internal/provider/linear"
 	"github.com/valksor/go-mehrhof/internal/provider/notion"
 	"github.com/valksor/go-mehrhof/internal/provider/wrike"
@@ -51,6 +52,7 @@ func initializeConductor(ctx context.Context, opts ...conductor.Option) (*conduc
 	github.Register(cond.GetProviderRegistry())
 	wrike.Register(cond.GetProviderRegistry())
 	linear.Register(cond.GetProviderRegistry())
+	jira.Register(cond.GetProviderRegistry())
 	notion.Register(cond.GetProviderRegistry())
 	youtrack.Register(cond.GetProviderRegistry())
 
