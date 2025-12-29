@@ -21,7 +21,7 @@ This command does **not** run planning. Use `mehr plan` for that.
 
 ## Provider Schemes
 
-**Important:** You must specify a provider scheme prefix (e.g., `file:`, `dir:`, `github:`):
+Specify a provider scheme prefix to use different task sources:
 
 ```bash
 mehr start file:task.md          # From a markdown file
@@ -30,17 +30,17 @@ mehr start github:5              # From GitHub issue #5
 mehr start github:owner/repo#123 # From explicit repo/issue
 ```
 
-Alternatively, configure a default provider in `.mehrhof/config.yaml`:
+**Default Provider:** The `file:` provider is the default, so you can omit the scheme for markdown files:
+
+```bash
+mehr start task.md   # Equivalent to: mehr start file:task.md
+```
+
+To change the default provider, configure it in `.mehrhof/config.yaml`:
 
 ```yaml
 providers:
-  default: file # Bare references like "task.md" will use file: provider
-```
-
-Then you can omit the scheme:
-
-```bash
-mehr start task.md   # Uses configured default provider
+  default: dir # Bare references will use directory provider
 ```
 
 ## Arguments
@@ -77,10 +77,13 @@ mehr start task.md   # Uses configured default provider
 
 ## Examples
 
-### Start from a File
+### Start from a File (Default Provider)
+
+The `file:` provider is the default, so you can omit it:
 
 ```bash
-mehr start file:task.md
+mehr start task.md        # Uses default file: provider
+mehr start file:task.md   # Explicit scheme (also works)
 ```
 
 Output:
@@ -155,7 +158,7 @@ Task registered: a1b2c3d4
 ### Start Without Branch
 
 ```bash
-mehr start --branch=false file:task.md
+mehr start --branch=false task.md
 ```
 
 Work happens on the current branch. Useful for quick experiments.
@@ -163,7 +166,8 @@ Work happens on the current branch. Useful for quick experiments.
 ### Start with Worktree (Parallel Tasks)
 
 ```bash
-mehr start --worktree file:task.md
+mehr start --worktree task.md    # Uses default file: provider
+mehr start --worktree dir:tasks/ # Explicit scheme for directories
 ```
 
 Creates a separate working directory for complete isolation:
@@ -183,12 +187,12 @@ Worktree: ../project-worktrees/a1b2c3d4
 
 ```bash
 # Terminal 1
-mehr start --worktree file:feature-a.md
+mehr start --worktree feature-a.md
 cd ../project-worktrees/a1b2c3d4
 mehr plan && mehr implement
 
 # Terminal 2 (from main repo)
-mehr start --worktree file:feature-b.md
+mehr start --worktree feature-b.md
 cd ../project-worktrees/e5f6g7h8
 mehr plan && mehr implement
 
@@ -201,7 +205,7 @@ mehr list
 ### Specify Agent
 
 ```bash
-mehr start --agent claude file:task.md
+mehr start --agent claude task.md
 ```
 
 ### Specify Per-Step Agents
@@ -210,10 +214,10 @@ Use different agents for different workflow phases:
 
 ```bash
 # Use Opus for planning, Sonnet for implementation
-mehr start --agent-planning claude-opus --agent-implementing claude-sonnet file:task.md
+mehr start --agent-planning claude-opus --agent-implementing claude-sonnet task.md
 
 # Override just the planning agent
-mehr start --agent-planning glm file:task.md
+mehr start --agent-planning glm task.md
 ```
 
 See [Agents - Per-Step Configuration](../concepts/agents.md#per-step-agent-configuration) for details.

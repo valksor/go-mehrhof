@@ -58,27 +58,39 @@ mehr version
 
 ## Quick Start
 
+Get started with Mehrhof in a few steps:
+
 ```bash
-# 1. Initialize workspace (creates .mehrhof directory)
+# 1. Initialize your workspace (creates .mehrhof directory with config)
 mehr init
 
-# 2. Start working on a task from a markdown file
-mehr start file:task.md
+# 2. Create a task file or start from an existing one
+cat > task.md << 'EOF'
+---
+title: Add user authentication
+---
+Implement login and registration using JWT tokens.
+EOF
 
-# 3. Create implementation specifications
+# 3. Start working on the task (creates git branch automatically)
+mehr start task.md
+
+# 4. Generate implementation specifications with AI
 mehr plan
 
-# 4. Implement the specifications
+# 5. Implement the specifications
 mehr implement
 
-# 5. Check current status
+# 6. Review progress and status at any time
 mehr status
 
-# 6. Complete and merge changes
+# 7. Complete the task and merge changes
 mehr finish
 ```
 
-**Note:** The `file:` prefix is the provider scheme. You can configure a default provider in `.mehrhof/config.yaml` to omit it.
+**Workflow Overview**: Mehrhof follows a plan → implement → review → finish cycle. Each step can be run independently, or use `mehr auto` for full automation.
+
+**Other Providers**: Use `github:123` for GitHub issues, `dir:tasks/` for directories, or configure providers in `.mehrhof/config.yaml`.
 
 ## Parallel Tasks
 
@@ -88,7 +100,7 @@ Run multiple tasks simultaneously in separate terminals using worktrees.
 
 ```bash
 # Terminal 1: Start first task with worktree
-mehr start --worktree file:feature-a.md
+mehr start --worktree feature-a.md
 # Output: Task registered: a1b2c3d4
 #         Worktree: ../project-worktrees/a1b2c3d4
 
@@ -96,7 +108,7 @@ cd ../project-worktrees/a1b2c3d4
 mehr plan && mehr implement
 
 # Terminal 2: Start second task (from main repo)
-mehr start --worktree file:feature-b.md
+mehr start --worktree feature-b.md
 # Output: Task registered: e5f6g7h8
 #         Worktree: ../project-worktrees/e5f6g7h8
 
