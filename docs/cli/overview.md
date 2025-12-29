@@ -35,9 +35,9 @@ These flags work with any command:
 | [plan](cli/plan.md)           | Create implementation specifications               |
 | [implement](cli/implement.md) | Implement the specifications                       |
 | [review](cli/review.md)       | Run code review                                    |
-| [talk](cli/talk.md)           | Add notes or discuss with agent                    |
+| [chat](cli/chat.md)           | Add notes or discuss with agent                    |
 | [finish](cli/finish.md)       | Complete task and merge                            |
-| [yolo](cli/yolo.md)           | Full automation: start → plan → implement → finish |
+| [auto](cli/auto.md)           | Full automation: start → plan → implement → finish |
 
 ### History
 
@@ -93,10 +93,10 @@ See [Configuration Overview](../configuration/overview.md) for workspace setting
 
 ## Examples
 
-### Quick Task (Yolo Mode)
+### Quick Task (Auto Mode)
 
 ```bash
-mehr yolo file:feature.md
+mehr auto file:feature.md
 ```
 
 ### Quick Task (Manual)
@@ -111,7 +111,7 @@ mehr start file:feature.md && mehr plan && mehr implement && mehr finish
 mehr start file:feature.md
 mehr plan
 # Review specs...
-mehr talk "Add error handling for edge cases"
+mehr chat "Add error handling for edge cases"
 mehr implement
 # Test changes...
 mehr finish

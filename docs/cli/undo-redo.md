@@ -136,7 +136,7 @@ Checkpoints:
 mehr implement        # First attempt
 # Review... not quite right
 mehr undo
-mehr talk "Use a simpler approach"
+mehr chat "Use a simpler approach"
 mehr implement        # Second attempt
 # Better!
 mehr finish
@@ -147,7 +147,7 @@ mehr finish
 ```bash
 mehr implement        # Approach A
 mehr undo
-mehr talk "Try functional style"
+mehr chat "Try functional style"
 mehr implement        # Approach B
 # Compare approaches
 mehr undo             # Back to A

@@ -77,10 +77,10 @@ env:
 mehr start --agent glm file:task.md
 ```
 
-### In Yolo Mode
+### In Auto Mode
 
 ```bash
-mehr yolo --agent glm file:task.md
+mehr auto --agent glm file:task.md
 ```
 
 ### Change Default Agent

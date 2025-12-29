@@ -58,7 +58,7 @@ Checkpoints: 3
 
 Available commands:
   mehr implement - Implement the specifications
-  mehr talk      - Add notes or discuss the task
+  mehr chat      - Add notes or discuss the task
   mehr finish    - Complete and optionally merge
 ```
 

@@ -156,7 +156,7 @@ specifications/
 You can run `mehr plan` multiple times:
 
 - Additional specs are appended
-- Use `mehr talk` to refine requirements first
+- Use `mehr chat` to refine requirements first
 - Delete unwanted specs manually
 
 ## After Planning
@@ -176,11 +176,11 @@ mehr implement
 If changes needed, discuss:
 
 ```bash
-mehr talk "Simplify the authentication flow"
+mehr chat "Simplify the authentication flow"
 ```
 
 ## See Also
 
 - [implement](cli/implement.md) - Implement specifications
-- [talk](cli/talk.md) - Discuss and refine
+- [chat](cli/chat.md) - Discuss and refine
 - [SPEC Format](../reference/spec-format.md) - Specification details
