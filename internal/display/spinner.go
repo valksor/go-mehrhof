@@ -164,36 +164,3 @@ func (s *Spinner) clearLine() {
 		_, _ = fmt.Fprint(s.writer, "\r\033[K")
 	}
 }
-
-// SpinWhile executes a function while showing a spinner.
-// Returns the error from the function (if any).
-func SpinWhile(message string, fn func() error) error {
-	spinner := NewSpinner(message)
-	spinner.Start()
-
-	err := fn()
-
-	if err != nil {
-		spinner.StopWithError(message + " failed")
-	} else {
-		spinner.StopWithSuccess(message + " done")
-	}
-
-	return err
-}
-
-// SpinWhileWithResult executes a function while showing a spinner, returning a result.
-func SpinWhileWithResult[T any](message string, fn func() (T, error)) (T, error) {
-	spinner := NewSpinner(message)
-	spinner.Start()
-
-	result, err := fn()
-
-	if err != nil {
-		spinner.StopWithError(message + " failed")
-	} else {
-		spinner.StopWithSuccess(message + " done")
-	}
-
-	return result, err
-}
