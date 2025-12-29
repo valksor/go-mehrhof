@@ -3,6 +3,7 @@ package workflow
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"sync"
 
 	"github.com/valksor/go-mehrhof/internal/events"
@@ -216,8 +217,16 @@ func (m *Machine) transitionTo(ctx context.Context, from, to State, event Event)
 	// attempt to dispatch events.
 	if len(listeners) > 0 {
 		go func() {
-			m.listenerSem <- struct{}{}        // Acquire semaphore
-			defer func() { <-m.listenerSem }() // Release semaphore
+			// Acquire semaphore
+			m.listenerSem <- struct{}{}
+			// Ensure semaphore is released even if listener panics
+			defer func() {
+				if r := recover(); r != nil {
+					// Log panic but don't crash the state machine
+					slog.Warn("state listener panicked", "panic", r)
+				}
+				<-m.listenerSem // Release semaphore
+			}()
 
 			for _, listener := range listeners {
 				listener(from, to, event, wu)

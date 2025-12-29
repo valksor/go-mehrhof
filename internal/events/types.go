@@ -23,9 +23,9 @@ const (
 
 // Event is the base event structure
 type Event struct {
-	Type      Type
 	Timestamp time.Time
 	Data      map[string]any
+	Type      Type
 }
 
 // Eventer interface for typed events
@@ -60,12 +60,12 @@ func (e StateChangedEvent) ToEvent() Event {
 
 // ProgressEvent for progress updates
 type ProgressEvent struct {
+	Timestamp time.Time
 	TaskID    string
 	Phase     string
 	Message   string
 	Current   int
 	Total     int
-	Timestamp time.Time
 }
 
 func (e ProgressEvent) ToEvent() Event {
@@ -87,10 +87,10 @@ func (e ProgressEvent) ToEvent() Event {
 
 // ErrorEvent for errors
 type ErrorEvent struct {
-	TaskID    string
-	Error     error
-	Fatal     bool
 	Timestamp time.Time
+	Error     error
+	TaskID    string
+	Fatal     bool
 }
 
 func (e ErrorEvent) ToEvent() Event {
@@ -137,10 +137,10 @@ func (e FileChangedEvent) ToEvent() Event {
 
 // CheckpointEvent when a checkpoint is created
 type CheckpointEvent struct {
+	Timestamp time.Time
 	TaskID    string
 	Commit    string
 	Message   string
-	Timestamp time.Time
 }
 
 func (e CheckpointEvent) ToEvent() Event {
@@ -183,9 +183,9 @@ func (e AgentMessageEvent) ToEvent() Event {
 
 // BlueprintReadyEvent when a blueprint is ready
 type BlueprintReadyEvent struct {
+	Timestamp   time.Time
 	TaskID      string
 	BlueprintID string
-	Timestamp   time.Time
 }
 
 func (e BlueprintReadyEvent) ToEvent() Event {
@@ -204,9 +204,9 @@ func (e BlueprintReadyEvent) ToEvent() Event {
 
 // BranchCreatedEvent when a task branch is created
 type BranchCreatedEvent struct {
+	Timestamp time.Time
 	TaskID    string
 	Branch    string
-	Timestamp time.Time
 }
 
 func (e BranchCreatedEvent) ToEvent() Event {
@@ -225,9 +225,9 @@ func (e BranchCreatedEvent) ToEvent() Event {
 
 // PlanCompletedEvent when planning phase completes
 type PlanCompletedEvent struct {
+	Timestamp       time.Time
 	TaskID          string
 	SpecificationID int
-	Timestamp       time.Time
 }
 
 func (e PlanCompletedEvent) ToEvent() Event {
@@ -246,9 +246,9 @@ func (e PlanCompletedEvent) ToEvent() Event {
 
 // ImplementDoneEvent when implementation phase completes
 type ImplementDoneEvent struct {
+	Timestamp time.Time
 	TaskID    string
 	DiffStat  string
-	Timestamp time.Time
 }
 
 func (e ImplementDoneEvent) ToEvent() Event {
@@ -267,10 +267,10 @@ func (e ImplementDoneEvent) ToEvent() Event {
 
 // PRCreatedEvent when a pull request is created
 type PRCreatedEvent struct {
-	TaskID    string
-	PRNumber  int
-	PRURL     string
 	Timestamp time.Time
+	TaskID    string
+	PRURL     string
+	PRNumber  int
 }
 
 func (e PRCreatedEvent) ToEvent() Event {

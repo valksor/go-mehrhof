@@ -388,11 +388,11 @@ func TestConcurrentDispatch(t *testing.T) {
 // Table-driven tests for transitions
 func TestTransitions(t *testing.T) {
 	tests := []struct {
+		setup     func(*Machine)
 		name      string
 		fromState State
 		event     Event
 		wantState State
-		setup     func(*Machine)
 		wantErr   bool
 	}{
 		{

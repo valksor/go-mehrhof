@@ -31,8 +31,8 @@ const (
 
 // EffectRequest represents a request for the conductor to execute an effect
 type EffectRequest struct {
-	Type EffectType
 	Data map[string]any
+	Type EffectType
 }
 
 // EffectRegistry allows registering effect handlers

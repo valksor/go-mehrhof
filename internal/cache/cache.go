@@ -1,4 +1,27 @@
 // Package cache provides a simple in-memory cache with TTL support.
+//
+// The cache stores arbitrary values with automatic expiration based on TTL.
+// It is designed for caching provider API responses to reduce rate limit usage.
+//
+// Thread safety:
+//   - All methods are safe for concurrent use.
+//   - Internal state is protected by a read-write mutex.
+//
+// Immutability requirements:
+//   - Get() returns a reference to the stored value without copying.
+//   - Callers MUST NOT modify the returned value, as it would corrupt the cache.
+//   - For mutable types (slices, maps, structs), callers should make their own copy
+//     before modifying. Alternatively, store only immutable values in the cache.
+//
+// Usage:
+//
+//	c := cache.New()
+//	c.Set("key", data, 5*time.Minute)
+//	val, ok := c.Get("key")
+//	if ok {
+//	    // val is the cached data - do not modify it directly
+//	    data := val.(*MyType) // type assertion for retrieval
+//	}
 package cache
 
 import (
@@ -66,7 +89,10 @@ func (c *Cache) Enabled() bool {
 
 // Get retrieves a value from the cache by key.
 // Returns the value and true if found and not expired, nil and false otherwise.
-// The caller should type-assert the result to the expected type.
+//
+// WARNING: The returned value is a reference to the cached object. Do NOT modify
+// the returned value directly, as it will corrupt the cache. Make a copy if
+// modification is needed. The caller should type-assert the result to the expected type.
 func (c *Cache) Get(key string) (any, bool) {
 	if !c.Enabled() {
 		return nil, false

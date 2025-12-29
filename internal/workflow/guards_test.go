@@ -9,8 +9,8 @@ func TestGuardHasSource(t *testing.T) {
 	ctx := context.Background()
 
 	tests := []struct {
-		name string
 		wu   *WorkUnit
+		name string
 		want bool
 	}{
 		{
@@ -48,8 +48,8 @@ func TestGuardNoSpecifications(t *testing.T) {
 	ctx := context.Background()
 
 	tests := []struct {
-		name string
 		wu   *WorkUnit
+		name string
 		want bool
 	}{
 		{
@@ -87,8 +87,8 @@ func TestGuardHasSpecifications(t *testing.T) {
 	ctx := context.Background()
 
 	tests := []struct {
-		name string
 		wu   *WorkUnit
+		name string
 		want bool
 	}{
 		{
@@ -126,8 +126,8 @@ func TestGuardCanUndo(t *testing.T) {
 	ctx := context.Background()
 
 	tests := []struct {
-		name string
 		wu   *WorkUnit
+		name string
 		want bool
 	}{
 		{
@@ -165,8 +165,8 @@ func TestGuardCanRedo(t *testing.T) {
 	ctx := context.Background()
 
 	tests := []struct {
-		name string
 		wu   *WorkUnit
+		name string
 		want bool
 	}{
 		{
@@ -194,8 +194,8 @@ func TestGuardCanFinish(t *testing.T) {
 	ctx := context.Background()
 
 	tests := []struct {
-		name string
 		wu   *WorkUnit
+		name string
 		want bool
 	}{
 		{
