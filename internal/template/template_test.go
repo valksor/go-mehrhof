@@ -245,6 +245,220 @@ git:
 	}
 }
 
+func TestApplyToContentDirect(t *testing.T) {
+	tests := []struct {
+		name    string
+		tpl     *Template
+		content string
+		wantHas []string
+	}{
+		{
+			name: "empty content",
+			tpl: &Template{
+				Name:        "test",
+				Description: "Test template",
+				Frontmatter: map[string]any{
+					"type":  "fix",
+					"agent": "claude",
+				},
+			},
+			content: "",
+			wantHas: []string{"---", "type: fix", "agent: claude"},
+		},
+		{
+			name: "content without frontmatter",
+			tpl: &Template{
+				Name: "test",
+				Frontmatter: map[string]any{
+					"type": "feature",
+				},
+			},
+			content: "# My Task\n\nDescription here.",
+			wantHas: []string{"---", "type: feature", "# My Task"},
+		},
+		{
+			name: "content with existing frontmatter - merge",
+			tpl: &Template{
+				Name: "test",
+				Frontmatter: map[string]any{
+					"type":  "fix",
+					"agent": "sonnet",
+				},
+			},
+			content: `---
+title: My Title
+key: ABC-123
+---
+
+# Task`,
+			wantHas: []string{"title: My Title", "key: ABC-123", "type: fix", "agent: sonnet"},
+		},
+		{
+			name: "template overrides existing frontmatter",
+			tpl: &Template{
+				Name: "test",
+				Frontmatter: map[string]any{
+					"type":     "fix",
+					"priority": "high",
+				},
+			},
+			content: `---
+type: feature
+priority: low
+title: Keep This
+---
+
+# Task`,
+			wantHas: []string{"type: fix", "priority: high", "title: Keep This"},
+		},
+		{
+			name: "malformed frontmatter - treat as body",
+			tpl: &Template{
+				Name: "test",
+				Frontmatter: map[string]any{
+					"type": "fix",
+				},
+			},
+			content: `---
+invalid yaml content [[[
+---
+
+# Task`,
+			wantHas: []string{"# Task"},
+		},
+		{
+			name: "content without frontmatter delimiter",
+			tpl: &Template{
+				Name: "test",
+				Frontmatter: map[string]any{
+					"type": "docs",
+				},
+			},
+			content: "Just plain content\nNo frontmatter here",
+			wantHas: []string{"---", "type: docs", "Just plain content"},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := tt.tpl.ApplyToContent(tt.content)
+
+			for _, want := range tt.wantHas {
+				if !contains(result, want) {
+					t.Errorf("ApplyToContent() result does not contain %q\nGot:\n%s", want, result)
+				}
+			}
+		})
+	}
+}
+
+func TestGetDescription(t *testing.T) {
+	tests := []struct {
+		name string
+		tpl  *Template
+		want string
+	}{
+		{
+			name: "template with description",
+			tpl: &Template{
+				Description: "Fix a bug",
+			},
+			want: "Fix a bug",
+		},
+		{
+			name: "template with no description",
+			tpl: &Template{
+				Description: "",
+			},
+			want: "No description available",
+		},
+		{
+			name: "template with description and agent",
+			tpl: &Template{
+				Description: "Build a feature",
+				Agent:       "claude",
+			},
+			want: "Build a feature (Agent: claude)",
+		},
+		{
+			name: "template with description and type",
+			tpl: &Template{
+				Description: "Fix issues",
+				Frontmatter: map[string]any{
+					"type": "fix",
+				},
+			},
+			want: "Fix issues (Type: fix)",
+		},
+		{
+			name: "template with description, agent, and type",
+			tpl: &Template{
+				Description: "Complex task",
+				Agent:       "sonnet",
+				Frontmatter: map[string]any{
+					"type": "feature",
+				},
+			},
+			want: "Complex task (Agent: sonnet, Type: feature)",
+		},
+		{
+			name: "template with all details but no description",
+			tpl: &Template{
+				Description: "",
+				Agent:       "claude",
+				Frontmatter: map[string]any{
+					"type": "chore",
+				},
+			},
+			want: "No description available (Agent: claude, Type: chore)",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := tt.tpl.GetDescription()
+			if got != tt.want {
+				t.Errorf("GetDescription() = %q, want %q", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestTemplateStruct(t *testing.T) {
+	// Test the Template struct directly
+	tpl := &Template{
+		Name:        "test-template",
+		Description: "A test template",
+		Agent:       "claude",
+		Frontmatter: map[string]any{
+			"type":     "fix",
+			"priority": "high",
+		},
+		AgentSteps: map[string]any{
+			"planning": map[string]any{
+				"agent": "opus",
+			},
+		},
+		Git: map[string]string{
+			"branch_pattern": "fix/{key}--{slug}",
+			"commit_prefix":  "[fix]",
+		},
+		Workflow: map[string]any{
+			"auto_quality": true,
+		},
+	}
+
+	if tpl.Name != "test-template" {
+		t.Errorf("Template.Name = %q, want 'test-template'", tpl.Name)
+	}
+	if tpl.Agent != "claude" {
+		t.Errorf("Template.Agent = %q, want 'claude'", tpl.Agent)
+	}
+	if tpl.Git["branch_pattern"] != "fix/{key}--{slug}" {
+		t.Errorf("Template.Git[branch_pattern] = %q, want 'fix/{key}--{slug}'", tpl.Git["branch_pattern"])
+	}
+}
+
 // Helper function to check if a string contains a substring
 func contains(s, substr string) bool {
 	return len(s) >= len(substr) && (s == substr || len(substr) == 0 ||
