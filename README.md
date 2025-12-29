@@ -847,6 +847,83 @@ linear:
 
 Create API tokens at: https://linear.app/settings/api
 
+### Jira Provider
+
+Reads and manages issues from Jira (Cloud and Server/Data Center).
+
+```bash
+mehr start jira:JIRA-123                                        # Issue key
+mehr start j:PROJ-456                                           # Short scheme
+mehr start jira:https://domain.atlassian.net/browse/JIRA-123  # Issue URL
+```
+
+**Reference Formats:**
+
+| Format | Example |
+|--------|---------|
+| Scheme with key | `jira:JIRA-123` |
+| Short scheme | `j:PROJ-456` |
+| Issue URL (Cloud) | `https://domain.atlassian.net/browse/JIRA-123` |
+| Issue URL (Server) | `https://jira.example.com/browse/PROJ-456` |
+
+**Features:**
+
+- **Read**: Fetches issue title, description, status, priority, labels, assignees, attachments
+- **List**: Browse project issues with JQL filtering (status, labels), pagination
+- **Create**: Create new issues with project, priority, type
+- **Update Status**: Change issue status via workflow transitions
+- **Manage Labels**: Add/remove labels on issues
+- **Comments**: Fetch all comments and add new ones
+- **Attachments**: Download file attachments
+- **Snapshot**: Export issue content as markdown
+- Auto-detects base URL from issue URLs
+- Supports both Jira Cloud and Jira Server/Data Center
+
+**Status Mapping:**
+
+| Mehrhof Status | Jira Status |
+|----------------|-------------|
+| `open` | To Do, Backlog, Open, New |
+| `in_progress` | In Progress, Started, In Development |
+| `review` | In Review, Code Review, Under Review, Verification |
+| `done` | Done, Closed, Resolved, Complete, Finished |
+| `closed` | Won't Fix, Cancelled, Obsolete |
+
+**Priority Mapping:**
+
+| Mehrhof Priority | Jira Priority |
+|------------------|---------------|
+| `critical` | Highest, Critical |
+| `high` | High |
+| `normal` | Medium, Normal, Default |
+| `low` | Low, Lowest |
+
+**Token Resolution Priority:**
+
+1. `MEHR_JIRA_TOKEN` environment variable
+2. `JIRA_TOKEN` environment variable
+3. `.mehrhof/config.yaml` `jira.token`
+
+**Configuration:**
+
+```yaml
+# .mehrhof/config.yaml
+jira:
+  token: "${JIRA_TOKEN}"        # API token
+  email: "user@example.com"     # Email for Cloud auth
+  base_url: "https://domain.atlassian.net"  # Optional, auto-detected
+  project: "PROJ"               # Default project key for operations
+```
+
+**Authentication:**
+
+- **Jira Cloud**: Uses email + API token via Basic Auth. Generate tokens at https://id.atlassian.com/manage-profile/security/api-tokens
+- **Jira Server/Data Center**: Uses PAT (Personal Access Token) or Basic Auth
+
+**Workflow Transitions:**
+
+Jira requires workflow transitions rather than direct status changes. The provider fetches available transitions and finds matching names (case-insensitive).
+
 ### Wrike Provider
 
 Reads and lists tasks from Wrike API v4.
@@ -1120,6 +1197,7 @@ internal/
 │   ├── file/       # File provider
 │   ├── directory/  # Directory provider
 │   ├── github/     # GitHub issues provider
+│   ├── jira/       # Jira issues provider
 │   ├── linear/     # Linear issues provider
 │   ├── notion/     # Notion pages provider
 │   ├── wrike/      # Wrike tasks provider
