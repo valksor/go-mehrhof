@@ -181,6 +181,7 @@ providers:
 | `-b, --branch` | Create git branch for the task (use `--branch=false` to disable) | `true` |
 | `-w, --worktree` | Create separate git worktree (enables parallel tasks) | `false` |
 | `-k, --key <key>` | External key for branch/commit naming (e.g., `FEATURE-123`) | auto-detect |
+| `-t, --template <name>` | Template to apply (bug-fix, feature, refactor, docs, test, chore) | - |
 | `--commit-prefix <template>` | Commit prefix template (e.g., `[{key}]`) | `[{key}]` |
 | `--branch-pattern <template>` | Branch pattern template (e.g., `{type}/{key}--{slug}`) | `{type}/{key}--{slug}` |
 
@@ -325,6 +326,75 @@ glm-fast  alias     glm      yes        GLM with lower token limit
 ```
 
 See [Agent Aliases](#agent-aliases) for configuration details.
+
+---
+
+### `mehr templates`
+
+Manage and apply task templates for common development patterns.
+
+```bash
+mehr templates                    # List available templates
+mehr templates show bug-fix        # Show template details
+mehr templates apply bug-fix task.md  # Apply template to file
+```
+
+**Available Templates:**
+
+| Template   | Description                                    |
+| ---------- | ---------------------------------------------- |
+| `bug-fix`  | Bug fix tasks with stricter validation         |
+| `feature`  | New feature development                        |
+| `refactor` | Code refactoring (quality-focused)             |
+| `docs`     | Documentation changes (skips quality checks)   |
+| `test`     | Adding or improving tests                      |
+| `chore`    | Maintenance tasks and chores                   |
+
+**Using with `mehr start`:**
+
+```bash
+mehr start --template bug-fix file:task.md
+mehr start -t feature file:FEATURE-123.md
+```
+
+Templates configure:
+- Task type (`type: fix`, `feature`, etc.)
+- Default agent (`agent: claude-sonnet`)
+- Git branch pattern (`branch_pattern: "fix/{key}--{slug}"`)
+- Commit prefix (`commit_prefix: "[fix/{key}]"`)
+- Workflow settings (`skip_quality: true/false`)
+
+---
+
+### `mehr cost`
+
+Show token usage and costs for the active task.
+
+```bash
+mehr cost                # Show cost for active task
+mehr cost --by-step      # Break down by workflow step
+mehr cost --all          # Show costs for all tasks
+mehr cost --summary      # Show aggregate summary
+```
+
+**Output:**
+
+```
+Task: Add user authentication
+Key: AUTH-001
+
+Input Tokens:     125,000
+Output Tokens:     45,000
+Cached Tokens:     80,000
+Total Cost:        $1.2350
+
+By Step:
+  planning:      $0.4500
+  implementing:  $0.6500
+  chat:          $0.1350
+```
+
+Costs are tracked automatically during planning, implementation, review, and chat phases. Data is persisted in `.mehrhof/work/<task-id>/work.yaml`.
 
 ---
 

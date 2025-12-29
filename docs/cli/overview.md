@@ -48,13 +48,15 @@ These flags work with any command:
 
 ### Utility
 
-| Command                   | Description                  |
-| ------------------------- | ---------------------------- |
-| [init](cli/init.md)       | Initialize task workspace    |
-| [agents](cli/agents.md)   | List available AI agents     |
-| [config](cli/config.md)   | Validate configuration files |
-| [plugins](cli/plugins.md) | Manage extension plugins     |
-| [version](cli/version.md) | Print version information    |
+| Command                   | Description                              |
+| ------------------------- | ---------------------------------------- |
+| [init](cli/init.md)       | Initialize task workspace                |
+| [agents](cli/agents.md)   | List available AI agents                 |
+| [config](cli/config.md)   | Validate configuration files             |
+| [plugins](cli/plugins.md) | Manage extension plugins                 |
+| [templates](cli/templates.md) | Manage task templates               |
+| [cost](cli/cost.md)       | Show token usage and costs               |
+| [version](cli/version.md) | Print version information                |
 
 ## Command Help
 
