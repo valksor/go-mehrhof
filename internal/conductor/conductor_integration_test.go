@@ -449,7 +449,7 @@ func TestRedo_NoGit(t *testing.T) {
 	}
 }
 
-func TestTalk_NoActiveTask(t *testing.T) {
+func TestChat_NoActiveTask(t *testing.T) {
 	ctx := context.Background()
 
 	c, err := New()
@@ -457,9 +457,9 @@ func TestTalk_NoActiveTask(t *testing.T) {
 		t.Fatalf("New: %v", err)
 	}
 
-	err = c.Talk(ctx, "hello", TalkOptions{})
+	err = c.Chat(ctx, "hello", ChatOptions{})
 	if err == nil {
-		t.Error("Talk should fail when no active task")
+		t.Error("Chat should fail when no active task")
 	}
 	if err.Error() != "no active task" {
 		t.Errorf("unexpected error: %v", err)
@@ -798,7 +798,7 @@ func TestGetTaskWork_WithTask(t *testing.T) {
 	}
 }
 
-// TestTalk_NoAgent is skipped because Talk() doesn't check for nil activeAgent
+// TestChat_NoAgent is skipped because Chat() doesn't check for nil activeAgent
 // before using it (it panics instead of returning an error). This would require
 // a mock agent to test properly.
 

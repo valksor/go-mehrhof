@@ -20,8 +20,8 @@ type Options struct {
 	UseWorktree  bool // Create git worktree for task
 	AutoInit     bool // Auto-initialize workspace if needed
 
-	// Yolo mode (full automation)
-	YoloMode           bool // Enable full automation mode
+	// Auto mode (full automation)
+	AutoMode           bool // Enable full automation mode
 	SkipAgentQuestions bool // Skip agent questions, proceed with best guess
 	MaxQualityRetries  int  // Max retries for quality loop (default: 3)
 
@@ -129,10 +129,10 @@ func WithAutoInit(enabled bool) Option {
 	}
 }
 
-// WithYoloMode enables full automation mode
-func WithYoloMode(enabled bool) Option {
+// WithAutoMode enables full automation mode
+func WithAutoMode(enabled bool) Option {
 	return func(o *Options) {
-		o.YoloMode = enabled
+		o.AutoMode = enabled
 		if enabled {
 			o.SkipAgentQuestions = true
 		}
@@ -237,8 +237,8 @@ func (o *Options) Apply(opts ...Option) {
 	}
 }
 
-// TalkOptions configures talk mode
-type TalkOptions struct {
+// ChatOptions configures chat mode
+type ChatOptions struct {
 	Continue    bool   // Continue existing session
 	SessionFile string // Specific session file to continue
 }

@@ -4,8 +4,8 @@ import (
 	"testing"
 )
 
-func TestDefaultYoloOptions(t *testing.T) {
-	opts := DefaultYoloOptions()
+func TestDefaultAutoOptions(t *testing.T) {
+	opts := DefaultAutoOptions()
 
 	if opts.QualityTarget != "quality" {
 		t.Errorf("QualityTarget = %q, want %q", opts.QualityTarget, "quality")
@@ -27,8 +27,8 @@ func TestDefaultYoloOptions(t *testing.T) {
 	}
 }
 
-func TestYoloOptionsStruct(t *testing.T) {
-	opts := YoloOptions{
+func TestAutoOptionsStruct(t *testing.T) {
+	opts := AutoOptions{
 		QualityTarget: "lint",
 		MaxRetries:    5,
 		SquashMerge:   false,
@@ -57,8 +57,8 @@ func TestYoloOptionsStruct(t *testing.T) {
 	}
 }
 
-func TestYoloResultStruct(t *testing.T) {
-	result := YoloResult{
+func TestAutoResultStruct(t *testing.T) {
+	result := AutoResult{
 		PlanningDone:    true,
 		ImplementDone:   true,
 		QualityAttempts: 2,
@@ -87,8 +87,8 @@ func TestYoloResultStruct(t *testing.T) {
 	}
 }
 
-func TestYoloResultStruct_Failed(t *testing.T) {
-	result := YoloResult{
+func TestAutoResultStruct_Failed(t *testing.T) {
+	result := AutoResult{
 		PlanningDone:    true,
 		ImplementDone:   true,
 		QualityAttempts: 3,
@@ -108,30 +108,30 @@ func TestYoloResultStruct_Failed(t *testing.T) {
 	}
 }
 
-func TestWithYoloMode(t *testing.T) {
+func TestWithAutoMode(t *testing.T) {
 	opts := DefaultOptions()
-	WithYoloMode(true)(&opts)
+	WithAutoMode(true)(&opts)
 
-	if opts.YoloMode != true {
-		t.Errorf("YoloMode = %v, want true", opts.YoloMode)
+	if opts.AutoMode != true {
+		t.Errorf("AutoMode = %v, want true", opts.AutoMode)
 	}
-	// YoloMode should auto-enable SkipAgentQuestions
+	// AutoMode should auto-enable SkipAgentQuestions
 	if opts.SkipAgentQuestions != true {
-		t.Errorf("SkipAgentQuestions = %v, want true (auto-set by YoloMode)", opts.SkipAgentQuestions)
+		t.Errorf("SkipAgentQuestions = %v, want true (auto-set by AutoMode)", opts.SkipAgentQuestions)
 	}
 }
 
-func TestWithYoloMode_Disabled(t *testing.T) {
+func TestWithAutoMode_Disabled(t *testing.T) {
 	opts := DefaultOptions()
 	// First enable
-	WithYoloMode(true)(&opts)
+	WithAutoMode(true)(&opts)
 	// Then disable
-	WithYoloMode(false)(&opts)
+	WithAutoMode(false)(&opts)
 
-	if opts.YoloMode != false {
-		t.Errorf("YoloMode = %v, want false", opts.YoloMode)
+	if opts.AutoMode != false {
+		t.Errorf("AutoMode = %v, want false", opts.AutoMode)
 	}
-	// SkipAgentQuestions should remain true (was set when YoloMode was true)
+	// SkipAgentQuestions should remain true (was set when AutoMode was true)
 	if opts.SkipAgentQuestions != true {
 		t.Errorf("SkipAgentQuestions = %v, should remain true from previous setting", opts.SkipAgentQuestions)
 	}
@@ -176,12 +176,12 @@ func TestWithMaxQualityRetries_Zero(t *testing.T) {
 	}
 }
 
-func TestDefaultOptions_IncludesYoloDefaults(t *testing.T) {
+func TestDefaultOptions_IncludesAutoDefaults(t *testing.T) {
 	opts := DefaultOptions()
 
-	// Verify yolo-related defaults
-	if opts.YoloMode != false {
-		t.Errorf("YoloMode = %v, want false", opts.YoloMode)
+	// Verify auto-related defaults
+	if opts.AutoMode != false {
+		t.Errorf("AutoMode = %v, want false", opts.AutoMode)
 	}
 	if opts.SkipAgentQuestions != false {
 		t.Errorf("SkipAgentQuestions = %v, want false", opts.SkipAgentQuestions)
@@ -191,15 +191,15 @@ func TestDefaultOptions_IncludesYoloDefaults(t *testing.T) {
 	}
 }
 
-func TestOptionsApply_YoloOptions(t *testing.T) {
+func TestOptionsApply_AutoOptions(t *testing.T) {
 	opts := DefaultOptions()
 	opts.Apply(
-		WithYoloMode(true),
+		WithAutoMode(true),
 		WithMaxQualityRetries(10),
 	)
 
-	if opts.YoloMode != true {
-		t.Errorf("YoloMode = %v, want true", opts.YoloMode)
+	if opts.AutoMode != true {
+		t.Errorf("AutoMode = %v, want true", opts.AutoMode)
 	}
 	if opts.SkipAgentQuestions != true {
 		t.Errorf("SkipAgentQuestions = %v, want true", opts.SkipAgentQuestions)

@@ -153,8 +153,8 @@ func (c *Conductor) RunPlanning(ctx context.Context) error {
 	// If agent asked a question, handle based on mode
 	if response.Question != nil {
 		if c.opts.SkipAgentQuestions {
-			// In yolo mode, skip questions and proceed with agent's best guess
-			c.publishProgress("Skipping agent question (yolo mode)...", 50)
+			// In auto mode, skip questions and proceed with agent's best guess
+			c.publishProgress("Skipping agent question (auto mode)...", 50)
 			// Log the skipped question for audit trail
 			c.logError(fmt.Errorf("skipped agent question: %s", response.Question.Text))
 			// Continue with whatever specs were generated (if any)
@@ -667,9 +667,9 @@ Provide:
 4. If needed, provide corrected code in yaml:file blocks`, title, sourceContent, specsContent)
 }
 
-// buildTalkPrompt creates a context-aware prompt for dialogue mode.
+// buildChatPrompt creates a context-aware prompt for dialogue mode.
 // This ensures the agent has full task awareness when answering questions or providing feedback.
-func buildTalkPrompt(title, sourceContent, notes, specs string, pq *storage.PendingQuestion, message string) string {
+func buildChatPrompt(title, sourceContent, notes, specs string, pq *storage.PendingQuestion, message string) string {
 	var sb strings.Builder
 
 	sb.WriteString("You are helping with a task. Respond to the user's message with context awareness.\n\n")

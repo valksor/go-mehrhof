@@ -202,8 +202,8 @@ func TestOptionsApply(t *testing.T) {
 	}
 }
 
-func TestTalkOptionsStruct(t *testing.T) {
-	opts := TalkOptions{
+func TestChatOptionsStruct(t *testing.T) {
+	opts := ChatOptions{
 		Continue:    true,
 		SessionFile: "session.yaml",
 	}
@@ -1047,8 +1047,8 @@ func TestGetDiffStats_NilTaskWork(t *testing.T) {
 	}
 }
 
-// Test buildTalkPrompt
-func TestBuildTalkPrompt(t *testing.T) {
+// Test buildChatPrompt
+func TestBuildChatPrompt(t *testing.T) {
 	tests := []struct {
 		name          string
 		title         string
@@ -1113,11 +1113,11 @@ func TestBuildTalkPrompt(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := buildTalkPrompt(tt.title, tt.sourceContent, tt.notes, tt.specs, tt.pendingQ, tt.message)
+			got := buildChatPrompt(tt.title, tt.sourceContent, tt.notes, tt.specs, tt.pendingQ, tt.message)
 
 			for _, want := range tt.wantContain {
 				if !strings.Contains(got, want) {
-					t.Errorf("buildTalkPrompt() missing %q", want)
+					t.Errorf("buildChatPrompt() missing %q", want)
 				}
 			}
 		})

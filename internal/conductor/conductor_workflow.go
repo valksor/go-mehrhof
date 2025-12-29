@@ -32,8 +32,8 @@ func (c *Conductor) Plan(ctx context.Context) error {
 	return nil
 }
 
-// Talk enters dialogue mode to add notes
-func (c *Conductor) Talk(ctx context.Context, message string, opts TalkOptions) error {
+// Chat enters dialogue mode to add notes
+func (c *Conductor) Chat(ctx context.Context, message string, opts ChatOptions) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -45,7 +45,7 @@ func (c *Conductor) Talk(ctx context.Context, message string, opts TalkOptions) 
 
 	// Dispatch dialogue start
 	if err := c.machine.Dispatch(ctx, workflow.EventDialogueStart); err != nil {
-		return fmt.Errorf("enter talk mode: %w", err)
+		return fmt.Errorf("enter chat mode: %w", err)
 	}
 
 	// Get agent for dialogue step
@@ -55,11 +55,11 @@ func (c *Conductor) Talk(ctx context.Context, message string, opts TalkOptions) 
 		return fmt.Errorf("get dialogue agent: %w", err)
 	}
 
-	// Build context-aware prompt for talk mode
+	// Build context-aware prompt for chat mode
 	// This ensures Claude has full awareness of the task when answering
 	sourceContent, notes, specs, pendingQ := c.readOptionalWorkspaceData(taskID)
 
-	prompt := buildTalkPrompt(c.taskWork.Metadata.Title, sourceContent, notes, specs, pendingQ, message)
+	prompt := buildChatPrompt(c.taskWork.Metadata.Title, sourceContent, notes, specs, pendingQ, message)
 
 	// Run agent with context-aware prompt
 	response, err := dialogueAgent.Run(ctx, prompt)
@@ -87,14 +87,14 @@ func (c *Conductor) Talk(ctx context.Context, message string, opts TalkOptions) 
 		}
 	}
 
-	// Clear pending question if it existed (user has answered via talk)
+	// Clear pending question if it existed (user has answered via chat)
 	if c.workspace.HasPendingQuestion(taskID) {
 		_ = c.workspace.ClearPendingQuestion(taskID)
 	}
 
 	// Return to previous state
 	if err := c.machine.Dispatch(ctx, workflow.EventDialogueEnd); err != nil {
-		return fmt.Errorf("exit talk mode: %w", err)
+		return fmt.Errorf("exit chat mode: %w", err)
 	}
 
 	return nil

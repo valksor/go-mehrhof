@@ -5,8 +5,8 @@ import (
 	"fmt"
 )
 
-// YoloOptions configures the full automation run
-type YoloOptions struct {
+// AutoOptions configures the full automation run
+type AutoOptions struct {
 	// Quality settings
 	QualityTarget string // Make target (default: "quality")
 	MaxRetries    int    // Max quality retry attempts (0 = skip quality)
@@ -18,9 +18,9 @@ type YoloOptions struct {
 	Push         bool   // Push after merge
 }
 
-// DefaultYoloOptions returns sensible defaults for yolo mode
-func DefaultYoloOptions() YoloOptions {
-	return YoloOptions{
+// DefaultAutoOptions returns sensible defaults for auto mode
+func DefaultAutoOptions() AutoOptions {
+	return AutoOptions{
 		QualityTarget: "quality",
 		MaxRetries:    3,
 		SquashMerge:   true,
@@ -30,8 +30,8 @@ func DefaultYoloOptions() YoloOptions {
 	}
 }
 
-// YoloResult holds the result of a full yolo run
-type YoloResult struct {
+// AutoResult holds the result of a full auto run
+type AutoResult struct {
 	PlanningDone    bool   // Planning phase completed
 	ImplementDone   bool   // Implementation phase completed
 	QualityAttempts int    // Number of quality check attempts
@@ -41,9 +41,9 @@ type YoloResult struct {
 	FailedAt        string // Phase where failure occurred
 }
 
-// RunYolo executes the full automation cycle: start -> plan -> implement -> quality -> finish
-func (c *Conductor) RunYolo(ctx context.Context, reference string, opts YoloOptions) (*YoloResult, error) {
-	result := &YoloResult{}
+// RunAuto executes the full automation cycle: start -> plan -> implement -> quality -> finish
+func (c *Conductor) RunAuto(ctx context.Context, reference string, opts AutoOptions) (*AutoResult, error) {
+	result := &AutoResult{}
 
 	// Step 1: Start task (register it)
 	c.publishProgress("Starting task...", 5)
@@ -63,7 +63,7 @@ func (c *Conductor) RunYolo(ctx context.Context, reference string, opts YoloOpti
 	}
 
 	if err := c.RunPlanning(ctx); err != nil {
-		// In yolo mode, ErrPendingQuestion should not occur (skipped in handlers.go)
+		// In auto mode, ErrPendingQuestion should not occur (skipped in handlers.go)
 		result.Error = err
 		result.FailedAt = "planning"
 		return result, fmt.Errorf("planning: %w", err)
@@ -96,7 +96,7 @@ func (c *Conductor) RunYolo(ctx context.Context, reference string, opts YoloOpti
 
 		qualityOpts := QualityOptions{
 			Target:       opts.QualityTarget,
-			SkipPrompt:   true, // Always skip prompt in yolo mode
+			SkipPrompt:   true, // Always skip prompt in auto mode
 			AllowFailure: true, // We handle failures in the retry loop
 		}
 
