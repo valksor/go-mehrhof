@@ -1,0 +1,13 @@
+name: bug-fix
+description: Template for bug fix tasks with stricter validation
+frontmatter:
+  type: fix
+agent: claude-sonnet
+agent_steps:
+  planning:
+    agent: claude
+git:
+  branch_pattern: "fix/{key}--{slug}"
+  commit_prefix: "[fix/{key}]"
+workflow:
+  skip_quality: false

@@ -1,0 +1,17 @@
+name: refactor
+description: Template for code refactoring (quality-focused)
+frontmatter:
+  type: refactor
+agent: claude
+agent_steps:
+  planning:
+    agent: claude
+  implementing:
+    agent: claude
+  reviewing:
+    agent: claude
+git:
+  branch_pattern: "refactor/{key}--{slug}"
+  commit_prefix: "[refactor]"
+workflow:
+  skip_quality: false

@@ -1,0 +1,10 @@
+name: chore
+description: Template for maintenance tasks and chores
+frontmatter:
+  type: chore
+agent: claude-sonnet
+git:
+  branch_pattern: "chore/{key}--{slug}"
+  commit_prefix: "[chore]"
+workflow:
+  skip_quality: true

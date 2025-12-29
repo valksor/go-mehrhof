@@ -1,0 +1,10 @@
+name: docs
+description: Template for documentation changes (skips quality checks)
+frontmatter:
+  type: docs
+agent: claude-sonnet
+git:
+  branch_pattern: "docs/{key}--{slug}"
+  commit_prefix: "[docs]"
+workflow:
+  skip_quality: true

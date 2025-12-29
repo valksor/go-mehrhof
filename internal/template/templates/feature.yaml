@@ -1,0 +1,15 @@
+name: feature
+description: Template for new feature development
+frontmatter:
+  type: feature
+agent: claude
+agent_steps:
+  planning:
+    agent: claude
+  implementing:
+    agent: claude-sonnet
+git:
+  branch_pattern: "feat/{key}--{slug}"
+  commit_prefix: "[{key}]"
+workflow:
+  skip_quality: false

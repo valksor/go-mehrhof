@@ -1,0 +1,10 @@
+name: test
+description: Template for adding or improving tests
+frontmatter:
+  type: test
+agent: claude-sonnet
+git:
+  branch_pattern: "test/{key}--{slug}"
+  commit_prefix: "[test]"
+workflow:
+  skip_quality: false
