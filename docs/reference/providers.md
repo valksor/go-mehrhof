@@ -9,7 +9,10 @@ Providers are task sources that Mehrhof can read from and interact with. Each pr
 | **File** | `file:` | Local markdown files |
 | **Directory** | `dir:` | Local directories with markdown files |
 | **GitHub** | `github:`, `gh:` | GitHub issues |
+| **Linear** | `linear:`, `ln:` | Linear issues |
+| **Notion** | `notion:`, `nt:` | Notion pages and databases |
 | **Wrike** | `wrike:`, `wk:` | Wrike tasks |
+| **YouTrack** | `youtrack:`, `yt:` | YouTrack issues |
 
 ## Provider Capabilities
 
@@ -156,6 +159,232 @@ The GitHub provider tries token sources in this order:
 
 ---
 
+## Linear Provider
+
+**Schemes:** `linear:`, `ln:`
+
+**Capabilities:** `read`, `list`, `fetch_comments`, `comment`, `update_status`, `manage_labels`, `create_work_unit`, `snapshot`
+
+Integrates with Linear for modern project management and issue tracking.
+
+### Usage
+
+```bash
+# By issue identifier
+mehr start linear:ENG-123
+mehr plan ln:ENG-123
+
+# By issue URL
+mehr start linear:https://linear.app/team/issue/ENG-123-title
+```
+
+### Configuration
+
+```yaml
+linear:
+  token: "${LINEAR_API_KEY}"
+  team: "ENG"  # Optional: default team key for operations
+```
+
+### Token Resolution
+
+1. `MEHR_LINEAR_API_KEY` environment variable
+2. `LINEAR_API_KEY` environment variable
+3. Token from `config.yaml`
+
+### Features
+
+- **Issue Fetching**: Retrieves title, description, status, priority, labels, assignees
+- **Status Mapping**: Maps Linear states to provider statuses (Backlog/Todo → Open, In Progress → In Progress, Done → Done)
+- **Priority Mapping**: Maps Linear priorities (Urgent → Critical, High → High, Medium → Normal, Low → Low)
+- **Comment Support**: Fetch and add comments to issues
+- **Label Management**: Add and remove labels on issues
+- **Status Updates**: Change issue state through workflow
+- **Issue Creation**: Create new Linear issues
+- **Snapshots**: Export issues as markdown with comments
+
+### Status Mapping
+
+| Linear State | Provider Status |
+|--------------|-----------------|
+| Backlog, Todo, Unstarted | Open |
+| In Progress, Started, In Review | In Progress |
+| Done, Completed | Done |
+| Canceled, Cancelled | Closed |
+
+### Priority Mapping
+
+| Linear Priority | Provider Priority |
+|-----------------|------------------|
+| Urgent | Critical |
+| High | High |
+| Medium | Normal |
+| Low | Low |
+| No priority | Normal |
+
+---
+
+## Notion Provider
+
+**Schemes:** `notion:`, `nt:`
+
+**Capabilities:** `read`, `list`, `fetch_comments`, `comment`, `update_status`, `manage_labels`, `create_work_unit`, `snapshot`
+
+Integrates with Notion for flexible task management using pages and databases.
+
+### Usage
+
+```bash
+# By page ID (32-char UUID, with or without dashes)
+mehr start notion:a1b2c3d4e5f678901234567890abcdef1
+mehr plan nt:a1b2c3d4-e5f6-7890-1234-567890abcdef1
+
+# By Notion URL
+mehr start notion:https://www.notion.so/Page-Title-a1b2c3d4e5f678901234567890abcdef1
+```
+
+### Configuration
+
+```yaml
+notion:
+  token: "${NOTION_TOKEN}"
+  database_id: "optional-default-database"  # For list operations
+  status_property: "Status"                  # Property name for status
+  description_property: "Description"        # Property name for description
+  labels_property: "Tags"                    # Multi-select property for labels
+```
+
+### Token Resolution
+
+1. `MEHR_NOTION_TOKEN` environment variable
+2. `NOTION_TOKEN` environment variable
+3. Token from `config.yaml`
+
+### Features
+
+- **Page Fetching**: Retrieves title, content blocks, status, labels, assignees
+- **Database Querying**: List pages from databases with status/label filtering
+- **Hybrid Approach**: Works with individual pages or database queries
+- **Status Mapping**: Maps Notion status/select properties to provider statuses
+- **Label Management**: Add/remove multi-select labels
+- **Comment Support**: Fetch and add comments to pages
+- **Status Updates**: Change page status through configurable property
+- **Page Creation**: Create new pages in databases
+- **Snapshots**: Export pages as markdown with comments
+- **Configurable Properties**: Customize which properties map to status/description/labels
+
+### Status Mapping
+
+| Notion Status | Provider Status |
+|---------------|-----------------|
+| Not Started, Backlog, Todo | Open |
+| In Progress, Started, Doing | In Progress |
+| In Review, Reviewing | Review |
+| Done, Completed, Finished | Done |
+| Cancelled, Archived | Closed |
+
+### Reference Formats
+
+| Format | Example |
+|--------|---------|
+| Scheme with page ID | `notion:a1b2c3d4e5f678901234567890abcdef1` |
+| Short scheme | `nt:a1b2c3d4e5f678901234567890abcdef1` |
+| UUID with dashes | `notion:a1b2c3d4-e5f6-7890-1234-567890abcdef1` |
+| Notion URL | `notion:https://www.notion.so/Page-Title-a1b2c3d4e5f6...` |
+
+### Property Configuration
+
+The Notion provider maps Notion properties to work unit fields:
+
+| Provider Field | Default Property Name | Notes |
+|----------------|----------------------|-------|
+| Status | `Status` | Status or select property type |
+| Description | `Description` | Falls back to page content blocks |
+| Labels | `Tags` | Multi-select property type |
+| Assignee | `Assignee` or `Owner` | People property type |
+
+You can customize these property names in your config.
+
+---
+
+## YouTrack Provider
+
+**Schemes:** `youtrack:`, `yt:`
+
+**Capabilities:** `read`, `list`, `fetch_comments`, `comment`, `update_status`, `manage_labels`, `create_work_unit`, `download_attachment`, `snapshot`
+
+Integrates with JetBrains YouTrack for comprehensive issue tracking.
+
+### Usage
+
+```bash
+# By issue ID
+mehr start youtrack:ABC-123
+mehr plan yt:ABC-123
+
+# By bare ID (auto-detected if format matches)
+mehr start ABC-123
+
+# By URL
+mehr start yt:https://company.myjetbrains.com/youtrack/issue/ABC-123
+mehr start yt:https://youtrack.cloud/issue/ABC-123
+```
+
+### Configuration
+
+```yaml
+youtrack:
+  token: "${YOUTRACK_TOKEN}"
+  host: "https://company.myjetbrains.com/youtrack"  # Optional: override host
+```
+
+### Token Resolution
+
+1. `MEHR_YOUTRACK_TOKEN` environment variable
+2. `YOUTRACK_TOKEN` environment variable
+3. Token from `config.yaml`
+
+### Reference Formats
+
+| Format | Example |
+|--------|---------|
+| Scheme with ID | `youtrack:ABC-123` |
+| Short scheme | `yt:ABC-123` |
+| Bare ID | `ABC-123` (auto-detected) |
+| Issue URL | `https://company.myjetbrains.com/youtrack/issue/ABC-123` |
+
+### Features
+
+- **Issue Fetching**: Retrieves title, description, status, priority, tags, assignees, custom fields
+- **List Issues**: Query-based filtering with status/tag support and pagination
+- **Comment Support**: Fetch all comments and add new ones
+- **Tag Management**: Add/remove tags (YouTrack's label equivalent)
+- **Status Updates**: Change issue state via custom field update
+- **Issue Creation**: Create new issues with project, priority, type
+- **Attachments**: Download file attachments
+- **Snapshots**: Export issue content as markdown
+
+### State Mapping
+
+| Mehrhof Status | YouTrack States |
+|----------------|-----------------|
+| `open` | New, Submitted, To be done |
+| `in_progress` | In Progress, Active |
+| `review` | Code Review, Verification |
+| `done` | Fixed, Done, Completed, Verified, Resolved |
+| `closed` | Closed, Won't fix, Can't reproduce, Duplicate, Obsolete |
+
+### Priority Mapping
+
+| Mehrhof Priority | YouTrack Priority |
+|------------------|-------------------|
+| `critical` | Critical, Show-stopper, Urgent |
+| `high` | Major, High |
+| `normal` | Normal |
+| `low` | Minor, Low |
+
+---
+
 ## Wrike Provider
 
 **Schemes:** `wrike:`, `wk:`
@@ -233,7 +462,10 @@ Provider plugins communicate via JSON-RPC 2.0 over stdin/stdout. See the plugin 
 | File | `file:path/to/file.md` | `file:tasks/auth.md` |
 | Directory | `dir:path/to/directory` | `dir:./tasks` |
 | GitHub | `github:N` or `github:owner/repo#N` | `github:123`, `github:owner/repo#456` |
+| Linear | `linear:TEAM-NUM` or URL | `linear:ENG-123`, `linear:https://linear.app/...` |
+| Notion | `notion:page-id` or URL | `notion:a1b2c3d4e5f6...`, `notion:https://notion.so/...` |
 | Wrike | `wrike:ID` or permalink | `wrike:IEAGI2D4I4AL7YNL` |
+| YouTrack | `youtrack:ABC-123` or URL | `youtrack:ABC-123`, `youtrack:https://...` |
 
 ---
 
