@@ -255,14 +255,14 @@ Requires at least one SPEC file (run `mehr plan` first).
 
 ---
 
-### `mehr talk [message]`
+### `mehr chat [message]`
 
 Enter interactive conversation mode with the AI agent.
 
 ```bash
-mehr talk                        # Enter interactive mode
-mehr talk "Help me debug this"   # Start with a message
-mehr talk --continue             # Continue previous session
+mehr chat                        # Enter interactive mode
+mehr chat "Help me debug this"   # Start with a message
+mehr chat --continue             # Continue previous session
 ```
 
 **Flags:**
@@ -459,16 +459,15 @@ Use this when you want to abandon a task completely.
 
 ---
 
-### `mehr yolo <reference>` (alias: `mehr auto`)
+### `mehr auto <reference>`
 
 Full automation mode: runs the entire workflow without user interaction.
 
 ```bash
-mehr yolo file:task.md               # Full cycle from file
-mehr auto file:task.md               # Same as yolo (alias)
-mehr yolo dir:./tasks/               # Full cycle from directory
-mehr yolo --max-retries 5 file:task.md  # Allow more quality retries
-mehr yolo --skip-quality file:task.md   # Skip quality checks entirely
+mehr auto file:task.md               # Full cycle from file
+mehr auto dir:./tasks/               # Full cycle from directory
+mehr auto --max-retries 5 file:task.md  # Allow more quality retries
+mehr auto --skip-quality file:task.md   # Skip quality checks entirely
 ```
 
 **Workflow:**
@@ -494,7 +493,7 @@ mehr yolo --skip-quality file:task.md   # Skip quality checks entirely
 | `--quality-target <target>` | Make target for quality checks | `quality` |
 
 **Quality Retry Loop:**
-If quality checks fail, yolo mode automatically re-runs implementation with the quality errors as feedback, up to `--max-retries` times.
+If quality checks fail, auto mode automatically re-runs implementation with the quality errors as feedback, up to `--max-retries` times.
 
 ---
 
