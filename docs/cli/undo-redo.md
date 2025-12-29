@@ -9,17 +9,30 @@ Revert to the previous checkpoint.
 ### Synopsis
 
 ```bash
-mehr undo
+mehr undo [-y|--yes]
 ```
+
+### Flags
+
+| Flag | Description |
+|------|-------------|
+| `-y, --yes` | Skip confirmation prompt |
 
 ### Description
 
 The `undo` command reverts the task to its previous checkpoint. This undoes the last set of changes by resetting to a previous git state.
 
+By default, `mehr undo` shows a confirmation prompt before proceeding. Use `--yes` to skip it.
+
 ### Examples
 
 ```bash
+# Undo with confirmation
 mehr undo
+
+# Undo without confirmation
+mehr undo --yes
+mehr undo -y
 ```
 
 Output:
@@ -56,17 +69,30 @@ Restore the next checkpoint (after undo).
 ### Synopsis
 
 ```bash
-mehr redo
+mehr redo [-y|--yes]
 ```
+
+### Flags
+
+| Flag | Description |
+|------|-------------|
+| `-y, --yes` | Skip confirmation prompt |
 
 ### Description
 
 The `redo` command restores changes that were previously undone. Only available after an undo.
 
+By default, `mehr redo` shows a confirmation prompt before proceeding. Use `--yes` to skip it.
+
 ### Examples
 
 ```bash
+# Redo with confirmation
 mehr redo
+
+# Redo without confirmation
+mehr redo --yes
+mehr redo -y
 ```
 
 Output:
