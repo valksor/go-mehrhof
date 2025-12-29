@@ -12,7 +12,7 @@ import (
 var StateDisplay = map[workflow.State]string{
 	workflow.StateIdle:          "Ready",
 	workflow.StatePlanning:      "Planning",
-	workflow.StateImplementing:  "In Progress",
+	workflow.StateImplementing:  "Implementing",
 	workflow.StateReviewing:     "Reviewing",
 	workflow.StateDone:          "Completed",
 	workflow.StateFailed:        "Failed",
@@ -42,7 +42,7 @@ var StateDescription = map[workflow.State]string{
 var SpecificationStatusDisplay = map[string]string{
 	storage.SpecificationStatusDraft:        "Draft",
 	storage.SpecificationStatusReady:        "Pending",
-	storage.SpecificationStatusImplementing: "In Progress",
+	storage.SpecificationStatusImplementing: "Implementing",
 	storage.SpecificationStatusDone:         "Completed",
 }
 

@@ -207,3 +207,12 @@ func ColorSpecStatus(status, displayName string) string {
 		return displayName
 	}
 }
+
+// WorktreeIndicator returns a visual indicator showing the current context.
+// Use this to help users understand if they're in a worktree or main repo.
+func WorktreeIndicator(isWorktree bool) string {
+	if isWorktree {
+		return Muted("[worktree]")
+	}
+	return ""
+}

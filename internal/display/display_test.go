@@ -15,7 +15,7 @@ func TestFormatState(t *testing.T) {
 	}{
 		{"idle", workflow.StateIdle, "Ready"},
 		{"planning", workflow.StatePlanning, "Planning"},
-		{"implementing", workflow.StateImplementing, "In Progress"},
+		{"implementing", workflow.StateImplementing, "Implementing"},
 		{"reviewing", workflow.StateReviewing, "Reviewing"},
 		{"done", workflow.StateDone, "Completed"},
 		{"failed", workflow.StateFailed, "Failed"},
@@ -45,7 +45,7 @@ func TestFormatStateString(t *testing.T) {
 	}{
 		{"idle", "idle", "Ready"},
 		{"planning", "planning", "Planning"},
-		{"implementing", "implementing", "In Progress"},
+		{"implementing", "implementing", "Implementing"},
 		{"unknown", "unknown", "unknown"},
 	}
 
@@ -97,7 +97,7 @@ func TestFormatSpecificationStatus(t *testing.T) {
 	}{
 		{"draft", storage.SpecificationStatusDraft, "Draft"},
 		{"ready", storage.SpecificationStatusReady, "Pending"},
-		{"implementing", storage.SpecificationStatusImplementing, "In Progress"},
+		{"implementing", storage.SpecificationStatusImplementing, "Implementing"},
 		{"done", storage.SpecificationStatusDone, "Completed"},
 		{"unknown", "unknown", "unknown"},
 	}
@@ -143,7 +143,7 @@ func TestFormatSpecificationStatusWithIcon(t *testing.T) {
 	}{
 		{"draft", storage.SpecificationStatusDraft, "○ Draft"},
 		{"ready", storage.SpecificationStatusReady, "◐ Pending"},
-		{"implementing", storage.SpecificationStatusImplementing, "◑ In Progress"},
+		{"implementing", storage.SpecificationStatusImplementing, "◑ Implementing"},
 		{"done", storage.SpecificationStatusDone, "● Completed"},
 		{"unknown", "unknown", "? unknown"},
 	}
