@@ -30,7 +30,8 @@
   - [mehr plugins](cli/plugins.md)
   - [mehr templates](cli/templates.md)
   - [mehr cost](cli/cost.md)
-  - [mehr undo/redo](cli/undo-redo.md)
+  - [mehr undo](cli/undo.md)
+  - [mehr redo](cli/redo.md)
   - [mehr abandon](cli/abandon.md)
   - [mehr version](cli/version.md)
 
@@ -42,6 +43,9 @@
   - [Your First Task](tutorials/first-task.md)
   - [Iterative Development](tutorials/iterative-development.md)
   - [Recovering from Mistakes](tutorials/undo-mistakes.md)
+
+- Advanced
+  - [Performance & Cost Optimization](advanced/optimization.md)
 
 - Reference
   - [Providers](reference/providers.md)
