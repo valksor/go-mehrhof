@@ -8,10 +8,11 @@ import (
 	"testing"
 
 	"github.com/google/go-github/v67/github"
+	providererrors "github.com/valksor/go-mehrhof/internal/provider/errors"
 )
 
 func TestWrapAPIError_NetworkError(t *testing.T) {
-	// Test network error wrapping (not covered in parser_test.go)
+	// Test network error wrapping (uses shared errors)
 	netErr := &net.OpError{Op: "dial", Net: "tcp", Err: fmt.Errorf("connection refused")}
 	got := wrapAPIError(netErr)
 
@@ -19,8 +20,9 @@ func TestWrapAPIError_NetworkError(t *testing.T) {
 		t.Fatal("wrapAPIError() = nil, want error")
 	}
 
-	if !errors.Is(got, ErrNetworkError) {
-		t.Errorf("wrapAPIError() error = %v, want wrapped %v", got, ErrNetworkError)
+	// Should use shared ErrNetworkError
+	if !errors.Is(got, providererrors.ErrNetworkError) {
+		t.Errorf("wrapAPIError() error = %v, want wrapped %v", got, providererrors.ErrNetworkError)
 	}
 }
 
@@ -44,21 +46,16 @@ func TestWrapAPIError_500ServerError(t *testing.T) {
 }
 
 func TestErrorVariables(t *testing.T) {
-	// Test that error variables are properly defined
+	// Test that GitHub-specific error variables are properly defined
 	tests := []struct {
 		name string
 		err  error
 		want string
 	}{
-		{"ErrNoToken", ErrNoToken, "github token not found"},
 		{"ErrRepoNotDetected", ErrRepoNotDetected, "could not detect repository from git remote"},
 		{"ErrRepoNotConfigured", ErrRepoNotConfigured, "repository not configured"},
 		{"ErrIssueNotFound", ErrIssueNotFound, "issue not found"},
-		{"ErrRateLimited", ErrRateLimited, "github api rate limit exceeded"},
-		{"ErrNetworkError", ErrNetworkError, "network error communicating with github"},
-		{"ErrUnauthorized", ErrUnauthorized, "github token unauthorized or expired"},
 		{"ErrInsufficientScope", ErrInsufficientScope, "github token lacks required scope"},
-		{"ErrInvalidReference", ErrInvalidReference, "invalid github reference"},
 	}
 
 	for _, tt := range tests {

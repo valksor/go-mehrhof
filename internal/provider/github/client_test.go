@@ -12,6 +12,7 @@ import (
 	gh "github.com/google/go-github/v67/github"
 
 	"github.com/valksor/go-mehrhof/internal/cache"
+	"github.com/valksor/go-mehrhof/internal/provider/token"
 )
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -152,11 +153,11 @@ func TestResolveToken(t *testing.T) {
 		_ = os.Unsetenv("MEHR_GITHUB_TOKEN")
 		_ = os.Unsetenv("GITHUB_TOKEN")
 
-		// This will try gh CLI and likely fail (returns ErrNoToken)
+		// This will try gh CLI and likely fail (returns token.ErrNoToken)
 		// unless gh is installed and authenticated
 		_, err := ResolveToken("")
 		// We can't predict if gh CLI is installed, so just check it doesn't panic
-		if err != nil && err != ErrNoToken {
+		if err != nil && err != token.ErrNoToken {
 			// gh might return a token, which is fine
 			t.Logf("ResolveToken returned error (expected if gh not installed): %v", err)
 		}

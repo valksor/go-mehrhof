@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/google/go-github/v67/github"
+	providererrors "github.com/valksor/go-mehrhof/internal/provider/errors"
 )
 
 func TestParseReference(t *testing.T) {
@@ -446,7 +447,7 @@ func TestWrapAPIError(t *testing.T) {
 				Response: &http.Response{StatusCode: 401},
 				Message:  "Bad credentials",
 			},
-			wantErr:     ErrUnauthorized,
+			wantErr:     providererrors.ErrUnauthorized,
 			wantWrapped: true,
 		},
 		{
@@ -458,7 +459,7 @@ func TestWrapAPIError(t *testing.T) {
 				},
 				Message: "API rate limit exceeded",
 			},
-			wantErr:     ErrRateLimited,
+			wantErr:     providererrors.ErrRateLimited,
 			wantWrapped: true,
 		},
 		{
