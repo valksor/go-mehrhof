@@ -102,7 +102,7 @@ type Specification struct {
 	Content     string    `yaml:"-"` // Raw markdown content (without frontmatter)
 }
 
-// Note represents a note from talk sessions
+// Note represents a note from chat sessions
 type Note struct {
 	Timestamp time.Time `yaml:"timestamp"`
 	Content   string    `yaml:"content"`
@@ -127,7 +127,7 @@ type Session struct {
 type SessionMetadata struct {
 	StartedAt time.Time `yaml:"started_at"`
 	EndedAt   time.Time `yaml:"ended_at,omitempty"`
-	Type      string    `yaml:"type"` // planning, implementation, talk, review
+	Type      string    `yaml:"type"` // planning, implementation, chat, review
 	Agent     string    `yaml:"agent"`
 	State     string    `yaml:"state,omitempty"` // task state when session started
 }
