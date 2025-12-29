@@ -3,6 +3,7 @@ package progress
 
 import (
 	"fmt"
+	"math"
 	"strings"
 	"sync"
 	"time"
@@ -165,4 +166,192 @@ func (p *SimpleProgress) Done() {
 // Message prints a message without status formatting.
 func (p *SimpleProgress) Message(message string) {
 	fmt.Println(message)
+}
+
+// ProgressBar tracks progress with percentage completion and elapsed time.
+type ProgressBar struct {
+	phase      string
+	agent      string
+	current    int
+	total      int
+	startTime  time.Time
+	lastUpdate time.Time
+	mu         sync.Mutex
+	width      int // Width of progress bar in characters
+}
+
+// NewProgressBar creates a new progress bar.
+func NewProgressBar(phase string, total int) *ProgressBar {
+	return &ProgressBar{
+		phase:      phase,
+		total:      total,
+		startTime:  time.Now(),
+		lastUpdate: time.Now(),
+		width:      30, // Default width
+	}
+}
+
+// SetAgent sets the agent/model name for display.
+func (p *ProgressBar) SetAgent(name string) {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	p.agent = name
+}
+
+// SetWidth sets the width of the progress bar.
+func (p *ProgressBar) SetWidth(w int) {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	p.width = w
+}
+
+// Increment advances progress by one.
+func (p *ProgressBar) Increment() {
+	p.Update(p.current + 1)
+}
+
+// Update sets the current progress value.
+func (p *ProgressBar) Update(current int) {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+
+	p.current = current
+	p.lastUpdate = time.Now()
+	p.render()
+}
+
+// render displays the current progress state.
+func (p *ProgressBar) render() {
+	if p.total <= 0 {
+		return
+	}
+
+	percent := float64(p.current) / float64(p.total)
+	elapsed := time.Since(p.startTime)
+
+	// Build progress bar
+	filled := int(math.Round(float64(p.width) * percent))
+	bar := strings.Repeat("█", filled) + strings.Repeat("░", p.width-filled)
+
+	// Format elapsed time
+	elapsedStr := formatDuration(elapsed)
+
+	// Build output
+	output := fmt.Sprintf("\r  [%s] %d%% %s", bar, int(percent*100), elapsedStr)
+
+	// Add phase if set
+	if p.phase != "" {
+		output += fmt.Sprintf(" - %s", p.phase)
+	}
+
+	// Add agent if set
+	if p.agent != "" {
+		output += fmt.Sprintf(" (%s)", p.agent)
+	}
+
+	// Clear rest of line
+	output += strings.Repeat(" ", 20)
+
+	fmt.Print(output)
+}
+
+// Done marks the progress as complete.
+func (p *ProgressBar) Done() {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+
+	p.current = p.total
+	elapsed := time.Since(p.startTime)
+
+	bar := strings.Repeat("█", p.width)
+	elapsedStr := formatDuration(elapsed)
+
+	output := fmt.Sprintf("\r  [%s] 100%% %s", bar, elapsedStr)
+
+	if p.phase != "" {
+		output += fmt.Sprintf(" - %s", p.phase)
+	}
+	if p.agent != "" {
+		output += fmt.Sprintf(" (%s)", p.agent)
+	}
+
+	fmt.Println(output + " ✓")
+}
+
+// formatDuration formats a duration as MM:SS.
+func formatDuration(d time.Duration) string {
+	minutes := int(d.Minutes())
+	seconds := int(d.Seconds()) % 60
+	return fmt.Sprintf("%d:%02d", minutes, seconds)
+}
+
+// StatusWithProgress combines status updates with progress tracking.
+type StatusWithProgress struct {
+	status    *StatusLine
+	progress  *ProgressBar
+	showAgent bool
+	agentName string
+	mu        sync.Mutex
+}
+
+// NewStatusWithProgress creates a combined status and progress tracker.
+func NewStatusWithProgress(phase string, total int) *StatusWithProgress {
+	return &StatusWithProgress{
+		status:   NewStatusLine(phase),
+		progress: NewProgressBar(phase, total),
+	}
+}
+
+// SetAgent sets the agent name for display.
+func (s *StatusWithProgress) SetAgent(name string) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.agentName = name
+	s.showAgent = true
+	s.progress.SetAgent(name)
+}
+
+// OnEvent implements the agent event handler.
+func (s *StatusWithProgress) OnEvent(event agent.Event) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	// Forward to status line for activity tracking
+	if err := s.status.OnEvent(event); err != nil {
+		return err
+	}
+
+	// Update progress bar on tool use completion
+	if event.Type == agent.EventToolResult && event.ToolCall != nil {
+		s.progress.Increment()
+	}
+
+	return nil
+}
+
+// Increment advances the progress by one.
+func (s *StatusWithProgress) Increment() {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.progress.Increment()
+}
+
+// Done marks both status and progress as complete.
+func (s *StatusWithProgress) Done() {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	// Show final status before clearing
+	s.progress.Done()
+	s.status.Done()
+}
+
+// GetStatusLine returns the underlying status line.
+func (s *StatusWithProgress) GetStatusLine() *StatusLine {
+	return s.status
+}
+
+// GetProgressBar returns the underlying progress bar.
+func (s *StatusWithProgress) GetProgressBar() *ProgressBar {
+	return s.progress
 }
