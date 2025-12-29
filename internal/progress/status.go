@@ -207,7 +207,11 @@ func (p *ProgressBar) SetWidth(w int) {
 
 // Increment advances progress by one.
 func (p *ProgressBar) Increment() {
-	p.Update(p.current + 1)
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	p.current++
+	p.lastUpdate = time.Now()
+	p.render()
 }
 
 // Update sets the current progress value.
