@@ -63,7 +63,7 @@ func (s *StatusLine) update(activity string) {
 	}
 
 	// Clear previous line and print new status
-	fmt.Printf("\r→ %s... (%s)", s.phase, activity+strings.Repeat(" ", 50))
+	fmt.Printf("\r→ %s... (%s\x1b[K)", s.phase, activity)
 	s.lastTool = activity
 	s.lastUpdate = time.Now()
 	s.updateCount++
@@ -75,7 +75,7 @@ func (s *StatusLine) Done() {
 	defer s.mu.Unlock()
 
 	// Clear the in-progress line and show done
-	fmt.Printf("\r→ %s ✓%s\n", s.phase, strings.Repeat(" ", 60))
+	fmt.Printf("\r→ %s ✓\x1b[K\n", s.phase)
 }
 
 // GetPhase returns the phase name.
@@ -253,8 +253,8 @@ func (p *ProgressBar) render() {
 		output += fmt.Sprintf(" (%s)", p.agent)
 	}
 
-	// Clear rest of line
-	output += strings.Repeat(" ", 20)
+	// Clear rest of line using ANSI escape sequence
+	output += "\x1b[K"
 
 	fmt.Print(output)
 }
