@@ -53,8 +53,12 @@ func Info() provider.ProviderInfo {
 		Priority:    20, // Higher than file/directory
 		Capabilities: provider.CapabilitySet{
 			provider.CapRead:               true,
+			provider.CapList:               true,
 			provider.CapFetchComments:      true,
 			provider.CapComment:            true,
+			provider.CapUpdateStatus:       true,
+			provider.CapManageLabels:       true,
+			provider.CapCreateWorkUnit:     true,
 			provider.CapCreatePR:           true,
 			provider.CapDownloadAttachment: true,
 			provider.CapSnapshot:           true,
