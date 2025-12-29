@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
@@ -9,24 +10,27 @@ import (
 	"github.com/valksor/go-mehrhof/internal/conductor"
 )
 
+var continueAuto bool // Auto-execute the next logical step
+
 var continueCmd = &cobra.Command{
 	Use:   "continue",
-	Short: "Show status and suggested next actions for current task",
-	Long: `Show the current mehr status and suggest next actions.
+	Short: "Continue to the next workflow step",
+	Long: `Continue to the next workflow step.
 
-If you're on a task branch (e.g., task/abc123), this will:
-- Show the current mehr status
-- Suggest the most appropriate next action based on state
+By default, shows status and suggests the next action.
+With --auto, executes the next logical step automatically.
 
 This is useful when returning to work on a task after a break.
 
 Examples:
-  mehr continue    # Show status and suggestions`,
+  mehr continue       # Show status and suggested next actions
+  mehr continue --auto # Auto-execute the next logical step`,
 	RunE: runContinue,
 }
 
 func init() {
 	rootCmd.AddCommand(continueCmd)
+	continueCmd.Flags().BoolVarP(&continueAuto, "auto", "a", false, "Auto-execute the next logical step")
 }
 
 func runContinue(cmd *cobra.Command, args []string) error {
@@ -82,7 +86,12 @@ func runContinue(cmd *cobra.Command, args []string) error {
 	fmt.Printf("Checkpoints: %d\n", status.Checkpoints)
 	fmt.Println()
 
-	// Suggest next actions based on state
+	// Auto-execute next step if --auto flag is set
+	if continueAuto {
+		return executeNextStep(ctx, cond, status)
+	}
+
+	// Otherwise, show suggested next actions
 	fmt.Println("Suggested next actions:")
 	switch status.State {
 	case "idle":
@@ -119,13 +128,39 @@ func runContinue(cmd *cobra.Command, args []string) error {
 		fmt.Printf("  mehr undo       # Revert to previous checkpoint (%d available)\n", status.Checkpoints-1)
 	}
 
-	// Always show finish and delete options
+	// Always show finish and abandon options
 	if status.State != "done" {
 		fmt.Println()
 		fmt.Println("Other options:")
 		fmt.Println("  mehr finish     # Complete and merge changes")
-		fmt.Println("  mehr delete     # Abandon task without merging")
+		fmt.Println("  mehr abandon    # Abandon task without merging")
 	}
 
 	return nil
+}
+
+// executeNextStep determines and executes the next logical workflow step
+func executeNextStep(ctx context.Context, cond *conductor.Conductor, status *conductor.TaskStatus) error {
+	switch status.State {
+	case "idle":
+		if status.Specifications == 0 {
+			fmt.Println("Running: mehr plan")
+			return cond.Plan(ctx)
+		}
+		fmt.Println("Running: mehr implement")
+		return cond.Implement(ctx)
+	case "planning":
+		fmt.Println("Running: mehr implement")
+		return cond.Implement(ctx)
+	case "implementing", "reviewing":
+		fmt.Println("Already in progress - use 'mehr finish' when complete")
+		return nil
+	case "done":
+		fmt.Println("Task is complete!")
+		return nil
+	default:
+		fmt.Printf("State '%s' doesn't have an auto-continue action\n", status.State)
+		fmt.Println("Use 'mehr guide' to see available options")
+		return nil
+	}
 }

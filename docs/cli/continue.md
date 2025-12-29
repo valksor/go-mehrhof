@@ -1,11 +1,11 @@
 # mehr continue
 
-Show status and suggested next actions for the current task.
+Continue to the next workflow step.
 
 ## Synopsis
 
 ```bash
-mehr continue
+mehr continue [flags]
 ```
 
 ## Description
@@ -16,12 +16,15 @@ The `continue` command helps you resume work on a task after a break. It:
 2. Shows task metadata (title, branch, specs, checkpoints)
 3. Suggests the most appropriate next action based on the current state
 4. Shows available undo/redo options
+5. With `--auto`, executes the next logical step automatically
 
 This is particularly useful when you return to a project and need to remember where you left off.
 
 ## Flags
 
-This command has no specific flags. Global flags (`--verbose`, `--no-color`) are available.
+| Flag    | Short | Type | Default | Description                             |
+| ------- | ----- | ---- | ------- | --------------------------------------- |
+| `--auto` | `-a`  | bool | false   | Auto-execute the next logical workflow step |
 
 ## Examples
 
@@ -47,7 +50,7 @@ Suggested next actions:
 
 Other options:
   mehr finish     # Complete and merge changes
-  mehr delete     # Abandon task without merging
+  mehr abandon    # Abandon task without merging
 ```
 
 ### After Implementation
@@ -76,7 +79,7 @@ Suggested next actions:
 
 Other options:
   mehr finish     # Complete and merge changes
-  mehr delete     # Abandon task without merging
+  mehr abandon    # Abandon task without merging
 ```
 
 ### No Active Task
