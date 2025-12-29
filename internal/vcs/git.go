@@ -266,7 +266,9 @@ func (g *Git) StashPop() error {
 	return err
 }
 
-// run executes a git command in the repo root
+// run executes a git command in the repo root.
+// Note: This uses a background context and does not propagate cancellation.
+// For operations that need context cancellation or deadlines, use RunContext().
 func (g *Git) run(args ...string) (string, error) {
 	return runGitCommand(g.repoRoot, args...)
 }
@@ -276,7 +278,9 @@ func (g *Git) RunContext(ctx context.Context, args ...string) (string, error) {
 	return runGitCommandContext(ctx, g.repoRoot, args...)
 }
 
-// runGitCommand executes a git command in the given directory
+// runGitCommand executes a git command in the given directory.
+// Deprecated: Use runGitCommandContext with proper context propagation.
+// This function exists for compatibility but should be replaced.
 func runGitCommand(dir string, args ...string) (string, error) {
 	return runGitCommandContext(context.Background(), dir, args...)
 }

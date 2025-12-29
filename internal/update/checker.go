@@ -1,6 +1,7 @@
 package update
 
 import (
+	"cmp"
 	"context"
 	"fmt"
 	"runtime"
@@ -31,12 +32,8 @@ func NewChecker(token, owner, repo string) *Checker {
 	}
 
 	// Set default owner/repo if not provided
-	if owner == "" {
-		owner = "valksor"
-	}
-	if repo == "" {
-		repo = "go-mehrhof"
-	}
+	owner = cmp.Or(owner, "valksor")
+	repo = cmp.Or(repo, "go-mehrhof")
 
 	return &Checker{
 		ghClient: tc,
