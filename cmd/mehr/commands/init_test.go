@@ -15,11 +15,11 @@ import (
 func TestInitCommand(t *testing.T) {
 	tests := []struct {
 		name            string
-		setupGit        bool
-		runTwice        bool
 		wantFiles       []string
 		wantInOutput    []string
 		wantNotInOutput []string
+		setupGit        bool
+		runTwice        bool
 	}{
 		{
 			name:     "creates workspace structure",

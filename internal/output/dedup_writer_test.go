@@ -9,8 +9,8 @@ import (
 func TestDeduplicatingWriter_BasicDedup(t *testing.T) {
 	tests := []struct {
 		name     string
-		writes   []string
 		expected string
+		writes   []string
 	}{
 		{
 			name:     "no duplicates",

@@ -102,8 +102,9 @@ func registerCompletions() {
 		}
 	}
 
-	// Workflow step completions
-	_ = rootCmd.RegisterFlagCompletionFunc("step", completeWorkflow) // May not exist in all commands
+	// Workflow step completions - may not exist in all commands
+	// nolint:staticcheck // Flag may not exist in all commands, ignore error
+	_ = rootCmd.RegisterFlagCompletionFunc("step", completeWorkflow)
 }
 
 // GetSettings returns the loaded settings

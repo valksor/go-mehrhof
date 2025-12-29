@@ -20,12 +20,12 @@ import (
 // TestContext provides test context for command tests.
 type TestContext struct {
 	T         *testing.T
-	TmpDir    string
 	StdoutBuf *bytes.Buffer
 	StderrBuf *bytes.Buffer
 	RootCmd   *cobra.Command
 	Workspace *storage.Workspace
 	Cleanup   func()
+	TmpDir    string
 }
 
 // NewTestContext creates a test context for command testing.

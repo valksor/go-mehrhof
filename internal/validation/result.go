@@ -27,10 +27,10 @@ type Finding struct {
 
 // Result holds all validation findings
 type Result struct {
-	Valid    bool      `json:"valid"`
+	Findings []Finding `json:"findings"`
 	Errors   int       `json:"errors"`
 	Warnings int       `json:"warnings"`
-	Findings []Finding `json:"findings"`
+	Valid    bool      `json:"valid"`
 }
 
 // NewResult creates an empty validation result

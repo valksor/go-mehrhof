@@ -9,10 +9,10 @@ import (
 
 // mockAgent is a test implementation of Agent interface
 type mockAgent struct {
-	name      string
 	available error
-	response  *Response
 	runErr    error
+	response  *Response
+	name      string
 }
 
 func (m *mockAgent) Name() string {

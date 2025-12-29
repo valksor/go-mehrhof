@@ -257,15 +257,15 @@ func TestNewChecker(t *testing.T) {
 
 func TestUpdateErrors(t *testing.T) {
 	tests := []struct {
-		name string
 		err  error
+		name string
 	}{
-		{"ErrNoUpdateAvailable", ErrNoUpdateAvailable},
-		{"ErrDownloadFailed", ErrDownloadFailed},
-		{"ErrChecksumFailed", ErrChecksumFailed},
-		{"ErrInstallFailed", ErrInstallFailed},
-		{"ErrAssetNotFound", ErrAssetNotFound},
-		{"ErrDevBuild", ErrDevBuild},
+		{ErrNoUpdateAvailable, "ErrNoUpdateAvailable"},
+		{ErrDownloadFailed, "ErrDownloadFailed"},
+		{ErrChecksumFailed, "ErrChecksumFailed"},
+		{ErrInstallFailed, "ErrInstallFailed"},
+		{ErrAssetNotFound, "ErrAssetNotFound"},
+		{ErrDevBuild, "ErrDevBuild"},
 	}
 
 	for _, tt := range tests {

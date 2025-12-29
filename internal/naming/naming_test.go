@@ -8,8 +8,8 @@ func TestSlugify(t *testing.T) {
 	tests := []struct {
 		name   string
 		title  string
-		maxLen int
 		want   string
+		maxLen int
 	}{
 		{
 			name:   "simple title",

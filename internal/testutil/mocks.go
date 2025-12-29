@@ -335,18 +335,16 @@ func (m *MockProcess) ClearCalls() {
 
 // MockProvider simulates a task provider for testing.
 type MockProvider struct {
-	MatchResult    bool
-	ParseResult    string
 	ParseErr       error
-	FetchResult    *MockWorkUnit
 	FetchErr       error
-	SnapshotResult *MockSnapshot
 	SnapshotErr    error
-
-	// Call tracking
-	MatchCalls []string
-	ParseCalls []string
-	FetchCalls []string
+	FetchResult    *MockWorkUnit
+	SnapshotResult *MockSnapshot
+	ParseResult    string
+	MatchCalls     []string
+	ParseCalls     []string
+	FetchCalls     []string
+	MatchResult    bool
 }
 
 // MockWorkUnit represents a work unit for testing.

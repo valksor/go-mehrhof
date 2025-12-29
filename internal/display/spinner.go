@@ -10,16 +10,15 @@ import (
 
 // Spinner provides animated progress indication for long-running operations.
 type Spinner struct {
-	message string
-	writer  io.Writer
-	frames  []string
-	delay   time.Duration
-
-	mu       sync.Mutex
-	running  bool
+	writer   io.Writer
 	stopCh   chan struct{}
 	doneCh   chan struct{}
+	message  string
+	frames   []string
+	delay    time.Duration
 	frameIdx int
+	mu       sync.Mutex
+	running  bool
 }
 
 // Default spinner frames (braille pattern for smooth animation)

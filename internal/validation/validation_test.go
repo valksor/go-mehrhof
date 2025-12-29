@@ -294,8 +294,8 @@ func TestValidateAgentSettings(t *testing.T) {
 	}
 
 	tests := []struct {
-		name       string
 		agent      storage.AgentSettings
+		name       string
 		wantErrors int
 	}{
 		{
@@ -386,8 +386,8 @@ func TestValidateEnvVarReferences(t *testing.T) {
 	defer func() { _ = os.Unsetenv("TEST_VAR_EXISTS") }()
 
 	tests := []struct {
-		name         string
 		env          map[string]string
+		name         string
 		wantWarnings int
 	}{
 		{
@@ -425,8 +425,8 @@ func TestValidateEnvVarReferences(t *testing.T) {
 
 func TestValidatePluginsConfig(t *testing.T) {
 	tests := []struct {
-		name         string
 		plugins      storage.PluginsConfig
+		name         string
 		wantWarnings int
 	}{
 		{
@@ -465,8 +465,8 @@ func TestValidatePluginsConfig(t *testing.T) {
 
 func TestValidateGitHubSettings(t *testing.T) {
 	tests := []struct {
-		name         string
 		gh           *storage.GitHubSettings
+		name         string
 		wantWarnings int
 	}{
 		{

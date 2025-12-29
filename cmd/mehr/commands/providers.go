@@ -125,10 +125,10 @@ type providerInfo struct {
 	Name        string
 	Scheme      string
 	Description string
+	Usage       string
 	Setup       []string
 	EnvVars     []string
 	Config      []string
-	Usage       string
 }
 
 func getProviderInfo(name string) *providerInfo {

@@ -33,8 +33,8 @@ coverage-html: coverage ## Generate HTML coverage report
 	go tool cover -html=covprofile -o .coverage/coverage.html
 
 lint: ## Run linter (golangci-lint)
-	@command -v golangci-lint >/dev/null 2>&1 || { echo "golangci-lint not installed"; exit 1; }
 	golangci-lint run ./...
+	govulncheck ./...
 
 fmt: ## Format code with go fmt, goimports, and gofumpt
 	go fmt ./...

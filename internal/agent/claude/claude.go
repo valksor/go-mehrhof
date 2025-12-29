@@ -15,8 +15,8 @@ const AgentName = "claude"
 
 // Agent wraps the Claude CLI
 type Agent struct {
-	config agent.Config
 	parser agent.Parser
+	config agent.Config
 }
 
 // New creates a Claude agent with default config
@@ -267,8 +267,13 @@ func (a *Agent) WithTimeout(d time.Duration) *Agent {
 	}
 }
 
-// WithEnv adds an environment variable
+// WithEnv adds an environment variable.
 // Returns a new Agent instance with the updated config to avoid data races.
+//
+// Thread safety: This method is safe for concurrent use as it returns a new
+// Agent instance rather than modifying the receiver. The returned Agent shares
+// the same parser reference with the original; if the parser is not thread-safe,
+// avoid calling Run/RunStream on multiple Agent instances concurrently.
 func (a *Agent) WithEnv(key, value string) agent.Agent {
 	newConfig := a.config
 	newConfig.Environment = make(map[string]string, len(a.config.Environment)+1)

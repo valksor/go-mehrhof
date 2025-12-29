@@ -21,11 +21,11 @@ func TestParseEvent_JSON(t *testing.T) {
 	p := NewYAMLBlockParser()
 
 	tests := []struct {
+		checkData func(t *testing.T, event Event)
 		name      string
 		input     string
 		wantType  EventType
 		wantText  string
-		checkData func(t *testing.T, event Event)
 	}{
 		{
 			name:     "content_block_delta",
@@ -200,11 +200,11 @@ func TestExtractQuestion(t *testing.T) {
 	p := NewYAMLBlockParser()
 
 	tests := []struct {
-		name     string
 		input    map[string]any
-		wantNil  bool
+		name     string
 		wantText string
 		wantOpts int
+		wantNil  bool
 	}{
 		{
 			name:    "nil input",
@@ -286,10 +286,10 @@ func TestExtractToolCall(t *testing.T) {
 	p := NewYAMLBlockParser()
 
 	tests := []struct {
-		name     string
 		block    map[string]any
-		wantNil  bool
+		name     string
 		wantName string
+		wantNil  bool
 	}{
 		{
 			name:    "empty block",
@@ -534,9 +534,9 @@ func TestParseUsage(t *testing.T) {
 	p := NewYAMLBlockParser()
 
 	tests := []struct {
-		name string
 		data map[string]any
 		want *UsageStats
+		name string
 	}{
 		{
 			name: "all fields",

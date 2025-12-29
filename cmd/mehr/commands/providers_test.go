@@ -11,11 +11,11 @@ import (
 
 func TestProvidersCommand_Structure(t *testing.T) {
 	tests := []struct {
-		name      string
 		cmd       *cobra.Command
+		wantArgs  cobra.PositionalArgs
+		name      string
 		wantUse   string
 		wantShort string
-		wantArgs  cobra.PositionalArgs
 	}{
 		{
 			name:      "providers command",

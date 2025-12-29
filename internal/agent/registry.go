@@ -7,9 +7,9 @@ import (
 
 // Registry manages available agents
 type Registry struct {
-	mu       sync.RWMutex
 	agents   map[string]Agent
 	fallback string
+	mu       sync.RWMutex
 }
 
 // NewRegistry creates an agent registry

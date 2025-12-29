@@ -17,8 +17,8 @@ type Options struct {
 // Validator validates configuration files
 type Validator struct {
 	workspacePath string
-	opts          Options
 	builtInAgents []string
+	opts          Options
 }
 
 // New creates a new configuration validator

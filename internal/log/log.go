@@ -32,9 +32,9 @@ const (
 
 // Options configures the logger
 type Options struct {
+	Output  io.Writer
 	Level   Level
 	JSON    bool
-	Output  io.Writer
 	Verbose bool
 }
 

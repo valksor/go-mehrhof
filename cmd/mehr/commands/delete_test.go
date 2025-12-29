@@ -14,8 +14,8 @@ func TestDeleteCommand_Flags(t *testing.T) {
 		name         string
 		flagName     string
 		shorthand    string
-		defaultValue bool
 		description  string
+		defaultValue bool
 	}{
 		{
 			name:         "yes flag",
