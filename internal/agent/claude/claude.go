@@ -246,30 +246,53 @@ func (a *Agent) SetParser(p agent.Parser) {
 }
 
 // WithWorkDir sets the working directory
+// Returns a new Agent instance with the updated config to avoid data races.
 func (a *Agent) WithWorkDir(dir string) *Agent {
-	a.config.WorkDir = dir
-	return a
+	newConfig := a.config
+	newConfig.WorkDir = dir
+	return &Agent{
+		config: newConfig,
+		parser: a.parser,
+	}
 }
 
 // WithTimeout sets execution timeout
+// Returns a new Agent instance with the updated config to avoid data races.
 func (a *Agent) WithTimeout(d time.Duration) *Agent {
-	a.config.Timeout = d
-	return a
+	newConfig := a.config
+	newConfig.Timeout = d
+	return &Agent{
+		config: newConfig,
+		parser: a.parser,
+	}
 }
 
 // WithEnv adds an environment variable
+// Returns a new Agent instance with the updated config to avoid data races.
 func (a *Agent) WithEnv(key, value string) agent.Agent {
-	a.config.Environment[key] = value
-	return a
+	newConfig := a.config
+	newConfig.Environment = make(map[string]string, len(a.config.Environment)+1)
+	for k, v := range a.config.Environment {
+		newConfig.Environment[k] = v
+	}
+	newConfig.Environment[key] = value
+	return &Agent{
+		config: newConfig,
+		parser: a.parser,
+	}
 }
 
 // WithArgs adds CLI arguments to pass to the agent process
+// Returns a new Agent instance with the updated config to avoid data races.
 func (a *Agent) WithArgs(args ...string) agent.Agent {
-	// Copy existing args to avoid aliasing
+	newConfig := a.config
 	newArgs := make([]string, len(a.config.Args), len(a.config.Args)+len(args))
 	copy(newArgs, a.config.Args)
-	a.config.Args = append(newArgs, args...)
-	return a
+	newConfig.Args = append(newArgs, args...)
+	return &Agent{
+		config: newConfig,
+		parser: a.parser,
+	}
 }
 
 // Register adds the Claude agent to a registry

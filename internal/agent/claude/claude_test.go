@@ -87,9 +87,9 @@ func TestWithTimeout(t *testing.T) {
 
 func TestWithEnv(t *testing.T) {
 	a := New()
-	a.WithEnv("API_KEY", "secret123")
-	if a.config.Environment["API_KEY"] != "secret123" {
-		t.Errorf("Environment[API_KEY] = %q, want %q", a.config.Environment["API_KEY"], "secret123")
+	aAgent := a.WithEnv("API_KEY", "secret123")
+	if aAgent.(*Agent).config.Environment["API_KEY"] != "secret123" {
+		t.Errorf("Environment[API_KEY] = %q, want %q", aAgent.(*Agent).config.Environment["API_KEY"], "secret123")
 	}
 }
 
@@ -98,9 +98,10 @@ func TestMethodChaining(t *testing.T) {
 		WithWorkDir("/work").
 		WithTimeout(15 * time.Minute)
 
-	// WithEnv returns agent.Agent interface, so call it separately
-	a.WithEnv("KEY1", "val1")
-	a.WithEnv("KEY2", "val2")
+	// WithEnv returns agent.Agent interface, so capture the result
+	aAgent := agent.Agent(a)
+	aAgent = aAgent.WithEnv("KEY1", "val1")
+	aAgent = aAgent.WithEnv("KEY2", "val2")
 
 	if a.config.WorkDir != "/work" {
 		t.Error("WithWorkDir chain failed")
@@ -108,10 +109,10 @@ func TestMethodChaining(t *testing.T) {
 	if a.config.Timeout != 15*time.Minute {
 		t.Error("WithTimeout chain failed")
 	}
-	if a.config.Environment["KEY1"] != "val1" {
+	if aAgent.(*Agent).config.Environment["KEY1"] != "val1" {
 		t.Error("WithEnv(KEY1) chain failed")
 	}
-	if a.config.Environment["KEY2"] != "val2" {
+	if aAgent.(*Agent).config.Environment["KEY2"] != "val2" {
 		t.Error("WithEnv(KEY2) chain failed")
 	}
 }
