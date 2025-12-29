@@ -97,12 +97,12 @@ func TestIsValidID(t *testing.T) {
 		{"ABC-123", true},
 		{"PROJECT-1", true},
 		{"123-456", true},
-		{"A1-23", true},      // valid: number part is digits only
-		{"A1-B2", false},     // invalid: letter in number part
-		{"abc-123", true},    // lowercase is now valid
-		{"ABC123", false},    // no dash
-		{"ABC-", false},       // no number
-		{"-123", false},       // no project
+		{"A1-23", true},   // valid: number part is digits only
+		{"A1-B2", false},  // invalid: letter in number part
+		{"abc-123", true}, // lowercase is now valid
+		{"ABC123", false}, // no dash
+		{"ABC-", false},   // no number
+		{"-123", false},   // no project
 		{"", false},
 	}
 

@@ -13,118 +13,118 @@ import (
 
 func TestParseReference(t *testing.T) {
 	tests := []struct {
-		name        string
-		input       string
-		wantIssueKey string
+		name           string
+		input          string
+		wantIssueKey   string
 		wantProjectKey string
-		wantNumber  int
-		wantURL     string
-		wantBaseURL string
-		wantErr     bool
-		errContains string
+		wantNumber     int
+		wantURL        string
+		wantBaseURL    string
+		wantErr        bool
+		errContains    string
 	}{
 		{
-			name:        "jira scheme with issue key",
-			input:       "jira:JIRA-123",
-			wantIssueKey: "JIRA-123",
+			name:           "jira scheme with issue key",
+			input:          "jira:JIRA-123",
+			wantIssueKey:   "JIRA-123",
 			wantProjectKey: "JIRA",
-			wantNumber:  123,
+			wantNumber:     123,
 		},
 		{
-			name:        "j short scheme with issue key",
-			input:       "j:PROJ-456",
-			wantIssueKey: "PROJ-456",
+			name:           "j short scheme with issue key",
+			input:          "j:PROJ-456",
+			wantIssueKey:   "PROJ-456",
 			wantProjectKey: "PROJ",
-			wantNumber:  456,
+			wantNumber:     456,
 		},
 		{
-			name:        "jira scheme with Cloud URL",
-			input:       "jira:https://domain.atlassian.net/browse/JIRA-123",
-			wantIssueKey: "JIRA-123",
+			name:           "jira scheme with Cloud URL",
+			input:          "jira:https://domain.atlassian.net/browse/JIRA-123",
+			wantIssueKey:   "JIRA-123",
 			wantProjectKey: "JIRA",
-			wantNumber:  123,
-			wantURL:     "https://domain.atlassian.net/browse/JIRA-123",
-			wantBaseURL: "https://domain.atlassian.net",
+			wantNumber:     123,
+			wantURL:        "https://domain.atlassian.net/browse/JIRA-123",
+			wantBaseURL:    "https://domain.atlassian.net",
 		},
 		{
-			name:        "j short scheme with Cloud URL",
-			input:       "j:https://company.atlassian.net/browse/PROJ-456",
-			wantIssueKey: "PROJ-456",
+			name:           "j short scheme with Cloud URL",
+			input:          "j:https://company.atlassian.net/browse/PROJ-456",
+			wantIssueKey:   "PROJ-456",
 			wantProjectKey: "PROJ",
-			wantNumber:  456,
-			wantURL:     "https://company.atlassian.net/browse/PROJ-456",
-			wantBaseURL: "https://company.atlassian.net",
+			wantNumber:     456,
+			wantURL:        "https://company.atlassian.net/browse/PROJ-456",
+			wantBaseURL:    "https://company.atlassian.net",
 		},
 		{
-			name:        "jira scheme with Server URL",
-			input:       "jira:https://jira.example.com/browse/JIRA-789",
-			wantIssueKey: "JIRA-789",
+			name:           "jira scheme with Server URL",
+			input:          "jira:https://jira.example.com/browse/JIRA-789",
+			wantIssueKey:   "JIRA-789",
 			wantProjectKey: "JIRA",
-			wantNumber:  789,
-			wantURL:     "https://jira.example.com/browse/JIRA-789",
-			wantBaseURL: "https://jira.example.com",
+			wantNumber:     789,
+			wantURL:        "https://jira.example.com/browse/JIRA-789",
+			wantBaseURL:    "https://jira.example.com",
 		},
 		{
-			name:        "bare Cloud URL without scheme",
-			input:       "https://domain.atlassian.net/browse/PROJ-123",
-			wantIssueKey: "PROJ-123",
+			name:           "bare Cloud URL without scheme",
+			input:          "https://domain.atlassian.net/browse/PROJ-123",
+			wantIssueKey:   "PROJ-123",
 			wantProjectKey: "PROJ",
-			wantNumber:  123,
-			wantURL:     "https://domain.atlassian.net/browse/PROJ-123",
-			wantBaseURL: "https://domain.atlassian.net",
+			wantNumber:     123,
+			wantURL:        "https://domain.atlassian.net/browse/PROJ-123",
+			wantBaseURL:    "https://domain.atlassian.net",
 		},
 		{
-			name:        "bare Server URL without scheme",
-			input:       "https://jira.example.com/browse/ABC-456",
-			wantIssueKey: "ABC-456",
+			name:           "bare Server URL without scheme",
+			input:          "https://jira.example.com/browse/ABC-456",
+			wantIssueKey:   "ABC-456",
 			wantProjectKey: "ABC",
-			wantNumber:  456,
-			wantURL:     "https://jira.example.com/browse/ABC-456",
-			wantBaseURL: "https://jira.example.com",
+			wantNumber:     456,
+			wantURL:        "https://jira.example.com/browse/ABC-456",
+			wantBaseURL:    "https://jira.example.com",
 		},
 		{
-			name:        "bare issue key format",
-			input:       "JIRA-123",
-			wantIssueKey: "JIRA-123",
+			name:           "bare issue key format",
+			input:          "JIRA-123",
+			wantIssueKey:   "JIRA-123",
 			wantProjectKey: "JIRA",
-			wantNumber:  123,
+			wantNumber:     123,
 		},
 		{
-			name:        "issue key with 2 char project",
-			input:       "AB-1",
-			wantIssueKey: "AB-1",
+			name:           "issue key with 2 char project",
+			input:          "AB-1",
+			wantIssueKey:   "AB-1",
 			wantProjectKey: "AB",
-			wantNumber:  1,
+			wantNumber:     1,
 		},
 		{
-			name:        "issue key with 10 char project",
-			input:       "ABCDEFGHIJ-123",
-			wantIssueKey: "ABCDEFGHIJ-123",
+			name:           "issue key with 10 char project",
+			input:          "ABCDEFGHIJ-123",
+			wantIssueKey:   "ABCDEFGHIJ-123",
 			wantProjectKey: "ABCDEFGHIJ",
-			wantNumber:  123,
+			wantNumber:     123,
 		},
 		{
-			name:        "issue key with numbers in project",
-			input:       "PROJ123-456",
-			wantIssueKey: "PROJ123-456",
+			name:           "issue key with numbers in project",
+			input:          "PROJ123-456",
+			wantIssueKey:   "PROJ123-456",
 			wantProjectKey: "PROJ123",
-			wantNumber:  456,
+			wantNumber:     456,
 		},
 		{
-			name:        "large issue number",
-			input:       "JIRA-999999",
-			wantIssueKey: "JIRA-999999",
+			name:           "large issue number",
+			input:          "JIRA-999999",
+			wantIssueKey:   "JIRA-999999",
 			wantProjectKey: "JIRA",
-			wantNumber:  999999,
+			wantNumber:     999999,
 		},
 		{
-			name:        "URL with query parameters",
-			input:       "https://jira.example.com/browse/JIRA-123?param=value",
-			wantIssueKey: "JIRA-123",
+			name:           "URL with query parameters",
+			input:          "https://jira.example.com/browse/JIRA-123?param=value",
+			wantIssueKey:   "JIRA-123",
 			wantProjectKey: "JIRA",
-			wantNumber:  123,
-			wantURL:     "https://jira.example.com/browse/JIRA-123?param=value",
-			wantBaseURL: "https://jira.example.com",
+			wantNumber:     123,
+			wantURL:        "https://jira.example.com/browse/JIRA-123?param=value",
+			wantBaseURL:    "https://jira.example.com",
 		},
 		{
 			name:        "empty string",
@@ -329,30 +329,30 @@ func TestRefString(t *testing.T) {
 		{
 			name: "with URL",
 			ref: Ref{
-				IssueKey: "JIRA-123",
+				IssueKey:   "JIRA-123",
 				ProjectKey: "JIRA",
-				Number:  123,
-				URL:     "https://jira.example.com/browse/JIRA-123",
+				Number:     123,
+				URL:        "https://jira.example.com/browse/JIRA-123",
 			},
 			want: "https://jira.example.com/browse/JIRA-123",
 		},
 		{
 			name: "without URL",
 			ref: Ref{
-				IssueKey: "PROJ-456",
+				IssueKey:   "PROJ-456",
 				ProjectKey: "PROJ",
-				Number:  456,
-				URL:     "",
+				Number:     456,
+				URL:        "",
 			},
 			want: "PROJ-456",
 		},
 		{
 			name: "empty ref",
 			ref: Ref{
-				IssueKey: "",
+				IssueKey:   "",
 				ProjectKey: "",
-				Number:  0,
-				URL:     "",
+				Number:     0,
+				URL:        "",
 			},
 			want: "",
 		},
@@ -831,10 +831,10 @@ func TestInferTaskTypeFromLabels(t *testing.T) {
 
 func TestBuildJQL(t *testing.T) {
 	tests := []struct {
-		name        string
-		projectKey  string
-		opts        provider.ListOptions
-		expected    string
+		name       string
+		projectKey string
+		opts       provider.ListOptions
+		expected   string
 	}{
 		{
 			name:       "basic project filter",

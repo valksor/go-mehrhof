@@ -301,41 +301,41 @@ func (c *Client) DownloadAttachment(ctx context.Context, attachmentURL string) (
 
 // Issue represents a Jira issue
 type Issue struct {
-	ID    string `json:"id"`
-	Key   string `json:"key"`
-	Self  string `json:"self"`
+	ID     string `json:"id"`
+	Key    string `json:"key"`
+	Self   string `json:"self"`
 	Fields Fields `json:"fields"`
 }
 
 // Fields contains issue fields
 type Fields struct {
-	Summary     string    `json:"summary"`
-	Description string    `json:"description"`
-	Status      *Status   `json:"status"`
-	Priority    *Priority `json:"priority"`
-	Labels      []string  `json:"labels"`
-	Assignee    *User     `json:"assignee"`
-	Reporter    *User     `json:"reporter"`
-	Created     time.Time `json:"created"`
-	Updated     time.Time `json:"updated"`
-	Project     *Project  `json:"project"`
-	Issuetype   *IssueType `json:"issuetype"`
-	Sprint      *Sprint   `json:"sprint"`
+	Summary     string        `json:"summary"`
+	Description string        `json:"description"`
+	Status      *Status       `json:"status"`
+	Priority    *Priority     `json:"priority"`
+	Labels      []string      `json:"labels"`
+	Assignee    *User         `json:"assignee"`
+	Reporter    *User         `json:"reporter"`
+	Created     time.Time     `json:"created"`
+	Updated     time.Time     `json:"updated"`
+	Project     *Project      `json:"project"`
+	Issuetype   *IssueType    `json:"issuetype"`
+	Sprint      *Sprint       `json:"sprint"`
 	Attachments []*Attachment `json:"attachment"`
 }
 
 // Status represents issue status
 type Status struct {
-	Self    string `json:"self"`
-	Name    string `json:"name"`
-	Key     string `json:"key"`
+	Self string `json:"self"`
+	Name string `json:"name"`
+	Key  string `json:"key"`
 }
 
 // Priority represents issue priority
 type Priority struct {
-	Self    string `json:"self"`
-	Name    string `json:"name"`
-	Key     string `json:"key"`
+	Self string `json:"self"`
+	Name string `json:"name"`
+	Key  string `json:"key"`
 }
 
 // User represents a Jira user
@@ -363,9 +363,9 @@ type IssueType struct {
 
 // Sprint represents an agile sprint
 type Sprint struct {
-	ID     int64  `json:"id"`
-	Name   string `json:"name"`
-	State  string `json:"state"`
+	ID    int64  `json:"id"`
+	Name  string `json:"name"`
+	State string `json:"state"`
 }
 
 // Comment represents a Jira comment
@@ -398,21 +398,21 @@ type Transition struct {
 // CreateIssueInput represents the input for creating an issue
 type CreateIssueInput struct {
 	Fields struct {
-		Project   *Project   `json:"project"`
-		Summary   string     `json:"summary"`
-		Description string   `json:"description,omitempty"`
-		IssueType *IssueType `json:"issuetype"`
-		Priority  *Priority  `json:"priority,omitempty"`
-		Labels    []string   `json:"labels,omitempty"`
-		Assignee  *User      `json:"assignee,omitempty"`
+		Project     *Project   `json:"project"`
+		Summary     string     `json:"summary"`
+		Description string     `json:"description,omitempty"`
+		IssueType   *IssueType `json:"issuetype"`
+		Priority    *Priority  `json:"priority,omitempty"`
+		Labels      []string   `json:"labels,omitempty"`
+		Assignee    *User      `json:"assignee,omitempty"`
 	} `json:"fields"`
 }
 
 // UpdateIssueInput represents the input for updating an issue
 type UpdateIssueInput struct {
 	Fields struct {
-		Summary  string   `json:"summary,omitempty"`
-		Labels   []string `json:"labels,omitempty"`
+		Summary  string    `json:"summary,omitempty"`
+		Labels   []string  `json:"labels,omitempty"`
 		Priority *Priority `json:"priority,omitempty"`
 	} `json:"fields,omitempty"`
 }
@@ -427,8 +427,8 @@ type SearchResponse struct {
 
 // CreateIssueResponse represents the response from creating an issue
 type CreateIssueResponse struct {
-	ID  string `json:"id"`
-	Key string `json:"key"`
+	ID   string `json:"id"`
+	Key  string `json:"key"`
 	Self string `json:"self"`
 }
 
@@ -439,9 +439,9 @@ type TransitionsResponse struct {
 
 // CommentsResponse represents the response from getting comments
 type CommentsResponse struct {
-	StartAt    int       `json:"startAt"`
-	MaxResults int       `json:"maxResults"`
-	Total      int       `json:"total"`
+	StartAt    int        `json:"startAt"`
+	MaxResults int        `json:"maxResults"`
+	Total      int        `json:"total"`
 	Comments   []*Comment `json:"comments"`
 }
 

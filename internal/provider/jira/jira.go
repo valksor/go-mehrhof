@@ -14,15 +14,15 @@ const ProviderName = "jira"
 
 // Provider handles Jira issues
 type Provider struct {
-	client          *Client
-	defaultProject  string // Default project key
-	baseURL         string // Base URL for API requests
+	client         *Client
+	defaultProject string // Default project key
+	baseURL        string // Base URL for API requests
 }
 
 // Config holds Jira provider configuration
 type Config struct {
-	Token  string // API token
-	Email  string // Email for Cloud auth
+	Token   string // API token
+	Email   string // Email for Cloud auth
 	BaseURL string // Base URL (optional, auto-detected)
 	Project string // Default project key
 }

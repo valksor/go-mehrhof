@@ -170,10 +170,10 @@ func (p *Provider) issueToWorkUnit(issue *Issue, comments []Comment, attachments
 		TaskType:    p.inferTaskType(issue),
 		Slug:        naming.Slugify(issue.Summary, 50),
 		Metadata: map[string]any{
-			"yt_id":       issue.ID,
-			"yt_project":  issue.Project.ShortName,
-			"yt_resolved": issue.Resolved > 0,
-			"yt_url":      issueURL,
+			"yt_id":         issue.ID,
+			"yt_project":    issue.Project.ShortName,
+			"yt_resolved":   issue.Resolved > 0,
+			"yt_url":        issueURL,
 			"custom_fields": issue.CustomFields,
 		},
 	}

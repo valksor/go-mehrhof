@@ -14,20 +14,20 @@ const ProviderName = "notion"
 
 // Provider handles Notion pages as tasks
 type Provider struct {
-	client               *Client
-	databaseID           string
-	statusProperty       string
-	descriptionProperty  string
-	labelsProperty       string
+	client              *Client
+	databaseID          string
+	statusProperty      string
+	descriptionProperty string
+	labelsProperty      string
 }
 
 // Config holds Notion provider configuration
 type Config struct {
-	Token              string
-	DatabaseID         string
-	StatusProperty     string
+	Token               string
+	DatabaseID          string
+	StatusProperty      string
 	DescriptionProperty string
-	LabelsProperty     string
+	LabelsProperty      string
 }
 
 // Info returns provider metadata
@@ -79,11 +79,11 @@ func New(_ context.Context, cfg provider.Config) (any, error) {
 	}
 
 	return &Provider{
-		client:               NewClient(token),
-		databaseID:           databaseID,
-		statusProperty:       statusProperty,
-		descriptionProperty:  descriptionProperty,
-		labelsProperty:       labelsProperty,
+		client:              NewClient(token),
+		databaseID:          databaseID,
+		statusProperty:      statusProperty,
+		descriptionProperty: descriptionProperty,
+		labelsProperty:      labelsProperty,
 	}, nil
 }
 

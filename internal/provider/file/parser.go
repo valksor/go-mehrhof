@@ -1,6 +1,7 @@
 package file
 
 import (
+	"cmp"
 	"os"
 	"strings"
 
@@ -56,12 +57,12 @@ func ParseMarkdown(content string) (*ParsedMarkdown, error) {
 
 	// Check for YAML frontmatter (--- delimited)
 	if strings.HasPrefix(content, "---\n") {
-		parts := strings.SplitN(content[4:], "\n---", 2)
-		if len(parts) == 2 {
+		before, after, found := strings.Cut(content[4:], "\n---")
+		if found {
 			var fm Frontmatter
-			if err := yaml.Unmarshal([]byte(parts[0]), &fm); err == nil {
+			if err := yaml.Unmarshal([]byte(before), &fm); err == nil {
 				result.Frontmatter = &fm
-				content = strings.TrimPrefix(parts[1], "\n")
+				content = strings.TrimPrefix(after, "\n")
 			}
 		}
 	}
@@ -88,9 +89,7 @@ func ParseMarkdown(content string) (*ParsedMarkdown, error) {
 	}
 
 	// Fallback to "Untitled" if no title found
-	if result.Title == "" {
-		result.Title = "Untitled Task"
-	}
+	result.Title = cmp.Or(result.Title, "Untitled Task")
 
 	// Body is everything after title
 	if bodyStart > 0 && bodyStart < len(lines) {

@@ -8,7 +8,7 @@ import (
 
 // Ref represents a parsed Jira issue reference
 type Ref struct {
-	IssueKey string // The issue key (e.g., "JIRA-123")
+	IssueKey   string // The issue key (e.g., "JIRA-123")
 	ProjectKey string // The project key (e.g., "JIRA")
 	Number     int    // The issue number (e.g., 123)
 	URL        string // The full URL if provided

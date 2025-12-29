@@ -25,7 +25,7 @@ func (p *Provider) CreateWorkUnit(ctx context.Context, input CreateWorkUnitInput
 
 	// Build properties
 	properties := map[string]Property{
-		"Name":  MakeTitleProperty(input.Title),
+		"Name":           MakeTitleProperty(input.Title),
 		p.statusProperty: MakeStatusProperty(mapProviderStatusToNotion(input.Status)),
 	}
 

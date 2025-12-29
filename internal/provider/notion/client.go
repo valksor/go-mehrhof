@@ -125,10 +125,10 @@ func (c *Client) GetPageContent(ctx context.Context, pageID string) ([]Block, er
 	normalizedID := NormalizePageID(pageID)
 
 	var blocks struct {
-		Object  string  `json:"object"`
-		Results []Block `json:"results"`
-		NextCursor string `json:"next_cursor,omitempty"`
-		HasMore bool    `json:"has_more"`
+		Object     string  `json:"object"`
+		Results    []Block `json:"results"`
+		NextCursor string  `json:"next_cursor,omitempty"`
+		HasMore    bool    `json:"has_more"`
 	}
 
 	path := fmt.Sprintf("/v1/blocks/%s/children", normalizedID)

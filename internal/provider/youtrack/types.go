@@ -5,12 +5,12 @@ import "time"
 // Issue represents a YouTrack issue from the API
 type Issue struct {
 	ID            string        `json:"id"`
-	IDReadable    string        `json:"idReadable"`    // e.g., "ABC-123"
-	Summary       string        `json:"summary"`       // Title
+	IDReadable    string        `json:"idReadable"` // e.g., "ABC-123"
+	Summary       string        `json:"summary"`    // Title
 	Description   string        `json:"description"`
-	Created       int64         `json:"created"`       // Unix timestamp ms
+	Created       int64         `json:"created"` // Unix timestamp ms
 	Updated       int64         `json:"updated"`
-	Resolved      int64         `json:"resolved"`      // 0 if unresolved
+	Resolved      int64         `json:"resolved"` // 0 if unresolved
 	Project       Project       `json:"project"`
 	Reporter      User          `json:"reporter"`
 	Updater       User          `json:"updater"`

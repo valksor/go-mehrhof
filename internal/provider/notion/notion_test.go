@@ -170,44 +170,44 @@ func TestNormalizePageID(t *testing.T) {
 
 func TestMapNotionStatus(t *testing.T) {
 	tests := []struct {
-		name string
+		name   string
 		status string
-		want provider.Status
+		want   provider.Status
 	}{
 		{
-			name: "Not Started -> open",
+			name:   "Not Started -> open",
 			status: "Not Started",
-			want: provider.StatusOpen,
+			want:   provider.StatusOpen,
 		},
 		{
-			name: "In Progress -> in_progress",
+			name:   "In Progress -> in_progress",
 			status: "In Progress",
-			want: provider.StatusInProgress,
+			want:   provider.StatusInProgress,
 		},
 		{
-			name: "In Review -> review",
+			name:   "In Review -> review",
 			status: "In Review",
-			want: provider.StatusReview,
+			want:   provider.StatusReview,
 		},
 		{
-			name: "Done -> done",
+			name:   "Done -> done",
 			status: "Done",
-			want: provider.StatusDone,
+			want:   provider.StatusDone,
 		},
 		{
-			name: "Cancelled -> closed",
+			name:   "Cancelled -> closed",
 			status: "Cancelled",
-			want: provider.StatusClosed,
+			want:   provider.StatusClosed,
 		},
 		{
-			name: "unknown -> open",
+			name:   "unknown -> open",
 			status: "Unknown Status",
-			want: provider.StatusOpen,
+			want:   provider.StatusOpen,
 		},
 		{
-			name: "case insensitive",
+			name:   "case insensitive",
 			status: "IN PROGRESS",
-			want: provider.StatusInProgress,
+			want:   provider.StatusInProgress,
 		},
 	}
 
@@ -266,9 +266,9 @@ func TestMatch(t *testing.T) {
 	p := &Provider{}
 
 	tests := []struct {
-		name string
+		name  string
 		input string
-		want bool
+		want  bool
 	}{
 		{
 			name:  "notion scheme - match",
@@ -356,8 +356,8 @@ func TestBlocksToMarkdown(t *testing.T) {
 						Type: "paragraph",
 						RichText: []RichText{
 							{
-								Type:       "text",
-								PlainText:  "Hello world",
+								Type:      "text",
+								PlainText: "Hello world",
 							},
 						},
 					},
@@ -374,8 +374,8 @@ func TestBlocksToMarkdown(t *testing.T) {
 						Type: "heading_1",
 						RichText: []RichText{
 							{
-								Type:       "text",
-								PlainText:  "Title",
+								Type:      "text",
+								PlainText: "Title",
 							},
 						},
 					},
@@ -393,8 +393,8 @@ func TestBlocksToMarkdown(t *testing.T) {
 						Language: "go",
 						RichText: []RichText{
 							{
-								Type:       "text",
-								PlainText:  "fmt.Println(\"hello\")",
+								Type:      "text",
+								PlainText: "fmt.Println(\"hello\")",
 							},
 						},
 					},
@@ -406,7 +406,7 @@ func TestBlocksToMarkdown(t *testing.T) {
 			name: "divider block",
 			blocks: []Block{
 				{
-					Type:   "divider",
+					Type:    "divider",
 					Divider: &DividerBlock{Type: "divider"},
 				},
 			},
@@ -621,8 +621,8 @@ func BenchmarkBlocksToMarkdown(b *testing.B) {
 				Type: "paragraph",
 				RichText: []RichText{
 					{
-						Type:       "text",
-						PlainText:  "Hello world",
+						Type:      "text",
+						PlainText: "Hello world",
 					},
 				},
 			},
@@ -633,8 +633,8 @@ func BenchmarkBlocksToMarkdown(b *testing.B) {
 				Type: "heading_1",
 				RichText: []RichText{
 					{
-						Type:       "text",
-						PlainText:  "Title",
+						Type:      "text",
+						PlainText: "Title",
 					},
 				},
 			},
