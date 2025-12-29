@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"time"
 
@@ -158,6 +159,9 @@ func (p *Provider) List(ctx context.Context, opts provider.ListOptions) ([]*prov
 		return nil, fmt.Errorf("read directory: %w", err)
 	}
 
+	// Files to skip when listing
+	skipFiles := []string{"readme.md", "task.md", "index.md"}
+
 	for _, entry := range entries {
 		if entry.IsDir() {
 			continue
@@ -166,8 +170,7 @@ func (p *Provider) List(ctx context.Context, opts provider.ListOptions) ([]*prov
 		name := entry.Name()
 
 		// Skip README-like files
-		lower := strings.ToLower(name)
-		if lower == "readme.md" || lower == "task.md" || lower == "index.md" {
+		if slices.Contains(skipFiles, strings.ToLower(name)) {
 			continue
 		}
 
@@ -256,6 +259,9 @@ func (p *Provider) findSubtasks(dir string) []string {
 		return subtasks
 	}
 
+	// Files to skip when finding subtasks
+	skipFiles := []string{"readme.md", "task.md", "index.md"}
+
 	for _, entry := range entries {
 		if entry.IsDir() {
 			continue
@@ -264,8 +270,7 @@ func (p *Provider) findSubtasks(dir string) []string {
 		name := entry.Name()
 
 		// Skip README-like files
-		lower := strings.ToLower(name)
-		if lower == "readme.md" || lower == "task.md" || lower == "index.md" {
+		if slices.Contains(skipFiles, strings.ToLower(name)) {
 			continue
 		}
 
