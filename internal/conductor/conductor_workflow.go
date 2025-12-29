@@ -69,6 +69,18 @@ func (c *Conductor) Chat(ctx context.Context, message string, opts ChatOptions) 
 		return fmt.Errorf("agent run: %w", err)
 	}
 
+	// Record usage stats
+	if response.Usage != nil {
+		if err := c.workspace.AddUsage(taskID, "chat",
+			response.Usage.InputTokens,
+			response.Usage.OutputTokens,
+			response.Usage.CachedTokens,
+			response.Usage.CostUSD,
+		); err != nil {
+			c.logError(fmt.Errorf("record chat usage: %w", err))
+		}
+	}
+
 	// Save response as note
 	noteContent := response.Summary
 	if noteContent == "" && len(response.Messages) > 0 {

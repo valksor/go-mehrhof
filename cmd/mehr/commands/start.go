@@ -3,11 +3,13 @@ package commands
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/spf13/cobra"
 
 	"github.com/valksor/go-mehrhof/internal/conductor"
 	"github.com/valksor/go-mehrhof/internal/storage"
+	"github.com/valksor/go-mehrhof/internal/template"
 )
 
 var (
@@ -17,6 +19,7 @@ var (
 	startKey           string // External key override (e.g., "FEATURE-123")
 	startCommitPrefix  string // Commit prefix template override
 	startBranchPattern string // Branch pattern template override
+	startTemplate      string // Template to apply
 
 	// Per-step agent overrides
 	startAgentPlanning     string
@@ -69,6 +72,7 @@ func init() {
 	startCmd.Flags().StringVarP(&startKey, "key", "k", "", "External key for branch/commit naming (e.g., FEATURE-123)")
 	startCmd.Flags().StringVar(&startCommitPrefix, "commit-prefix", "", "Commit prefix template (e.g., [{key}])")
 	startCmd.Flags().StringVar(&startBranchPattern, "branch-pattern", "", "Branch pattern template (e.g., {type}/{key}--{slug})")
+	startCmd.Flags().StringVarP(&startTemplate, "template", "t", "", "Template to apply (bug-fix, feature, refactor, docs, test, chore)")
 
 	// Per-step agent overrides
 	startCmd.Flags().StringVar(&startAgentPlanning, "agent-plan", "", "Agent for planning step")
@@ -80,6 +84,35 @@ func init() {
 func runStart(cmd *cobra.Command, args []string) error {
 	ctx := cmd.Context()
 	reference := args[0]
+
+	// Apply template if specified (only works for file: provider)
+	if startTemplate != "" {
+		if !strings.HasPrefix(reference, "file:") {
+			return fmt.Errorf("--template only works with file: provider")
+		}
+
+		filePath := strings.TrimPrefix(reference, "file:")
+		tpl, err := template.LoadBuiltIn(startTemplate)
+		if err != nil {
+			return fmt.Errorf("load template: %w", err)
+		}
+
+		// Read existing content
+		var content string
+		data, err := os.ReadFile(filePath)
+		if err != nil {
+			return fmt.Errorf("read file: %w", err)
+		}
+		content = string(data)
+
+		// Apply template and write back
+		newContent := tpl.ApplyToContent(content)
+		if err := os.WriteFile(filePath, []byte(newContent), 0o644); err != nil {
+			return fmt.Errorf("write file with template: %w", err)
+		}
+
+		fmt.Printf("Applied template '%s' to %s\n", startTemplate, filePath)
+	}
 
 	// Determine branch behavior
 	// Worktree implies branch creation

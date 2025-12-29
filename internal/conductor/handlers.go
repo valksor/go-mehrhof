@@ -11,6 +11,7 @@ import (
 
 	"github.com/valksor/go-mehrhof/internal/agent"
 	"github.com/valksor/go-mehrhof/internal/events"
+	"github.com/valksor/go-mehrhof/internal/progress"
 	"github.com/valksor/go-mehrhof/internal/storage"
 	"github.com/valksor/go-mehrhof/internal/workflow"
 )
@@ -77,6 +78,13 @@ func (c *Conductor) RunPlanning(ctx context.Context) error {
 
 	taskID := c.activeTask.ID
 
+	// Create progress tracker for this phase
+	var statusLine *progress.StatusLine
+	if !c.opts.DryRun {
+		statusLine = progress.NewStatusLine("Planning")
+		defer statusLine.Done()
+	}
+
 	// Get agent for planning step
 	planningAgent, err := c.GetAgentForStep(workflow.StepPlanning)
 	if err != nil {
@@ -135,19 +143,39 @@ func (c *Conductor) RunPlanning(ctx context.Context) error {
 	// Run agent with streaming
 	c.publishProgress("Agent analyzing task...", 20)
 	response, err := planningAgent.RunWithCallback(ctx, prompt, func(event agent.Event) error {
+		// Always publish to event bus
 		c.eventBus.PublishRaw(events.Event{
 			Type: events.TypeAgentMessage,
 			Data: map[string]any{"event": event},
 		})
+		// Also track progress if not dry-run
+		if statusLine != nil {
+			_ = statusLine.OnEvent(event)
+		}
 		return nil
 	})
 	if err != nil {
+		if statusLine != nil {
+			statusLine.Done()
+		}
 		c.activeTask.State = "idle"
 		if err := c.workspace.SaveActiveTask(c.activeTask); err != nil {
 			c.logError(fmt.Errorf("save active task after planning error: %w", err))
 		}
 		_ = c.machine.Dispatch(ctx, workflow.EventError)
 		return fmt.Errorf("agent planning: %w", err)
+	}
+
+	// Record usage stats
+	if response.Usage != nil {
+		if err := c.workspace.AddUsage(taskID, "planning",
+			response.Usage.InputTokens,
+			response.Usage.OutputTokens,
+			response.Usage.CachedTokens,
+			response.Usage.CostUSD,
+		); err != nil {
+			c.logError(fmt.Errorf("record planning usage: %w", err))
+		}
 	}
 
 	// If agent asked a question, handle based on mode
@@ -228,6 +256,13 @@ func (c *Conductor) RunImplementation(ctx context.Context) error {
 
 	taskID := c.activeTask.ID
 
+	// Create progress tracker for this phase
+	var statusLine *progress.StatusLine
+	if !c.opts.DryRun {
+		statusLine = progress.NewStatusLine("Implementing")
+		defer statusLine.Done()
+	}
+
 	// Get agent for implementing step
 	implementingAgent, err := c.GetAgentForStep(workflow.StepImplementing)
 	if err != nil {
@@ -269,19 +304,39 @@ func (c *Conductor) RunImplementation(ctx context.Context) error {
 	// Run agent with streaming
 	c.publishProgress("Agent implementing...", 20)
 	response, err := implementingAgent.RunWithCallback(ctx, prompt, func(event agent.Event) error {
+		// Always publish to event bus
 		c.eventBus.PublishRaw(events.Event{
 			Type: events.TypeAgentMessage,
 			Data: map[string]any{"event": event},
 		})
+		// Also track progress if not dry-run
+		if statusLine != nil {
+			_ = statusLine.OnEvent(event)
+		}
 		return nil
 	})
 	if err != nil {
+		if statusLine != nil {
+			statusLine.Done()
+		}
 		c.activeTask.State = "idle"
 		if err := c.workspace.SaveActiveTask(c.activeTask); err != nil {
 			c.logError(fmt.Errorf("save active task after implementation error: %w", err))
 		}
 		_ = c.machine.Dispatch(ctx, workflow.EventError)
 		return fmt.Errorf("agent implementation: %w", err)
+	}
+
+	// Record usage stats
+	if response.Usage != nil {
+		if err := c.workspace.AddUsage(taskID, "implementing",
+			response.Usage.InputTokens,
+			response.Usage.OutputTokens,
+			response.Usage.CachedTokens,
+			response.Usage.CostUSD,
+		); err != nil {
+			c.logError(fmt.Errorf("record implementation usage: %w", err))
+		}
 	}
 
 	c.publishProgress("Applying changes...", 70)
@@ -320,6 +375,13 @@ func (c *Conductor) RunReview(ctx context.Context) error {
 
 	taskID := c.activeTask.ID
 
+	// Create progress tracker for this phase
+	var statusLine *progress.StatusLine
+	if !c.opts.DryRun {
+		statusLine = progress.NewStatusLine("Reviewing")
+		defer statusLine.Done()
+	}
+
 	// Get agent for reviewing step
 	reviewAgent, err := c.GetAgentForStep(workflow.StepReviewing)
 	if err != nil {
@@ -353,19 +415,39 @@ func (c *Conductor) RunReview(ctx context.Context) error {
 	// Run agent
 	c.publishProgress("Agent reviewing...", 20)
 	response, err := reviewAgent.RunWithCallback(ctx, prompt, func(event agent.Event) error {
+		// Always publish to event bus
 		c.eventBus.PublishRaw(events.Event{
 			Type: events.TypeAgentMessage,
 			Data: map[string]any{"event": event},
 		})
+		// Also track progress if not dry-run
+		if statusLine != nil {
+			_ = statusLine.OnEvent(event)
+		}
 		return nil
 	})
 	if err != nil {
+		if statusLine != nil {
+			statusLine.Done()
+		}
 		c.activeTask.State = "idle"
 		if err := c.workspace.SaveActiveTask(c.activeTask); err != nil {
 			c.logError(fmt.Errorf("save active task after review error: %w", err))
 		}
 		_ = c.machine.Dispatch(ctx, workflow.EventError)
 		return fmt.Errorf("agent review: %w", err)
+	}
+
+	// Record usage stats
+	if response.Usage != nil {
+		if err := c.workspace.AddUsage(taskID, "review",
+			response.Usage.InputTokens,
+			response.Usage.OutputTokens,
+			response.Usage.CachedTokens,
+			response.Usage.CostUSD,
+		); err != nil {
+			c.logError(fmt.Errorf("record review usage: %w", err))
+		}
 	}
 
 	c.publishProgress("Processing review...", 70)
