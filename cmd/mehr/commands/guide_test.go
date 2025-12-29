@@ -11,8 +11,8 @@ func TestGuideCommand_Structure(t *testing.T) {
 	if guideCmd.Use != "guide" {
 		t.Errorf("expected Use to be 'guide', got %q", guideCmd.Use)
 	}
-	if guideCmd.Short != "Show context-aware next actions" {
-		t.Errorf("expected Short to be 'Show context-aware next actions', got %q", guideCmd.Short)
+	if guideCmd.Short != "Show suggested next actions (interactive)" {
+		t.Errorf("expected Short to be 'Show suggested next actions (interactive)', got %q", guideCmd.Short)
 	}
 	// Verify Long description is set
 	if guideCmd.Long == "" {

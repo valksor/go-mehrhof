@@ -11,11 +11,22 @@ import (
 
 var guideCmd = &cobra.Command{
 	Use:   "guide",
-	Short: "Show context-aware next actions",
-	Long: `Show suggested next actions based on the current task state.
+	Short: "Show suggested next actions (interactive)",
+	Long: `Show context-aware suggestions for what to do next.
 
 This command analyzes your current context (active task, state, specifications)
-and suggests the most appropriate next action.`,
+and suggests the most appropriate next action.
+
+Works in both main repository and worktree environments.
+
+DIFFERENCES FROM OTHER COMMANDS:
+- 'mehr status' - Read-only view of current state (more detailed)
+- 'mehr continue' - Can auto-execute with --auto flag
+- 'mehr guide' - Lightweight suggestions only
+
+Examples:
+  mehr guide            # Show suggested next actions
+  mehr guide            # Works from any directory`,
 	RunE: runGuide,
 }
 

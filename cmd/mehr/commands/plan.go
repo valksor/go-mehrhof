@@ -36,9 +36,10 @@ task. This is useful for exploring requirements before creating a formal task.
 Plans are saved to .task/planned/ directory.
 
 Examples:
-  mehr plan                    # Create specs for active task
-  mehr plan --verbose          # Show agent output
-  mehr plan --new              # Start standalone planning
+  mehr plan                      # Create specs for active task
+  mehr plan --verbose            # Show agent output
+  mehr plan --full-context       # Include full exploration context
+  mehr plan --new                # Start standalone planning
   mehr plan --new "build a CLI"  # Start with seed topic`,
 	RunE: runPlan,
 }

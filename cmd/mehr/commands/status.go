@@ -18,14 +18,20 @@ var statusAll bool
 
 var statusCmd = &cobra.Command{
 	Use:   "status",
-	Short: "Show active mehr status",
-	Long: `Show the status of the active task.
+	Short: "Show the current state of active task(s)",
+	Long: `Show the current state of the active task(s).
 
-Displays task ID, state, source reference, specs, and checkpoints.
-Use --all to list all tasks in the workspace.
+This is a read-only view of:
+- Task ID, title, state, and source reference
+- Specifications and their completion status
+- Git checkpoints for undo/redo
+- Session and token usage
+
+For context-aware next action suggestions, use 'mehr guide'.
+To auto-execute the next workflow step, use 'mehr continue --auto'.
 
 Examples:
-  mehr status              # Show active mehr status
+  mehr status              # Show active task state
   mehr status --all        # Show all tasks in workspace`,
 	RunE: runStatus,
 }
@@ -209,7 +215,7 @@ func showActiveTask(ws *storage.Workspace, git *vcs.Git) error {
 			summaryParts = append(summaryParts, fmt.Sprintf("%d completed", summary[storage.SpecificationStatusDone]))
 		}
 		if summary[storage.SpecificationStatusImplementing] > 0 {
-			summaryParts = append(summaryParts, fmt.Sprintf("%d in-progress", summary[storage.SpecificationStatusImplementing]))
+			summaryParts = append(summaryParts, fmt.Sprintf("%d implementing", summary[storage.SpecificationStatusImplementing]))
 		}
 		if summary[storage.SpecificationStatusReady] > 0 {
 			summaryParts = append(summaryParts, fmt.Sprintf("%d pending", summary[storage.SpecificationStatusReady]))
