@@ -1026,6 +1026,11 @@ func TestGetDiffStats_NilGit(t *testing.T) {
 		t.Fatalf("New: %v", err)
 	}
 	c.git = nil
+	c.taskWork = &storage.TaskWork{
+		Git: storage.GitInfo{
+			BaseBranch: "main",
+		},
+	}
 
 	got := c.getDiffStats()
 	if got != "" {
