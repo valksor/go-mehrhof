@@ -903,3 +903,440 @@ func TestBuildJQL(t *testing.T) {
 		})
 	}
 }
+
+// ──────────────────────────────────────────────────────────────────────────────
+// mapProviderStatusToJiraTransitions tests
+// ──────────────────────────────────────────────────────────────────────────────
+
+func TestMapProviderStatusToJiraTransitions(t *testing.T) {
+	tests := []struct {
+		name     string
+		status   provider.Status
+		expected []string
+	}{
+		{
+			name:     "open status",
+			status:   provider.StatusOpen,
+			expected: []string{"To Do", "Backlog", "Open", "Reopen", "New"},
+		},
+		{
+			name:     "in progress status",
+			status:   provider.StatusInProgress,
+			expected: []string{"In Progress", "Start Progress", "Start Development"},
+		},
+		{
+			name:     "review status",
+			status:   provider.StatusReview,
+			expected: []string{"In Review", "Code Review", "Ready for Review"},
+		},
+		{
+			name:     "done status",
+			status:   provider.StatusDone,
+			expected: []string{"Done", "Close", "Resolve", "Complete", "Mark as Done"},
+		},
+		{
+			name:     "closed status",
+			status:   provider.StatusClosed,
+			expected: []string{"Closed", "Cancel", "Won't Fix", "Won't Do"},
+		},
+		{
+			name:     "unknown status defaults to To Do",
+			status:   provider.Status("unknown"),
+			expected: []string{"To Do"},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := mapProviderStatusToJiraTransitions(tt.status)
+			if len(got) != len(tt.expected) {
+				t.Errorf("mapProviderStatusToJiraTransitions(%v) length = %d, want %d", tt.status, len(got), len(tt.expected))
+				return
+			}
+			for i := range got {
+				if got[i] != tt.expected[i] {
+					t.Errorf("mapProviderStatusToJiraTransitions(%v)[%d] = %q, want %q", tt.status, i, got[i], tt.expected[i])
+				}
+			}
+		})
+	}
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// mapAssignees tests
+// ──────────────────────────────────────────────────────────────────────────────
+
+func TestMapAssignees(t *testing.T) {
+	tests := []struct {
+		name      string
+		assignee  *User
+		wantCount int
+		wantID    string
+		wantName  string
+	}{
+		{
+			name:      "nil assignee returns empty slice",
+			assignee:  nil,
+			wantCount: 0,
+		},
+		{
+			name: "valid assignee",
+			assignee: &User{
+				AccountID:    "acc-123",
+				DisplayName:  "John Doe",
+				EmailAddress: "john@example.com",
+			},
+			wantCount: 1,
+			wantID:    "acc-123",
+			wantName:  "John Doe",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := mapAssignees(tt.assignee)
+			if len(got) != tt.wantCount {
+				t.Errorf("mapAssignees() length = %d, want %d", len(got), tt.wantCount)
+				return
+			}
+			if tt.wantCount > 0 {
+				if got[0].ID != tt.wantID {
+					t.Errorf("mapAssignees()[0].ID = %q, want %q", got[0].ID, tt.wantID)
+				}
+				if got[0].Name != tt.wantName {
+					t.Errorf("mapAssignees()[0].Name = %q, want %q", got[0].Name, tt.wantName)
+				}
+			}
+		})
+	}
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// mapComments tests
+// ──────────────────────────────────────────────────────────────────────────────
+
+func TestMapComments(t *testing.T) {
+	tests := []struct {
+		name     string
+		comments []*Comment
+		wantLen  int
+		wantNil  bool
+	}{
+		{
+			name:     "nil comments returns nil",
+			comments: nil,
+			wantNil:  true,
+		},
+		{
+			name:     "empty comments returns empty slice",
+			comments: []*Comment{},
+			wantLen:  0,
+		},
+		{
+			name: "single comment",
+			comments: []*Comment{
+				{
+					ID:   "comment-1",
+					Body: "Test comment",
+					Author: &User{
+						AccountID:   "user-1",
+						DisplayName: "Alice",
+					},
+				},
+			},
+			wantLen: 1,
+		},
+		{
+			name: "comment with nil author",
+			comments: []*Comment{
+				{
+					ID:     "comment-2",
+					Body:   "No author comment",
+					Author: nil,
+				},
+			},
+			wantLen: 1,
+		},
+		{
+			name: "multiple comments",
+			comments: []*Comment{
+				{
+					ID:   "comment-1",
+					Body: "First",
+				},
+				{
+					ID:   "comment-2",
+					Body: "Second",
+				},
+			},
+			wantLen: 2,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := mapComments(tt.comments)
+			if tt.wantNil {
+				if got != nil {
+					t.Errorf("mapComments() = %v, want nil", got)
+				}
+				return
+			}
+			if len(got) != tt.wantLen {
+				t.Errorf("mapComments() length = %d, want %d", len(got), tt.wantLen)
+			}
+		})
+	}
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// mapAttachments tests
+// ──────────────────────────────────────────────────────────────────────────────
+
+func TestMapAttachments(t *testing.T) {
+	tests := []struct {
+		name        string
+		attachments []*Attachment
+		wantLen     int
+		wantNil     bool
+	}{
+		{
+			name:        "nil attachments returns nil",
+			attachments: nil,
+			wantNil:     true,
+		},
+		{
+			name:        "empty attachments returns empty slice",
+			attachments: []*Attachment{},
+			wantLen:     0,
+		},
+		{
+			name: "single attachment",
+			attachments: []*Attachment{
+				{
+					ID:       "att-1",
+					Filename: "file.pdf",
+					Content:  "https://example.com/file.pdf",
+					MimeType: "application/pdf",
+					Size:     1024,
+				},
+			},
+			wantLen: 1,
+		},
+		{
+			name: "multiple attachments",
+			attachments: []*Attachment{
+				{
+					ID:       "att-1",
+					Filename: "file1.pdf",
+					Content:  "https://example.com/file1.pdf",
+				},
+				{
+					ID:       "att-2",
+					Filename: "file2.png",
+					Content:  "https://example.com/file2.png",
+				},
+			},
+			wantLen: 2,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := mapAttachments(tt.attachments)
+			if tt.wantNil {
+				if got != nil {
+					t.Errorf("mapAttachments() = %v, want nil", got)
+				}
+				return
+			}
+			if len(got) != tt.wantLen {
+				t.Errorf("mapAttachments() length = %d, want %d", len(got), tt.wantLen)
+			}
+		})
+	}
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// buildMetadata tests
+// ──────────────────────────────────────────────────────────────────────────────
+
+func TestBuildMetadata(t *testing.T) {
+	tests := []struct {
+		name     string
+		issue    *Issue
+		wantKeys []string
+	}{
+		{
+			name: "issue with basic fields",
+			issue: &Issue{
+				Key: "PROJ-123",
+				Fields: Fields{
+					Status:   &Status{Name: "In Progress"},
+					Priority: &Priority{Name: "High"},
+					Project: &Project{
+						Key:  "PROJ",
+						Name: "Project Name",
+					},
+					Issuetype: &IssueType{
+						Name: "Bug",
+					},
+				},
+			},
+			wantKeys: []string{"key", "status", "priority", "project_key", "project_name", "issue_type"},
+		},
+		{
+			name: "issue with sprint",
+			issue: &Issue{
+				Key: "PROJ-456",
+				Fields: Fields{
+					Status:   &Status{Name: "Done"},
+					Priority: &Priority{Name: "Medium"},
+					Sprint: &Sprint{
+						ID:   123,
+						Name: "Sprint 1",
+					},
+				},
+			},
+			wantKeys: []string{"key", "status", "priority", "sprint_name", "sprint_id"},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := buildMetadata(tt.issue)
+			if len(got) != len(tt.wantKeys) {
+				t.Errorf("buildMetadata() keys = %v, want %v", got, tt.wantKeys)
+				return
+			}
+			for _, key := range tt.wantKeys {
+				if _, ok := got[key]; !ok {
+					t.Errorf("buildMetadata() missing key %q", key)
+				}
+			}
+		})
+	}
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// httpError tests
+// ──────────────────────────────────────────────────────────────────────────────
+
+func TestHTTPError_Error(t *testing.T) {
+	err := &httpError{
+		message: "not found",
+		code:    404,
+	}
+	got := err.Error()
+	want := "HTTP 404: not found"
+	if got != want {
+		t.Errorf("Error() = %q, want %q", got, want)
+	}
+}
+
+func TestHTTPError_HTTPStatusCode(t *testing.T) {
+	err := &httpError{
+		message: "unauthorized",
+		code:    401,
+	}
+	got := err.HTTPStatusCode()
+	if got != 401 {
+		t.Errorf("HTTPStatusCode() = %d, want 401", got)
+	}
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// NewClient tests
+// ──────────────────────────────────────────────────────────────────────────────
+
+func TestNewClient(t *testing.T) {
+	tests := []struct {
+		name      string
+		token     string
+		email     string
+		baseURL   string
+		wantCloud bool
+	}{
+		{
+			name:      "Jira Cloud URL detected",
+			token:     "test-token",
+			email:     "test@example.com",
+			baseURL:   "https://example.atlassian.net",
+			wantCloud: true,
+		},
+		{
+			name:      "Jira Server URL detected",
+			token:     "test-token",
+			email:     "test@example.com",
+			baseURL:   "https://jira.example.com",
+			wantCloud: false,
+		},
+		{
+			name:      "empty base URL uses default API version (cloud)",
+			token:     "test-token",
+			email:     "",
+			baseURL:   "",
+			wantCloud: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			c := NewClient(tt.token, tt.email, tt.baseURL)
+			if c == nil {
+				t.Fatal("NewClient() returned nil")
+			}
+			if c.token != tt.token {
+				t.Errorf("token = %q, want %q", c.token, tt.token)
+			}
+			if c.email != tt.email {
+				t.Errorf("email = %q, want %q", c.email, tt.email)
+			}
+			if c.baseURL != tt.baseURL {
+				t.Errorf("baseURL = %q, want %q", c.baseURL, tt.baseURL)
+			}
+			isCloud := c.apiVersion == "3"
+			if isCloud != tt.wantCloud {
+				t.Errorf("isCloud = %v, want %v", isCloud, tt.wantCloud)
+			}
+		})
+	}
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// SetBaseURL tests
+// ──────────────────────────────────────────────────────────────────────────────
+
+func TestSetBaseURL(t *testing.T) {
+	c := NewClient("token", "", "")
+
+	tests := []struct {
+		name      string
+		baseURL   string
+		wantCloud bool
+	}{
+		{
+			name:      "Jira Cloud URL",
+			baseURL:   "https://example.atlassian.net",
+			wantCloud: true,
+		},
+		{
+			name:      "Jira Server URL",
+			baseURL:   "https://jira.example.com",
+			wantCloud: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			c.SetBaseURL(tt.baseURL)
+			if c.baseURL != tt.baseURL {
+				t.Errorf("baseURL = %q, want %q", c.baseURL, tt.baseURL)
+			}
+			isCloud := c.apiVersion == "3"
+			if isCloud != tt.wantCloud {
+				t.Errorf("isCloud = %v, want %v", isCloud, tt.wantCloud)
+			}
+		})
+	}
+}
