@@ -173,6 +173,7 @@ func TestVersionNewer(t *testing.T) {
 		b    string
 		want bool
 	}{
+		// Basic comparisons
 		{"a is newer major", "2.0.0", "1.0.0", true},
 		{"a is newer minor", "1.2.0", "1.1.0", true},
 		{"a is newer patch", "1.1.1", "1.1.0", true},
@@ -180,6 +181,19 @@ func TestVersionNewer(t *testing.T) {
 		{"b is newer", "1.0.0", "1.0.1", false},
 		{"b is newer major", "1.0.0", "2.0.0", false},
 		{"a is older", "1.0.0", "1.1.0", false},
+
+		// With 'v' prefix (as used by semver.Compare)
+		{"with v prefix - a newer", "v2.0.0", "v1.0.0", true},
+		{"with v prefix - equal", "v1.0.0", "v1.0.0", false},
+		{"with v prefix - b newer", "v1.0.0", "v2.0.0", false},
+
+		// Pre-release versions (semver lib handles these correctly)
+		{"pre-release: alpha is older", "1.0.0", "1.0.0-alpha", true},
+		{"pre-release: beta is older", "1.0.0", "1.0.0-beta", true},
+		{"pre-release: rc is older", "1.0.0", "1.0.0-rc.1", true},
+
+		// Versions with more than 3 parts (build metadata)
+		{"build metadata ignored", "1.0.0+build1", "1.0.0+build2", false},
 	}
 
 	for _, tt := range tests {

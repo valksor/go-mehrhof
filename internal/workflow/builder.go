@@ -233,10 +233,11 @@ func (b *MachineBuilder) Build(eventBus *events.Bus) *Machine {
 	return &Machine{
 		state:             StateIdle,
 		eventBus:          eventBus,
-		listeners:         make([]StateListener, 0),
-		history:           make([]HistoryEntry, 0),
-		undoStack:         make([]string, 0),
-		redoStack:         make([]string, 0),
+		listeners:         nil,
+		history:           nil,
+		undoStack:         nil,
+		redoStack:         nil,
+		listenerSem:       make(chan struct{}, 10), // Max 10 concurrent listener calls
 		stateRegistry:     b.states,
 		transitionTable:   b.transitions,
 		globalTransitions: b.globals,

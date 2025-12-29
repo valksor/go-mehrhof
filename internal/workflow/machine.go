@@ -25,6 +25,9 @@ type Machine struct {
 	undoStack []string
 	redoStack []string
 
+	// Semaphore to limit concurrent listener notifications (prevents unbounded goroutines)
+	listenerSem chan struct{}
+
 	// Instance-level configuration (set by builder, or defaults to package-level globals)
 	stateRegistry     map[State]StateInfo
 	transitionTable   map[TransitionKey][]Transition
@@ -43,12 +46,13 @@ type HistoryEntry struct {
 // Use NewMachineBuilder().Build() for custom configurations.
 func NewMachine(eventBus *events.Bus) *Machine {
 	return &Machine{
-		state:     StateIdle,
-		eventBus:  eventBus,
-		listeners: make([]StateListener, 0),
-		history:   make([]HistoryEntry, 0),
-		undoStack: make([]string, 0),
-		redoStack: make([]string, 0),
+		state:       StateIdle,
+		eventBus:    eventBus,
+		listeners:   nil,
+		history:     nil,
+		undoStack:   nil,
+		redoStack:   nil,
+		listenerSem: make(chan struct{}, 10), // Max 10 concurrent listener calls
 		// Use package-level defaults
 		stateRegistry:     StateRegistry,
 		transitionTable:   TransitionTable,
@@ -87,31 +91,66 @@ func (m *Machine) AddListener(listener StateListener) {
 
 // Dispatch attempts to transition based on an event
 func (m *Machine) Dispatch(ctx context.Context, event Event) error {
-	m.mu.Lock()
-	defer m.mu.Unlock()
+	// First pass: check if transition is possible and evaluate guards
+	// We do this without holding the lock to avoid blocking if guards do I/O
 
-	from := m.state
+	var from State
+	var transitions []Transition
+	var globalTo State
+	hasGlobal := false
 
-	// Check global transitions first (error, abort)
+	// Snapshot current state and transitions
+	m.mu.RLock()
+	from = m.state
 	if to, ok := m.globalTransitions[event]; ok {
-		return m.transitionTo(ctx, from, to, event)
+		globalTo = to
+		hasGlobal = true
+	} else {
+		key := TransitionKey{From: from, Event: event}
+		transitions = m.transitionTable[key]
+	}
+	wu := m.workUnit
+	m.mu.RUnlock()
+
+	// Handle global transitions (no guards to evaluate)
+	if hasGlobal {
+		m.mu.Lock()
+		defer m.mu.Unlock()
+		// Re-check state hasn't changed while we were thinking
+		if m.state != from {
+			return fmt.Errorf("state changed from %s to %s during dispatch", from, m.state)
+		}
+		return m.transitionTo(ctx, from, globalTo, event)
 	}
 
-	// Get possible transitions from instance table
-	key := TransitionKey{From: from, Event: event}
-	transitions := m.transitionTable[key]
+	// No transitions available
 	if len(transitions) == 0 {
 		return fmt.Errorf("no transition from %s on event %s", from, event)
 	}
 
-	// Find first transition where all guards pass
+	// Evaluate guards outside lock (guards may do I/O like RPC calls)
+	var validTransition *Transition
 	for _, t := range transitions {
-		if EvaluateGuards(ctx, m.workUnit, t.Guards) {
-			return m.transitionTo(ctx, from, t.To, event)
+		if EvaluateGuards(ctx, wu, t.Guards) {
+			validTransition = &t
+			break
 		}
 	}
 
-	return fmt.Errorf("no valid transition from %s on event %s (guards failed)", from, event)
+	if validTransition == nil {
+		return fmt.Errorf("no valid transition from %s on event %s (guards failed)", from, event)
+	}
+
+	// Acquire write lock for the actual transition
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	// Final check: state hasn't changed since we evaluated guards
+	if m.state != from {
+		return fmt.Errorf("state changed from %s to %s during dispatch", from, m.state)
+	}
+
+	return m.transitionTo(ctx, from, validTransition.To, event)
 }
 
 // CanDispatch checks if a transition is possible
@@ -177,6 +216,9 @@ func (m *Machine) transitionTo(ctx context.Context, from, to State, event Event)
 	// attempt to dispatch events.
 	if len(listeners) > 0 {
 		go func() {
+			m.listenerSem <- struct{}{}        // Acquire semaphore
+			defer func() { <-m.listenerSem }() // Release semaphore
+
 			for _, listener := range listeners {
 				listener(from, to, event, wu)
 			}
@@ -211,9 +253,9 @@ func (m *Machine) Reset() {
 
 	m.state = StateIdle
 	m.workUnit = nil
-	m.history = make([]HistoryEntry, 0)
-	m.undoStack = make([]string, 0)
-	m.redoStack = make([]string, 0)
+	m.history = nil
+	m.undoStack = nil
+	m.redoStack = nil
 }
 
 // PushUndo adds a checkpoint to the undo stack
@@ -223,7 +265,7 @@ func (m *Machine) PushUndo(checkpoint string) {
 
 	m.undoStack = append(m.undoStack, checkpoint)
 	// Clear redo stack on new action
-	m.redoStack = make([]string, 0)
+	m.redoStack = nil
 }
 
 // PopUndo removes and returns the last checkpoint from undo stack

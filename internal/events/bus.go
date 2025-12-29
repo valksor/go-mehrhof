@@ -1,6 +1,7 @@
 package events
 
 import (
+	"context"
 	"fmt"
 	"sync"
 )
@@ -21,13 +22,22 @@ type Bus struct {
 	handlers    map[Type][]Subscription
 	allHandlers []Subscription
 	nextID      int
+	// semaphore limits concurrent goroutines in PublishAsync
+	semaphore chan struct{}
+	// ctx is used for cancellation
+	ctx    context.Context
+	cancel context.CancelFunc
 }
 
 // NewBus creates a new event bus
 func NewBus() *Bus {
+	ctx, cancel := context.WithCancel(context.Background())
 	return &Bus{
 		handlers:    make(map[Type][]Subscription),
 		allHandlers: make([]Subscription, 0),
+		semaphore:   make(chan struct{}, 100), // Max 100 concurrent async publishes
+		ctx:         ctx,
+		cancel:      cancel,
 	}
 }
 
@@ -124,12 +134,21 @@ func (b *Bus) PublishRaw(event Event) {
 
 // PublishAsync sends an event asynchronously
 func (b *Bus) PublishAsync(e Eventer) {
-	go b.Publish(e)
+	b.PublishRawAsync(e.ToEvent())
 }
 
 // PublishRawAsync sends a raw event asynchronously
 func (b *Bus) PublishRawAsync(event Event) {
-	go b.PublishRaw(event)
+	go func() {
+		// Acquire semaphore slot or exit if context cancelled
+		select {
+		case b.semaphore <- struct{}{}:
+			defer func() { <-b.semaphore }()
+		case <-b.ctx.Done():
+			return
+		}
+		b.PublishRaw(event)
+	}()
 }
 
 // HasSubscribers returns true if there are any subscribers for the given type
@@ -150,4 +169,13 @@ func (b *Bus) Clear() {
 
 	b.handlers = make(map[Type][]Subscription)
 	b.allHandlers = make([]Subscription, 0)
+}
+
+// Shutdown gracefully shuts down the event bus, waiting for async publishes to complete.
+func (b *Bus) Shutdown() {
+	b.cancel()
+	// Drain semaphore to wait for in-flight async publishes
+	for i := 0; i < cap(b.semaphore); i++ {
+		b.semaphore <- struct{}{}
+	}
 }

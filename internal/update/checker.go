@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/google/go-github/v67/github"
+	"golang.org/x/mod/semver"
 	"golang.org/x/oauth2"
 )
 
@@ -153,25 +154,16 @@ func (c *Checker) fetchChecksum(ctx context.Context, url, assetName string) (str
 }
 
 // versionNewer compares two version strings and returns true if a is newer than b.
-// This is a simple semver comparison that handles major.minor.patch format.
+// Uses golang.org/x/mod/semver for proper semantic version comparison.
 func versionNewer(a, b string) bool {
-	// Simple semver comparison - parse major.minor.patch
-	var aMajor, aMinor, aPatch int
-	var bMajor, bMinor, bPatch int
-
-	_, _ = fmt.Sscanf(a, "%d.%d.%d", &aMajor, &aMinor, &aPatch)
-	_, _ = fmt.Sscanf(b, "%d.%d.%d", &bMajor, &bMinor, &bPatch)
-
-	if aMajor > bMajor {
-		return true
+	// semver.Compare requires versions to start with "v"
+	if !strings.HasPrefix(a, "v") {
+		a = "v" + a
 	}
-	if aMajor == bMajor && aMinor > bMinor {
-		return true
+	if !strings.HasPrefix(b, "v") {
+		b = "v" + b
 	}
-	if aMajor == bMajor && aMinor == bMinor && aPatch > bPatch {
-		return true
-	}
-	return false
+	return semver.Compare(a, b) > 0
 }
 
 // ReleaseInfoFromGitHub converts a GitHub release to our ReleaseInfo type.
