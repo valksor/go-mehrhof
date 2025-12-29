@@ -20,11 +20,48 @@ This is typically a one-time setup per project. Running `init` again is safe - i
 
 ## Flags
 
-This command has no specific flags. Global flags (`--verbose`, `--no-color`) are available.
+| Flag | Short | Description |
+|------|-------|-------------|
+| `--interactive` | `-i` | Interactive setup for API key, provider, and agent |
+
+Global flags (`--verbose`, `--no-color`) are also available.
 
 ## Examples
 
-### Initialize a New Project
+### Interactive Setup
+
+For first-time setup, use interactive mode to configure your API key and preferences:
+
+```bash
+mehr init --interactive
+```
+
+You'll be prompted for:
+1. **API Key** - Your Anthropic API key (validated for `sk-ant-` prefix)
+2. **Default Provider** - Choose from: file, dir, github, jira, linear, notion, wrike, youtrack
+3. **Default Agent** - Built-in agents (default: claude)
+
+Output:
+
+```
+Interactive Setup
+-----------------
+
+Enter your Anthropic API key (sk-ant-...): sk-ant-xxx...
+API key saved to .env
+
+Available providers: file, dir, github, jira, linear, notion, wrike, youtrack
+Enter default provider [file]: file
+
+Available built-in agents: claude
+Enter default agent [claude]: claude
+
+Configuration saved!
+```
+
+### Initialize a New Project (Non-Interactive)
+
+For standard setup without prompts:
 
 ```bash
 cd my-project

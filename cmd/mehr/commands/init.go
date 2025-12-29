@@ -1,14 +1,18 @@
 package commands
 
 import (
+	"bufio"
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/spf13/cobra"
 	"github.com/valksor/go-mehrhof/internal/storage"
 	"github.com/valksor/go-mehrhof/internal/vcs"
 )
+
+var initInteractive bool
 
 var initCmd = &cobra.Command{
 	Use:   "init",
@@ -19,6 +23,7 @@ and updating .gitignore.`,
 }
 
 func init() {
+	initCmd.Flags().BoolVarP(&initInteractive, "interactive", "i", false, "Interactive setup for API key, provider, and agent")
 	rootCmd.AddCommand(initCmd)
 }
 
@@ -73,6 +78,13 @@ func runInit(cmd *cobra.Command, args []string) error {
 		}
 	}
 
+	// Run interactive setup if requested
+	if initInteractive {
+		if err := interactiveSetup(cmd, ws, envPath); err != nil {
+			_, _ = fmt.Fprintf(errOut, "warning: interactive setup failed: %v\n", err)
+		}
+	}
+
 	_, _ = fmt.Fprintf(out, "Workspace initialized in %s\n", root)
 
 	// Show welcome message and next steps
@@ -109,4 +121,78 @@ func createEnvTemplate(path string) error {
 # GITHUB_TOKEN=ghp_...
 `
 	return os.WriteFile(path, []byte(template), 0o600) // 0600 for secrets
+}
+
+// interactiveSetup guides the user through initial configuration
+func interactiveSetup(cmd *cobra.Command, ws *storage.Workspace, envPath string) error {
+	out := cmd.OutOrStdout()
+	in := bufio.NewReader(cmd.InOrStdin())
+
+	_, _ = fmt.Fprintln(out)
+	_, _ = fmt.Fprintln(out, "Interactive Setup")
+	_, _ = fmt.Fprintln(out, "-----------------")
+
+	// Step 1: API Key
+	_, _ = fmt.Fprintln(out)
+	_, _ = fmt.Fprintf(out, "Enter your Anthropic API key (sk-ant-...): ")
+	apiKey, _ := in.ReadString('\n')
+	apiKey = strings.TrimSpace(apiKey)
+
+	if apiKey != "" {
+		if !strings.HasPrefix(apiKey, "sk-ant-") {
+			_, _ = fmt.Fprintln(out, "Warning: API key doesn't start with 'sk-ant-'. Did you enter it correctly?")
+		}
+		// Append to .env file
+		f, err := os.OpenFile(envPath, os.O_APPEND|os.O_WRONLY, 0o600)
+		if err == nil {
+			_, _ = fmt.Fprintf(f, "\nANTHROPIC_API_KEY=%s\n", apiKey)
+			if err := f.Close(); err != nil {
+				_, _ = fmt.Fprintf(out, "warning: failed to close .env file: %v\n", err)
+			}
+			_, _ = fmt.Fprintln(out, "API key saved to .env")
+		}
+	}
+
+	// Step 2: Default Provider
+	_, _ = fmt.Fprintln(out)
+	_, _ = fmt.Fprintln(out, "Available providers: file, dir, github, jira, linear, notion, wrike, youtrack")
+	_, _ = fmt.Fprintf(out, "Enter default provider [file]: ")
+	provider, _ := in.ReadString('\n')
+	provider = strings.TrimSpace(provider)
+	if provider == "" {
+		provider = "file"
+	}
+
+	// Step 3: Default Agent
+	_, _ = fmt.Fprintln(out)
+	_, _ = fmt.Fprintln(out, "Available built-in agents: claude")
+	_, _ = fmt.Fprintf(out, "Enter default agent [claude]: ")
+	agent, _ := in.ReadString('\n')
+	agent = strings.TrimSpace(agent)
+
+	if agent == "" {
+		agent = "claude"
+	}
+
+	if agent == "glm" {
+		_, _ = fmt.Fprintln(out, "Note: 'glm' is not a built-in agent. You'll need to configure it as an alias in config.yaml.")
+	}
+
+	// Update config.yaml with user's choices
+	cfg, err := ws.LoadConfig()
+	if err != nil {
+		return fmt.Errorf("load config: %w", err)
+	}
+
+	// Agent and Providers are value types in WorkspaceConfig, not pointers
+	cfg.Providers.Default = provider
+	cfg.Agent.Default = agent
+
+	if err := ws.SaveConfig(cfg); err != nil {
+		return fmt.Errorf("save config: %w", err)
+	}
+
+	_, _ = fmt.Fprintln(out)
+	_, _ = fmt.Fprintln(out, "Configuration saved!")
+	return nil
 }
