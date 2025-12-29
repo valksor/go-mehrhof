@@ -110,9 +110,15 @@ func confirmAction(prompt string, skipConfirm bool) (bool, error) {
 // CommandOptions holds common options for command execution.
 type CommandOptions struct {
 	Verbose     bool
+	Quiet       bool
 	DryRun      bool
 	StepAgent   string // Per-step agent override (e.g., "planning", "implementing")
 	FullContext bool
+}
+
+// IsQuiet returns true if quiet mode is enabled.
+func IsQuiet() bool {
+	return quiet
 }
 
 // BuildConductorOptions creates conductor options from command options.
@@ -186,9 +192,18 @@ func RequireActiveTask(cond *conductor.Conductor) bool {
 
 // SetupVerboseEventHandlers subscribes to common events for verbose output.
 // This centralizes the verbose event subscription pattern.
+// Quiet mode suppresses progress and file change events but keeps errors.
 func SetupVerboseEventHandlers(cond *conductor.Conductor) {
 	w := cond.GetStdout()
 	cond.GetEventBus().SubscribeAll(func(e events.Event) {
+		// Suppress non-essential output in quiet mode
+		if IsQuiet() {
+			switch e.Type {
+			case events.TypeProgress, events.TypeFileChanged, events.TypeCheckpoint:
+				return
+			}
+		}
+
 		switch e.Type {
 		case events.TypeProgress:
 			if msg, ok := e.Data["message"].(string); ok {
@@ -221,7 +236,11 @@ func SetupVerboseEventHandlers(cond *conductor.Conductor) {
 }
 
 // PrintNextSteps prints common next steps after a command completes.
+// Respects quiet mode - suppresses output if enabled.
 func PrintNextSteps(steps ...string) {
+	if IsQuiet() {
+		return
+	}
 	fmt.Println()
 	fmt.Println(display.Muted("Next steps:"))
 	for _, step := range steps {

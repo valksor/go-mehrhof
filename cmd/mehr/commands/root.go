@@ -20,6 +20,7 @@ var (
 	// Global flags
 	verbose bool
 	noColor bool
+	quiet   bool
 )
 
 var rootCmd = &cobra.Command{
@@ -85,7 +86,23 @@ func Execute() error {
 
 func init() {
 	rootCmd.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false, "Enable verbose output")
+	rootCmd.PersistentFlags().BoolVarP(&quiet, "quiet", "q", false, "Suppress non-essential output")
 	rootCmd.PersistentFlags().BoolVar(&noColor, "no-color", false, "Disable color output")
+
+	// Add command groups for better help organization
+	rootCmd.AddGroup(&cobra.Group{
+		ID:    "workflow",
+		Title: "Workflow Commands:",
+	}, &cobra.Group{
+		ID:    "task",
+		Title: "Task Commands:",
+	}, &cobra.Group{
+		ID:    "info",
+		Title: "Information Commands:",
+	}, &cobra.Group{
+		ID:    "config",
+		Title: "Configuration Commands:",
+	})
 
 	// Register shell completions for common flags
 	registerCompletions()
