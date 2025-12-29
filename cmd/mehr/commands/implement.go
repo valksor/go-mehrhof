@@ -37,7 +37,7 @@ func init() {
 	rootCmd.AddCommand(implementCmd)
 
 	implementCmd.Flags().BoolVarP(&implementDryRun, "dry-run", "n", false, "Don't apply file changes (preview only)")
-	implementCmd.Flags().StringVar(&implementAgentImplementing, "agent-implementing", "", "Agent for implementation step")
+	implementCmd.Flags().StringVar(&implementAgentImplementing, "agent-implement", "", "Agent for implementation step")
 }
 
 func runImplement(cmd *cobra.Command, args []string) error {

@@ -71,10 +71,10 @@ func init() {
 	startCmd.Flags().StringVar(&startBranchPattern, "branch-pattern", "", "Branch pattern template (e.g., {type}/{key}--{slug})")
 
 	// Per-step agent overrides
-	startCmd.Flags().StringVar(&startAgentPlanning, "agent-planning", "", "Agent for planning step")
-	startCmd.Flags().StringVar(&startAgentImplementing, "agent-implementing", "", "Agent for implementation step")
-	startCmd.Flags().StringVar(&startAgentReviewing, "agent-reviewing", "", "Agent for review step")
-	startCmd.Flags().StringVar(&startAgentDialogue, "agent-dialogue", "", "Agent for dialogue/talk step")
+	startCmd.Flags().StringVar(&startAgentPlanning, "agent-plan", "", "Agent for planning step")
+	startCmd.Flags().StringVar(&startAgentImplementing, "agent-implement", "", "Agent for implementation step")
+	startCmd.Flags().StringVar(&startAgentReviewing, "agent-review", "", "Agent for review step")
+	startCmd.Flags().StringVar(&startAgentDialogue, "agent-chat", "", "Agent for dialogue/chat step")
 }
 
 func runStart(cmd *cobra.Command, args []string) error {
@@ -174,7 +174,7 @@ func runStart(cmd *cobra.Command, args []string) error {
 		fmt.Printf("  cd %s           - Switch to the worktree\n", status.WorktreePath)
 	}
 	fmt.Printf("  mehr plan      - Create implementation specifications\n")
-	fmt.Printf("  mehr talk      - Add notes or discuss the task\n")
+	fmt.Printf("  mehr chat      - Add notes or discuss the task\n")
 
 	return nil
 }

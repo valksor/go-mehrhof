@@ -74,6 +74,25 @@ func runInit(cmd *cobra.Command, args []string) error {
 	}
 
 	_, _ = fmt.Fprintf(out, "Workspace initialized in %s\n", root)
+
+	// Show welcome message and next steps
+	_, _ = fmt.Fprintln(out)
+	_, _ = fmt.Fprintln(out, "Welcome to Mehrhof!")
+	_, _ = fmt.Fprintln(out)
+	_, _ = fmt.Fprintln(out, "Quick start:")
+	_, _ = fmt.Fprintf(out, "  1. Set your API key in %s:\n", envPath)
+	_, _ = fmt.Fprintf(out, "     echo 'ANTHROPIC_API_KEY=sk-ant-...' >> %s\n", envPath)
+	_, _ = fmt.Fprintln(out)
+	_, _ = fmt.Fprintf(out, "  2. Start your first task:\n")
+	_, _ = fmt.Fprintf(out, "     mehr start file:task.md\n")
+	_, _ = fmt.Fprintln(out)
+	_, _ = fmt.Fprintf(out, "  3. Create specifications:\n")
+	_, _ = fmt.Fprintf(out, "     mehr plan\n")
+	_, _ = fmt.Fprintln(out)
+	_, _ = fmt.Fprintf(out, "  4. Implement the specifications:\n")
+	_, _ = fmt.Fprintf(out, "     mehr implement\n")
+	_, _ = fmt.Fprintln(out)
+
 	return nil
 }
 

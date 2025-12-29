@@ -47,7 +47,7 @@ func init() {
 
 	reviewCmd.Flags().StringVar(&reviewTool, "tool", "coderabbit", "Review tool to use (coderabbit)")
 	reviewCmd.Flags().StringVarP(&reviewOutput, "output", "o", "", "Output file name (default: review-N.txt)")
-	reviewCmd.Flags().StringVar(&reviewAgentReviewing, "agent-reviewing", "", "Agent for review step (when using agent-based review)")
+	reviewCmd.Flags().StringVar(&reviewAgentReviewing, "agent-review", "", "Agent for review step (when using agent-based review)")
 }
 
 func runReview(cmd *cobra.Command, args []string) error {

@@ -7,6 +7,7 @@ import (
 	"io"
 	"os"
 	"strings"
+	"sync"
 
 	"github.com/valksor/go-mehrhof/internal/agent/claude"
 	"github.com/valksor/go-mehrhof/internal/conductor"
@@ -14,6 +15,7 @@ import (
 	"github.com/valksor/go-mehrhof/internal/provider/directory"
 	"github.com/valksor/go-mehrhof/internal/provider/file"
 	"github.com/valksor/go-mehrhof/internal/provider/github"
+	"github.com/valksor/go-mehrhof/internal/provider/gitlab"
 	"github.com/valksor/go-mehrhof/internal/provider/jira"
 	"github.com/valksor/go-mehrhof/internal/provider/linear"
 	"github.com/valksor/go-mehrhof/internal/provider/notion"
@@ -21,17 +23,19 @@ import (
 	"github.com/valksor/go-mehrhof/internal/provider/youtrack"
 )
 
-// dedupStdout is the shared deduplicating writer for verbose output.
-// It's initialized once and reused across commands to maintain dedup state.
-var dedupStdout *output.DeduplicatingWriter
+var (
+	dedupStdout sync.Once
+	dedupWriter *output.DeduplicatingWriter
+)
 
 // getDeduplicatingStdout returns a deduplicating writer that wraps os.Stdout.
 // The writer suppresses consecutive identical lines.
+// Uses sync.Once to ensure thread-safe initialization.
 func getDeduplicatingStdout() io.Writer {
-	if dedupStdout == nil {
-		dedupStdout = output.NewDeduplicatingWriter(os.Stdout)
-	}
-	return dedupStdout
+	dedupStdout.Do(func() {
+		dedupWriter = output.NewDeduplicatingWriter(os.Stdout)
+	})
+	return dedupWriter
 }
 
 // initializeConductor creates and initializes a conductor with the standard
@@ -46,10 +50,11 @@ func initializeConductor(ctx context.Context, opts ...conductor.Option) (*conduc
 		return nil, fmt.Errorf("create conductor: %w", err)
 	}
 
-		// Register standard providers
+	// Register standard providers
 	file.Register(cond.GetProviderRegistry())
 	directory.Register(cond.GetProviderRegistry())
 	github.Register(cond.GetProviderRegistry())
+	gitlab.Register(cond.GetProviderRegistry())
 	wrike.Register(cond.GetProviderRegistry())
 	linear.Register(cond.GetProviderRegistry())
 	jira.Register(cond.GetProviderRegistry())

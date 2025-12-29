@@ -158,7 +158,7 @@ func showWorktreeTask(ws *storage.Workspace, git *vcs.Git) error {
 		fmt.Printf("  mehr implement - Implement the specifications\n")
 		fmt.Printf("  mehr plan      - Create additional specifications\n")
 	}
-	fmt.Printf("  mehr talk      - Add notes or discuss the task\n")
+	fmt.Printf("  mehr chat      - Add notes or discuss the task\n")
 	fmt.Printf("  mehr finish    - Complete and optionally merge\n")
 
 	return nil
@@ -273,7 +273,7 @@ func showActiveTask(ws *storage.Workspace, git *vcs.Git) error {
 		fmt.Printf("  mehr implement - Implement the specifications\n")
 		fmt.Printf("  mehr plan      - Create additional specifications\n")
 	}
-	fmt.Printf("  mehr talk      - Add notes or discuss the task\n")
+	fmt.Printf("  mehr chat      - Add notes or discuss the task\n")
 	fmt.Printf("  mehr finish    - Complete and optionally merge\n")
 
 	return nil
@@ -345,6 +345,11 @@ func showAllTasks(ws *storage.Workspace, git *vcs.Git) error {
 
 	// Add legend for symbols
 	fmt.Println()
-	fmt.Println(display.Muted("Legend: * = active task"))
+	fmt.Println(display.Muted("Legend:"))
+	fmt.Println(display.Muted("  * = active task"))
+	fmt.Println(display.Muted("  ○ = draft spec"))
+	fmt.Println(display.Muted("  ◐ = ready to implement"))
+	fmt.Println(display.Muted("  ◑ = implementing"))
+	fmt.Println(display.Muted("  ● = completed"))
 	return nil
 }

@@ -53,7 +53,7 @@ func init() {
 	planCmd.Flags().BoolVarP(&planStandalone, "new", "n", false, "Start standalone planning without a task")
 	planCmd.Flags().StringVarP(&planSeed, "seed", "s", "", "Initial topic for standalone planning")
 	planCmd.Flags().BoolVar(&planFullContext, "full-context", false, "Include full exploration context from previous session (default: summary only)")
-	planCmd.Flags().StringVar(&planAgentPlanning, "agent-planning", "", "Agent for planning step")
+	planCmd.Flags().StringVar(&planAgentPlanning, "agent-plan", "", "Agent for planning step")
 }
 
 func runPlan(cmd *cobra.Command, args []string) error {
@@ -168,7 +168,7 @@ func runPlan(cmd *cobra.Command, args []string) error {
 				fmt.Println()
 			}
 			fmt.Println(display.Muted("Answer with:"))
-			fmt.Printf("  %s\n", display.Cyan("mehr talk \"your answer\""))
+			fmt.Printf("  %s\n", display.Cyan("mehr chat \"your answer\""))
 			fmt.Printf("  %s\n", display.Cyan("mehr plan")+" "+display.Muted("(to continue after answering)"))
 		}
 		return nil
@@ -192,7 +192,7 @@ func runPlan(cmd *cobra.Command, args []string) error {
 	fmt.Println()
 	fmt.Println(display.Muted("Next steps:"))
 	fmt.Printf("  %s - View task status and specifications\n", display.Cyan("mehr status"))
-	fmt.Printf("  %s - Add notes or clarifications\n", display.Cyan("mehr talk"))
+	fmt.Printf("  %s - Add notes or clarifications\n", display.Cyan("mehr chat"))
 	fmt.Printf("  %s - Implement the specifications\n", display.Cyan("mehr implement"))
 
 	return nil
