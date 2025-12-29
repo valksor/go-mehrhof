@@ -199,6 +199,9 @@ func NewDefaultWorkspaceConfig() *WorkspaceConfig {
 			AutoInit:             true,
 			SessionRetentionDays: 30,
 		},
+		Providers: ProvidersSettings{
+			Default: "file",
+		},
 		Update: UpdateSettings{
 			Enabled:       true,
 			CheckInterval: 24,
