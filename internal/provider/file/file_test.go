@@ -240,6 +240,57 @@ Just a simple task without frontmatter.
 	}
 }
 
+func TestFetchFilenameAsTitle(t *testing.T) {
+	tmpDir := t.TempDir()
+	taskFile := filepath.Join(tmpDir, "test-task.md")
+	content := `Just a description without any title heading or frontmatter.`
+	if err := os.WriteFile(taskFile, []byte(content), 0o644); err != nil {
+		t.Fatalf("WriteFile: %v", err)
+	}
+
+	p := &Provider{basePath: tmpDir}
+	ctx := context.Background()
+
+	wu, err := p.Fetch(ctx, taskFile)
+	if err != nil {
+		t.Fatalf("Fetch: %v", err)
+	}
+
+	if wu.Title != "test-task" {
+		t.Errorf("Title = %q, want %q (filename as fallback)", wu.Title, "test-task")
+	}
+}
+
+func TestFetchWithSlug(t *testing.T) {
+	tmpDir := t.TempDir()
+	taskFile := filepath.Join(tmpDir, "my-task.md")
+	content := `---
+title: My Task
+slug: custom-slug
+---
+
+This is the task description.
+`
+	if err := os.WriteFile(taskFile, []byte(content), 0o644); err != nil {
+		t.Fatalf("WriteFile: %v", err)
+	}
+
+	p := &Provider{basePath: tmpDir}
+	ctx := context.Background()
+
+	wu, err := p.Fetch(ctx, taskFile)
+	if err != nil {
+		t.Fatalf("Fetch: %v", err)
+	}
+
+	if wu.Title != "My Task" {
+		t.Errorf("Title = %q, want %q", wu.Title, "My Task")
+	}
+	if wu.Slug != "custom-slug" {
+		t.Errorf("Slug = %q, want %q", wu.Slug, "custom-slug")
+	}
+}
+
 func TestSnapshot(t *testing.T) {
 	tmpDir := t.TempDir()
 	taskFile := filepath.Join(tmpDir, "snapshot.md")

@@ -26,6 +26,7 @@ type Frontmatter struct {
 	// Naming overrides for branch/commit customization
 	Key  string `yaml:"key"`  // External key override (e.g., "FEATURE-123")
 	Type string `yaml:"type"` // Task type override (e.g., "feature", "fix")
+	Slug string `yaml:"slug"` // Branch slug override (e.g., "custom-slug")
 
 	// Agent configuration
 	Agent      string                          `yaml:"agent,omitempty"`       // Agent name or alias (e.g., "glm", "claude")
@@ -43,16 +44,16 @@ type ParsedMarkdown struct {
 }
 
 // ParseMarkdownFile reads and parses a markdown file
-func ParseMarkdownFile(path string) (*ParsedMarkdown, error) {
+func ParseMarkdownFile(path, fallbackTitle string) (*ParsedMarkdown, error) {
 	content, err := os.ReadFile(path)
 	if err != nil {
 		return nil, err
 	}
-	return ParseMarkdown(string(content))
+	return ParseMarkdown(string(content), fallbackTitle)
 }
 
 // ParseMarkdown parses markdown content
-func ParseMarkdown(content string) (*ParsedMarkdown, error) {
+func ParseMarkdown(content, fallbackTitle string) (*ParsedMarkdown, error) {
 	result := &ParsedMarkdown{Raw: content}
 
 	// Check for YAML frontmatter (--- delimited)
@@ -88,8 +89,8 @@ func ParseMarkdown(content string) (*ParsedMarkdown, error) {
 		result.Title = result.Frontmatter.Title
 	}
 
-	// Fallback to "Untitled" if no title found
-	result.Title = cmp.Or(result.Title, "Untitled Task")
+	// Fallback to provided title (filename) if no title found
+	result.Title = cmp.Or(result.Title, fallbackTitle)
 
 	// Body is everything after title
 	if bodyStart > 0 && bodyStart < len(lines) {

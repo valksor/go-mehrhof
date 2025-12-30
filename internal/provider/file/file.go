@@ -69,7 +69,10 @@ func (p *Provider) Parse(input string) (string, error) {
 
 // Fetch reads the file and creates a WorkUnit
 func (p *Provider) Fetch(ctx context.Context, id string) (*provider.WorkUnit, error) {
-	parsed, err := ParseMarkdownFile(id)
+	// Extract filename without extension for fallback title
+	filename := strings.TrimSuffix(filepath.Base(id), filepath.Ext(id))
+
+	parsed, err := ParseMarkdownFile(id, filename)
 	if err != nil {
 		return nil, fmt.Errorf("parse file: %w", err)
 	}
@@ -81,7 +84,6 @@ func (p *Provider) Fetch(ctx context.Context, id string) (*provider.WorkUnit, er
 	}
 
 	// Extract naming info from filename
-	filename := filepath.Base(id)
 	externalKey := naming.KeyFromFilename(filename)
 	taskType := naming.TaskTypeFromFilename(filename)
 
@@ -122,6 +124,9 @@ func (p *Provider) Fetch(ctx context.Context, id string) (*provider.WorkUnit, er
 		}
 		if parsed.Frontmatter.Type != "" {
 			wu.TaskType = parsed.Frontmatter.Type
+		}
+		if parsed.Frontmatter.Slug != "" {
+			wu.Slug = parsed.Frontmatter.Slug
 		}
 		// Agent configuration from frontmatter
 		if parsed.Frontmatter.Agent != "" || len(parsed.Frontmatter.AgentEnv) > 0 || len(parsed.Frontmatter.AgentArgs) > 0 || len(parsed.Frontmatter.AgentSteps) > 0 {

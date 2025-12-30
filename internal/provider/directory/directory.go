@@ -186,7 +186,10 @@ func (p *Provider) List(ctx context.Context, opts provider.ListOptions) ([]*prov
 }
 
 func (p *Provider) fetchFile(ctx context.Context, path string) (*provider.WorkUnit, error) {
-	parsed, err := file.ParseMarkdownFile(path)
+	// Extract filename without extension for fallback title
+	filename := strings.TrimSuffix(filepath.Base(path), filepath.Ext(path))
+
+	parsed, err := file.ParseMarkdownFile(path, filename)
 	if err != nil {
 		return nil, err
 	}
@@ -241,7 +244,9 @@ func (p *Provider) findReadme(dir string) (path, title, description string, fron
 	for _, name := range candidates {
 		checkPath := filepath.Join(dir, name)
 		if _, err := os.Stat(checkPath); err == nil {
-			parsed, err := file.ParseMarkdownFile(checkPath)
+			// Use filename without extension as fallback
+			fallbackTitle := strings.TrimSuffix(name, filepath.Ext(name))
+			parsed, err := file.ParseMarkdownFile(checkPath, fallbackTitle)
 			if err == nil {
 				return checkPath, parsed.Title, parsed.Body, parsed.Frontmatter
 			}
