@@ -8,6 +8,8 @@ Show detailed task state (specs, checkpoints, sessions).
 mehr status [flags]
 ```
 
+**Aliases:** `st`
+
 ## Description
 
 The `status` command displays information about the active task including:
@@ -23,10 +25,12 @@ The `status` command displays information about the active task including:
 
 ## Flags
 
-| Flag     | Short | Type | Default | Description                    |
-| -------- | ----- | ---- | ------- | ------------------------------ |
-| `--all`  | `-a`  | bool | false   | Show all tasks in workspace    |
-| `--json` |       | bool | false   | Output as JSON for programmatic use |
+| Flag     | Short | Type | Default | Description                              |
+| -------- | ----- | ---- | ------- | ---------------------------------------- |
+| `--all`  |       | bool | false   | Show all tasks in workspace              |
+| `--json` |       | bool | false   | Output as JSON for programmatic use      |
+
+**Note:** The `--json` flag is useful for scripting and integration with other tools.
 
 ## Examples
 
@@ -226,9 +230,9 @@ mehr continue [flags]
 The `continue` command is designed for resuming work on a task after a break. It shows the current status and suggests what to do next. With `--auto`, it automatically executes the next logical workflow step.
 
 **Flags:**
-| Flag    | Short | Type | Default | Description                             |
-| ------- | ----- | ---- | ------- | --------------------------------------- |
-| `--auto` | `-a`  | bool | false   | Auto-execute the next logical workflow step |
+| Flag     | Type | Default | Description                             |
+| -------- | ---- | ------- | --------------------------------------- |
+| `--auto` | bool | false   | Auto-execute the next logical workflow step |
 
 ## Examples
 

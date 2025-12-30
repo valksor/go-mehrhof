@@ -219,7 +219,7 @@ Monitor token usage and costs with the `cost` command:
 
 ```bash
 mehr cost                 # Show current task costs
-mehr cost --by-step       # Breakdown by workflow step
+mehr cost --breakdown     # Breakdown by workflow step
 mehr cost --all           # Show all historical tasks
 mehr cost --summary       # Aggregate statistics
 ```

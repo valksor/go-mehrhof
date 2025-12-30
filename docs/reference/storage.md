@@ -246,7 +246,7 @@ exchanges:
 
 ## Planned Directory
 
-Standalone planning sessions (from `mehr plan --new`):
+Standalone planning sessions (from `mehr plan --standalone`):
 
 ```
 planned/

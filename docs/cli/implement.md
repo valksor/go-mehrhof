@@ -8,6 +8,8 @@ Implement the specifications for the active task.
 mehr implement [flags]
 ```
 
+**Aliases:** `impl`, `i`
+
 ## Description
 
 The `implement` command runs the implementation phase where the AI agent:

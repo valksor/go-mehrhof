@@ -101,7 +101,7 @@ Run multiple tasks simultaneously in separate terminals using worktrees.
 ```bash
 # Terminal 1: Start first task with worktree
 mehr start --worktree feature-a.md
-# Output: Task registered: a1b2c3d4
+# Output: Task started: a1b2c3d4
 #         Worktree: ../project-worktrees/a1b2c3d4
 
 cd ../project-worktrees/a1b2c3d4
@@ -109,7 +109,7 @@ mehr plan && mehr implement
 
 # Terminal 2: Start second task (from main repo)
 mehr start --worktree feature-b.md
-# Output: Task registered: e5f6g7h8
+# Output: Task started: e5f6g7h8
 #         Worktree: ../project-worktrees/e5f6g7h8
 
 cd ../project-worktrees/e5f6g7h8
@@ -189,11 +189,11 @@ providers:
 **Flags:**
 | Flag | Description | Default |
 |------|-------------|---------|
-| `-a, --agent <name>` | Agent to use | auto-detect |
+| `-A, --agent <name>` | Agent to use | auto-detect |
 | `--no-branch` | Skip creating a git branch (branch creation is default) | `false` |
 | `-w, --worktree` | Create separate git worktree (enables parallel tasks) | `false` |
 | `-k, --key <key>` | External key for branch/commit naming (e.g., `FEATURE-123`) | auto-detect |
-| `-t, --template <name>` | Template to apply (bug-fix, feature, refactor, docs, test, chore) | - |
+| `--template <name>` | Template to apply (bug-fix, feature, refactor, docs, test, chore) | - |
 | `--commit-prefix <template>` | Commit prefix template (e.g., `[{key}]`) | `[{key}]` |
 | `--branch-pattern <template>` | Branch pattern template (e.g., `{type}/{key}--{slug}`) | `{type}/{key}--{slug}` |
 
@@ -213,6 +213,8 @@ providers:
 
 Show status and suggested next actions for the current task. Useful when returning to work after a break.
 
+**Aliases:** `cont`, `c`
+
 ```bash
 mehr continue
 ```
@@ -230,10 +232,10 @@ This will:
 Create implementation specifications for the active task.
 
 ```bash
-mehr plan                    # Create specs for active task
-mehr plan --verbose          # Show agent output
-mehr plan --new              # Start standalone planning (no task required)
-mehr plan --new "build a CLI"  # Standalone planning with seed topic
+mehr plan                         # Create specs for active task (alias: p)
+mehr plan --verbose               # Show agent output
+mehr plan --standalone            # Start standalone planning (no task required)
+mehr plan --standalone "build a CLI"  # Standalone planning with seed topic
 ```
 
 This runs the planning phase to analyze the task and create structured `specification-N.md` files in the work directory. You can run this multiple times to create additional specifications.
@@ -241,17 +243,19 @@ This runs the planning phase to analyze the task and create structured `specific
 **Flags:**
 | Flag | Description | Default |
 |------|-------------|---------|
-| `-n, --new` | Start standalone planning without a task | `false` |
+| `--standalone` | Start standalone planning without a task | `false` |
 | `-s, --seed <topic>` | Initial topic for standalone planning | - |
 
 **Standalone Planning:**
-With `--new`, you can start an interactive planning session without an active task. This is useful for exploring requirements before creating a formal task. Plans are saved to `.mehrhof/planned/` directory.
+With `--standalone`, you can start an interactive planning session without an active task. This is useful for exploring requirements before creating a formal task. Plans are saved to `.mehrhof/planned/` directory.
 
 ---
 
 ### `mehr implement`
 
 Implement the specifications for the active task.
+
+**Aliases:** `impl`, `i`
 
 ```bash
 mehr implement               # Implement the specs
@@ -291,6 +295,8 @@ mehr answer "your response"      # Alias: submit answer to pending agent questio
 
 Show the status of the current task.
 
+**Aliases:** `st`
+
 ```bash
 mehr status              # Show current task status
 mehr status --all        # Show all tasks (same as mehr list)
@@ -301,7 +307,8 @@ In a worktree, automatically shows the task associated with that worktree.
 **Flags:**
 | Flag | Description | Default |
 |------|-------------|---------|
-| `-a, --all` | Show all tasks | `false` |
+| `--all` | Show all tasks | `false` |
+| `--json` | Output as JSON for programmatic use | `false` |
 
 ---
 
@@ -367,7 +374,7 @@ mehr templates apply bug-fix task.md  # Apply template to file
 
 ```bash
 mehr start --template bug-fix file:task.md
-mehr start -t feature file:FEATURE-123.md
+mehr start --template feature file:FEATURE-123.md
 ```
 
 Templates configure:
@@ -385,7 +392,7 @@ Show token usage and costs for the active task.
 
 ```bash
 mehr cost                # Show cost for active task
-mehr cost --by-step      # Break down by workflow step
+mehr cost --breakdown    # Break down by workflow step
 mehr cost --all          # Show costs for all tasks
 mehr cost --summary      # Show aggregate summary
 ```
@@ -491,6 +498,8 @@ mehr redo
 
 Complete the task and merge changes to the target branch, or create a pull request.
 
+**Aliases:** `fi`, `done`
+
 ```bash
 mehr finish                      # Complete and merge (with confirmation)
 mehr finish --yes                # Skip confirmation prompt
@@ -549,7 +558,7 @@ Full automation mode: runs the entire workflow without user interaction.
 mehr auto file:task.md               # Full cycle from file
 mehr auto dir:./tasks/               # Full cycle from directory
 mehr auto --max-retries 5 file:task.md  # Allow more quality retries
-mehr auto --skip-quality file:task.md   # Skip quality checks entirely
+mehr auto --no-quality file:task.md     # Skip quality checks entirely
 ```
 
 **Workflow:**
@@ -563,11 +572,11 @@ mehr auto --skip-quality file:task.md   # Skip quality checks entirely
 **Flags:**
 | Flag | Description | Default |
 |------|-------------|---------|
-| `-a, --agent <name>` | Agent to use | auto-detect |
+| `-A, --agent <name>` | Agent to use | auto-detect |
 | `--no-branch` | Skip creating a git branch (branch creation is default) | `false` |
 | `-w, --worktree` | Create a separate git worktree | `false` |
 | `--max-retries <n>` | Maximum quality check retry attempts | `3` |
-| `--skip-quality` | Skip quality checks entirely | `false` |
+| `--no-quality` | Skip quality checks entirely | `false` |
 | `--no-push` | Don't push after merge | `false` |
 | `--no-delete` | Don't delete task branch after merge | `false` |
 | `--no-squash` | Use regular merge instead of squash | `false` |
@@ -776,7 +785,7 @@ Tasks are stored in `.mehrhof/` directory within your repository:
 ├── .active_task             # Current active task reference (main repo only)
 ├── locks/                   # File locks for concurrent access
 │   └── <task-id>.lock
-├── planned/                 # Standalone planning results (when --new is used)
+├── planned/                 # Standalone planning results (when --standalone is used)
 │   └── <timestamp>/
 │       └── specification-1.md
 └── work/

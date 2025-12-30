@@ -8,6 +8,8 @@ Complete the task by creating a pull request or merging locally.
 mehr finish [flags]
 ```
 
+**Aliases:** `fi`, `done`
+
 ## Description
 
 The `finish` command completes the current task by:
@@ -31,7 +33,7 @@ The `finish` command completes the current task by:
 | `--push`           |       | bool   | false   | Push to remote after local merge            |
 | `--no-squash`      |       | bool   | false   | Regular merge (no squash)                   |
 | `--target`         | `-t`  | string | auto    | Target branch to merge into                 |
-| `--skip-quality`   |       | bool   | false   | Skip quality checks                         |
+| `--no-quality`     |       | bool   | false   | Skip quality checks                         |
 | `--quality-target` |       | string | quality | Make target for quality checks            |
 | `--draft`          |       | bool   | false   | Create PR as draft                          |
 | `--pr-title`       |       | string | auto    | Custom PR title                             |
@@ -135,7 +137,7 @@ Merge to `develop` instead of auto-detected base branch.
 ### Skip Quality Checks
 
 ```bash
-mehr finish --skip-quality
+mehr finish --no-quality
 ```
 
 Skip running `make quality`.

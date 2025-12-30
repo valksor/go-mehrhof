@@ -1,6 +1,6 @@
 # mehr start
 
-Register a new task from a file or directory.
+Start a new task from a file, directory, or provider.
 
 ## Synopsis
 
@@ -13,7 +13,7 @@ mehr start <scheme:reference> [flags]
 The `start` command registers a new task and prepares the workspace. It:
 
 1. Generates a unique task ID
-2. Creates a git branch (unless `--branch=false`)
+2. Creates a git branch (unless `--no-branch`)
 3. Copies source content to the work directory
 4. Sets the task as active
 
@@ -53,18 +53,18 @@ providers:
 
 | Flag                   | Short | Type   | Default                | Description                                           |
 | ---------------------- | ----- | ------ | ---------------------- | ----------------------------------------------------- |
-| `--agent`              | `-a`  | string | auto                   | Agent to use (overrides all steps)                    |
-| `--agent-planning`     |       | string |                        | Agent for planning step                               |
-| `--agent-implementing` |       | string |                        | Agent for implementation step                         |
-| `--agent-reviewing`    |       | string |                        | Agent for review step                                 |
-| `--branch`             | `-b`  | bool   | true                   | Create a git branch |
-| `--no-branch`          |       | bool   | false                  | Skip creating a git branch |
+| `--agent`              | `-A`  | string | auto                   | Agent to use (overrides all steps)                    |
+| `--agent-plan`         |       | string |                        | Agent for planning step                               |
+| `--agent-implement`    |       | string |                        | Agent for implementation step                         |
+| `--agent-review`       |       | string |                        | Agent for review step                                 |
+| `--no-branch`          |       | bool   | false                  | Skip creating a git branch                            |
 | `--worktree`           | `-w`  | bool   | false                  | Create a separate git worktree                        |
 | `--key`                | `-k`  | string | auto                   | External key for branch/commit naming                 |
 | `--title`              |       | string | auto                   | Task title override                                   |
 | `--slug`               |       | string | auto                   | Branch slug override                                  |
 | `--commit-prefix`      |       | string | `[{key}]`              | Commit prefix template                                |
 | `--branch-pattern`     |       | string | `{type}/{key}--{slug}` | Branch pattern template                               |
+| `--template`           |       | string |                        | Template to apply (bug-fix, feature, refactor, etc.)  |
 
 ### Naming Template Variables
 
@@ -288,7 +288,7 @@ Brief description of what needs to be done.
    - Type extracted from filename prefix (e.g., `FEATURE-` → `feature`)
    - Slug generated from title
 
-3. **Branch Creation** (unless `--branch=false`)
+3. **Branch Creation** (unless `--no-branch`)
    - Branch name: `{type}/{key}--{slug}` (e.g., `feature/FEATURE-123--add-auth`)
    - Base branch: current HEAD
 

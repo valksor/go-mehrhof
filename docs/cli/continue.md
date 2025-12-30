@@ -8,6 +8,8 @@ Continue to the next workflow step.
 mehr continue [flags]
 ```
 
+**Aliases:** `cont`, `c`
+
 ## Description
 
 The `continue` command helps you resume work on a task after a break. It:
@@ -22,9 +24,9 @@ This is particularly useful when you return to a project and need to remember wh
 
 ## Flags
 
-| Flag    | Short | Type | Default | Description                             |
-| ------- | ----- | ---- | ------- | --------------------------------------- |
-| `--auto` | `-a`  | bool | false   | Auto-execute the next logical workflow step |
+| Flag     | Type | Default | Description                             |
+| -------- | ---- | ------- | --------------------------------------- |
+| `--auto` | bool | false   | Auto-execute the next logical workflow step |
 
 ## Examples
 

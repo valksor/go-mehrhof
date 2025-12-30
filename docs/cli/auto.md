@@ -31,11 +31,10 @@ This is ideal for well-defined tasks where you trust the AI to handle the entire
 | Flag               | Short | Description                          | Default     |
 | ------------------ | ----- | ------------------------------------ | ----------- |
 | `--agent`          | `-a`  | Agent to use                         | auto-detect |
-| `--branch`         | `-b`  | Create git branch for the task       | `true`      |
-| `--no-branch`      |       | Do not create a git branch           |             |
+| `--no-branch`      |       | Do not create a git branch           | `false`     |
 | `--worktree`       | `-w`  | Create a separate git worktree       | `false`     |
 | `--max-retries`    |       | Maximum quality check retry attempts | `3`         |
-| `--skip-quality`   |       | Skip quality checks entirely         | `false`     |
+| `--no-quality`     |       | Skip quality checks entirely         | `false`     |
 | `--no-push`        |       | Don't push after merge               | `false`     |
 | `--no-delete`      |       | Don't delete task branch after merge | `false`     |
 | `--no-squash`      |       | Use regular merge instead of squash  | `false`     |
@@ -61,7 +60,7 @@ mehr auto ./tasks/feature/
 mehr auto --max-retries 5 task.md
 
 # Skip quality checks entirely
-mehr auto --skip-quality task.md
+mehr auto --no-quality task.md
 
 # Use custom make target for quality
 mehr auto --quality-target lint task.md

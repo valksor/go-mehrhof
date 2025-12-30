@@ -6,7 +6,7 @@ Show token usage and costs for the active task.
 
 ```bash
 mehr cost                    # Show cost for active task
-mehr cost --by-step          # Break down by workflow step
+mehr cost --breakdown        # Break down by workflow step
 mehr cost --all              # Show costs for all tasks
 mehr cost --summary          # Show aggregate summary across all tasks
 ```
@@ -22,12 +22,12 @@ Cost tracking works by:
 
 ## Flags
 
-| Flag            | Description                              | Default |
-| --------------- | ---------------------------------------- | ------- |
-| `--by-step`     | Break down costs by workflow step        | `false` |
-| `--all`         | Show costs for all tasks in workspace    | `false` |
-| `--summary`     | Show aggregate summary across all tasks  | `false` |
-| `--json`        | Output as JSON for programmatic use      | `false` |
+| Flag            | Short | Description                              | Default |
+| --------------- | ----- | ---------------------------------------- | ------- |
+| `--breakdown`   |       | Break down costs by workflow step        | `false` |
+| `--all`         |       | Show costs for all tasks in workspace    | `false` |
+| `--summary`     | `-s`  | Show aggregate summary across all tasks  | `false` |
+| `--json`        |       | Output as JSON for programmatic use      | `false` |
 
 ## Output
 
@@ -48,7 +48,7 @@ Total Cost:        $1.2350
 ### By Step Breakdown
 
 ```bash
-$ mehr cost --by-step
+$ mehr cost --breakdown
 
 Task: Add user authentication
 Key: AUTH-001

@@ -140,5 +140,5 @@ mehr finish
 ### Exploring Without a Task
 
 ```bash
-mehr plan --new "How should I implement caching?"
+mehr plan --standalone "How should I implement caching?"
 ```

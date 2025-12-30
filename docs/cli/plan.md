@@ -8,6 +8,8 @@ Create implementation specifications for the active task.
 mehr plan [flags]
 ```
 
+**Aliases:** `p`
+
 ## Description
 
 The `plan` command runs the planning phase where the AI agent:
@@ -21,12 +23,19 @@ specification files are saved to `.mehrhof/work/<id>/specifications/`.
 
 ## Flags
 
-| Flag               | Short | Type   | Default | Description                         |
-| ------------------ | ----- | ------ | ------- | ----------------------------------- |
-| `--new`            | `-n`  | bool   | false   | Start standalone planning (no task) |
-| `--verbose`        | `-v`  | bool   | false   | Show agent output in real-time      |
-| `--agent-planning` |       | string |         | Override agent for planning step    |
-| `--full-context`   |       | bool   | false   | Include full exploration context    |
+| Flag               | Short | Type   | Default | Description                          |
+| ------------------ | ----- | ------ | ------- | ------------------------------------ |
+| `--standalone`     |       | bool   | false   | Start standalone planning (no task)  |
+| `--seed`           | `-s`  | string |         | Initial topic for standalone planning |
+| `--verbose`        | `-v`  | bool   | false   | Show agent output in real-time       |
+| `--agent-plan`     |       | string |         | Override agent for planning step     |
+| `--full-context`   |       | bool   | false   | Include full exploration context     |
+
+**Note:** For standalone mode, you can also provide the seed topic as a positional argument:
+```bash
+mehr plan --standalone "build a CLI"           # positional argument
+mehr plan --standalone --seed "build a CLI"    # flag argument (equivalent)
+```
 
 ## Examples
 
@@ -56,7 +65,7 @@ Shows the agent's reasoning and progress in real-time.
 ### Standalone Planning
 
 ```bash
-mehr plan --new
+mehr plan --standalone
 ```
 
 Start an interactive planning session without a formal task:
@@ -70,7 +79,7 @@ Plan saved to: .mehrhof/planned/xyz789/
 ### Standalone with Seed
 
 ```bash
-mehr plan --new "Design a REST API for products"
+mehr plan --standalone "Design a REST API for products"
 ```
 
 Skip the topic prompt by providing it directly.
