@@ -10,8 +10,6 @@ const (
 	StepImplementing Step = "implementing"
 	// StepReviewing is the review phase where code is reviewed
 	StepReviewing Step = "reviewing"
-	// StepDialogue is the dialogue/chat mode for interactive conversation
-	StepDialogue Step = "dialogue"
 	// StepCheckpointing is the checkpointing phase for git operations
 	StepCheckpointing Step = "checkpointing"
 )
@@ -22,7 +20,6 @@ func AllSteps() []Step {
 		StepPlanning,
 		StepImplementing,
 		StepReviewing,
-		StepDialogue,
 		StepCheckpointing,
 	}
 }

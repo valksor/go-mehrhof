@@ -504,6 +504,7 @@ func (w *Workspace) CreateWork(taskID string, source SourceInfo) (*TaskWork, err
 		workPath,
 		filepath.Join(workPath, specsDirName),
 		filepath.Join(workPath, sessionsDirName),
+		filepath.Join(workPath, "source"), // Source files directory
 	}
 	for _, dir := range dirs {
 		if err := os.MkdirAll(dir, 0o755); err != nil {
@@ -1002,22 +1003,32 @@ func (w *Workspace) ListSessions(taskID string) ([]*Session, error) {
 }
 
 // GetSourceContent returns combined source content for prompts
+// Reads from actual files in source/ directory (hybrid storage)
 func (w *Workspace) GetSourceContent(taskID string) (string, error) {
 	work, err := w.LoadWork(taskID)
 	if err != nil {
 		return "", err
 	}
 
+	workPath := w.WorkPath(taskID)
 	var parts []string
 
-	// Single file source
-	if work.Source.Content != "" {
-		parts = append(parts, work.Source.Content)
+	// Read from source files (new hybrid storage)
+	for _, filePath := range work.Source.Files {
+		fullPath := filepath.Join(workPath, filePath)
+		content, err := os.ReadFile(fullPath)
+		if err != nil {
+			// Log but continue - file might be missing
+			continue
+		}
+		// Extract filename for heading
+		filename := filepath.Base(filePath)
+		parts = append(parts, fmt.Sprintf("### %s\n\n%s", filename, string(content)))
 	}
 
-	// Multiple files from directory
-	for _, f := range work.Source.Files {
-		parts = append(parts, fmt.Sprintf("### %s\n\n%s", f.Path, f.Content))
+	// Fallback: read from embedded content (backwards compatibility)
+	if len(parts) == 0 && work.Source.Content != "" {
+		parts = append(parts, work.Source.Content)
 	}
 
 	return strings.Join(parts, "\n\n---\n\n"), nil

@@ -882,7 +882,7 @@ func TestGetSourceContent(t *testing.T) {
 		t.Fatalf("EnsureInitialized: %v", err)
 	}
 
-	// Test single file source
+	// Test single file source (embedded content for backwards compat)
 	source := SourceInfo{
 		Type:    "file",
 		Ref:     "task.md",
@@ -900,17 +900,23 @@ func TestGetSourceContent(t *testing.T) {
 		t.Errorf("content = %q, want %q", content, "Single file content")
 	}
 
-	// Test directory source with multiple files
+	// Test directory source with actual files (new hybrid storage)
 	source2 := SourceInfo{
-		Type: "directory",
-		Ref:  "tasks/",
-		Files: []SourceFile{
-			{Path: "file1.md", Content: "Content 1"},
-			{Path: "file2.md", Content: "Content 2"},
-		},
+		Type:  "directory",
+		Ref:   "tasks/",
+		Files: []string{"source/file1.md", "source/file2.md"},
 	}
 	if _, err := ws.CreateWork("test2", source2); err != nil {
 		t.Fatalf("CreateWork(test2): %v", err)
+	}
+
+	// Write actual source files
+	workPath := ws.WorkPath("test2")
+	if err := os.WriteFile(filepath.Join(workPath, "source", "file1.md"), []byte("Content 1"), 0o644); err != nil {
+		t.Fatalf("write file1: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(workPath, "source", "file2.md"), []byte("Content 2"), 0o644); err != nil {
+		t.Fatalf("write file2: %v", err)
 	}
 
 	content, err = ws.GetSourceContent("test2")
@@ -1755,17 +1761,14 @@ func TestSourceInfoStruct(t *testing.T) {
 		Type:   "directory",
 		Ref:    ".mehrhof/plans/my-plan",
 		ReadAt: now,
-		Files: []SourceFile{
-			{Path: "task.md", Content: "# Task"},
-			{Path: "notes.md", Content: "# Notes"},
-		},
+		Files:  []string{"source/task.md", "source/notes.md"},
 	}
 
 	if len(source.Files) != 2 {
 		t.Errorf("Files length = %d, want 2", len(source.Files))
 	}
-	if source.Files[0].Path != "task.md" {
-		t.Errorf("Files[0].Path = %q, want %q", source.Files[0].Path, "task.md")
+	if source.Files[0] != "source/task.md" {
+		t.Errorf("Files[0] = %q, want %q", source.Files[0], "source/task.md")
 	}
 }
 

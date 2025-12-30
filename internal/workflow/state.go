@@ -14,7 +14,6 @@ const (
 	StateWaiting      State = "waiting"      // Waiting for user answer to agent question
 
 	// Auxiliary states (entered during phases)
-	StateDialogue      State = "dialogue"      // Chat mode (available from any state)
 	StateCheckpointing State = "checkpointing" // Creating git checkpoint
 	StateReverting     State = "reverting"     // Undo operation
 	StateRestoring     State = "restoring"     // Redo operation
@@ -35,10 +34,6 @@ const (
 	EventPlanDone      Event = "plan_done"      // Planning completed
 	EventImplementDone Event = "implement_done" // Implementation completed
 	EventReviewDone    Event = "review_done"    // Review completed
-
-	// Dialogue (chat) - available from any non-terminal state
-	EventDialogueStart Event = "dialogue_start"
-	EventDialogueEnd   Event = "dialogue_end"
 
 	// Checkpoint operations
 	EventCheckpoint     Event = "checkpoint"
@@ -75,7 +70,6 @@ type StateInfo struct {
 	Description string
 	Terminal    bool // No more transitions possible
 	Phase       bool // Is this a main phase state
-	ChatAllowed bool // Can enter chat mode from this state
 }
 
 // StateRegistry maps states to their metadata
@@ -85,77 +79,60 @@ var StateRegistry = map[State]StateInfo{
 		Description: "Task registered, awaiting action",
 		Terminal:    false,
 		Phase:       true,
-		ChatAllowed: true,
 	},
 	StatePlanning: {
 		Name:        StatePlanning,
 		Description: "Agent creating specifications",
 		Terminal:    false,
 		Phase:       true,
-		ChatAllowed: false, // Can't chat during active planning
 	},
 	StateImplementing: {
 		Name:        StateImplementing,
 		Description: "Agent implementing specifications",
 		Terminal:    false,
 		Phase:       true,
-		ChatAllowed: false, // Can't chat during active implementation
 	},
 	StateReviewing: {
 		Name:        StateReviewing,
 		Description: "Code review in progress",
 		Terminal:    false,
 		Phase:       true,
-		ChatAllowed: false,
 	},
 	StateDone: {
 		Name:        StateDone,
 		Description: "Task completed",
 		Terminal:    true,
 		Phase:       true,
-		ChatAllowed: false,
 	},
 	StateFailed: {
 		Name:        StateFailed,
 		Description: "Task failed with error",
 		Terminal:    false, // Changed to allow recovery via EventReset
 		Phase:       false,
-		ChatAllowed: false,
 	},
 	StateWaiting: {
 		Name:        StateWaiting,
 		Description: "Waiting for user answer to agent question",
 		Terminal:    false,
 		Phase:       false,
-		ChatAllowed: true, // User can answer via chat
-	},
-	StateDialogue: {
-		Name:        StateDialogue,
-		Description: "Conversation mode for adding notes",
-		Terminal:    false,
-		Phase:       false,
-		ChatAllowed: false,
 	},
 	StateCheckpointing: {
 		Name:        StateCheckpointing,
 		Description: "Creating git checkpoint",
 		Terminal:    false,
 		Phase:       false,
-		ChatAllowed: false,
 	},
 	StateReverting: {
 		Name:        StateReverting,
 		Description: "Undoing to previous checkpoint",
 		Terminal:    false,
 		Phase:       false,
-		ChatAllowed: false,
 	},
 	StateRestoring: {
 		Name:        StateRestoring,
 		Description: "Redoing to next checkpoint",
 		Terminal:    false,
 		Phase:       false,
-		ChatAllowed: false,
 	},
 }
 
@@ -163,12 +140,6 @@ var StateRegistry = map[State]StateInfo{
 func IsPhaseState(s State) bool {
 	info, ok := StateRegistry[s]
 	return ok && info.Phase
-}
-
-// CanChat returns true if chat mode can be entered from this state
-func CanChat(s State) bool {
-	info, ok := StateRegistry[s]
-	return ok && info.ChatAllowed
 }
 
 // IsTerminal returns true if the state is terminal

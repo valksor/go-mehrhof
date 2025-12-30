@@ -464,26 +464,6 @@ func TestTransitions(t *testing.T) {
 			wantErr:   true,
 		},
 		{
-			name:      "idle to dialogue",
-			fromState: StateIdle,
-			event:     EventDialogueStart,
-			wantState: StateDialogue,
-			setup:     func(m *Machine) {},
-			wantErr:   false,
-		},
-		{
-			name:      "dialogue to idle",
-			fromState: StateDialogue,
-			event:     EventDialogueEnd,
-			wantState: StateIdle,
-			setup: func(m *Machine) {
-				m.mu.Lock()
-				m.state = StateDialogue
-				m.mu.Unlock()
-			},
-			wantErr: false,
-		},
-		{
 			name:      "idle to done on finish",
 			fromState: StateIdle,
 			event:     EventFinish,
@@ -537,7 +517,6 @@ func TestIsPhaseState(t *testing.T) {
 		{StateDone, true},
 		{StateFailed, false},
 		{StateWaiting, false},
-		{StateDialogue, false},
 		{StateCheckpointing, false},
 		{StateReverting, false},
 		{StateRestoring, false},
@@ -549,33 +528,6 @@ func TestIsPhaseState(t *testing.T) {
 			got := IsPhaseState(tt.state)
 			if got != tt.want {
 				t.Errorf("IsPhaseState(%v) = %v, want %v", tt.state, got, tt.want)
-			}
-		})
-	}
-}
-
-func TestCanChat(t *testing.T) {
-	tests := []struct {
-		state State
-		want  bool
-	}{
-		{StateIdle, true},
-		{StatePlanning, false},
-		{StateImplementing, false},
-		{StateReviewing, false},
-		{StateDone, false},
-		{StateFailed, false},
-		{StateWaiting, true},
-		{StateDialogue, false},
-		{StateCheckpointing, false},
-		{State("unknown"), false},
-	}
-
-	for _, tt := range tests {
-		t.Run(string(tt.state), func(t *testing.T) {
-			got := CanChat(tt.state)
-			if got != tt.want {
-				t.Errorf("CanChat(%v) = %v, want %v", tt.state, got, tt.want)
 			}
 		})
 	}
@@ -593,7 +545,7 @@ func TestIsTerminalState(t *testing.T) {
 		{StateDone, true},
 		{StateFailed, false},
 		{StateWaiting, false},
-		{StateDialogue, false},
+		{StateCheckpointing, false},
 		{State("unknown"), false},
 	}
 
@@ -655,7 +607,6 @@ func TestStateRegistryContainsAllStates(t *testing.T) {
 		StateDone,
 		StateFailed,
 		StateWaiting,
-		StateDialogue,
 		StateCheckpointing,
 		StateReverting,
 		StateRestoring,

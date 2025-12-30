@@ -22,8 +22,6 @@ type TransitionKey struct {
 //	idle -> implementing -> idle (code changed)
 //	idle -> reviewing -> idle (review done)
 //	idle -> done (finish)
-//
-// User can enter dialogue (chat) from idle to add notes
 var TransitionTable = map[TransitionKey][]Transition{
 	// === Start: Register task ===
 	{StateIdle, EventStart}: {
@@ -50,9 +48,6 @@ var TransitionTable = map[TransitionKey][]Transition{
 	// === Waiting (agent asked question) ===
 	{StateWaiting, EventAnswer}: {
 		{From: StateWaiting, Event: EventAnswer, To: StateIdle}, // Ready to re-plan
-	},
-	{StateWaiting, EventDialogueStart}: {
-		{From: StateWaiting, Event: EventDialogueStart, To: StateDialogue},
 	},
 	{StateWaiting, EventPlan}: {
 		{From: StateWaiting, Event: EventPlan, To: StatePlanning}, // Re-enter planning after answer
@@ -94,17 +89,6 @@ var TransitionTable = map[TransitionKey][]Transition{
 	// === Failed State Recovery ===
 	{StateFailed, EventReset}: {
 		{From: StateFailed, Event: EventReset, To: StateIdle},
-	},
-
-	// === Dialogue (Chat) - from idle only ===
-	{StateIdle, EventDialogueStart}: {
-		{From: StateIdle, Event: EventDialogueStart, To: StateDialogue},
-	},
-	{StateDialogue, EventDialogueEnd}: {
-		{From: StateDialogue, Event: EventDialogueEnd, To: StateIdle},
-	},
-	{StateDialogue, EventError}: {
-		{From: StateDialogue, Event: EventError, To: StateIdle},
 	},
 
 	// === Checkpointing (return to previous phase) ===

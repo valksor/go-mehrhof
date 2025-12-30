@@ -38,18 +38,13 @@ type WorkMetadata struct {
 }
 
 // SourceInfo tracks the original source (read-only reference)
+// Hybrid storage: metadata in YAML, actual file content in source/ directory
 type SourceInfo struct {
-	Type    string       `yaml:"type"`    // directory, file, github, youtrack
-	Ref     string       `yaml:"ref"`     // original reference
-	ReadAt  time.Time    `yaml:"read_at"` // when source was read
-	Files   []SourceFile `yaml:"files,omitempty"`
-	Content string       `yaml:"content,omitempty"` // for single file sources
-}
-
-// SourceFile represents a file from the source
-type SourceFile struct {
-	Path    string `yaml:"path"`
-	Content string `yaml:"content"`
+	Type    string    `yaml:"type"`              // directory, file, github, youtrack
+	Ref     string    `yaml:"ref"`               // original reference
+	ReadAt  time.Time `yaml:"read_at"`           // when source was read
+	Files   []string  `yaml:"files,omitempty"`   // relative paths to source files (e.g., "source/task.md")
+	Content string    `yaml:"content,omitempty"` // kept for backwards compat, empty for new tasks
 }
 
 // GitInfo holds git-related information
@@ -103,7 +98,7 @@ type Specification struct {
 	Content     string    `yaml:"-"` // Raw markdown content (without frontmatter)
 }
 
-// Note represents a note from chat sessions
+// Note represents a user note added via the note command
 type Note struct {
 	Timestamp time.Time `yaml:"timestamp"`
 	Content   string    `yaml:"content"`
@@ -128,7 +123,7 @@ type Session struct {
 type SessionMetadata struct {
 	StartedAt time.Time `yaml:"started_at"`
 	EndedAt   time.Time `yaml:"ended_at,omitempty"`
-	Type      string    `yaml:"type"` // planning, implementation, chat, review
+	Type      string    `yaml:"type"` // planning, implementing, reviewing, checkpointing
 	Agent     string    `yaml:"agent"`
 	State     string    `yaml:"state,omitempty"` // task state when session started
 }
