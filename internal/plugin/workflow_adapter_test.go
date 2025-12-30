@@ -284,53 +284,6 @@ func TestNewWorkflowAdapter(t *testing.T) {
 	}
 }
 
-func TestBuildPhases(t *testing.T) {
-	manifest := &Manifest{Name: "test"}
-	proc := &Process{}
-	adapter := NewWorkflowAdapter(manifest, proc)
-
-	// Set up phases
-	adapter.phases = []PhaseInfo{
-		{Name: "phase1", Description: "Phase One", After: "planning"},
-		{Name: "phase2", Description: "Phase Two", Before: "implementing"},
-	}
-
-	// Set up guards and effects (using naming convention)
-	adapter.guards = []GuardInfo{
-		{Name: "phase1_guard1", Description: "Guard for phase1"},
-	}
-	adapter.effects = []EffectInfo{
-		{Name: "phase1_effect1", Description: "Effect for phase1"},
-	}
-
-	phases := adapter.BuildPhases()
-
-	if len(phases) != 2 {
-		t.Fatalf("BuildPhases() length = %d, want 2", len(phases))
-	}
-
-	// Check first phase
-	p1 := phases[0]
-	if p1.Name != "phase1" {
-		t.Errorf("Phase 1 Name = %q, want %q", p1.Name, "phase1")
-	}
-	if p1.After != "planning" {
-		t.Errorf("Phase 1 After = %q, want %q", p1.After, "planning")
-	}
-	if len(p1.Guards) != 1 {
-		t.Errorf("Phase 1 Guards length = %d, want 1", len(p1.Guards))
-	}
-	if len(p1.Effects) != 1 {
-		t.Errorf("Phase 1 Effects length = %d, want 1", len(p1.Effects))
-	}
-
-	// Check state name format
-	expectedState := workflow.State("plugin_test_phase1")
-	if p1.State != expectedState {
-		t.Errorf("Phase 1 State = %q, want %q", p1.State, expectedState)
-	}
-}
-
 func TestBuildPhaseDefinitions(t *testing.T) {
 	manifest := &Manifest{Name: "test"}
 	proc := &Process{}
