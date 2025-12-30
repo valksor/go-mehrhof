@@ -57,6 +57,7 @@ These flags work with any command:
 | [plugins](cli/plugins.md) | Manage extension plugins                 |
 | [templates](cli/templates.md) | Manage task templates               |
 | [cost](cli/cost.md)       | Show token usage and costs               |
+| [list](cli/list.md)       | List all tasks in workspace              |
 | [version](cli/version.md) | Print version information                |
 
 ### Provider Authentication
@@ -92,7 +93,11 @@ mehr finish               # Merge changes
 
 ## Output Formats
 
-By default, output is human-readable text. Some commands support JSON output via the `--format` flag.
+By default, output is human-readable text. Some commands support JSON output via the `--json` flag for programmatic access:
+
+- `mehr cost --json` - Token usage and cost data
+- `mehr list --json` - Task listing
+- `mehr status --json` - Detailed task status
 
 ## Exit Codes
 

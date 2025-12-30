@@ -190,8 +190,7 @@ providers:
 | Flag | Description | Default |
 |------|-------------|---------|
 | `-a, --agent <name>` | Agent to use | auto-detect |
-| `-b, --branch` | Create git branch for the task | `true` |
-| `--no-branch` | Skip creating a git branch | `false` |
+| `--no-branch` | Skip creating a git branch (branch creation is default) | `false` |
 | `-w, --worktree` | Create separate git worktree (enables parallel tasks) | `false` |
 | `-k, --key <key>` | External key for branch/commit naming (e.g., `FEATURE-123`) | auto-detect |
 | `-t, --template <name>` | Template to apply (bug-fix, feature, refactor, docs, test, chore) | - |
@@ -276,8 +275,10 @@ Add notes to the current task. Notes are saved to `notes.md` for the AI agent to
 ```bash
 mehr note                        # Enter interactive mode
 mehr note "Use JWT for auth"     # Add a quick note
-mehr answer "your response"      # Alias for responding to questions
+mehr answer "your response"      # Alias: submit answer to pending agent question
 ```
+
+**Aliases:** `note`, `answer` - Both commands accept the same arguments. Use `answer` when responding to agent questions.
 
 **Flags:**
 | Flag | Description | Default |
@@ -563,8 +564,7 @@ mehr auto --skip-quality file:task.md   # Skip quality checks entirely
 | Flag | Description | Default |
 |------|-------------|---------|
 | `-a, --agent <name>` | Agent to use | auto-detect |
-| `-b, --branch` | Create git branch for the task | `true` |
-| `--no-branch` | Skip creating a git branch | `false` |
+| `--no-branch` | Skip creating a git branch (branch creation is default) | `false` |
 | `-w, --worktree` | Create a separate git worktree | `false` |
 | `--max-retries <n>` | Maximum quality check retry attempts | `3` |
 | `--skip-quality` | Skip quality checks entirely | `false` |
