@@ -177,9 +177,14 @@ func (p *Provider) Snapshot(ctx context.Context, id string) (*provider.Snapshot,
 	}
 
 	return &provider.Snapshot{
-		Type:    "file",
-		Ref:     id,
-		Content: content.String(),
+		Type: ProviderName,
+		Ref:  id,
+		Files: []provider.SnapshotFile{
+			{
+				Path:    "task.md",
+				Content: content.String(),
+			},
+		},
 	}, nil
 }
 

@@ -93,9 +93,17 @@ func (p *Provider) Snapshot(ctx context.Context, id string) (*provider.Snapshot,
 		}
 	}
 
+	// Split into separate files for better organization
+	mainContent := content.String()
+
 	return &provider.Snapshot{
-		Type:    ProviderName,
-		Ref:     id,
-		Content: content.String(),
+		Type: ProviderName,
+		Ref:  id,
+		Files: []provider.SnapshotFile{
+			{
+				Path:    "page.md",
+				Content: mainContent,
+			},
+		},
 	}, nil
 }
