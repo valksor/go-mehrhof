@@ -24,6 +24,7 @@ The `list` command displays all tasks in the workspace with their worktree paths
 | Flag          | Short | Type | Default | Description                    |
 | ------------- | ----- | ---- | ------- | ------------------------------ |
 | `--worktrees` | `-w`  | bool | false   | Show only tasks with worktrees |
+| `--json`      |       | bool | false   | Output as JSON for programmatic use |
 
 ## Examples
 
@@ -59,6 +60,37 @@ a1b2c3d4    implementing    Add authentication       ../project-worktrees/a1b2c3
 e5f6g7h8    planning        Fix database queries     ../project-worktrees/e5f6g7h8
 
 Legend: * = active task in main repo, → = current worktree
+```
+
+### JSON Output
+
+For programmatic access, use `--json`:
+
+```bash
+mehr list --json
+```
+
+Output:
+
+```json
+[
+  {
+    "task_id": "a1b2c3d4",
+    "state": "implementing",
+    "title": "Add authentication",
+    "worktree_path": "../project-worktrees/a1b2c3d4",
+    "is_active": false,
+    "is_current_worktree": true
+  },
+  {
+    "task_id": "c9d0e1f2",
+    "state": "idle",
+    "title": "Update config",
+    "worktree_path": "",
+    "is_active": true,
+    "is_current_worktree": false
+  }
+]
 ```
 
 ## Output Columns

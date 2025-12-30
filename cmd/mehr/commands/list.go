@@ -22,16 +22,21 @@ Tasks with worktrees can be worked on independently in separate terminals.
 
 Examples:
   mehr list              # List all tasks
-  mehr list --worktrees  # Show only tasks with worktrees`,
+  mehr list --worktrees  # Show only tasks with worktrees
+  mehr list --json       # Output as JSON`,
 	RunE: runList,
 }
 
-var listWorktreesOnly bool
+var (
+	listWorktreesOnly bool
+	listJSON          bool
+)
 
 func init() {
 	rootCmd.AddCommand(listCmd)
 
 	listCmd.Flags().BoolVarP(&listWorktreesOnly, "worktrees", "w", false, "Show only tasks with worktrees")
+	listCmd.Flags().BoolVar(&listJSON, "json", false, "Output as JSON")
 }
 
 func runList(cmd *cobra.Command, args []string) error {
@@ -55,6 +60,9 @@ func runList(cmd *cobra.Command, args []string) error {
 	}
 
 	if len(taskIDs) == 0 {
+		if listJSON {
+			return outputJSON([]jsonListTask{})
+		}
 		fmt.Println("No tasks found in workspace.")
 		fmt.Println("\nUse 'mehr start <reference>' to create a new task.")
 		return nil
@@ -75,6 +83,60 @@ func runList(cmd *cobra.Command, args []string) error {
 		currentWorktreePath = res.Git.Root()
 	}
 
+	// JSON output
+	if listJSON {
+		var tasks []jsonListTask
+		for _, taskID := range taskIDs {
+			work, err := ws.LoadWork(taskID)
+			if err != nil {
+				continue
+			}
+
+			// Filter by worktrees if requested
+			if listWorktreesOnly && work.Git.WorktreePath == "" {
+				continue
+			}
+
+			// Get state
+			state := "idle"
+			isActive := taskID == activeID
+			if isActive {
+				active, _ := ws.LoadActiveTask()
+				if active != nil {
+					state = active.State
+				}
+			}
+
+			// Format title (no truncation for JSON)
+			title := work.Metadata.Title
+			if title == "" {
+				title = "(untitled)"
+			}
+
+			// Format worktree path (relative if possible)
+			worktreePath := ""
+			if work.Git.WorktreePath != "" {
+				worktreePath = work.Git.WorktreePath
+				// Try to make it relative
+				if rel, err := filepath.Rel(root, worktreePath); err == nil && len(rel) < len(worktreePath) {
+					worktreePath = rel
+				}
+			}
+
+			tasks = append(tasks, jsonListTask{
+				TaskID:       taskID,
+				State:        state,
+				Title:        title,
+				WorktreePath: worktreePath,
+				IsActive:     isActive,
+				IsCurrent:    currentWorktreePath != "" && work.Git.WorktreePath == currentWorktreePath,
+			})
+		}
+
+		return outputJSON(tasks)
+	}
+
+	// Regular text output
 	w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
 	if _, err := fmt.Fprintln(w, "TASK ID\tSTATE\tTITLE\tWORKTREE\tACTIVE"); err != nil {
 		return fmt.Errorf("print header: %w", err)
@@ -153,4 +215,14 @@ func runList(cmd *cobra.Command, args []string) error {
 	}
 
 	return nil
+}
+
+// JSON output structures for list command
+type jsonListTask struct {
+	TaskID       string `json:"task_id"`
+	State        string `json:"state"`
+	Title        string `json:"title"`
+	WorktreePath string `json:"worktree_path,omitempty"`
+	IsActive     bool   `json:"is_active"`
+	IsCurrent    bool   `json:"is_current_worktree"`
 }
