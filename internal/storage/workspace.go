@@ -79,6 +79,39 @@ func (w *Workspace) HasConfig() bool {
 	return err == nil
 }
 
+// EnvPath returns the path to the .env file
+func (w *Workspace) EnvPath() string {
+	return filepath.Join(w.taskRoot, envFileName)
+}
+
+// LoadEnv reads the .env file and returns key-value pairs.
+// Returns empty map if file doesn't exist.
+func (w *Workspace) LoadEnv() (map[string]string, error) {
+	data, err := os.ReadFile(w.EnvPath())
+	if err != nil {
+		if os.IsNotExist(err) {
+			return make(map[string]string), nil
+		}
+		return nil, fmt.Errorf("read .env: %w", err)
+	}
+
+	result := make(map[string]string)
+	lines := strings.Split(string(data), "\n")
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+		// Skip empty lines and comments
+		if line == "" || strings.HasPrefix(line, "#") {
+			continue
+		}
+		// Parse KEY=VALUE
+		parts := strings.SplitN(line, "=", 2)
+		if len(parts) == 2 {
+			result[strings.TrimSpace(parts[0])] = strings.TrimSpace(parts[1])
+		}
+	}
+	return result, nil
+}
+
 // WorkspaceConfig holds workspace-specific configuration that users can customize
 type WorkspaceConfig struct {
 	Git       GitSettings                 `yaml:"git"`
@@ -88,7 +121,12 @@ type WorkspaceConfig struct {
 	Env       map[string]string           `yaml:"env,omitempty"`
 	Agents    map[string]AgentAliasConfig `yaml:"agents,omitempty"`
 	GitHub    *GitHubSettings             `yaml:"github,omitempty"`
+	GitLab    *GitLabSettings             `yaml:"gitlab,omitempty"`
+	Notion    *NotionSettings             `yaml:"notion,omitempty"`
+	Jira      *JiraSettings               `yaml:"jira,omitempty"`
+	Linear    *LinearSettings             `yaml:"linear,omitempty"`
 	Wrike     *WrikeSettings              `yaml:"wrike,omitempty"`
+	YouTrack  *YouTrackSettings           `yaml:"youtrack,omitempty"`
 	Plugins   PluginsConfig               `yaml:"plugins,omitempty"`
 	Update    UpdateSettings              `yaml:"update,omitempty"`
 }
@@ -130,6 +168,44 @@ type WrikeSettings struct {
 	Token  string `yaml:"token,omitempty"`  // Wrike API token (env vars take priority)
 	Host   string `yaml:"host,omitempty"`   // API base URL override (default: https://www.wrike.com/api/v4)
 	Folder string `yaml:"folder,omitempty"` // Default folder ID for task lookup
+}
+
+// GitLabSettings holds GitLab provider configuration
+type GitLabSettings struct {
+	Token         string `yaml:"token,omitempty"`          // GitLab token (env vars take priority)
+	Host          string `yaml:"host,omitempty"`           // GitLab host (default: https://gitlab.com)
+	ProjectPath   string `yaml:"project_path,omitempty"`   // Default project path (e.g., group/project)
+	BranchPattern string `yaml:"branch_pattern,omitempty"` // Default: "issue/{key}-{slug}"
+	CommitPrefix  string `yaml:"commit_prefix,omitempty"`  // Default: "[#{key}]"
+}
+
+// NotionSettings holds Notion provider configuration
+type NotionSettings struct {
+	Token               string `yaml:"token,omitempty"`                // Notion token (env vars take priority)
+	DatabaseID          string `yaml:"database_id,omitempty"`          // Default database ID
+	StatusProperty      string `yaml:"status_property,omitempty"`      // Property name for status (default: Status)
+	DescriptionProperty string `yaml:"description_property,omitempty"` // Property name for description
+	LabelsProperty      string `yaml:"labels_property,omitempty"`      // Property name for labels (default: Tags)
+}
+
+// JiraSettings holds Jira provider configuration
+type JiraSettings struct {
+	Token   string `yaml:"token,omitempty"`    // Jira API token (env vars take priority)
+	Email   string `yaml:"email,omitempty"`    // Email for Cloud auth
+	BaseURL string `yaml:"base_url,omitempty"` // Base URL (optional, auto-detected)
+	Project string `yaml:"project,omitempty"`  // Default project key
+}
+
+// LinearSettings holds Linear provider configuration
+type LinearSettings struct {
+	Token string `yaml:"token,omitempty"` // Linear API key (env vars take priority)
+	Team  string `yaml:"team,omitempty"`  // Default team key
+}
+
+// YouTrackSettings holds YouTrack provider configuration
+type YouTrackSettings struct {
+	Token string `yaml:"token,omitempty"` // YouTrack token (env vars take priority)
+	Host  string `yaml:"host,omitempty"`  // YouTrack host
 }
 
 // AgentAliasConfig defines a user-defined agent alias that wraps an existing agent
@@ -277,10 +353,10 @@ func (w *Workspace) SaveConfig(cfg *WorkspaceConfig) error {
 #         extends: claude                       # base agent to wrap
 #         description: "Claude Opus model"      # shown in 'mehr agents list'
 #         args: ["--model", "claude-opus-4-20250514"]  # CLI flags to pass
-#     sonnet-fast:
+#     claude-fast:
 #         extends: claude
-#         description: "Claude Sonnet with limited turns"
-#         args: ["--model", "claude-sonnet-4-20250514", "--max-turns", "3"]
+#         description: "Claude with limited turns"
+#         args: ["--max-turns", "3"]
 #     glm:
 #         extends: claude
 #         description: "Claude with GLM key"
