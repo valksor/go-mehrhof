@@ -23,9 +23,10 @@ The `status` command displays information about the active task including:
 
 ## Flags
 
-| Flag    | Short | Type | Default | Description                 |
-| ------- | ----- | ---- | ------- | --------------------------- |
-| `--all` | `-a`  | bool | false   | Show all tasks in workspace |
+| Flag     | Short | Type | Default | Description                    |
+| -------- | ----- | ---- | ------- | ------------------------------ |
+| `--all`  | `-a`  | bool | false   | Show all tasks in workspace    |
+| `--json` |       | bool | false   | Output as JSON for programmatic use |
 
 ## Examples
 
@@ -113,6 +114,55 @@ Tasks in workspace:
     Specs: 1
 
 * = active task
+```
+
+### JSON Output
+
+For programmatic access, use `--json`:
+
+```bash
+mehr status --json
+```
+
+Output:
+
+```json
+{
+  "task_id": "a1b2c3d4",
+  "title": "Add user authentication",
+  "state": "implementing",
+  "state_description": "Generating code from specifications",
+  "source": "task.md",
+  "work_dir": ".mehrhof/work/a1b2c3d4",
+  "branch": "task/a1b2c3d4",
+  "started_at": "2024-01-15T10:30:00Z",
+  "agent_name": "claude",
+  "is_active": true,
+  "specifications": [
+    {
+      "number": 1,
+      "title": "User login flow",
+      "status": "done",
+      "created_at": "2024-01-15T10:30:00Z",
+      "completed_at": "2024-01-15T11:00:00Z"
+    }
+  ],
+  "specifications_summary": {
+    "draft": 0,
+    "ready": 0,
+    "implementing": 1,
+    "done": 1
+  },
+  "checkpoints": [
+    {
+      "number": 1,
+      "message": "Initial planning",
+      "id": "abc1234567890abcdef",
+      "timestamp": "2024-01-15T10:45:00Z"
+    }
+  ],
+  "total_tokens": 125000
+}
 ```
 
 ## Status Fields

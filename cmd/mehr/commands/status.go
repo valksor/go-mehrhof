@@ -14,23 +14,28 @@ import (
 	"github.com/valksor/go-mehrhof/internal/workflow"
 )
 
-var statusAll bool
+var (
+	statusAll  bool
+	statusJSON bool
+)
 
 var statusCmd = &cobra.Command{
 	Use:   "status",
 	Short: "Show detailed task state (specs, checkpoints, sessions)",
 	Long: `Show a detailed read-only view of the active task(s).
 
-Displays comprehensive information about:
+Use this when you want comprehensive information about your task:
 - Task ID, title, state, and source reference
 - Specifications and their completion status
 - Git checkpoints for undo/redo
 - Session history and token usage
 
-DIFFERENCES FROM OTHER COMMANDS:
-- 'mehr guide' - Quick, lightweight next-action suggestions
-- 'mehr continue' - Resume workflow with optional auto-execution
-- 'mehr status' - Detailed state inspection (this command)
+For quick next-action suggestions, use 'mehr guide' instead.
+To auto-resume the workflow, use 'mehr continue --auto'.
+
+See also:
+  mehr guide                 - Quick next-action suggestions (less verbose)
+  mehr continue              - Resume workflow with optional auto-execution
 
 Examples:
   mehr status              # Show active task state
@@ -42,6 +47,7 @@ func init() {
 	rootCmd.AddCommand(statusCmd)
 
 	statusCmd.Flags().BoolVarP(&statusAll, "all", "a", false, "Show all tasks in workspace")
+	statusCmd.Flags().BoolVar(&statusJSON, "json", false, "Output as JSON")
 }
 
 func runStatus(cmd *cobra.Command, args []string) error {
@@ -79,6 +85,9 @@ func showWorktreeTask(ws *storage.Workspace, git *vcs.Git) error {
 	}
 
 	if active == nil {
+		if statusJSON {
+			return outputJSON(jsonStatusTask{})
+		}
 		fmt.Print(display.ErrorWithSuggestions(
 			"No task associated with this worktree",
 			[]display.Suggestion{
@@ -92,6 +101,11 @@ func showWorktreeTask(ws *storage.Workspace, git *vcs.Git) error {
 	work, err := ws.LoadWork(active.ID)
 	if err != nil {
 		return fmt.Errorf("load work: %w", err)
+	}
+
+	// JSON output path
+	if statusJSON {
+		return outputJSON(buildJSONStatusTask(ws, git, active, work, git.Root(), true))
 	}
 
 	fmt.Printf("Worktree Task: %s\n", display.Bold(active.ID))
@@ -159,6 +173,9 @@ func showWorktreeTask(ws *storage.Workspace, git *vcs.Git) error {
 
 func showActiveTask(ws *storage.Workspace, git *vcs.Git) error {
 	if !ws.HasActiveTask() {
+		if statusJSON {
+			return outputJSON(jsonStatusTask{})
+		}
 		fmt.Print(display.NoActiveTaskError())
 		return nil
 	}
@@ -171,6 +188,11 @@ func showActiveTask(ws *storage.Workspace, git *vcs.Git) error {
 	work, err := ws.LoadWork(active.ID)
 	if err != nil {
 		return fmt.Errorf("load work: %w", err)
+	}
+
+	// JSON output path
+	if statusJSON {
+		return outputJSON(buildJSONStatusTask(ws, git, active, work, "", false))
 	}
 
 	fmt.Printf("Active Task: %s\n", display.Bold(active.ID))
@@ -279,6 +301,9 @@ func showAllTasks(ws *storage.Workspace, git *vcs.Git) error {
 	}
 
 	if len(taskIDs) == 0 {
+		if statusJSON {
+			return outputJSON(jsonStatusAllOutput{Tasks: []jsonStatusTask{}})
+		}
 		fmt.Println("No tasks found in workspace.")
 		return nil
 	}
@@ -290,6 +315,38 @@ func showAllTasks(ws *storage.Workspace, git *vcs.Git) error {
 		if active != nil {
 			activeID = active.ID
 		}
+	}
+
+	// JSON output path
+	if statusJSON {
+		var tasks []jsonStatusTask
+		for _, taskID := range taskIDs {
+			work, err := ws.LoadWork(taskID)
+			if err != nil {
+				continue
+			}
+			isActive := taskID == activeID
+			state := "unknown"
+			if isActive {
+				active, _ := ws.LoadActiveTask()
+				if active != nil {
+					state = active.State
+				}
+			}
+
+			title := work.Metadata.Title
+			if title == "" {
+				title = "(untitled)"
+			}
+
+			tasks = append(tasks, jsonStatusTask{
+				TaskID:   taskID,
+				Title:    title,
+				State:    state,
+				IsActive: isActive,
+			})
+		}
+		return outputJSON(jsonStatusAllOutput{Tasks: tasks})
 	}
 
 	w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
@@ -345,4 +402,132 @@ func showAllTasks(ws *storage.Workspace, git *vcs.Git) error {
 	fmt.Println(display.Muted("  ◑ = implementing"))
 	fmt.Println(display.Muted("  ● = completed"))
 	return nil
+}
+
+// JSON output structures for status command
+type jsonStatusTask struct {
+	TaskID         string              `json:"task_id"`
+	Title          string              `json:"title,omitempty"`
+	State          string              `json:"state"`
+	StateDesc      string              `json:"state_description"`
+	Source         string              `json:"source"`
+	ExternalKey    string              `json:"external_key,omitempty"`
+	WorkDir        string              `json:"work_dir,omitempty"`
+	WorktreePath   string              `json:"worktree_path,omitempty"`
+	Branch         string              `json:"branch,omitempty"`
+	Started        string              `json:"started_at"`
+	AgentName      string              `json:"agent_name,omitempty"`
+	AgentSource    string              `json:"agent_source,omitempty"`
+	IsActive       bool                `json:"is_active"`
+	Specifications []jsonSpecification `json:"specifications,omitempty"`
+	SpecSummary    *jsonSpecSummary    `json:"specifications_summary,omitempty"`
+	Checkpoints    []jsonCheckpoint    `json:"checkpoints,omitempty"`
+	Sessions       []jsonSession       `json:"sessions,omitempty"`
+	TotalTokens    int                 `json:"total_tokens,omitempty"`
+}
+
+type jsonSpecification struct {
+	Number      int    `json:"number"`
+	Title       string `json:"title,omitempty"`
+	Status      string `json:"status"`
+	CreatedAt   string `json:"created_at,omitempty"`
+	CompletedAt string `json:"completed_at,omitempty"`
+}
+
+type jsonSpecSummary struct {
+	Draft        int `json:"draft"`
+	Ready        int `json:"ready"`
+	Implementing int `json:"implementing"`
+	Done         int `json:"done"`
+}
+
+type jsonCheckpoint struct {
+	Number    int    `json:"number"`
+	Message   string `json:"message"`
+	ID        string `json:"id"`
+	Timestamp string `json:"timestamp,omitempty"`
+}
+
+type jsonSession struct {
+	Kind         string `json:"kind"`
+	StartTime    string `json:"start_time,omitempty"`
+	InputTokens  int    `json:"input_tokens,omitempty"`
+	OutputTokens int    `json:"output_tokens,omitempty"`
+}
+
+type jsonStatusAllOutput struct {
+	Tasks []jsonStatusTask `json:"tasks"`
+}
+
+// buildJSONStatusTask constructs a jsonStatusTask from workspace data
+func buildJSONStatusTask(ws *storage.Workspace, git *vcs.Git, active *storage.ActiveTask, work *storage.TaskWork, worktreePath string, isWorktree bool) jsonStatusTask {
+	task := jsonStatusTask{
+		TaskID:       active.ID,
+		Title:        work.Metadata.Title,
+		State:        active.State,
+		StateDesc:    display.GetStateDescription(workflow.State(active.State)),
+		Source:       active.Ref,
+		ExternalKey:  work.Metadata.ExternalKey,
+		WorkDir:      active.WorkDir,
+		WorktreePath: worktreePath,
+		Branch:       active.Branch,
+		Started:      active.Started.Format("2006-01-02T15:04:05Z"),
+		AgentName:    work.Agent.Name,
+		AgentSource:  work.Agent.Source,
+		IsActive:     true,
+	}
+
+	// Get specifications with status
+	specifications, _ := ws.ListSpecificationsWithStatus(active.ID)
+	for _, spec := range specifications {
+		task.Specifications = append(task.Specifications, jsonSpecification{
+			Number:      spec.Number,
+			Title:       spec.Title,
+			Status:      spec.Status,
+			CreatedAt:   spec.CreatedAt.Format("2006-01-02T15:04:05Z"),
+			CompletedAt: spec.CompletedAt.Format("2006-01-02T15:04:05Z"),
+		})
+	}
+
+	// Get specification summary
+	summary, _ := ws.GetSpecificationsSummary(active.ID)
+	task.SpecSummary = &jsonSpecSummary{
+		Draft:        summary[storage.SpecificationStatusDraft],
+		Ready:        summary[storage.SpecificationStatusReady],
+		Implementing: summary[storage.SpecificationStatusImplementing],
+		Done:         summary[storage.SpecificationStatusDone],
+	}
+
+	// Get checkpoints if git is available
+	if git != nil {
+		checkpoints, _ := git.ListCheckpoints(active.ID)
+		for _, cp := range checkpoints {
+			task.Checkpoints = append(task.Checkpoints, jsonCheckpoint{
+				Number:    cp.Number,
+				Message:   cp.Message,
+				ID:        cp.ID,
+				Timestamp: cp.Timestamp.Format("2006-01-02T15:04:05Z"),
+			})
+		}
+	}
+
+	// Get sessions and token usage
+	sessions, _ := ws.ListSessions(active.ID)
+	for _, s := range sessions {
+		inputTokens := 0
+		outputTokens := 0
+		if s.Usage != nil {
+			inputTokens = s.Usage.InputTokens
+			outputTokens = s.Usage.OutputTokens
+			task.TotalTokens += inputTokens + outputTokens
+		}
+		task.Sessions = append(task.Sessions, jsonSession{
+			Kind:         s.Kind,
+			StartTime:    s.Metadata.StartedAt.Format("2006-01-02T15:04:05Z"),
+			InputTokens:  inputTokens,
+			OutputTokens: outputTokens,
+		})
+	}
+
+	return task
 }
