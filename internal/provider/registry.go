@@ -1,9 +1,10 @@
 package provider
 
 import (
+	"cmp"
 	"context"
 	"fmt"
-	"sort"
+	"slices"
 	"strings"
 	"sync"
 )
@@ -97,8 +98,8 @@ func (r *Registry) List() []ProviderInfo {
 	}
 
 	// Sort by priority descending
-	sort.Slice(infos, func(i, j int) bool {
-		return infos[i].Priority > infos[j].Priority
+	slices.SortFunc(infos, func(a, b ProviderInfo) int {
+		return cmp.Compare(b.Priority, a.Priority)
 	})
 
 	return infos
@@ -198,50 +199,8 @@ func (r *Registry) listSchemes() []string {
 	for scheme := range r.schemes {
 		schemes = append(schemes, scheme)
 	}
-	sort.Strings(schemes)
+	slices.Sort(schemes)
 	return schemes
-}
-
-// Detect auto-detects provider from input and returns instance + parsed ID.
-//
-// Deprecated: Use Resolve() with explicit schemes instead.
-// This method uses heuristics to guess the provider, which can be ambiguous.
-func (r *Registry) Detect(ctx context.Context, input string, cfg Config) (any, string, error) {
-	r.mu.RLock()
-	providers := make([]registeredProvider, 0, len(r.providers))
-	for _, rp := range r.providers {
-		providers = append(providers, rp)
-	}
-	r.mu.RUnlock()
-
-	// Sort by priority descending
-	sort.Slice(providers, func(i, j int) bool {
-		return providers[i].info.Priority > providers[j].info.Priority
-	})
-
-	// Try each provider
-	for _, rp := range providers {
-		// Create temporary instance to check Match
-		instance, err := rp.factory(ctx, cfg)
-		if err != nil {
-			continue
-		}
-
-		identifier, ok := instance.(Identifier)
-		if !ok {
-			continue
-		}
-
-		if identifier.Match(input) {
-			id, err := identifier.Parse(input)
-			if err != nil {
-				continue
-			}
-			return instance, id, nil
-		}
-	}
-
-	return nil, "", fmt.Errorf("no provider matched input: %s", input)
 }
 
 // Create creates a provider instance by name
