@@ -2,7 +2,7 @@ name: chore
 description: Template for maintenance tasks and chores
 frontmatter:
   type: chore
-agent: claude-sonnet
+agent: claude
 git:
   branch_pattern: "chore/{key}--{slug}"
   commit_prefix: "[chore]"

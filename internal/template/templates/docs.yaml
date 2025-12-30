@@ -2,7 +2,7 @@ name: docs
 description: Template for documentation changes (skips quality checks)
 frontmatter:
   type: docs
-agent: claude-sonnet
+agent: claude
 git:
   branch_pattern: "docs/{key}--{slug}"
   commit_prefix: "[docs]"

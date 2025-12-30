@@ -2,7 +2,7 @@ name: test
 description: Template for adding or improving tests
 frontmatter:
   type: test
-agent: claude-sonnet
+agent: claude
 git:
   branch_pattern: "test/{key}--{slug}"
   commit_prefix: "[test]"

@@ -2,7 +2,7 @@ name: bug-fix
 description: Template for bug fix tasks with stricter validation
 frontmatter:
   type: fix
-agent: claude-sonnet
+agent: claude
 agent_steps:
   planning:
     agent: claude

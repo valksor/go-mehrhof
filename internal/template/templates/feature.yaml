@@ -7,7 +7,7 @@ agent_steps:
   planning:
     agent: claude
   implementing:
-    agent: claude-sonnet
+    agent: claude
 git:
   branch_pattern: "feat/{key}--{slug}"
   commit_prefix: "[{key}]"
