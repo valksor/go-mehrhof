@@ -371,7 +371,7 @@ mehr start -t feature file:FEATURE-123.md
 
 Templates configure:
 - Task type (`type: fix`, `feature`, etc.)
-- Default agent (`agent: claude-sonnet`)
+- Default agent (`agent: claude`)
 - Git branch pattern (`branch_pattern: "fix/{key}--{slug}"`)
 - Commit prefix (`commit_prefix: "[fix/{key}]"`)
 - Workflow settings (`skip_quality: true/false`)

@@ -90,7 +90,6 @@ func completeAgent(cmd *cobra.Command, args []string, toComplete string) ([]stri
 	agents := []string{
 		"claude",
 		"claude-opus",
-		"claude-sonnet",
 		"claude-haiku",
 	}
 
