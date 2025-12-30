@@ -24,6 +24,7 @@
   - [mehr continue](cli/continue.md)
   - [mehr guide](cli/guide.md)
   - [mehr providers](cli/providers.md)
+  - [Provider Login](cli/login.md)
   - [mehr list](cli/list.md)
   - [mehr agents](cli/agents.md)
   - [mehr config](cli/config.md)
