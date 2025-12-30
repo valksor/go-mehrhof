@@ -66,13 +66,13 @@ func TestGetStateDescription(t *testing.T) {
 		state workflow.State
 		want  string
 	}{
-		{"idle", workflow.StateIdle, "Ready for next action"},
+		{"idle", workflow.StateIdle, "Ready to start"},
 		{"planning", workflow.StatePlanning, "AI is creating specifications"},
 		{"implementing", workflow.StateImplementing, "AI is generating code"},
 		{"reviewing", workflow.StateReviewing, "Code review in progress"},
 		{"done", workflow.StateDone, "Task completed successfully"},
 		{"failed", workflow.StateFailed, "Task failed with error"},
-		{"waiting", workflow.StateWaiting, "Waiting for your input"},
+		{"waiting", workflow.StateWaiting, "Action required: Awaiting your response"},
 		{"checkpointing", workflow.StateCheckpointing, "Creating checkpoint"},
 		{"reverting", workflow.StateReverting, "Reverting to previous state"},
 		{"restoring", workflow.StateRestoring, "Restoring from checkpoint"},
@@ -208,15 +208,16 @@ func TestFormatStateColored(t *testing.T) {
 	SetColorsEnabled(false)
 	defer SetColorsEnabled(true)
 
+	// Format is "[prefix] StateName" for accessibility
 	tests := []struct {
 		name  string
 		state workflow.State
 		want  string
 	}{
-		{"idle", workflow.StateIdle, "Ready"},
-		{"planning", workflow.StatePlanning, "Planning"},
-		{"done", workflow.StateDone, "Completed"},
-		{"failed", workflow.StateFailed, "Failed"},
+		{"idle", workflow.StateIdle, "[R] Ready"},
+		{"planning", workflow.StatePlanning, "[P] Planning"},
+		{"done", workflow.StateDone, "[D] Completed"},
+		{"failed", workflow.StateFailed, "[F] Failed"},
 	}
 
 	for _, tt := range tests {
@@ -308,7 +309,6 @@ func TestColorFunctions(t *testing.T) {
 		{"Info", Info, "test"},
 		{"Muted", Muted, "test"},
 		{"Bold", Bold, "test"},
-		{"Dim", Dim, "test"},
 		{"Cyan", Cyan, "test"},
 	}
 
@@ -1018,7 +1018,7 @@ func TestRelativeTimestamp(t *testing.T) {
 	t.Run("minutes ago", func(t *testing.T) {
 		past := time.Now().Add(-5 * time.Minute)
 		got := f.RelativeTimestamp(past)
-		if !contains(got, "min ago") {
+		if !contains(got, "mins ago") {
 			t.Errorf("RelativeTimestamp(5m ago) = %q, want minutes", got)
 		}
 	})
@@ -1026,7 +1026,7 @@ func TestRelativeTimestamp(t *testing.T) {
 	t.Run("hours ago", func(t *testing.T) {
 		past := time.Now().Add(-3 * time.Hour)
 		got := f.RelativeTimestamp(past)
-		if !contains(got, "hr ago") {
+		if !contains(got, "hrs ago") {
 			t.Errorf("RelativeTimestamp(3h ago) = %q, want hours", got)
 		}
 	})
@@ -1034,7 +1034,7 @@ func TestRelativeTimestamp(t *testing.T) {
 	t.Run("days ago", func(t *testing.T) {
 		past := time.Now().Add(-5 * 24 * time.Hour)
 		got := f.RelativeTimestamp(past)
-		if !contains(got, "day ago") {
+		if !contains(got, "days ago") {
 			t.Errorf("RelativeTimestamp(5d ago) = %q, want days", got)
 		}
 	})

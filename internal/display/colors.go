@@ -11,7 +11,6 @@ import (
 const (
 	reset   = "\033[0m"
 	bold    = "\033[1m"
-	dim     = "\033[2m"
 	red     = "\033[31m"
 	green   = "\033[32m"
 	yellow  = "\033[33m"
@@ -112,11 +111,6 @@ func Muted(text string) string {
 // Bold formats text as bold.
 func Bold(text string) string {
 	return colorize(text, bold)
-}
-
-// Dim formats text as dim/faded.
-func Dim(text string) string {
-	return colorize(text, dim)
 }
 
 // Cyan formats text in cyan (used for commands/code).

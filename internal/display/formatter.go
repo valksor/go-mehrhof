@@ -184,13 +184,22 @@ func (f *Formatter) RelativeTimestamp(t time.Time) string {
 		return "just now"
 	case duration < time.Hour:
 		minutes := int(duration.Minutes())
-		return fmt.Sprintf("%d min ago", minutes)
+		if minutes == 1 {
+			return "1 min ago"
+		}
+		return fmt.Sprintf("%d mins ago", minutes)
 	case duration < 24*time.Hour:
 		hours := int(duration.Hours())
-		return fmt.Sprintf("%d hr ago", hours)
+		if hours == 1 {
+			return "1 hr ago"
+		}
+		return fmt.Sprintf("%d hrs ago", hours)
 	case duration < 30*24*time.Hour:
 		days := int(duration.Hours() / 24)
-		return fmt.Sprintf("%d day ago", days)
+		if days == 1 {
+			return "1 day ago"
+		}
+		return fmt.Sprintf("%d days ago", days)
 	default:
 		return t.Format("2006-01-02")
 	}

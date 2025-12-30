@@ -24,16 +24,31 @@ var StateDisplay = map[workflow.State]string{
 
 // StateDescription provides additional context for each state
 var StateDescription = map[workflow.State]string{
-	workflow.StateIdle:          "Ready for next action",
+	workflow.StateIdle:          "Ready to start",
 	workflow.StatePlanning:      "AI is creating specifications",
 	workflow.StateImplementing:  "AI is generating code",
 	workflow.StateReviewing:     "Code review in progress",
 	workflow.StateDone:          "Task completed successfully",
 	workflow.StateFailed:        "Task failed with error",
-	workflow.StateWaiting:       "Waiting for your input",
+	workflow.StateWaiting:       "Action required: Awaiting your response",
 	workflow.StateCheckpointing: "Creating checkpoint",
 	workflow.StateReverting:     "Reverting to previous state",
 	workflow.StateRestoring:     "Restoring from checkpoint",
+}
+
+// StateAccessiblePrefix provides short text prefixes for accessibility
+// These help color-blind users distinguish states without relying on color alone
+var StateAccessiblePrefix = map[workflow.State]string{
+	workflow.StateIdle:          "[R]", // Ready
+	workflow.StatePlanning:      "[P]", // Planning
+	workflow.StateImplementing:  "[I]", // Implementing
+	workflow.StateReviewing:     "[V]", // reViewing
+	workflow.StateDone:          "[D]", // Done
+	workflow.StateFailed:        "[F]", // Failed
+	workflow.StateWaiting:       "[W]", // Waiting
+	workflow.StateCheckpointing: "[C]", // Checkpointing
+	workflow.StateReverting:     "[U]", // Undoing
+	workflow.StateRestoring:     "[S]", // reStoring
 }
 
 // SpecificationStatusDisplay maps internal specification status values to user-friendly names
@@ -99,16 +114,26 @@ func FormatSpecificationStatusWithIcon(status string) string {
 
 // Color-aware formatting functions
 
-// FormatStateColored returns a colored state display name.
+// GetStateAccessiblePrefix returns the accessibility prefix for a state.
+func GetStateAccessiblePrefix(state workflow.State) string {
+	if prefix, ok := StateAccessiblePrefix[state]; ok {
+		return prefix
+	}
+	return "[?]"
+}
+
+// FormatStateColored returns a colored state display name with accessibility prefix.
+// Format: "[P] Planning" where the prefix is muted and the name is colored.
 func FormatStateColored(state workflow.State) string {
+	prefix := Muted(GetStateAccessiblePrefix(state))
 	displayName := FormatState(state)
-	return ColorState(string(state), displayName)
+	coloredName := ColorState(string(state), displayName)
+	return prefix + " " + coloredName
 }
 
 // FormatStateStringColored returns a colored state display name from a string.
 func FormatStateStringColored(state string) string {
-	displayName := FormatStateString(state)
-	return ColorState(state, displayName)
+	return FormatStateColored(workflow.State(state))
 }
 
 // FormatSpecificationStatusColored returns a colored specification status.
