@@ -59,6 +59,18 @@ These flags work with any command:
 | [cost](cli/cost.md)       | Show token usage and costs               |
 | [version](cli/version.md) | Print version information                |
 
+### Provider Authentication
+
+| Command                        | Description                        |
+| ------------------------------ | ---------------------------------- |
+| [github login](cli/login.md)   | Authenticate with GitHub           |
+| [gitlab login](cli/login.md)   | Authenticate with GitLab           |
+| [notion login](cli/login.md)   | Authenticate with Notion           |
+| [jira login](cli/login.md)     | Authenticate with Jira             |
+| [linear login](cli/login.md)   | Authenticate with Linear           |
+| [wrike login](cli/login.md)    | Authenticate with Wrike            |
+| [youtrack login](cli/login.md) | Authenticate with YouTrack         |
+
 ## Command Help
 
 Get help for any command:

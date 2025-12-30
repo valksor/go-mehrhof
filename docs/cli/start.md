@@ -235,8 +235,8 @@ mehr start --agent claude task.md
 Use different agents for different workflow phases:
 
 ```bash
-# Use Opus for planning, Sonnet for implementation
-mehr start --agent-planning claude-opus --agent-implementing claude-sonnet task.md
+# Use Opus for planning, claude for implementation
+mehr start --agent-planning claude-opus --agent-implementing claude task.md
 
 # Override just the planning agent
 mehr start --agent-planning glm task.md

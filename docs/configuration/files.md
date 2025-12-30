@@ -74,7 +74,7 @@ agent:
         MAX_TOKENS: "16384"
       args: ["--max-turns", "15"] # CLI args for this step
     implementing:
-      name: claude-sonnet # Use Sonnet for implementation
+      name: claude # Use for implementation
     reviewing:
       name: claude-opus
 ```

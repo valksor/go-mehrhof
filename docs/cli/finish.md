@@ -1,6 +1,6 @@
 # mehr finish
 
-Complete the task and merge changes to the target branch, or create a pull request.
+Complete the task by creating a pull request or merging locally.
 
 ## Synopsis
 
@@ -13,61 +13,113 @@ mehr finish [flags]
 The `finish` command completes the current task by:
 
 1. Running quality checks (if available)
-2. Squash-merging changes to the target branch, OR creating a pull request
-3. Deleting the task branch (unless creating PR)
+2. Creating a pull request (if provider supports it), OR merging locally
+3. Keeping the task branch by default (use `--delete` to remove)
 4. Cleaning up the work directory
 
-By default, it does **not** push to remote. Use `--pr` to create a pull request instead of merging locally.
+**Default behavior**:
+- For `github:` tasks → Creates PR automatically
+- For `file:`/`directory:` tasks → Prompts to choose (merge / mark done / cancel)
+- Use `--merge` flag to force local merge
 
 ## Flags
 
-| Flag               | Short | Type   | Default | Description                            |
-| ------------------ | ----- | ------ | ------- | -------------------------------------- |
-| `--no-push`        |       | bool   | false   | Don't push after merge                 |
-| `--no-delete`      |       | bool   | false   | Keep task branch after merge           |
-| `--no-squash`      |       | bool   | false   | Regular merge (no squash)              |
-| `--target`         | `-t`  | string | main    | Target branch to merge into            |
-| `--skip-quality`   |       | bool   | false   | Skip quality checks                    |
-| `--quality-target` |       | string | quality | Make target for quality checks         |
-| `--pr`             |       | bool   | false   | Create pull request instead of merging |
-| `--draft`          |       | bool   | false   | Create PR as draft (requires `--pr`)   |
-| `--pr-title`       |       | string | auto    | Custom PR title (requires `--pr`)      |
-| `--pr-body`        |       | string | auto    | Custom PR body (requires `--pr`)       |
+| Flag               | Short | Type   | Default | Description                                |
+| ------------------ | ----- | ------ | ------- | ------------------------------------------ |
+| `--merge`          |       | bool   | false   | Force local merge instead of creating PR    |
+| `--delete`         |       | bool   | false   | Delete task branch after merge              |
+| `--push`           |       | bool   | false   | Push to remote after local merge            |
+| `--no-squash`      |       | bool   | false   | Regular merge (no squash)                   |
+| `--target`         | `-t`  | string | auto    | Target branch to merge into                 |
+| `--skip-quality`   |       | bool   | false   | Skip quality checks                         |
+| `--quality-target` |       | string | quality | Make target for quality checks            |
+| `--draft`          |       | bool   | false   | Create PR as draft                          |
+| `--pr-title`       |       | string | auto    | Custom PR title                             |
+| `--pr-body`        |       | string | auto    | Custom PR body                              |
 
 ## Examples
 
-### Basic Finish
+### Basic Finish (GitHub task)
 
 ```bash
 mehr finish
 ```
 
-Output:
+For `github:` tasks, automatically creates a PR:
 
 ```
 Finishing task a1b2c3d4...
 Running quality checks...
   make quality: PASSED
-Merging to main...
-  Squash merge: SUCCESS
-Cleaning up...
-  Branch deleted: task/a1b2c3d4
-  Work directory removed
+Pushing branch to origin...
+Creating pull request...
+  PR #42: [#5] Add authentication feature
+  https://github.com/owner/repo/pull/42
 Task completed!
 ```
 
-### Keep Branch
+### Basic Finish (file task)
 
 ```bash
-mehr finish --no-delete
+mehr finish
 ```
 
-Merge but keep the task branch for reference.
+For `file:`/`directory:` tasks, prompts for action:
 
-### Regular Merge
+```
+The provider for this task does not support pull requests.
+What would you like to do?
+  1. Merge changes to target branch locally
+  2. Mark task as done (no merge)
+  3. Cancel
+
+Enter choice (1-3):
+```
+
+### Force Local Merge
 
 ```bash
-mehr finish --no-squash
+mehr finish --merge
+```
+
+Perform local merge instead of creating PR (works for any provider).
+
+### Merge and Delete Branch
+
+```bash
+mehr finish --merge --delete
+```
+
+Merge locally and clean up the task branch.
+
+### Merge and Push
+
+```bash
+mehr finish --merge --push --delete
+```
+
+Full local workflow: merge, push to remote, delete branch.
+
+### Create Draft PR
+
+```bash
+mehr finish --draft
+```
+
+Creates a draft PR for early feedback (GitHub tasks only).
+
+### Custom PR Title and Body
+
+```bash
+mehr finish --pr-title "Fix: Authentication bug" --pr-body "Resolves login flow issue"
+```
+
+Override the auto-generated PR title and body.
+
+### Regular Merge (No Squash)
+
+```bash
+mehr finish --merge --no-squash
 ```
 
 Preserve individual commits instead of squashing.
@@ -75,10 +127,10 @@ Preserve individual commits instead of squashing.
 ### Different Target Branch
 
 ```bash
-mehr finish --target develop
+mehr finish --merge --target develop
 ```
 
-Merge to `develop` instead of `main`.
+Merge to `develop` instead of auto-detected base branch.
 
 ### Skip Quality Checks
 
@@ -96,41 +148,6 @@ mehr finish --quality-target lint
 
 Run `make lint` instead of `make quality`.
 
-### Create Pull Request
-
-```bash
-mehr finish --pr
-```
-
-Creates a PR instead of merging locally. Requires a provider that supports PR creation (e.g., GitHub):
-
-```
-Finishing task a1b2c3d4...
-Running quality checks...
-  make quality: PASSED
-Pushing branch to origin...
-Creating pull request...
-  PR #42: [#5] Add authentication feature
-  https://github.com/owner/repo/pull/42
-Task completed!
-```
-
-### Create Draft PR
-
-```bash
-mehr finish --pr --draft
-```
-
-Creates a draft PR for early feedback.
-
-### Custom PR Title and Body
-
-```bash
-mehr finish --pr --pr-title "Fix: Authentication bug" --pr-body "Resolves issue with login flow"
-```
-
-Override the auto-generated PR title and body.
-
 ## Quality Checks
 
 If your project has a Makefile with a `quality` target, it runs automatically:
@@ -139,6 +156,7 @@ If your project has a Makefile with a `quality` target, it runs automatically:
 quality:
 	go fmt ./...
 	golangci-lint run
+	go test ./...
 ```
 
 If quality checks modify files (e.g., auto-formatting), you'll be prompted:
@@ -152,26 +170,71 @@ Continue with modified files? [y/N]
 
 ## What Happens
 
+### With PR Creation (default for github:, gitlab:, etc.)
+
 1. **Quality Checks** (unless skipped)
-   - Runs `make quality`
-   - Handles auto-modifications
+2. **Push branch** to remote
+3. **Create PR** via provider API
+4. **Task marked done** (branch preserved)
 
-2. **Merge**
-   - Switches to target branch
-   - Performs squash merge
-   - Commit message includes task summary
+### With Local Merge (`--merge` flag)
 
-3. **Cleanup**
-   - Deletes task branch (unless `--no-delete`)
-   - Removes `.mehrhof/work/<id>/`
-   - Clears active task
+1. **Quality Checks** (unless skipped)
+2. **Switch** to target branch
+3. **Merge** (squash by default)
+4. **Push** (if `--push` flag used)
+5. **Cleanup** (if `--delete` flag used)
+6. **Task marked done**
+
+## Pull Request Contents
+
+The PR is automatically populated with:
+
+- **Title**: `[#123] Task title` or `Task title`
+- **Body**:
+  - Task description
+  - Specifications summary
+  - Changed files (diff stat)
+  - Test plan checklist
+
+Example:
+
+```markdown
+## Summary
+
+Implementation for: Add authentication feature
+
+Closes #123
+
+## Implementation Details
+
+### Specification 1
+[First 500 chars of spec...]
+
+## Changes
+
+```
+ src/auth/jwt.go       | 45 +++++++++++++++++++
+ src/auth/middleware.go | 89 +++++++++++++++++++++++++++++++++++
+ src/api/routes.go      | 12 +++++
+```
+
+## Test Plan
+
+- [ ] Manual testing
+- [ ] Unit tests pass
+- [ ] Code review
+
+---
+*Generated by [Mehrhof](https://github.com/valksor/go-mehrhof)*
+```
 
 ## Merge Commit
 
-The squash merge creates a single commit:
+When using local merge with squash, creates a single commit:
 
 ```
-[task] Complete: Add authentication feature
+[#123] Complete: Add authentication feature
 
 Implemented JWT-based authentication with:
 - Login endpoint
@@ -179,14 +242,6 @@ Implemented JWT-based authentication with:
 - Token refresh
 
 Task: a1b2c3d4
-```
-
-## After Finish
-
-The task is complete. To push:
-
-```bash
-git push origin main
 ```
 
 ## Error Handling
@@ -237,6 +292,6 @@ git checkout task/a1b2c3d4
 
 ## See Also
 
-- [delete](cli/delete.md) - Abandon without merging
-- [review](cli/review.md) - Review before finishing
+- [delete](./delete.md) - Abandon without merging
+- [review](./review.md) - Review before finishing
 - [Workflow](../concepts/workflow.md) - Task lifecycle

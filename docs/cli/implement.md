@@ -72,10 +72,10 @@ See the agent's reasoning and code generation in real-time.
 ### Override Implementation Agent
 
 ```bash
-mehr implement --agent-implementing claude-sonnet
+mehr implement --agent-implementing claude
 ```
 
-Use a faster/cheaper agent for code generation. See [Per-Step Agents](../concepts/agents.md#per-step-agent-configuration).
+Use a specific agent for code generation. See [Per-Step Agents](../concepts/agents.md#per-step-agent-configuration).
 
 ## What Happens
 

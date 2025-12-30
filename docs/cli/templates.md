@@ -64,7 +64,7 @@ Frontmatter:
   type: fix
 
 Agent:
-  Default: claude-sonnet
+  Default: claude
 
 Git:
   branch_pattern: fix/{key}--{slug}
@@ -89,7 +89,7 @@ Applied template 'bug-fix' to task.md
 
 Frontmatter added:
   type: fix
-  agent: claude-sonnet
+  agent: claude
 ```
 
 ## Using with `mehr start`
@@ -112,7 +112,7 @@ For bug fix tasks requiring stricter validation.
 
 ```yaml
 type: fix
-agent: claude-sonnet
+agent: claude
 git:
   branch_pattern: "fix/{key}--{slug}"
   commit_prefix: "[fix/{key}]"
@@ -140,7 +140,7 @@ For code refactoring and quality improvements.
 
 ```yaml
 type: refactor
-agent: claude-sonnet
+agent: claude
 git:
   branch_pattern: "refactor/{key}--{slug}"
   commit_prefix: "[refactor]"
@@ -168,7 +168,7 @@ For adding or improving tests.
 
 ```yaml
 type: test
-agent: claude-sonnet
+agent: claude
 git:
   branch_pattern: "test/{key}--{slug}"
   commit_prefix: "[test]"
@@ -182,7 +182,7 @@ For maintenance tasks and chores.
 
 ```yaml
 type: chore
-agent: claude-sonnet
+agent: claude
 git:
   branch_pattern: "chore/{key}--{slug}"
   commit_prefix: "[chore]"

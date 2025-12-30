@@ -69,7 +69,7 @@ agent:
         MAX_TOKENS: "16384"
       args: ["--max-turns", "15"]
     implementing:
-      name: claude-sonnet   # Use Sonnet for implementation (speed > quality)
+      name: claude   # Use for implementation
     reviewing:
       name: claude          # Use Opus for review (catches more issues)
 ```
@@ -79,7 +79,7 @@ agent:
 | Agent | Use Case | Cost | Speed | Quality |
 |-------|----------|------|-------|---------|
 | claude-opus | Planning, code review | High | Slow | Best |
-| claude-sonnet | Implementation | Medium | Fast | Good |
+| claude | Implementation | Medium | Fast | Good |
 | claude-haiku | Quick questions | Low | Fastest | Adequate |
 
 ### Recommended Patterns
@@ -89,7 +89,7 @@ agent:
 agent:
   steps:
     planning: claude-opus
-    implementing: claude-sonnet
+    implementing: claude
     reviewing: claude-opus
 ```
 
@@ -97,9 +97,9 @@ agent:
 ```yaml
 agent:
   steps:
-    planning: claude-sonnet
+    planning: claude
     implementing: claude-haiku
-    reviewing: claude-sonnet
+    reviewing: claude
 ```
 
 ## Timeout and Retry Configuration
@@ -226,12 +226,11 @@ mehr cost --summary       # Aggregate statistics
 
 ### Cost Reduction Tips
 
-1. **Use Sonnet for implementation**: Code generation is straightforward for faster models
-2. **Limit max turns**: Prevent runaway conversations
+1. **Limit max turns**: Prevent runaway conversations
    ```yaml
    agents:
-     sonnet-fast:
-       extends: claude-sonnet
+     claude-fast:
+       extends: claude
        args: ["--max-turns", "5"]
    ```
 3. **Reuse specs**: Run `mehr implement` multiple times on the same spec instead of replanning

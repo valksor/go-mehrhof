@@ -210,14 +210,14 @@ Configure per-step agents in `.mehrhof/config.yaml`:
 
 ```yaml
 agent:
-  default: claude-sonnet # Default for all steps
+  default: claude # Default for all steps
   steps:
     planning:
-      name: claude # Use Opus for planning (more capable)
+      name: claude # Use for planning (more capable)
     implementing:
-      name: claude-sonnet # Use Sonnet for implementation (faster)
+      name: claude # Use for implementation
     reviewing:
-      name: claude # Use Opus for review
+      name: claude # Use for review
 ```
 
 ### Task Frontmatter
@@ -227,10 +227,10 @@ Override per-step agents in individual task files:
 ```yaml
 ---
 title: Complex OAuth2 Implementation
-agent: claude-sonnet # Task default
+agent: claude # Task default
 agent_steps:
   planning:
-    agent: claude # Use Opus for this task's planning
+    agent: claude # Use for this task's planning
     env:
       MAX_TOKENS: "16384"
     args: ["--max-turns", "15"] # CLI args for planning only
@@ -247,7 +247,7 @@ Override per-step agents at runtime:
 # Override specific steps
 mehr start --agent-planning claude file:task.md
 mehr plan --agent-planning claude
-mehr implement --agent-implementing claude-sonnet
+mehr implement --agent-implementing claude
 
 # --agent still overrides ALL steps
 mehr start --agent claude file:task.md  # Uses claude for everything
@@ -288,20 +288,15 @@ agents:
     description: "Claude Opus 4"
     args: ["--model", "claude-opus-4-20250514"]
 
-  claude-sonnet:
-    extends: claude
-    description: "Claude Sonnet 4"
-    args: ["--model", "claude-sonnet-4-20250514"]
-
 agent:
-  default: claude-sonnet # Fast/cheap default
+  default: claude # Default agent
   steps:
     planning:
       name: claude-opus # Opus for complex analysis
     reviewing:
       name: claude-opus # Opus for thorough review
     implementing:
-      name: claude-sonnet # Sonnet for code generation
+      name: claude # Use for code generation
 ```
 
 ### Step Agent Persistence
@@ -310,14 +305,14 @@ When a task starts, the resolved agents for each step are persisted in `work.yam
 
 ```yaml
 agent:
-  name: claude-sonnet
+  name: claude
   source: workspace
   steps:
     planning:
       name: claude-opus
       source: workspace-step
     implementing:
-      name: claude-sonnet
+      name: claude
       source: workspace
 ```
 
