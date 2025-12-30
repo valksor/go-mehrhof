@@ -5,6 +5,8 @@ import (
 	"os"
 	"path/filepath"
 	"time"
+
+	_slices "slices"
 )
 
 // Settings holds user preferences that persist between sessions
@@ -70,19 +72,14 @@ func (s *Settings) Save() error {
 
 // AddRecentTask adds a task to recent list (max 10, most recent first)
 func (s *Settings) AddRecentTask(taskID string) {
-	// Remove if already present
-	filtered := make([]string, 0, len(s.RecentTasks))
-	for _, t := range s.RecentTasks {
-		if t != taskID {
-			filtered = append(filtered, t)
-		}
-	}
+	// Remove all occurrences of taskID, then insert at front
+	s.RecentTasks = _slices.DeleteFunc(s.RecentTasks, func(t string) bool {
+		return t == taskID
+	})
+	s.RecentTasks = _slices.Insert(s.RecentTasks, 0, taskID)
 
-	// Add to front
-	s.RecentTasks = append([]string{taskID}, filtered...)
-
-	// Trim to max 10
+	// Trim to max 10 and remove excess capacity
 	if len(s.RecentTasks) > 10 {
-		s.RecentTasks = s.RecentTasks[:10]
+		s.RecentTasks = _slices.Clip(s.RecentTasks[:10])
 	}
 }

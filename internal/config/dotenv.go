@@ -35,7 +35,7 @@ func LoadDotEnv(baseDir string) error {
 func LoadDotEnvFromCwd() error {
 	cwd, err := os.Getwd()
 	if err != nil {
-		return nil // Silent fail if can't get cwd
+		return err
 	}
 	return LoadDotEnv(cwd)
 }

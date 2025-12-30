@@ -129,8 +129,10 @@ func (c *Conductor) GetGit() *vcs.Git {
 	return c.git
 }
 
-// GetActiveTask returns the current active task
+// GetActiveTask returns the current active task.
 // Returns a copy to avoid data races; the caller cannot modify the internal state.
+// Note: ActiveTask only contains value types (strings, bool, time.Time),
+// so a shallow copy is sufficient - no deep copy needed.
 func (c *Conductor) GetActiveTask() *storage.ActiveTask {
 	c.mu.RLock()
 	defer c.mu.RUnlock()

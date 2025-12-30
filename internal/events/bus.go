@@ -6,6 +6,11 @@ import (
 	"sync"
 )
 
+const (
+	// maxAsyncPublishes limits concurrent goroutines in PublishAsync
+	maxAsyncPublishes = 100
+)
+
 // Handler processes events
 type Handler func(Event)
 
@@ -24,6 +29,8 @@ type Bus struct {
 	nextID      int
 	// semaphore limits concurrent goroutines in PublishAsync
 	semaphore chan struct{}
+	// wg tracks active async publishes for graceful shutdown
+	wg sync.WaitGroup
 	// ctx is used for cancellation
 	ctx    context.Context
 	cancel context.CancelFunc
@@ -35,7 +42,7 @@ func NewBus() *Bus {
 	return &Bus{
 		handlers:    make(map[Type][]Subscription),
 		allHandlers: make([]Subscription, 0),
-		semaphore:   make(chan struct{}, 100), // Max 100 concurrent async publishes
+		semaphore:   make(chan struct{}, maxAsyncPublishes),
 		ctx:         ctx,
 		cancel:      cancel,
 	}
@@ -111,7 +118,12 @@ func (b *Bus) Publish(e Eventer) {
 // PublishRaw sends a raw event to all registered handlers
 func (b *Bus) PublishRaw(event Event) {
 	b.mu.RLock()
-	handlers := make([]Handler, 0)
+	// Pre-allocate capacity to avoid reallocations
+	capacity := len(b.allHandlers)
+	if subs, ok := b.handlers[event.Type]; ok {
+		capacity += len(subs)
+	}
+	handlers := make([]Handler, 0, capacity)
 
 	// Type-specific handlers
 	if subs, ok := b.handlers[event.Type]; ok {
@@ -139,7 +151,9 @@ func (b *Bus) PublishAsync(e Eventer) {
 
 // PublishRawAsync sends a raw event asynchronously
 func (b *Bus) PublishRawAsync(event Event) {
+	b.wg.Add(1)
 	go func() {
+		defer b.wg.Done()
 		// Acquire semaphore slot or exit if context cancelled
 		select {
 		case b.semaphore <- struct{}{}:
@@ -174,8 +188,6 @@ func (b *Bus) Clear() {
 // Shutdown gracefully shuts down the event bus, waiting for async publishes to complete.
 func (b *Bus) Shutdown() {
 	b.cancel()
-	// Drain semaphore to wait for in-flight async publishes
-	for i := 0; i < cap(b.semaphore); i++ {
-		b.semaphore <- struct{}{}
-	}
+	// Wait for all active async publishes to complete
+	b.wg.Wait()
 }

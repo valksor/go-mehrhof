@@ -1,6 +1,7 @@
 package conductor
 
 import (
+	"cmp"
 	"context"
 	"fmt"
 )
@@ -89,10 +90,8 @@ func (c *Conductor) RunAuto(ctx context.Context, reference string, opts AutoOpti
 
 	// Step 4: Quality retry loop (skip if MaxRetries is 0)
 	if opts.MaxRetries > 0 {
-		maxRetries := opts.MaxRetries
-		if maxRetries <= 0 {
-			maxRetries = c.opts.MaxQualityRetries
-		}
+		// Use opts.MaxRetries if positive, otherwise fall back to conductor default
+		maxRetries := cmp.Or(opts.MaxRetries, c.opts.MaxQualityRetries)
 
 		qualityOpts := QualityOptions{
 			Target:       opts.QualityTarget,

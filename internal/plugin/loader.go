@@ -48,21 +48,22 @@ const (
 
 // Process represents a running plugin process.
 type Process struct {
-	stdin    io.WriteCloser
-	stderr   io.ReadCloser
-	ctx      context.Context
-	err      error
-	done     chan struct{}
-	cmd      *exec.Cmd
-	stdout   *bufio.Reader
-	cancel   context.CancelFunc
-	manifest *Manifest
-	pending  map[int64]chan *Response
-	streamCh chan json.RawMessage
-	reqID    atomic.Int64
-	mu       sync.Mutex
-	stopping bool
-	started  bool
+	stdin      io.WriteCloser
+	stderr     io.ReadCloser
+	stdoutPipe io.ReadCloser // Original stdout pipe for explicit cleanup
+	ctx        context.Context
+	err        error
+	done       chan struct{}
+	cmd        *exec.Cmd
+	stdout     *bufio.Reader
+	cancel     context.CancelFunc
+	manifest   *Manifest
+	pending    map[int64]chan *Response
+	streamCh   chan json.RawMessage
+	reqID      atomic.Int64
+	mu         sync.Mutex
+	stopping   bool
+	started    bool
 }
 
 // Loader manages plugin process lifecycle.
@@ -186,6 +187,12 @@ func startProcess(ctx context.Context, manifest *Manifest) (*Process, error) {
 		execPath = filepath.Join(manifest.Dir, execPath)
 		// Clean the path to resolve any ".." components
 		execPath = filepath.Clean(execPath)
+		// Resolve symlinks to prevent symlink-based directory escapes
+		resolved, err := filepath.EvalSymlinks(execPath)
+		if err != nil {
+			return nil, fmt.Errorf("plugin %s: resolve path: %w", manifest.Name, err)
+		}
+		execPath = resolved
 		// Verify the resolved path is still within the plugin directory
 		rel, err := filepath.Rel(manifest.Dir, execPath)
 		if err != nil || strings.HasPrefix(rel, "..") {
@@ -221,15 +228,16 @@ func startProcess(ctx context.Context, manifest *Manifest) (*Process, error) {
 	procCtx, procCancel := context.WithCancel(ctx)
 
 	proc := &Process{
-		manifest: manifest,
-		cmd:      cmd,
-		stdin:    stdin,
-		stdout:   bufio.NewReaderSize(stdout, defaultPluginBufferSize),
-		stderr:   stderr,
-		pending:  make(map[int64]chan *Response),
-		done:     make(chan struct{}),
-		ctx:      procCtx,
-		cancel:   procCancel,
+		manifest:   manifest,
+		cmd:        cmd,
+		stdin:      stdin,
+		stdoutPipe: stdout, // Store original pipe for explicit cleanup
+		stdout:     bufio.NewReaderSize(stdout, defaultPluginBufferSize),
+		stderr:     stderr,
+		pending:    make(map[int64]chan *Response),
+		done:       make(chan struct{}),
+		ctx:        procCtx,
+		cancel:     procCancel,
 	}
 
 	if err := cmd.Start(); err != nil {
@@ -493,14 +501,14 @@ func (p *Process) Stop() error {
 		p.stderr = nil
 	}
 
-	// Close stdout pipe - Reset(nil) doesn't close the underlying pipe,
-	// so we need to get the underlying reader and close it directly
-	if p.stdout != nil {
-		// bufio.Reader doesn't expose the underlying reader,
-		// but since we're stopping anyway, just set to nil
-		// The pipe will be closed when the process exits
-		p.stdout = nil
+	// Close stdout pipe explicitly (the underlying io.ReadCloser, not the bufio wrapper)
+	if p.stdoutPipe != nil {
+		if err := p.stdoutPipe.Close(); err != nil {
+			slog.Warn("failed to close plugin stdout", "plugin", p.manifest.Name, "error", err)
+		}
+		p.stdoutPipe = nil
 	}
+	p.stdout = nil // Clear the bufio.Reader reference
 
 	// Wait for process with timeout
 	done := make(chan error, 1)

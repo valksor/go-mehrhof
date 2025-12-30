@@ -4,6 +4,9 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+
+	_maps "maps"
+	_slices "slices"
 )
 
 const (
@@ -80,13 +83,9 @@ func (d *Discovery) Discover() ([]*Manifest, error) {
 		}
 	}
 
-	// Convert map to slice
-	result := make([]*Manifest, 0, len(plugins))
-	for _, p := range plugins {
-		result = append(result, p)
-	}
-
-	return result, nil
+	// Convert map to slice and clip excess capacity
+	result := _slices.Collect(_maps.Values(plugins))
+	return _slices.Clip(result), nil
 }
 
 // DiscoverByType finds all plugins of a specific type.
@@ -96,13 +95,14 @@ func (d *Discovery) DiscoverByType(pluginType PluginType) ([]*Manifest, error) {
 		return nil, err
 	}
 
-	var result []*Manifest
+	// Pre-allocate with len(all) as upper bound, then clip
+	result := make([]*Manifest, 0, len(all))
 	for _, p := range all {
 		if p.Type == pluginType {
 			result = append(result, p)
 		}
 	}
-	return result, nil
+	return _slices.Clip(result), nil
 }
 
 // DiscoverByName finds a specific plugin by name.

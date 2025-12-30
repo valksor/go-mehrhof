@@ -5,6 +5,9 @@ import (
 	"errors"
 	"fmt"
 	"sync"
+
+	_maps "maps"
+	_slices "slices"
 )
 
 // PluginInfo holds information about a registered plugin.
@@ -151,11 +154,9 @@ func (r *Registry) List() []*PluginInfo {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
-	result := make([]*PluginInfo, 0, len(r.plugins))
-	for _, info := range r.plugins {
-		result = append(result, info)
-	}
-	return result
+	// Collect values into a slice, then clip excess capacity
+	result := _slices.Collect(_maps.Values(r.plugins))
+	return _slices.Clip(result)
 }
 
 // ListEnabled returns all enabled and loaded plugins.
@@ -163,13 +164,14 @@ func (r *Registry) ListEnabled() []*PluginInfo {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
-	var result []*PluginInfo
+	// Pre-allocate with map size as upper bound, then clip
+	result := make([]*PluginInfo, 0, len(r.plugins))
 	for _, info := range r.plugins {
 		if info.Enabled && info.Process != nil {
 			result = append(result, info)
 		}
 	}
-	return result
+	return _slices.Clip(result)
 }
 
 // ListByType returns plugins of a specific type.
@@ -177,13 +179,14 @@ func (r *Registry) ListByType(t PluginType) []*PluginInfo {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
-	var result []*PluginInfo
+	// Pre-allocate with map size as upper bound, then clip
+	result := make([]*PluginInfo, 0, len(r.plugins))
 	for _, info := range r.plugins {
 		if info.Manifest.Type == t {
 			result = append(result, info)
 		}
 	}
-	return result
+	return _slices.Clip(result)
 }
 
 // ListEnabledByType returns enabled plugins of a specific type.
@@ -191,13 +194,14 @@ func (r *Registry) ListEnabledByType(t PluginType) []*PluginInfo {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
-	var result []*PluginInfo
+	// Pre-allocate with map size as upper bound, then clip
+	result := make([]*PluginInfo, 0, len(r.plugins))
 	for _, info := range r.plugins {
 		if info.Manifest.Type == t && info.Enabled && info.Process != nil {
 			result = append(result, info)
 		}
 	}
-	return result
+	return _slices.Clip(result)
 }
 
 // Providers returns all enabled provider plugins.
