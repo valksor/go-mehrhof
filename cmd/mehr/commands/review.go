@@ -11,6 +11,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/valksor/go-mehrhof/internal/conductor"
+	"github.com/valksor/go-mehrhof/internal/display"
 )
 
 // maxReviewFileNumber is the maximum number to try when generating review filenames
@@ -62,7 +63,8 @@ func runReview(cmd *cobra.Command, args []string) error {
 	// Check for active task
 	activeTask := cond.GetActiveTask()
 	if activeTask == nil {
-		return fmt.Errorf("no active task - start a task first with 'mehr start'")
+		fmt.Print(display.NoActiveTaskError())
+		return fmt.Errorf("no active task")
 	}
 
 	// Get workspace
@@ -74,7 +76,7 @@ func runReview(cmd *cobra.Command, args []string) error {
 	// Check if review tool is available
 	toolPath, err := exec.LookPath(reviewTool)
 	if err != nil {
-		return fmt.Errorf("review tool '%s' not found in PATH\nInstall it with: npm install -g coderabbitai", reviewTool)
+		return fmt.Errorf("review tool '%s' not found in PATH\n\nInstall with: npm install -g %s\n\nOr use --tool to specify a different tool:\n  mehr review --tool <tool-name>", reviewTool, reviewTool)
 	}
 
 	fmt.Printf("Running %s review...\n", reviewTool)

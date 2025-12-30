@@ -9,12 +9,13 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/valksor/go-mehrhof/internal/conductor"
+	"github.com/valksor/go-mehrhof/internal/display"
 )
 
 var noteCmd = &cobra.Command{
 	Use:     "note [message]",
 	Aliases: []string{"answer"},
-	Short:   "Add notes to the task",
+	Short:   "Add notes to the task or answer agent questions",
 	Long: `Add notes, context, or requirements to the current task.
 
 This command saves your input directly to notes.md in the work directory.
@@ -23,8 +24,12 @@ Notes are included when the agent runs during plan/implement/review phases.
 Use this to add requirements, clarify specifications, or provide context
 before running plan/implement. The agent will see your notes when processing.
 
-If a message is provided, it is saved as a note and the command exits.
-Otherwise, enters an interactive loop reading from stdin.
+If an agent question is pending (waiting for your response), this command
+will submit your answer and clear the pending question state.
+
+ALIASES:
+  note                        General note-taking
+  answer                      Submit answer to pending agent question
 
 Examples:
   mehr note                                # Enter interactive mode
@@ -54,7 +59,8 @@ func runNote(cmd *cobra.Command, args []string) error {
 
 	// Check for active task
 	if cond.GetActiveTask() == nil {
-		return fmt.Errorf("no active task\nUse 'mehr start <reference>' to register a task first")
+		fmt.Print(display.NoActiveTaskError())
+		return fmt.Errorf("no active task")
 	}
 
 	taskID := cond.GetActiveTask().ID

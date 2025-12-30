@@ -17,14 +17,17 @@ var continueCmd = &cobra.Command{
 	Short: "Resume workflow with optional auto-execution",
 	Long: `Continue to the next workflow step.
 
-This command is designed for resuming work on a task after a break:
-- Without --auto: Shows status and suggested next actions
-- With --auto: Automatically executes the next logical workflow step
+This command is designed for resuming work on a task after a break.
+Without --auto, it shows status and suggested next actions.
+With --auto, it automatically executes the next logical workflow step.
 
-DIFFERENCES FROM OTHER COMMANDS:
-- 'mehr status' - Detailed state inspection (no execution capability)
-- 'mehr guide' - Quick suggestions only (no auto-execution)
-- 'mehr continue' - Status display + optional auto-execution (this command)
+Use 'continue --auto' to hands-off execute the next step (plan, implement, etc.).
+Use 'status' for detailed inspection without resuming.
+Use 'guide' for quick suggestions without execution.
+
+See also:
+  mehr status                 - Detailed state inspection
+  mehr guide                 - Quick next-action suggestions
 
 Examples:
   mehr continue       # Show status and suggested next actions

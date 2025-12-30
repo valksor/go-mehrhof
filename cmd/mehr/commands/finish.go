@@ -6,6 +6,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/valksor/go-mehrhof/internal/conductor"
+	"github.com/valksor/go-mehrhof/internal/display"
 )
 
 var (
@@ -28,10 +29,17 @@ var finishCmd = &cobra.Command{
 	Short: "Complete the task (creates PR by default for supported providers)",
 	Long: `Complete the current task by creating a pull request or merging locally.
 
+PROVIDER BEHAVIOR:
+  github:     Creates a pull request automatically
+  gitlab:     Creates a merge request automatically
+  file:, dir: Prompts for action (merge locally / mark done / cancel)
+  jira:       Prompts for action (merge locally / mark done / cancel)
+  others:     Prompts for action (merge locally / mark done / cancel)
+
 By default, this:
 - Runs 'make quality' if available (code formatting, linting, etc.)
-- Creates a pull request if the provider supports it (e.g., github:)
-- For providers without PR support: asks what to do (merge/mark done/cancel)
+- For PR providers: creates a pull/merge request
+- For other providers: prompts what to do
 - Keeps the task branch (use --delete to remove it)
 - Does NOT push after local merge (use --push to enable)
 
@@ -44,7 +52,7 @@ If quality checks modify files (e.g., auto-formatting), you'll be prompted
 to confirm before proceeding.
 
 Examples:
-  mehr finish                      # Create PR (for github:) or prompt for action
+  mehr finish                      # Create PR (github/gitlab) or prompt for action
   mehr finish --yes                # Skip confirmation prompt
   mehr finish --merge              # Force local merge instead of PR
   mehr finish --merge --delete     # Merge and delete task branch
@@ -88,7 +96,8 @@ func runFinish(cmd *cobra.Command, args []string) error {
 	// Check for active task
 	activeTask := cond.GetActiveTask()
 	if activeTask == nil {
-		return fmt.Errorf("no active task to finish\nUse 'mehr start <reference>' to register a task first")
+		fmt.Print(display.NoActiveTaskError())
+		return fmt.Errorf("no active task")
 	}
 
 	// Get status for display

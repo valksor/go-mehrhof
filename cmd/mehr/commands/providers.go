@@ -40,40 +40,48 @@ func init() {
 
 func runProvidersList(cmd *cobra.Command, args []string) error {
 	w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
-	_, _ = fmt.Fprintln(w, "SCHEME\tPROVIDER\tDESCRIPTION")
-	_, _ = fmt.Fprintln(w, "------\t--------\t-----------")
+	_, _ = fmt.Fprintln(w, "SCHEME\tSHORTHAND\tPROVIDER\tDESCRIPTION")
+	_, _ = fmt.Fprintln(w, "------\t---------\t--------\t-----------")
 
 	providers := []struct {
 		scheme      string
+		shorthand   string
 		name        string
 		description string
 	}{
-		{"file", "File", "Single markdown file"},
-		{"dir", "Directory", "Directory with README.md"},
-		{"github", "GitHub", "GitHub issues and pull requests"},
-		{"gitlab", "GitLab", "GitLab issues and merge requests"},
-		{"jira", "Jira", "Atlassian Jira tickets"},
-		{"linear", "Linear", "Linear issues"},
-		{"notion", "Notion", "Notion pages and databases"},
-		{"wrike", "Wrike", "Wrike tasks"},
-		{"youtrack", "YouTrack", "JetBrains YouTrack issues"},
+		{"file", "f", "File", "Single markdown file"},
+		{"dir", "d", "Directory", "Directory with README.md"},
+		{"github", "gh", "GitHub", "GitHub issues and pull requests"},
+		{"gitlab", "", "GitLab", "GitLab issues and merge requests"},
+		{"jira", "", "Jira", "Atlassian Jira tickets"},
+		{"linear", "", "Linear", "Linear issues"},
+		{"notion", "", "Notion", "Notion pages and databases"},
+		{"wrike", "", "Wrike", "Wrike tasks"},
+		{"youtrack", "yt", "YouTrack", "JetBrains YouTrack issues"},
 	}
 
 	for _, p := range providers {
-		_, _ = fmt.Fprintf(w, "%s\t%s\t%s\n", p.scheme, p.name, p.description)
+		sh := p.shorthand
+		if sh == "" {
+			sh = "-"
+		}
+		_, _ = fmt.Fprintf(w, "%s\t%s\t%s\t%s\n", p.scheme, sh, p.name, p.description)
 	}
 
 	_ = w.Flush()
 
 	fmt.Println()
 	fmt.Println("Usage:")
-	fmt.Println("  mehr start <scheme>:<reference>  # Use provider with scheme")
+	fmt.Println("  mehr start <scheme>:<reference>  # Use provider with scheme or shorthand")
 	fmt.Println()
 	fmt.Println("Examples:")
 	fmt.Println("  mehr start file:task.md")
+	fmt.Println("  mehr start f:task.md              # shorthand also works")
 	fmt.Println("  mehr start dir:./tasks/")
 	fmt.Println("  mehr start github:owner/repo#123")
-	fmt.Println("  mehr start jira:PROJECT-123")
+	fmt.Println("  mehr start gh:owner/repo#123       # shorthand also works")
+	fmt.Println("  mehr start youtrack:PROJECT-123")
+	fmt.Println("  mehr start yt:PROJECT-123         # shorthand also works")
 
 	return nil
 }

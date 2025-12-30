@@ -177,13 +177,7 @@ func deriveStepName(agentVar string) string {
 // Returns true if an active task exists, false otherwise.
 func RequireActiveTask(cond *conductor.Conductor) bool {
 	if cond.GetActiveTask() == nil {
-		fmt.Print(display.ErrorWithSuggestions(
-			"No active task",
-			[]display.Suggestion{
-				{Command: "mehr start <reference>", Description: "Register a task first"},
-				{Command: "mehr plan --new", Description: "Start standalone planning"},
-			},
-		))
+		fmt.Print(display.NoActiveTaskError())
 		return false
 	}
 	return true

@@ -59,7 +59,8 @@ func runAbandon(cmd *cobra.Command, args []string) error {
 	// Check for active task
 	activeTask := cond.GetActiveTask()
 	if activeTask == nil {
-		return fmt.Errorf("no active task: use 'mehr start <reference>' to create a task or 'mehr list' to view existing tasks")
+		fmt.Print(display.NoActiveTaskError())
+		return fmt.Errorf("no active task")
 	}
 
 	// Get status for display

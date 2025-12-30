@@ -6,6 +6,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/valksor/go-mehrhof/internal/conductor"
+	"github.com/valksor/go-mehrhof/internal/display"
 )
 
 var redoYes bool
@@ -40,7 +41,8 @@ func runRedo(cmd *cobra.Command, args []string) error {
 	// Check for active task
 	activeTask := cond.GetActiveTask()
 	if activeTask == nil {
-		return fmt.Errorf("no active task: use 'mehr start <reference>' to create a task")
+		fmt.Print(display.NoActiveTaskError())
+		return fmt.Errorf("no active task")
 	}
 
 	// Get status for confirmation
