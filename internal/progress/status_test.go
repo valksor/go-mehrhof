@@ -87,9 +87,7 @@ func TestStatusLineConcurrent(t *testing.T) {
 	// Test concurrent access
 	var wg sync.WaitGroup
 	for i := 0; i < 10; i++ {
-		wg.Add(2)
-		go func() {
-			defer wg.Done()
+		wg.Go(func() {
 			_ = sl.OnEvent(agent.Event{
 				Type: agent.EventToolUse,
 				ToolCall: &agent.ToolCall{
@@ -97,11 +95,10 @@ func TestStatusLineConcurrent(t *testing.T) {
 					Description: "Running command",
 				},
 			})
-		}()
-		go func() {
-			defer wg.Done()
+		})
+		wg.Go(func() {
 			sl.GetUpdateCount()
-		}()
+		})
 	}
 	wg.Wait()
 
@@ -142,49 +139,16 @@ func TestMultiProgressConcurrent(t *testing.T) {
 	// Test concurrent access
 	var wg sync.WaitGroup
 	for i := 0; i < 5; i++ {
-		wg.Add(1)
-		go func(i int) {
-			defer wg.Done()
+		wg.Go(func() {
 			phase := string(rune('A' + i))
 			mp.Add(phase)
 			mp.Remove(phase)
-		}(i)
+		})
 	}
 	wg.Wait()
 
 	// Should not panic
 	mp.DoneAll()
-}
-
-func TestSimpleProgress(t *testing.T) {
-	sp := NewSimpleProgress("Simple")
-
-	// Should not panic
-	sp.Update("test message")
-	sp.Done()
-	sp.Message("just a message")
-}
-
-func TestSimpleProgressConcurrent(t *testing.T) {
-	sp := NewSimpleProgress("Concurrent")
-
-	// Test concurrent access
-	var wg sync.WaitGroup
-	for i := 0; i < 10; i++ {
-		wg.Add(1)
-		go func(i int) {
-			defer wg.Done()
-			sp.Update("message")
-		}(i)
-		wg.Add(1)
-		go func(i int) {
-			defer wg.Done()
-			sp.Done()
-		}(i)
-	}
-	wg.Wait()
-
-	// Should not panic
 }
 
 func TestStatusLineToolDescriptionTruncation(t *testing.T) {
@@ -366,14 +330,50 @@ func TestProgressBarConcurrent(t *testing.T) {
 	// Test concurrent access
 	var wg sync.WaitGroup
 	for i := 0; i < 10; i++ {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
+		wg.Go(func() {
 			pb.Increment()
-		}()
+		})
 	}
 	wg.Wait()
 
 	// Should not panic
 	pb.Done()
+}
+
+func TestStatusLineStartTime(t *testing.T) {
+	before := time.Now()
+	sl := NewStatusLine("Testing")
+	after := time.Now()
+
+	// startTime should be set between before and after
+	if sl.startTime.Before(before) || sl.startTime.After(after) {
+		t.Errorf("startTime not set correctly, got %v, want between %v and %v", sl.startTime, before, after)
+	}
+}
+
+func TestStatusLineElapsedTimeThreshold(t *testing.T) {
+	// This test verifies that the elapsed time logic doesn't cause errors
+	// when under or over the 5-second threshold
+	sl := NewStatusLine("Testing")
+
+	// Immediately call update (under 5 seconds) - should not show time
+	event := agent.Event{
+		Type: agent.EventToolUse,
+		ToolCall: &agent.ToolCall{
+			Name:        "Read",
+			Description: "test",
+		},
+	}
+	err := sl.OnEvent(event)
+	if err != nil {
+		t.Errorf("OnEvent() error = %v", err)
+	}
+
+	// Call Done immediately - should show elapsed time in format 0:00
+	sl.Done()
+
+	// Verify no panic and update was recorded
+	if sl.GetUpdateCount() != 1 {
+		t.Errorf("GetUpdateCount() = %d, want 1", sl.GetUpdateCount())
+	}
 }

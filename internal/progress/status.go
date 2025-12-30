@@ -15,6 +15,7 @@ import (
 type StatusLine struct {
 	phase       string
 	lastTool    string
+	startTime   time.Time
 	lastUpdate  time.Time
 	updateCount int
 	mu          sync.Mutex
@@ -22,9 +23,11 @@ type StatusLine struct {
 
 // NewStatusLine creates a new status line for the given phase.
 func NewStatusLine(phase string) *StatusLine {
+	now := time.Now()
 	return &StatusLine{
 		phase:      phase,
-		lastUpdate: time.Now(),
+		startTime:  now,
+		lastUpdate: now,
 	}
 }
 
@@ -62,8 +65,15 @@ func (s *StatusLine) update(activity string) {
 		activity = activity[:47] + "..."
 	}
 
+	// Build elapsed time string (only show after 5 seconds)
+	elapsed := time.Since(s.startTime)
+	elapsedStr := ""
+	if elapsed >= 5*time.Second {
+		elapsedStr = fmt.Sprintf(" (%s)", formatDuration(elapsed))
+	}
+
 	// Clear previous line and print new status
-	fmt.Printf("\r→ %s... (%s\x1b[K)", s.phase, activity)
+	fmt.Printf("\r→ %s...%s (%s\x1b[K)", s.phase, elapsedStr, activity)
 	s.lastTool = activity
 	s.lastUpdate = time.Now()
 	s.updateCount++
@@ -74,8 +84,12 @@ func (s *StatusLine) Done() {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	// Clear the in-progress line and show done
-	fmt.Printf("\r→ %s ✓\x1b[K\n", s.phase)
+	// Build elapsed time string (always show on completion)
+	elapsed := time.Since(s.startTime)
+	elapsedStr := formatDuration(elapsed)
+
+	// Clear the in-progress line and show done with elapsed time
+	fmt.Printf("\r→ %s ✓ (%s)\x1b[K\n", s.phase, elapsedStr)
 }
 
 // GetPhase returns the phase name.
@@ -133,39 +147,6 @@ func (m *MultiProgress) DoneAll() {
 		m.lines[phase].Done()
 		delete(m.lines, phase)
 	}
-}
-
-// SimpleProgress provides simple status updates without live tracking.
-// Use this when you don't have access to streaming events.
-type SimpleProgress struct {
-	phase string
-	mu    sync.Mutex
-}
-
-// NewSimpleProgress creates a new simple progress tracker.
-func NewSimpleProgress(phase string) *SimpleProgress {
-	return &SimpleProgress{phase: phase}
-}
-
-// Update shows a status update.
-func (p *SimpleProgress) Update(message string) {
-	p.mu.Lock()
-	defer p.mu.Unlock()
-
-	fmt.Printf("→ %s... %s\n", p.phase, message)
-}
-
-// Done marks the phase as complete.
-func (p *SimpleProgress) Done() {
-	p.mu.Lock()
-	defer p.mu.Unlock()
-
-	fmt.Printf("→ %s ✓\n", p.phase)
-}
-
-// Message prints a message without status formatting.
-func (p *SimpleProgress) Message(message string) {
-	fmt.Println(message)
 }
 
 // ProgressBar tracks progress with percentage completion and elapsed time.
