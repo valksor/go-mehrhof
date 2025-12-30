@@ -216,12 +216,10 @@ func TestConcurrentPublish(t *testing.T) {
 	})
 
 	var wg sync.WaitGroup
-	for i := 0; i < 100; i++ {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
+	for range 100 {
+		wg.Go(func() {
 			bus.Publish(ProgressEvent{TaskID: "test"})
-		}()
+		})
 	}
 
 	wg.Wait()
@@ -235,13 +233,11 @@ func TestConcurrentSubscribeUnsubscribe(t *testing.T) {
 	bus := NewBus()
 
 	var wg sync.WaitGroup
-	for i := 0; i < 50; i++ {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
+	for range 50 {
+		wg.Go(func() {
 			id := bus.Subscribe(TypeProgress, func(e Event) {})
 			bus.Unsubscribe(id)
-		}()
+		})
 	}
 
 	wg.Wait()
@@ -517,5 +513,102 @@ func TestPRCreatedEventToEvent(t *testing.T) {
 	}
 	if event.Data["pr_url"] != "https://github.com/owner/repo/pull/42" {
 		t.Errorf("pr_url = %v, want https://github.com/owner/repo/pull/42", event.Data["pr_url"])
+	}
+}
+
+func TestShutdown(t *testing.T) {
+	bus := NewBus()
+
+	var count atomic.Int32
+	var started atomic.Int32
+	bus.Subscribe(TypeProgress, func(e Event) {
+		started.Add(1)
+		// Simulate some work
+		time.Sleep(5 * time.Millisecond)
+		count.Add(1)
+	})
+
+	// Publish multiple async events
+	for range 10 {
+		bus.PublishAsync(ProgressEvent{TaskID: "test"})
+	}
+
+	// Give goroutines time to start (acquire semaphore)
+	time.Sleep(20 * time.Millisecond)
+
+	// Shutdown should wait for all active async handlers to complete
+	bus.Shutdown()
+
+	// Handlers that started should have completed
+	// Note: Some may not have started if they were blocked on semaphore when context cancelled
+	if count.Load() != started.Load() {
+		t.Errorf("count = %d, started = %d - started handlers should complete", count.Load(), started.Load())
+	}
+
+	// At least some handlers should have run
+	if count.Load() == 0 {
+		t.Error("no handlers ran")
+	}
+}
+
+func TestShutdownWaitsForActiveHandlers(t *testing.T) {
+	bus := NewBus()
+
+	var completed atomic.Bool
+	bus.Subscribe(TypeProgress, func(e Event) {
+		// Long-running handler
+		time.Sleep(50 * time.Millisecond)
+		completed.Store(true)
+	})
+
+	// Start an async handler
+	bus.PublishAsync(ProgressEvent{TaskID: "test"})
+
+	// Give it time to start
+	time.Sleep(10 * time.Millisecond)
+
+	// Shutdown should wait for the active handler
+	bus.Shutdown()
+
+	// Handler should have completed before Shutdown returned
+	if !completed.Load() {
+		t.Error("Shutdown returned before handler completed")
+	}
+}
+
+func TestPublishAsyncSemaphoreLimiting(t *testing.T) {
+	bus := NewBus()
+
+	var concurrentCount atomic.Int32
+	var maxConcurrent atomic.Int32
+
+	bus.Subscribe(TypeProgress, func(e Event) {
+		// Track max concurrent handlers
+		current := concurrentCount.Add(1)
+		for {
+			oldMax := maxConcurrent.Load()
+			if current <= oldMax {
+				break
+			}
+			if maxConcurrent.CompareAndSwap(oldMax, current) {
+				break
+			}
+		}
+
+		time.Sleep(10 * time.Millisecond) // Simulate work
+		concurrentCount.Add(-1)
+	})
+
+	// Publish more events than the semaphore allows (maxAsyncPublishes = 100)
+	for range 150 {
+		bus.PublishAsync(ProgressEvent{TaskID: "test"})
+	}
+
+	// Wait for all to complete
+	bus.Shutdown()
+
+	// Max concurrent should not exceed maxAsyncPublishes (100)
+	if maxConcurrent.Load() > maxAsyncPublishes {
+		t.Errorf("max concurrent = %d, should not exceed %d", maxConcurrent.Load(), maxAsyncPublishes)
 	}
 }

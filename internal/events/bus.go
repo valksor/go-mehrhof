@@ -150,10 +150,9 @@ func (b *Bus) PublishAsync(e Eventer) {
 }
 
 // PublishRawAsync sends a raw event asynchronously
+// Uses Go 1.25's WaitGroup.Go() for cleaner goroutine management
 func (b *Bus) PublishRawAsync(event Event) {
-	b.wg.Add(1)
-	go func() {
-		defer b.wg.Done()
+	b.wg.Go(func() {
 		// Acquire semaphore slot or exit if context cancelled
 		select {
 		case b.semaphore <- struct{}{}:
@@ -162,7 +161,7 @@ func (b *Bus) PublishRawAsync(event Event) {
 			return
 		}
 		b.PublishRaw(event)
-	}()
+	})
 }
 
 // HasSubscribers returns true if there are any subscribers for the given type
