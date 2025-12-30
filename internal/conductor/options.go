@@ -253,12 +253,6 @@ func (o *Options) Apply(opts ...Option) {
 	}
 }
 
-// ChatOptions configures chat mode
-type ChatOptions struct {
-	Continue    bool   // Continue existing session
-	SessionFile string // Specific session file to continue
-}
-
 // FinishOptions configures the finish operation
 type FinishOptions struct {
 	SquashMerge  bool   // Use squash merge

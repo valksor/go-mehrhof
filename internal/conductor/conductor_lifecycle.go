@@ -3,25 +3,15 @@ package conductor
 import (
 	"context"
 	"fmt"
+	"os"
+	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/valksor/go-mehrhof/internal/provider"
 	"github.com/valksor/go-mehrhof/internal/storage"
 	"github.com/valksor/go-mehrhof/internal/vcs"
 )
-
-// readOptionalWorkspaceData reads optional workspace files, returning empty values
-// for any that don't exist. This is used for context gathering where missing files
-// are not errors.
-func (c *Conductor) readOptionalWorkspaceData(taskID string) (
-	sourceContent string, notes string, specs string, pendingQ *storage.PendingQuestion,
-) {
-	sourceContent, _ = c.workspace.GetSourceContent(taskID)
-	notes, _ = c.workspace.ReadNotes(taskID)
-	specs, _ = c.workspace.GatherSpecificationsContent(taskID)
-	pendingQ, _ = c.workspace.LoadPendingQuestion(taskID)
-	return sourceContent, notes, specs, pendingQ
-}
 
 // Initialize sets up the conductor for a repository
 func (c *Conductor) Initialize(ctx context.Context) error {
@@ -205,10 +195,10 @@ func (c *Conductor) Start(ctx context.Context, reference string) error {
 	}
 
 	// Snapshot the source (read-only copy)
-	sourceInfo := c.snapshotSource(ctx, p, reference, workUnit)
+	snapshot := c.snapshotSource(ctx, p, reference, workUnit)
 
-	// Register the task with workspace
-	if err := c.registerTask(taskID, reference, workUnit, sourceInfo, gitInfo, namingInfo); err != nil {
+	// Register the task with workspace (writes source files)
+	if err := c.registerTask(taskID, reference, workUnit, snapshot, gitInfo, namingInfo); err != nil {
 		return err
 	}
 
@@ -256,36 +246,100 @@ func (c *Conductor) fetchWorkUnit(ctx context.Context, reference string) (any, *
 }
 
 // snapshotSource creates a snapshot of the source content
-func (c *Conductor) snapshotSource(ctx context.Context, p any, reference string, workUnit *provider.WorkUnit) storage.SourceInfo {
+func (c *Conductor) snapshotSource(ctx context.Context, p any, reference string, workUnit *provider.WorkUnit) *provider.Snapshot {
 	if snapshotter, ok := p.(provider.Snapshotter); ok {
 		snapshot, err := snapshotter.Snapshot(ctx, workUnit.ID)
-		if err == nil {
-			sourceInfo := storage.SourceInfo{
-				Type:    snapshot.Type,
-				Ref:     snapshot.Ref,
-				ReadAt:  time.Now(),
-				Content: snapshot.Content,
-			}
-			for _, f := range snapshot.Files {
-				sourceInfo.Files = append(sourceInfo.Files, storage.SourceFile{
-					Path:    f.Path,
-					Content: f.Content,
-				})
-			}
-			return sourceInfo
+		if err == nil && snapshot != nil {
+			return snapshot
 		}
 	}
 
-	// Fallback: store reference only
-	return storage.SourceInfo{
-		Type:   workUnit.Provider,
-		Ref:    reference,
-		ReadAt: time.Now(),
+	// Fallback: return minimal snapshot with reference only
+	return &provider.Snapshot{
+		Type: workUnit.Provider,
+		Ref:  reference,
 	}
 }
 
+// buildSourceInfo creates storage.SourceInfo from provider snapshot (metadata only)
+func (c *Conductor) buildSourceInfo(snapshot *provider.Snapshot, taskID string) storage.SourceInfo {
+	info := storage.SourceInfo{
+		Type:   snapshot.Type,
+		Ref:    snapshot.Ref,
+		ReadAt: time.Now(),
+	}
+
+	// For single file content, store path reference
+	if snapshot.Content != "" {
+		// Generate filename from reference or use default
+		filename := "source.md"
+		if snapshot.Ref != "" {
+			// Extract filename from reference if possible
+			if idx := strings.LastIndex(snapshot.Ref, "/"); idx != -1 {
+				filename = snapshot.Ref[idx+1:]
+			} else if idx := strings.LastIndex(snapshot.Ref, ":"); idx != -1 {
+				filename = snapshot.Ref[idx+1:] + ".md"
+			}
+		}
+		info.Files = []string{"source/" + filename}
+	}
+
+	// For directory/multiple files, store file paths
+	for _, f := range snapshot.Files {
+		info.Files = append(info.Files, "source/"+f.Path)
+	}
+
+	return info
+}
+
+// writeSourceFiles writes snapshot content to the work directory's source/ subdirectory
+func (c *Conductor) writeSourceFiles(taskID string, snapshot *provider.Snapshot) error {
+	if snapshot == nil {
+		return nil
+	}
+
+	workPath := c.workspace.WorkPath(taskID)
+	sourceDir := filepath.Join(workPath, "source")
+
+	// Create source directory if it doesn't exist
+	if err := os.MkdirAll(sourceDir, 0o755); err != nil {
+		return fmt.Errorf("create source directory: %w", err)
+	}
+
+	// Write single file content
+	if snapshot.Content != "" {
+		filename := "source.md"
+		if snapshot.Ref != "" {
+			// Extract filename from reference
+			if idx := strings.LastIndex(snapshot.Ref, "/"); idx != -1 {
+				filename = snapshot.Ref[idx+1:]
+			} else if idx := strings.LastIndex(snapshot.Ref, ":"); idx != -1 {
+				filename = snapshot.Ref[idx+1:] + ".md"
+			}
+		}
+		destPath := filepath.Join(sourceDir, filename)
+		if err := os.WriteFile(destPath, []byte(snapshot.Content), 0o644); err != nil {
+			return fmt.Errorf("write source file: %w", err)
+		}
+	}
+
+	// Write multiple files (directory provider)
+	for _, f := range snapshot.Files {
+		destPath := filepath.Join(sourceDir, f.Path)
+		// Ensure parent directory exists
+		if err := os.MkdirAll(filepath.Dir(destPath), 0o755); err != nil {
+			return fmt.Errorf("create directory: %w", err)
+		}
+		if err := os.WriteFile(destPath, []byte(f.Content), 0o644); err != nil {
+			return fmt.Errorf("write file %s: %w", f.Path, err)
+		}
+	}
+
+	return nil
+}
+
 // registerTask creates the work directory and active task reference
-func (c *Conductor) registerTask(taskID, reference string, workUnit *provider.WorkUnit, sourceInfo storage.SourceInfo, gi *gitInfo, ni *namingInfo) error {
+func (c *Conductor) registerTask(taskID, reference string, workUnit *provider.WorkUnit, snapshot *provider.Snapshot, gi *gitInfo, ni *namingInfo) error {
 	// Resolve agent for this task (uses priority: CLI > task > workspace > auto)
 	agentInst, agentSource, err := c.resolveAgentForTask()
 	if err != nil {
@@ -293,10 +347,18 @@ func (c *Conductor) registerTask(taskID, reference string, workUnit *provider.Wo
 	}
 	c.activeAgent = agentInst
 
-	// Create work directory
+	// Build SourceInfo with metadata (files will be written separately)
+	sourceInfo := c.buildSourceInfo(snapshot, taskID)
+
+	// Create work directory (creates source/ subdirectory)
 	work, err := c.workspace.CreateWork(taskID, sourceInfo)
 	if err != nil {
 		return fmt.Errorf("create work: %w", err)
+	}
+
+	// Write source files to work directory
+	if err := c.writeSourceFiles(taskID, snapshot); err != nil {
+		return fmt.Errorf("write source files: %w", err)
 	}
 
 	// Set metadata from work unit and naming info

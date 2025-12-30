@@ -130,7 +130,7 @@ func (c *Conductor) RunPlanning(ctx context.Context) error {
 				pendingContext = pq.ContextSummary
 			}
 		}
-		// Clear the pending question (answer should be in notes via chat command)
+		// Clear the pending question (answer should be in notes via note command)
 		_ = c.workspace.ClearPendingQuestion(taskID)
 	}
 
@@ -747,54 +747,6 @@ Provide:
 2. Any issues found (critical, major, minor)
 3. Suggested improvements
 4. If needed, provide corrected code in yaml:file blocks`, title, sourceContent, specsContent)
-}
-
-// buildChatPrompt creates a context-aware prompt for dialogue mode.
-// This ensures the agent has full task awareness when answering questions or providing feedback.
-func buildChatPrompt(title, sourceContent, notes, specs string, pq *storage.PendingQuestion, message string) string {
-	var sb strings.Builder
-
-	sb.WriteString("You are helping with a task. Respond to the user's message with context awareness.\n\n")
-	sb.WriteString(fmt.Sprintf("## Task: %s\n\n", title))
-
-	if sourceContent != "" {
-		sb.WriteString("## Source Content\n")
-		sb.WriteString(sourceContent)
-		sb.WriteString("\n\n")
-	}
-
-	if specs != "" {
-		sb.WriteString("## Current Specifications\n")
-		sb.WriteString(specs)
-		sb.WriteString("\n\n")
-	}
-
-	if notes != "" {
-		sb.WriteString("## Previous Notes\n")
-		sb.WriteString(notes)
-		sb.WriteString("\n\n")
-	}
-
-	if pq != nil {
-		sb.WriteString("## Your Previous Question\n")
-		sb.WriteString(pq.Question)
-		sb.WriteString("\n\n")
-		if pq.ContextSummary != "" {
-			sb.WriteString("## Context Before Question\n")
-			sb.WriteString(pq.ContextSummary)
-			sb.WriteString("\n\n")
-		}
-	}
-
-	sb.WriteString("## User's Message\n")
-	sb.WriteString(message)
-	sb.WriteString("\n\n")
-
-	sb.WriteString("## Instructions\n")
-	sb.WriteString("Respond helpfully to the user's message. Keep your response focused and concise.\n")
-	sb.WriteString("If this is an answer to your previous question, acknowledge it and explain how you'll proceed.\n")
-
-	return sb.String()
 }
 
 // saveCurrentSession saves the current session if one exists

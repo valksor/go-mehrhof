@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/valksor/go-mehrhof/internal/agent"
 	"github.com/valksor/go-mehrhof/internal/events"
 	"github.com/valksor/go-mehrhof/internal/workflow"
 )
@@ -27,86 +26,6 @@ func (c *Conductor) Plan(ctx context.Context) error {
 	// Dispatch planning event
 	if err := c.machine.Dispatch(ctx, workflow.EventPlan); err != nil {
 		return fmt.Errorf("enter planning: %w", err)
-	}
-
-	return nil
-}
-
-// Chat enters dialogue mode to add notes
-func (c *Conductor) Chat(ctx context.Context, message string, opts ChatOptions) error {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-
-	if c.activeTask == nil {
-		return fmt.Errorf("no active task")
-	}
-
-	taskID := c.activeTask.ID
-
-	// Dispatch dialogue start
-	if err := c.machine.Dispatch(ctx, workflow.EventDialogueStart); err != nil {
-		return fmt.Errorf("enter chat mode: %w", err)
-	}
-
-	// Get agent for dialogue step
-	dialogueAgent, err := c.GetAgentForStep(workflow.StepDialogue)
-	if err != nil {
-		_ = c.machine.Dispatch(ctx, workflow.EventDialogueEnd)
-		return fmt.Errorf("get dialogue agent: %w", err)
-	}
-
-	// Build context-aware prompt for chat mode
-	// This ensures Claude has full awareness of the task when answering
-	sourceContent, notes, specs, pendingQ := c.readOptionalWorkspaceData(taskID)
-
-	prompt := buildChatPrompt(c.taskWork.Metadata.Title, sourceContent, notes, specs, pendingQ, message)
-
-	// Run agent with context-aware prompt
-	response, err := dialogueAgent.Run(ctx, prompt)
-	if err != nil {
-		// End dialogue even on error
-		_ = c.machine.Dispatch(ctx, workflow.EventDialogueEnd)
-		return fmt.Errorf("agent run: %w", err)
-	}
-
-	// Record usage stats
-	if response.Usage != nil {
-		if err := c.workspace.AddUsage(taskID, "chat",
-			response.Usage.InputTokens,
-			response.Usage.OutputTokens,
-			response.Usage.CachedTokens,
-			response.Usage.CostUSD,
-		); err != nil {
-			c.logError(fmt.Errorf("record chat usage: %w", err))
-		}
-	}
-
-	// Save response as note
-	noteContent := response.Summary
-	if noteContent == "" && len(response.Messages) > 0 {
-		noteContent = response.Messages[0]
-	}
-	if noteContent != "" {
-		if err := c.workspace.AppendNote(taskID, noteContent, c.activeTask.State); err != nil {
-			c.logError(fmt.Errorf("append note: %w", err))
-		}
-	}
-
-	// Apply file changes if not dry-run
-	if !c.opts.DryRun && len(response.Files) > 0 {
-		if err := c.applyFileChanges(ctx, response.Files); err != nil {
-			c.logError(fmt.Errorf("apply changes: %w", err))
-		}
-	}
-
-	// Clear pending question if it existed (user has answered via chat)
-	if c.workspace.HasPendingQuestion(taskID) {
-		_ = c.workspace.ClearPendingQuestion(taskID)
-	}
-
-	// Return to previous state
-	if err := c.machine.Dispatch(ctx, workflow.EventDialogueEnd); err != nil {
-		return fmt.Errorf("exit chat mode: %w", err)
 	}
 
 	return nil
@@ -377,11 +296,6 @@ func (c *Conductor) onStateChanged(e events.Event) {
 		to = ""
 	}
 	c.opts.OnStateChange(from, to)
-}
-
-// applyFileChanges applies agent file changes to disk
-func (c *Conductor) applyFileChanges(ctx context.Context, files []agent.FileChange) error {
-	return applyFiles(ctx, c, files)
 }
 
 // countCheckpoints returns the number of checkpoints for current task

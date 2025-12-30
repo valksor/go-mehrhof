@@ -202,20 +202,6 @@ func TestOptionsApply(t *testing.T) {
 	}
 }
 
-func TestChatOptionsStruct(t *testing.T) {
-	opts := ChatOptions{
-		Continue:    true,
-		SessionFile: "session.yaml",
-	}
-
-	if opts.Continue != true {
-		t.Errorf("Continue = %v, want true", opts.Continue)
-	}
-	if opts.SessionFile != "session.yaml" {
-		t.Errorf("SessionFile = %q, want %q", opts.SessionFile, "session.yaml")
-	}
-}
-
 func TestDefaultFinishOptions(t *testing.T) {
 	opts := DefaultFinishOptions()
 
@@ -1049,83 +1035,6 @@ func TestGetDiffStats_NilTaskWork(t *testing.T) {
 	got := c.getDiffStats()
 	if got != "" {
 		t.Errorf("getDiffStats() = %q, want empty string", got)
-	}
-}
-
-// Test buildChatPrompt
-func TestBuildChatPrompt(t *testing.T) {
-	tests := []struct {
-		name          string
-		title         string
-		sourceContent string
-		notes         string
-		specs         string
-		pendingQ      *storage.PendingQuestion
-		message       string
-		wantContain   []string
-	}{
-		{
-			name:          "basic prompt",
-			title:         "Test task",
-			sourceContent: "Source",
-			notes:         "",
-			specs:         "",
-			pendingQ:      nil,
-			message:       "Hello",
-			wantContain: []string{
-				"## Task: Test task",
-				"## User's Message",
-				"Hello",
-				"## Instructions",
-			},
-		},
-		{
-			name:          "with all context",
-			title:         "Task",
-			sourceContent: "Requirements",
-			notes:         "Previous notes",
-			specs:         "# Spec 1",
-			pendingQ:      nil,
-			message:       "Question",
-			wantContain: []string{
-				"## Source Content",
-				"Requirements",
-				"## Current Specifications",
-				"# Spec 1",
-				"## Previous Notes",
-				"Previous notes",
-			},
-		},
-		{
-			name:          "with pending question",
-			title:         "Task",
-			sourceContent: "",
-			notes:         "",
-			specs:         "",
-			pendingQ: &storage.PendingQuestion{
-				Question:       "What approach?",
-				ContextSummary: "Analysis context",
-			},
-			message: "Use option A",
-			wantContain: []string{
-				"## Your Previous Question",
-				"What approach?",
-				"## Context Before Question",
-				"Analysis context",
-			},
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got := buildChatPrompt(tt.title, tt.sourceContent, tt.notes, tt.specs, tt.pendingQ, tt.message)
-
-			for _, want := range tt.wantContain {
-				if !strings.Contains(got, want) {
-					t.Errorf("buildChatPrompt() missing %q", want)
-				}
-			}
-		})
 	}
 }
 

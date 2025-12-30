@@ -449,23 +449,6 @@ func TestRedo_NoGit(t *testing.T) {
 	}
 }
 
-func TestChat_NoActiveTask(t *testing.T) {
-	ctx := context.Background()
-
-	c, err := New()
-	if err != nil {
-		t.Fatalf("New: %v", err)
-	}
-
-	err = c.Chat(ctx, "hello", ChatOptions{})
-	if err == nil {
-		t.Error("Chat should fail when no active task")
-	}
-	if err.Error() != "no active task" {
-		t.Errorf("unexpected error: %v", err)
-	}
-}
-
 func TestFinish_NoActiveTask(t *testing.T) {
 	ctx := context.Background()
 
@@ -797,10 +780,6 @@ func TestGetTaskWork_WithTask(t *testing.T) {
 		t.Errorf("GetTaskWork returned different work ID: got %q, want %q", got.Metadata.ID, work.Metadata.ID)
 	}
 }
-
-// TestChat_NoAgent is skipped because Chat() doesn't check for nil activeAgent
-// before using it (it panics instead of returning an error). This would require
-// a mock agent to test properly.
 
 // TestDelete_NoWorkspace is skipped because Delete() doesn't check for nil workspace
 // before using it (it panics instead of returning an error).
