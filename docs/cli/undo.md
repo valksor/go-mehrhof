@@ -93,7 +93,7 @@ The task is at its initial state.
 mehr implement        # First attempt
 # Review... not quite right
 mehr undo
-mehr chat "Use a simpler approach"
+mehr note "Use a simpler approach"
 mehr implement        # Second attempt
 # Better!
 mehr finish
@@ -104,7 +104,7 @@ mehr finish
 ```bash
 mehr implement        # Approach A
 mehr undo             # Back to try something else
-mehr chat "Try functional style"
+mehr note "Try functional style"
 mehr implement        # Approach B
 # Decide on B
 mehr finish

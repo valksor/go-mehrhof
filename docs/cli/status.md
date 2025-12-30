@@ -58,7 +58,7 @@ Checkpoints: 3
 
 Available commands:
   mehr implement - Implement the specifications
-  mehr chat      - Add notes or discuss the task
+  mehr note      - Add notes to the task
   mehr finish    - Complete and optionally merge
 ```
 
@@ -136,7 +136,6 @@ Tasks in workspace:
 | planning     | Creating specifications |
 | implementing | Generating code         |
 | reviewing    | Running review          |
-| dialogue     | Chat session active     |
 | done         | Completed               |
 | failed       | Error occurred          |
 

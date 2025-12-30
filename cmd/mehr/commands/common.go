@@ -164,7 +164,6 @@ func deriveStepName(agentVar string) string {
 		"implement":     "implementing",
 		"reviewing":     "reviewing",
 		"review":        "reviewing",
-		"chat":          "dialogue",
 		"checkpointing": "checkpointing",
 	}
 

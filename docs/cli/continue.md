@@ -46,7 +46,7 @@ Checkpoints: 1
 
 Suggested next actions:
   mehr implement  # Start implementation
-  mehr chat       # Discuss the plan
+  mehr note       # Add notes
 
 Other options:
   mehr finish     # Complete and merge changes
@@ -71,7 +71,7 @@ Checkpoints: 5
 
 Suggested next actions:
   mehr implement  # Continue implementation
-  mehr chat       # Discuss issues
+  mehr note       # Add notes
   mehr undo       # Revert last change
   mehr finish     # Complete and merge
 
@@ -123,8 +123,8 @@ The suggested actions depend on the current task state:
 | State          | Primary Suggestions                                |
 | -------------- | -------------------------------------------------- |
 | `idle`         | `plan` (if no specs), `implement` (if specs exist) |
-| `planning`     | `implement`, `chat`                                |
-| `implementing` | `implement`, `chat`, `undo`, `finish`              |
+| `planning`     | `implement`, `note`                                |
+| `implementing` | `implement`, `note`, `undo`, `finish`              |
 | `reviewing`    | `finish`, `implement`                              |
 | `done`         | `start` (new task)                                 |
 

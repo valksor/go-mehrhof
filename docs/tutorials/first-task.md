@@ -158,10 +158,10 @@ Add a /health endpoint to the existing HTTP server...
 
 ## Step 6: Add Clarification (Optional)
 
-Want to refine the plan? Use `dialogue`:
+Want to refine the plan? Add a note:
 
 ```bash
-mehr chat "Use the chi router pattern we already have"
+mehr note "Use the chi router pattern we already have"
 ```
 
 ```
@@ -229,7 +229,7 @@ Not happy with the result?
 mehr undo
 
 # Add more context
-mehr chat "The handler should use our standard response helper"
+mehr note "The handler should use our standard response helper"
 
 # Try again
 mehr implement
@@ -259,13 +259,13 @@ Task completed!
 1. **Task files** describe what you want in markdown
 2. **`mehr start`** creates a branch and workspace
 3. **`mehr plan`** generates detailed specifications
-4. **`mehr chat`** adds context and refinements
+4. **`mehr note`** adds context and refinements
 5. **`mehr implement`** generates code from specs
 6. **`mehr undo`** reverts if needed
 7. **`mehr finish`** merges and cleans up
 
 ## Next Steps
 
-- [Iterative Development](tutorials/iterative-development.md) - Refine with chat mode
+- [Iterative Development](tutorials/iterative-development.md) - Refine with notes
 - [Recovering from Mistakes](tutorials/undo-mistakes.md) - Master undo/redo
 - [CLI Reference](../cli/overview.md) - All commands

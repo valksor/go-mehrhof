@@ -202,7 +202,6 @@ Different workflow steps can use different agents. This is useful for optimizing
 | `planning`      | `mehr plan`      | Requirement analysis, specs |
 | `implementing`  | `mehr implement` | Code generation             |
 | `reviewing`     | `mehr review`    | Code review (agent-based)   |
-| `dialogue`      | `mehr chat`      | Interactive conversation    |
 | `checkpointing` | (internal)       | Checkpoint summaries        |
 
 ### Workspace Configuration
@@ -249,7 +248,6 @@ Override per-step agents at runtime:
 mehr start --agent-planning claude file:task.md
 mehr plan --agent-planning claude
 mehr implement --agent-implementing claude-sonnet
-mehr chat --agent-dialogue claude
 
 # --agent still overrides ALL steps
 mehr start --agent claude file:task.md  # Uses claude for everything
@@ -262,11 +260,9 @@ Available CLI flags by command:
 | `mehr start`     | `--agent-planning`     | Planning step agent |
 |                  | `--agent-implementing` | Implementation step |
 |                  | `--agent-reviewing`    | Review step         |
-|                  | `--agent-dialogue`     | Dialogue step       |
 | `mehr plan`      | `--agent-planning`     | Planning step agent |
 | `mehr implement` | `--agent-implementing` | Implementation step |
 | `mehr review`    | `--agent-reviewing`    | Review step agent   |
-| `mehr chat`      | `--agent-dialogue`     | Dialogue step agent |
 
 ### Per-Step Priority Resolution
 
@@ -306,8 +302,6 @@ agent:
       name: claude-opus # Opus for thorough review
     implementing:
       name: claude-sonnet # Sonnet for code generation
-    dialogue:
-      name: claude-sonnet # Sonnet for quick interactions
 ```
 
 ### Step Agent Persistence
@@ -331,7 +325,7 @@ This ensures consistent agent usage when resuming tasks across sessions.
 
 ### Agent Persistence
 
-Once a task starts, the agent choice is persisted in `work.yaml`. Subsequent commands (`plan`, `implement`, `dialogue`) automatically use the same agent:
+Once a task starts, the agent choice is persisted in `work.yaml`. Subsequent commands (`plan`, `implement`, `review`) automatically use the same agent:
 
 ```bash
 mehr start file:task.md  # Agent resolved from frontmatter: glm
@@ -395,15 +389,6 @@ During `mehr implement`, the agent:
 2. Considers notes and context
 3. Generates or modifies code files
 4. Provides a summary of changes
-
-### Chat Mode
-
-During `mehr chat`, the agent:
-
-1. Maintains conversation context
-2. Answers questions about the task
-3. Accepts clarifications and notes
-4. Updates the understanding for future phases
 
 ## Agent Output
 

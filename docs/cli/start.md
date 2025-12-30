@@ -57,7 +57,6 @@ providers:
 | `--agent-planning`     |       | string |                        | Agent for planning step                               |
 | `--agent-implementing` |       | string |                        | Agent for implementation step                         |
 | `--agent-reviewing`    |       | string |                        | Agent for review step                                 |
-| `--agent-dialogue`     |       | string |                        | Agent for dialogue/talk step                          |
 | `--branch`             | `-b`  | bool   | true                   | Create a git branch |
 | `--no-branch`          |       | bool   | false                  | Skip creating a git branch |
 | `--worktree`           | `-w`  | bool   | false                  | Create a separate git worktree                        |

@@ -55,10 +55,10 @@ git diff
 
 ## Round 2: Add Clarification
 
-### Use Chat Mode
+### Add Notes
 
 ```bash
-mehr chat "Use stateless JWT tokens, not sessions. Store nothing server-side."
+mehr note "Use stateless JWT tokens, not sessions. Store nothing server-side."
 ```
 
 ### Undo and Retry
@@ -90,7 +90,7 @@ git diff
 ### Add More Context
 
 ```bash
-mehr chat "Token expiry should be 24 hours. Include refresh token with 7 day expiry."
+mehr note "Token expiry should be 24 hours. Include refresh token with 7 day expiry."
 ```
 
 ### Iterate
@@ -108,28 +108,10 @@ grep -r "expir" --include="*.go"
 
 ## Round 4: Request Specific Changes
 
-### Interactive Discussion
+### Add Detailed Notes
 
 ```bash
-mehr chat
-```
-
-```
-You: The password hashing looks weak. What are you using?
-
-Agent: I'm using bcrypt with cost factor 10. The implementation is in
-internal/auth/password.go. Would you like me to increase the cost factor
-or use a different algorithm?
-
-You: Use Argon2id instead with recommended parameters.
-
-Agent: Understood. I'll update the password hashing to use Argon2id with:
-- Memory: 64MB
-- Iterations: 3
-- Parallelism: 4
-This provides better resistance against GPU attacks.
-
-You: exit
+mehr note "Use Argon2id for password hashing with recommended parameters: Memory 64MB, Iterations 3, Parallelism 4. This provides better resistance against GPU attacks than bcrypt."
 ```
 
 ### Implement Changes
@@ -139,38 +121,38 @@ mehr undo
 mehr implement
 ```
 
-## Effective Chat Patterns
+## Effective Note Patterns
 
 ### Be Specific
 
 ```bash
 # Vague (less effective)
-mehr chat "Make it more secure"
+mehr note "Make it more secure"
 
 # Specific (more effective)
-mehr chat "Add rate limiting: max 5 login attempts per minute per IP"
+mehr note "Add rate limiting: max 5 login attempts per minute per IP"
 ```
 
 ### Explain Why
 
 ```bash
 # Just what
-mehr chat "Use Redis for token storage"
+mehr note "Use Redis for token storage"
 
 # What and why (better)
-mehr chat "Use Redis for token storage because we need to invalidate tokens across multiple server instances"
+mehr note "Use Redis for token storage because we need to invalidate tokens across multiple server instances"
 ```
 
 ### Reference Existing Code
 
 ```bash
-mehr chat "Use the same error response format as internal/api/errors.go"
+mehr note "Use the same error response format as internal/api/errors.go"
 ```
 
 ### Ask Questions
 
 ```bash
-mehr chat "What's the best way to handle password reset tokens?"
+mehr note "What's the best way to handle password reset tokens?"
 ```
 
 ## Workflow Summary
@@ -179,13 +161,13 @@ mehr chat "What's the best way to handle password reset tokens?"
 mehr start task.md
 mehr plan
 ├── Review specs
-├── mehr chat "refinement..."
+├── mehr note "refinement..."
 └── mehr plan (if major changes)
 
 mehr implement
 ├── Review code
 ├── mehr undo
-├── mehr chat "adjustment..."
+├── mehr note "adjustment..."
 └── mehr implement
 
 [Repeat until satisfied]
@@ -212,12 +194,12 @@ Basic description.
 
 ### 2. Build Up Context
 
-Add details through chat:
+Add details through notes:
 
 ```bash
-mehr chat "Also need input validation"
-mehr chat "Support both JSON and form-encoded requests"
-mehr chat "Log all auth attempts for audit"
+mehr note "Also need input validation"
+mehr note "Support both JSON and form-encoded requests"
+mehr note "Log all auth attempts for audit"
 ```
 
 ### 3. Review Before Implementing
@@ -228,7 +210,7 @@ Always check specs before `mehr implement`:
 mehr plan
 cat .mehrhof/work/*/specifications/*.md
 # Looks wrong?
-mehr chat "Actually, change X to Y"
+mehr note "Actually, change X to Y"
 mehr plan  # Regenerate
 ```
 
@@ -240,7 +222,7 @@ Undo is cheap. Don't hesitate:
 mehr implement
 # Not right
 mehr undo
-mehr chat "..."
+mehr note "..."
 mehr implement
 # Still not right
 mehr undo
@@ -253,12 +235,12 @@ Notes accumulate. Keep them relevant:
 
 ```bash
 # Good: Specific, actionable
-mehr chat "Validate email format using regexp"
+mehr note "Validate email format using regexp"
 
 # Avoid: Vague, contradictory over time
-mehr chat "Maybe use sessions"
-mehr chat "Actually use JWT"
-mehr chat "Or maybe sessions are fine"
+mehr note "Maybe use sessions"
+mehr note "Actually use JWT"
+mehr note "Or maybe sessions are fine"
 ```
 
 ## When to Start Fresh
@@ -281,4 +263,4 @@ Consider this when:
 
 - [Recovering from Mistakes](tutorials/undo-mistakes.md) - Deep dive on undo/redo
 - [Your First Task](tutorials/first-task.md) - Basic workflow
-- [talk command](../cli/chat.md) - Talk reference
+- [note command](../cli/note.md) - Add notes to the task

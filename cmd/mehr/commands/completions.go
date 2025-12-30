@@ -111,7 +111,6 @@ func completeWorkflow(cmd *cobra.Command, args []string, toComplete string) ([]s
 		"planning",
 		"implementing",
 		"reviewing",
-		"dialogue",
 		"checkpointing",
 	}
 

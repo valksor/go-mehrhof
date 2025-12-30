@@ -127,7 +127,7 @@ After review, address issues and re-implement:
 ```bash
 mehr review
 # Issues found...
-mehr chat "Fix the error handling in handler.go"
+mehr note "Fix the error handling in handler.go"
 mehr implement
 mehr review  # Verify fixes
 ```

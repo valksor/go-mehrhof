@@ -77,8 +77,6 @@ agent:
       name: claude-sonnet # Use Sonnet for implementation
     reviewing:
       name: claude-opus
-    dialogue:
-      name: claude-sonnet
 ```
 
 **Per-Step Configuration:**
@@ -88,7 +86,6 @@ agent:
 | `planning`      | Agent for `mehr plan`          |
 | `implementing`  | Agent for `mehr implement`     |
 | `reviewing`     | Agent for `mehr review`        |
-| `dialogue`      | Agent for `mehr chat`          |
 | `checkpointing` | Agent for checkpoint summaries |
 
 Each step can specify:

@@ -16,7 +16,7 @@
   - [mehr start](cli/start.md)
   - [mehr plan](cli/plan.md)
   - [mehr implement](cli/implement.md)
-  - [mehr chat](cli/chat.md)
+  - [mehr note](cli/note.md)
   - [mehr review](cli/review.md)
   - [mehr finish](cli/finish.md)
   - [mehr auto](cli/auto.md)

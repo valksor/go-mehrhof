@@ -110,7 +110,7 @@ Either no undo was performed, or new changes cleared the redo stack.
 ```bash
 mehr implement        # Approach A
 mehr undo             # Back to try something else
-mehr chat "Try functional style"
+mehr note "Try functional style"
 mehr implement        # Approach B
 # Compare approaches
 mehr undo             # Back to A

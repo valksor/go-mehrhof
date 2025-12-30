@@ -111,7 +111,7 @@ func init() {
 // registerCompletions sets up custom completion functions for flags
 func registerCompletions() {
 	// Agent flag completions
-	agentFlags := []string{"agent", "agent-plan", "agent-implement", "agent-review", "agent-chat"}
+	agentFlags := []string{"agent", "agent-plan", "agent-implement", "agent-review"}
 	for _, flag := range agentFlags {
 		if err := rootCmd.RegisterFlagCompletionFunc(flag, completeAgent); err != nil {
 			// Some flags might not exist in all commands, ignore errors

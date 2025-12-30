@@ -125,7 +125,7 @@ Implementation can be run multiple times:
 ```bash
 mehr implement           # First attempt
 mehr undo               # Didn't like it
-mehr chat "Use interfaces instead of concrete types"
+mehr note "Use interfaces instead of concrete types"
 mehr implement          # Try again with guidance
 ```
 

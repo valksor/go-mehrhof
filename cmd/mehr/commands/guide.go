@@ -115,8 +115,8 @@ func runGuide(cmd *cobra.Command, args []string) error {
 		}
 		fmt.Println()
 		fmt.Println("Suggested action:")
-		fmt.Println("  mehr chat \"your answer\"    # Respond to the question")
-		fmt.Println("  mehr chat                   # Enter interactive mode")
+		fmt.Println("  mehr answer \"your answer\"  # Respond to the question")
+		fmt.Println("  mehr note                   # Enter interactive mode")
 		return nil
 	}
 
@@ -128,7 +128,7 @@ func runGuide(cmd *cobra.Command, args []string) error {
 	case workflow.StateIdle:
 		if len(specs) == 0 {
 			fmt.Println("  mehr plan                  # Create specifications")
-			fmt.Println("  mehr chat                  # Discuss requirements")
+			fmt.Println("  mehr note                  # Add requirements")
 		} else {
 			// Check if any specs are not done
 			hasIncomplete := false
@@ -143,17 +143,17 @@ func runGuide(cmd *cobra.Command, args []string) error {
 				fmt.Println("  mehr plan                  # Create more specifications")
 			} else {
 				fmt.Println("  mehr finish                # Complete and merge")
-				fmt.Println("  mehr chat                  # Add notes or discuss")
+				fmt.Println("  mehr note                  # Add notes")
 			}
 		}
 
 	case workflow.StatePlanning:
 		fmt.Println("  mehr status                # View planning progress")
-		fmt.Println("  mehr chat                  # Discuss the plan")
+		fmt.Println("  mehr note                  # Add context")
 
 	case workflow.StateImplementing:
 		fmt.Println("  mehr status                # View implementation progress")
-		fmt.Println("  mehr chat                  # Discuss issues")
+		fmt.Println("  mehr note                  # Add notes")
 		fmt.Println("  mehr undo                  # Revert last change")
 		fmt.Println("  mehr finish                # Complete and merge")
 
@@ -167,10 +167,7 @@ func runGuide(cmd *cobra.Command, args []string) error {
 		fmt.Println("  mehr start <reference>    # Start a new task")
 
 	case workflow.StateWaiting:
-		fmt.Println("  mehr chat                  # Respond to agent question")
-
-	case workflow.StateDialogue:
-		fmt.Println("  mehr chat                  # Continue conversation")
+		fmt.Println("  mehr answer \"response\"       # Respond to agent question")
 
 	case workflow.StateCheckpointing:
 		fmt.Println("  mehr status                # View checkpoint progress")
@@ -180,11 +177,11 @@ func runGuide(cmd *cobra.Command, args []string) error {
 
 	case workflow.StateFailed:
 		fmt.Println("  mehr status                # View error details")
-		fmt.Println("  mehr chat                  # Discuss the error")
+		fmt.Println("  mehr note                  # Add notes about the error")
 		fmt.Println("  mehr start <reference>    # Start a new task")
 
 	default:
-		fmt.Println("  mehr chat                  # Discuss the task")
+		fmt.Println("  mehr note                  # Add notes")
 		fmt.Println("  mehr status                # View detailed status")
 	}
 

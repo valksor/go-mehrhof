@@ -156,7 +156,7 @@ specifications/
 You can run `mehr plan` multiple times:
 
 - Additional specs are appended
-- Use `mehr chat` to refine requirements first
+- Use `mehr note` to add requirements first
 - Delete unwanted specs manually
 
 ## After Planning
@@ -173,14 +173,14 @@ If satisfied, implement:
 mehr implement
 ```
 
-If changes needed, discuss:
+If changes needed, add notes:
 
 ```bash
-mehr chat "Simplify the authentication flow"
+mehr note "Simplify the authentication flow"
 ```
 
 ## See Also
 
 - [implement](cli/implement.md) - Implement specifications
-- [chat](cli/chat.md) - Discuss and refine
+- [note](cli/note.md) - Add notes or clarifications
 - [SPEC Format](../reference/spec-format.md) - Specification details

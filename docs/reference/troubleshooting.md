@@ -240,7 +240,7 @@ mehr plan
 
 ```bash
 # Add clarification
-mehr chat "Include error handling for all edge cases"
+mehr note "Include error handling for all edge cases"
 
 # Regenerate
 mehr plan
@@ -278,7 +278,7 @@ agent:
 Or break into smaller specs:
 
 ```bash
-mehr chat "Focus on just the API handler first"
+mehr note "Focus on just the API handler first"
 mehr plan
 ```
 
@@ -293,7 +293,7 @@ mehr plan
 mehr undo
 
 # Provide more context
-mehr chat "Use the existing error handling pattern in internal/errors/"
+mehr note "Use the existing error handling pattern in internal/errors/"
 
 # Try again
 mehr implement

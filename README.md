@@ -269,21 +269,20 @@ Requires at least one SPEC file (run `mehr plan` first).
 
 ---
 
-### `mehr chat [message]`
+### `mehr note [message]`
 
-Enter interactive conversation mode with the AI agent.
+Add notes to the current task. Notes are saved to `notes.md` for the AI agent to reference during planning and implementation.
 
 ```bash
-mehr chat                        # Enter interactive mode
-mehr chat "Help me debug this"   # Start with a message
-mehr chat --continue             # Continue previous session
+mehr note                        # Enter interactive mode
+mehr note "Use JWT for auth"     # Add a quick note
+mehr answer "your response"      # Alias for responding to questions
 ```
 
 **Flags:**
 | Flag | Description | Default |
 |------|-------------|---------|
-| `-c, --continue` | Continue previous session | `false` |
-| `-s, --session <file>` | Specific session file to continue | - |
+| `-q, --question` | Append note as Q&A format | `false` |
 
 ---
 
@@ -399,15 +398,14 @@ Key: AUTH-001
 Input Tokens:     125,000
 Output Tokens:     45,000
 Cached Tokens:     80,000
-Total Cost:        $1.2350
+Total Cost:        $1.1000
 
 By Step:
   planning:      $0.4500
   implementing:  $0.6500
-  chat:          $0.1350
 ```
 
-Costs are tracked automatically during planning, implementation, review, and chat phases. Data is persisted in `.mehrhof/work/<task-id>/work.yaml`.
+Costs are tracked automatically during planning, implementation, and review phases. Data is persisted in `.mehrhof/work/<task-id>/work.yaml`.
 
 ---
 

@@ -47,7 +47,7 @@ Specifications: 2
 Suggested next actions:
   mehr implement              # Implement the specifications
   mehr plan                  # Create more specifications
-  mehr chat                  # Discuss the plan
+  mehr note                  # Add notes
 ```
 
 ### Pending Agent Question
@@ -69,8 +69,8 @@ Specifications: 1
     3. OAuth2
 
 Suggested action:
-  mehr chat "your answer"    # Respond to the question
-  mehr chat                   # Enter interactive mode
+  mehr answer "your response" # Respond to the question
+  mehr note                  # Enter interactive mode
 ```
 
 ### Task Done
@@ -95,14 +95,13 @@ The `guide` command provides different suggestions based on the current workflow
 
 | State          | Suggestions                                                      |
 | -------------- | ---------------------------------------------------------------- |
-| `idle`         | `plan`, `chat` (no specs) or `implement`, `finish` (specs exist) |
-| `planning`     | `status`, `chat`                                                |
-| `implementing` | `status`, `chat`, `undo`, `finish`                              |
+| `idle`         | `plan`, `note` (no specs) or `implement`, `finish` (specs exist) |
+| `planning`     | `status`, `note`                                                |
+| `implementing` | `status`, `note`, `undo`, `finish`                              |
 | `reviewing`    | `status`, `finish`, `implement`                                 |
 | `done`         | Start new task                                                  |
-| `waiting`      | `chat` (respond to question)                                    |
-| `dialogue`     | `chat` (continue conversation)                                  |
-| `failed`       | `status`, `chat`, start new task                                |
+| `waiting`      | `answer` (respond to question)                                  |
+| `failed`       | `status`, `note`, start new task                                |
 
 ## Worktree Support
 
@@ -129,5 +128,5 @@ State: implementing
 ## See Also
 
 - [status](status.md) - Detailed task status
-- [chat](chat.md) - Discuss with the agent
+- [note](note.md) - Add notes to the task
 - [Workflow](../concepts/workflow.md) - Understanding states

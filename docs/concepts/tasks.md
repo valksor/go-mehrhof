@@ -131,7 +131,6 @@ See [SPEC File Format](../reference/spec-format.md) for details.
 | planning     | Creating specifications |
 | implementing | Generating code         |
 | reviewing    | Running code review     |
-| dialogue     | Chat session active     |
 | done         | Completed and merged    |
 | failed       | Error occurred          |
 
@@ -175,10 +174,10 @@ This creates a separate working directory:
 
 ## Task Notes
 
-Add context during development with `dialogue`:
+Add context during development:
 
 ```bash
-mehr chat "Use the existing UserService instead of creating a new one"
+mehr note "Use the existing UserService instead of creating a new one"
 ```
 
 Notes are saved to `.mehrhof/work/<id>/notes.md` and included in future AI prompts.
@@ -195,7 +194,7 @@ mehr plan
 # Creates: .mehrhof/work/abc12345/specifications/specification-1.md
 
 # 3. Add clarification
-mehr chat "The API should be REST, not GraphQL"
+mehr note "The API should be REST, not GraphQL"
 # Updates: .mehrhof/work/abc12345/notes.md
 
 # 4. Implement

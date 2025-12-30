@@ -137,7 +137,7 @@ func runPlan(cmd *cobra.Command, args []string) error {
 				fmt.Println()
 			}
 			fmt.Println(display.Muted("Answer with:"))
-			fmt.Printf("  %s\n", display.Cyan("mehr chat \"your answer\""))
+			fmt.Printf("  %s\n", display.Cyan("mehr answer \"your response\""))
 			fmt.Printf("  %s\n", display.Cyan("mehr plan")+" "+display.Muted("(to continue after answering)"))
 		}
 		return nil
@@ -161,7 +161,7 @@ func runPlan(cmd *cobra.Command, args []string) error {
 
 	PrintNextSteps(
 		"mehr status - View task status and specifications",
-		"mehr chat - Add notes or clarifications",
+		"mehr note - Add notes or clarifications",
 		"mehr implement - Implement the specifications",
 	)
 

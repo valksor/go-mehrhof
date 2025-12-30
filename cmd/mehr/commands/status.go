@@ -151,7 +151,7 @@ func showWorktreeTask(ws *storage.Workspace, git *vcs.Git) error {
 		fmt.Printf("  mehr implement - Implement the specifications\n")
 		fmt.Printf("  mehr plan      - Create additional specifications\n")
 	}
-	fmt.Printf("  mehr chat      - Add notes or discuss the task\n")
+	fmt.Printf("  mehr note      - Add notes to the task\n")
 	fmt.Printf("  mehr finish    - Complete and optionally merge\n")
 
 	return nil
@@ -266,7 +266,7 @@ func showActiveTask(ws *storage.Workspace, git *vcs.Git) error {
 		fmt.Printf("  mehr implement - Implement the specifications\n")
 		fmt.Printf("  mehr plan      - Create additional specifications\n")
 	}
-	fmt.Printf("  mehr chat      - Add notes or discuss the task\n")
+	fmt.Printf("  mehr note      - Add notes to the task\n")
 	fmt.Printf("  mehr finish    - Complete and optionally merge\n")
 
 	return nil

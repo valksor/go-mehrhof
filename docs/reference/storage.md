@@ -14,6 +14,7 @@ All task data is stored in the `.mehrhof/` directory:
 │   └── <task-id>/
 │       ├── work.yaml        # Task metadata
 │       ├── notes.md         # User notes
+│       ├── source/          # Source files (task content)
 │       ├── specifications/  # Specifications
 │       ├── reviews/         # Code reviews
 │       └── sessions/        # Agent conversation logs
@@ -89,10 +90,7 @@ source:
   ref: task.md
   read_at: 2025-01-15T10:30:00Z
   files:
-    - path: task.md
-      content: |
-        # Add Health Endpoint
-        ...
+    - source/task.md
 git:
   branch: task/cb9a54db
   base_branch: main
@@ -114,10 +112,22 @@ git:
 
 | Field     | Description                        |
 | --------- | ---------------------------------- |
-| `type`    | Source type (file, directory)      |
+| `type`    | Source type (file, directory, github, jira, etc.) |
 | `ref`     | Original reference                 |
 | `read_at` | When source was read               |
-| `files`   | Array of source files with content |
+| `files`   | Paths to source files in `source/` directory |
+
+The `source/` directory contains the actual source files:
+
+```
+source/
+├── task.md           # Main task content (file provider)
+├── issue.md           # Issue content (GitHub/Jira/Linear)
+├── comments.md        # Comments (GitHub)
+├── notes.md           # Notes (GitLab)
+└── linked/            # Linked issues (GitHub)
+    └── issue-123.md
+```
 
 #### git
 
@@ -129,30 +139,31 @@ git:
 
 ### notes.md
 
-User notes accumulated through `mehr chat`:
+User notes accumulated through `mehr note`:
 
 ```markdown
 # Notes
 
-## 2025-01-15 10:45:00 [planning]
+## 2025-01-15 10:45:00 [idle]
 
 Use the existing HTTP router, don't create a new one.
 
-## 2025-01-15 11:00:00 [implementing]
+## 2025-01-15 11:00:00 [idle]
 
 The handler should return JSON, not plain text.
 Make sure to set Content-Type header.
 
-## 2025-01-15 11:30:00 [dialogue]
+## 2025-01-15 11:30:00 [waiting]
 
-Use dependency injection for the version service.
+**Q:** Should we use dependency injection?
+**A:** Yes, use dependency injection for the version service.
 ```
 
 Each entry includes:
 
 - Timestamp
-- Phase when note was added
-- User's message
+- State when note was added
+- User's note (or Q&A format when answering agent questions)
 
 ### specifications/ Directory
 
@@ -187,8 +198,8 @@ Agent conversation logs:
 ```
 sessions/
 ├── 2025-01-15T10-30-00-planning.yaml
-├── 2025-01-15T11-00-00-dialogue.yaml
-└── 2025-01-15T11-30-00-implementing.yaml
+├── 2025-01-15T11-00-00-implementing.yaml
+└── 2025-01-15T11-30-00-reviewing.yaml
 ```
 
 **Filename format:** `<timestamp>-<type>.yaml`
@@ -290,7 +301,8 @@ JWT tokens are a good choice...
 | config.yaml          | User       | Yes         |
 | .active_task         | Mehrhof    | No          |
 | work.yaml            | Mehrhof    | No          |
-| notes.md             | Mehrhof    | Read-only   |
+| source/              | Mehrhof    | Read-only   |
+| notes.md             | User       | Yes         |
 | specifications/\*.md | Mehrhof    | Read-only\* |
 | reviews/\*.txt       | Mehrhof    | Read-only   |
 | sessions/\*.yaml     | Mehrhof    | No          |

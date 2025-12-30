@@ -36,7 +36,7 @@ These flags work with any command:
 | [plan](cli/plan.md)           | Create implementation specifications               |
 | [implement](cli/implement.md) | Implement the specifications                       |
 | [review](cli/review.md)       | Run code review                                    |
-| [chat](cli/chat.md)           | Add notes or discuss with agent                    |
+| [note](cli/note.md)           | Add notes to the task                              |
 | [finish](cli/finish.md)       | Complete task and merge                            |
 | [auto](cli/auto.md)           | Full automation: start → plan → implement → finish |
 
@@ -114,7 +114,7 @@ mehr start file:feature.md && mehr plan && mehr implement && mehr finish
 mehr start file:feature.md
 mehr plan
 # Review specs...
-mehr chat "Add error handling for edge cases"
+mehr note "Add error handling for edge cases"
 mehr implement
 # Test changes...
 mehr finish

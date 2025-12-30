@@ -13,8 +13,6 @@ stateDiagram-v2
     implementing --> idle: code generated
     idle --> reviewing: mehr review
     reviewing --> idle: review complete
-    idle --> dialogue: mehr chat
-    dialogue --> idle: conversation ends
     idle --> done: mehr finish
     done --> [*]
 ```
@@ -25,7 +23,7 @@ stateDiagram-v2
 
 | State            | Description                       | Available Actions                                 |
 | ---------------- | --------------------------------- | ------------------------------------------------- |
-| **idle**         | Task registered, ready for action | plan, implement, review, chat, finish, undo, redo |
+| **idle**         | Task registered, ready for action | plan, implement, review, finish, undo, redo      |
 | **planning**     | AI creating specifications        | Wait for completion                               |
 | **implementing** | AI generating code                | Wait for completion                               |
 | **reviewing**    | Code review in progress           | Wait for completion                               |
@@ -35,7 +33,6 @@ stateDiagram-v2
 
 | State             | Description               |
 | ----------------- | ------------------------- |
-| **dialogue**      | Interactive chat session  |
 | **checkpointing** | Creating git checkpoint   |
 | **reverting**     | Undo in progress          |
 | **restoring**     | Redo in progress          |
@@ -137,24 +134,23 @@ Guards are conditions that must be met for transitions:
 
 Events trigger state transitions:
 
-| Event              | Description             |
-| ------------------ | ----------------------- |
-| EventStart         | Begin task registration |
-| EventPlan          | Enter planning phase    |
-| EventImplement     | Enter implementation    |
-| EventReview        | Enter code review       |
-| EventFinish        | Complete task           |
-| EventDialogueStart | Enter chat mode         |
-| EventUndo/Redo     | Checkpoint operations   |
-| EventError         | Handle errors           |
-| EventAbort         | Abandon task            |
+| Event          | Description             |
+| -------------- | ----------------------- |
+| EventStart     | Begin task registration |
+| EventPlan      | Enter planning phase    |
+| EventImplement | Enter implementation    |
+| EventReview    | Enter code review       |
+| EventFinish    | Complete task           |
+| EventUndo/Redo | Checkpoint operations   |
+| EventError     | Handle errors           |
+| EventAbort     | Abandon task            |
 
 ## Typical User Journey
 
 ```
 1. mehr start task.md     → idle (task registered)
 2. mehr plan              → planning → idle (specs created)
-3. [Review specs, maybe chat]
+3. [Review specs, add notes with mehr note]
 4. mehr implement         → implementing → idle (code generated)
 5. [Review changes, maybe undo/redo]
 6. mehr review            → reviewing → idle (review done)

@@ -13,7 +13,7 @@ mehr cost --summary          # Show aggregate summary across all tasks
 
 ## Description
 
-The `cost` command displays token usage and associated costs for AI agent operations. Costs are tracked automatically during workflow phases (planning, implementing, reviewing, chat).
+The `cost` command displays token usage and associated costs for AI agent operations. Costs are tracked automatically during workflow phases (planning, implementing, reviewing).
 
 Cost tracking works by:
 1. Each agent call returns usage stats after completion (via Claude CLI's `message_stop` event)
@@ -55,12 +55,11 @@ Key: AUTH-001
 Input Tokens:     125,000
 Output Tokens:     45,000
 Cached Tokens:     80,000
-Total Cost:        $1.2350
+Total Cost:        $1.1000
 
 By Step:
   planning:      $0.4500 (45,000 input + 15,000 output)
   implementing:  $0.6500 (60,000 input + 25,000 output)
-  chat:          $0.1350 (20,000 input + 5,000 output)
 ```
 
 ### All Tasks

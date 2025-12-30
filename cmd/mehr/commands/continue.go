@@ -101,18 +101,18 @@ func runContinue(cmd *cobra.Command, args []string) error {
 	case "idle":
 		if status.Specifications == 0 {
 			fmt.Println("  mehr plan       # Create specifications")
-			fmt.Println("  mehr chat       # Discuss requirements")
+			fmt.Println("  mehr note       # Add requirements")
 		} else {
 			fmt.Println("  mehr implement  # Implement the specifications")
 			fmt.Println("  mehr plan       # Create more specifications")
-			fmt.Println("  mehr chat       # Discuss changes")
+			fmt.Println("  mehr note       # Add notes")
 		}
 	case "planning":
 		fmt.Println("  mehr implement  # Start implementation")
-		fmt.Println("  mehr chat       # Discuss the plan")
+		fmt.Println("  mehr note       # Add notes")
 	case "implementing":
 		fmt.Println("  mehr implement  # Continue implementation")
-		fmt.Println("  mehr chat       # Discuss issues")
+		fmt.Println("  mehr note       # Add notes")
 		fmt.Println("  mehr undo       # Revert last change")
 		fmt.Println("  mehr finish     # Complete and merge")
 	case "reviewing":
@@ -122,7 +122,7 @@ func runContinue(cmd *cobra.Command, args []string) error {
 		fmt.Println("  Task is complete!")
 		fmt.Println("  mehr start <ref>  # Start a new task")
 	default:
-		fmt.Println("  mehr chat       # Discuss the task")
+		fmt.Println("  mehr note       # Add notes")
 		fmt.Println("  mehr status     # View detailed status")
 	}
 

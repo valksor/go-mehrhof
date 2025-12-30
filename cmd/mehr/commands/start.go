@@ -28,7 +28,6 @@ var (
 	startAgentPlanning     string
 	startAgentImplementing string
 	startAgentReviewing    string
-	startAgentDialogue     string
 )
 
 var startCmd = &cobra.Command{
@@ -88,7 +87,6 @@ func init() {
 	startCmd.Flags().StringVar(&startAgentPlanning, "agent-plan", "", "Agent for planning step")
 	startCmd.Flags().StringVar(&startAgentImplementing, "agent-implement", "", "Agent for implementation step")
 	startCmd.Flags().StringVar(&startAgentReviewing, "agent-review", "", "Agent for review step")
-	startCmd.Flags().StringVar(&startAgentDialogue, "agent-chat", "", "Agent for dialogue/chat step")
 }
 
 func runStart(cmd *cobra.Command, args []string) error {
@@ -152,9 +150,6 @@ func runStart(cmd *cobra.Command, args []string) error {
 	}
 	if startAgentReviewing != "" {
 		opts = append(opts, conductor.WithStepAgent("reviewing", startAgentReviewing))
-	}
-	if startAgentDialogue != "" {
-		opts = append(opts, conductor.WithStepAgent("dialogue", startAgentDialogue))
 	}
 
 	// Pass default provider from workspace config
@@ -223,7 +218,7 @@ func runStart(cmd *cobra.Command, args []string) error {
 		fmt.Printf("  cd %s           - Switch to the worktree\n", status.WorktreePath)
 	}
 	fmt.Printf("  mehr plan      - Create implementation specifications\n")
-	fmt.Printf("  mehr chat      - Add notes or discuss the task\n")
+	fmt.Printf("  mehr note      - Add notes to the task\n")
 
 	return nil
 }

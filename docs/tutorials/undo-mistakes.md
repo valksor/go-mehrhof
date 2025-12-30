@@ -8,7 +8,7 @@ Mehrhof creates checkpoints at key moments:
 
 - After `mehr plan` (specs created)
 - After `mehr implement` (code generated)
-- After `mehr chat` (if files changed)
+- After `mehr note` (if files changed)
 
 You can navigate between checkpoints with `mehr undo` and `mehr redo`.
 
@@ -39,7 +39,7 @@ Simply undo and provide better guidance:
 mehr undo
 
 # Add context about what went wrong
-mehr chat "Use the repository pattern like in internal/users/. The current approach has tight coupling."
+mehr note "Use the repository pattern like in internal/users/. The current approach has tight coupling."
 
 # Try again
 mehr implement
@@ -77,7 +77,7 @@ Not sure if it's the best approach?
 # Save this state and try another
 mehr undo
 
-mehr chat "Try a functional approach instead of OOP"
+mehr note "Try a functional approach instead of OOP"
 mehr implement         # Approach B
 ```
 
@@ -118,9 +118,9 @@ Sometimes you need to go back multiple steps:
 ```bash
 mehr plan              # Checkpoint 1
 mehr implement         # Checkpoint 2
-mehr chat "add tests"
+mehr note "add tests"
 mehr implement         # Checkpoint 3
-mehr chat "fix bug"
+mehr note "fix bug"
 mehr implement         # Checkpoint 4 (current)
 ```
 
@@ -167,7 +167,7 @@ If you accidentally made changes after undo:
 ```bash
 mehr implement         # Good code
 mehr undo              # Mistake
-mehr chat "something"   # This clears redo!
+mehr note "something"   # This clears redo!
 mehr redo              # Error: nothing to redo
 ```
 
@@ -230,7 +230,7 @@ git checkout abc1234 -- internal/api/good2.go
 # ... etc
 
 # Now re-implement just the problematic parts
-mehr chat "Only fix the handler in handler.go"
+mehr note "Only fix the handler in handler.go"
 mehr implement
 ```
 
@@ -263,7 +263,7 @@ mehr implement
 # Hmm, not sure...
 mehr undo
 # Try different guidance
-mehr chat "..."
+mehr note "..."
 mehr implement
 # Still not right
 mehr undo
@@ -275,10 +275,10 @@ mehr undo
 When iterating, your notes help recovery:
 
 ```bash
-mehr chat "Attempting approach A: singleton pattern"
+mehr note "Attempting approach A: singleton pattern"
 mehr implement
 mehr undo
-mehr chat "Approach A didn't work because X. Trying approach B: dependency injection"
+mehr note "Approach A didn't work because X. Trying approach B: dependency injection"
 mehr implement
 ```
 
@@ -296,7 +296,7 @@ mehr start improved-task.md
 
 | Situation          | Solution                                                |
 | ------------------ | ------------------------------------------------------- |
-| Bad implementation | `mehr undo` → `mehr chat` → `mehr implement`            |
+| Bad implementation | `mehr undo` → `mehr note` → `mehr implement`            |
 | Want to compare    | `mehr undo` → try alternative → `mehr undo`/`mehr redo` |
 | Accidental undo    | `mehr redo`                                             |
 | Lost redo          | `git reflog` → `git checkout <hash> -- file`            |

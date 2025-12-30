@@ -115,7 +115,7 @@ func showTaskCost(ws *storage.Workspace, taskID, label string) error {
 	// Check if any costs have been recorded
 	if costs.TotalInputTokens == 0 && costs.TotalOutputTokens == 0 {
 		fmt.Printf("No cost data available for task: %s\n", display.Bold(label))
-		fmt.Printf("\nRun 'mehr plan', 'mehr implement', or 'mehr chat' to generate costs.\n")
+		fmt.Printf("\nRun 'mehr plan' or 'mehr implement' to generate costs.\n")
 		return nil
 	}
 
