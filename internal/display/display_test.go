@@ -22,7 +22,6 @@ func TestFormatState(t *testing.T) {
 		{"done", workflow.StateDone, "Completed"},
 		{"failed", workflow.StateFailed, "Failed"},
 		{"waiting", workflow.StateWaiting, "Waiting"},
-		{"dialogue", workflow.StateDialogue, "Dialogue"},
 		{"checkpointing", workflow.StateCheckpointing, "Checkpointing"},
 		{"reverting", workflow.StateReverting, "Reverting"},
 		{"restoring", workflow.StateRestoring, "Restoring"},
@@ -74,7 +73,6 @@ func TestGetStateDescription(t *testing.T) {
 		{"done", workflow.StateDone, "Task completed successfully"},
 		{"failed", workflow.StateFailed, "Task failed with error"},
 		{"waiting", workflow.StateWaiting, "Waiting for your input"},
-		{"dialogue", workflow.StateDialogue, "Interactive conversation mode"},
 		{"checkpointing", workflow.StateCheckpointing, "Creating checkpoint"},
 		{"reverting", workflow.StateReverting, "Reverting to previous state"},
 		{"restoring", workflow.StateRestoring, "Restoring from checkpoint"},
@@ -170,7 +168,6 @@ func TestStateDisplayMapCompleteness(t *testing.T) {
 		workflow.StateDone,
 		workflow.StateFailed,
 		workflow.StateWaiting,
-		workflow.StateDialogue,
 		workflow.StateCheckpointing,
 		workflow.StateReverting,
 		workflow.StateRestoring,
@@ -402,7 +399,6 @@ func TestColorState(t *testing.T) {
 		{"done", "done", "Done"},
 		{"failed", "failed", "Failed"},
 		{"waiting", "waiting", "Waiting"},
-		{"dialogue", "dialogue", "Dialogue"},
 		{"unknown", "unknown", "Unknown"},
 	}
 
@@ -660,7 +656,7 @@ func TestTaskFailedError(t *testing.T) {
 
 	got := TaskFailedError("implementation", fmt.Errorf("syntax error"))
 
-	wantContains := []string{"✗", "Error:", "Task failed during implementation", "Cause: syntax error", "Suggested actions", "mehr status", "mehr chat", "mehr undo"}
+	wantContains := []string{"✗", "Error:", "Task failed during implementation", "Cause: syntax error", "Suggested actions", "mehr status", "mehr note", "mehr undo"}
 	for _, want := range wantContains {
 		if !contains(got, want) {
 			t.Errorf("TaskFailedError() missing %q\nGot: %s", want, got)

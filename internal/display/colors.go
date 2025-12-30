@@ -185,7 +185,7 @@ func ColorState(state, displayName string) string {
 		return Success(displayName)
 	case "failed":
 		return Error(displayName)
-	case "waiting", "dialogue":
+	case "waiting":
 		return Warning(displayName)
 	default:
 		return displayName

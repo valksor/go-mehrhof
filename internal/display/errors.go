@@ -119,7 +119,7 @@ func TaskFailedError(step string, err error) string {
 		fmt.Sprintf("Task failed during %s", step),
 		[]Suggestion{
 			{Command: "mehr status", Description: "View detailed error information"},
-			{Command: "mehr chat", Description: "Discuss the error with the agent"},
+			{Command: "mehr note", Description: "Add notes about the error"},
 			{Command: "mehr undo", Description: "Revert last changes if applicable"},
 		},
 	)
