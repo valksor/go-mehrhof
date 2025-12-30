@@ -72,8 +72,6 @@ agent:
       name: claude-sonnet   # Use Sonnet for implementation (speed > quality)
     reviewing:
       name: claude          # Use Opus for review (catches more issues)
-    dialogue:
-      name: claude-sonnet   # Use Sonnet for chat (cost-effective)
 ```
 
 ### Cost vs Capability Trade-offs
@@ -81,7 +79,7 @@ agent:
 | Agent | Use Case | Cost | Speed | Quality |
 |-------|----------|------|-------|---------|
 | claude-opus | Planning, code review | High | Slow | Best |
-| claude-sonnet | Implementation, chat | Medium | Fast | Good |
+| claude-sonnet | Implementation | Medium | Fast | Good |
 | claude-haiku | Quick questions | Low | Fastest | Adequate |
 
 ### Recommended Patterns
