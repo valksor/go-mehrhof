@@ -3,7 +3,7 @@ package workflow
 import (
 	"context"
 	"fmt"
-	"log"
+	"log/slog"
 )
 
 // EffectFunc is a side effect executed during a transition
@@ -95,7 +95,7 @@ func ExecuteEffects(ctx context.Context, wu *WorkUnit, effects []CriticalEffect)
 				return fmt.Errorf("critical effect %s failed: %w", eff.Name, err)
 			}
 			// Log non-critical effect failure but continue
-			log.Printf("workflow: non-critical effect %s failed: %v", eff.Name, err)
+			slog.Debug("non-critical effect failed", "effect", eff.Name, "error", err)
 		}
 	}
 	return nil

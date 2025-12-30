@@ -572,17 +572,6 @@ func TestCommitWithOptions(t *testing.T) {
 			t.Error("Commit returned empty hash")
 		}
 	})
-
-	t.Run("CommitAllowEmptyViaDeprecated", func(t *testing.T) {
-		// Test backward compatibility
-		hash, err := g.CommitAllowEmpty("deprecated empty commit")
-		if err != nil {
-			t.Fatalf("CommitAllowEmpty: %v", err)
-		}
-		if hash == "" {
-			t.Error("CommitAllowEmpty returned empty hash")
-		}
-	})
 }
 
 func TestGetCommitAuthor(t *testing.T) {

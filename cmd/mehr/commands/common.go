@@ -5,7 +5,7 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"log"
+	"log/slog"
 	"os"
 	"strings"
 	"sync"
@@ -202,7 +202,7 @@ func SetupVerboseEventHandlers(cond *conductor.Conductor) {
 			if msg, ok := e.Data["message"].(string); ok {
 				_, err := fmt.Fprintf(w, "  %s\n", msg)
 				if err != nil {
-					log.Println(err)
+					slog.Debug("write progress", "error", err)
 				}
 			}
 		case events.TypeFileChanged:
@@ -210,14 +210,14 @@ func SetupVerboseEventHandlers(cond *conductor.Conductor) {
 				op, _ := e.Data["operation"].(string)
 				_, err := fmt.Fprintf(w, "  [%s] %s\n", op, path)
 				if err != nil {
-					log.Println(err)
+					slog.Debug("write file change", "error", err)
 				}
 			}
 		case events.TypeCheckpoint:
 			if num, ok := e.Data["checkpoint"].(int); ok {
 				_, err := fmt.Fprintf(w, "  Checkpoint #%d created\n", num)
 				if err != nil {
-					log.Println(err)
+					slog.Debug("write checkpoint", "error", err)
 				}
 			}
 		case events.TypeAgentMessage:
@@ -298,7 +298,7 @@ func printAgentEventTo(w io.Writer, e agent.Event) {
 	if e.Text != "" {
 		_, err := fmt.Fprint(w, e.Text)
 		if err != nil {
-			log.Println(err)
+			slog.Debug("write agent text", "error", err)
 		}
 	}
 
@@ -319,7 +319,7 @@ func printAgentEventTo(w io.Writer, e agent.Event) {
 		if result, ok := e.Data["result"].(string); ok {
 			_, err := fmt.Fprint(w, result)
 			if err != nil {
-				log.Println(err)
+				slog.Debug("write agent result", "error", err)
 			}
 		}
 	}
@@ -334,12 +334,12 @@ func printToolCallTo(w io.Writer, tc *agent.ToolCall) {
 	if tc.Description != "" {
 		_, err := fmt.Fprintf(w, "→ %s: %s\n", tc.Name, tc.Description)
 		if err != nil {
-			log.Println(err)
+			slog.Debug("write tool call", "error", err)
 		}
 	} else {
 		_, err := fmt.Fprintf(w, "→ %s\n", tc.Name)
 		if err != nil {
-			log.Println(err)
+			slog.Debug("write tool call", "error", err)
 		}
 	}
 }

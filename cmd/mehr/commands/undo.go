@@ -74,6 +74,6 @@ func runUndo(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("undo: %w", err)
 	}
 
-	fmt.Println("Reverted to previous checkpoint")
+	fmt.Println(display.SuccessMsg("Reverted to previous checkpoint"))
 	return nil
 }

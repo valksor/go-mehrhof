@@ -188,12 +188,6 @@ func (g *Git) Commit(message string, opts ...CommitOptions) (string, error) {
 	return strings.TrimSpace(out), nil
 }
 
-// CommitAllowEmpty creates a commit even if there are no changes.
-// Deprecated: Use Commit(message, CommitOptions{AllowEmpty: true}) instead.
-func (g *Git) CommitAllowEmpty(message string) (string, error) {
-	return g.Commit(message, CommitOptions{AllowEmpty: true})
-}
-
 // Checkout switches to a branch
 func (g *Git) Checkout(ref string) error {
 	_, err := g.run("checkout", ref)

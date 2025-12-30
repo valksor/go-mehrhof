@@ -116,7 +116,7 @@ COMMANDS BY STATE:
   From idle (central hub):
     mehr start <ref>     Begin new task
     mehr plan             Create specifications
-    mehr implement        Generate code from specs
+    mehr implement        Generate code from specifications
     mehr review           Run code review (optional)
     mehr finish           Complete task (creates PR or merges)
     mehr undo             Revert to previous checkpoint
@@ -137,7 +137,7 @@ KEY TRANSITIONS:
   • planning → idle         Planning completes
   • planning → waiting      Agent asks question
   • waiting → idle          Answer provided, ready to continue
-  • idle → implementing     "mehr implement" (requires specs)
+  • idle → implementing     "mehr implement" (requires specifications)
   • implementing → idle     Implementation completes
   • idle → reviewing        "mehr review" (optional)
   • reviewing → idle        Review completes

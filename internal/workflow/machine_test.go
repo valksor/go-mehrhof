@@ -356,17 +356,15 @@ func TestConcurrentDispatch(t *testing.T) {
 		Source: &Source{Reference: "file:task.md"},
 	})
 
-	var wg sync.WaitGroup
 	errors := make([]error, 10)
 
 	// Multiple concurrent dispatch attempts - only one should succeed
 	// Using EventPlan which transitions from Idle to Planning
-	for i := 0; i < 10; i++ {
-		wg.Add(1)
-		go func(idx int) {
-			defer wg.Done()
-			errors[idx] = m.Dispatch(context.Background(), EventPlan)
-		}(i)
+	var wg sync.WaitGroup
+	for i := range 10 {
+		wg.Go(func() {
+			errors[i] = m.Dispatch(context.Background(), EventPlan)
+		})
 	}
 
 	wg.Wait()

@@ -1,12 +1,13 @@
 package commands
 
 import (
+	"cmp"
 	"context"
 	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
-	"sort"
+	"slices"
 	"strings"
 	"text/tabwriter"
 
@@ -168,8 +169,8 @@ func runPluginsList(cmd *cobra.Command, args []string) error {
 	}
 
 	// Sort manifests by name
-	sort.Slice(manifests, func(i, j int) bool {
-		return manifests[i].Name < manifests[j].Name
+	slices.SortFunc(manifests, func(a, b *plugin.Manifest) int {
+		return cmp.Compare(a.Name, b.Name)
 	})
 
 	// Print table

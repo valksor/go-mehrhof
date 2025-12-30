@@ -22,32 +22,40 @@ var (
 )
 
 var planCmd = &cobra.Command{
-	Use:   "plan",
-	Short: "Create implementation specifications for the active task",
+	Use:     "plan [seed-topic]",
+	Aliases: []string{"p"},
+	Short:   "Create implementation specifications for the active task",
 	Long: `Run the planning phase to analyze the task and create specification files.
 
 The agent will read the source content and any notes, then generate
 structured specifications (specification-N.md files) in the work directory.
 
-You can run this multiple times to create additional specs.
+You can run this multiple times to create additional specifications.
 
-With --new, you can start a standalone planning session without an active
-task. This is useful for exploring requirements before creating a formal task.
-Plans are saved to .task/planned/ directory.
+STANDALONE MODE (--standalone):
+  Start a planning session without an active task. This is useful for
+  exploring requirements before creating a formal task.
+  Plans are saved to .mehrhof/planned/ directory.
+
+SEED TOPIC:
+  For standalone mode, you can provide a seed topic in two ways:
+    mehr plan --standalone --seed "build a CLI"
+    mehr plan --standalone "build a CLI"    # positional argument works too
 
 Examples:
-  mehr plan                      # Create specs for active task
-  mehr plan --verbose            # Show agent output
-  mehr plan --full-context       # Include full exploration context
-  mehr plan --new                # Start standalone planning
-  mehr plan --new "build a CLI"  # Start with seed topic`,
+  mehr plan                           # Create specifications for active task
+  mehr plan --verbose                 # Show agent output
+  mehr plan --full-context            # Include full exploration context
+  mehr plan --standalone              # Start standalone planning
+  mehr plan --standalone "build CLI"  # Start with seed topic (positional)
+  mehr plan --standalone --seed "CLI" # Start with seed topic (flag)`,
 	RunE: runPlan,
 }
 
 func init() {
 	rootCmd.AddCommand(planCmd)
 
-	planCmd.Flags().BoolVarP(&planStandalone, "new", "n", false, "Start standalone planning without a task")
+	planCmd.Flags().BoolVar(&planStandalone, "standalone", false, "Start standalone planning without a task")
 	planCmd.Flags().StringVarP(&planSeed, "seed", "s", "", "Initial topic for standalone planning")
 	planCmd.Flags().BoolVar(&planFullContext, "full-context", false, "Include full exploration context from previous session (default: summary only)")
 	planCmd.Flags().StringVar(&planAgentPlanning, "agent-plan", "", "Agent for planning step")

@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"sort"
+	"slices"
 	"strconv"
 	"strings"
 	"text/tabwriter"
@@ -32,7 +32,7 @@ Costs are tracked per workflow step (planning, implementing, etc.).
 
 Examples:
   mehr cost               # Show costs for active task
-  mehr cost --by-step     # Break down by workflow step
+  mehr cost --breakdown   # Break down by workflow step
   mehr cost --all         # Show costs for all tasks
   mehr cost --summary     # Summary of all tasks
   mehr cost --json        # Output as JSON`,
@@ -42,8 +42,8 @@ Examples:
 func init() {
 	rootCmd.AddCommand(costCmd)
 
-	costCmd.Flags().BoolVar(&costByStep, "by-step", false, "Show breakdown by workflow step")
-	costCmd.Flags().BoolVarP(&costAllTasks, "all", "a", false, "Show costs for all tasks")
+	costCmd.Flags().BoolVar(&costByStep, "breakdown", false, "Show breakdown by workflow step")
+	costCmd.Flags().BoolVar(&costAllTasks, "all", false, "Show costs for all tasks")
 	costCmd.Flags().BoolVarP(&costSummary, "summary", "s", false, "Show summary of all tasks")
 	costCmd.Flags().BoolVar(&costJSON, "json", false, "Output as JSON")
 }
@@ -242,7 +242,7 @@ func showTaskCost(ws *storage.Workspace, taskID, label string) error {
 			for step := range costs.ByStep {
 				steps = append(steps, step)
 			}
-			sort.Strings(steps)
+			slices.Sort(steps)
 
 			w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
 			_, _ = fmt.Fprintln(w, "  STEP\t\tINPUT\tOUTPUT\tCACHED\tCOST\tCALLS")
@@ -515,7 +515,7 @@ func showCostSummary(ws *storage.Workspace, taskIDs []string, activeID string) e
 		for step := range stepTotals {
 			steps = append(steps, step)
 		}
-		sort.Strings(steps)
+		slices.Sort(steps)
 
 		w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
 		_, _ = fmt.Fprintln(w, "  STEP\t\tINPUT\tOUTPUT\tCACHED\tCOST\tCALLS")

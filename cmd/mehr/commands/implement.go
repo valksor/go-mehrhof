@@ -2,7 +2,7 @@ package commands
 
 import (
 	"fmt"
-	"log"
+	"log/slog"
 
 	"github.com/spf13/cobra"
 
@@ -17,17 +17,18 @@ var (
 )
 
 var implementCmd = &cobra.Command{
-	Use:   "implement",
-	Short: "Implement the specifications for the active task",
+	Use:     "implement",
+	Aliases: []string{"impl", "i"},
+	Short:   "Implement the specifications for the active task",
 	Long: `Run the implementation phase to generate code based on specifications.
 
-The agent will read all SPEC files in the work directory along with any
-notes, then implement the specifications by creating or modifying files.
+The agent will read all specification files in the work directory along with any
+notes, then implement them by creating or modifying files.
 
-Requires at least one SPEC file to exist (run 'mehr plan' first).
+Requires at least one specification file to exist (run 'mehr plan' first).
 
 Examples:
-  mehr implement                # Implement the specs
+  mehr implement                # Implement the specifications
   mehr implement --dry-run      # Preview without making changes
   mehr implement --verbose      # Show agent output`,
 	RunE: runImplement,
@@ -80,7 +81,7 @@ func runImplement(cmd *cobra.Command, args []string) error {
 				if msg, ok := e.Data["message"].(string); ok {
 					_, err := fmt.Fprintf(w, "  %s\n", msg)
 					if err != nil {
-						log.Println(err)
+						slog.Debug("write progress", "error", err)
 					}
 				}
 			case events.TypeFileChanged:
@@ -88,14 +89,14 @@ func runImplement(cmd *cobra.Command, args []string) error {
 					op, _ := e.Data["operation"].(string)
 					_, err := fmt.Fprintf(w, "  [%s] %s\n", op, path)
 					if err != nil {
-						log.Println(err)
+						slog.Debug("write file change", "error", err)
 					}
 				}
 			case events.TypeCheckpoint:
 				if num, ok := e.Data["checkpoint"].(int); ok {
 					_, err := fmt.Fprintf(w, "  Checkpoint #%d created\n", num)
 					if err != nil {
-						log.Println(err)
+						slog.Debug("write checkpoint", "error", err)
 					}
 				}
 			}

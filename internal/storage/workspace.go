@@ -8,7 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
-	"sort"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -805,7 +805,7 @@ func (w *Workspace) ListSpecifications(taskID string) ([]int, error) {
 		}
 	}
 
-	sort.Ints(numbers)
+	slices.Sort(numbers)
 	return numbers, nil
 }
 

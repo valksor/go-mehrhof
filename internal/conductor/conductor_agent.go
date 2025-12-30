@@ -3,7 +3,7 @@ package conductor
 import (
 	"context"
 	"fmt"
-	"log"
+	"log/slog"
 
 	"github.com/valksor/go-mehrhof/internal/agent"
 	"github.com/valksor/go-mehrhof/internal/plugin"
@@ -212,7 +212,7 @@ func (c *Conductor) GetAgentForStep(step workflow.Step) (agent.Agent, error) {
 		// Save updated work.yaml
 		if err := c.workspace.SaveWork(c.taskWork); err != nil {
 			// Log but don't fail - agent resolution succeeded, persistence failed
-			log.Printf("warning: failed to save agent info to work.yaml: %v", err)
+			slog.Warn("failed to save agent info to work.yaml", "error", err)
 		}
 	}
 

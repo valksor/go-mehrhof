@@ -8,26 +8,30 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/valksor/go-mehrhof/internal/conductor"
+	"github.com/valksor/go-mehrhof/internal/display"
 )
 
 var continueAuto bool // Auto-execute the next logical step
 
 var continueCmd = &cobra.Command{
-	Use:   "continue",
-	Short: "Resume workflow with optional auto-execution",
+	Use:     "continue",
+	Aliases: []string{"cont", "c"},
+	Short:   "Resume workflow with optional auto-execution",
 	Long: `Continue to the next workflow step.
 
 This command is designed for resuming work on a task after a break.
 Without --auto, it shows status and suggested next actions.
 With --auto, it automatically executes the next logical workflow step.
 
-Use 'continue --auto' to hands-off execute the next step (plan, implement, etc.).
-Use 'status' for detailed inspection without resuming.
-Use 'guide' for quick suggestions without execution.
+WHEN TO USE:
+  guide          - Quick "what do I do next?" (terse, suggestions only)
+  status         - Detailed inspection (all task data, checkpoints, sessions)
+  continue       - Show status + suggestions (like guide but more context)
+  continue --auto - Automatically execute the next logical step
 
 See also:
-  mehr status                 - Detailed state inspection
-  mehr guide                 - Quick next-action suggestions
+  mehr status - Detailed state inspection
+  mehr guide  - Quick next-action suggestions
 
 Examples:
   mehr continue       # Show status and suggested next actions
@@ -37,7 +41,7 @@ Examples:
 
 func init() {
 	rootCmd.AddCommand(continueCmd)
-	continueCmd.Flags().BoolVarP(&continueAuto, "auto", "a", false, "Auto-execute the next logical step")
+	continueCmd.Flags().BoolVar(&continueAuto, "auto", false, "Auto-execute the next logical step")
 }
 
 func runContinue(cmd *cobra.Command, args []string) error {
@@ -68,9 +72,9 @@ func runContinue(cmd *cobra.Command, args []string) error {
 
 		fmt.Println("No active task found.")
 		fmt.Println()
-		fmt.Println("To start a new task:")
-		fmt.Println("  mehr start <file.md>       # From markdown file")
-		fmt.Println("  mehr start <directory/>    # From directory with README.md")
+		fmt.Println(display.Muted("Suggested actions:"))
+		fmt.Println("  mehr start <file.md>       # Start from markdown file")
+		fmt.Println("  mehr start <directory/>    # Start from directory")
 		return nil
 	}
 
@@ -99,7 +103,7 @@ func runContinue(cmd *cobra.Command, args []string) error {
 	}
 
 	// Otherwise, show suggested next actions
-	fmt.Println("Suggested next actions:")
+	fmt.Println(display.Muted("Suggested actions:"))
 	switch status.State {
 	case "idle":
 		if status.Specifications == 0 {

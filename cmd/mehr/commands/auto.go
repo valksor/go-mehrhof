@@ -2,17 +2,17 @@ package commands
 
 import (
 	"fmt"
-	"log"
+	"log/slog"
 
 	"github.com/spf13/cobra"
 
 	"github.com/valksor/go-mehrhof/internal/conductor"
+	"github.com/valksor/go-mehrhof/internal/display"
 	"github.com/valksor/go-mehrhof/internal/events"
 )
 
 var (
 	autoAgent         string
-	autoBranch        bool
 	autoNoBranch      bool
 	autoWorktree      bool
 	autoMaxRetries    int
@@ -21,7 +21,7 @@ var (
 	autoNoSquash      bool
 	autoTargetBranch  string
 	autoQualityTarget string
-	autoSkipQuality   bool
+	autoNoQuality     bool
 )
 
 var autoCmd = &cobra.Command{
@@ -44,7 +44,7 @@ Examples:
   mehr auto ./tasks/                   # Full cycle from directory
   mehr auto --max-retries 5 task.md    # Allow more quality retries
   mehr auto --no-push task.md          # Don't push after merge
-  mehr auto --skip-quality task.md     # Skip quality checks entirely`,
+  mehr auto --no-quality task.md       # Skip quality checks entirely`,
 	Args: cobra.ExactArgs(1),
 	RunE: runAuto,
 }
@@ -53,8 +53,7 @@ func init() {
 	rootCmd.AddCommand(autoCmd)
 
 	autoCmd.Flags().StringVarP(&autoAgent, "agent", "a", "", "Agent to use (default: auto-detect)")
-	autoCmd.Flags().BoolVarP(&autoBranch, "branch", "b", true, "Create a git branch for this task")
-	autoCmd.Flags().BoolVar(&autoNoBranch, "no-branch", false, "Skip creating a git branch")
+	autoCmd.Flags().BoolVar(&autoNoBranch, "no-branch", false, "Do not create a git branch")
 	autoCmd.Flags().BoolVarP(&autoWorktree, "worktree", "w", false, "Create a separate git worktree")
 	autoCmd.Flags().IntVar(&autoMaxRetries, "max-retries", 3, "Maximum quality check retry attempts")
 	autoCmd.Flags().BoolVar(&autoNoPush, "no-push", false, "Don't push after merge")
@@ -62,7 +61,7 @@ func init() {
 	autoCmd.Flags().BoolVar(&autoNoSquash, "no-squash", false, "Use regular merge instead of squash")
 	autoCmd.Flags().StringVarP(&autoTargetBranch, "target", "t", "", "Target branch to merge into")
 	autoCmd.Flags().StringVar(&autoQualityTarget, "quality-target", "quality", "Make target for quality checks")
-	autoCmd.Flags().BoolVar(&autoSkipQuality, "skip-quality", false, "Skip quality checks entirely")
+	autoCmd.Flags().BoolVar(&autoNoQuality, "no-quality", false, "Skip quality checks entirely")
 }
 
 func runAuto(cmd *cobra.Command, args []string) error {
@@ -70,11 +69,8 @@ func runAuto(cmd *cobra.Command, args []string) error {
 	reference := args[0]
 
 	// Determine branch behavior
-	// Worktree implies branch creation, --no-branch explicitly disables it
-	createBranch := autoBranch && !autoNoBranch
-	if autoWorktree {
-		createBranch = true
-	}
+	// Branch is created by default; --no-branch disables it; worktree implies branch
+	createBranch := !autoNoBranch || autoWorktree
 
 	// Build conductor options with auto mode enabled
 	// Always use deduplicating stdout for auto since it displays progress unconditionally
@@ -110,36 +106,51 @@ func runAuto(cmd *cobra.Command, args []string) error {
 		switch e.Type {
 		case events.TypeProgress:
 			if msg, ok := e.Data["message"].(string); ok {
-				_, err := fmt.Fprintf(w, "  [AUTO] %s\n", msg)
+				// Map progress percentage to phase number
+				phase := "[2/5]"
+				if pct, ok := e.Data["percentage"].(int); ok {
+					switch {
+					case pct <= 10:
+						phase = "[1/5]" // Start
+					case pct <= 30:
+						phase = "[2/5]" // Planning
+					case pct <= 50:
+						phase = "[3/5]" // Implementation
+					case pct <= 80:
+						phase = "[4/5]" // Quality
+					default:
+						phase = "[5/5]" // Finish
+					}
+				}
+				_, err := fmt.Fprintf(w, "  %s %s\n", display.Info(phase), msg)
 				if err != nil {
-					log.Println(err)
+					slog.Debug("write progress", "error", err)
 				}
 			}
 		case events.TypeFileChanged:
 			if verbose {
 				if path, ok := e.Data["path"].(string); ok {
 					op, _ := e.Data["operation"].(string)
-					_, err := fmt.Fprintf(w, "  [%s] %s\n", op, path)
+					_, err := fmt.Fprintf(w, "  %s [%s] %s\n", display.Muted("     "), op, path)
 					if err != nil {
-						log.Println(err)
+						slog.Debug("write file change", "error", err)
 					}
 				}
 			}
 		case events.TypeCheckpoint:
 			if verbose {
 				if num, ok := e.Data["checkpoint"].(int); ok {
-					_, err := fmt.Fprintf(w, "  Checkpoint #%d created\n", num)
+					_, err := fmt.Fprintf(w, "  %s Checkpoint #%d created\n", display.Muted("     "), num)
 					if err != nil {
-						log.Println(err)
+						slog.Debug("write checkpoint", "error", err)
 					}
 				}
 			}
 		}
 	})
 
-	fmt.Printf("Starting auto mode for: %s\n", reference)
-	fmt.Println("Full automation: start -> plan -> implement -> quality -> finish")
-	fmt.Println()
+	fmt.Printf("%s Starting auto mode for: %s\n", display.Info("[1/5]"), display.Bold(reference))
+	fmt.Printf("%s Workflow: start → plan → implement → quality → finish\n", display.Muted("     "))
 
 	// Build auto options
 	autoOpts := conductor.AutoOptions{
@@ -152,7 +163,7 @@ func runAuto(cmd *cobra.Command, args []string) error {
 	}
 
 	// Skip quality if requested
-	if autoSkipQuality {
+	if autoNoQuality {
 		autoOpts.MaxRetries = 0
 	}
 
@@ -169,12 +180,12 @@ func runAuto(cmd *cobra.Command, args []string) error {
 	}
 
 	fmt.Println()
-	fmt.Println("Auto complete!")
-	fmt.Printf("  Quality attempts: %d\n", result.QualityAttempts)
+	fmt.Println(display.SuccessMsg("Task completed automatically"))
+	fmt.Printf("  %s Quality attempts: %d\n", display.Muted("•"), result.QualityAttempts)
 	if !autoNoPush {
-		fmt.Println("  Changes merged and pushed")
+		fmt.Printf("  %s Changes merged and pushed\n", display.Muted("•"))
 	} else {
-		fmt.Println("  Changes merged (not pushed)")
+		fmt.Printf("  %s Changes merged (not pushed)\n", display.Muted("•"))
 	}
 
 	return nil

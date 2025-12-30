@@ -106,9 +106,7 @@ func TestWithLock(t *testing.T) {
 
 	// Run multiple goroutines that increment counter with lock
 	for i := 0; i < 5; i++ {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
+		wg.Go(func() {
 			err := WithLock(lockPath, func() error {
 				// Read, increment, write (non-atomic without lock)
 				val := atomic.LoadInt32(&counter)
@@ -119,7 +117,7 @@ func TestWithLock(t *testing.T) {
 			if err != nil {
 				t.Errorf("WithLock: %v", err)
 			}
-		}()
+		})
 	}
 
 	wg.Wait()
@@ -222,9 +220,7 @@ func TestWithLockTimeout_Concurrent(t *testing.T) {
 
 	// Run multiple goroutines that increment counter with lock timeout
 	for i := 0; i < 3; i++ {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
+		wg.Go(func() {
 			err := WithLockTimeout(lockPath, 5*time.Second, func() error {
 				val := atomic.LoadInt32(&counter)
 				time.Sleep(10 * time.Millisecond)
@@ -234,7 +230,7 @@ func TestWithLockTimeout_Concurrent(t *testing.T) {
 			if err != nil {
 				t.Errorf("WithLockTimeout: %v", err)
 			}
-		}()
+		})
 	}
 
 	wg.Wait()

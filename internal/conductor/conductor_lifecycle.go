@@ -217,7 +217,7 @@ func (c *Conductor) ensureCleanWorkspace() error {
 		return fmt.Errorf("check git status: %w", err)
 	}
 	if hasChanges {
-		return fmt.Errorf("workspace has uncommitted changes\nPlease commit or stash your changes before starting a new task with --branch")
+		return fmt.Errorf("workspace has uncommitted changes\nPlease commit or stash your changes, or use --no-branch to work on the current branch")
 	}
 	return nil
 }

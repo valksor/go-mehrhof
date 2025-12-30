@@ -20,8 +20,9 @@ var (
 )
 
 var statusCmd = &cobra.Command{
-	Use:   "status",
-	Short: "Show detailed task state (specs, checkpoints, sessions)",
+	Use:     "status",
+	Aliases: []string{"st"},
+	Short:   "Show detailed task state (specifications, checkpoints, sessions)",
 	Long: `Show a detailed read-only view of the active task(s).
 
 Use this when you want comprehensive information about your task:
@@ -30,16 +31,23 @@ Use this when you want comprehensive information about your task:
 - Git checkpoints for undo/redo
 - Session history and token usage
 
-For quick next-action suggestions, use 'mehr guide' instead.
-To auto-resume the workflow, use 'mehr continue --auto'.
+WHEN TO USE:
+  guide     - Quick "what do I do next?" (terse, suggestions only)
+  status    - Detailed inspection (all task data, checkpoints, sessions)
+  continue  - Resume workflow (with optional --auto to execute next step)
+
+OUTPUT FORMATS:
+  Default output is human-readable text.
+  Use --json for machine-parseable JSON output (useful for scripts).
 
 See also:
-  mehr guide                 - Quick next-action suggestions (less verbose)
-  mehr continue              - Resume workflow with optional auto-execution
+  mehr guide    - Quick next-action suggestions (less verbose)
+  mehr continue - Resume workflow with optional auto-execution
 
 Examples:
   mehr status              # Show active task state
-  mehr status --all        # Show all tasks in workspace`,
+  mehr status --all        # Show all tasks in workspace
+  mehr status --json       # Output as JSON for scripting`,
 	RunE: runStatus,
 }
 
@@ -155,6 +163,11 @@ func showWorktreeTask(ws *storage.Workspace, git *vcs.Git) error {
 		for _, cp := range checkpoints {
 			fmt.Printf("  - #%d: %s (%s)\n", cp.Number, cp.Message, cp.ID[:8])
 		}
+	}
+
+	// Show spec icon legend if there are specifications
+	if len(specifications) > 0 {
+		printSpecLegend()
 	}
 
 	// Show next actions
@@ -280,6 +293,11 @@ func showActiveTask(ws *storage.Workspace, git *vcs.Git) error {
 		}
 	}
 
+	// Show spec icon legend if there are specifications
+	if len(specifications) > 0 {
+		printSpecLegend()
+	}
+
 	// Show next actions based on state
 	fmt.Printf("\nAvailable commands:\n")
 	if len(specifications) == 0 {
@@ -397,11 +415,18 @@ func showAllTasks(ws *storage.Workspace, git *vcs.Git) error {
 	fmt.Println()
 	fmt.Println(display.Muted("Legend:"))
 	fmt.Println(display.Muted("  * = active task"))
-	fmt.Println(display.Muted("  ○ = draft spec"))
+	printSpecLegend()
+	return nil
+}
+
+// printSpecLegend prints the specification status icon legend
+func printSpecLegend() {
+	fmt.Println()
+	fmt.Println(display.Muted("Specification icons:"))
+	fmt.Println(display.Muted("  ○ = draft"))
 	fmt.Println(display.Muted("  ◐ = ready to implement"))
 	fmt.Println(display.Muted("  ◑ = implementing"))
 	fmt.Println(display.Muted("  ● = completed"))
-	return nil
 }
 
 // JSON output structures for status command

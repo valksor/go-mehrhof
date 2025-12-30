@@ -29,7 +29,17 @@ var rootCmd = &cobra.Command{
 	Long: `mehrhof is a CLI tool for AI-assisted task automation.
 
 It orchestrates AI agents to perform planning, implementation, and code review
-workflows. Tasks can be sourced from files, directories, or external providers.`,
+workflows. Tasks can be sourced from files, directories, or external providers.
+
+Quick Start:
+  mehr start task.md     Start a task from a markdown file
+  mehr plan              AI creates specifications
+  mehr implement         AI implements the code
+  mehr finish            Complete and merge/PR
+
+For guidance:  mehr guide
+For status:    mehr status
+For full auto: mehr auto task.md`,
 	SilenceUsage:  true,
 	SilenceErrors: true,
 	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {

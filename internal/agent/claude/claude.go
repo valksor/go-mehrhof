@@ -5,7 +5,7 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"log"
+	"log/slog"
 	"os"
 	"os/exec"
 	"time"
@@ -200,7 +200,7 @@ func (a *Agent) executeStream(ctx context.Context, prompt string, eventCh chan<-
 	stderrBytes, err := bufio.NewReader(stderr).ReadString('\n')
 	if err != nil && err != io.EOF {
 		// Log but don't fail - stderr may not have content
-		log.Printf("warning: error reading stderr: %v", err)
+		slog.Debug("error reading stderr", "error", err)
 	}
 
 	// Wait for command to finish

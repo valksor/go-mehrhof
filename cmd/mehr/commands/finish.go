@@ -25,8 +25,9 @@ var (
 )
 
 var finishCmd = &cobra.Command{
-	Use:   "finish",
-	Short: "Complete the task (creates PR by default for supported providers)",
+	Use:     "finish",
+	Aliases: []string{"fi", "done"},
+	Short:   "Complete the task (creates PR by default for supported providers)",
 	Long: `Complete the current task by creating a pull request or merging locally.
 
 PROVIDER BEHAVIOR:
@@ -50,6 +51,15 @@ When using --merge, this performs a local merge instead of creating a PR:
 
 If quality checks modify files (e.g., auto-formatting), you'll be prompted
 to confirm before proceeding.
+
+FLAG COMBINATIONS:
+  PR mode (default):
+    --draft, --pr-title, --pr-body are allowed
+    --merge is NOT allowed with these flags
+
+  Merge mode (--merge):
+    --delete, --push, --no-squash, --target are allowed
+    --draft, --pr-title, --pr-body are NOT allowed
 
 Examples:
   mehr finish                      # Create PR (github/gitlab) or prompt for action
@@ -82,6 +92,11 @@ func init() {
 	finishCmd.Flags().BoolVar(&finishDraftPR, "draft", false, "Create PR as draft")
 	finishCmd.Flags().StringVar(&finishPRTitle, "pr-title", "", "Custom PR title")
 	finishCmd.Flags().StringVar(&finishPRBody, "pr-body", "", "Custom PR body")
+
+	// PR flags are mutually exclusive with merge mode
+	finishCmd.MarkFlagsMutuallyExclusive("merge", "draft")
+	finishCmd.MarkFlagsMutuallyExclusive("merge", "pr-title")
+	finishCmd.MarkFlagsMutuallyExclusive("merge", "pr-body")
 }
 
 func runFinish(cmd *cobra.Command, args []string) error {
@@ -104,11 +119,6 @@ func runFinish(cmd *cobra.Command, args []string) error {
 	status, err := cond.Status()
 	if err != nil {
 		return fmt.Errorf("get status: %w", err)
-	}
-
-	// Validate PR flags (only allowed if not forcing local merge)
-	if finishMerge && (finishDraftPR || finishPRTitle != "" || finishPRBody != "") {
-		return fmt.Errorf("--draft, --pr-title, and --pr-body require PR mode (don't use --merge)")
 	}
 
 	// Build confirmation prompt
@@ -167,7 +177,7 @@ func runFinish(cmd *cobra.Command, args []string) error {
 			}
 
 			if result.Passed {
-				fmt.Println("Quality checks passed")
+				fmt.Println(display.SuccessMsg("Quality checks passed"))
 			}
 		}
 	}
@@ -192,9 +202,9 @@ func runFinish(cmd *cobra.Command, args []string) error {
 
 	// Success message depends on what happened
 	if finishMerge {
-		fmt.Println("Task completed and merged successfully")
+		fmt.Println(display.SuccessMsg("Task completed and merged"))
 	} else {
-		fmt.Println("Task completed successfully")
+		fmt.Println(display.SuccessMsg("Task completed"))
 	}
 	return nil
 }

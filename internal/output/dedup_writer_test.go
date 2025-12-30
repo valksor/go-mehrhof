@@ -181,15 +181,13 @@ func TestDeduplicatingWriter_ThreadSafety(t *testing.T) {
 
 	// Concurrent writes
 	for i := 0; i < 10; i++ {
-		wg.Add(1)
-		go func(id int) {
-			defer wg.Done()
+		wg.Go(func() {
 			for j := 0; j < iterations; j++ {
 				if _, err := w.Write([]byte("concurrent\n")); err != nil {
 					t.Errorf("concurrent write error: %v", err)
 				}
 			}
-		}(i)
+		})
 	}
 
 	wg.Wait()

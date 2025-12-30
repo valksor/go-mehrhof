@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"sort"
+	"slices"
 	"text/tabwriter"
 
 	"github.com/spf13/cobra"
@@ -95,7 +95,7 @@ func runAgentsList(cmd *cobra.Command, args []string) error {
 	}
 
 	// Sort agent names for consistent output
-	sort.Strings(agentNames)
+	slices.Sort(agentNames)
 
 	// Gather info about each agent
 	agents := make([]agentInfo, 0, len(agentNames))

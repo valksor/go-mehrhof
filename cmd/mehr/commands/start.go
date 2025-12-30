@@ -31,23 +31,39 @@ var (
 
 var startCmd = &cobra.Command{
 	Use:   "start <reference>",
-	Short: "Register a new task from a file or directory",
-	Long: `Register a new task from a file, directory, or external provider.
+	Short: "Start a new task from a file, directory, or provider",
+	Long: `Start a new task from a file, directory, or external provider.
 
-This command reads the source, creates a git branch, and registers the task
+This command reads the source, creates a git branch, and sets up the task
 as active. It does NOT run planning - use 'mehr plan' for that.
 
 USAGE:
   mehr start <reference>
 
 PROVIDERS:
-  file:task.md              Markdown file
-  dir:./tasks/              Directory
+  file:task.md              Markdown file (default, can omit 'file:')
+  dir:./tasks/              Directory of markdown files
   github:123                GitHub issue (requires configuration)
+  notion:abc123 / nt:       Notion page by ID or URL
+  jira:PROJ-123             Jira issue (requires configuration)
+  linear:ABC-123            Linear issue (requires configuration)
+  wrike:abc123              Wrike task (requires configuration)
+  youtrack:PROJ-123         YouTrack issue (requires configuration)
+
+AGENT SELECTION (highest to lowest priority):
+  1. CLI flag: --agent or --agent-plan/--agent-implement/--agent-review
+  2. Task frontmatter: agent: or agent_steps: in markdown
+  3. Workspace config: agent.default or agent.steps in .mehrhof/config.yaml
+  4. Auto-detect: uses default claude agent
 
 GIT OPTIONS:
-  --no-branch               Skip creating a git branch
+  --no-branch               Do not create a git branch
   --worktree                Create isolated git worktree (allows parallel tasks)
+
+PER-STEP AGENT FLAGS:
+  --agent-plan              Agent for planning step (overrides default)
+  --agent-implement         Agent for implementation step (overrides default)
+  --agent-review            Agent for review step (overrides default)
 
 TEMPLATES:
   --template bug-fix        Apply bug-fix template
@@ -73,8 +89,8 @@ See also:
 func init() {
 	rootCmd.AddCommand(startCmd)
 
-	startCmd.Flags().StringVarP(&startAgent, "agent", "a", "", "Agent to use (default: auto-detect)")
-	startCmd.Flags().BoolVar(&startNoBranch, "no-branch", false, "Skip creating a git branch (branch creation is default)")
+	startCmd.Flags().StringVarP(&startAgent, "agent", "A", "", "Agent to use (default: auto-detect)")
+	startCmd.Flags().BoolVar(&startNoBranch, "no-branch", false, "Do not create a git branch")
 	startCmd.Flags().BoolVarP(&startWorktree, "worktree", "w", false, "Create a separate git worktree for this task")
 
 	// Naming override flags
@@ -83,7 +99,7 @@ func init() {
 	startCmd.Flags().StringVar(&startSlug, "slug", "", "Branch slug override (e.g., custom-slug)")
 	startCmd.Flags().StringVar(&startCommitPrefix, "commit-prefix", "", "Commit prefix template (e.g., [{key}])")
 	startCmd.Flags().StringVar(&startBranchPattern, "branch-pattern", "", "Branch pattern template (e.g., {type}/{key}--{slug})")
-	startCmd.Flags().StringVarP(&startTemplate, "template", "t", "", "Template to apply (bug-fix, feature, refactor, docs, test, chore)")
+	startCmd.Flags().StringVar(&startTemplate, "template", "", "Template to apply (bug-fix, feature, refactor, docs, test, chore)")
 
 	// Per-step agent overrides
 	startCmd.Flags().StringVar(&startAgentPlanning, "agent-plan", "", "Agent for planning step")
@@ -200,7 +216,7 @@ func runStart(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	fmt.Printf("Task registered: %s\n", status.TaskID)
+	fmt.Printf("Task started: %s\n", status.TaskID)
 	fmt.Printf("  Title: %s\n", status.Title)
 	if status.ExternalKey != "" {
 		fmt.Printf("  Key: %s\n", status.ExternalKey)

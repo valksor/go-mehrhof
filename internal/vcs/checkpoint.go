@@ -1,9 +1,10 @@
 package vcs
 
 import (
+	"cmp"
 	"fmt"
 	"regexp"
-	"sort"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -130,8 +131,8 @@ func (g *Git) ListCheckpoints(taskID string) ([]*Checkpoint, error) {
 	}
 
 	// Sort by number
-	sort.Slice(checkpoints, func(i, j int) bool {
-		return checkpoints[i].Number < checkpoints[j].Number
+	slices.SortFunc(checkpoints, func(a, b *Checkpoint) int {
+		return cmp.Compare(a.Number, b.Number)
 	})
 
 	return checkpoints, nil

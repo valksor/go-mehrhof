@@ -5,6 +5,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/valksor/go-mehrhof/internal/display"
 	"github.com/valksor/go-mehrhof/internal/storage"
 	"github.com/valksor/go-mehrhof/internal/workflow"
 )
@@ -18,14 +19,16 @@ This is a lightweight command for quickly answering "what do I do next?"
 It analyzes your current context (active task, state, specifications) and
 suggests the most appropriate next action without displaying verbose details.
 
-Use 'guide' for quick suggestions, 'status' for detailed inspection,
-and 'continue --auto' to automatically execute the next step.
+WHEN TO USE:
+  guide     - Quick "what do I do next?" (terse, suggestions only)
+  status    - Detailed inspection (all task data, checkpoints, sessions)
+  continue  - Resume workflow (with optional --auto to execute next step)
 
 Works in both main repository and worktree environments.
 
 See also:
-  mehr status                 - Detailed state with full specs/sessions/checkpoints
-  mehr continue              - Resume workflow with optional auto-execution
+  mehr status   - Detailed state with specifications/sessions/checkpoints
+  mehr continue - Resume workflow with optional auto-execution
 
 Examples:
   mehr guide            # Show suggested next actions
@@ -61,7 +64,7 @@ func runGuide(cmd *cobra.Command, args []string) error {
 		if active == nil {
 			fmt.Println("No task associated with this worktree.")
 			fmt.Println()
-			fmt.Println("Suggested actions:")
+			fmt.Println(display.Muted("Suggested actions:"))
 			fmt.Println("  mehr start <reference>   # Start a new task")
 			return nil
 		}
@@ -71,9 +74,9 @@ func runGuide(cmd *cobra.Command, args []string) error {
 		if !ws.HasActiveTask() {
 			fmt.Println("No active task.")
 			fmt.Println()
-			fmt.Println("Suggested actions:")
+			fmt.Println(display.Muted("Suggested actions:"))
 			fmt.Println("  mehr start <reference>   # Start a new task")
-			fmt.Println("  mehr status --all          # View all tasks in workspace")
+			fmt.Println("  mehr status --all        # View all tasks in workspace")
 			return nil
 		}
 		active, err = ws.LoadActiveTask()
@@ -88,7 +91,7 @@ func runGuide(cmd *cobra.Command, args []string) error {
 	if work == nil {
 		fmt.Println("No task found.")
 		fmt.Println()
-		fmt.Println("Suggested actions:")
+		fmt.Println(display.Muted("Suggested actions:"))
 		fmt.Println("  mehr start <reference>   # Start a new task")
 		return nil
 	}
@@ -107,7 +110,7 @@ func runGuide(cmd *cobra.Command, args []string) error {
 	if ws.HasPendingQuestion(work.Metadata.ID) {
 		q, _ := ws.LoadPendingQuestion(work.Metadata.ID)
 		fmt.Println()
-		fmt.Println("⚠️  The AI has a question for you:")
+		fmt.Println("⚠️  The agent has a question for you:")
 		fmt.Printf("  %s\n", q.Question)
 		if len(q.Options) > 0 {
 			fmt.Println("  Options:")
@@ -116,7 +119,7 @@ func runGuide(cmd *cobra.Command, args []string) error {
 			}
 		}
 		fmt.Println()
-		fmt.Println("Suggested action:")
+		fmt.Println(display.Muted("Suggested actions:"))
 		fmt.Println("  mehr answer \"your answer\"  # Respond to the question")
 		fmt.Println("  mehr note                   # Enter interactive mode")
 		return nil
@@ -124,7 +127,7 @@ func runGuide(cmd *cobra.Command, args []string) error {
 
 	// Show state-specific suggestions
 	fmt.Println()
-	fmt.Println("Suggested next actions:")
+	fmt.Println(display.Muted("Suggested actions:"))
 
 	switch workflow.State(active.State) {
 	case workflow.StateIdle:

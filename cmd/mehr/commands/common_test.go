@@ -225,3 +225,110 @@ func getCommandNames(commands []*cobra.Command) []string {
 	}
 	return names
 }
+
+func TestImplementCommand_Aliases(t *testing.T) {
+	expectedAliases := []string{"impl", "i"}
+	actualAliases := implementCmd.Aliases
+
+	if len(actualAliases) != len(expectedAliases) {
+		t.Errorf("implement aliases count = %d, want %d", len(actualAliases), len(expectedAliases))
+	}
+
+	for i, expected := range expectedAliases {
+		if i >= len(actualAliases) || actualAliases[i] != expected {
+			t.Errorf("implement alias[%d] = %q, want %q", i, actualAliases[i], expected)
+		}
+	}
+}
+
+func TestFinishCommand_Aliases(t *testing.T) {
+	expectedAliases := []string{"fi", "done"}
+	actualAliases := finishCmd.Aliases
+
+	if len(actualAliases) != len(expectedAliases) {
+		t.Errorf("finish aliases count = %d, want %d", len(actualAliases), len(expectedAliases))
+	}
+
+	for i, expected := range expectedAliases {
+		if i >= len(actualAliases) || actualAliases[i] != expected {
+			t.Errorf("finish alias[%d] = %q, want %q", i, actualAliases[i], expected)
+		}
+	}
+}
+
+func TestStatusCommand_Aliases(t *testing.T) {
+	expectedAliases := []string{"st"}
+	actualAliases := statusCmd.Aliases
+
+	if len(actualAliases) != len(expectedAliases) {
+		t.Errorf("status aliases count = %d, want %d", len(actualAliases), len(expectedAliases))
+	}
+
+	for i, expected := range expectedAliases {
+		if i >= len(actualAliases) || actualAliases[i] != expected {
+			t.Errorf("status alias[%d] = %q, want %q", i, actualAliases[i], expected)
+		}
+	}
+}
+
+func TestContinueCommand_Aliases(t *testing.T) {
+	expectedAliases := []string{"cont", "c"}
+	actualAliases := continueCmd.Aliases
+
+	if len(actualAliases) != len(expectedAliases) {
+		t.Errorf("continue aliases count = %d, want %d", len(actualAliases), len(expectedAliases))
+	}
+
+	for i, expected := range expectedAliases {
+		if i >= len(actualAliases) || actualAliases[i] != expected {
+			t.Errorf("continue alias[%d] = %q, want %q", i, actualAliases[i], expected)
+		}
+	}
+}
+
+func TestPlanCommand_Aliases(t *testing.T) {
+	expectedAliases := []string{"p"}
+	actualAliases := planCmd.Aliases
+
+	if len(actualAliases) != len(expectedAliases) {
+		t.Errorf("plan aliases count = %d, want %d", len(actualAliases), len(expectedAliases))
+	}
+
+	for i, expected := range expectedAliases {
+		if i >= len(actualAliases) || actualAliases[i] != expected {
+			t.Errorf("plan alias[%d] = %q, want %q", i, actualAliases[i], expected)
+		}
+	}
+}
+
+func TestStartCommand_AgentFlagShorthand(t *testing.T) {
+	// The agent flag should have shorthand 'A' (not 'a' which conflicts with --all)
+	agentFlag := startCmd.Flags().Lookup("agent")
+	if agentFlag == nil {
+		t.Fatal("start command missing 'agent' flag")
+	}
+
+	if agentFlag.Shorthand != "A" {
+		t.Errorf("agent flag shorthand = %q, want 'A'", agentFlag.Shorthand)
+	}
+}
+
+func TestPlanCommand_StandaloneFlag(t *testing.T) {
+	// Check for --standalone flag
+	standaloneFlag := planCmd.Flags().Lookup("standalone")
+	if standaloneFlag == nil {
+		t.Error("plan command missing 'standalone' flag")
+	}
+
+	// The deprecated --new flag was removed (use --standalone instead)
+}
+
+func TestCostCommand_BreakdownFlag(t *testing.T) {
+	// Check for --breakdown flag
+	breakdownFlag := costCmd.Flags().Lookup("breakdown")
+	if breakdownFlag == nil {
+		t.Error("cost command missing 'breakdown' flag")
+	}
+
+	// The deprecated --by-step flag was removed (use --breakdown instead)
+}
