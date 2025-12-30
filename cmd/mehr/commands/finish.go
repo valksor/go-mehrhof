@@ -10,51 +10,51 @@ import (
 
 var (
 	finishYes           bool
-	finishNoPush        bool
-	finishNoDelete      bool
+	finishMerge         bool
+	finishDelete        bool
+	finishPush          bool
 	finishNoSquash      bool
 	finishTargetBranch  string
 	finishSkipQuality   bool
 	finishQualityTarget string
 	// PR-related flags
-	finishCreatePR bool
-	finishDraftPR  bool
-	finishPRTitle  string
-	finishPRBody   string
+	finishDraftPR bool
+	finishPRTitle string
+	finishPRBody  string
 )
 
 var finishCmd = &cobra.Command{
 	Use:   "finish",
-	Short: "Complete the task and merge (or create PR)",
-	Long: `Complete the current task and merge changes to the target branch, or create a pull request.
+	Short: "Complete the task (creates PR by default for supported providers)",
+	Long: `Complete the current task by creating a pull request or merging locally.
 
 By default, this:
 - Runs 'make quality' if available (code formatting, linting, etc.)
-- Performs a squash merge to keep the history clean
-- Deletes the task branch
-- Does NOT push to remote (use --push to enable)
+- Creates a pull request if the provider supports it (e.g., github:)
+- For providers without PR support: asks what to do (merge/mark done/cancel)
+- Keeps the task branch (use --delete to remove it)
+- Does NOT push after local merge (use --push to enable)
 
-When using --pr, this creates a pull request instead of merging locally:
-- Pushes the branch to origin
-- Creates a PR via the GitHub API (for github: tasks)
-- Does NOT delete the branch or merge locally
-- Optionally posts a comment to the original issue
+When using --merge, this performs a local merge instead of creating a PR:
+- Performs a squash merge to keep the history clean
+- Does NOT delete the task branch by default
+- Does NOT push to remote by default
 
 If quality checks modify files (e.g., auto-formatting), you'll be prompted
 to confirm before proceeding.
 
 Examples:
-  mehr finish                      # Complete and merge (with confirmation)
+  mehr finish                      # Create PR (for github:) or prompt for action
   mehr finish --yes                # Skip confirmation prompt
-  mehr finish --no-push            # Merge but don't push
-  mehr finish --no-delete          # Keep task branch after merge
+  mehr finish --merge              # Force local merge instead of PR
+  mehr finish --merge --delete     # Merge and delete task branch
+  mehr finish --merge --push       # Merge and push to remote
   mehr finish --no-squash          # Regular merge instead of squash
   mehr finish --target develop     # Merge to specific branch
   mehr finish --skip-quality       # Skip quality checks
   mehr finish --quality-target lint # Use custom make target
-  mehr finish --pr                 # Create PR instead of merging
-  mehr finish --pr --draft         # Create PR as draft
-  mehr finish --pr --pr-title "Fix bug" # Custom PR title`,
+  mehr finish --draft              # Create PR as draft
+  mehr finish --pr-title "Fix bug" # Custom PR title`,
 	RunE: runFinish,
 }
 
@@ -62,18 +62,18 @@ func init() {
 	rootCmd.AddCommand(finishCmd)
 
 	finishCmd.Flags().BoolVarP(&finishYes, "yes", "y", false, "Skip confirmation prompt")
-	finishCmd.Flags().BoolVar(&finishNoPush, "no-push", false, "Don't push after merge")
-	finishCmd.Flags().BoolVar(&finishNoDelete, "no-delete", false, "Don't delete task branch")
+	finishCmd.Flags().BoolVar(&finishMerge, "merge", false, "Force local merge instead of creating PR")
+	finishCmd.Flags().BoolVar(&finishDelete, "delete", false, "Delete branch after merge")
+	finishCmd.Flags().BoolVar(&finishPush, "push", false, "Push to remote after local merge")
 	finishCmd.Flags().BoolVar(&finishNoSquash, "no-squash", false, "Use regular merge instead of squash")
 	finishCmd.Flags().StringVarP(&finishTargetBranch, "target", "t", "", "Target branch to merge into")
 	finishCmd.Flags().BoolVar(&finishSkipQuality, "skip-quality", false, "Skip quality checks (make quality)")
 	finishCmd.Flags().StringVar(&finishQualityTarget, "quality-target", "quality", "Make target for quality checks")
 
 	// PR-related flags
-	finishCmd.Flags().BoolVar(&finishCreatePR, "pr", false, "Create pull request instead of merging locally")
-	finishCmd.Flags().BoolVar(&finishDraftPR, "draft", false, "Create PR as draft (requires --pr)")
-	finishCmd.Flags().StringVar(&finishPRTitle, "pr-title", "", "Custom PR title (requires --pr)")
-	finishCmd.Flags().StringVar(&finishPRBody, "pr-body", "", "Custom PR body (requires --pr)")
+	finishCmd.Flags().BoolVar(&finishDraftPR, "draft", false, "Create PR as draft")
+	finishCmd.Flags().StringVar(&finishPRTitle, "pr-title", "", "Custom PR title")
+	finishCmd.Flags().StringVar(&finishPRBody, "pr-body", "", "Custom PR body")
 }
 
 func runFinish(cmd *cobra.Command, args []string) error {
@@ -97,9 +97,9 @@ func runFinish(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("get status: %w", err)
 	}
 
-	// Validate PR flags
-	if !finishCreatePR && (finishDraftPR || finishPRTitle != "" || finishPRBody != "") {
-		return fmt.Errorf("--draft, --pr-title, and --pr-body require --pr flag")
+	// Validate PR flags (only allowed if not forcing local merge)
+	if finishMerge && (finishDraftPR || finishPRTitle != "" || finishPRBody != "") {
+		return fmt.Errorf("--draft, --pr-title, and --pr-body require PR mode (don't use --merge)")
 	}
 
 	// Build confirmation prompt
@@ -113,16 +113,19 @@ func runFinish(cmd *cobra.Command, args []string) error {
 	promptLines += fmt.Sprintf("\n  State: %s", status.State)
 	promptLines += fmt.Sprintf("\n  Specifications: %d", status.Specifications)
 
-	if finishCreatePR {
-		promptLines += "\n\nThis will create a pull request"
-		if finishDraftPR {
-			promptLines += " (as draft)"
+	if finishMerge {
+		promptLines += "\n\nThis will perform a local merge"
+		if finishDelete && status.Branch != "" {
+			promptLines += " and delete the task branch"
+		}
+		if finishPush {
+			promptLines += " and push to remote"
 		}
 		promptLines += "."
 	} else {
-		promptLines += "\n\nThis will merge changes"
-		if !finishNoDelete && status.Branch != "" {
-			promptLines += " and delete the task branch"
+		promptLines += "\n\nThis will create a pull request (if provider supports it)"
+		if finishDraftPR {
+			promptLines += " as draft"
 		}
 		promptLines += "."
 	}
@@ -163,14 +166,14 @@ func runFinish(cmd *cobra.Command, args []string) error {
 	// Build finish options
 	opts := conductor.FinishOptions{
 		SquashMerge:  !finishNoSquash,
-		DeleteBranch: !finishNoDelete,
+		DeleteBranch: finishDelete,
 		TargetBranch: finishTargetBranch,
-		PushAfter:    !finishNoPush,
+		PushAfter:    finishPush,
 		// PR options
-		CreatePR: finishCreatePR,
-		DraftPR:  finishDraftPR,
-		PRTitle:  finishPRTitle,
-		PRBody:   finishPRBody,
+		ForceMerge: finishMerge,
+		DraftPR:    finishDraftPR,
+		PRTitle:    finishPRTitle,
+		PRBody:     finishPRBody,
 	}
 
 	// Perform finish
@@ -178,10 +181,11 @@ func runFinish(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("finish: %w", err)
 	}
 
-	if finishCreatePR {
-		fmt.Println("Pull request created successfully")
-	} else {
+	// Success message depends on what happened
+	if finishMerge {
 		fmt.Println("Task completed and merged successfully")
+	} else {
+		fmt.Println("Task completed successfully")
 	}
 	return nil
 }

@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/valksor/go-mehrhof/internal/events"
+	"github.com/valksor/go-mehrhof/internal/provider"
 	"github.com/valksor/go-mehrhof/internal/workflow"
 )
 
@@ -206,8 +207,14 @@ func (c *Conductor) Finish(ctx context.Context, opts FinishOptions) error {
 		return fmt.Errorf("no active task")
 	}
 
-	// Handle PR creation if requested
-	if opts.CreatePR {
+	// Determine action based on flags and provider support
+	if opts.ForceMerge {
+		// User explicitly requested local merge
+		if err := c.finishWithMerge(ctx, opts); err != nil {
+			return err
+		}
+	} else if c.providerSupportsPR(ctx) {
+		// Provider supports PR, create one by default
 		prResult, err := c.finishWithPR(ctx, opts)
 		if err != nil {
 			return err
@@ -217,21 +224,25 @@ func (c *Conductor) Finish(ctx context.Context, opts FinishOptions) error {
 			c.logVerbose("Created PR #%d: %s", prResult.Number, prResult.URL)
 		}
 	} else if c.git != nil && c.activeTask.UseGit && c.activeTask.Branch != "" {
-		// Handle git merge operations if applicable
-		if err := c.performMerge(opts); err != nil {
+		// Provider doesn't support PR, ask user what to do
+		action, err := c.askUserFinishAction()
+		if err != nil {
 			return err
 		}
-
-		// Push if requested
-		if opts.PushAfter {
-			targetBranch := c.resolveTargetBranch(opts.TargetBranch)
-			if err := c.git.PushBranch(targetBranch, "origin", false); err != nil {
-				return fmt.Errorf("push: %w", err)
+		switch action {
+		case "merge":
+			if err := c.finishWithMerge(ctx, opts); err != nil {
+				return err
 			}
+		case "done":
+			// Just mark as done, no merge
+			c.logVerbose("Marking task as done without merging")
+		case "cancel":
+			return fmt.Errorf("cancelled by user")
 		}
-
-		// Cleanup branch and worktree
-		c.cleanupAfterMerge(opts)
+	} else {
+		// No git, just mark as done
+		c.logVerbose("No git branch associated, marking task as done")
 	}
 
 	// Update state
@@ -322,5 +333,84 @@ func (c *Conductor) publishProgress(message string, percent int) {
 
 	if c.opts.OnProgress != nil {
 		c.opts.OnProgress(message, percent)
+	}
+}
+
+// finishWithMerge performs a local merge operation
+func (c *Conductor) finishWithMerge(ctx context.Context, opts FinishOptions) error {
+	// Handle git merge operations if applicable
+	if c.git == nil || !c.activeTask.UseGit || c.activeTask.Branch == "" {
+		return fmt.Errorf("git not available or no branch associated with task")
+	}
+
+	if err := c.performMerge(opts); err != nil {
+		return err
+	}
+
+	// Push if requested
+	if opts.PushAfter {
+		targetBranch := c.resolveTargetBranch(opts.TargetBranch)
+		if err := c.git.PushBranch(targetBranch, "origin", false); err != nil {
+			return fmt.Errorf("push: %w", err)
+		}
+	}
+
+	// Cleanup branch and worktree if requested
+	c.cleanupAfterMerge(opts)
+	return nil
+}
+
+// providerSupportsPR checks if the current task's provider supports PR creation
+func (c *Conductor) providerSupportsPR(ctx context.Context) bool {
+	if c.activeTask == nil || c.activeTask.Ref == "" {
+		return false
+	}
+
+	// Resolve provider from the stored reference
+	resolveOpts := provider.ResolveOptions{
+		DefaultProvider: c.opts.DefaultProvider,
+	}
+	p, _, err := c.providers.Resolve(ctx, c.activeTask.Ref, provider.Config{}, resolveOpts)
+	if err != nil {
+		return false
+	}
+
+	// Check if provider implements PRCreator interface
+	_, ok := p.(provider.PRCreator)
+	return ok
+}
+
+// askUserFinishAction prompts the user to choose an action when PR is not supported
+func (c *Conductor) askUserFinishAction() (string, error) {
+	// For non-interactive use (auto mode), default to "done"
+	if c.opts.AutoMode || c.opts.SkipAgentQuestions {
+		return "done", nil
+	}
+
+	fmt.Println("\nThe provider for this task does not support pull requests.")
+	fmt.Println("What would you like to do?")
+	fmt.Println("  1. Merge changes to target branch locally")
+	fmt.Println("  2. Mark task as done (no merge)")
+	fmt.Println("  3. Cancel")
+
+	for {
+		var choice string
+		fmt.Print("\nEnter choice (1-3): ")
+		if _, err := fmt.Scanln(&choice); err != nil {
+			// Handle EOF or empty input
+			fmt.Println("\nCancelled")
+			return "cancel", nil
+		}
+
+		switch choice {
+		case "1", "merge":
+			return "merge", nil
+		case "2", "done":
+			return "done", nil
+		case "3", "cancel", "q":
+			return "cancel", nil
+		default:
+			fmt.Println("Invalid choice. Please enter 1, 2, or 3.")
+		}
 	}
 }

@@ -208,14 +208,17 @@ func TestDefaultFinishOptions(t *testing.T) {
 	if opts.SquashMerge != true {
 		t.Errorf("SquashMerge = %v, want true", opts.SquashMerge)
 	}
-	if opts.DeleteBranch != true {
-		t.Errorf("DeleteBranch = %v, want true", opts.DeleteBranch)
+	if opts.DeleteBranch != false {
+		t.Errorf("DeleteBranch = %v, want false (don't delete by default)", opts.DeleteBranch)
 	}
 	if opts.TargetBranch != "" {
 		t.Errorf("TargetBranch = %q, want empty (auto-detect)", opts.TargetBranch)
 	}
 	if opts.PushAfter != false {
 		t.Errorf("PushAfter = %v, want false", opts.PushAfter)
+	}
+	if opts.ForceMerge != false {
+		t.Errorf("ForceMerge = %v, want false (create PR by default)", opts.ForceMerge)
 	}
 }
 

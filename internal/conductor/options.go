@@ -261,20 +261,20 @@ type FinishOptions struct {
 	PushAfter    bool   // Push after merge
 
 	// PR-related options (for GitHub provider)
-	CreatePR bool   // Create PR instead of local merge
-	DraftPR  bool   // Create PR as draft
-	PRTitle  string // Custom PR title (defaults to task title)
-	PRBody   string // Custom PR body
+	ForceMerge bool   // Force local merge instead of PR creation
+	DraftPR    bool   // Create PR as draft
+	PRTitle    string // Custom PR title (defaults to task title)
+	PRBody     string // Custom PR body
 }
 
 // DefaultFinishOptions returns default finish options
 func DefaultFinishOptions() FinishOptions {
 	return FinishOptions{
 		SquashMerge:  true,
-		DeleteBranch: true,
-		TargetBranch: "", // Auto-detect base branch
-		PushAfter:    false,
-		CreatePR:     false,
+		DeleteBranch: false, // Don't delete by default
+		TargetBranch: "",    // Auto-detect base branch
+		PushAfter:    false, // Don't push by default
+		ForceMerge:   false, // Create PR by default if supported
 		DraftPR:      false,
 	}
 }
