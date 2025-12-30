@@ -27,6 +27,7 @@ Cost tracking works by:
 | `--by-step`     | Break down costs by workflow step        | `false` |
 | `--all`         | Show costs for all tasks in workspace    | `false` |
 | `--summary`     | Show aggregate summary across all tasks  | `false` |
+| `--json`        | Output as JSON for programmatic use      | `false` |
 
 ## Output
 
@@ -86,6 +87,47 @@ All Tasks Summary:
   Output Tokens: 56,000
   Cached Tokens: 80,000
   Total Cost: $1.5770
+```
+
+### JSON Output
+
+For programmatic access, use `--json`:
+
+```bash
+mehr cost --json
+```
+
+Output:
+
+```json
+{
+  "task_id": "abc12345",
+  "title": "Add user authentication",
+  "total_tokens": 170000,
+  "input_tokens": 125000,
+  "output_tokens": 45000,
+  "cached_tokens": 80000,
+  "cached_percent": 47.1,
+  "total_cost_usd": 1.235,
+  "by_step": {
+    "planning": {
+      "input_tokens": 45000,
+      "output_tokens": 15000,
+      "cached_tokens": 30000,
+      "total_tokens": 60000,
+      "cost_usd": 0.45,
+      "calls": 2
+    },
+    "implementing": {
+      "input_tokens": 60000,
+      "output_tokens": 25000,
+      "cached_tokens": 50000,
+      "total_tokens": 85000,
+      "cost_usd": 0.65,
+      "calls": 5
+    }
+  }
+}
 ```
 
 ## Cost Data Location
