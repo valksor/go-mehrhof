@@ -62,6 +62,8 @@ providers:
 | `--no-branch`          |       | bool   | false                  | Skip creating a git branch |
 | `--worktree`           | `-w`  | bool   | false                  | Create a separate git worktree                        |
 | `--key`                | `-k`  | string | auto                   | External key for branch/commit naming                 |
+| `--title`              |       | string | auto                   | Task title override                                   |
+| `--slug`               |       | string | auto                   | Branch slug override                                  |
 | `--commit-prefix`      |       | string | `[{key}]`              | Commit prefix template                                |
 | `--branch-pattern`     |       | string | `{type}/{key}--{slug}` | Branch pattern template                               |
 
@@ -75,6 +77,10 @@ providers:
 | `{slug}`    | URL-safe slugified title                   | `add-user-auth`          |
 
 **Key resolution priority:** CLI `--key` > frontmatter `key:` > filename > task ID
+
+**Title resolution priority:** CLI `--title` > frontmatter `title:` > first `#` heading > filename
+
+**Slug resolution priority:** CLI `--slug` > frontmatter `slug:` > generated from title
 
 ## Examples
 
@@ -122,6 +128,22 @@ Task registered: a1b2c3d4
   Key: JIRA-456
   Branch: task/JIRA-456--add-user-auth
 ```
+
+### Override Title and Slug via CLI
+
+```bash
+# Override the title
+mehr start --title "Fix critical login bug" file:task.md
+
+# Override the slug for branch naming
+mehr start --slug "login-fix" file:task.md
+
+# Use filename as title with custom slug
+mehr start file:test.md --slug "test"
+# Branch: task/test--test (filename 'test' becomes title)
+```
+
+**Note:** When no title is found in the file (no frontmatter `title:` and no `#` heading), the filename (without extension) is used as the title.
 
 ### Start from a Directory
 
@@ -256,6 +278,7 @@ Brief description of what needs to be done.
 | `title` | Task title (overrides H1)    | `Add user authentication` |
 | `key`   | External key for naming      | `AUTH-001`, `JIRA-123`    |
 | `type`  | Task type for branch pattern | `feature`, `fix`, `docs`  |
+| `slug`  | Branch slug override         | `add-auth`, `login-fix`   |
 
 ## What Happens
 

@@ -46,10 +46,19 @@ func (c *Conductor) resolveNaming(workUnit *provider.WorkUnit, taskID string) *n
 		taskType = "task"
 	}
 
-	// Resolve slug
+	// Resolve title: CLI flag > workUnit
+	title := workUnit.Title
+	if c.opts.TitleOverride != "" {
+		title = c.opts.TitleOverride
+	}
+
+	// Resolve slug: CLI flag > workUnit > generated from title
 	slug := workUnit.Slug
 	if slug == "" {
-		slug = naming.Slugify(workUnit.Title, 50)
+		slug = naming.Slugify(title, 50)
+	}
+	if c.opts.SlugOverride != "" {
+		slug = c.opts.SlugOverride
 	}
 
 	// Resolve branch pattern template: CLI flag > workspace config
@@ -70,7 +79,7 @@ func (c *Conductor) resolveNaming(workUnit *provider.WorkUnit, taskID string) *n
 		TaskID: taskID,
 		Type:   taskType,
 		Slug:   slug,
-		Title:  workUnit.Title,
+		Title:  title,
 	}
 
 	// Expand templates

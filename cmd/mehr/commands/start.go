@@ -18,6 +18,8 @@ var (
 	startNoBranch      bool
 	startWorktree      bool
 	startKey           string // External key override (e.g., "FEATURE-123")
+	startTitle         string // Title override for the task
+	startSlug          string // Slug override for branch naming
 	startCommitPrefix  string // Commit prefix template override
 	startBranchPattern string // Branch pattern template override
 	startTemplate      string // Template to apply
@@ -76,6 +78,8 @@ func init() {
 
 	// Naming override flags
 	startCmd.Flags().StringVarP(&startKey, "key", "k", "", "External key for branch/commit naming (e.g., FEATURE-123)")
+	startCmd.Flags().StringVar(&startTitle, "title", "", "Task title override")
+	startCmd.Flags().StringVar(&startSlug, "slug", "", "Branch slug override (e.g., custom-slug)")
 	startCmd.Flags().StringVar(&startCommitPrefix, "commit-prefix", "", "Commit prefix template (e.g., [{key}])")
 	startCmd.Flags().StringVar(&startBranchPattern, "branch-pattern", "", "Branch pattern template (e.g., {type}/{key}--{slug})")
 	startCmd.Flags().StringVarP(&startTemplate, "template", "t", "", "Template to apply (bug-fix, feature, refactor, docs, test, chore)")
@@ -165,6 +169,12 @@ func runStart(cmd *cobra.Command, args []string) error {
 	// Naming override options
 	if startKey != "" {
 		opts = append(opts, conductor.WithExternalKey(startKey))
+	}
+	if startTitle != "" {
+		opts = append(opts, conductor.WithTitleOverride(startTitle))
+	}
+	if startSlug != "" {
+		opts = append(opts, conductor.WithSlugOverride(startSlug))
 	}
 	if startCommitPrefix != "" {
 		opts = append(opts, conductor.WithCommitPrefixTemplate(startCommitPrefix))

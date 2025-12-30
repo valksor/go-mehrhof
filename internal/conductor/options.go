@@ -40,6 +40,8 @@ type Options struct {
 
 	// Naming overrides (CLI flags)
 	ExternalKey           string // Override external key (e.g., "FEATURE-123")
+	TitleOverride         string // Override task title
+	SlugOverride          string // Override branch slug
 	CommitPrefixTemplate  string // Override commit prefix template (e.g., "[{key}]")
 	BranchPatternTemplate string // Override branch pattern template (e.g., "{type}/{key}--{slug}")
 
@@ -206,6 +208,20 @@ func WithCommitPrefixTemplate(template string) Option {
 func WithBranchPatternTemplate(template string) Option {
 	return func(o *Options) {
 		o.BranchPatternTemplate = template
+	}
+}
+
+// WithTitleOverride sets the task title override
+func WithTitleOverride(title string) Option {
+	return func(o *Options) {
+		o.TitleOverride = title
+	}
+}
+
+// WithSlugOverride sets the branch slug override
+func WithSlugOverride(slug string) Option {
+	return func(o *Options) {
+		o.SlugOverride = slug
 	}
 }
 
