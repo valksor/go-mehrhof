@@ -55,7 +55,7 @@ func runCost(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	ws, err := storage.OpenWorkspace(res.Root)
+	ws, err := storage.OpenWorkspace(res.Root, nil)
 	if err != nil {
 		return fmt.Errorf("open workspace: %w", err)
 	}

@@ -9,7 +9,7 @@ import (
 var workflowCmd = &cobra.Command{
 	Use:   "workflow",
 	Short: "Show the workflow state machine diagram",
-	Long: `Display a visual representation of the mehrhof workflow state machine.
+	Long: `Display a visual representation of the Mehrhof workflow state machine.
 
 This shows all valid states and transitions in the workflow, helping you understand
 how tasks flow from start to completion.

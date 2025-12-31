@@ -40,7 +40,7 @@ func NewTestContext(t *testing.T) *TestContext {
 	stderrBuf := &bytes.Buffer{}
 
 	// Set up workspace
-	ws, err := storage.OpenWorkspace(tmpDir)
+	ws, err := storage.OpenWorkspace(tmpDir, nil)
 	if err != nil {
 		t.Fatalf("Open workspace: %v", err)
 	}

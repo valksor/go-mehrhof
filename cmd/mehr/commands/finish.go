@@ -18,6 +18,7 @@ var (
 	finishTargetBranch  string
 	finishSkipQuality   bool
 	finishQualityTarget string
+	finishDeleteWork    bool
 	// PR-related flags
 	finishDraftPR bool
 	finishPRTitle string
@@ -42,6 +43,7 @@ By default, this:
 - For PR providers: creates a pull/merge request
 - For other providers: prompts what to do
 - Keeps the task branch (use --delete to remove it)
+- Keeps the work directory (use --delete-work to remove it)
 - Does NOT push after local merge (use --push to enable)
 
 When using --merge, this performs a local merge instead of creating a PR:
@@ -72,7 +74,8 @@ Examples:
   mehr finish --skip-quality       # Skip quality checks
   mehr finish --quality-target lint # Use custom make target
   mehr finish --draft              # Create PR as draft
-  mehr finish --pr-title "Fix bug" # Custom PR title`,
+  mehr finish --pr-title "Fix bug" # Custom PR title
+  mehr finish --delete-work        # Delete work directory after finishing`,
 	RunE: runFinish,
 }
 
@@ -87,6 +90,7 @@ func init() {
 	finishCmd.Flags().StringVarP(&finishTargetBranch, "target", "t", "", "Target branch to merge into")
 	finishCmd.Flags().BoolVar(&finishSkipQuality, "skip-quality", false, "Skip quality checks (make quality)")
 	finishCmd.Flags().StringVar(&finishQualityTarget, "quality-target", "quality", "Make target for quality checks")
+	finishCmd.Flags().BoolVar(&finishDeleteWork, "delete-work", false, "Delete work directory after finishing")
 
 	// PR-related flags
 	finishCmd.Flags().BoolVar(&finishDraftPR, "draft", false, "Create PR as draft")
@@ -183,11 +187,18 @@ func runFinish(cmd *cobra.Command, args []string) error {
 	}
 
 	// Build finish options
+	// Use tri-state for DeleteWork: nil=defer to config, true=delete, false=keep
+	var deleteWork *bool
+	if cmd.Flags().Changed("delete-work") {
+		deleteWork = conductor.BoolPtr(finishDeleteWork)
+	}
+
 	opts := conductor.FinishOptions{
 		SquashMerge:  !finishNoSquash,
 		DeleteBranch: finishDelete,
 		TargetBranch: finishTargetBranch,
 		PushAfter:    finishPush,
+		DeleteWork:   deleteWork,
 		// PR options
 		ForceMerge: finishMerge,
 		DraftPR:    finishDraftPR,

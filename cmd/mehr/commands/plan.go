@@ -185,7 +185,7 @@ func runStandalonePlan(cmd *cobra.Command) error {
 	}
 
 	// Open workspace
-	ws, err := storage.OpenWorkspace(cwd)
+	ws, err := storage.OpenWorkspace(cwd, nil)
 	if err != nil {
 		return fmt.Errorf("open workspace: %w", err)
 	}

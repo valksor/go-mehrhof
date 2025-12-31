@@ -38,6 +38,7 @@ func TestVersionCommand(t *testing.T) {
 			args: []string{"version"},
 			wantInOutput: []string{
 				"mehr 1.2.3",
+				"by Valksor",
 				"Commit: abc123",
 				"Built:  2024-01-15T10:30:00Z",
 				"Go:",
@@ -48,6 +49,7 @@ func TestVersionCommand(t *testing.T) {
 			args: []string{"version"},
 			wantInOutput: []string{
 				"mehr",
+				"by Valksor",
 				"Commit:",
 				"Built:",
 				"Go:",

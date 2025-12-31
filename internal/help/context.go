@@ -30,7 +30,7 @@ func LoadContext() *HelpContext {
 	}
 
 	// Try to open workspace
-	ws, err := storage.OpenWorkspace(cwd)
+	ws, err := storage.OpenWorkspace(cwd, nil)
 	if err != nil {
 		return ctx
 	}

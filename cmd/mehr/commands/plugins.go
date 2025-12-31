@@ -155,7 +155,7 @@ func runPluginsList(cmd *cobra.Command, args []string) error {
 	}
 
 	// Load workspace config to check enabled status
-	ws, _ := storage.OpenWorkspace(".")
+	ws, _ := storage.OpenWorkspace(".", nil)
 	var cfg *storage.WorkspaceConfig
 	if ws != nil {
 		cfg, _ = ws.LoadConfig()

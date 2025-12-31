@@ -20,6 +20,7 @@ var versionCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		out := cmd.OutOrStdout()
 		_, _ = fmt.Fprintf(out, "mehr %s\n", Version)
+		_, _ = fmt.Fprintf(out, "  by Valksor\n")
 		_, _ = fmt.Fprintf(out, "  Commit: %s\n", Commit)
 		_, _ = fmt.Fprintf(out, "  Built:  %s\n", BuildTime)
 		_, _ = fmt.Fprintf(out, "  Go:     %s\n", runtime.Version())

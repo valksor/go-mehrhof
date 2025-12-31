@@ -48,7 +48,7 @@ func runList(cmd *cobra.Command, args []string) error {
 
 	root := res.Root // Capture for later use
 
-	ws, err := storage.OpenWorkspace(root)
+	ws, err := storage.OpenWorkspace(root, nil)
 	if err != nil {
 		return fmt.Errorf("open workspace: %w", err)
 	}

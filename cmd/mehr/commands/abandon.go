@@ -95,10 +95,16 @@ func runAbandon(cmd *cobra.Command, args []string) error {
 	}
 
 	// Build delete options
+	// Use tri-state for DeleteWork: nil=defer to config, true=delete, false=keep
+	var deleteWork *bool
+	if cmd.Flags().Changed("keep-work") {
+		deleteWork = conductor.BoolPtr(!abandonKeepWork) // --keep-work means don't delete
+	}
+
 	opts := conductor.DeleteOptions{
-		Force:       abandonYes,
-		KeepBranch:  abandonKeepBranch,
-		KeepWorkDir: abandonKeepWork,
+		Force:      abandonYes,
+		KeepBranch: abandonKeepBranch,
+		DeleteWork: deleteWork,
 	}
 
 	// Perform delete

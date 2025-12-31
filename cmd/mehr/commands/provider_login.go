@@ -292,7 +292,7 @@ func runProviderLogin(providerName string) func(*cobra.Command, []string) error 
 			return fmt.Errorf("get working directory: %w", err)
 		}
 
-		ws, err := storage.OpenWorkspace(root)
+		ws, err := storage.OpenWorkspace(root, nil)
 		if err != nil {
 			return fmt.Errorf("open workspace: %w", err)
 		}

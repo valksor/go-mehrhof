@@ -294,7 +294,7 @@ func TestGetConfigToken(t *testing.T) {
 func TestLoadEnv(t *testing.T) {
 	t.Run("non-existent file", func(t *testing.T) {
 		tmpDir := t.TempDir()
-		ws, err := storage.OpenWorkspace(tmpDir)
+		ws, err := storage.OpenWorkspace(tmpDir, nil)
 		if err != nil {
 			t.Fatalf("OpenWorkspace: %v", err)
 		}
@@ -310,7 +310,7 @@ func TestLoadEnv(t *testing.T) {
 
 	t.Run("parse env file", func(t *testing.T) {
 		tmpDir := t.TempDir()
-		ws, err := storage.OpenWorkspace(tmpDir)
+		ws, err := storage.OpenWorkspace(tmpDir, nil)
 		if err != nil {
 			t.Fatalf("OpenWorkspace: %v", err)
 		}

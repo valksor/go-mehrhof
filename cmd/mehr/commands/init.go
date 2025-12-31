@@ -43,7 +43,7 @@ func runInit(cmd *cobra.Command, args []string) error {
 		root = git.Root()
 	}
 
-	ws, err := storage.OpenWorkspace(root)
+	ws, err := storage.OpenWorkspace(root, nil)
 	if err != nil {
 		return fmt.Errorf("open workspace: %w", err)
 	}

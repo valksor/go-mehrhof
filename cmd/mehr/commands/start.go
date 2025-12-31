@@ -170,7 +170,7 @@ func runStart(cmd *cobra.Command, args []string) error {
 
 	// Pass default provider from workspace config
 	if wd, err := os.Getwd(); err == nil {
-		if ws, err := storage.OpenWorkspace(wd); err == nil {
+		if ws, err := storage.OpenWorkspace(wd, nil); err == nil {
 			if wsCfg, err := ws.LoadConfig(); err == nil && wsCfg.Providers.Default != "" {
 				opts = append(opts, conductor.WithDefaultProvider(wsCfg.Providers.Default))
 			}
