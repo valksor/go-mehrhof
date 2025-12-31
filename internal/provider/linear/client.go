@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"time"
 
+	providererrors "github.com/valksor/go-mehrhof/internal/provider/errors"
 	"github.com/valksor/go-mehrhof/internal/provider/token"
 )
 
@@ -168,7 +169,7 @@ func (c *Client) GetIssue(ctx context.Context, issueID string) (*Issue, error) {
 	}
 
 	if response.Issue == nil {
-		return nil, ErrIssueNotFound
+		return nil, providererrors.ErrNotFound
 	}
 
 	return response.Issue, nil

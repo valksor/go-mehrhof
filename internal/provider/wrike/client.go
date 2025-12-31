@@ -3,7 +3,6 @@ package wrike
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -11,15 +10,12 @@ import (
 	"strings"
 	"time"
 
-	providererrors "github.com/valksor/go-mehrhof/internal/provider/errors"
+	"github.com/valksor/go-mehrhof/internal/provider/httpclient"
 	"github.com/valksor/go-mehrhof/internal/provider/token"
 )
 
 const (
 	defaultBaseURL = "https://www.wrike.com/api/v4"
-	defaultTimeout = 30 * time.Second
-	maxRetries     = 3
-	initialBackoff = 1 * time.Second
 )
 
 // Config holds client configuration
@@ -43,7 +39,7 @@ func NewClient(token, host string) *Client {
 	}
 
 	return &Client{
-		httpClient: &http.Client{Timeout: defaultTimeout},
+		httpClient: httpclient.NewHTTPClient(),
 		baseURL:    baseURL,
 		token:      token,
 	}
@@ -86,7 +82,7 @@ func (c *Client) doRequest(ctx context.Context, method, path string, body io.Rea
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return wrapAPIError(&httpError{code: resp.StatusCode, message: string(respBody)})
+		return wrapAPIError(httpclient.NewHTTPError(resp.StatusCode, string(respBody)))
 	}
 
 	if result != nil {
@@ -98,52 +94,12 @@ func (c *Client) doRequest(ctx context.Context, method, path string, body io.Rea
 	return nil
 }
 
-// doRequestWithRetry performs an HTTP request with exponential backoff retry
-// Retries on rate limit errors (429) and service unavailable (503)
+// doRequestWithRetry performs an HTTP request with exponential backoff retry.
+// Retries on rate limit errors (429) and service unavailable (503).
 func (c *Client) doRequestWithRetry(ctx context.Context, method, path string, body io.Reader, result any) error {
-	var lastErr error
-	backoff := initialBackoff
-
-	for attempt := 0; attempt <= maxRetries; attempt++ {
-		err := c.doRequest(ctx, method, path, body, result)
-		if err == nil {
-			return nil
-		}
-
-		lastErr = err
-
-		// Check if error is retryable
-		// 1. Check for specific error types (after wrapAPIError wrapping)
-		if errors.Is(err, providererrors.ErrRateLimited) {
-			// Rate limited - retry
-		} else if errors.Is(err, providererrors.ErrNetworkError) {
-			// Network error - retry
-		} else {
-			// 2. Check for unwrapped HTTP errors (before wrapAPIError)
-			var httpErr interface{ HTTPStatusCode() int }
-			if errors.As(err, &httpErr) {
-				statusCode := httpErr.HTTPStatusCode()
-				if statusCode != http.StatusTooManyRequests && statusCode != http.StatusServiceUnavailable {
-					return err // Not retryable
-				}
-			} else {
-				// Not a retryable error
-				return err
-			}
-		}
-
-		// Wait before retry (exponential backoff)
-		if attempt < maxRetries {
-			select {
-			case <-time.After(backoff):
-				backoff *= 2
-			case <-ctx.Done():
-				return ctx.Err()
-			}
-		}
-	}
-
-	return lastErr
+	return httpclient.WithRetry(ctx, httpclient.DefaultRetryConfig(), func() error {
+		return c.doRequest(ctx, method, path, body, result)
+	})
 }
 
 // GetTask fetches a task by ID
@@ -256,7 +212,7 @@ func (c *Client) DownloadAttachment(ctx context.Context, attachmentID string) (i
 
 	if resp.StatusCode != http.StatusOK {
 		defer func() { _ = resp.Body.Close() }()
-		return nil, "", wrapAPIError(&httpError{code: resp.StatusCode, message: "download failed"})
+		return nil, "", wrapAPIError(httpclient.NewHTTPError(resp.StatusCode, "download failed"))
 	}
 
 	return resp.Body, resp.Header.Get("Content-Disposition"), nil
@@ -336,18 +292,4 @@ type commentResponse struct {
 
 type attachmentsResponse struct {
 	Data []Attachment `json:"data"`
-}
-
-// httpError wraps an HTTP error for proper error handling
-type httpError struct {
-	message string
-	code    int
-}
-
-func (e *httpError) Error() string {
-	return fmt.Sprintf("HTTP %d: %s", e.code, e.message)
-}
-
-func (e *httpError) HTTPStatusCode() int {
-	return e.code
 }

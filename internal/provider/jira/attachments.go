@@ -2,7 +2,10 @@ package jira
 
 import (
 	"context"
+	"fmt"
 	"io"
+
+	providererrors "github.com/valksor/go-mehrhof/internal/provider/errors"
 )
 
 // DownloadAttachment downloads an attachment from Jira
@@ -34,7 +37,7 @@ func (p *Provider) DownloadAttachment(ctx context.Context, workUnitID, attachmen
 	}
 
 	if attachmentURL == "" {
-		return nil, ErrIssueNotFound
+		return nil, fmt.Errorf("%w: attachment %s", providererrors.ErrNotFound, attachmentID)
 	}
 
 	// Download the attachment

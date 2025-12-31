@@ -11,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	providererrors "github.com/valksor/go-mehrhof/internal/provider/errors"
 	"github.com/valksor/go-mehrhof/internal/provider/token"
 )
 
@@ -316,7 +317,7 @@ func (c *Client) doRequestWithRetry(ctx context.Context, method, path string, bo
 		// Retry on rate limit (429), service unavailable (503), or network errors
 		isRetryable := httpErr.code == http.StatusTooManyRequests ||
 			httpErr.code == http.StatusServiceUnavailable ||
-			errors.Is(err, ErrNetworkError)
+			errors.Is(err, providererrors.ErrNetworkError)
 
 		if !isRetryable || attempt == maxRetries {
 			return err

@@ -13,6 +13,7 @@ import (
 	"strings"
 	"time"
 
+	providererrors "github.com/valksor/go-mehrhof/internal/provider/errors"
 	"github.com/valksor/go-mehrhof/internal/provider/token"
 )
 
@@ -450,7 +451,7 @@ func (e *httpError) HTTPStatusCode() int {
 	return e.code
 }
 
-// wrapAPIError converts errors to typed errors
+// wrapAPIError converts errors to typed errors using shared error package.
 func wrapAPIError(err error) error {
 	if err == nil {
 		return nil
@@ -460,13 +461,13 @@ func wrapAPIError(err error) error {
 	if errors.As(err, &httpErr) {
 		switch httpErr.HTTPStatusCode() {
 		case http.StatusUnauthorized:
-			return fmt.Errorf("%w: %v", ErrUnauthorized, err)
+			return fmt.Errorf("%w: %v", providererrors.ErrUnauthorized, err)
 		case http.StatusForbidden:
-			return fmt.Errorf("%w: %v", ErrRateLimited, err)
+			return fmt.Errorf("%w: %v", providererrors.ErrRateLimited, err)
 		case http.StatusNotFound:
-			return fmt.Errorf("%w: %v", ErrIssueNotFound, err)
+			return fmt.Errorf("%w: %v", providererrors.ErrNotFound, err)
 		case http.StatusTooManyRequests:
-			return fmt.Errorf("%w: %v", ErrRateLimited, err)
+			return fmt.Errorf("%w: %v", providererrors.ErrRateLimited, err)
 		}
 	}
 
