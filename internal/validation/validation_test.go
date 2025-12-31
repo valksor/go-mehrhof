@@ -645,7 +645,7 @@ func TestValidatorValidate(t *testing.T) {
 	tmpDir := t.TempDir()
 
 	// Create a minimal workspace
-	ws, err := storage.OpenWorkspace(tmpDir)
+	ws, err := storage.OpenWorkspace(tmpDir, nil)
 	if err != nil {
 		t.Fatalf("OpenWorkspace: %v", err)
 	}
@@ -671,7 +671,7 @@ func TestValidatorValidate_StrictMode(t *testing.T) {
 	tmpDir := t.TempDir()
 
 	// Create workspace with config that has warnings
-	ws, err := storage.OpenWorkspace(tmpDir)
+	ws, err := storage.OpenWorkspace(tmpDir, nil)
 	if err != nil {
 		t.Fatalf("OpenWorkspace: %v", err)
 	}
@@ -696,7 +696,7 @@ func TestValidatorValidate_NoConfig(t *testing.T) {
 	tmpDir := t.TempDir()
 
 	// Create workspace without config file
-	ws, err := storage.OpenWorkspace(tmpDir)
+	ws, err := storage.OpenWorkspace(tmpDir, nil)
 	if err != nil {
 		t.Fatalf("OpenWorkspace: %v", err)
 	}
@@ -719,5 +719,210 @@ func TestValidatorValidate_NoConfig(t *testing.T) {
 	}
 	if !result.Valid {
 		t.Error("expected valid result when no config exists")
+	}
+}
+
+// Tests for validateStorageSettings
+
+func TestValidateStorageSettings_ValidPaths(t *testing.T) {
+	tests := []struct {
+		name    string
+		workDir string
+	}{
+		{"empty path (use default)", ""},
+		{"simple relative path", "work"},
+		{"nested relative path", "foo/bar/work"},
+		{"path with dots in name", ".mehrhof/work"},
+		{"path with underscores", "task_work"},
+		{"path with hyphens", "task-work"},
+		{"path with numbers", "work123"},
+		{"mixed alphanumeric", "tasks/work-v2"},
+		{"deeply nested", "a/b/c/d/e/work"},
+		{"single dot directory", "./work"},
+		{"trailing slash", "work/"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := NewResult()
+			storageSettings := storage.StorageSettings{WorkDir: tt.workDir}
+			validateStorageSettings(storageSettings, "config.yaml", result)
+
+			if !result.Valid {
+				t.Errorf("expected valid for %q, got errors: %+v", tt.workDir, result.Findings)
+			}
+		})
+	}
+}
+
+func TestValidateStorageSettings_AbsolutePaths(t *testing.T) {
+	tests := []struct {
+		name    string
+		workDir string
+	}{
+		{"unix absolute path", "/var/task-work"},
+		{"unix root", "/"},
+		{"windows style absolute", "\\task-work"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := NewResult()
+			storageSettings := storage.StorageSettings{WorkDir: tt.workDir}
+			validateStorageSettings(storageSettings, "config.yaml", result)
+
+			if result.Valid {
+				t.Errorf("expected error for absolute path %q", tt.workDir)
+			}
+			if result.Errors != 1 {
+				t.Errorf("expected 1 error, got %d", result.Errors)
+			}
+			// Verify error code
+			if len(result.Findings) > 0 && result.Findings[0].Code != CodeInvalidPath {
+				t.Errorf("expected INVALID_PATH error code, got %s", result.Findings[0].Code)
+			}
+		})
+	}
+}
+
+func TestValidateStorageSettings_HomeExpansion(t *testing.T) {
+	tests := []struct {
+		name    string
+		workDir string
+	}{
+		{"tilde alone", "~"},
+		{"tilde with slash", "~/work"},
+		{"tilde with path", "~/.mehrhof/work"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := NewResult()
+			storageSettings := storage.StorageSettings{WorkDir: tt.workDir}
+			validateStorageSettings(storageSettings, "config.yaml", result)
+
+			if result.Valid {
+				t.Errorf("expected error for home expansion %q", tt.workDir)
+			}
+			if result.Errors != 1 {
+				t.Errorf("expected 1 error, got %d", result.Errors)
+			}
+		})
+	}
+}
+
+func TestValidateStorageSettings_PathTraversal(t *testing.T) {
+	tests := []struct {
+		name    string
+		workDir string
+	}{
+		{"simple parent ref", ".."},
+		{"parent with path", "../work"},
+		{"nested parent ref", "foo/../bar"},
+		{"double parent", "../../work"},
+		{"hidden parent", ".mehrhof/../secret"},
+		{"parent at end", "work/.."},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := NewResult()
+			storageSettings := storage.StorageSettings{WorkDir: tt.workDir}
+			validateStorageSettings(storageSettings, "config.yaml", result)
+
+			if result.Valid {
+				t.Errorf("expected error for path traversal %q", tt.workDir)
+			}
+			if result.Errors != 1 {
+				t.Errorf("expected 1 error, got %d", result.Errors)
+			}
+		})
+	}
+}
+
+func TestValidateStorageSettings_InvalidCharacters(t *testing.T) {
+	tests := []struct {
+		name    string
+		workDir string
+	}{
+		{"space in path", "work dir"},
+		{"special chars", "work@dir"},
+		{"hash symbol", "work#1"},
+		{"dollar sign", "work$var"},
+		{"percent", "work%20"},
+		{"asterisk", "work*"},
+		{"question mark", "work?"},
+		{"brackets", "work[1]"},
+		{"curly braces", "work{1}"},
+		{"semicolon", "work;dir"},
+		{"equals", "work=dir"},
+		{"ampersand", "work&dir"},
+		{"pipe", "work|dir"},
+		{"backslash in middle", "work\\dir"},
+		{"quotes", "work\"dir"},
+		{"backtick", "work`dir"},
+		{"colon", "C:work"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := NewResult()
+			storageSettings := storage.StorageSettings{WorkDir: tt.workDir}
+			validateStorageSettings(storageSettings, "config.yaml", result)
+
+			if result.Valid {
+				t.Errorf("expected error for invalid chars in %q", tt.workDir)
+			}
+			if result.Errors != 1 {
+				t.Errorf("expected 1 error, got %d for %q", result.Errors, tt.workDir)
+			}
+		})
+	}
+}
+
+func TestValidateWorkspaceConfig_WithStorageSettings(t *testing.T) {
+	builtInAgents := []string{"claude"}
+
+	tests := []struct {
+		name      string
+		storage   storage.StorageSettings
+		wantValid bool
+	}{
+		{
+			name:      "default storage settings",
+			storage:   storage.StorageSettings{},
+			wantValid: true,
+		},
+		{
+			name:      "custom valid path",
+			storage:   storage.StorageSettings{WorkDir: "custom/work"},
+			wantValid: true,
+		},
+		{
+			name:      "invalid absolute path",
+			storage:   storage.StorageSettings{WorkDir: "/absolute"},
+			wantValid: false,
+		},
+		{
+			name:      "invalid path traversal",
+			storage:   storage.StorageSettings{WorkDir: "../escape"},
+			wantValid: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cfg := &storage.WorkspaceConfig{
+				Git:     storage.GitSettings{BranchPattern: "{key}"},
+				Agent:   storage.AgentSettings{Default: "claude"},
+				Storage: tt.storage,
+			}
+			result := NewResult()
+			validateWorkspaceConfig(cfg, "config.yaml", builtInAgents, result)
+
+			if result.Valid != tt.wantValid {
+				t.Errorf("valid = %v, want %v (findings: %+v)", result.Valid, tt.wantValid, result.Findings)
+			}
+		})
 	}
 }

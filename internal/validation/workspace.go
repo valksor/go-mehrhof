@@ -22,6 +22,7 @@ const (
 	CodeInvalidEnum         = "INVALID_ENUM"
 	CodeInvalidRange        = "INVALID_RANGE"
 	CodePluginNotFound      = "PLUGIN_NOT_FOUND"
+	CodeInvalidPath         = "INVALID_PATH"
 )
 
 // Valid git pattern placeholders
@@ -35,6 +36,7 @@ func validateWorkspaceConfig(cfg *storage.WorkspaceConfig, configPath string, bu
 	validateGitSettings(cfg.Git, configPath, result)
 	validateAgentSettings(cfg.Agent, configPath, builtInAgents, cfg.Agents, result)
 	validateWorkflowSettings(cfg.Workflow, configPath, result)
+	validateStorageSettings(cfg.Storage, configPath, result)
 	validateAgentAliases(cfg.Agents, configPath, builtInAgents, result)
 	validatePluginsConfig(cfg.Plugins, configPath, result)
 
@@ -118,6 +120,38 @@ func validateWorkflowSettings(workflow storage.WorkflowSettings, configPath stri
 	// Validate session retention days (reasonable range: 1-365)
 	if workflow.SessionRetentionDays < 0 || workflow.SessionRetentionDays > 365 {
 		result.AddWarning(CodeInvalidRange, fmt.Sprintf("Session retention days %d may be unreasonable (expected 1-365)", workflow.SessionRetentionDays), "workflow.session_retention_days", configPath)
+	}
+}
+
+// validateStorageSettings validates storage-related configuration
+func validateStorageSettings(storage storage.StorageSettings, configPath string, result *Result) {
+	if storage.WorkDir == "" {
+		return // Empty is fine, will use default
+	}
+
+	// Check for absolute paths
+	if strings.HasPrefix(storage.WorkDir, "/") || strings.HasPrefix(storage.WorkDir, "\\") {
+		result.AddError(CodeInvalidPath, "Work directory must be relative to project root, not absolute", "storage.work_dir", configPath)
+		return
+	}
+
+	// Check for home directory expansion
+	if strings.HasPrefix(storage.WorkDir, "~") {
+		result.AddError(CodeInvalidPath, "Work directory cannot use home directory (~) expansion", "storage.work_dir", configPath)
+		return
+	}
+
+	// Check for path traversal attempts
+	if strings.Contains(storage.WorkDir, "..") {
+		result.AddError(CodeInvalidPath, "Work directory cannot contain '..' (would escape project root)", "storage.work_dir", configPath)
+		return
+	}
+
+	// Check for invalid characters (basic sanity check)
+	// Valid: alphanumeric, hyphen, underscore, dot, forward slash
+	validPathPattern := regexp.MustCompile(`^[a-zA-Z0-9._/-]+$`)
+	if !validPathPattern.MatchString(storage.WorkDir) {
+		result.AddError(CodeInvalidPath, "Work directory contains invalid characters", "storage.work_dir", configPath)
 	}
 }
 

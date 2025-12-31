@@ -58,7 +58,7 @@ func (v *Validator) Validate(ctx context.Context) (*Result, error) {
 func (v *Validator) validateWorkspace() (*Result, error) {
 	result := NewResult()
 
-	ws, err := storage.OpenWorkspace(v.workspacePath)
+	ws, err := storage.OpenWorkspace(v.workspacePath, nil)
 	if err != nil {
 		return nil, fmt.Errorf("open workspace: %w", err)
 	}
