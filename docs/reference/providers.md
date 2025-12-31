@@ -16,6 +16,10 @@ Providers are task sources that Mehrhof can read from and interact with. Each pr
 | **Wrike** | `wrike:`, `wk:` | Wrike tasks |
 | **YouTrack** | `youtrack:`, `yt:` | YouTrack issues |
 | **Trello** | `trello:`, `tr:` | Trello cards |
+| **Asana** | `asana:`, `as:` | Asana tasks |
+| **ClickUp** | `clickup:`, `cu:` | ClickUp tasks |
+| **Azure DevOps** | `azdo:`, `azure:` | Azure DevOps work items |
+| **Bitbucket** | `bitbucket:`, `bb:` | Bitbucket issues |
 
 ## Provider Capabilities
 
@@ -31,6 +35,19 @@ Providers are task sources that Mehrhof can read from and interact with. Each pr
 | `create_pr` | Create pull requests |
 | `download_attachment` | Download file attachments |
 | `snapshot` | Capture task content for storage |
+| `fetch_subtasks` | Retrieve subtasks/child items |
+
+### Subtask Support
+
+Providers implement subtasks differently based on their API:
+
+| Provider | Subtask Source |
+|----------|----------------|
+| Jira, Asana, ClickUp, Wrike, YouTrack | Native subtask API |
+| Linear | Child issues via GraphQL |
+| Azure DevOps | Child work items via relations |
+| Trello | Checklist items converted to subtasks |
+| GitHub, GitLab, Bitbucket | Task lists parsed from markdown (`- [ ]` / `- [x]`) |
 
 ---
 
@@ -89,7 +106,7 @@ The directory provider can enumerate all markdown files in a directory, allowing
 
 **Schemes:** `github:`, `gh:`
 
-**Capabilities:** `read`, `list`, `fetch_comments`, `comment`, `update_status`, `manage_labels`, `create_work_unit`, `create_pr`, `download_attachment`, `snapshot`
+**Capabilities:** `read`, `list`, `fetch_comments`, `comment`, `update_status`, `manage_labels`, `create_work_unit`, `create_pr`, `download_attachment`, `snapshot`, `fetch_subtasks`
 
 Interacts with GitHub issues for fully integrated task management.
 
@@ -180,7 +197,7 @@ The GitHub provider tries token sources in this order:
 
 **Schemes:** `gitlab:`, `gl:`
 
-**Capabilities:** `read`, `list`, `fetch_comments`, `comment`, `update_status`, `manage_labels`, `create_work_unit`, `download_attachment`, `snapshot`
+**Capabilities:** `read`, `list`, `fetch_comments`, `comment`, `update_status`, `manage_labels`, `create_work_unit`, `download_attachment`, `snapshot`, `fetch_subtasks`
 
 Interacts with GitLab issues for fully integrated task management. Works with both GitLab.com and self-hosted GitLab instances.
 
@@ -292,7 +309,7 @@ Create a Personal Access Token in GitLab:
 
 **Schemes:** `jira:`, `j:`
 
-**Capabilities:** `read`, `list`, `fetch_comments`, `comment`, `update_status`, `manage_labels`, `create_work_unit`, `download_attachment`, `snapshot`
+**Capabilities:** `read`, `list`, `fetch_comments`, `comment`, `update_status`, `manage_labels`, `create_work_unit`, `download_attachment`, `snapshot`, `fetch_subtasks`
 
 Integrates with Jira for comprehensive issue tracking. Supports both Jira Cloud and Jira Server/Data Center.
 
@@ -392,7 +409,7 @@ Common transition names mapped:
 
 **Schemes:** `linear:`, `ln:`
 
-**Capabilities:** `read`, `list`, `fetch_comments`, `comment`, `update_status`, `manage_labels`, `create_work_unit`, `snapshot`
+**Capabilities:** `read`, `list`, `fetch_comments`, `comment`, `update_status`, `manage_labels`, `create_work_unit`, `snapshot`, `fetch_subtasks`
 
 Integrates with Linear for modern project management and issue tracking.
 
@@ -540,7 +557,7 @@ You can customize these property names in your config.
 
 **Schemes:** `youtrack:`, `yt:`
 
-**Capabilities:** `read`, `list`, `fetch_comments`, `comment`, `update_status`, `manage_labels`, `create_work_unit`, `download_attachment`, `snapshot`
+**Capabilities:** `read`, `list`, `fetch_comments`, `comment`, `update_status`, `manage_labels`, `create_work_unit`, `download_attachment`, `snapshot`, `fetch_subtasks`
 
 Integrates with JetBrains YouTrack for comprehensive issue tracking.
 
@@ -618,7 +635,7 @@ youtrack:
 
 **Schemes:** `wrike:`, `wk:`
 
-**Capabilities:** `read`, `list`, `fetch_comments`, `comment`, `download_attachment`, `snapshot`
+**Capabilities:** `read`, `list`, `fetch_comments`, `comment`, `update_status`, `manage_labels`, `create_work_unit`, `download_attachment`, `snapshot`, `fetch_subtasks`
 
 Integrates with Wrike for enterprise project management.
 
@@ -665,7 +682,7 @@ wrike:
 
 **Schemes:** `trello:`, `tr:`
 
-**Capabilities:** `read`, `list`, `fetch_comments`, `comment`, `update_status`, `manage_labels`, `download_attachment`
+**Capabilities:** `read`, `list`, `fetch_comments`, `comment`, `update_status`, `manage_labels`, `create_work_unit`, `download_attachment`, `snapshot`, `fetch_subtasks`
 
 Integrates with Trello boards and cards for visual project management.
 
@@ -752,6 +769,307 @@ The provider searches for lists with names matching the target status.
 
 ---
 
+## Asana Provider
+
+**Schemes:** `asana:`, `as:`
+
+**Capabilities:** `read`, `list`, `fetch_comments`, `comment`, `update_status`, `manage_labels`, `snapshot`, `fetch_subtasks`
+
+Integrates with Asana for task and project management.
+
+### Usage
+
+```bash
+# By task GID (16-17 digit number)
+mehr start asana:1234567890123456
+mehr plan as:1234567890123456
+```
+
+### Configuration
+
+```yaml
+asana:
+  token: "${ASANA_TOKEN}"
+  workspace: "123456789"           # Optional: default workspace GID
+  default_project: "987654321"     # Optional: default project for listing
+```
+
+### Token Resolution
+
+1. `MEHR_ASANA_TOKEN` environment variable
+2. `ASANA_TOKEN` environment variable
+3. Token from `config.yaml`
+
+### Authentication
+
+Create a Personal Access Token at: https://app.asana.com/0/developer-console
+
+### Features
+
+- **Task Fetching**: Retrieves task name, notes, due dates, assignees, tags, custom fields
+- **List Tasks**: Browse tasks from projects with status filtering
+- **Comment Support**: Fetch and add stories (comments) to tasks
+- **Status Updates**: Move tasks between sections
+- **Tag Management**: Add and remove tags
+- **Snapshots**: Export task content as markdown
+
+### Status Mapping
+
+Status is determined by the task's section in Asana (case-insensitive):
+
+| Asana Section | Provider Status |
+|---------------|-----------------|
+| To Do, Backlog, New | Open |
+| In Progress, Doing | In Progress |
+| In Review, Review | Review |
+| Done, Complete | Done |
+| Archived | Closed |
+
+---
+
+## ClickUp Provider
+
+**Schemes:** `clickup:`, `cu:`
+
+**Capabilities:** `read`, `list`, `fetch_comments`, `comment`, `update_status`, `manage_labels`, `create_work_unit`, `snapshot`, `fetch_subtasks`
+
+Integrates with ClickUp for comprehensive task management.
+
+### Usage
+
+```bash
+# By task ID
+mehr start clickup:abc123xyz
+mehr plan cu:abc123xyz
+
+# By custom task ID (if enabled)
+mehr start cu:TASK-123
+```
+
+### Configuration
+
+```yaml
+clickup:
+  token: "${CLICKUP_TOKEN}"
+  workspace: "123456"            # Optional: workspace ID
+  default_list: "987654"         # Optional: default list for operations
+  custom_task_ids: true          # Enable PROJ-123 format
+```
+
+### Token Resolution
+
+1. `MEHR_CLICKUP_TOKEN` environment variable
+2. `CLICKUP_TOKEN` environment variable
+3. Token from `config.yaml`
+
+### Authentication
+
+Create an API token at: https://app.clickup.com/settings/apps
+
+### Reference Formats
+
+| Format | Example |
+|--------|---------|
+| Scheme with task ID | `clickup:abc123xyz` |
+| Short scheme | `cu:abc123xyz` |
+| Custom task ID | `cu:TASK-123` |
+
+### Features
+
+- **Task Fetching**: Retrieves task name, description, status, priority, tags, assignees, due dates
+- **List Tasks**: Browse tasks from lists with status filtering
+- **Comment Support**: Fetch and add comments
+- **Status Updates**: Change task status
+- **Tag Management**: Add and remove tags
+- **Task Creation**: Create new tasks in lists
+- **Snapshots**: Export task content as markdown
+
+### Status Mapping
+
+| ClickUp Status | Provider Status |
+|----------------|-----------------|
+| to do, open | Open |
+| in progress | In Progress |
+| in review | Review |
+| complete, closed | Done |
+
+---
+
+## Azure DevOps Provider
+
+**Schemes:** `azdo:`, `azure:`
+
+**Capabilities:** `read`, `list`, `fetch_comments`, `comment`, `update_status`, `manage_labels`, `create_work_unit`, `download_attachment`, `create_pr`, `snapshot`, `fetch_subtasks`
+
+Integrates with Azure DevOps for work item tracking and pull request management.
+
+### Usage
+
+```bash
+# By work item ID (requires configured org/project)
+mehr start azdo:123
+mehr plan azure:123
+
+# Explicit organization and project
+mehr start azdo:org/project#456
+
+# By URL
+mehr start azdo:https://dev.azure.com/org/project/_workitems/edit/123
+```
+
+### Configuration
+
+```yaml
+azure_devops:
+  token: "${AZURE_DEVOPS_TOKEN}"    # Personal Access Token
+  organization: "myorg"
+  project: "MyProject"
+  area_path: "MyProject\\Area"      # Optional: default area path
+  branch_pattern: "feature/{key}-{slug}"
+  target_branch: "main"
+```
+
+### Token Resolution
+
+1. `MEHR_AZURE_DEVOPS_TOKEN` environment variable
+2. `AZURE_DEVOPS_TOKEN` environment variable
+3. Token from `config.yaml`
+
+### Authentication
+
+Create a Personal Access Token at: https://dev.azure.com/{organization}/_usersSettings/tokens
+
+Required scopes: `Work Items (Read, Write)`, `Code (Read, Write)` for PR creation.
+
+### Reference Formats
+
+| Format | Example |
+|--------|---------|
+| Scheme with ID | `azdo:123` |
+| Short scheme | `azure:456` |
+| Org/project with ID | `azdo:org/project#123` |
+| URL | `azdo:https://dev.azure.com/org/project/_workitems/edit/123` |
+
+### Features
+
+- **Work Item Fetching**: Retrieves title, description, state, priority, tags, assignees
+- **List Work Items**: WIQL query support with status filtering
+- **Discussion Support**: Fetch and add comments
+- **State Updates**: Change work item state
+- **Tag Management**: Add and remove tags
+- **Work Item Creation**: Create Bugs, Tasks, User Stories, Features
+- **PR Creation**: Create pull requests with automatic work item linking (AB#123 syntax)
+- **Snapshots**: Export work item content as markdown
+
+### Status Mapping
+
+| Azure DevOps State | Provider Status |
+|--------------------|-----------------|
+| New, To Do | Open |
+| Active, In Progress, Doing | In Progress |
+| Resolved | Review |
+| Closed, Done | Done |
+| Removed | Closed |
+
+### Priority Mapping
+
+| Azure DevOps Priority | Provider Priority |
+|-----------------------|-------------------|
+| 1 | Critical |
+| 2 | High |
+| 3 | Normal |
+| 4 | Low |
+
+### Work Item Types
+
+Supported work item types: Bug, Task, User Story, Feature, Epic (configurable by project).
+
+---
+
+## Bitbucket Provider
+
+**Schemes:** `bitbucket:`, `bb:`
+
+**Capabilities:** `read`, `list`, `fetch_comments`, `comment`, `update_status`, `manage_labels`, `create_work_unit`, `download_attachment`, `create_pr`, `snapshot`, `fetch_subtasks`
+
+Integrates with Bitbucket Cloud for issue tracking and pull request management.
+
+### Usage
+
+```bash
+# By issue ID (requires configured workspace/repo)
+mehr start bitbucket:123
+mehr plan bb:123
+
+# Explicit workspace and repository
+mehr start bb:workspace/repo#456
+
+# By URL
+mehr start bb:https://bitbucket.org/workspace/repo/issues/123
+```
+
+### Configuration
+
+```yaml
+bitbucket:
+  token: "${BITBUCKET_TOKEN}"       # App password
+  workspace: "myworkspace"
+  repo: "myrepo"
+  branch_pattern: "issue/{key}-{slug}"
+  target_branch: "main"
+  draft_pr: false
+```
+
+### Token Resolution
+
+1. `MEHR_BITBUCKET_TOKEN` environment variable
+2. `BITBUCKET_TOKEN` environment variable
+3. Token from `config.yaml`
+
+### Authentication
+
+Create an App Password at: https://bitbucket.org/account/settings/app-passwords/
+
+Required permissions: `Issues: Read, Write`, `Repositories: Read, Write`, `Pull requests: Write`.
+
+### Reference Formats
+
+| Format | Example |
+|--------|---------|
+| Scheme with issue ID | `bitbucket:123` |
+| Short scheme | `bb:456` |
+| Workspace/repo with ID | `bb:workspace/repo#123` |
+| Issue URL | `bb:https://bitbucket.org/workspace/repo/issues/123` |
+
+### Features
+
+- **Issue Fetching**: Retrieves title, content, state, priority, assignee
+- **List Issues**: Browse repository issues with status filtering
+- **Comment Support**: Fetch and add comments
+- **State Updates**: Change issue state
+- **PR Creation**: Create pull requests
+- **Snapshots**: Export issue content as markdown
+
+### Status Mapping
+
+| Bitbucket State | Provider Status |
+|-----------------|-----------------|
+| new, open | Open |
+| on hold | In Progress |
+| resolved | Done |
+| closed, invalid, duplicate, wontfix | Closed |
+
+### Priority Mapping
+
+| Bitbucket Priority | Provider Priority |
+|--------------------|-------------------|
+| critical | Critical |
+| major | High |
+| minor | Normal |
+| trivial | Low |
+
+---
+
 ## Plugin Providers
 
 You can extend Mehrhof with custom providers through the plugin system. See [Plugins](../concepts/plugins.md) for details.
@@ -788,6 +1106,11 @@ Provider plugins communicate via JSON-RPC 2.0 over stdin/stdout. See the plugin 
 | Notion | `notion:page-id` or URL | `notion:a1b2c3d4e5f6...`, `notion:https://notion.so/...` |
 | Wrike | `wrike:ID` or permalink | `wrike:IEAGI2D4I4AL7YNL` |
 | YouTrack | `youtrack:ABC-123` or URL | `youtrack:ABC-123`, `youtrack:https://...` |
+| Trello | `trello:ID` or `trello:shortLink` | `trello:507f1f77bcf86cd799439011`, `trello:abc12XYZ` |
+| Asana | `asana:TASK-GID` | `asana:1234567890123456` |
+| ClickUp | `clickup:ID` or `clickup:TASK-ID` | `clickup:abc123xyz`, `clickup:TASK-123` |
+| Azure DevOps | `azdo:ID` or `azdo:org/project#ID` | `azdo:123`, `azdo:org/project#456` |
+| Bitbucket | `bitbucket:ID` or `bb:workspace/repo#ID` | `bb:123`, `bb:workspace/repo#456` |
 
 ---
 

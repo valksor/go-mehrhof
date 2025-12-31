@@ -132,6 +132,101 @@ agents:
 | `mistral` | 7B | Fast inference |
 | `mixtral` | 8x7B | High quality, larger context |
 
+### GitHub Copilot
+
+GitHub Copilot agent wraps the `gh copilot` CLI extension for shell command suggestions and code explanations.
+
+**Prerequisites:**
+
+- GitHub CLI installed (`gh`)
+- Copilot extension installed (`gh extension install github/gh-copilot`)
+- Active GitHub Copilot subscription
+
+```bash
+# Verify Copilot works
+gh copilot --version
+```
+
+**Key Features:**
+
+- **Suggest mode**: Generate shell commands from natural language
+- **Explain mode**: Explain what commands do
+- **Target types**: Shell, Git, or GitHub CLI commands
+
+**Configuration:**
+
+```yaml
+# .mehrhof/config.yaml
+agents:
+  copilot-shell:
+    extends: copilot
+    description: "Copilot for shell commands"
+    args: ["--target", "shell"]
+
+  copilot-git:
+    extends: copilot
+    description: "Copilot for git commands"
+    args: ["--target", "git"]
+```
+
+**Limitations:**
+
+- Cloud-only (requires GitHub subscription)
+- Best for command-line tasks, not code generation
+- Context sent to GitHub servers
+
+### OpenRouter
+
+OpenRouter provides unified access to 100+ AI models through a single API. Useful for accessing models from OpenAI, Anthropic, Google, Meta, and others.
+
+**Prerequisites:**
+
+- OpenRouter API key (get one at https://openrouter.ai/keys)
+
+```bash
+# Set API key
+export OPENROUTER_API_KEY="sk-or-..."
+```
+
+**Key Features:**
+
+- **Model variety**: Access to Claude, GPT-4, Gemini, Llama, and many more
+- **Cost optimization**: Choose models based on price/performance
+- **Fallback support**: Configure backup models
+- **Streaming**: Full streaming support for real-time responses
+
+**Default Model:** `anthropic/claude-3.5-sonnet`
+
+**Configuration:**
+
+```yaml
+# .mehrhof/config.yaml
+agents:
+  openrouter-gpt4:
+    extends: openrouter
+    description: "OpenRouter with GPT-4"
+    args: ["--model", "openai/gpt-4-turbo"]
+
+  openrouter-gemini:
+    extends: openrouter
+    description: "OpenRouter with Gemini"
+    args: ["--model", "google/gemini-pro-1.5"]
+
+  openrouter-llama:
+    extends: openrouter
+    description: "OpenRouter with Llama 3.1"
+    args: ["--model", "meta-llama/llama-3.1-405b-instruct"]
+```
+
+**Popular Models:**
+
+| Model | Provider | Best For |
+|-------|----------|----------|
+| `anthropic/claude-3.5-sonnet` | Anthropic | General coding |
+| `openai/gpt-4-turbo` | OpenAI | Complex reasoning |
+| `google/gemini-pro-1.5` | Google | Large context |
+| `meta-llama/llama-3.1-405b-instruct` | Meta | Open-source alternative |
+
 ## Selecting an Agent
 
 ### At Start Time

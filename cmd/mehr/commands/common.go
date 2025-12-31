@@ -14,11 +14,17 @@ import (
 	"github.com/valksor/go-mehrhof/internal/agent/aider"
 	"github.com/valksor/go-mehrhof/internal/agent/claude"
 	"github.com/valksor/go-mehrhof/internal/agent/codex"
+	"github.com/valksor/go-mehrhof/internal/agent/copilot"
 	"github.com/valksor/go-mehrhof/internal/agent/ollama"
+	"github.com/valksor/go-mehrhof/internal/agent/openrouter"
 	"github.com/valksor/go-mehrhof/internal/conductor"
 	"github.com/valksor/go-mehrhof/internal/display"
 	"github.com/valksor/go-mehrhof/internal/events"
 	"github.com/valksor/go-mehrhof/internal/output"
+	"github.com/valksor/go-mehrhof/internal/provider/asana"
+	"github.com/valksor/go-mehrhof/internal/provider/azuredevops"
+	"github.com/valksor/go-mehrhof/internal/provider/bitbucket"
+	"github.com/valksor/go-mehrhof/internal/provider/clickup"
 	"github.com/valksor/go-mehrhof/internal/provider/directory"
 	"github.com/valksor/go-mehrhof/internal/provider/file"
 	"github.com/valksor/go-mehrhof/internal/provider/github"
@@ -70,6 +76,10 @@ func initializeConductor(ctx context.Context, opts ...conductor.Option) (*conduc
 	notion.Register(cond.GetProviderRegistry())
 	trello.Register(cond.GetProviderRegistry())
 	youtrack.Register(cond.GetProviderRegistry())
+	bitbucket.Register(cond.GetProviderRegistry())
+	asana.Register(cond.GetProviderRegistry())
+	clickup.Register(cond.GetProviderRegistry())
+	azuredevops.Register(cond.GetProviderRegistry())
 
 	// Register standard agents
 	if err := claude.Register(cond.GetAgentRegistry()); err != nil {
@@ -83,6 +93,12 @@ func initializeConductor(ctx context.Context, opts ...conductor.Option) (*conduc
 	}
 	if err := ollama.Register(cond.GetAgentRegistry()); err != nil {
 		return nil, fmt.Errorf("register ollama agent: %w", err)
+	}
+	if err := copilot.Register(cond.GetAgentRegistry()); err != nil {
+		return nil, fmt.Errorf("register copilot agent: %w", err)
+	}
+	if err := openrouter.Register(cond.GetAgentRegistry()); err != nil {
+		return nil, fmt.Errorf("register openrouter agent: %w", err)
 	}
 
 	// Initialize the conductor (loads workspace, detects agent, etc.)

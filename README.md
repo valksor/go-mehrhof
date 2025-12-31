@@ -1242,6 +1242,161 @@ Generate API credentials at: https://trello.com/app-key
 | In Review | Review |
 | Done, Completed | Done |
 
+### Asana Provider
+
+Reads and manages tasks from Asana workspaces and projects.
+
+```bash
+mehr start asana:1234567890123456   # Task GID
+mehr start as:1234567890123456       # Short scheme
+```
+
+**Features:**
+
+- **Read**: Fetches task title, notes, status, due dates, assignees, tags
+- **List**: Browse tasks from projects with status filtering
+- **Comment**: Add comments (stories) to tasks
+- **Status**: Move tasks between sections
+
+**Token Resolution Priority:**
+
+1. `MEHR_ASANA_TOKEN` environment variable
+2. `ASANA_TOKEN` environment variable
+3. `.mehrhof/config.yaml` `asana.token`
+
+**Configuration:**
+
+```yaml
+asana:
+  token: "${ASANA_TOKEN}"
+  workspace: "123456789"        # Optional: default workspace GID
+  default_project: "987654321"  # Optional: default project GID
+```
+
+### ClickUp Provider
+
+Reads and manages tasks from ClickUp workspaces.
+
+```bash
+mehr start clickup:abc123xyz       # Task ID
+mehr start cu:abc123xyz            # Short scheme
+mehr start cu:TASK-123             # Custom task ID (if enabled)
+```
+
+**Features:**
+
+- **Read**: Fetches task title, description, status, priority, tags, assignees
+- **List**: Browse tasks from lists with status filtering
+- **Comment**: Add comments to tasks
+- **Status**: Update task status
+- **Labels**: Manage task tags
+
+**Token Resolution Priority:**
+
+1. `MEHR_CLICKUP_TOKEN` environment variable
+2. `CLICKUP_TOKEN` environment variable
+3. `.mehrhof/config.yaml` `clickup.token`
+
+**Configuration:**
+
+```yaml
+clickup:
+  token: "${CLICKUP_TOKEN}"
+  workspace: "123456"           # Optional: workspace ID
+  default_list: "987654"        # Optional: default list ID
+  custom_task_ids: true         # Use PROJ-123 format
+```
+
+### Azure DevOps Provider
+
+Reads and manages work items from Azure DevOps.
+
+```bash
+mehr start azdo:123                           # Work item ID
+mehr start azure:org/project#456              # Explicit org/project
+mehr start azdo:https://dev.azure.com/org/project/_workitems/edit/123
+```
+
+**Features:**
+
+- **Read**: Fetches work item title, description, state, priority, tags, assignees
+- **List**: Browse work items with WIQL query support
+- **Comment**: Add discussions to work items
+- **Status**: Update work item state
+- **Labels**: Manage work item tags
+- **PR Creation**: Create pull requests linked to work items (AB#123 syntax)
+
+**Token Resolution Priority:**
+
+1. `MEHR_AZURE_DEVOPS_TOKEN` environment variable
+2. `AZURE_DEVOPS_TOKEN` environment variable
+3. `.mehrhof/config.yaml` `azure_devops.token`
+
+**Configuration:**
+
+```yaml
+azure_devops:
+  token: "${AZURE_DEVOPS_TOKEN}"    # Personal Access Token
+  organization: "myorg"
+  project: "MyProject"
+  branch_pattern: "feature/{key}-{slug}"
+  target_branch: "main"
+```
+
+**Status Mapping:**
+
+| Azure DevOps State | Provider Status |
+|--------------------|-----------------|
+| New, To Do | Open |
+| Active, In Progress | In Progress |
+| Resolved | Review |
+| Closed, Done | Done |
+| Removed | Closed |
+
+### Bitbucket Provider
+
+Reads and manages issues from Bitbucket Cloud repositories.
+
+```bash
+mehr start bitbucket:123                    # Issue ID
+mehr start bb:workspace/repo#456            # Explicit workspace/repo
+mehr start bb:https://bitbucket.org/workspace/repo/issues/123
+```
+
+**Features:**
+
+- **Read**: Fetches issue title, content, state, priority, assignees
+- **List**: Browse repository issues with status filtering
+- **Comment**: Add comments to issues
+- **Status**: Update issue state
+- **PR Creation**: Create pull requests
+
+**Token Resolution Priority:**
+
+1. `MEHR_BITBUCKET_TOKEN` environment variable
+2. `BITBUCKET_TOKEN` environment variable
+3. `.mehrhof/config.yaml` `bitbucket.token`
+
+**Configuration:**
+
+```yaml
+bitbucket:
+  token: "${BITBUCKET_TOKEN}"       # App password
+  workspace: "myworkspace"
+  repo: "myrepo"
+  branch_pattern: "issue/{key}-{slug}"
+  target_branch: "main"
+```
+
+**Status Mapping:**
+
+| Bitbucket State | Provider Status |
+|-----------------|-----------------|
+| new, open | Open |
+| on hold | In Progress |
+| resolved | Done |
+| closed, invalid, duplicate, wontfix | Closed |
+
 ## Plugins
 
 Mehrhof supports plugins for extending functionality without recompilation. Plugins communicate via JSON-RPC 2.0 over stdin/stdout.
@@ -1323,7 +1478,13 @@ For plugin development documentation, see `.mehrhof/plugins/docs/`:
 cmd/mehr/           # CLI entry point
 internal/
 ├── agent/          # AI agent abstraction
-│   └── claude/     # Claude agent implementation
+│   ├── claude/     # Claude agent implementation
+│   ├── codex/      # Codex agent implementation
+│   ├── aider/      # Aider Git-aware pair programming agent
+│   ├── ollama/     # Ollama local LLM agent
+│   ├── copilot/    # GitHub Copilot CLI agent
+│   ├── openrouter/ # OpenRouter unified API agent
+│   └── session/    # Session recovery/checkpointing
 ├── conductor/      # Main orchestrator
 ├── config/         # Configuration loading
 ├── events/         # Event bus pub/sub
@@ -1333,12 +1494,17 @@ internal/
 │   ├── file/       # File provider
 │   ├── directory/  # Directory provider
 │   ├── github/     # GitHub issues provider
+│   ├── gitlab/     # GitLab issues provider
 │   ├── jira/       # Jira issues provider
 │   ├── linear/     # Linear issues provider
 │   ├── notion/     # Notion pages provider
 │   ├── wrike/      # Wrike tasks provider
 │   ├── youtrack/   # YouTrack issues provider
-│   └── trello/     # Trello cards provider
+│   ├── trello/     # Trello cards provider
+│   ├── asana/      # Asana tasks provider
+│   ├── clickup/    # ClickUp tasks provider
+│   ├── azuredevops/# Azure DevOps work items provider
+│   └── bitbucket/  # Bitbucket issues provider
 ├── storage/        # YAML-based persistence
 ├── vcs/            # Git operations
 └── workflow/       # State machine engine
