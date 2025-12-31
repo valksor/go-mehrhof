@@ -33,15 +33,23 @@ type Workspace struct {
 	workRoot string // .mehrhof/work directory
 }
 
-// OpenWorkspace opens or creates a workspace in the given directory
-func OpenWorkspace(repoRoot string) (*Workspace, error) {
+// OpenWorkspace opens or creates a workspace in the given directory.
+// If cfg is nil, defaults are used for work directory path.
+func OpenWorkspace(repoRoot string, cfg *WorkspaceConfig) (*Workspace, error) {
 	absRoot, err := filepath.Abs(repoRoot)
 	if err != nil {
 		return nil, fmt.Errorf("resolve path: %w", err)
 	}
 
 	taskRoot := filepath.Join(absRoot, taskDirName)
-	workRoot := filepath.Join(taskRoot, workSubDirName)
+
+	// Determine work directory path from config or default
+	workDir := ".mehrhof/work" // default
+	if cfg != nil && cfg.Storage.WorkDir != "" {
+		workDir = cfg.Storage.WorkDir
+	}
+	// Work directory is relative to project root (absRoot), not taskRoot
+	workRoot := filepath.Join(absRoot, workDir)
 
 	return &Workspace{
 		root:     absRoot,
@@ -126,6 +134,7 @@ type WorkspaceConfig struct {
 	YouTrack  *YouTrackSettings           `yaml:"youtrack,omitempty"`
 	Plugins   PluginsConfig               `yaml:"plugins,omitempty"`
 	Update    UpdateSettings              `yaml:"update,omitempty"`
+	Storage   StorageSettings             `yaml:"storage,omitempty"`
 }
 
 // PluginsConfig holds plugin-related configuration
@@ -241,12 +250,19 @@ type AgentSettings struct {
 type WorkflowSettings struct {
 	AutoInit             bool `yaml:"auto_init"`
 	SessionRetentionDays int  `yaml:"session_retention_days"`
+	DeleteWorkOnFinish   bool `yaml:"delete_work_on_finish"`  // Delete work dirs on finish (default: false)
+	DeleteWorkOnAbandon  bool `yaml:"delete_work_on_abandon"` // Delete work dirs on abandon (default: true)
 }
 
 // UpdateSettings holds update-related configuration
 type UpdateSettings struct {
 	Enabled       bool `yaml:"enabled"`        // Enable automatic update checks
 	CheckInterval int  `yaml:"check_interval"` // Hours between checks (default: 24)
+}
+
+// StorageSettings holds storage-related configuration
+type StorageSettings struct {
+	WorkDir string `yaml:"work_dir,omitempty"` // Path to work directory (relative to project root)
 }
 
 // ProvidersSettings holds provider-related configuration
@@ -271,6 +287,8 @@ func NewDefaultWorkspaceConfig() *WorkspaceConfig {
 		Workflow: WorkflowSettings{
 			AutoInit:             true,
 			SessionRetentionDays: 30,
+			DeleteWorkOnFinish:   false, // Keep work dirs by default on finish
+			DeleteWorkOnAbandon:  true,  // Delete work dirs by default on abandon
 		},
 		Providers: ProvidersSettings{
 			Default: "file",
@@ -278,6 +296,9 @@ func NewDefaultWorkspaceConfig() *WorkspaceConfig {
 		Update: UpdateSettings{
 			Enabled:       true,
 			CheckInterval: 24,
+		},
+		Storage: StorageSettings{
+			WorkDir: ".mehrhof/work", // Default: .mehrhof/work (relative to project root)
 		},
 		Env: make(map[string]string),
 	}
@@ -382,6 +403,31 @@ func (w *Workspace) SaveConfig(cfg *WorkspaceConfig) error {
 `
 	}
 
+	// Add storage section comment if storage work_dir is default/empty
+	if cfg.Storage.WorkDir == "" || cfg.Storage.WorkDir == ".mehrhof/work" {
+		content += `
+# Storage settings
+# Configure where task work directories are stored (relative to project root)
+# Example:
+# storage:
+#     work_dir: .mehrhof/work    # Default location
+#     work_dir: tasks/           # Alternative: store in project root tasks/ directory
+#     work_dir: .task-work       # Alternative: hidden directory in project root
+`
+	}
+
+	// Add workflow cleanup settings comment
+	if !cfg.Workflow.DeleteWorkOnFinish && cfg.Workflow.DeleteWorkOnAbandon {
+		content += `
+# Workflow cleanup settings
+# Control whether work directories are deleted when tasks finish/abandon
+# Example:
+# workflow:
+#     delete_work_on_finish: false   # Keep work dirs after finish (default)
+#     delete_work_on_abandon: true   # Delete work dirs on abandon (default)
+`
+	}
+
 	if err := os.WriteFile(w.ConfigPath(), []byte(content), 0o644); err != nil {
 		return fmt.Errorf("write config file: %w", err)
 	}
@@ -434,9 +480,20 @@ func (w *Workspace) UpdateGitignore() error {
 		content = string(data)
 	}
 
+	// Load config to get work directory setting
+	workDirEntry := ".mehrhof/work/" // default
+	cfg, err := w.LoadConfig()
+	if err == nil && cfg.Storage.WorkDir != "" {
+		workDirEntry = cfg.Storage.WorkDir
+		// Ensure trailing slash for directory
+		if !strings.HasSuffix(workDirEntry, "/") {
+			workDirEntry += "/"
+		}
+	}
+
 	// Define entries to add
 	entries := []string{
-		taskDirName + "/work/",
+		workDirEntry,
 		taskDirName + "/" + envFileName,
 		activeTaskFile,
 	}
