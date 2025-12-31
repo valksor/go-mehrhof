@@ -10,12 +10,29 @@ mehr review [flags]
 
 ## Description
 
-The `review` command runs an automated code review on the task's changes. By default, it uses CodeRabbit to analyze:
+The `review` command runs an automated code review on the task's changes. The review process includes:
+
+### Automated Linting
+
+Before the AI review, Mehrhof automatically detects and runs appropriate linters based on your project:
+
+| Project Type | Linter | Detection |
+|--------------|--------|-----------|
+| Go | golangci-lint | `go.mod` present |
+| JavaScript/TypeScript | ESLint | `package.json` present |
+| Python | Ruff | `pyproject.toml` or `requirements.txt` present |
+
+Lint results are included in the AI agent's review context, allowing it to address both lint issues and higher-level code quality concerns.
+
+### AI Code Review
+
+After linting, the AI agent analyzes:
 
 - Code quality issues
 - Potential bugs
 - Style violations
 - Security concerns
+- Lint issues found by automated linters
 
 Review results are saved to the work directory.
 

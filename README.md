@@ -90,7 +90,7 @@ mehr finish
 
 **Workflow Overview**: Mehrhof follows a plan → implement → review → finish cycle. Each step can be run independently, or use `mehr auto` for full automation.
 
-**Other Providers**: Use `github:123` for GitHub issues, `dir:tasks/` for directories, or configure providers in `.mehrhof/config.yaml`.
+**Other Providers**: Use `github:123` for GitHub issues, `trello:cardId` for Trello cards, `dir:tasks/` for directories, or configure providers in `.mehrhof/config.yaml`.
 
 ## Parallel Tasks
 
@@ -1197,6 +1197,51 @@ Notion databases have customizable property names. The provider maps these throu
 | `description_property` | Name of rich_text property for description | `Description` |
 | `labels_property` | Name of multi_select property for tags/labels | `Tags` |
 
+### Trello Provider
+
+Reads and manages cards from Trello boards.
+
+```bash
+mehr start trello:507f1f77bcf86cd799439011   # Card ID (24-char)
+mehr start tr:abc12XYZ                        # Short link (8-char)
+mehr start tr:https://trello.com/c/abc12XYZ/card-name  # Card URL
+```
+
+**Features:**
+
+- **Read**: Fetches card title, description, labels, members, checklists, attachments
+- **List**: Browse cards from boards
+- **Comment**: Add comments to cards
+- **Status**: Move cards between lists
+- **Labels**: Add/remove labels
+
+**Token Resolution Priority:**
+
+1. `MEHR_TRELLO_API_KEY` / `MEHR_TRELLO_TOKEN` environment variables
+2. `TRELLO_API_KEY` / `TRELLO_TOKEN` environment variables
+3. `.mehrhof/config.yaml` `trello.api_key` / `trello.token`
+
+**Configuration:**
+
+```yaml
+# .mehrhof/config.yaml
+trello:
+  api_key: "${TRELLO_API_KEY}"
+  token: "${TRELLO_TOKEN}"
+  board: "default-board-id"  # Optional: default board
+```
+
+Generate API credentials at: https://trello.com/app-key
+
+**Status Mapping (List Name → Status):**
+
+| Trello List | Provider Status |
+|-------------|-----------------|
+| To Do, Backlog | Open |
+| In Progress, Doing | In Progress |
+| In Review | Review |
+| Done, Completed | Done |
+
 ## Plugins
 
 Mehrhof supports plugins for extending functionality without recompilation. Plugins communicate via JSON-RPC 2.0 over stdin/stdout.
@@ -1292,7 +1337,8 @@ internal/
 │   ├── linear/     # Linear issues provider
 │   ├── notion/     # Notion pages provider
 │   ├── wrike/      # Wrike tasks provider
-│   └── youtrack/   # YouTrack issues provider
+│   ├── youtrack/   # YouTrack issues provider
+│   └── trello/     # Trello cards provider
 ├── storage/        # YAML-based persistence
 ├── vcs/            # Git operations
 └── workflow/       # State machine engine

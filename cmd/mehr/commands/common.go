@@ -11,8 +11,10 @@ import (
 	"sync"
 
 	"github.com/valksor/go-mehrhof/internal/agent"
+	"github.com/valksor/go-mehrhof/internal/agent/aider"
 	"github.com/valksor/go-mehrhof/internal/agent/claude"
 	"github.com/valksor/go-mehrhof/internal/agent/codex"
+	"github.com/valksor/go-mehrhof/internal/agent/ollama"
 	"github.com/valksor/go-mehrhof/internal/conductor"
 	"github.com/valksor/go-mehrhof/internal/display"
 	"github.com/valksor/go-mehrhof/internal/events"
@@ -24,6 +26,7 @@ import (
 	"github.com/valksor/go-mehrhof/internal/provider/jira"
 	"github.com/valksor/go-mehrhof/internal/provider/linear"
 	"github.com/valksor/go-mehrhof/internal/provider/notion"
+	"github.com/valksor/go-mehrhof/internal/provider/trello"
 	"github.com/valksor/go-mehrhof/internal/provider/wrike"
 	"github.com/valksor/go-mehrhof/internal/provider/youtrack"
 	"github.com/valksor/go-mehrhof/internal/vcs"
@@ -65,6 +68,7 @@ func initializeConductor(ctx context.Context, opts ...conductor.Option) (*conduc
 	linear.Register(cond.GetProviderRegistry())
 	jira.Register(cond.GetProviderRegistry())
 	notion.Register(cond.GetProviderRegistry())
+	trello.Register(cond.GetProviderRegistry())
 	youtrack.Register(cond.GetProviderRegistry())
 
 	// Register standard agents
@@ -73,6 +77,12 @@ func initializeConductor(ctx context.Context, opts ...conductor.Option) (*conduc
 	}
 	if err := codex.Register(cond.GetAgentRegistry()); err != nil {
 		return nil, fmt.Errorf("register codex agent: %w", err)
+	}
+	if err := aider.Register(cond.GetAgentRegistry()); err != nil {
+		return nil, fmt.Errorf("register aider agent: %w", err)
+	}
+	if err := ollama.Register(cond.GetAgentRegistry()); err != nil {
+		return nil, fmt.Errorf("register ollama agent: %w", err)
 	}
 
 	// Initialize the conductor (loads workspace, detects agent, etc.)
