@@ -1,4 +1,4 @@
-# Mehrhof - AI-Powered Task Automation CLI
+# Valksor Mehrhof - AI-Powered Task Automation CLI
 
 [![valksor](https://badgen.net/static/org/valksor/green)](https://github.com/valksor)
 [![BSD-3-Clause](https://img.shields.io/badge/BSD--3--Clause-green?style=flat)](https://github.com/valksor/go-mehrhof/blob/master/LICENSE)
