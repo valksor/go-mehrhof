@@ -24,12 +24,15 @@ type Provider struct {
 
 // Config holds GitLab provider configuration
 type Config struct {
-	Token         string
-	Host          string // e.g., "https://gitlab.com" or custom host
-	ProjectPath   string // e.g., "group/project" or "12345" (project ID)
-	ProjectID     int64  // Numeric project ID (alternative to path)
-	BranchPattern string // Default: "issue/{key}-{slug}"
-	CommitPrefix  string // Default: "[#{key}]"
+	Token              string
+	Host               string // e.g., "https://gitlab.com" or custom host
+	ProjectPath        string // e.g., "group/project" or "12345" (project ID)
+	ProjectID          int64  // Numeric project ID (alternative to path)
+	BranchPattern      string // Default: "issue/{key}-{slug}"
+	CommitPrefix       string // Default: "[#{key}]"
+	TargetBranch       string // Target branch for MRs (default: repo default branch)
+	DraftMR            bool   // Create MRs as draft by default
+	RemoveSourceBranch bool   // Remove source branch when MR is merged
 }
 
 // Info returns provider metadata
@@ -49,6 +52,8 @@ func Info() provider.ProviderInfo {
 			provider.CapCreateWorkUnit:     true,
 			provider.CapDownloadAttachment: true,
 			provider.CapSnapshot:           true,
+			provider.CapCreatePR:           true, // MR creation
+			provider.CapFetchSubtasks:      true,
 		},
 	}
 }
@@ -83,12 +88,20 @@ func New(ctx context.Context, cfg provider.Config) (any, error) {
 		commitPrefix = "[#{key}]"
 	}
 
+	// MR-related config
+	targetBranch := cfg.GetString("target_branch")
+	draftMR := cfg.GetBool("draft_mr")
+	removeSourceBranch := cfg.GetBool("remove_source_branch")
+
 	config := &Config{
-		Token:         resolvedToken,
-		Host:          host,
-		ProjectPath:   projectPath,
-		BranchPattern: branchPattern,
-		CommitPrefix:  commitPrefix,
+		Token:              resolvedToken,
+		Host:               host,
+		ProjectPath:        projectPath,
+		BranchPattern:      branchPattern,
+		CommitPrefix:       commitPrefix,
+		TargetBranch:       targetBranch,
+		DraftMR:            draftMR,
+		RemoveSourceBranch: removeSourceBranch,
 	}
 
 	return &Provider{

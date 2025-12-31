@@ -64,6 +64,7 @@ func Info() provider.ProviderInfo {
 			provider.CapCreatePR:           true,
 			provider.CapDownloadAttachment: true,
 			provider.CapSnapshot:           true,
+			provider.CapFetchSubtasks:      true,
 		},
 	}
 }

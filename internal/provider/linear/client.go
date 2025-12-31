@@ -478,6 +478,67 @@ func (c *Client) GetComments(ctx context.Context, issueID string) ([]*Comment, e
 	return response.Issue.Comments.Nodes, nil
 }
 
+// GetChildIssues fetches child issues (sub-issues) for an issue
+func (c *Client) GetChildIssues(ctx context.Context, issueID string) ([]*Issue, error) {
+	query := `
+		query GetChildIssues($issueId: String!) {
+			issue(id: $issueId) {
+				children {
+					nodes {
+						id
+						identifier
+						title
+						description
+						state {
+							id
+							name
+							type
+						}
+						priority
+						labels {
+							nodes {
+								id
+								name
+								color
+							}
+						}
+						assignee {
+							id
+							name
+							email
+						}
+						createdAt
+						updatedAt
+						url
+						team {
+							key
+							name
+						}
+					}
+				}
+			}
+		}
+	`
+
+	var response struct {
+		Issue struct {
+			Children struct {
+				Nodes []*Issue `json:"nodes"`
+			} `json:"children"`
+		} `json:"issue"`
+	}
+
+	variables := map[string]any{
+		"issueId": issueID,
+	}
+
+	if err := c.doGraphQLRequest(ctx, query, variables, &response); err != nil {
+		return nil, err
+	}
+
+	return response.Issue.Children.Nodes, nil
+}
+
 // ──────────────────────────────────────────────────────────────────────────────
 // Linear API Types
 // ──────────────────────────────────────────────────────────────────────────────

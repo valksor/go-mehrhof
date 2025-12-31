@@ -151,3 +151,48 @@ func ExtractImageURLs(body string) []string {
 	}
 	return urls
 }
+
+// TaskItem represents a parsed task list item from markdown
+type TaskItem struct {
+	Text      string // The task text
+	Completed bool   // Whether the checkbox is checked
+	Line      int    // Line number in the body (1-based)
+}
+
+// taskListPattern matches markdown task list items:
+// - [ ] unchecked task
+// - [x] checked task
+// * [ ] alternative bullet
+var taskListPattern = regexp.MustCompile(`^[\s]*[-*]\s+\[([ xX])\]\s+(.+)$`)
+
+// ParseTaskList extracts task list items from markdown text
+func ParseTaskList(body string) []TaskItem {
+	if body == "" {
+		return nil
+	}
+
+	lines := strings.Split(body, "\n")
+	var tasks []TaskItem
+
+	for i, line := range lines {
+		matches := taskListPattern.FindStringSubmatch(line)
+		if matches == nil {
+			continue
+		}
+
+		// matches[1] is the checkbox state (space, x, or X)
+		// matches[2] is the task text
+		completed := matches[1] == "x" || matches[1] == "X"
+		text := strings.TrimSpace(matches[2])
+
+		if text != "" {
+			tasks = append(tasks, TaskItem{
+				Text:      text,
+				Completed: completed,
+				Line:      i + 1, // 1-based line number
+			})
+		}
+	}
+
+	return tasks
+}

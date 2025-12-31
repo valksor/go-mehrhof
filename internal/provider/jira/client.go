@@ -283,6 +283,17 @@ func (c *Client) DownloadAttachment(ctx context.Context, attachmentURL string) (
 	return resp.Body, resp.Header.Get("Content-Type"), nil
 }
 
+// GetSubtasks fetches subtasks for an issue
+func (c *Client) GetSubtasks(ctx context.Context, issueKey string) ([]*Issue, error) {
+	// Get the issue to extract subtasks from the fields
+	issue, err := c.GetIssue(ctx, issueKey)
+	if err != nil {
+		return nil, err
+	}
+
+	return issue.Fields.Subtasks, nil
+}
+
 // ──────────────────────────────────────────────────────────────────────────────
 // Jira API Types
 // ──────────────────────────────────────────────────────────────────────────────
@@ -310,6 +321,8 @@ type Fields struct {
 	Issuetype   *IssueType    `json:"issuetype"`
 	Sprint      *Sprint       `json:"sprint"`
 	Attachments []*Attachment `json:"attachment"`
+	Subtasks    []*Issue      `json:"subtasks"`
+	Parent      *Issue        `json:"parent"`
 }
 
 // Status represents issue status

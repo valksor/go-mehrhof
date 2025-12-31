@@ -487,6 +487,116 @@ func TestExtractImageURLs(t *testing.T) {
 	}
 }
 
+func TestParseTaskList(t *testing.T) {
+	tests := []struct {
+		name string
+		body string
+		want []TaskItem
+	}{
+		{
+			name: "empty body",
+			body: "",
+			want: nil,
+		},
+		{
+			name: "no task list items",
+			body: "Just some regular text\nNo checkboxes here",
+			want: nil,
+		},
+		{
+			name: "single unchecked task",
+			body: "- [ ] Task one",
+			want: []TaskItem{
+				{Text: "Task one", Completed: false, Line: 1},
+			},
+		},
+		{
+			name: "single checked task",
+			body: "- [x] Task completed",
+			want: []TaskItem{
+				{Text: "Task completed", Completed: true, Line: 1},
+			},
+		},
+		{
+			name: "checked with uppercase X",
+			body: "- [X] Also completed",
+			want: []TaskItem{
+				{Text: "Also completed", Completed: true, Line: 1},
+			},
+		},
+		{
+			name: "multiple tasks",
+			body: "- [ ] First task\n- [x] Second task done\n- [ ] Third task",
+			want: []TaskItem{
+				{Text: "First task", Completed: false, Line: 1},
+				{Text: "Second task done", Completed: true, Line: 2},
+				{Text: "Third task", Completed: false, Line: 3},
+			},
+		},
+		{
+			name: "asterisk bullets",
+			body: "* [ ] Task with asterisk\n* [x] Completed with asterisk",
+			want: []TaskItem{
+				{Text: "Task with asterisk", Completed: false, Line: 1},
+				{Text: "Completed with asterisk", Completed: true, Line: 2},
+			},
+		},
+		{
+			name: "mixed content",
+			body: "# Header\n\nSome intro text.\n\n- [ ] First todo\n- Regular list item\n- [x] Done item\n\nMore text",
+			want: []TaskItem{
+				{Text: "First todo", Completed: false, Line: 5},
+				{Text: "Done item", Completed: true, Line: 7},
+			},
+		},
+		{
+			name: "indented tasks",
+			body: "  - [ ] Indented task\n    - [x] More indented",
+			want: []TaskItem{
+				{Text: "Indented task", Completed: false, Line: 1},
+				{Text: "More indented", Completed: true, Line: 2},
+			},
+		},
+		{
+			name: "task with extra whitespace in text",
+			body: "- [ ]   Task with spaces   ",
+			want: []TaskItem{
+				{Text: "Task with spaces", Completed: false, Line: 1},
+			},
+		},
+		{
+			name: "empty task text is skipped",
+			body: "- [ ] \n- [ ] Valid task",
+			want: []TaskItem{
+				{Text: "Valid task", Completed: false, Line: 2},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := ParseTaskList(tt.body)
+
+			if len(got) != len(tt.want) {
+				t.Errorf("ParseTaskList() = %d items, want %d items", len(got), len(tt.want))
+				return
+			}
+
+			for i, w := range tt.want {
+				if got[i].Text != w.Text {
+					t.Errorf("ParseTaskList()[%d].Text = %q, want %q", i, got[i].Text, w.Text)
+				}
+				if got[i].Completed != w.Completed {
+					t.Errorf("ParseTaskList()[%d].Completed = %v, want %v", i, got[i].Completed, w.Completed)
+				}
+				if got[i].Line != w.Line {
+					t.Errorf("ParseTaskList()[%d].Line = %d, want %d", i, got[i].Line, w.Line)
+				}
+			}
+		})
+	}
+}
+
 func TestMapGitLabState(t *testing.T) {
 	tests := []struct {
 		name  string

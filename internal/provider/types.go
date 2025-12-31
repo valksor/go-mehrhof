@@ -130,6 +130,7 @@ const (
 	CapCreatePR           Capability = "create_pr"
 	CapLinkBranch         Capability = "link_branch"
 	CapCreateWorkUnit     Capability = "create_work_unit"
+	CapFetchSubtasks      Capability = "fetch_subtasks"
 )
 
 // CapabilitySet is a set of capabilities
@@ -176,6 +177,9 @@ func InferCapabilities(p any) CapabilitySet {
 	}
 	if _, ok := p.(WorkUnitCreator); ok {
 		caps[CapCreateWorkUnit] = true
+	}
+	if _, ok := p.(SubtaskFetcher); ok {
+		caps[CapFetchSubtasks] = true
 	}
 
 	return caps

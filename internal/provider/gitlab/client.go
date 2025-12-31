@@ -305,3 +305,39 @@ func (c *Client) Host() string {
 	}
 	return "gitlab.com"
 }
+
+// CreateMergeRequest creates a new merge request
+func (c *Client) CreateMergeRequest(ctx context.Context, title, description, sourceBranch, targetBranch string, removeSourceBranch bool) (*gitlab.MergeRequest, error) {
+	pid, err := c.getProjectID(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	mr, _, err := c.gl.MergeRequests.CreateMergeRequest(pid, &gitlab.CreateMergeRequestOptions{
+		Title:              ptr(title),
+		Description:        ptr(description),
+		SourceBranch:       ptr(sourceBranch),
+		TargetBranch:       ptr(targetBranch),
+		RemoveSourceBranch: ptr(removeSourceBranch),
+	}, gitlab.WithContext(ctx))
+	if err != nil {
+		return nil, wrapAPIError(err)
+	}
+
+	return mr, nil
+}
+
+// GetDefaultBranch returns the project's default branch
+func (c *Client) GetDefaultBranch(ctx context.Context) (string, error) {
+	pid, err := c.getProjectID(ctx)
+	if err != nil {
+		return "", err
+	}
+
+	project, _, err := c.gl.Projects.GetProject(pid, nil, gitlab.WithContext(ctx))
+	if err != nil {
+		return "", wrapAPIError(err)
+	}
+
+	return project.DefaultBranch, nil
+}

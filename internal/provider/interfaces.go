@@ -131,6 +131,11 @@ type WorkUnitCreator interface {
 	CreateWorkUnit(ctx context.Context, opts CreateWorkUnitOptions) (*WorkUnit, error)
 }
 
+// SubtaskFetcher retrieves subtasks for a work unit
+type SubtaskFetcher interface {
+	FetchSubtasks(ctx context.Context, workUnitID string) ([]*WorkUnit, error)
+}
+
 // CreateWorkUnitOptions for creating a work unit
 type CreateWorkUnitOptions struct {
 	CustomFields map[string]any
@@ -156,4 +161,5 @@ type FullProvider interface {
 	BranchLinker
 	WorkUnitCreator
 	Snapshotter
+	SubtaskFetcher
 }

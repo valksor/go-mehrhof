@@ -272,6 +272,24 @@ func (c *Client) RemoveLabel(ctx context.Context, cardID, labelID string) error 
 	return c.delete(ctx, endpoint)
 }
 
+// CreateCard creates a new card in a list
+func (c *Client) CreateCard(ctx context.Context, listID, name, desc string) (*Card, error) {
+	endpoint := "/cards"
+	params := url.Values{
+		"idList": {listID},
+		"name":   {name},
+	}
+	if desc != "" {
+		params.Set("desc", desc)
+	}
+
+	var card Card
+	if err := c.post(ctx, endpoint, params, &card); err != nil {
+		return nil, err
+	}
+	return &card, nil
+}
+
 // DownloadAttachment downloads an attachment
 func (c *Client) DownloadAttachment(ctx context.Context, cardID, attachmentID string) (io.ReadCloser, error) {
 	// First get the attachment details to get the URL

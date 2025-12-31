@@ -41,6 +41,8 @@ func Info() provider.ProviderInfo {
 			provider.CapManageLabels:       true,
 			provider.CapDownloadAttachment: true,
 			provider.CapSnapshot:           true,
+			provider.CapCreateWorkUnit:     true,
+			provider.CapFetchSubtasks:      true,
 		},
 	}
 }
