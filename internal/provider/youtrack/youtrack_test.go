@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/valksor/go-mehrhof/internal/provider"
+	providererrors "github.com/valksor/go-mehrhof/internal/provider/errors"
 )
 
 func TestParseReference(t *testing.T) {
@@ -393,68 +394,68 @@ func TestWrapAPIError(t *testing.T) {
 		},
 		{
 			name:          "already wrapped error",
-			err:           ErrNoToken,
-			checkError:    ErrNoToken,
+			err:           providererrors.ErrNoToken,
+			checkError:    providererrors.ErrNoToken,
 			wantUnwrapped: true,
 		},
 		{
 			name:          "issue not found",
-			err:           ErrIssueNotFound,
-			checkError:    ErrIssueNotFound,
+			err:           providererrors.ErrNotFound,
+			checkError:    providererrors.ErrNotFound,
 			wantUnwrapped: true,
 		},
 		{
 			name:          "rate limited",
-			err:           ErrRateLimited,
-			checkError:    ErrRateLimited,
+			err:           providererrors.ErrRateLimited,
+			checkError:    providererrors.ErrRateLimited,
 			wantUnwrapped: true,
 		},
 		{
 			name:          "network error",
-			err:           ErrNetworkError,
-			checkError:    ErrNetworkError,
+			err:           providererrors.ErrNetworkError,
+			checkError:    providererrors.ErrNetworkError,
 			wantUnwrapped: true,
 		},
 		{
 			name:          "unauthorized",
-			err:           ErrUnauthorized,
-			checkError:    ErrUnauthorized,
+			err:           providererrors.ErrUnauthorized,
+			checkError:    providererrors.ErrUnauthorized,
 			wantUnwrapped: true,
 		},
 		{
 			name:          "invalid reference",
-			err:           ErrInvalidReference,
-			checkError:    ErrInvalidReference,
+			err:           providererrors.ErrInvalidReference,
+			checkError:    providererrors.ErrInvalidReference,
 			wantUnwrapped: true,
 		},
 		{
 			name:          "401 unauthorized wraps correctly",
 			err:           newHTTPError(http.StatusUnauthorized, "unauthorized"),
-			checkError:    ErrUnauthorized,
+			checkError:    providererrors.ErrUnauthorized,
 			wantUnwrapped: false,
 		},
 		{
 			name:          "403 forbidden wraps as rate limited",
 			err:           newHTTPError(http.StatusForbidden, "forbidden"),
-			checkError:    ErrRateLimited,
+			checkError:    providererrors.ErrRateLimited,
 			wantUnwrapped: false,
 		},
 		{
 			name:          "404 not found wraps correctly",
 			err:           newHTTPError(http.StatusNotFound, "not found"),
-			checkError:    ErrIssueNotFound,
+			checkError:    providererrors.ErrNotFound,
 			wantUnwrapped: false,
 		},
 		{
 			name:          "429 too many requests wraps correctly",
 			err:           newHTTPError(http.StatusTooManyRequests, "rate limit"),
-			checkError:    ErrRateLimited,
+			checkError:    providererrors.ErrRateLimited,
 			wantUnwrapped: false,
 		},
 		{
 			name:          "503 service unavailable wraps correctly",
 			err:           newHTTPError(http.StatusServiceUnavailable, "unavailable"),
-			checkError:    ErrRateLimited,
+			checkError:    providererrors.ErrRateLimited,
 			wantUnwrapped: false,
 		},
 		{
@@ -466,7 +467,7 @@ func TestWrapAPIError(t *testing.T) {
 		{
 			name:          "network error wraps correctly",
 			err:           &net.OpError{Op: "dial", Err: errors.New("connection refused")},
-			checkError:    ErrNetworkError,
+			checkError:    providererrors.ErrNetworkError,
 			wantUnwrapped: false,
 		},
 		{

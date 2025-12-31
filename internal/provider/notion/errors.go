@@ -5,20 +5,17 @@ import (
 	"fmt"
 	"net"
 	"net/http"
+
+	providererrors "github.com/valksor/go-mehrhof/internal/provider/errors"
 )
 
-// Error types for the Notion provider
+// Notion-specific error types that don't have shared equivalents.
 var (
-	ErrNoToken          = errors.New("notion api key not found")
-	ErrPageNotFound     = errors.New("page not found")
-	ErrUnauthorized     = errors.New("notion token unauthorized or expired")
-	ErrInvalidReference = errors.New("invalid notion reference")
+	// ErrDatabaseRequired is returned when a Notion database ID is needed but not provided.
 	ErrDatabaseRequired = errors.New("database id required for this operation")
-	ErrRateLimited      = errors.New("notion api rate limit exceeded")
-	ErrNetworkError     = errors.New("network error communicating with notion")
 )
 
-// wrapAPIError converts HTTP errors to typed errors
+// wrapAPIError converts HTTP errors to typed errors using shared error package.
 func wrapAPIError(err error) error {
 	if err == nil {
 		return nil
@@ -29,20 +26,20 @@ func wrapAPIError(err error) error {
 	if errors.As(err, &httpErr) {
 		switch httpErr.HTTPStatusCode() {
 		case http.StatusUnauthorized:
-			return fmt.Errorf("%w: %v", ErrUnauthorized, err)
+			return fmt.Errorf("%w: %v", providererrors.ErrUnauthorized, err)
 		case http.StatusForbidden:
-			return fmt.Errorf("%w: %v", ErrRateLimited, err)
+			return fmt.Errorf("%w: %v", providererrors.ErrRateLimited, err)
 		case http.StatusNotFound:
-			return fmt.Errorf("%w: %v", ErrPageNotFound, err)
+			return fmt.Errorf("%w: %v", providererrors.ErrNotFound, err)
 		case http.StatusTooManyRequests:
-			return fmt.Errorf("%w: %v", ErrRateLimited, err)
+			return fmt.Errorf("%w: %v", providererrors.ErrRateLimited, err)
 		}
 	}
 
 	// Check for network errors
 	var netErr net.Error
 	if errors.As(err, &netErr) {
-		return fmt.Errorf("%w: %v", ErrNetworkError, err)
+		return fmt.Errorf("%w: %v", providererrors.ErrNetworkError, err)
 	}
 
 	return err

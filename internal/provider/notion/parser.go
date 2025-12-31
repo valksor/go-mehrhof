@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
+
+	providererrors "github.com/valksor/go-mehrhof/internal/provider/errors"
 )
 
 // Ref represents a parsed Notion reference
@@ -49,7 +51,7 @@ func ParseReference(input string) (*Ref, error) {
 	input = strings.TrimSpace(input)
 
 	if input == "" {
-		return nil, fmt.Errorf("%w: empty reference", ErrInvalidReference)
+		return nil, fmt.Errorf("%w: empty reference", providererrors.ErrInvalidReference)
 	}
 
 	// Strip scheme prefix if present
@@ -93,7 +95,7 @@ func ParseReference(input string) (*Ref, error) {
 		}, nil
 	}
 
-	return nil, fmt.Errorf("%w: unrecognized format: %s (expected 32-char page ID or Notion URL)", ErrInvalidReference, input)
+	return nil, fmt.Errorf("%w: unrecognized format: %s (expected 32-char page ID or Notion URL)", providererrors.ErrInvalidReference, input)
 }
 
 // ExtractPageID extracts the page ID from a Notion URL

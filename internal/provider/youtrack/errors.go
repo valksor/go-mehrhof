@@ -5,24 +5,12 @@ import (
 	"fmt"
 	"net"
 	"net/http"
+
+	providererrors "github.com/valksor/go-mehrhof/internal/provider/errors"
 )
 
-var (
-	// ErrNoToken is returned when no YouTrack token can be found
-	ErrNoToken = errors.New("youtrack token not found")
-	// ErrIssueNotFound is returned when an issue cannot be found
-	ErrIssueNotFound = errors.New("issue not found")
-	// ErrRateLimited is returned when API rate limit is exceeded
-	ErrRateLimited = errors.New("youtrack api rate limit exceeded")
-	// ErrNetworkError is returned for network communication errors
-	ErrNetworkError = errors.New("network error communicating with youtrack")
-	// ErrUnauthorized is returned when the token is invalid or expired
-	ErrUnauthorized = errors.New("youtrack token unauthorized or expired")
-	// ErrInvalidReference is returned when a reference format is invalid
-	ErrInvalidReference = errors.New("invalid youtrack reference")
-)
-
-// httpError represents an HTTP error with status code
+// httpError represents an HTTP error with status code.
+// This is provider-specific to match YouTrack's error format.
 type httpError struct {
 	message string
 	code    int
@@ -35,24 +23,29 @@ func (e *httpError) Error() string {
 	return fmt.Sprintf("HTTP %d", e.code)
 }
 
-// HTTPStatusCode returns the HTTP status code
+// HTTPStatusCode returns the HTTP status code.
 func (e *httpError) HTTPStatusCode() int {
 	return e.code
 }
 
-// wrapAPIError wraps an error with appropriate YouTrack-specific error types
+// newHTTPError creates a new HTTP error.
+func newHTTPError(code int, message string) *httpError {
+	return &httpError{code: code, message: message}
+}
+
+// wrapAPIError wraps an error with appropriate typed errors using shared error package.
 func wrapAPIError(err error) error {
 	if err == nil {
 		return nil
 	}
 
-	// Check if it's already one of our errors
-	if errors.Is(err, ErrNoToken) ||
-		errors.Is(err, ErrIssueNotFound) ||
-		errors.Is(err, ErrRateLimited) ||
-		errors.Is(err, ErrNetworkError) ||
-		errors.Is(err, ErrUnauthorized) ||
-		errors.Is(err, ErrInvalidReference) {
+	// Check if it's already a provider error
+	if errors.Is(err, providererrors.ErrNoToken) ||
+		errors.Is(err, providererrors.ErrNotFound) ||
+		errors.Is(err, providererrors.ErrRateLimited) ||
+		errors.Is(err, providererrors.ErrNetworkError) ||
+		errors.Is(err, providererrors.ErrUnauthorized) ||
+		errors.Is(err, providererrors.ErrInvalidReference) {
 		return err
 	}
 
@@ -61,15 +54,15 @@ func wrapAPIError(err error) error {
 	if errors.As(err, &httpErr) {
 		switch httpErr.code {
 		case http.StatusUnauthorized:
-			return fmt.Errorf("%w: %v", ErrUnauthorized, err)
+			return fmt.Errorf("%w: %v", providererrors.ErrUnauthorized, err)
 		case http.StatusForbidden:
-			return fmt.Errorf("%w: %v", ErrRateLimited, err)
+			return fmt.Errorf("%w: %v", providererrors.ErrRateLimited, err)
 		case http.StatusNotFound:
-			return fmt.Errorf("%w: %v", ErrIssueNotFound, err)
+			return fmt.Errorf("%w: %v", providererrors.ErrNotFound, err)
 		case http.StatusTooManyRequests:
-			return fmt.Errorf("%w: %v", ErrRateLimited, err)
+			return fmt.Errorf("%w: %v", providererrors.ErrRateLimited, err)
 		case http.StatusServiceUnavailable:
-			return fmt.Errorf("%w: %v", ErrRateLimited, err)
+			return fmt.Errorf("%w: %v", providererrors.ErrRateLimited, err)
 		default:
 			return err
 		}
@@ -78,13 +71,8 @@ func wrapAPIError(err error) error {
 	// Check for network errors
 	var netErr net.Error
 	if errors.As(err, &netErr) {
-		return fmt.Errorf("%w: %v", ErrNetworkError, err)
+		return fmt.Errorf("%w: %v", providererrors.ErrNetworkError, err)
 	}
 
 	return err
-}
-
-// newHTTPError creates a new HTTP error
-func newHTTPError(code int, message string) *httpError {
-	return &httpError{code: code, message: message}
 }
