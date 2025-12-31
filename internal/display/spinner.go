@@ -36,24 +36,6 @@ func NewSpinner(message string) *Spinner {
 	}
 }
 
-// WithWriter sets the output writer (useful for testing).
-func (s *Spinner) WithWriter(w io.Writer) *Spinner {
-	s.writer = w
-	return s
-}
-
-// WithFrames sets custom animation frames.
-func (s *Spinner) WithFrames(frames []string) *Spinner {
-	s.frames = frames
-	return s
-}
-
-// WithDelay sets the animation delay between frames.
-func (s *Spinner) WithDelay(d time.Duration) *Spinner {
-	s.delay = d
-	return s
-}
-
 // Start begins the spinner animation.
 func (s *Spinner) Start() {
 	s.mu.Lock()

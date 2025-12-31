@@ -71,12 +71,6 @@ func ValidatePattern(pattern string) []string {
 	return unknown
 }
 
-// DefaultBranchPattern is the default pattern for branch names.
-const DefaultBranchPattern = "{type}/{key}--{slug}"
-
-// DefaultCommitPrefix is the default pattern for commit prefixes.
-const DefaultCommitPrefix = "[{key}]"
-
 // CleanBranchName ensures a branch name is valid for git.
 // Removes or replaces invalid characters.
 // Note: Double hyphens (--) are preserved as they're used as separators.

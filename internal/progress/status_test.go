@@ -12,12 +12,12 @@ func TestNewStatusLine(t *testing.T) {
 	phase := "Testing"
 	sl := NewStatusLine(phase)
 
-	if sl.GetPhase() != phase {
-		t.Errorf("GetPhase() = %q, want %q", sl.GetPhase(), phase)
+	if sl.phase != phase {
+		t.Errorf("phase = %q, want %q", sl.phase, phase)
 	}
 
-	if sl.GetUpdateCount() != 0 {
-		t.Errorf("GetUpdateCount() = %d, want 0", sl.GetUpdateCount())
+	if sl.updateCount != 0 {
+		t.Errorf("updateCount = %d, want 0", sl.updateCount)
 	}
 }
 
@@ -35,8 +35,8 @@ func TestStatusLineOnEvent(t *testing.T) {
 
 	_ = sl.OnEvent(event)
 
-	if sl.GetUpdateCount() != 1 {
-		t.Errorf("GetUpdateCount() = %d, want 1", sl.GetUpdateCount())
+	if sl.updateCount != 1 {
+		t.Errorf("updateCount = %d, want 1", sl.updateCount)
 	}
 }
 
@@ -54,8 +54,8 @@ func TestStatusLineOnEventText(t *testing.T) {
 		t.Errorf("OnEvent() error = %v", err)
 	}
 
-	if sl.GetUpdateCount() != 0 {
-		t.Errorf("GetUpdateCount() = %d, want 0 (text event should not update immediately)", sl.GetUpdateCount())
+	if sl.updateCount != 0 {
+		t.Errorf("updateCount = %d, want 0 (text event should not update immediately)", sl.updateCount)
 	}
 
 	// Wait for threshold and try again
@@ -65,8 +65,8 @@ func TestStatusLineOnEventText(t *testing.T) {
 		t.Errorf("OnEvent() error = %v", err)
 	}
 
-	if sl.GetUpdateCount() != 1 {
-		t.Errorf("GetUpdateCount() = %d, want 1 (after threshold)", sl.GetUpdateCount())
+	if sl.updateCount != 1 {
+		t.Errorf("updateCount = %d, want 1 (after threshold)", sl.updateCount)
 	}
 }
 
@@ -76,8 +76,8 @@ func TestStatusLineDone(t *testing.T) {
 	// Should not panic
 	sl.Done()
 
-	if sl.GetUpdateCount() != 0 {
-		t.Errorf("GetUpdateCount() = %d, want 0", sl.GetUpdateCount())
+	if sl.updateCount != 0 {
+		t.Errorf("updateCount = %d, want 0", sl.updateCount)
 	}
 }
 
@@ -96,59 +96,13 @@ func TestStatusLineConcurrent(t *testing.T) {
 				},
 			})
 		})
-		wg.Go(func() {
-			sl.GetUpdateCount()
-		})
 	}
 	wg.Wait()
 
 	// Should not panic and should have recorded some updates
-	if sl.GetUpdateCount() != 10 {
-		t.Errorf("GetUpdateCount() = %d, want 10", sl.GetUpdateCount())
+	if sl.updateCount != 10 {
+		t.Errorf("updateCount = %d, want 10", sl.updateCount)
 	}
-}
-
-func TestMultiProgress(t *testing.T) {
-	mp := NewMultiProgress()
-
-	// Add some status lines
-	sl1 := mp.Add("Phase1")
-	sl2 := mp.Add("Phase2")
-
-	if sl1.GetPhase() != "Phase1" {
-		t.Errorf("first status line phase = %q, want Phase1", sl1.GetPhase())
-	}
-
-	if sl2.GetPhase() != "Phase2" {
-		t.Errorf("second status line phase = %q, want Phase2", sl2.GetPhase())
-	}
-
-	// Remove one
-	mp.Remove("Phase1")
-
-	// Remove all
-	mp.DoneAll()
-
-	// Should not panic
-	mp.DoneAll() // Double call should be safe
-}
-
-func TestMultiProgressConcurrent(t *testing.T) {
-	mp := NewMultiProgress()
-
-	// Test concurrent access
-	var wg sync.WaitGroup
-	for i := 0; i < 5; i++ {
-		wg.Go(func() {
-			phase := string(rune('A' + i))
-			mp.Add(phase)
-			mp.Remove(phase)
-		})
-	}
-	wg.Wait()
-
-	// Should not panic
-	mp.DoneAll()
 }
 
 func TestStatusLineToolDescriptionTruncation(t *testing.T) {
@@ -174,8 +128,8 @@ func TestStatusLineToolDescriptionTruncation(t *testing.T) {
 	}
 
 	// Should have updated without error
-	if sl.GetUpdateCount() != 1 {
-		t.Errorf("GetUpdateCount() = %d, want 1", sl.GetUpdateCount())
+	if sl.updateCount != 1 {
+		t.Errorf("updateCount = %d, want 1", sl.updateCount)
 	}
 }
 
@@ -193,8 +147,8 @@ func TestStatusLineUnknownEventType(t *testing.T) {
 	}
 
 	// Unknown event types should be ignored
-	if sl.GetUpdateCount() != 0 {
-		t.Errorf("GetUpdateCount() = %d, want 0 (unknown event should be ignored)", sl.GetUpdateCount())
+	if sl.updateCount != 0 {
+		t.Errorf("updateCount = %d, want 0 (unknown event should be ignored)", sl.updateCount)
 	}
 }
 
@@ -214,93 +168,9 @@ func TestStatusLineNilToolCall(t *testing.T) {
 	}
 
 	// Should not have updated
-	if sl.GetUpdateCount() != 0 {
-		t.Errorf("GetUpdateCount() = %d, want 0 (nil ToolCall should be ignored)", sl.GetUpdateCount())
+	if sl.updateCount != 0 {
+		t.Errorf("updateCount = %d, want 0 (nil ToolCall should be ignored)", sl.updateCount)
 	}
-}
-
-func TestProgressBar(t *testing.T) {
-	t.Run("new progress bar", func(t *testing.T) {
-		pb := NewProgressBar("Testing", 100)
-		if pb == nil {
-			t.Fatal("NewProgressBar returned nil")
-		}
-	})
-
-	t.Run("increment updates progress", func(t *testing.T) {
-		pb := NewProgressBar("Testing", 10)
-		pb.Increment()
-		pb.Increment()
-		// Just ensure it doesn't panic
-	})
-
-	t.Run("update sets current value", func(t *testing.T) {
-		pb := NewProgressBar("Testing", 100)
-		pb.Update(50)
-		// Just ensure it doesn't panic
-	})
-
-	t.Run("set agent name", func(t *testing.T) {
-		pb := NewProgressBar("Testing", 100)
-		pb.SetAgent("claude-opus-4")
-		// Just ensure it doesn't panic
-	})
-
-	t.Run("set width", func(t *testing.T) {
-		pb := NewProgressBar("Testing", 100)
-		pb.SetWidth(40)
-		// Just ensure it doesn't panic
-	})
-
-	t.Run("done marks complete", func(t *testing.T) {
-		pb := NewProgressBar("Testing", 10)
-		for i := 0; i < 10; i++ {
-			pb.Increment()
-		}
-		pb.Done()
-		// Ensure no panic
-	})
-}
-
-func TestStatusWithProgress(t *testing.T) {
-	t.Run("new combined tracker", func(t *testing.T) {
-		swp := NewStatusWithProgress("Planning", 5)
-		if swp == nil {
-			t.Fatal("NewStatusWithProgress returned nil")
-		}
-		if swp.GetStatusLine() == nil {
-			t.Error("GetStatusLine() returned nil")
-		}
-		if swp.GetProgressBar() == nil {
-			t.Error("GetProgressBar() returned nil")
-		}
-	})
-
-	t.Run("set agent propagates to progress bar", func(t *testing.T) {
-		swp := NewStatusWithProgress("Planning", 5)
-		swp.SetAgent("claude-opus-4")
-		// Just ensure it doesn't panic
-	})
-
-	t.Run("on event updates progress on tool result", func(t *testing.T) {
-		swp := NewStatusWithProgress("Planning", 5)
-		event := agent.Event{
-			Type: agent.EventToolResult,
-			ToolCall: &agent.ToolCall{
-				Name: "read_file",
-			},
-		}
-		_ = swp.OnEvent(event)
-		// Just ensure it doesn't panic
-	})
-
-	t.Run("increment advances progress", func(t *testing.T) {
-		swp := NewStatusWithProgress("Planning", 5)
-		swp.Increment()
-		swp.Increment()
-		swp.Done()
-		// Ensure no panic
-	})
 }
 
 func TestFormatDuration(t *testing.T) {
@@ -322,22 +192,6 @@ func TestFormatDuration(t *testing.T) {
 			}
 		})
 	}
-}
-
-func TestProgressBarConcurrent(t *testing.T) {
-	pb := NewProgressBar("Concurrent", 100)
-
-	// Test concurrent access
-	var wg sync.WaitGroup
-	for i := 0; i < 10; i++ {
-		wg.Go(func() {
-			pb.Increment()
-		})
-	}
-	wg.Wait()
-
-	// Should not panic
-	pb.Done()
 }
 
 func TestStatusLineStartTime(t *testing.T) {
@@ -373,7 +227,7 @@ func TestStatusLineElapsedTimeThreshold(t *testing.T) {
 	sl.Done()
 
 	// Verify no panic and update was recorded
-	if sl.GetUpdateCount() != 1 {
-		t.Errorf("GetUpdateCount() = %d, want 1", sl.GetUpdateCount())
+	if sl.updateCount != 1 {
+		t.Errorf("updateCount = %d, want 1", sl.updateCount)
 	}
 }
