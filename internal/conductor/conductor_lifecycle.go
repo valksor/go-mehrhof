@@ -8,6 +8,8 @@ import (
 	"strings"
 	"time"
 
+	"gopkg.in/yaml.v3"
+
 	"github.com/valksor/go-mehrhof/internal/provider"
 	"github.com/valksor/go-mehrhof/internal/storage"
 	"github.com/valksor/go-mehrhof/internal/vcs"
@@ -40,8 +42,18 @@ func (c *Conductor) Initialize(ctx context.Context) error {
 		}
 	}
 
-	// Initialize workspace
-	ws, err := storage.OpenWorkspace(root)
+	// Load workspace config to get work directory setting
+	var cfg *storage.WorkspaceConfig
+	configPath := filepath.Join(root, ".mehrhof", "config.yaml")
+	if data, err := os.ReadFile(configPath); err == nil {
+		cfg = storage.NewDefaultWorkspaceConfig()
+		if err := yaml.Unmarshal(data, cfg); err != nil {
+			return fmt.Errorf("parse config file: %w", err)
+		}
+	}
+
+	// Initialize workspace with config
+	ws, err := storage.OpenWorkspace(root, cfg)
 	if err != nil {
 		return fmt.Errorf("initialize workspace: %w", err)
 	}
@@ -498,8 +510,15 @@ func (c *Conductor) Delete(ctx context.Context, opts DeleteOptions) error {
 		}
 	}
 
-	// Delete work directory
-	if !opts.KeepWorkDir {
+	// Delete work directory based on: CLI flag > config > default (delete)
+	var shouldDelete bool
+	if opts.DeleteWork != nil {
+		shouldDelete = *opts.DeleteWork // CLI explicitly set
+	} else {
+		cfg, _ := c.workspace.LoadConfig()              // ignore error, use defaults
+		shouldDelete = cfg.Workflow.DeleteWorkOnAbandon // default: true
+	}
+	if shouldDelete {
 		if err := c.workspace.DeleteWork(taskID); err != nil {
 			c.logError(fmt.Errorf("delete work directory: %w", err))
 		}

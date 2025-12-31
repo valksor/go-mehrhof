@@ -261,6 +261,21 @@ func (c *Conductor) Finish(ctx context.Context, opts FinishOptions) error {
 		c.logError(fmt.Errorf("clear active task: %w", err))
 	}
 
+	// Delete work directory based on: CLI flag > config > default (keep)
+	shouldDelete := false
+	if opts.DeleteWork != nil {
+		shouldDelete = *opts.DeleteWork // CLI explicitly set
+	} else {
+		cfg, _ := c.workspace.LoadConfig() // ignore error, use defaults
+		shouldDelete = cfg.Workflow.DeleteWorkOnFinish
+	}
+	if shouldDelete {
+		taskID := c.activeTask.ID
+		if err := c.workspace.DeleteWork(taskID); err != nil {
+			c.logError(fmt.Errorf("delete work directory: %w", err))
+		}
+	}
+
 	c.activeTask = nil
 	c.taskWork = nil
 

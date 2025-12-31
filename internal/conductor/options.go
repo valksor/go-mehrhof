@@ -259,6 +259,7 @@ type FinishOptions struct {
 	DeleteBranch bool   // Delete branch after merge
 	TargetBranch string // Branch to merge into
 	PushAfter    bool   // Push after merge
+	DeleteWork   *bool  // Delete work directory: nil=defer to config, true=delete, false=keep
 
 	// PR-related options (for GitHub provider)
 	ForceMerge bool   // Force local merge instead of PR creation
@@ -274,23 +275,30 @@ func DefaultFinishOptions() FinishOptions {
 		DeleteBranch: false, // Don't delete by default
 		TargetBranch: "",    // Auto-detect base branch
 		PushAfter:    false, // Don't push by default
+		DeleteWork:   nil,   // Defer to config (default: keep)
 		ForceMerge:   false, // Create PR by default if supported
 		DraftPR:      false,
 	}
 }
 
-// DeleteOptions configures the delete operation
+// DeleteOptions configures the delete (abandon) operation
 type DeleteOptions struct {
-	Force       bool // Skip confirmation prompt
-	KeepBranch  bool // Keep the git branch (only delete workspace)
-	KeepWorkDir bool // Keep the work directory (only delete branch)
+	Force      bool  // Skip confirmation prompt
+	KeepBranch bool  // Keep the git branch (only delete workspace)
+	DeleteWork *bool // Delete work directory: nil=defer to config, true=delete, false=keep
 }
 
 // DefaultDeleteOptions returns default delete options
 func DefaultDeleteOptions() DeleteOptions {
 	return DeleteOptions{
-		Force:       false,
-		KeepBranch:  false,
-		KeepWorkDir: false,
+		Force:      false,
+		KeepBranch: false,
+		DeleteWork: nil, // Defer to config (default: delete)
 	}
+}
+
+// BoolPtr returns a pointer to the given bool value.
+// Useful for setting DeleteWork in FinishOptions/DeleteOptions.
+func BoolPtr(b bool) *bool {
+	return &b
 }
