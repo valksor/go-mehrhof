@@ -230,4 +230,4 @@ For provider tokens and credentials, the resolution priority is:
 ## See Also
 
 - [start](start.md) - Start a task from a provider
-- [Providers Reference](../reference/providers.md) - Detailed provider documentation
+- [Providers Reference](../providers/index.md) - Detailed provider documentation

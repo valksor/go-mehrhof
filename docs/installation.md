@@ -145,4 +145,4 @@ Ensure the binary is executable:
 chmod +x $(which mehr)
 ```
 
-See [Troubleshooting](reference/troubleshooting.md) for more solutions.
+See [Troubleshooting](troubleshooting/index.md) for more solutions.

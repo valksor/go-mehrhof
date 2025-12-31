@@ -94,7 +94,7 @@ Each step can specify:
 - `env` - Environment variables for this step
 - `args` - CLI arguments for this step
 
-See [Agents - Per-Step Configuration](../concepts/agents.md#per-step-agent-configuration) for details.
+See [Per-Step Agent Configuration](../agents/per-step.md) for details.
 
 #### providers
 

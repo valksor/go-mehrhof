@@ -244,5 +244,5 @@ Or browse the example link provider:
 ## See Also
 
 - [mehr plugins](../cli/plugins.md) - CLI reference
-- [AI Agents](agents.md) - Built-in agent system
+- [AI Agents](../agents/index.md) - Built-in agent system
 - [Configuration](../configuration/files.md) - Config file reference

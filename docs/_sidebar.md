@@ -6,7 +6,7 @@
 - Concepts
   - [Workflow](concepts/workflow.md)
   - [Tasks](concepts/tasks.md)
-  - [AI Agents](concepts/agents.md)
+  - [AI Agents](agents/index.md)
   - [Plugins](concepts/plugins.md)
   - [Checkpoints](concepts/checkpoints.md)
 
@@ -48,8 +48,31 @@
 - Advanced
   - [Performance & Cost Optimization](advanced/optimization.md)
 
+- Providers
+  - [Overview](providers/index.md)
+  - [File Provider](providers/file.md)
+  - [Directory Provider](providers/directory.md)
+  - [GitHub](providers/github.md)
+  - [GitLab](providers/gitlab.md)
+  - [Jira](providers/jira.md)
+  - [Linear](providers/linear.md)
+  - [Notion](providers/notion.md)
+  - [Wrike](providers/wrike.md)
+  - [YouTrack](providers/youtrack.md)
+  - [Trello](providers/trello.md)
+  - [Asana](providers/asana.md)
+  - [ClickUp](providers/clickup.md)
+  - [Azure DevOps](providers/azure-devops.md)
+  - [Bitbucket](providers/bitbucket.md)
+
+- Troubleshooting
+  - [Overview](troubleshooting/index.md)
+  - [Installation](troubleshooting/installation.md)
+  - [Claude CLI](troubleshooting/claude-cli.md)
+  - [Tasks](troubleshooting/tasks.md)
+  - [Git](troubleshooting/git.md)
+  - [Diagnostics](troubleshooting/diagnostics.md)
+
 - Reference
-  - [Providers](reference/providers.md)
   - [Storage Structure](reference/storage.md)
   - [SPEC File Format](reference/spec-format.md)
-  - [Troubleshooting](reference/troubleshooting.md)

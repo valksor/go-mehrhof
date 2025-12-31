@@ -90,7 +90,7 @@ Skip the topic prompt by providing it directly.
 mehr plan --agent-planning claude-opus
 ```
 
-Use a specific agent for this planning session. See [Per-Step Agents](../concepts/agents.md#per-step-agent-configuration).
+Use a specific agent for this planning session. See [Per-Step Agent Configuration](../agents/per-step.md).
 
 ## What Happens
 

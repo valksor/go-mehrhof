@@ -228,3 +228,4 @@ Fix by setting the environment variable or using a literal value.
 - [Configuration Overview](../configuration/overview.md) - How configuration works
 - [Configuration Files](../configuration/files.md) - Config file reference
 - [mehr agents](agents.md) - Agent aliases
+- [Agent Aliases](../agents/aliases.md) - Alias configuration

@@ -242,7 +242,7 @@ mehr start --agent-planning claude-opus --agent-implementing claude task.md
 mehr start --agent-planning glm task.md
 ```
 
-See [Agents - Per-Step Configuration](../concepts/agents.md#per-step-agent-configuration) for details.
+See [Per-Step Agent Configuration](../agents/per-step.md) for details.
 
 ## Task File Format
 

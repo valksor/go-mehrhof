@@ -77,7 +77,7 @@ See the agent's reasoning and code generation in real-time.
 mehr implement --agent-implementing claude
 ```
 
-Use a specific agent for code generation. See [Per-Step Agents](../concepts/agents.md#per-step-agent-configuration).
+Use a specific agent for code generation. See [Per-Step Agent Configuration](../agents/per-step.md).
 
 ## What Happens
 
