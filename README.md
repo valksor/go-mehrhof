@@ -1371,6 +1371,8 @@ mehr --help
 mehr <command> --help
 ```
 
+The help output is contextual - it groups commands into "Available Now" and "Other Commands" based on your current workspace state (active task, specifications, etc.).
+
 ## License
 
 Internal use only.

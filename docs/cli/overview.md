@@ -81,6 +81,29 @@ mehr --help
 mehr <command> --help
 ```
 
+### Contextual Help
+
+The help output adapts to your current workspace state. Commands are grouped into:
+
+- **Available Now** - Commands that can be run in the current context
+- **Other Commands** - Commands that require additional context (with reasons why)
+
+Example output without an active task:
+
+```
+Available Now:
+  start       Start a new task
+  auto        Full automation
+  list        List all tasks
+  ...
+
+Other Commands:
+  status      Show task state (needs active task)
+  implement   Implement specifications (needs specifications)
+  undo        Revert checkpoint (needs git task)
+  ...
+```
+
 ## Workflow Summary
 
 ```bash

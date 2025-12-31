@@ -11,6 +11,7 @@ import (
 
 	"github.com/valksor/go-mehrhof/internal/config"
 	"github.com/valksor/go-mehrhof/internal/display"
+	"github.com/valksor/go-mehrhof/internal/help"
 	"github.com/valksor/go-mehrhof/internal/log"
 )
 
@@ -116,6 +117,9 @@ func init() {
 
 	// Register shell completions for common flags
 	registerCompletions()
+
+	// Setup contextual help that shows available/unavailable commands
+	help.SetupContextualHelp(rootCmd)
 }
 
 // registerCompletions sets up custom completion functions for flags
