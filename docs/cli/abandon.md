@@ -93,6 +93,15 @@ Only delete the branch. Work directory remains for reference.
 | Notes            | `.mehrhof/work/<id>/notes.md`        | Yes     |
 | Active reference | `.mehrhof/.active_task`              | Cleared |
 
+**Note:** The default behavior for work directory deletion can be configured in `config.yaml`:
+
+```yaml
+workflow:
+  delete_work_on_abandon: false   # Keep work dirs on abandon (default: true)
+```
+
+**Precedence:** CLI flag (`--keep-work`) > config (`delete_work_on_abandon`) > default (`true`)
+
 ### With --keep-branch
 
 Branch preserved, everything else deleted.

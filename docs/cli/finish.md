@@ -17,7 +17,7 @@ The `finish` command completes the current task by:
 1. Running quality checks (if available)
 2. Creating a pull request (if provider supports it), OR merging locally
 3. Keeping the task branch by default (use `--delete` to remove)
-4. Cleaning up the work directory
+4. Keeping the work directory by default (use `--delete-work` to remove, or configure `workflow.delete_work_on_finish` in `config.yaml`)
 
 **Default behavior**:
 - For `github:` tasks → Creates PR automatically
@@ -34,7 +34,8 @@ The `finish` command completes the current task by:
 | `--no-squash`      |       | bool   | false   | Regular merge (no squash)                   |
 | `--target`         | `-t`  | string | auto    | Target branch to merge into                 |
 | `--no-quality`     |       | bool   | false   | Skip quality checks                         |
-| `--quality-target` |       | string | quality | Make target for quality checks            |
+| `--quality-target` |       | string | quality | Make target for quality checks              |
+| `--delete-work`    |       | bool   | false   | Delete work directory after finishing       |
 | `--draft`          |       | bool   | false   | Create PR as draft                          |
 | `--pr-title`       |       | string | auto    | Custom PR title                             |
 | `--pr-body`        |       | string | auto    | Custom PR body                              |
@@ -149,6 +150,21 @@ mehr finish --quality-target lint
 ```
 
 Run `make lint` instead of `make quality`.
+
+### Delete Work Directory
+
+```bash
+mehr finish --delete-work
+```
+
+Delete the work directory after finishing. By default, the work directory is kept for reference. Configure the default behavior in `config.yaml`:
+
+```yaml
+workflow:
+  delete_work_on_finish: true   # Auto-delete on finish
+```
+
+**Precedence:** CLI flag (`--delete-work`) > config (`delete_work_on_finish`) > default (`false`)
 
 ## Quality Checks
 

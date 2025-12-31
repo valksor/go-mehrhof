@@ -132,7 +132,58 @@ When both global and provider-specific settings exist, the provider-specific set
 workflow:
   auto_init: true # Auto-initialize workspace
   session_retention_days: 30 # Keep sessions for N days
+  delete_work_on_finish: false # Delete work dirs after finish (default: false)
+  delete_work_on_abandon: true # Delete work dirs on abandon (default: true)
 ```
+
+**Cleanup settings:**
+
+| Setting               | Default | Description                            |
+| --------------------- | ------- | -------------------------------------- |
+| `delete_work_on_finish` | `false` | Delete work directory after `mehr finish` |
+| `delete_work_on_abandon` | `true`  | Delete work directory after `mehr abandon` |
+
+**Precedence order:** CLI flags always override config values:
+- `mehr finish --delete-work` → deletes work even if config says `false`
+- `mehr abandon --keep-work` → keeps work even if config says `true`
+
+#### storage
+
+```yaml
+storage:
+  work_dir: .mehrhof/work # Path to work directory (relative to project root)
+```
+
+**Work directory configuration:**
+
+The `work_dir` setting controls where task work directories are stored. The path is relative to the project root.
+
+**Valid values:**
+- `.mehrhof/work` (default) - Traditional location inside `.mehrhof/`
+- `tasks/` - Store in project root `tasks/` directory
+- `.task-work` - Hidden directory in project root
+
+**Examples:**
+
+```yaml
+# Default: .mehrhof/work/abc12345/
+storage:
+  work_dir: .mehrhof/work
+
+# Alternative: tasks/abc12345/
+storage:
+  work_dir: tasks/
+
+# Alternative: .task-work/abc12345/
+storage:
+  work_dir: .task-work
+```
+
+**Validation rules:**
+- Must be relative to project root (no absolute paths)
+- Cannot contain `..` (prevents escaping project)
+- Cannot use `~` expansion
+- Must contain only alphanumeric, hyphen, underscore, dot, and forward slash
 
 #### env
 

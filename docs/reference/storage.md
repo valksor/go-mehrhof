@@ -10,7 +10,7 @@ All task data is stored in the `.mehrhof/` directory:
 .mehrhof/
 ├── config.yaml              # Workspace configuration
 ├── .active_task             # Current active task reference
-├── work/                    # Task work directories
+├── work/                    # Task work directories (default: .mehrhof/work/)
 │   └── <task-id>/
 │       ├── work.yaml        # Task metadata
 │       ├── notes.md         # User notes
@@ -21,6 +21,8 @@ All task data is stored in the `.mehrhof/` directory:
 └── planned/                 # Standalone planning sessions
     └── <plan-id>/
 ```
+
+**Note:** The work directory location is configurable. See [Configuration - Storage Settings](../configuration/files.md#storage) for details.
 
 ## Root Files
 
@@ -72,7 +74,7 @@ started: 2025-01-15T10:30:00Z
 
 ## Work Directory
 
-Each task has a work directory at `.mehrhof/work/<task-id>/`.
+Each task has a work directory. By default, this is at `.mehrhof/work/<task-id>/`, but the location is configurable via `storage.work_dir` in `config.yaml`.
 
 ### work.yaml
 
@@ -311,11 +313,11 @@ JWT tokens are a good choice...
 
 ## Gitignore Recommendations
 
-Add to `.gitignore`:
+Add to `.gitignore` (adjust work directory path if using a custom `storage.work_dir`):
 
 ```gitignore
 # Mehrhof task data
-.mehrhof/work/
+.mehrhof/work/           # Or custom work_dir from config
 .mehrhof/planned/
 .mehrhof/.active_task
 ```
@@ -352,8 +354,15 @@ find .mehrhof/work/*/sessions/ -mtime +30 -delete
 
 ### Remove Completed Tasks
 
-After `mehr finish`, work directories are removed automatically. For manual cleanup:
+After `mehr finish`, work directories are removed based on the `workflow.delete_work_on_finish` config setting (default: `false`/keep). For manual cleanup:
 
 ```bash
 rm -rf .mehrhof/work/abc12345/
+```
+
+For automatic cleanup on finish, configure:
+
+```yaml
+workflow:
+  delete_work_on_finish: true   # Auto-delete work dirs on finish
 ```

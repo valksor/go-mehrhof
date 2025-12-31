@@ -1,6 +1,6 @@
-# Mehrhof
+# Valksor Mehrhof
 
-Mehrhof is a CLI tool for AI-powered task automation. It orchestrates AI agents (calling Claude CLI) to help you plan and implement software development tasks.
+Mehrhof is a CLI tool for AI-powered task automation by Valksor. It orchestrates AI agents (calling Claude CLI) to help you plan and implement software development tasks.
 
 ## Key Features
 

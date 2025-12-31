@@ -1,6 +1,6 @@
 # mehr config
 
-Manage and validate mehrhof configuration files.
+Manage and validate Mehrhof configuration files.
 
 ## Commands
 
