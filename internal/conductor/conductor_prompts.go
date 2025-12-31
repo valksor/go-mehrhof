@@ -92,7 +92,13 @@ Output each file change in a yaml:file block.`
 
 // buildReviewPrompt creates the prompt for code review
 func buildReviewPrompt(title, sourceContent, specsContent string) string {
-	return fmt.Sprintf(`You are a senior software engineer conducting a code review.
+	return buildReviewPromptWithLint(title, sourceContent, specsContent, "")
+}
+
+// buildReviewPromptWithLint creates the prompt for code review including lint results.
+// If lintResults is empty, it falls back to the standard review prompt.
+func buildReviewPromptWithLint(title, sourceContent, specsContent, lintResults string) string {
+	prompt := fmt.Sprintf(`You are a senior software engineer conducting a code review.
 
 ## Task
 %s
@@ -102,20 +108,39 @@ func buildReviewPrompt(title, sourceContent, specsContent string) string {
 
 ## Specifications
 %s
+`, title, sourceContent, specsContent)
 
+	// Include lint results if available
+	if lintResults != "" {
+		prompt += fmt.Sprintf(`
+%s
+`, lintResults)
+	}
+
+	prompt += `
 ## Instructions
 Review the implementation for:
 1. Correctness - Does it meet the specifications?
 2. Code quality - Is it clean, readable, and maintainable?
 3. Security - Are there any vulnerabilities?
 4. Performance - Are there any obvious bottlenecks?
-5. Best practices - Does it follow language/framework conventions?
+5. Best practices - Does it follow language/framework conventions?`
+
+	// Add lint-specific instruction if results were provided
+	if lintResults != "" {
+		prompt += `
+6. Lint issues - Address all issues found by automated linters above`
+	}
+
+	prompt += `
 
 Provide:
 1. A summary of your findings
 2. Any issues found (critical, major, minor)
 3. Suggested improvements
-4. If needed, provide corrected code in yaml:file blocks`, title, sourceContent, specsContent)
+4. If needed, provide corrected code in yaml:file blocks`
+
+	return prompt
 }
 
 // formatSpecificationContent formats a specification file from agent response
