@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
+
+	providererrors "github.com/valksor/go-mehrhof/internal/provider/errors"
 )
 
 // Ref represents a parsed Jira issue reference
@@ -51,7 +53,7 @@ func ParseReference(input string) (*Ref, error) {
 	input = strings.TrimSpace(input)
 
 	if input == "" {
-		return nil, fmt.Errorf("%w: empty reference", ErrInvalidReference)
+		return nil, fmt.Errorf("%w: empty reference", providererrors.ErrInvalidReference)
 	}
 
 	// Strip scheme prefix if present
@@ -90,7 +92,7 @@ func ParseReference(input string) (*Ref, error) {
 	// Parse issue key format (PROJ-123)
 	ref, err := parseIssueKey(issueKey)
 	if err != nil {
-		return nil, fmt.Errorf("%w: unrecognized format: %s (expected PROJ-123 or jira URL)", ErrInvalidReference, input)
+		return nil, fmt.Errorf("%w: unrecognized format: %s (expected PROJ-123 or jira URL)", providererrors.ErrInvalidReference, input)
 	}
 
 	return ref, nil
@@ -102,7 +104,7 @@ func parseIssueKey(issueKey string) (*Ref, error) {
 		projectKey := matches[1]
 		var number int
 		if _, err := fmt.Sscanf(matches[2], "%d", &number); err != nil {
-			return nil, fmt.Errorf("%w: invalid issue number: %s", ErrInvalidReference, matches[2])
+			return nil, fmt.Errorf("%w: invalid issue number: %s", providererrors.ErrInvalidReference, matches[2])
 		}
 		return &Ref{
 			IssueKey:   issueKey,
@@ -111,7 +113,7 @@ func parseIssueKey(issueKey string) (*Ref, error) {
 			IsExplicit: false,
 		}, nil
 	}
-	return nil, fmt.Errorf("%w: invalid issue key format: %s (expected PROJ-123)", ErrInvalidReference, issueKey)
+	return nil, fmt.Errorf("%w: invalid issue key format: %s (expected PROJ-123)", providererrors.ErrInvalidReference, issueKey)
 }
 
 // ExtractIssueKey extracts the issue key from a Jira URL
