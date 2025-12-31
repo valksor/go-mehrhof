@@ -542,7 +542,7 @@ func TestStatus_WithActiveTask(t *testing.T) {
 	}
 
 	// Set up workspace
-	ws, err := storage.OpenWorkspace(tmpDir)
+	ws, err := storage.OpenWorkspace(tmpDir, nil)
 	if err != nil {
 		t.Fatalf("OpenWorkspace: %v", err)
 	}
@@ -608,10 +608,11 @@ func TestStatus_WithActiveTask(t *testing.T) {
 }
 
 func TestDeleteOptionsStruct(t *testing.T) {
+	deleteWork := BoolPtr(false) // explicit: keep
 	opts := DeleteOptions{
-		Force:       true,
-		KeepBranch:  true,
-		KeepWorkDir: true,
+		Force:      true,
+		KeepBranch: true,
+		DeleteWork: deleteWork,
 	}
 
 	if opts.Force != true {
@@ -620,8 +621,8 @@ func TestDeleteOptionsStruct(t *testing.T) {
 	if opts.KeepBranch != true {
 		t.Errorf("KeepBranch = %v, want true", opts.KeepBranch)
 	}
-	if opts.KeepWorkDir != true {
-		t.Errorf("KeepWorkDir = %v, want true", opts.KeepWorkDir)
+	if opts.DeleteWork == nil || *opts.DeleteWork != false {
+		t.Errorf("DeleteWork = %v, want false (keep)", opts.DeleteWork)
 	}
 }
 
@@ -634,8 +635,8 @@ func TestDefaultDeleteOptions(t *testing.T) {
 	if opts.KeepBranch != false {
 		t.Errorf("KeepBranch = %v, want false", opts.KeepBranch)
 	}
-	if opts.KeepWorkDir != false {
-		t.Errorf("KeepWorkDir = %v, want false", opts.KeepWorkDir)
+	if opts.DeleteWork != nil {
+		t.Errorf("DeleteWork = %v, want nil (defer to config)", opts.DeleteWork)
 	}
 }
 
@@ -1268,7 +1269,7 @@ func TestResolveAgentForTask(t *testing.T) {
 			tmpDir := t.TempDir()
 
 			// Create workspace with config
-			ws, err := storage.OpenWorkspace(tmpDir)
+			ws, err := storage.OpenWorkspace(tmpDir, nil)
 			if err != nil {
 				t.Fatalf("OpenWorkspace: %v", err)
 			}
@@ -1448,7 +1449,7 @@ func TestResolveAgentForStep(t *testing.T) {
 			tmpDir := t.TempDir()
 
 			// Create workspace
-			ws, err := storage.OpenWorkspace(tmpDir)
+			ws, err := storage.OpenWorkspace(tmpDir, nil)
 			if err != nil {
 				t.Fatalf("OpenWorkspace: %v", err)
 			}
@@ -1692,7 +1693,7 @@ func TestGetAgentForStep(t *testing.T) {
 			tmpDir := t.TempDir()
 
 			// Create workspace
-			ws, err := storage.OpenWorkspace(tmpDir)
+			ws, err := storage.OpenWorkspace(tmpDir, nil)
 			if err != nil {
 				t.Fatalf("OpenWorkspace: %v", err)
 			}
@@ -1854,7 +1855,7 @@ func TestResolveNaming(t *testing.T) {
 			tmpDir := t.TempDir()
 
 			// Create workspace
-			ws, err := storage.OpenWorkspace(tmpDir)
+			ws, err := storage.OpenWorkspace(tmpDir, nil)
 			if err != nil {
 				t.Fatalf("OpenWorkspace: %v", err)
 			}
@@ -1955,7 +1956,7 @@ func TestBuildWorkUnit_WithSpecs(t *testing.T) {
 			tmpDir := t.TempDir()
 
 			// Create workspace
-			ws, err := storage.OpenWorkspace(tmpDir)
+			ws, err := storage.OpenWorkspace(tmpDir, nil)
 			if err != nil {
 				t.Fatalf("OpenWorkspace: %v", err)
 			}
@@ -2053,4 +2054,159 @@ func (a *testAgent) WithEnv(key, value string) agent.Agent {
 
 func (a *testAgent) WithArgs(args ...string) agent.Agent {
 	return a
+}
+
+// Tests for DeleteWork tri-state behavior
+
+func TestBoolPtr(t *testing.T) {
+	truePtr := BoolPtr(true)
+	falsePtr := BoolPtr(false)
+
+	if truePtr == nil || *truePtr != true {
+		t.Error("BoolPtr(true) should return pointer to true")
+	}
+	if falsePtr == nil || *falsePtr != false {
+		t.Error("BoolPtr(false) should return pointer to false")
+	}
+}
+
+func TestFinishOptions_DeleteWork_TriState(t *testing.T) {
+	tests := []struct {
+		name       string
+		deleteWork *bool
+		wantNil    bool
+		wantValue  bool
+	}{
+		{
+			name:       "nil defers to config",
+			deleteWork: nil,
+			wantNil:    true,
+		},
+		{
+			name:       "explicit true means delete",
+			deleteWork: BoolPtr(true),
+			wantNil:    false,
+			wantValue:  true,
+		},
+		{
+			name:       "explicit false means keep",
+			deleteWork: BoolPtr(false),
+			wantNil:    false,
+			wantValue:  false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			opts := FinishOptions{
+				DeleteWork: tt.deleteWork,
+			}
+
+			if tt.wantNil {
+				if opts.DeleteWork != nil {
+					t.Errorf("DeleteWork = %v, want nil", opts.DeleteWork)
+				}
+			} else {
+				if opts.DeleteWork == nil {
+					t.Fatal("DeleteWork is nil, want non-nil")
+				}
+				if *opts.DeleteWork != tt.wantValue {
+					t.Errorf("*DeleteWork = %v, want %v", *opts.DeleteWork, tt.wantValue)
+				}
+			}
+		})
+	}
+}
+
+func TestDeleteOptions_DeleteWork_TriState(t *testing.T) {
+	tests := []struct {
+		name       string
+		deleteWork *bool
+		wantNil    bool
+		wantValue  bool
+	}{
+		{
+			name:       "nil defers to config",
+			deleteWork: nil,
+			wantNil:    true,
+		},
+		{
+			name:       "explicit true means delete",
+			deleteWork: BoolPtr(true),
+			wantNil:    false,
+			wantValue:  true,
+		},
+		{
+			name:       "explicit false means keep",
+			deleteWork: BoolPtr(false),
+			wantNil:    false,
+			wantValue:  false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			opts := DeleteOptions{
+				DeleteWork: tt.deleteWork,
+			}
+
+			if tt.wantNil {
+				if opts.DeleteWork != nil {
+					t.Errorf("DeleteWork = %v, want nil", opts.DeleteWork)
+				}
+			} else {
+				if opts.DeleteWork == nil {
+					t.Fatal("DeleteWork is nil, want non-nil")
+				}
+				if *opts.DeleteWork != tt.wantValue {
+					t.Errorf("*DeleteWork = %v, want %v", *opts.DeleteWork, tt.wantValue)
+				}
+			}
+		})
+	}
+}
+
+// Test precedence logic: CLI flag > config > default
+func TestDeleteWorkPrecedence_Documentation(t *testing.T) {
+	// This test documents the expected precedence behavior.
+	// The actual precedence logic is in Finish() and Delete() methods,
+	// but we can verify the expected mapping here:
+
+	// For Finish (default behavior: keep work)
+	t.Run("Finish default keeps work", func(t *testing.T) {
+		opts := DefaultFinishOptions()
+		if opts.DeleteWork != nil {
+			t.Error("Default FinishOptions.DeleteWork should be nil (defer to config)")
+		}
+		// When DeleteWork is nil and config.DeleteWorkOnFinish is false (default),
+		// work directory should be kept.
+	})
+
+	// For Delete (default behavior: delete work)
+	t.Run("Delete default deletes work", func(t *testing.T) {
+		opts := DefaultDeleteOptions()
+		if opts.DeleteWork != nil {
+			t.Error("Default DeleteOptions.DeleteWork should be nil (defer to config)")
+		}
+		// When DeleteWork is nil and config.DeleteWorkOnAbandon is true (default),
+		// work directory should be deleted.
+	})
+
+	// CLI --delete-work flag should force deletion
+	t.Run("CLI delete-work flag forces deletion", func(t *testing.T) {
+		deleteWork := BoolPtr(true)
+		opts := FinishOptions{DeleteWork: deleteWork}
+		if opts.DeleteWork == nil || *opts.DeleteWork != true {
+			t.Error("When CLI flag is set, DeleteWork should be true")
+		}
+	})
+
+	// CLI --keep-work flag should prevent deletion
+	t.Run("CLI keep-work flag prevents deletion", func(t *testing.T) {
+		deleteWork := BoolPtr(false) // --keep-work means don't delete
+		opts := DeleteOptions{DeleteWork: deleteWork}
+		if opts.DeleteWork == nil || *opts.DeleteWork != false {
+			t.Error("When CLI flag is set, DeleteWork should be false")
+		}
+	})
 }

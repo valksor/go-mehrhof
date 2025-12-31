@@ -68,7 +68,7 @@ func SetupTestTask(t *testing.T, c *conductor.Conductor, title string) *storage.
 	if ws == nil {
 		// Create workspace if not initialized
 		var err error
-		ws, err = storage.OpenWorkspace(tmpDir)
+		ws, err = storage.OpenWorkspace(tmpDir, nil)
 		if err != nil {
 			t.Fatalf("Open workspace: %v", err)
 		}

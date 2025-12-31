@@ -619,7 +619,7 @@ func TestSaveCurrentSession(t *testing.T) {
 			tmpDir := t.TempDir()
 
 			// Create workspace
-			ws, err := storage.OpenWorkspace(tmpDir)
+			ws, err := storage.OpenWorkspace(tmpDir, nil)
 			if err != nil {
 				t.Fatalf("OpenWorkspace: %v", err)
 			}

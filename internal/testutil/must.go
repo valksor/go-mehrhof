@@ -96,7 +96,7 @@ func CreateTempWorkspace(t *testing.T) (string, *storage.Workspace, func()) {
 		t.Fatal(err)
 	}
 
-	ws := T(storage.OpenWorkspace(path))
+	ws := T(storage.OpenWorkspace(path, nil))
 
 	return path, ws, cleanup
 }

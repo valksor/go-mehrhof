@@ -266,7 +266,7 @@ func TestStart_InvalidReference(t *testing.T) {
 	}
 
 	// Set up workspace
-	ws, err := storage.OpenWorkspace(tmpDir)
+	ws, err := storage.OpenWorkspace(tmpDir, nil)
 	if err != nil {
 		t.Fatalf("OpenWorkspace: %v", err)
 	}
@@ -289,7 +289,7 @@ func TestResume_NoActiveTask(t *testing.T) {
 	}
 
 	// Set up workspace
-	ws, err := storage.OpenWorkspace(tmpDir)
+	ws, err := storage.OpenWorkspace(tmpDir, nil)
 	if err != nil {
 		t.Fatalf("OpenWorkspace: %v", err)
 	}
@@ -399,7 +399,7 @@ func TestUndo_NoGit(t *testing.T) {
 	}
 
 	// Set up workspace and fake active task
-	ws, err := storage.OpenWorkspace(tmpDir)
+	ws, err := storage.OpenWorkspace(tmpDir, nil)
 	if err != nil {
 		t.Fatalf("OpenWorkspace: %v", err)
 	}
@@ -429,7 +429,7 @@ func TestRedo_NoGit(t *testing.T) {
 	}
 
 	// Set up workspace and fake active task
-	ws, err := storage.OpenWorkspace(tmpDir)
+	ws, err := storage.OpenWorkspace(tmpDir, nil)
 	if err != nil {
 		t.Fatalf("OpenWorkspace: %v", err)
 	}
@@ -604,7 +604,7 @@ func TestImplement_NoSpecifications(t *testing.T) {
 	}
 
 	// Set up workspace and active task
-	ws, err := storage.OpenWorkspace(tmpDir)
+	ws, err := storage.OpenWorkspace(tmpDir, nil)
 	if err != nil {
 		t.Fatalf("OpenWorkspace: %v", err)
 	}
@@ -648,7 +648,7 @@ func TestStart_TaskAlreadyActive(t *testing.T) {
 	}
 
 	// Set up workspace and existing active task
-	ws, err := storage.OpenWorkspace(tmpDir)
+	ws, err := storage.OpenWorkspace(tmpDir, nil)
 	if err != nil {
 		t.Fatalf("OpenWorkspace: %v", err)
 	}
@@ -690,7 +690,7 @@ func TestBuildWorkUnit_WithTaskWork(t *testing.T) {
 	}
 
 	// Set up workspace and task work
-	ws, err := storage.OpenWorkspace(tmpDir)
+	ws, err := storage.OpenWorkspace(tmpDir, nil)
 	if err != nil {
 		t.Fatalf("OpenWorkspace: %v", err)
 	}
@@ -753,7 +753,7 @@ func TestGetTaskWork_WithTask(t *testing.T) {
 	}
 
 	// Set up workspace and task work
-	ws, err := storage.OpenWorkspace(tmpDir)
+	ws, err := storage.OpenWorkspace(tmpDir, nil)
 	if err != nil {
 		t.Fatalf("OpenWorkspace: %v", err)
 	}
@@ -794,7 +794,7 @@ func TestDelete_WithWorkspace(t *testing.T) {
 	}
 
 	// Set up workspace
-	ws, err := storage.OpenWorkspace(tmpDir)
+	ws, err := storage.OpenWorkspace(tmpDir, nil)
 	if err != nil {
 		t.Fatalf("OpenWorkspace: %v", err)
 	}
@@ -825,10 +825,10 @@ func TestDelete_WithWorkspace(t *testing.T) {
 	c.taskWork = work
 	c.activeTask = activeTask
 
-	// Delete with KeepWorkDir (no git to delete branch)
-	err = c.Delete(ctx, DeleteOptions{KeepWorkDir: true})
+	// Delete with DeleteWork=false (keep work dir, no git to delete branch)
+	err = c.Delete(ctx, DeleteOptions{DeleteWork: BoolPtr(false)})
 	if err != nil {
-		t.Errorf("Delete with KeepWorkDir: %v", err)
+		t.Errorf("Delete with DeleteWork=false: %v", err)
 	}
 
 	// Active task should be cleared
@@ -849,7 +849,7 @@ func TestFinish_NoGit(t *testing.T) {
 	}
 
 	// Set up workspace
-	ws, err := storage.OpenWorkspace(tmpDir)
+	ws, err := storage.OpenWorkspace(tmpDir, nil)
 	if err != nil {
 		t.Fatalf("OpenWorkspace: %v", err)
 	}
@@ -913,7 +913,7 @@ func TestFinish_NoGitUsed(t *testing.T) {
 	}
 
 	// Set up workspace
-	ws, err := storage.OpenWorkspace(tmpDir)
+	ws, err := storage.OpenWorkspace(tmpDir, nil)
 	if err != nil {
 		t.Fatalf("OpenWorkspace: %v", err)
 	}
@@ -1088,7 +1088,7 @@ func TestStatus_Integration(t *testing.T) {
 	tmpDir := t.TempDir()
 
 	// Create workspace
-	ws, err := storage.OpenWorkspace(tmpDir)
+	ws, err := storage.OpenWorkspace(tmpDir, nil)
 	if err != nil {
 		t.Fatalf("OpenWorkspace: %v", err)
 	}

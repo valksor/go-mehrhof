@@ -80,7 +80,7 @@ func TestHasQualityTarget_NoWorkspace(t *testing.T) {
 func TestHasQualityTarget_NoMakefile(t *testing.T) {
 	tmpDir := t.TempDir()
 
-	ws, err := storage.OpenWorkspace(tmpDir)
+	ws, err := storage.OpenWorkspace(tmpDir, nil)
 	if err != nil {
 		t.Fatalf("OpenWorkspace: %v", err)
 	}
@@ -109,7 +109,7 @@ quality:
 		t.Fatalf("WriteFile: %v", err)
 	}
 
-	ws, err := storage.OpenWorkspace(tmpDir)
+	ws, err := storage.OpenWorkspace(tmpDir, nil)
 	if err != nil {
 		t.Fatalf("OpenWorkspace: %v", err)
 	}
@@ -138,7 +138,7 @@ build:
 		t.Fatalf("WriteFile: %v", err)
 	}
 
-	ws, err := storage.OpenWorkspace(tmpDir)
+	ws, err := storage.OpenWorkspace(tmpDir, nil)
 	if err != nil {
 		t.Fatalf("OpenWorkspace: %v", err)
 	}
@@ -154,7 +154,7 @@ build:
 func TestRunQuality_NoTarget(t *testing.T) {
 	tmpDir := t.TempDir()
 
-	ws, err := storage.OpenWorkspace(tmpDir)
+	ws, err := storage.OpenWorkspace(tmpDir, nil)
 	if err != nil {
 		t.Fatalf("OpenWorkspace: %v", err)
 	}
@@ -191,7 +191,7 @@ quality:
 		t.Fatalf("WriteFile: %v", err)
 	}
 
-	ws, err := storage.OpenWorkspace(tmpDir)
+	ws, err := storage.OpenWorkspace(tmpDir, nil)
 	if err != nil {
 		t.Fatalf("OpenWorkspace: %v", err)
 	}
@@ -234,7 +234,7 @@ quality:
 		t.Fatalf("WriteFile: %v", err)
 	}
 
-	ws, err := storage.OpenWorkspace(tmpDir)
+	ws, err := storage.OpenWorkspace(tmpDir, nil)
 	if err != nil {
 		t.Fatalf("OpenWorkspace: %v", err)
 	}
@@ -273,7 +273,7 @@ quality:
 		t.Fatalf("WriteFile: %v", err)
 	}
 
-	ws, err := storage.OpenWorkspace(tmpDir)
+	ws, err := storage.OpenWorkspace(tmpDir, nil)
 	if err != nil {
 		t.Fatalf("OpenWorkspace: %v", err)
 	}
@@ -315,7 +315,7 @@ lint:
 		t.Fatalf("WriteFile: %v", err)
 	}
 
-	ws, err := storage.OpenWorkspace(tmpDir)
+	ws, err := storage.OpenWorkspace(tmpDir, nil)
 	if err != nil {
 		t.Fatalf("OpenWorkspace: %v", err)
 	}
