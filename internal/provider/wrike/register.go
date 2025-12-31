@@ -13,10 +13,14 @@ func Info() provider.ProviderInfo {
 		Priority:    20, // Same as GitHub
 		Capabilities: provider.CapabilitySet{
 			provider.CapRead:               true,
+			provider.CapList:               true,
 			provider.CapFetchComments:      true,
 			provider.CapComment:            true,
+			provider.CapUpdateStatus:       true,
 			provider.CapDownloadAttachment: true,
 			provider.CapSnapshot:           true,
+			provider.CapCreateWorkUnit:     true,
+			provider.CapFetchSubtasks:      true,
 		},
 	}
 }

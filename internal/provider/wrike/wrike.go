@@ -24,6 +24,8 @@ type Provider struct {
 func New(_ context.Context, cfg provider.Config) (any, error) {
 	token := cfg.GetString("token")
 	host := cfg.GetString("host")
+	folderID := cfg.GetString("folder_id")
+	spaceID := cfg.GetString("space_id")
 
 	// Try to resolve token from env if not provided
 	if token == "" {
@@ -35,7 +37,12 @@ func New(_ context.Context, cfg provider.Config) (any, error) {
 	}
 
 	return &Provider{
-		client: NewClient(token, host),
+		client: NewClientWithConfig(ClientConfig{
+			Token:    token,
+			Host:     host,
+			FolderID: folderID,
+			SpaceID:  spaceID,
+		}),
 	}, nil
 }
 

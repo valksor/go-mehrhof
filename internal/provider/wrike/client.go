@@ -29,6 +29,8 @@ type Client struct {
 	httpClient *http.Client
 	baseURL    string
 	token      string
+	folderID   string // Default folder for list/create operations
+	spaceID    string // Default space for list operations
 }
 
 // NewClient creates a new Wrike API client
@@ -43,6 +45,30 @@ func NewClient(token, host string) *Client {
 		baseURL:    baseURL,
 		token:      token,
 	}
+}
+
+// NewClientWithConfig creates a new Wrike API client with full configuration
+func NewClientWithConfig(cfg ClientConfig) *Client {
+	baseURL := defaultBaseURL
+	if cfg.Host != "" {
+		baseURL = strings.TrimSuffix(cfg.Host, "/")
+	}
+
+	return &Client{
+		httpClient: httpclient.NewHTTPClient(),
+		baseURL:    baseURL,
+		token:      cfg.Token,
+		folderID:   cfg.FolderID,
+		spaceID:    cfg.SpaceID,
+	}
+}
+
+// ClientConfig holds extended client configuration
+type ClientConfig struct {
+	Token    string
+	Host     string
+	FolderID string
+	SpaceID  string
 }
 
 // ResolveToken finds the Wrike token from multiple sources.
@@ -236,6 +262,66 @@ func (c *Client) PostComment(ctx context.Context, taskID, text string) (*Comment
 
 	if len(response.Data) == 0 {
 		return nil, fmt.Errorf("no comment returned")
+	}
+
+	return &response.Data[0], nil
+}
+
+// UpdateTaskStatus updates the status of a task
+func (c *Client) UpdateTaskStatus(ctx context.Context, taskID, status string) error {
+	requestBody := map[string]string{
+		"status": status,
+	}
+	bodyBytes, err := json.Marshal(requestBody)
+	if err != nil {
+		return fmt.Errorf("encode request: %w", err)
+	}
+
+	var response taskResponse
+	if err := c.doRequestWithRetry(ctx, http.MethodPut, "/tasks/"+url.PathEscape(taskID),
+		strings.NewReader(string(bodyBytes)), &response); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// CreateTaskOptions holds options for creating a new task
+type CreateTaskOptions struct {
+	Title       string
+	Description string
+	Priority    string
+	Status      string
+}
+
+// CreateTask creates a new task in a folder
+func (c *Client) CreateTask(ctx context.Context, folderID string, opts CreateTaskOptions) (*Task, error) {
+	requestBody := map[string]any{
+		"title": opts.Title,
+	}
+	if opts.Description != "" {
+		requestBody["description"] = opts.Description
+	}
+	if opts.Priority != "" {
+		requestBody["priority"] = opts.Priority
+	}
+	if opts.Status != "" {
+		requestBody["status"] = opts.Status
+	}
+
+	bodyBytes, err := json.Marshal(requestBody)
+	if err != nil {
+		return nil, fmt.Errorf("encode request: %w", err)
+	}
+
+	var response taskResponse
+	if err := c.doRequestWithRetry(ctx, http.MethodPost, "/folders/"+url.PathEscape(folderID)+"/tasks",
+		strings.NewReader(string(bodyBytes)), &response); err != nil {
+		return nil, err
+	}
+
+	if len(response.Data) == 0 {
+		return nil, fmt.Errorf("no task returned")
 	}
 
 	return &response.Data[0], nil
