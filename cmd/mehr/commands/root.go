@@ -27,7 +27,10 @@ var (
 var rootCmd = &cobra.Command{
 	Use:   "mehr",
 	Short: "AI-powered task automation",
-	Long: `mehrhof is a CLI tool for AI-assisted task automation.
+	CompletionOptions: cobra.CompletionOptions{
+		DisableDefaultCmd: true,
+	},
+	Long: `Mehrhof is a CLI tool for AI-assisted task automation by Valksor.
 
 It orchestrates AI agents to perform planning, implementation, and code review
 workflows. Tasks can be sourced from files, directories, or external providers.
@@ -115,27 +118,8 @@ func init() {
 		Title: "Configuration Commands:",
 	})
 
-	// Register shell completions for common flags
-	registerCompletions()
-
 	// Setup contextual help that shows available/unavailable commands
 	help.SetupContextualHelp(rootCmd)
-}
-
-// registerCompletions sets up custom completion functions for flags
-func registerCompletions() {
-	// Agent flag completions
-	agentFlags := []string{"agent", "agent-plan", "agent-implement", "agent-review"}
-	for _, flag := range agentFlags {
-		if err := rootCmd.RegisterFlagCompletionFunc(flag, completeAgent); err != nil {
-			// Some flags might not exist in all commands, ignore errors
-			continue
-		}
-	}
-
-	// Workflow step completions - may not exist in all commands
-	// nolint:staticcheck // Flag may not exist in all commands, ignore error
-	_ = rootCmd.RegisterFlagCompletionFunc("step", completeWorkflow)
 }
 
 // GetSettings returns the loaded settings
