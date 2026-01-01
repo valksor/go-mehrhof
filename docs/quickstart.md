@@ -23,6 +23,8 @@ claude --version
 | macOS | Intel | `mehr-darwin-amd64` |
 | macOS | Apple Silicon | `mehr-darwin-arm64` |
 
+> **Windows Users:** Use [WSL2](https://learn.microsoft.com/en-us/windows/wsl/) with the Linux binary (`mehr-linux-amd64` or `mehr-linux-arm64`).
+
 ```bash
 # Download (example: macOS Apple Silicon)
 curl -L https://github.com/valksor/go-mehrhof/releases/latest/download/mehr-darwin-arm64 -o mehr

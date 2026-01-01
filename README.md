@@ -52,6 +52,8 @@ Download the latest release for your platform:
 | macOS | AMD64 (Intel) | `mehr-darwin-amd64` |
 | macOS | ARM64 (Apple Silicon) | `mehr-darwin-arm64` |
 
+> **Windows Users:** Native Windows binaries are not provided. Use [WSL2](https://learn.microsoft.com/en-us/windows/wsl/) (Windows Subsystem for Linux) and download the appropriate Linux binary (`mehr-linux-amd64` or `mehr-linux-arm64`).
+
 ```bash
 # Download and install (example for macOS ARM64)
 curl -L https://github.com/valksor/go-mehrhof/releases/latest/download/mehr-darwin-arm64 -o mehr
