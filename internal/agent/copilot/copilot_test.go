@@ -291,3 +291,352 @@ func TestAgentInterface(t *testing.T) {
 	// Verify Agent implements MetadataProvider
 	var _ agent.MetadataProvider = (*Agent)(nil)
 }
+
+func TestNewWithConfig(t *testing.T) {
+	cfg := agent.Config{
+		Command:    []string{"custom-gh", "copilot"},
+		Timeout:    10 * time.Minute,
+		RetryCount: 5,
+		RetryDelay: 2 * time.Second,
+		WorkDir:    "/custom/dir",
+		Args:       []string{"--mode", "explain"},
+		Environment: map[string]string{
+			"TEST_VAR": "test_value",
+		},
+	}
+
+	a := NewWithConfig(cfg)
+
+	if a.Name() != AgentName {
+		t.Errorf("Name() = %q, want %q", a.Name(), AgentName)
+	}
+
+	if a.config.Command[0] != "custom-gh" {
+		t.Errorf("Command[0] = %q, want %q", a.config.Command[0], "custom-gh")
+	}
+
+	if a.config.Timeout != 10*time.Minute {
+		t.Errorf("Timeout = %v, want 10m", a.config.Timeout)
+	}
+
+	if a.config.WorkDir != "/custom/dir" {
+		t.Errorf("WorkDir = %q, want %q", a.config.WorkDir, "/custom/dir")
+	}
+
+	if len(a.config.Args) != 2 {
+		t.Errorf("Args len = %d, want 2", len(a.config.Args))
+	}
+}
+
+func TestNewWithConfig_EmptyCommand(t *testing.T) {
+	cfg := agent.Config{
+		Command: []string{},
+	}
+
+	a := NewWithConfig(cfg)
+
+	if a.config.Command[0] != "gh" {
+		t.Errorf("Command[0] = %q, want %q (default)", a.config.Command[0], "gh")
+	}
+}
+
+func TestSetParser(t *testing.T) {
+	a := New()
+	mockParser := &mockParser{}
+
+	a.SetParser(mockParser)
+
+	if a.parser != mockParser {
+		t.Error("SetParser() did not set parser")
+	}
+}
+
+func TestSetMode(t *testing.T) {
+	a := New()
+
+	a.SetMode(ModeExplain)
+
+	if a.mode != ModeExplain {
+		t.Errorf("SetMode() mode = %q, want %q", a.mode, ModeExplain)
+	}
+}
+
+func TestSetTarget(t *testing.T) {
+	a := New()
+
+	a.SetTarget(TargetGH)
+
+	if a.target != TargetGH {
+		t.Errorf("SetTarget() target = %q, want %q", a.target, TargetGH)
+	}
+}
+
+func TestBuildArgs_ConfigOverrides(t *testing.T) {
+	tests := []struct {
+		name   string
+		args   []string
+		prompt string
+		want   string // Check for mode in result
+	}{
+		{
+			name:   "mode override via --mode",
+			args:   []string{"--mode", "explain"},
+			prompt: "test prompt",
+			want:   "explain",
+		},
+		{
+			name:   "mode override via -m",
+			args:   []string{"-m", "explain"},
+			prompt: "test prompt",
+			want:   "explain",
+		},
+		{
+			name:   "target override via --target",
+			args:   []string{"--target", "git"},
+			prompt: "test prompt",
+			want:   "suggest", // mode should still be suggest
+		},
+		{
+			name:   "target override via -t",
+			args:   []string{"-t", "gh"},
+			prompt: "test prompt",
+			want:   "suggest",
+		},
+		{
+			name:   "both mode and target override",
+			args:   []string{"--mode", "explain", "--target", "git"},
+			prompt: "test prompt",
+			want:   "explain",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			a := New()
+			a.config.Args = tt.args
+
+			got := a.buildArgs(tt.prompt)
+
+			// Find the mode in args
+			foundMode := ""
+			for i, arg := range got {
+				if arg == "suggest" || arg == "explain" {
+					foundMode = arg
+					break
+				}
+				if i > 0 && got[i-1] == "copilot" && (arg == "suggest" || arg == "explain") {
+					foundMode = arg
+					break
+				}
+			}
+
+			if foundMode != tt.want {
+				t.Errorf("buildArgs() mode = %q, want %q, args = %v", foundMode, tt.want, got)
+			}
+		})
+	}
+}
+
+func TestBuildArgs_ConfigOverrides_Invalid(t *testing.T) {
+	tests := []struct {
+		name   string
+		args   []string
+		prompt string
+		// Should keep defaults for unrecognized values
+		wantMode   Mode
+		wantTarget TargetType
+	}{
+		{
+			name:       "invalid mode value keeps default",
+			args:       []string{"--mode", "invalid"},
+			prompt:     "test",
+			wantMode:   ModeSuggest,
+			wantTarget: TargetShell,
+		},
+		{
+			name:       "invalid target value keeps default",
+			args:       []string{"--target", "invalid"},
+			prompt:     "test",
+			wantMode:   ModeSuggest,
+			wantTarget: TargetShell,
+		},
+		{
+			name:       "mode flag without value keeps default",
+			args:       []string{"--mode"},
+			prompt:     "test",
+			wantMode:   ModeSuggest,
+			wantTarget: TargetShell,
+		},
+		{
+			name:       "target flag at end without value",
+			args:       []string{"--target"},
+			prompt:     "test",
+			wantMode:   ModeSuggest,
+			wantTarget: TargetShell,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			a := New()
+			a.config.Args = tt.args
+
+			got := a.buildArgs(tt.prompt)
+
+			// Check that defaults are used
+			foundMode := a.mode
+			foundTarget := a.target
+
+			// Parse mode from result
+			for i, arg := range got {
+				if i > 0 && got[i-1] == "copilot" {
+					if arg == "suggest" || arg == "explain" {
+						foundMode = Mode(arg)
+					}
+				}
+			}
+
+			if foundMode != tt.wantMode {
+				t.Errorf("buildArgs() mode = %q, want %q", foundMode, tt.wantMode)
+			}
+
+			if foundTarget != tt.wantTarget {
+				t.Errorf("buildArgs() target = %q, want %q", foundTarget, tt.wantTarget)
+			}
+		})
+	}
+}
+
+func TestRegister(t *testing.T) {
+	registry := agent.NewRegistry()
+
+	err := Register(registry)
+	if err != nil {
+		t.Fatalf("Register() error = %v", err)
+	}
+
+	// Verify the agent is registered
+	got, err := registry.Get(AgentName)
+	if err != nil {
+		t.Error("Register() did not register the agent")
+	}
+
+	if got.Name() != AgentName {
+		t.Errorf("Registered agent name = %q, want %q", got.Name(), AgentName)
+	}
+}
+
+func TestRegister_Duplicate(t *testing.T) {
+	registry := agent.NewRegistry()
+
+	// First registration should succeed
+	err := Register(registry)
+	if err != nil {
+		t.Fatalf("First Register() error = %v", err)
+	}
+
+	// Second registration should fail
+	err = Register(registry)
+	if err == nil {
+		t.Error("Second Register() should return error for duplicate")
+	}
+}
+
+func TestPlainTextParser_Parse_EmptyEvents(t *testing.T) {
+	p := NewPlainTextParser()
+
+	resp, err := p.Parse([]agent.Event{})
+	if err != nil {
+		t.Fatalf("Parse() error = %v", err)
+	}
+
+	if len(resp.Messages) != 0 {
+		t.Errorf("Parse() messages len = %d, want 0", len(resp.Messages))
+	}
+
+	if resp.Summary != "" {
+		t.Errorf("Parse() summary = %q, want empty", resp.Summary)
+	}
+}
+
+func TestPlainTextParser_Parse_WithEmptyText(t *testing.T) {
+	p := NewPlainTextParser()
+
+	events := []agent.Event{
+		{Type: agent.EventText, Text: ""},
+		{Type: agent.EventText, Text: "   "},
+		{Type: agent.EventText, Text: "actual content"},
+	}
+
+	resp, err := p.Parse(events)
+	if err != nil {
+		t.Fatalf("Parse() error = %v", err)
+	}
+
+	// Should have 1 non-empty message
+	if len(resp.Messages) != 1 {
+		t.Errorf("Parse() messages len = %d, want 1", len(resp.Messages))
+	}
+
+	if resp.Summary != "actual content" {
+		t.Errorf("Parse() summary = %q, want %q", resp.Summary, "actual content")
+	}
+}
+
+func TestWithEnv_Chaining(t *testing.T) {
+	a := New()
+	a.config.Environment = map[string]string{"EXISTING": "value"}
+
+	b := a.WithEnv("NEW_KEY", "new_value").(*Agent)
+
+	// Original should not have new key
+	if _, ok := a.config.Environment["NEW_KEY"]; ok {
+		t.Error("WithEnv modified original agent")
+	}
+
+	// Original should still have existing key
+	if a.config.Environment["EXISTING"] != "value" {
+		t.Error("WithEnv removed existing keys from original")
+	}
+
+	// New agent should have both keys
+	if b.config.Environment["EXISTING"] != "value" {
+		t.Error("WithEnv did not copy existing keys")
+	}
+
+	if b.config.Environment["NEW_KEY"] != "new_value" {
+		t.Errorf("WithEnv() NEW_KEY = %q, want %q", b.config.Environment["NEW_KEY"], "new_value")
+	}
+}
+
+func TestWithArgs_Chaining(t *testing.T) {
+	a := New()
+	a.config.Args = []string{"--existing"}
+
+	b := a.WithArgs("--new1", "--new2").(*Agent)
+
+	// Original should be unchanged
+	if len(a.config.Args) != 1 {
+		t.Error("WithArgs modified original agent")
+	}
+
+	// New agent should have both existing and new args
+	if len(b.config.Args) != 3 {
+		t.Errorf("WithArgs() args len = %d, want 3", len(b.config.Args))
+	}
+
+	if b.config.Args[0] != "--existing" {
+		t.Errorf("WithArgs() args[0] = %q, want %q", b.config.Args[0], "--existing")
+	}
+}
+
+// mockParser is a simple mock for testing SetParser
+type mockParser struct{}
+
+func (m *mockParser) ParseEvent(line []byte) (agent.Event, error) {
+	return agent.Event{Type: agent.EventText, Text: string(line)}, nil
+}
+
+func (m *mockParser) Parse(events []agent.Event) (*agent.Response, error) {
+	return &agent.Response{Messages: []string{"mock"}}, nil
+}

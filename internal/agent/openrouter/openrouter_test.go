@@ -282,3 +282,238 @@ func TestAgentInterface(t *testing.T) {
 	// Verify Agent implements MetadataProvider
 	var _ agent.MetadataProvider = (*Agent)(nil)
 }
+
+func TestNewWithConfig(t *testing.T) {
+	cfg := agent.Config{
+		Timeout: 10 * time.Minute,
+		Args:    []string{"--model", "custom-model"},
+		Environment: map[string]string{
+			"CUSTOM_VAR": "custom_value",
+		},
+	}
+
+	a := NewWithConfig(cfg)
+
+	if a.Name() != AgentName {
+		t.Errorf("Name() = %q, want %q", a.Name(), AgentName)
+	}
+
+	if a.config.Timeout != 10*time.Minute {
+		t.Errorf("Timeout = %v, want 10m", a.config.Timeout)
+	}
+
+	if a.model != DefaultModel {
+		t.Errorf("model = %q, want %q (default)", a.model, DefaultModel)
+	}
+}
+
+func TestNewWithConfig_HTTPClientTimeout(t *testing.T) {
+	cfg := agent.Config{
+		Timeout: 3 * time.Minute,
+	}
+
+	a := NewWithConfig(cfg)
+
+	if a.httpClient.Timeout != 3*time.Minute {
+		t.Errorf("httpClient.Timeout = %v, want 3m", a.httpClient.Timeout)
+	}
+}
+
+func TestWithEnv_MehrAPIKey(t *testing.T) {
+	a := New()
+	b := a.WithEnv("MEHR_OPENROUTER_API_KEY", "mehr-test-key").(*Agent)
+
+	if b.apiKey != "mehr-test-key" {
+		t.Errorf("WithEnv(MEHR_OPENROUTER_API_KEY) apiKey = %q, want %q", b.apiKey, "mehr-test-key")
+	}
+}
+
+func TestWithEnv_Chaining(t *testing.T) {
+	a := New()
+	a.config.Environment = map[string]string{"EXISTING": "value"}
+
+	b := a.WithEnv("NEW_KEY", "new_value").(*Agent)
+
+	// Original should not have new key
+	if _, ok := a.config.Environment["NEW_KEY"]; ok {
+		t.Error("WithEnv modified original agent")
+	}
+
+	// Original should still have existing key
+	if a.config.Environment["EXISTING"] != "value" {
+		t.Error("WithEnv removed existing keys from original")
+	}
+
+	// New agent should have both keys
+	if b.config.Environment["EXISTING"] != "value" {
+		t.Error("WithEnv did not copy existing keys")
+	}
+
+	if b.config.Environment["NEW_KEY"] != "new_value" {
+		t.Errorf("WithEnv() NEW_KEY = %q, want %q", b.config.Environment["NEW_KEY"], "new_value")
+	}
+}
+
+func TestWithArgs_Chaining(t *testing.T) {
+	a := New()
+	a.config.Args = []string{"--existing"}
+
+	b := a.WithArgs("--new1", "--new2").(*Agent)
+
+	// Original should be unchanged
+	if len(a.config.Args) != 1 {
+		t.Error("WithArgs modified original agent")
+	}
+
+	// New agent should have both existing and new args
+	if len(b.config.Args) != 3 {
+		t.Errorf("WithArgs() args len = %d, want 3", len(b.config.Args))
+	}
+
+	if b.config.Args[0] != "--existing" {
+		t.Errorf("WithArgs() args[0] = %q, want %q", b.config.Args[0], "--existing")
+	}
+}
+
+func TestRegister(t *testing.T) {
+	registry := agent.NewRegistry()
+
+	err := Register(registry)
+	if err != nil {
+		t.Fatalf("Register() error = %v", err)
+	}
+
+	// Verify the agent is registered
+	got, err := registry.Get(AgentName)
+	if err != nil {
+		t.Error("Register() did not register the agent")
+	}
+
+	if got.Name() != AgentName {
+		t.Errorf("Registered agent name = %q, want %q", got.Name(), AgentName)
+	}
+}
+
+func TestRegister_Duplicate(t *testing.T) {
+	registry := agent.NewRegistry()
+
+	// First registration should succeed
+	err := Register(registry)
+	if err != nil {
+		t.Fatalf("First Register() error = %v", err)
+	}
+
+	// Second registration should fail
+	err = Register(registry)
+	if err == nil {
+		t.Error("Second Register() should return error for duplicate")
+	}
+}
+
+func TestParseEvents_EmptyEvents(t *testing.T) {
+	resp, err := parseEvents([]agent.Event{})
+	if err != nil {
+		t.Fatalf("parseEvents() error = %v", err)
+	}
+
+	if len(resp.Messages) != 0 {
+		t.Errorf("parseEvents() messages len = %d, want 0", len(resp.Messages))
+	}
+
+	if resp.Summary != "" {
+		t.Errorf("parseEvents() summary = %q, want empty", resp.Summary)
+	}
+}
+
+func TestParseEvents_OnlyComplete(t *testing.T) {
+	events := []agent.Event{
+		{Type: agent.EventComplete, Data: map[string]any{}},
+	}
+
+	resp, err := parseEvents(events)
+	if err != nil {
+		t.Fatalf("parseEvents() error = %v", err)
+	}
+
+	if len(resp.Messages) != 0 {
+		t.Errorf("parseEvents() messages len = %d, want 0", len(resp.Messages))
+	}
+}
+
+func TestParseEvents_WithSummary(t *testing.T) {
+	events := []agent.Event{
+		{Type: agent.EventText, Text: "First line of a longer response\nSecond line\nThird line"},
+		{Type: agent.EventComplete, Data: map[string]any{}},
+	}
+
+	resp, err := parseEvents(events)
+	if err != nil {
+		t.Fatalf("parseEvents() error = %v", err)
+	}
+
+	if resp.Summary != "First line of a longer response" {
+		t.Errorf("parseEvents() summary = %q, want %q", resp.Summary, "First line of a longer response")
+	}
+}
+
+func TestParseEvents_WhitespaceOnly(t *testing.T) {
+	events := []agent.Event{
+		{Type: agent.EventText, Text: "   "},
+		{Type: agent.EventText, Text: "\n\n"},
+		{Type: agent.EventText, Text: "Actual content"},
+	}
+
+	resp, err := parseEvents(events)
+	if err != nil {
+		t.Fatalf("parseEvents() error = %v", err)
+	}
+
+	if len(resp.Messages) != 1 {
+		t.Errorf("parseEvents() messages len = %d, want 1", len(resp.Messages))
+	}
+
+	// parseEvents uses TrimSpace on the final result
+	if resp.Messages[0] != "Actual content" {
+		t.Errorf("parseEvents() message = %q, want %q", resp.Messages[0], "Actual content")
+	}
+}
+
+func TestWithModel_PreservesOriginal(t *testing.T) {
+	a := New()
+	originalModel := a.model
+
+	b := a.WithModel("new-model")
+
+	if a.model != originalModel {
+		t.Error("WithModel modified original agent")
+	}
+
+	if b.model != "new-model" {
+		t.Errorf("WithModel() model = %q, want %q", b.model, "new-model")
+	}
+
+	// Original and new agent should have different model references
+	if &a.model == &b.model {
+		t.Error("WithModel() should create new agent with separate model field")
+	}
+}
+
+func TestWithTimeout_PreservesOriginal(t *testing.T) {
+	a := New()
+	originalTimeout := a.config.Timeout
+
+	b := a.WithTimeout(15 * time.Minute)
+
+	if a.config.Timeout != originalTimeout {
+		t.Error("WithTimeout modified original agent")
+	}
+
+	if b.config.Timeout != 15*time.Minute {
+		t.Errorf("WithTimeout() = %v, want 15m", b.config.Timeout)
+	}
+
+	// HTTP client should be different
+	if a.httpClient == b.httpClient {
+		t.Error("WithTimeout() should create new HTTP client")
+	}
+}

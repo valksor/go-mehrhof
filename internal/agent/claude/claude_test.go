@@ -264,3 +264,113 @@ func TestRunWithCallback_NoCLI(t *testing.T) {
 		t.Log("Callback was called (this may vary)")
 	}
 }
+
+func TestWithArgs(t *testing.T) {
+	tests := []struct {
+		name         string
+		existingArgs []string
+		newArgs      []string
+		wantLen      int
+		wantLast     []string
+	}{
+		{
+			name:         "no existing args",
+			existingArgs: nil,
+			newArgs:      []string{"--model", "opus"},
+			wantLen:      2,
+			wantLast:     []string{"--model", "opus"},
+		},
+		{
+			name:         "append to existing args",
+			existingArgs: []string{"--print"},
+			newArgs:      []string{"--verbose", "--output", "json"},
+			wantLen:      4,
+			wantLast:     []string{"--print", "--verbose", "--output", "json"},
+		},
+		{
+			name:         "empty new args",
+			existingArgs: []string{"--print"},
+			newArgs:      []string{},
+			wantLen:      1,
+			wantLast:     []string{"--print"},
+		},
+		{
+			name:         "single new arg",
+			existingArgs: []string{},
+			newArgs:      []string{"--help"},
+			wantLen:      1,
+			wantLast:     []string{"--help"},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cfg := agent.Config{
+				Command: []string{"claude"},
+				Args:    tt.existingArgs,
+			}
+			a := NewWithConfig(cfg)
+
+			// WithArgs returns agent.Agent interface
+			aAgent := a.WithArgs(tt.newArgs...)
+			resultAgent := aAgent.(*Agent)
+
+			if len(resultAgent.config.Args) != tt.wantLen {
+				t.Errorf("Args length = %d, want %d", len(resultAgent.config.Args), tt.wantLen)
+			}
+
+			for i, want := range tt.wantLast {
+				if i >= len(resultAgent.config.Args) {
+					t.Errorf("Missing arg at index %d", i)
+					continue
+				}
+				if resultAgent.config.Args[i] != want {
+					t.Errorf("Args[%d] = %q, want %q", i, resultAgent.config.Args[i], want)
+				}
+			}
+		})
+	}
+}
+
+func TestWithArgs_Chaining(t *testing.T) {
+	a := New()
+	aAgent := agent.Agent(a)
+
+	// Chain multiple WithArgs calls
+	aAgent = aAgent.WithArgs("--model", "opus")
+	aAgent = aAgent.WithArgs("--max-tokens", "4096")
+	aAgent = aAgent.WithArgs("--temperature", "0.7")
+
+	resultAgent := aAgent.(*Agent)
+	expectedArgs := []string{"--model", "opus", "--max-tokens", "4096", "--temperature", "0.7"}
+
+	if len(resultAgent.config.Args) != len(expectedArgs) {
+		t.Errorf("Args length = %d, want %d", len(resultAgent.config.Args), len(expectedArgs))
+	}
+
+	for i, want := range expectedArgs {
+		if resultAgent.config.Args[i] != want {
+			t.Errorf("Args[%d] = %q, want %q", i, resultAgent.config.Args[i], want)
+		}
+	}
+}
+
+func TestWithArgs_OriginalUnmodified(t *testing.T) {
+	cfg := agent.Config{
+		Command: []string{"claude"},
+		Args:    []string{"--print"},
+	}
+	originalAgent := NewWithConfig(cfg)
+	originalLen := len(originalAgent.config.Args)
+
+	// WithArgs should return a new agent, not modify the original
+	newAgent := originalAgent.WithArgs("--verbose")
+
+	if len(originalAgent.config.Args) != originalLen {
+		t.Errorf("Original agent was modified (len = %d, want %d)", len(originalAgent.config.Args), originalLen)
+	}
+
+	if len(newAgent.(*Agent).config.Args) != originalLen+1 {
+		t.Errorf("New agent has wrong arg count (len = %d, want %d)", len(newAgent.(*Agent).config.Args), originalLen+1)
+	}
+}
