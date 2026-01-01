@@ -4,7 +4,6 @@
 [![BSD-3-Clause](https://img.shields.io/badge/BSD--3--Clause-green?style=flat)](https://github.com/valksor/go-mehrhof/blob/master/LICENSE)
 [![Coverage Status](https://coveralls.io/repos/github/valksor/go-mehrhof/badge.svg?branch=master)](https://coveralls.io/github/valksor/go-mehrhof?branch=master)
 
-
 ---
 
 **⚠️ EXPERIMENTAL INTEGRATIONS**
@@ -20,1587 +19,243 @@ We are gradually testing and hardening integrations. Report issues at [github.co
 
 ---
 
-A command-line tool for AI-assisted task automation. It orchestrates AI agents to perform planning, implementation, and code review workflows.
+## Why Mehrhof?
 
-## Table of Contents
+Mehrhof is a command-line tool that orchestrates AI agents to perform **planning, implementation, and code review** workflows for software development tasks.
 
-- [Prerequisites](#prerequisites)
-- [Installation](#installation)
-- [Quick Start](#quick-start)
-- [Parallel Tasks](#parallel-tasks)
-- [Commands](#commands)
-- [Configuration](#configuration)
-- [Workflow](#workflow)
-- [Providers](#providers)
-- [Plugins](#plugins)
-- [Architecture](#architecture)
-- [Development](#development)
-- [Troubleshooting](#troubleshooting)
-
-## Prerequisites
-
-Before installing Mehrhof, ensure you have the following:
-
-- **Go 1.25+** - Required for building from source
-- **Git** – Required for version control operations
-- **Claude API Key** - Set `ANTHROPIC_API_KEY` environment variable for AI agent
-
-Optional:
-
-- **CodeRabbit CLI** - For automated code reviews (`npm install -g coderabbitai`)
-- **GitHub Token** - For GitHub issue integration (`GITHUB_TOKEN` or `MEHR_GITHUB_TOKEN`)
-
-## Installation
-
-### From Source
-
-```bash
-# Clone the repository
-git clone <repository-url>
-cd go-mehrhof
-
-# Build the binary
-make build
-
-# Install to $GOPATH/bin
-make install
-```
-
-### Verify Installation
-
-```bash
-mehr version
-```
+**Key benefits:**
+- **Parallel tasks** - Run multiple AI tasks simultaneously using git worktrees for isolated development
+- **Workflow engine** - Reliable plan → implement → review → finish cycle with checkpointing and undo/redo
+- **Provider integrations** - Connect to 15+ task sources (GitHub issues, Jira, Linear, Notion, etc.)
+- **State tracking** - Task state persists across sessions; resume anytime with `mehr continue`
+- **Auto mode** - Fully automated workflow: `mehr auto file:task.md` handles everything
+- **Self-updating** - Auto-update from GitHub releases, no manual reinstall
 
 ## Quick Start
 
-Get started with Mehrhof in a few steps:
+### Prerequisites
+
+- **Go 1.25+** (for building from source)
+- **Git** (for version control operations)
+- **Claude CLI** - Mehrhof wraps Claude CLI for AI operations (see [installation](https://valksor.github.io/go-mehrhof/#/installation))
+
+### Installation
+
+#### Option 1: Pre-built Binary (Recommended)
+
+Download the latest release for your platform:
+
+| Platform | Architecture | Binary Name |
+|----------|--------------|-------------|
+| Linux | AMD64 | `mehr-linux-amd64` |
+| Linux | ARM64 | `mehr-linux-arm64` |
+| macOS | AMD64 (Intel) | `mehr-darwin-amd64` |
+| macOS | ARM64 (Apple Silicon) | `mehr-darwin-arm64` |
 
 ```bash
-# 1. Initialize your workspace (creates .mehrhof directory with config)
-mehr init
-
-# 2. Create a task file or start from an existing one
-cat > task.md << 'EOF'
----
-title: Add user authentication
----
-Implement login and registration using JWT tokens.
-EOF
-
-# 3. Start working on the task (creates git branch automatically)
-mehr start task.md
-
-# 4. Generate implementation specifications with AI
-mehr plan
-
-# 5. Implement the specifications
-mehr implement
-
-# 6. Review progress and status at any time
-mehr status
-
-# 7. Complete the task and merge changes
-mehr finish
-```
-
-**Workflow Overview**: Mehrhof follows a plan → implement → review → finish cycle. Each step can be run independently, or use `mehr auto` for full automation.
-
-**Other Providers**: Use `github:123` for GitHub issues, `trello:cardId` for Trello cards, `dir:tasks/` for directories, or configure providers in `.mehrhof/config.yaml`.
-
-## Parallel Tasks
-
-Run multiple tasks simultaneously in separate terminals using worktrees.
-
-### Starting Parallel Tasks
-
-```bash
-# Terminal 1: Start first task with worktree
-mehr start --worktree feature-a.md
-# Output: Task started: a1b2c3d4
-#         Worktree: ../project-worktrees/a1b2c3d4
-
-cd ../project-worktrees/a1b2c3d4
-mehr plan && mehr implement
-
-# Terminal 2: Start second task (from main repo)
-mehr start --worktree feature-b.md
-# Output: Task started: e5f6g7h8
-#         Worktree: ../project-worktrees/e5f6g7h8
-
-cd ../project-worktrees/e5f6g7h8
-mehr plan && mehr implement
-```
-
-### Listing All Tasks
-
-```bash
-mehr list
-```
-
-Output:
-
-```
-TASK ID     STATE           TITLE                    WORKTREE                         ACTIVE
-a1b2c3d4    implementing    Add authentication       ../project-worktrees/a1b2c3d4    →
-e5f6g7h8    planning        Fix database queries     ../project-worktrees/e5f6g7h8
-c9d0e1f2    done            Update README            -
-
-Legend: * = active task in main repo, → = current worktree
-```
-
-### How It Works
-
-- **Worktrees** are isolated git checkouts, each on its own branch
-- **Auto-detection**: Commands automatically detect which task you're working on based on your current directory
-- **Shared storage**: All tasks share `.mehrhof/` in the main repo
-- **File locking**: Prevents race conditions when multiple processes access shared data
-
-### Worktree vs Branch-Only
-
-| Feature          | `--worktree`   | `--branch` (default) |
-|------------------|----------------|----------------------|
-| Parallel tasks   | Yes            | No                   |
-| Isolation        | Full directory | Same directory       |
-| Branch switching | Not needed     | Required             |
-| Disk usage       | Higher         | Lower                |
-
-## Commands
-
-### `mehr init`
-
-Initialize the task workspace by creating the `.mehrhof` directory and updating `.gitignore`.
-
-```bash
-mehr init
-```
-
-This creates:
-
-- `.mehrhof/` directory for task storage
-- `.mehrhof/config.yaml` with default configuration
-- Updates `.gitignore` to exclude task files
-
----
-
-### `mehr start <reference>`
-
-Start working on a task from a file, directory, or external provider.
-
-```bash
-mehr start file:task.md              # From a markdown file (scheme required)
-mehr start dir:./tasks/              # From a directory with README.md
-mehr start --worktree file:task.md   # With separate worktree (for parallel tasks)
-mehr start --no-branch file:task.md  # Without creating a git branch
-```
-
-**Provider Schemes:**
-You must specify a provider scheme prefix (e.g., `file:`, `dir:`). Alternatively, configure a default provider in `.mehrhof/config.yaml`:
-
-```yaml
-providers:
-  default: file # Bare references like "task.md" will use file: provider
-```
-
-**Flags:**
-| Flag | Description | Default |
-|------|-------------|---------|
-| `-A, --agent <name>` | Agent to use | auto-detect |
-| `--no-branch` | Skip creating a git branch (branch creation is default) | `false` |
-| `-w, --worktree` | Create separate git worktree (enables parallel tasks) | `false` |
-| `-k, --key <key>` | External key for branch/commit naming (e.g., `FEATURE-123`) | auto-detect |
-| `--template <name>` | Template to apply (bug-fix, feature, refactor, docs, test, chore) | - |
-| `--commit-prefix <template>` | Commit prefix template (e.g., `[{key}]`) | `[{key}]` |
-| `--branch-pattern <template>` | Branch pattern template (e.g., `{type}/{key}--{slug}`) | `{type}/{key}--{slug}` |
-
-**Naming Variables:**
-| Variable | Description | Example |
-|----------|-------------|---------|
-| `{key}` | External key from filename/frontmatter/CLI | `FEATURE-123` |
-| `{task_id}` | Internal task ID | `a1b2c3d4` |
-| `{type}` | Task type from filename prefix | `feature`, `fix`, `task` |
-| `{slug}` | URL-safe slugified title | `add-user-auth` |
-
-**Key Resolution Priority:** CLI `--key` flag > YAML frontmatter `key:` > filename extraction > task ID fallback
-
----
-
-### `mehr continue`
-
-Show status and suggested next actions for the current task. Useful when returning to work after a break.
-
-**Aliases:** `cont`, `c`
-
-```bash
-mehr continue
-```
-
-This will:
-
-- Display current task status
-- Suggest the most appropriate next action based on state
-- Show available undo/redo options
-
----
-
-### `mehr plan`
-
-Create implementation specifications for the active task.
-
-```bash
-mehr plan                         # Create specs for active task (alias: p)
-mehr plan --verbose               # Show agent output
-mehr plan --standalone            # Start standalone planning (no task required)
-mehr plan --standalone "build a CLI"  # Standalone planning with seed topic
-```
-
-This runs the planning phase to analyze the task and create structured `specification-N.md` files in the work directory. You can run this multiple times to create additional specifications.
-
-**Flags:**
-| Flag | Description | Default |
-|------|-------------|---------|
-| `--standalone` | Start standalone planning without a task | `false` |
-| `-s, --seed <topic>` | Initial topic for standalone planning | - |
-
-**Standalone Planning:**
-With `--standalone`, you can start an interactive planning session without an active task. This is useful for exploring requirements before creating a formal task. Plans are saved to `.mehrhof/planned/` directory.
-
----
-
-### `mehr implement`
-
-Implement the specifications for the active task.
-
-**Aliases:** `impl`, `i`
-
-```bash
-mehr implement               # Implement the specs
-mehr implement --dry-run     # Preview without making changes
-mehr implement --verbose     # Show agent output
-```
-
-**Flags:**
-| Flag | Description | Default |
-|------|-------------|---------|
-| `-n, --dry-run` | Don't apply file changes (preview only) | `false` |
-
-Requires at least one SPEC file (run `mehr plan` first).
-
----
-
-### `mehr note [message]`
-
-Add notes to the current task. Notes are saved to `notes.md` for the AI agent to reference during planning and implementation.
-
-```bash
-mehr note                        # Enter interactive mode
-mehr note "Use JWT for auth"     # Add a quick note
-mehr answer "your response"      # Alias: submit answer to pending agent question
-```
-
-**Aliases:** `note`, `answer` - Both commands accept the same arguments. Use `answer` when responding to agent questions.
-
-**Flags:**
-| Flag | Description | Default |
-|------|-------------|---------|
-| `-q, --question` | Append note as Q&A format | `false` |
-
----
-
-### `mehr status`
-
-Show the status of the current task.
-
-**Aliases:** `st`
-
-```bash
-mehr status              # Show current task status
-mehr status --all        # Show all tasks (same as mehr list)
-```
-
-In a worktree, automatically shows the task associated with that worktree.
-
-**Flags:**
-| Flag | Description | Default |
-|------|-------------|---------|
-| `--all` | Show all tasks | `false` |
-| `--json` | Output as JSON for programmatic use | `false` |
-
----
-
-### `mehr list`
-
-List all tasks in the workspace with their worktree paths and states.
-
-```bash
-mehr list                # List all tasks
-mehr list --worktrees    # Show only tasks with worktrees
-```
-
-**Flags:**
-| Flag | Description | Default |
-|------|-------------|---------|
-| `-w, --worktrees` | Show only tasks with worktrees | `false` |
-
----
-
-### `mehr agents list`
-
-List all available AI agents, including built-in agents and user-defined aliases.
-
-```bash
-mehr agents list
-```
-
-Output:
-
-```
-NAME      TYPE      EXTENDS  AVAILABLE  DESCRIPTION
-claude    built-in  -        yes        -
-glm       alias     claude   yes        Claude with GLM API key
-glm-fast  alias     glm      yes        GLM with lower token limit
-```
-
-See [Agent Aliases](#agent-aliases) for configuration details.
-
----
-
-### `mehr templates`
-
-Manage and apply task templates for common development patterns.
-
-```bash
-mehr templates                    # List available templates
-mehr templates show bug-fix        # Show template details
-mehr templates apply bug-fix task.md  # Apply template to file
-```
-
-**Available Templates:**
-
-| Template   | Description                                    |
-| ---------- | ---------------------------------------------- |
-| `bug-fix`  | Bug fix tasks with stricter validation         |
-| `feature`  | New feature development                        |
-| `refactor` | Code refactoring (quality-focused)             |
-| `docs`     | Documentation changes (skips quality checks)   |
-| `test`     | Adding or improving tests                      |
-| `chore`    | Maintenance tasks and chores                   |
-
-**Using with `mehr start`:**
-
-```bash
-mehr start --template bug-fix file:task.md
-mehr start --template feature file:FEATURE-123.md
-```
-
-Templates configure:
-- Task type (`type: fix`, `feature`, etc.)
-- Default agent (`agent: claude`)
-- Git branch pattern (`branch_pattern: "fix/{key}--{slug}"`)
-- Commit prefix (`commit_prefix: "[fix/{key}]"`)
-- Workflow settings (`skip_quality: true/false`)
-
----
-
-### `mehr cost`
-
-Show token usage and costs for the active task.
-
-```bash
-mehr cost                # Show cost for active task
-mehr cost --breakdown    # Break down by workflow step
-mehr cost --all          # Show costs for all tasks
-mehr cost --summary      # Show aggregate summary
-```
-
-**Output:**
-
-```
-Task: Add user authentication
-Key: AUTH-001
-
-Input Tokens:     125,000
-Output Tokens:     45,000
-Cached Tokens:     80,000
-Total Cost:        $1.1000
-
-By Step:
-  planning:      $0.4500
-  implementing:  $0.6500
-```
-
-Costs are tracked automatically during planning, implementation, and review phases. Data is persisted in `.mehrhof/work/<task-id>/work.yaml`.
-
----
-
-### `mehr config validate`
-
-Validate workspace configuration (`.mehrhof/config.yaml`).
-
-```bash
-mehr config validate                    # Validate workspace config
-mehr config validate --strict           # Treat warnings as errors
-mehr config validate --format json      # JSON output for CI
-```
-
-**Flags:**
-| Flag | Description | Default |
-|------|-------------|---------|
-| `--strict` | Treat warnings as errors | `false` |
-| `--format` | Output format: `text`, `json` | `text` |
-
-**Validations:**
-
-- YAML syntax validity
-- Agent alias circular dependencies
-- Undefined agent references
-- Git pattern template validity
-- Plugin configuration
-
----
-
-### `mehr review`
-
-Run automated code review on current changes.
-
-> **Note:** This command is a thin wrapper that delegates to external code review tools. It does not contain built-in review logic—it simply executes the specified tool as a subprocess and captures its output.
-
-```bash
-mehr review                     # Run CodeRabbit review
-mehr review --tool coderabbit   # Explicitly specify tool
-mehr review --output review.txt # Save to specific file
-```
-
-**Flags:**
-| Flag | Description | Default |
-|------|-------------|---------|
-| `--tool <name>` | Review tool to use (must be installed separately) | `coderabbit` |
-| `-o, --output <file>` | Output file name | `REVIEW-N.txt` |
-
-**Supported Tools:**
-
-- **CodeRabbit** (default): Install with `npm install -g coderabbitai`
-- Any CLI tool that accepts a `review` subcommand can be used via `--tool`
-
-**Review Status:**
-
-- `COMPLETE` - Review passed with no issues
-- `ISSUES` - Review found issues that need attention
-- `ERROR` - Review tool failed to run
-
----
-
-### `mehr undo`
-
-Revert to the previous checkpoint.
-
-```bash
-mehr undo
-```
-
----
-
-### `mehr redo`
-
-Restore the next checkpoint (after undo).
-
-```bash
-mehr redo
-```
-
----
-
-### `mehr finish`
-
-Complete the task and merge changes to the target branch, or create a pull request.
-
-**Aliases:** `fi`, `done`
-
-```bash
-mehr finish                      # Complete and merge (with confirmation)
-mehr finish --yes                # Skip confirmation prompt
-mehr finish --no-push            # Merge but don't push
-mehr finish --no-delete          # Keep task branch after merge
-mehr finish --no-squash          # Regular merge instead of squash
-mehr finish --target develop     # Merge to specific branch
-mehr finish --pr                 # Create PR instead of merging
-mehr finish --pr --draft         # Create PR as draft
-mehr finish --pr --pr-title "Fix bug"  # Custom PR title
-```
-
-**Flags:**
-| Flag | Description | Default |
-|------|-------------|---------|
-| `-y, --yes` | Skip confirmation prompt | `false` |
-| `--no-push` | Don't push after merge | `false` |
-| `--no-delete` | Don't delete task branch | `false` |
-| `--no-squash` | Use regular merge instead of squash | `false` |
-| `-t, --target <branch>` | Target branch to merge into | from config |
-| `--pr` | Create pull request instead of merging locally | `false` |
-| `--draft` | Create PR as draft (requires `--pr`) | `false` |
-| `--pr-title <title>` | Custom PR title (requires `--pr`) | auto-generated |
-| `--pr-body <body>` | Custom PR body (requires `--pr`) | auto-generated |
-
----
-
-### `mehr abandon`
-
-Abandon the current task without merging changes.
-
-```bash
-mehr abandon                 # Abandon with confirmation
-mehr abandon --yes           # Abandon without confirmation
-mehr abandon -y              # Same as --yes
-mehr abandon --keep-branch   # Abandon task but keep the git branch
-mehr abandon --keep-work     # Abandon branch but keep the work directory
-```
-
-**Flags:**
-| Flag | Description | Default |
-|------|-------------|---------|
-| `-y, --yes` | Skip confirmation prompt | `false` |
-| `--keep-branch` | Keep the git branch | `false` |
-| `--keep-work` | Keep the work directory | `false` |
-
-Use this when you want to abandon a task completely.
-
----
-
-### `mehr auto <reference>`
-
-Full automation mode: runs the entire workflow without user interaction.
-
-```bash
-mehr auto file:task.md               # Full cycle from file
-mehr auto dir:./tasks/               # Full cycle from directory
-mehr auto --max-retries 5 file:task.md  # Allow more quality retries
-mehr auto --no-quality file:task.md     # Skip quality checks entirely
-```
-
-**Workflow:**
-
-1. Register task (creates git branch)
-2. Run planning (creates specs, skips agent questions)
-3. Implement the specifications
-4. Run quality checks (with retry loop if failed)
-5. Merge to target branch
-
-**Flags:**
-| Flag | Description | Default |
-|------|-------------|---------|
-| `-A, --agent <name>` | Agent to use | auto-detect |
-| `--no-branch` | Skip creating a git branch (branch creation is default) | `false` |
-| `-w, --worktree` | Create a separate git worktree | `false` |
-| `--max-retries <n>` | Maximum quality check retry attempts | `3` |
-| `--no-quality` | Skip quality checks entirely | `false` |
-| `--no-push` | Don't push after merge | `false` |
-| `--no-delete` | Don't delete task branch after merge | `false` |
-| `--no-squash` | Use regular merge instead of squash | `false` |
-| `-t, --target <branch>` | Target branch to merge into | auto-detect |
-| `--quality-target <target>` | Make target for quality checks | `quality` |
-
-**Quality Retry Loop:**
-If quality checks fail, auto mode automatically re-runs implementation with the quality errors as feedback, up to `--max-retries` times.
-
----
-
-### `mehr version`
-
-Print version information.
-
-```bash
+# Download and install (example for macOS ARM64)
+curl -L https://github.com/valksor/go-mehrhof/releases/latest/download/mehr-darwin-arm64 -o mehr
+chmod +x mehr
+sudo mv mehr /usr/local/bin/
+
+# Verify
 mehr version
 ```
 
----
+#### Option 2: Nightly Build (Pre-release)
 
-### `mehr update`
-
-Update mehr to the latest version from GitHub releases.
+Get the latest commit build (always available, use with caution):
 
 ```bash
-mehr update                    # Update to latest stable release
-mehr update --check            # Check for updates without installing
-mehr update --pre-release      # Include pre-release versions
-mehr update -y                 # Skip confirmation prompt
+# Download latest nightly (example for macOS ARM64)
+curl -L https://github.com/valksor/go-mehrhof/releases/download/nightly/mehr-darwin-arm64 -o mehr
+chmod +x mehr
+sudo mv mehr /usr/local/bin/
 ```
 
-**Flags:**
-| Flag | Description | Default |
-|------|-------------|---------|
-| `-p, --pre-release` | Include pre-release versions | `false` |
-| `--check` | Check only, don't install | `false` |
-| `-y, --yes` | Skip confirmation prompt | `false` |
+**Note:** Nightly builds are pre-release and may contain untested changes. Prefer stable releases when available.
 
-**Update Process:**
-
-1. Checks for the latest release from GitHub
-2. Downloads the binary for your platform (linux-amd64, linux-arm64, darwin-amd64, darwin-arm64)
-3. Verifies checksum (if available in release)
-4. Replaces the current binary atomically
-5. Prompts you to restart mehr
-
-**Automatic Update Checks:**
-
-By default, mehr checks for updates on startup (once every 24 hours). If an update is available, you'll see a notification but the update won't be installed automatically.
-
-To disable automatic checks, add to `.mehrhof/config.yaml`:
-
-```yaml
-update:
-  enabled: false
-  check_interval: 168  # hours (default: 24)
-```
-
-**Permissions:**
-
-If mehr is installed in a system directory like `/usr/local/bin`, you may need to run `sudo mehr update` to have write permissions.
-
----
-
-### Global Flags
-
-These flags are available for all commands:
-
-| Flag            | Description                                 | Default |
-|-----------------|---------------------------------------------|---------|
-| `-v, --verbose` | Enable verbose output (debug logging)       | `false` |
-| `-q, --quiet`   | Suppress non-essential output               | `false` |
-| `--no-color`    | Disable color output                        | `false` |
-
-## Configuration
-
-### Workspace Configuration
-
-Project-level configuration is stored in `.mehrhof/config.yaml`:
-
-```yaml
-# Task workspace configuration
-git:
-  auto_commit: true
-  commit_prefix: "[{key}]" # Template: {key}, {task_id}, {type}, {slug}
-  branch_pattern: "{type}/{key}--{slug}" # e.g., feature/FEATURE-123--add-auth
-  sign_commits: false
-
-agent:
-  default: claude
-  timeout: 300 # seconds
-  max_retries: 3
-
-providers:
-  default: file # Allow bare references like "task.md" without scheme prefix
-
-workflow:
-  auto_init: true
-  session_retention_days: 30
-
-update:
-  enabled: true  # Enable automatic update checks on startup
-  check_interval: 24  # Hours between checks
-
-# Environment variables passed to agents
-env:
-  ANTHROPIC_API_KEY: your-api-key-here
-```
-
-### Agent Aliases
-
-Define custom agents that wrap existing agents with specific environment variables:
-
-```yaml
-# In .mehrhof/config.yaml
-agents:
-  glm:
-    extends: claude # Base agent to wrap
-    description: "Claude with GLM API key" # Shown in 'mehr agents list'
-    env:
-      ANTHROPIC_API_KEY: "${GLM_API_KEY}" # ${VAR} references system env vars
-
-  glm-fast:
-    extends: glm # Aliases can extend other aliases
-    description: "GLM with lower token limit"
-    env:
-      MAX_TOKENS: "2048"
-```
-
-Usage:
+#### Option 3: Build from Source
 
 ```bash
-# Set environment variable
-export GLM_API_KEY="sk-ant-..."
+git clone https://github.com/valksor/go-mehrhof.git
+cd go-mehrhof
+make install
 
-# List available agents
-mehr agents list
-
-# Use an alias
-mehr start --agent glm file:task.md
+# Verify
+mehr version
 ```
 
-### User Settings
+### First Task (5 steps)
 
-User-level settings are stored in `~/.mehrhof/settings.json`:
+```bash
+# 1. Initialize workspace
+mehr init
 
-```json
-{
-  "preferred_agent": "claude",
-  "target_branch": "main",
-  "last_provider": "file",
-  "recent_tasks": ["abc123", "def456"]
-}
+# 2. Create a task file
+cat > task.md << 'EOF'
+---
+title: Add health check endpoint
+---
+Create a /health endpoint that returns HTTP 200 with JSON status.
+EOF
+
+# 3. Start the task (creates git branch)
+mehr start task.md
+
+# 4. Generate specifications
+mehr plan
+
+# 5. Implement
+mehr implement
+
+# 6. Review and finish
+mehr finish
 ```
 
-### Environment Variables
+**Workflow Overview**: `init` → `start` → `plan` → `implement` → `review` → `finish`
 
-Mehrhof uses standard environment variables and CLI flags instead of custom `MEHR_*` variables:
-
-| Variable            | Description                               |
-|---------------------|-------------------------------------------|
-| `ANTHROPIC_API_KEY` | Claude API key (used by Claude CLI)       |
-| `GITHUB_TOKEN`      | GitHub API token for issue integration    |
-| `MEHR_GITHUB_TOKEN` | Alternative GitHub token (takes priority) |
-| `NO_COLOR`          | Disable colored output (any value)        |
-
-For configuration, use `.mehrhof/config.yaml` (see Configuration section above).
-For runtime options, use CLI flags: `--verbose`, `--no-color`.
-
-## Workflow
-
-### Typical Task Workflow
+## How It Works
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │                                                             │
-│  mehr init  ──►  mehr start  ──►  mehr plan  ──►            │
+│  mehr init  →  mehr start  →  mehr plan  →                  │
 │                                                             │
-│  ──►  mehr implement  ──►  mehr review  ──►  mehr finish    │
+│  →  mehr implement  →  mehr review  →  mehr finish          │
 │                                                             │
 └─────────────────────────────────────────────────────────────┘
 ```
 
-1. **Initialize** (`mehr init`) - Set up the workspace (one-time)
-2. **Start** (`mehr start`) - Begin a new task from a file or directory
-3. **Plan** (`mehr plan`) - Generate implementation specifications
-4. **Implement** (`mehr implement`) - Execute the specifications
+1. **Initialize** (`mehr init`) - Set up workspace (one-time)
+2. **Start** (`mehr start`) - Begin a task; creates git branch automatically
+3. **Plan** (`mehr plan`) - AI generates implementation specifications
+4. **Implement** (`mehr implement`) - AI executes the specifications
 5. **Review** (`mehr review`) - Run automated code review
 6. **Finish** (`mehr finish`) - Merge changes and clean up
 
-### Recovery Commands
-
+**Recovery commands**:
 - `mehr continue` - Resume work and see suggested next actions
-- `mehr undo` - Revert to previous checkpoint
-- `mehr redo` - Restore after undo
+- `mehr undo` / `mehr redo` - Revert to previous checkpoint
 - `mehr abandon` - Abandon task without merging
 
-## Task Storage
+## Essential Commands
 
-Tasks are stored in `.mehrhof/` directory within your repository:
-
-```
-.mehrhof/
-├── config.yaml              # Workspace configuration
-├── .active_task             # Current active task reference (main repo only)
-├── locks/                   # File locks for concurrent access
-│   └── <task-id>.lock
-├── planned/                 # Standalone planning results (when --standalone is used)
-│   └── <timestamp>/
-│       └── specification-1.md
-└── work/
-    └── <task-id>/
-        ├── work.yaml        # Task state and metadata
-        ├── specifications/
-        │   ├── specification-1.md    # Implementation specifications
-        │   └── specification-2.md
-        ├── reviews/
-        │   └── review-1.txt # Code review results
-        └── sessions/
-            └── <timestamp>.yaml
-```
-
-## Providers
-
-Providers are task sources. You must specify a provider scheme prefix (e.g., `file:`, `dir:`), or configure a default provider.
-
-### File Provider
-
-Reads tasks from markdown files.
-
-```bash
-mehr start file:task.md
-mehr start file:path/to/task.md
-mehr start file:FEATURE-123.md          # Key auto-extracted: FEATURE-123, type: feature
-mehr start --key JIRA-456 file:task.md  # Override key via CLI
-```
-
-**Frontmatter Support:**
-
-```markdown
----
-title: Add user authentication
-key: AUTH-001
-type: feature
----
-
-# Task Description
-
-...
-```
-
-### Directory Provider
-
-Reads tasks from directories with README.md files.
-
-```bash
-mehr start dir:./tasks/
-mehr start dir:path/to/tasks/
-```
-
-### GitHub Provider
-
-Reads tasks from GitHub issues. Supports auto-detection of repository from git remote.
-
-```bash
-mehr start github:5                    # Issue #5 from auto-detected repo
-mehr start github:owner/repo#123       # Explicit repository
-mehr start gh:5                        # Short alias
-```
-
-**Features:**
-
-- **Read**: Fetches issue title, body, labels, assignees, comments
-- **List**: Browse repository issues with filters
-- **Create**: Create new GitHub issues
-- **Update Status**: Close/reopen issues
-- **Manage Labels**: Add/remove labels on issues
-- **PR Creation**: Create pull requests after implementation
-- Auto-detects repository from `git remote origin`
-- Extracts linked issues (`#123` references) and images
-- Creates branches named `issue/{key}-{slug}` by default
-- Commits prefixed with `[#{key}]`
-
-**Token Resolution Priority:**
-
-1. `MEHR_GITHUB_TOKEN` environment variable
-2. `GITHUB_TOKEN` environment variable
-3. `.mehrhof/config.yaml` `github.token`
-4. `gh auth token` (GitHub CLI)
-
-**PR Creation:**
-
-```bash
-mehr finish --pr                       # Create PR instead of local merge
-mehr finish --pr --draft               # Create as draft PR
-mehr finish --pr --pr-title "Fix bug"  # Custom PR title
-```
-
-**Configuration:**
-
-```yaml
-# .mehrhof/config.yaml
-github:
-  branch_pattern: "issue/{key}-{slug}"
-  commit_prefix: "[#{key}]"
-  target_branch: "main"
-  draft_pr: false
-  comments:
-    enabled: false # Auto-post comments to issues
-    on_branch_created: true # Post when branch is created
-    on_plan_done: true # Post implementation plan summary
-    on_implement_done: true # Post changelog with files changed
-    on_pr_created: true # Post PR link
-```
-
-### Linear Provider
-
-Reads and manages issues from Linear.
-
-```bash
-mehr start linear:ENG-123                                        # Issue identifier
-mehr start ln:ENG-123                                           # Short scheme
-mehr start ln:https://linear.app/team/issue/ENG-123-title      # Issue URL
-```
-
-**Reference Formats:**
-
-| Format | Example |
-|--------|---------|
-| Scheme with identifier | `linear:ENG-123` |
-| Short scheme | `ln:ENG-123` |
-| Issue URL | `https://linear.app/team/issue/ENG-123-title` |
-
-**Features:**
-
-- Fetches issue title, description, status, priority, labels, assignees
-- Lists issues from teams with status filtering
-- Create new issues and update status
-- Add and remove labels, fetch and add comments
-- Export markdown snapshots with comments
-- Maps Linear states (Todo → Open, In Progress → In Progress, Done → Done)
-- Maps Linear priorities (Urgent → Critical, High → High, Medium → Normal)
-
-**Token Resolution Priority:**
-
-1. `MEHR_LINEAR_API_KEY` environment variable
-2. `LINEAR_API_KEY` environment variable
-3. `.mehrhof/config.yaml` `linear.token`
-
-**Configuration:**
-
-```yaml
-# .mehrhof/config.yaml
-linear:
-  token: "${LINEAR_API_KEY}"  # Linear API key
-  team: "ENG"                 # Optional: default team key for list/create
-```
-
-Create API tokens at: https://linear.app/settings/api
-
-### Jira Provider
-
-Reads and manages issues from Jira (Cloud and Server/Data Center).
-
-```bash
-mehr start jira:JIRA-123                                        # Issue key
-mehr start j:PROJ-456                                           # Short scheme
-mehr start jira:https://domain.atlassian.net/browse/JIRA-123  # Issue URL
-```
-
-**Reference Formats:**
-
-| Format | Example |
-|--------|---------|
-| Scheme with key | `jira:JIRA-123` |
-| Short scheme | `j:PROJ-456` |
-| Issue URL (Cloud) | `https://domain.atlassian.net/browse/JIRA-123` |
-| Issue URL (Server) | `https://jira.example.com/browse/PROJ-456` |
-
-**Features:**
-
-- **Read**: Fetches issue title, description, status, priority, labels, assignees, attachments
-- **List**: Browse project issues with JQL filtering (status, labels), pagination
-- **Create**: Create new issues with project, priority, type
-- **Update Status**: Change issue status via workflow transitions
-- **Manage Labels**: Add/remove labels on issues
-- **Comments**: Fetch all comments and add new ones
-- **Attachments**: Download file attachments
-- **Snapshot**: Export issue content as markdown
-- Auto-detects base URL from issue URLs
-- Supports both Jira Cloud and Jira Server/Data Center
-
-**Status Mapping:**
-
-| Mehrhof Status | Jira Status |
-|----------------|-------------|
-| `open` | To Do, Backlog, Open, New |
-| `in_progress` | In Progress, Started, In Development |
-| `review` | In Review, Code Review, Under Review, Verification |
-| `done` | Done, Closed, Resolved, Complete, Finished |
-| `closed` | Won't Fix, Cancelled, Obsolete |
-
-**Priority Mapping:**
-
-| Mehrhof Priority | Jira Priority |
-|------------------|---------------|
-| `critical` | Highest, Critical |
-| `high` | High |
-| `normal` | Medium, Normal, Default |
-| `low` | Low, Lowest |
-
-**Token Resolution Priority:**
-
-1. `MEHR_JIRA_TOKEN` environment variable
-2. `JIRA_TOKEN` environment variable
-3. `.mehrhof/config.yaml` `jira.token`
-
-**Configuration:**
-
-```yaml
-# .mehrhof/config.yaml
-jira:
-  token: "${JIRA_TOKEN}"        # API token
-  email: "user@example.com"     # Email for Cloud auth
-  base_url: "https://domain.atlassian.net"  # Optional, auto-detected
-  project: "PROJ"               # Default project key for operations
-```
-
-**Authentication:**
-
-- **Jira Cloud**: Uses email + API token via Basic Auth. Generate tokens at https://id.atlassian.com/manage-profile/security/api-tokens
-- **Jira Server/Data Center**: Uses PAT (Personal Access Token) or Basic Auth
-
-**Workflow Transitions:**
-
-Jira requires workflow transitions rather than direct status changes. The provider fetches available transitions and finds matching names (case-insensitive).
-
-### Wrike Provider
-
-Reads and lists tasks from Wrike API v4.
-
-```bash
-mehr start wrike:1234567890                                  # Numeric ID with scheme
-mehr start wk:IEAAJXXXXXXXX                                  # API ID with short scheme
-mehr start wk:https://www.wrike.com/open.htm?id=1234567890   # Permalink URL
-```
-
-**Reference Formats:**
-
-| Format | Example |
-|--------|---------|
-| Scheme with numeric ID | `wrike:1234567890` |
-| Scheme with API ID | `wrike:IEAAJXXXXXXXX` |
-| Short scheme | `wk:1234567890` |
-| Permalink URL | `https://www.wrike.com/open.htm?id=1234567890` |
-
-**Features:**
-
-- Fetches task title, description, status, priority, permalink
-- Recursively fetches subtasks (max depth 5)
-- Downloads attachments and comments (with automatic pagination)
-- Automatic retry with exponential backoff for rate limit errors
-- Supports multiple ID formats: numeric, API ID, permalink
-
-**Token Resolution Priority:**
-
-1. `MEHR_WRIKE_TOKEN` environment variable
-2. `WRIKE_TOKEN` environment variable
-3. `.mehrhof/config.yaml` `wrike.token`
-
-**Configuration:**
-
-```yaml
-# .mehrhof/config.yaml
-wrike:
-  token: "${WRIKE_TOKEN}"  # Bearer token for Wrike API v4
-  host: "https://www.wrike.com/api/v4"  # Optional: override API base URL
-```
-
-Create API tokens at: https://www.wrike.com/frontend/apps/index.html#api
-
-### YouTrack Provider
-
-Reads and manages issues from YouTrack (Cloud or Server).
-
-```bash
-mehr start youtrack:ABC-123                                   # Issue ID with scheme
-mehr start yt:ABC-123                                        # Short scheme
-mehr start yt:https://company.myjetbrains.com/youtrack/issue/ABC-123  # Issue URL
-mehr start ABC-123                                           # Bare ID (auto-detected)
-```
-
-**Reference Formats:**
-
-| Format | Example |
-|--------|---------|
-| Scheme with ID | `youtrack:ABC-123` |
-| Short scheme | `yt:ABC-123` |
-| Issue URL | `https://company.myjetbrains.com/youtrack/issue/ABC-123` |
-| Bare ID | `ABC-123` (auto-detected if pattern matches) |
-
-**Features:**
-
-- **Read**: Fetches issue title, description, status, priority, tags, assignees, custom fields
-- **List**: Browse issues with query support, status/tag filtering, pagination
-- **Create**: Create new issues with project, priority, type
-- **Update Status**: Change issue state via custom field update
-- **Manage Tags**: Add/remove tags (YouTrack's label equivalent)
-- **Comments**: Fetch all comments and add new ones
-- **Attachments**: Download attachments from issues
-- **Snapshot**: Export issue content as markdown
-
-**State Mapping:**
-
-| Mehrhof Status | YouTrack States |
-|----------------|-----------------|
-| `open` | New, Submitted, To be done |
-| `in_progress` | In Progress, Active |
-| `review` | Code Review, Verification |
-| `done` | Fixed, Done, Completed, Verified, Resolved |
-| `closed` | Closed, Won't fix, Can't reproduce, Duplicate, Obsolete |
-
-**Priority Mapping:**
-
-| Mehrhof Priority | YouTrack Priority |
-|------------------|-------------------|
-| `critical` | Critical, Show-stopper, Urgent |
-| `high` | Major, High |
-| `normal` | Normal |
-| `low` | Minor, Low |
-
-**Token Resolution Priority:**
-
-1. `MEHR_YOUTRACK_TOKEN` environment variable
-2. `YOUTRACK_TOKEN` environment variable
-3. `.mehrhof/config.yaml` `youtrack.token`
-
-**Configuration:**
-
-```yaml
-# .mehrhof/config.yaml
-youtrack:
-  token: "${YOUTRACK_TOKEN}"  # Permanent token from YouTrack profile
-  host: "https://company.myjetbrains.com/youtrack"  # Optional: override host
-```
-
-Create permanent tokens at: https://company.myjetbrains.com/youtrack/settings/tokens
-
-### Notion
-
-The Notion provider integrates with Notion pages and databases to treat pages as tasks. It supports both individual page fetching and database querying with configurable property mappings.
-
-**Usage:**
-
-```bash
-mehr start notion:a1b2c3d4e5f678901234567890abcdef  # Page ID
-mehr start nt:a1b2c3d4e5f678901234567890abcdef     # Short scheme
-mehr start notion:https://www.notion.so/Page-Title-a1b2c3d4e5f678901234567890abcdef  # Notion URL
-```
-
-**Reference Formats:**
-
-| Format | Example |
-|--------|---------|
-| Scheme with ID | `notion:a1b2c3d4e5f678901234567890abcdef` |
-| Short scheme | `nt:a1b2c3d4e5f678901234567890abcdef` |
-| Page URL | `https://www.notion.so/Page-Title-a1b2c3d4e5f678901234567890abcdef` |
-| UUID with dashes | `a1b2c3d4-e5f6-7890-1234-567890abcdef` |
-
-**Features:**
-
-- **Read**: Fetches page title, content (blocks), status, labels, assignees
-- **List**: Query database pages with filters for status/labels, pagination
-- **Create**: Create new pages in databases with title, description, status, labels
-- **Update Status**: Change page status via configurable property
-- **Manage Labels**: Add/remove multi-select tags
-- **Comments**: Fetch page comments and add new ones
-- **Snapshot**: Export page content as markdown with metadata
-
-**Status Mapping:**
-
-| Mehrhof Status | Notion Status |
-|----------------|---------------|
-| `open` | Not Started, Backlog, To Do |
-| `in_progress` | In Progress, Started, Doing |
-| `review` | In Review, Review, Reviewing |
-| `done` | Done, Completed, Finished |
-| `closed` | Cancelled, Canceled, Archived |
-
-**Token Resolution Priority:**
-
-1. `MEHR_NOTION_TOKEN` environment variable
-2. `NOTION_TOKEN` environment variable
-3. `.mehrhof/config.yaml` `notion.token`
-
-**Configuration:**
-
-```yaml
-# .mehrhof/config.yaml
-notion:
-  token: "${NOTION_TOKEN}"           # Integration token from Notion
-  database_id: "abc123..."           # Optional: default database for list operations
-  status_property: "Status"          # Property name for status (default: Status)
-  description_property: "Description" # Property name for description
-  labels_property: "Tags"            # Multi-select property for labels (default: Tags)
-```
-
-Create integration tokens at: https://www.notion.so/my-integrations
-
-**Property Configuration:**
-
-Notion databases have customizable property names. The provider maps these through configuration:
-
-| Config | Description | Default |
-|--------|-------------|---------|
-| `status_property` | Name of status/select property | `Status` |
-| `description_property` | Name of rich_text property for description | `Description` |
-| `labels_property` | Name of multi_select property for tags/labels | `Tags` |
-
-### Trello Provider
-
-Reads and manages cards from Trello boards.
-
-```bash
-mehr start trello:507f1f77bcf86cd799439011   # Card ID (24-char)
-mehr start tr:abc12XYZ                        # Short link (8-char)
-mehr start tr:https://trello.com/c/abc12XYZ/card-name  # Card URL
-```
-
-**Features:**
-
-- **Read**: Fetches card title, description, labels, members, checklists, attachments
-- **List**: Browse cards from boards
-- **Comment**: Add comments to cards
-- **Status**: Move cards between lists
-- **Labels**: Add/remove labels
-
-**Token Resolution Priority:**
-
-1. `MEHR_TRELLO_API_KEY` / `MEHR_TRELLO_TOKEN` environment variables
-2. `TRELLO_API_KEY` / `TRELLO_TOKEN` environment variables
-3. `.mehrhof/config.yaml` `trello.api_key` / `trello.token`
-
-**Configuration:**
-
-```yaml
-# .mehrhof/config.yaml
-trello:
-  api_key: "${TRELLO_API_KEY}"
-  token: "${TRELLO_TOKEN}"
-  board: "default-board-id"  # Optional: default board
-```
-
-Generate API credentials at: https://trello.com/app-key
-
-**Status Mapping (List Name → Status):**
-
-| Trello List | Provider Status |
-|-------------|-----------------|
-| To Do, Backlog | Open |
-| In Progress, Doing | In Progress |
-| In Review | Review |
-| Done, Completed | Done |
-
-### Asana Provider
-
-Reads and manages tasks from Asana workspaces and projects.
-
-```bash
-mehr start asana:1234567890123456   # Task GID
-mehr start as:1234567890123456       # Short scheme
-```
-
-**Features:**
-
-- **Read**: Fetches task title, notes, status, due dates, assignees, tags
-- **List**: Browse tasks from projects with status filtering
-- **Comment**: Add comments (stories) to tasks
-- **Status**: Move tasks between sections
-
-**Token Resolution Priority:**
-
-1. `MEHR_ASANA_TOKEN` environment variable
-2. `ASANA_TOKEN` environment variable
-3. `.mehrhof/config.yaml` `asana.token`
-
-**Configuration:**
-
-```yaml
-asana:
-  token: "${ASANA_TOKEN}"
-  workspace: "123456789"        # Optional: default workspace GID
-  default_project: "987654321"  # Optional: default project GID
-```
-
-### ClickUp Provider
-
-Reads and manages tasks from ClickUp workspaces.
-
-```bash
-mehr start clickup:abc123xyz       # Task ID
-mehr start cu:abc123xyz            # Short scheme
-mehr start cu:TASK-123             # Custom task ID (if enabled)
-```
-
-**Features:**
-
-- **Read**: Fetches task title, description, status, priority, tags, assignees
-- **List**: Browse tasks from lists with status filtering
-- **Comment**: Add comments to tasks
-- **Status**: Update task status
-- **Labels**: Manage task tags
-
-**Token Resolution Priority:**
-
-1. `MEHR_CLICKUP_TOKEN` environment variable
-2. `CLICKUP_TOKEN` environment variable
-3. `.mehrhof/config.yaml` `clickup.token`
-
-**Configuration:**
-
-```yaml
-clickup:
-  token: "${CLICKUP_TOKEN}"
-  workspace: "123456"           # Optional: workspace ID
-  default_list: "987654"        # Optional: default list ID
-  custom_task_ids: true         # Use PROJ-123 format
-```
-
-### Azure DevOps Provider
-
-Reads and manages work items from Azure DevOps.
-
-```bash
-mehr start azdo:123                           # Work item ID
-mehr start azure:org/project#456              # Explicit org/project
-mehr start azdo:https://dev.azure.com/org/project/_workitems/edit/123
-```
-
-**Features:**
-
-- **Read**: Fetches work item title, description, state, priority, tags, assignees
-- **List**: Browse work items with WIQL query support
-- **Comment**: Add discussions to work items
-- **Status**: Update work item state
-- **Labels**: Manage work item tags
-- **PR Creation**: Create pull requests linked to work items (AB#123 syntax)
-
-**Token Resolution Priority:**
-
-1. `MEHR_AZURE_DEVOPS_TOKEN` environment variable
-2. `AZURE_DEVOPS_TOKEN` environment variable
-3. `.mehrhof/config.yaml` `azure_devops.token`
-
-**Configuration:**
-
-```yaml
-azure_devops:
-  token: "${AZURE_DEVOPS_TOKEN}"    # Personal Access Token
-  organization: "myorg"
-  project: "MyProject"
-  branch_pattern: "feature/{key}-{slug}"
-  target_branch: "main"
-```
-
-**Status Mapping:**
-
-| Azure DevOps State | Provider Status |
-|--------------------|-----------------|
-| New, To Do | Open |
-| Active, In Progress | In Progress |
-| Resolved | Review |
-| Closed, Done | Done |
-| Removed | Closed |
-
-### Bitbucket Provider
-
-Reads and manages issues from Bitbucket Cloud repositories.
-
-```bash
-mehr start bitbucket:123                    # Issue ID
-mehr start bb:workspace/repo#456            # Explicit workspace/repo
-mehr start bb:https://bitbucket.org/workspace/repo/issues/123
-```
-
-**Features:**
-
-- **Read**: Fetches issue title, content, state, priority, assignees
-- **List**: Browse repository issues with status filtering
-- **Comment**: Add comments to issues
-- **Status**: Update issue state
-- **PR Creation**: Create pull requests
-
-**Token Resolution Priority:**
-
-1. `MEHR_BITBUCKET_TOKEN` environment variable
-2. `BITBUCKET_TOKEN` environment variable
-3. `.mehrhof/config.yaml` `bitbucket.token`
-
-**Configuration:**
-
-```yaml
-bitbucket:
-  token: "${BITBUCKET_TOKEN}"       # App password
-  workspace: "myworkspace"
-  repo: "myrepo"
-  branch_pattern: "issue/{key}-{slug}"
-  target_branch: "main"
-```
-
-**Status Mapping:**
-
-| Bitbucket State | Provider Status |
-|-----------------|-----------------|
-| new, open | Open |
-| on hold | In Progress |
-| resolved | Done |
-| closed, invalid, duplicate, wontfix | Closed |
-
-## Plugins
-
-Mehrhof supports plugins for extending functionality without recompilation. Plugins communicate via JSON-RPC 2.0 over stdin/stdout.
-
-### Plugin Types
-
-| Type         | Purpose                  | Examples                       | Status |
-|--------------|--------------------------|--------------------------------|--------|
-| **Provider** | Custom task sources      | Jira, YouTrack, Linear, Notion | Stable |
-| **Agent**    | Custom AI backends       | Local LLMs, Codex              | Stable |
-| **Workflow** | State machine extensions | Approval steps, notifications  | Stable |
-
-Workflow plugins support dynamic phase insertion (`after`/`before`), custom guards, and critical effects that can block workflow on failure.
-
-### Using Plugins
-
-```bash
-# List available plugins (global and project-local)
-mehr plugins list
-
-# Install a plugin from git repository
-mehr plugins install https://github.com/example/my-plugin.git
-
-# Install a plugin from local path
-mehr plugins install ./path/to/plugin
-
-# Remove a plugin
-mehr plugins remove my-plugin
-
-# Validate a plugin (checks manifest and connectivity)
-mehr plugins validate my-plugin
-
-# Show detailed plugin information
-mehr plugins info my-plugin
-```
-
-**Plugin Commands:**
 | Command | Description |
 |---------|-------------|
-| `mehr plugins list` | List all discovered plugins with status |
-| `mehr plugins install <source>` | Install from git URL or local path |
-| `mehr plugins remove <name>` | Remove an installed plugin |
-| `mehr plugins validate [name]` | Validate manifest and test connectivity |
-| `mehr plugins info <name>` | Show detailed plugin information |
+| `mehr init` | Initialize workspace (creates `.mehrhof/` directory) |
+| `mehr start <ref>` | Start task from file, directory, or provider |
+| `mehr auto <ref>` | Full automation: plan → implement → review → finish |
+| `mehr plan` | Generate AI implementation specifications |
+| `mehr implement` | Execute the specifications |
+| `mehr review` | Run automated code review |
+| `mehr status` | Show current task status |
+| `mehr continue` | Resume work; shows suggested next actions |
+| `mehr finish` | Complete task and merge changes |
+| `mehr list` | List all tasks in workspace |
+| `mehr undo` / `mehr redo` | Navigate checkpoints |
+| `mehr note <msg>` | Add notes for AI context |
 
-### Enabling Plugins
+**See [CLI Reference](https://valksor.github.io/go-mehrhof/#/cli/) for all commands and flags.**
 
-Add to `.mehrhof/config.yaml`:
+## Task Providers
+
+Mehrhof supports 15+ task sources. Use provider schemes to load tasks:
+
+| Provider | Scheme | Example | Docs |
+|----------|--------|---------|------|
+| File | `file:` | `file:task.md` | [file](https://valksor.github.io/go-mehrhof/#/providers/file) |
+| Directory | `dir:` | `dir:./tasks/` | [directory](https://valksor.github.io/go-mehrhof/#/providers/directory) |
+| GitHub | `github:` | `github:123` | [github](https://valksor.github.io/go-mehrhof/#/providers/github) |
+| GitLab | `gitlab:` | `gitlab:123` | [gitlab](https://valksor.github.io/go-mehrhof/#/providers/gitlab) |
+| Bitbucket | `bitbucket:` | `bitbucket:123` | [bitbucket](https://valksor.github.io/go-mehrhof/#/providers/bitbucket) |
+| Jira | `jira:` | `jira:PROJ-123` | [jira](https://valksor.github.io/go-mehrhof/#/providers/jira) |
+| Linear | `linear:` | `linear:ENG-123` | [linear](https://valksor.github.io/go-mehrhof/#/providers/linear) |
+| Asana | `asana:` | `asana:1234...` | [asana](https://valksor.github.io/go-mehrhof/#/providers/asana) |
+| ClickUp | `clickup:` | `clickup:abc123` | [clickup](https://valksor.github.io/go-mehrhof/#/providers/clickup) |
+| Azure DevOps | `azdo:` | `azdo:123` | [azure-devops](https://valksor.github.io/go-mehrhof/#/providers/azure-devops) |
+| Notion | `notion:` | `notion:<uuid>` | [notion](https://valksor.github.io/go-mehrhof/#/providers/notion) |
+| Trello | `trello:` | `trello:<id>` | [trello](https://valksor.github.io/go-mehrhof/#/providers/trello) |
+| Wrike | `wrike:` | `wrike:<id>` | [wrike](https://valksor.github.io/go-mehrhof/#/providers/wrike) |
+| YouTrack | `youtrack:` | `youtrack:ABC-123` | [youtrack](https://valksor.github.io/go-mehrhof/#/providers/youtrack) |
+
+**Default provider**: Configure in `.mehrhof/config.yaml` to use bare references:
+```yaml
+providers:
+  default: file  # "mehr start task.md" works without "file:" prefix
+```
+
+## Parallel Tasks with Worktrees
+
+Run multiple tasks simultaneously in isolated environments:
+
+```bash
+# Terminal 1
+mehr start --worktree feature-a.md
+cd ../project-worktrees/<task-id>
+mehr plan && mehr implement
+
+# Terminal 2 (from main repo)
+mehr start --worktree feature-b.md
+cd ../project-worktrees/<task-id>
+mehr plan && mehr implement
+```
+
+Each worktree is an isolated git checkout. Mehrhof auto-detects which task you're working on based on your current directory.
+
+## Configuration
+
+Project-level configuration in `.mehrhof/config.yaml`:
 
 ```yaml
-plugins:
-  enabled:
-    - jira
-    - slack-notify
+# Git integration
+git:
+  auto_commit: true
+  commit_prefix: "[{key}]"
+  branch_pattern: "{type}/{key}--{slug}"
+  target_branch: "main"
+
+# Agent configuration
+agent:
+  default: claude
+  timeout: 300
+
+# Default provider for bare references
+providers:
+  default: file
+
+# Auto-update checks
+update:
+  enabled: true
+  check_interval: 24  # hours
 ```
 
-### Plugin Locations
+**See [Configuration Guide](https://valksor.github.io/go-mehrhof/#/configuration/) for all options including agent aliases, per-step agents, and provider settings.**
 
-```
-~/.mehrhof/plugins/     # Global (all projects)
-.mehrhof/plugins/       # Project-local (overrides global)
-```
+## Documentation
 
-### Creating Plugins
-
-For plugin development documentation, see `.mehrhof/plugins/docs/`:
-
-| Guide                 | Description                  |
-|-----------------------|------------------------------|
-| `README.md`           | Getting started              |
-| `provider-plugins.md` | Create task source providers |
-| `agent-plugins.md`    | Create AI agent backends     |
-| `workflow-plugins.md` | Extend the state machine     |
-| `protocol.md`         | JSON-RPC protocol reference  |
-
-## Architecture
-
-```
-cmd/mehr/           # CLI entry point
-internal/
-├── agent/          # AI agent abstraction
-│   ├── claude/     # Claude agent implementation
-│   ├── codex/      # Codex agent implementation
-│   ├── aider/      # Aider Git-aware pair programming agent
-│   ├── ollama/     # Ollama local LLM agent
-│   ├── copilot/    # GitHub Copilot CLI agent
-│   ├── openrouter/ # OpenRouter unified API agent
-│   └── session/    # Session recovery/checkpointing
-├── conductor/      # Main orchestrator
-├── config/         # Configuration loading
-├── events/         # Event bus pub/sub
-├── log/            # Structured logging
-├── plugin/         # Plugin system (JSON-RPC providers, agents, workflows)
-├── provider/       # Task source providers
-│   ├── file/       # File provider
-│   ├── directory/  # Directory provider
-│   ├── github/     # GitHub issues provider
-│   ├── gitlab/     # GitLab issues provider
-│   ├── jira/       # Jira issues provider
-│   ├── linear/     # Linear issues provider
-│   ├── notion/     # Notion pages provider
-│   ├── wrike/      # Wrike tasks provider
-│   ├── youtrack/   # YouTrack issues provider
-│   ├── trello/     # Trello cards provider
-│   ├── asana/      # Asana tasks provider
-│   ├── clickup/    # ClickUp tasks provider
-│   ├── azuredevops/# Azure DevOps work items provider
-│   └── bitbucket/  # Bitbucket issues provider
-├── storage/        # YAML-based persistence
-├── vcs/            # Git operations
-└── workflow/       # State machine engine
-```
+- 📖 [Full Documentation](https://valksor.github.io/go-mehrhof)
+- [Getting Started](https://valksor.github.io/go-mehrhof/#/getting-started) - 5-minute walkthrough
+- [Installation](https://valksor.github.io/go-mehrhof/#/installation) - Build and setup
+- [Providers](https://valksor.github.io/go-mehrhof/#/providers) - Task source integrations
+- [CLI Reference](https://valksor.github.io/go-mehrhof/#/cli) - All commands and flags
+- [Configuration](https://valksor.github.io/go-mehrhof/#/configuration) - Customize behavior
+- [Concepts](https://valksor.github.io/go-mehrhof/#/concepts) - Workflow, storage, architecture
+- [Troubleshooting](https://valksor.github.io/go-mehrhof/#/troubleshooting) - Common issues
 
 ## Development
 
-### Build Commands
-
 ```bash
-# Build the binary
-make build
-
-# Run tests
-make test
-
-# Run tests with coverage
-make coverage
-
-# Run linter
-make lint
-
-# Format code
-make fmt
-
-# Install locally
-make install
-
-# Clean build artifacts
-make clean
-
-# Tidy dependencies
-make tidy
+make build        # Build binary to ./build/mehr
+make install      # Install to $GOPATH/bin
+make test         # Run tests with coverage
+make coverage     # Generate coverage report
+make lint         # Run golangci-lint
+make fmt          # Format code
+make tidy         # Tidy dependencies
 ```
-
-### Running Locally
-
-```bash
-# Build and run
-make run
-
-# Run with arguments
-make run-args ARGS="start task.md"
-
-# Show version info
-make version
-```
-
-## Troubleshooting
-
-### Common Issues
-
-**"no active task"**
-
-- Run `mehr start <file>` to begin a new task
-- Or run `mehr continue` to see suggestions
-
-**"ANTHROPIC_API_KEY not set"**
-
-- Export your Claude API key: `export ANTHROPIC_API_KEY=your-key`
-- Or add it to `.mehrhof/config.yaml` under `env:`
-
-**"review tool not found"**
-
-- Install CodeRabbit: `npm install -g coderabbitai`
-
-**"workspace not initialized"**
-
-- Run `mehr init` to create the `.mehrhof` directory
-
-### Getting Help
-
-```bash
-# Show help for any command
-mehr --help
-mehr <command> --help
-```
-
-The help output is contextual - it groups commands into "Available Now" and "Other Commands" based on your current workspace state (active task, specifications, etc.).
 
 ## License
 
-Internal use only.
+By contributing to Mehrhof, you agree that your contributions will be licensed under the [BSD 3-Clause License](LICENSE).
+
