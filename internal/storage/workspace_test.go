@@ -2114,3 +2114,306 @@ func TestDeleteWork_CustomWorkDir(t *testing.T) {
 		t.Error("work should not exist after deletion")
 	}
 }
+
+// ──────────────────────────────────────────────────────────────────────────────
+// Usage tracking tests (AddUsage, FlushUsage, etc.)
+// ──────────────────────────────────────────────────────────────────────────────
+
+func TestAddUsage_SingleCall(t *testing.T) {
+	tmpDir := t.TempDir()
+	ws, _ := OpenWorkspace(tmpDir, nil)
+	if err := ws.EnsureInitialized(); err != nil {
+		t.Fatalf("EnsureInitialized: %v", err)
+	}
+
+	taskID := "test-usage-1"
+	source := SourceInfo{Type: "file", Ref: "test.md"}
+	if _, err := ws.CreateWork(taskID, source); err != nil {
+		t.Fatalf("CreateWork: %v", err)
+	}
+
+	// Add usage
+	if err := ws.AddUsage(taskID, "planning", 1000, 500, 100, 0.01); err != nil {
+		t.Fatalf("AddUsage: %v", err)
+	}
+
+	// Flush to persist
+	if err := ws.FlushUsage(); err != nil {
+		t.Fatalf("FlushUsage: %v", err)
+	}
+
+	// Load work and verify
+	work, err := ws.LoadWork(taskID)
+	if err != nil {
+		t.Fatalf("LoadWork: %v", err)
+	}
+
+	if work.Costs.TotalInputTokens != 1000 {
+		t.Errorf("TotalInputTokens = %d, want 1000", work.Costs.TotalInputTokens)
+	}
+	if work.Costs.TotalOutputTokens != 500 {
+		t.Errorf("TotalOutputTokens = %d, want 500", work.Costs.TotalOutputTokens)
+	}
+	if work.Costs.TotalCachedTokens != 100 {
+		t.Errorf("TotalCachedTokens = %d, want 100", work.Costs.TotalCachedTokens)
+	}
+	if work.Costs.TotalCostUSD != 0.01 {
+		t.Errorf("TotalCostUSD = %f, want 0.01", work.Costs.TotalCostUSD)
+	}
+
+	// Check ByStep stats
+	if work.Costs.ByStep == nil {
+		t.Fatal("ByStep should not be nil")
+	}
+	stepStats, ok := work.Costs.ByStep["planning"]
+	if !ok {
+		t.Fatal("ByStep should contain 'planning' stats")
+	}
+	if stepStats.InputTokens != 1000 {
+		t.Errorf("stepStats.InputTokens = %d, want 1000", stepStats.InputTokens)
+	}
+	if stepStats.OutputTokens != 500 {
+		t.Errorf("stepStats.OutputTokens = %d, want 500", stepStats.OutputTokens)
+	}
+	if stepStats.CachedTokens != 100 {
+		t.Errorf("stepStats.CachedTokens = %d, want 100", stepStats.CachedTokens)
+	}
+	if stepStats.CostUSD != 0.01 {
+		t.Errorf("stepStats.CostUSD = %f, want 0.01", stepStats.CostUSD)
+	}
+	if stepStats.Calls != 1 {
+		t.Errorf("stepStats.Calls = %d, want 1", stepStats.Calls)
+	}
+}
+
+func TestAddUsage_MultipleCallsAccumulate(t *testing.T) {
+	tmpDir := t.TempDir()
+	ws, _ := OpenWorkspace(tmpDir, nil)
+	if err := ws.EnsureInitialized(); err != nil {
+		t.Fatalf("EnsureInitialized: %v", err)
+	}
+
+	taskID := "test-usage-2"
+	source := SourceInfo{Type: "file", Ref: "test.md"}
+	if _, err := ws.CreateWork(taskID, source); err != nil {
+		t.Fatalf("CreateWork: %v", err)
+	}
+
+	// Add usage multiple times
+	for i := 0; i < 5; i++ {
+		if err := ws.AddUsage(taskID, "planning", 1000, 500, 100, 0.01); err != nil {
+			t.Fatalf("AddUsage %d: %v", i, err)
+		}
+	}
+
+	// Flush to persist
+	if err := ws.FlushUsage(); err != nil {
+		t.Fatalf("FlushUsage: %v", err)
+	}
+
+	// Load work and verify accumulation
+	work, err := ws.LoadWork(taskID)
+	if err != nil {
+		t.Fatalf("LoadWork: %v", err)
+	}
+
+	if work.Costs.TotalInputTokens != 5000 { // 5 * 1000
+		t.Errorf("TotalInputTokens = %d, want 5000", work.Costs.TotalInputTokens)
+	}
+	if work.Costs.TotalOutputTokens != 2500 { // 5 * 500
+		t.Errorf("TotalOutputTokens = %d, want 2500", work.Costs.TotalOutputTokens)
+	}
+	if work.Costs.TotalCostUSD != 0.05 { // 5 * 0.01
+		t.Errorf("TotalCostUSD = %f, want 0.05", work.Costs.TotalCostUSD)
+	}
+
+	// Check ByStep stats
+	stepStats := work.Costs.ByStep["planning"]
+	if stepStats.Calls != 5 {
+		t.Errorf("stepStats.Calls = %d, want 5", stepStats.Calls)
+	}
+}
+
+func TestAddUsage_MultipleSteps(t *testing.T) {
+	tmpDir := t.TempDir()
+	ws, _ := OpenWorkspace(tmpDir, nil)
+	if err := ws.EnsureInitialized(); err != nil {
+		t.Fatalf("EnsureInitialized: %v", err)
+	}
+
+	taskID := "test-usage-3"
+	source := SourceInfo{Type: "file", Ref: "test.md"}
+	if _, err := ws.CreateWork(taskID, source); err != nil {
+		t.Fatalf("CreateWork: %v", err)
+	}
+
+	// Add usage for different steps
+	if err := ws.AddUsage(taskID, "planning", 1000, 500, 100, 0.01); err != nil {
+		t.Fatalf("AddUsage planning: %v", err)
+	}
+	if err := ws.AddUsage(taskID, "implementing", 2000, 1000, 200, 0.03); err != nil {
+		t.Fatalf("AddUsage implementing: %v", err)
+	}
+	if err := ws.AddUsage(taskID, "reviewing", 500, 300, 50, 0.005); err != nil {
+		t.Fatalf("AddUsage reviewing: %v", err)
+	}
+
+	// Flush to persist
+	if err := ws.FlushUsage(); err != nil {
+		t.Fatalf("FlushUsage: %v", err)
+	}
+
+	// Load work and verify
+	work, err := ws.LoadWork(taskID)
+	if err != nil {
+		t.Fatalf("LoadWork: %v", err)
+	}
+
+	// Check totals
+	if work.Costs.TotalInputTokens != 3500 { // 1000 + 2000 + 500
+		t.Errorf("TotalInputTokens = %d, want 3500", work.Costs.TotalInputTokens)
+	}
+	if work.Costs.TotalOutputTokens != 1800 { // 500 + 1000 + 300
+		t.Errorf("TotalOutputTokens = %d, want 1800", work.Costs.TotalOutputTokens)
+	}
+
+	// Check each step
+	if len(work.Costs.ByStep) != 3 {
+		t.Errorf("ByStep has %d entries, want 3", len(work.Costs.ByStep))
+	}
+
+	// Verify planning step
+	planningStats := work.Costs.ByStep["planning"]
+	if planningStats.InputTokens != 1000 {
+		t.Errorf("planning.InputTokens = %d, want 1000", planningStats.InputTokens)
+	}
+
+	// Verify implementing step
+	implementingStats := work.Costs.ByStep["implementing"]
+	if implementingStats.InputTokens != 2000 {
+		t.Errorf("implementing.InputTokens = %d, want 2000", implementingStats.InputTokens)
+	}
+
+	// Verify reviewing step
+	reviewingStats := work.Costs.ByStep["reviewing"]
+	if reviewingStats.InputTokens != 500 {
+		t.Errorf("reviewing.InputTokens = %d, want 500", reviewingStats.InputTokens)
+	}
+}
+
+func TestAddUsage_AutoFlushOnThreshold(t *testing.T) {
+	tmpDir := t.TempDir()
+	ws, _ := OpenWorkspace(tmpDir, nil)
+	if err := ws.EnsureInitialized(); err != nil {
+		t.Fatalf("EnsureInitialized: %v", err)
+	}
+
+	taskID := "test-usage-4"
+	source := SourceInfo{Type: "file", Ref: "test.md"}
+	if _, err := ws.CreateWork(taskID, source); err != nil {
+		t.Fatalf("CreateWork: %v", err)
+	}
+
+	// Add enough usage to trigger auto-flush (threshold is 100 calls)
+	// The auto-flush should happen when totalCalls >= defaultUsageFlushThreshold
+	for i := 0; i < 100; i++ {
+		if err := ws.AddUsage(taskID, "planning", 100, 50, 10, 0.001); err != nil {
+			t.Fatalf("AddUsage %d: %v", i, err)
+		}
+	}
+
+	// Data should be persisted even without explicit flush
+	work, err := ws.LoadWork(taskID)
+	if err != nil {
+		t.Fatalf("LoadWork: %v", err)
+	}
+
+	if work.Costs.TotalInputTokens != 10000 { // 100 * 100
+		t.Errorf("TotalInputTokens = %d, want 10000", work.Costs.TotalInputTokens)
+	}
+}
+
+func TestFlushUsage_EmptyBuffer(t *testing.T) {
+	tmpDir := t.TempDir()
+	ws, _ := OpenWorkspace(tmpDir, nil)
+	if err := ws.EnsureInitialized(); err != nil {
+		t.Fatalf("EnsureInitialized: %v", err)
+	}
+
+	// Flush with no usage data should not error
+	if err := ws.FlushUsage(); err != nil {
+		t.Errorf("FlushUsage with empty buffer: %v", err)
+	}
+}
+
+func TestAddUsage_MultipleTasks(t *testing.T) {
+	tmpDir := t.TempDir()
+	ws, _ := OpenWorkspace(tmpDir, nil)
+	if err := ws.EnsureInitialized(); err != nil {
+		t.Fatalf("EnsureInitialized: %v", err)
+	}
+
+	taskID1 := "test-task-1"
+	taskID2 := "test-task-2"
+	source := SourceInfo{Type: "file", Ref: "test.md"}
+
+	if _, err := ws.CreateWork(taskID1, source); err != nil {
+		t.Fatalf("CreateWork task1: %v", err)
+	}
+	if _, err := ws.CreateWork(taskID2, source); err != nil {
+		t.Fatalf("CreateWork task2: %v", err)
+	}
+
+	// Add usage for both tasks
+	if err := ws.AddUsage(taskID1, "planning", 1000, 500, 100, 0.01); err != nil {
+		t.Fatalf("AddUsage task1: %v", err)
+	}
+	if err := ws.AddUsage(taskID2, "planning", 2000, 1000, 200, 0.02); err != nil {
+		t.Fatalf("AddUsage task2: %v", err)
+	}
+
+	// Flush
+	if err := ws.FlushUsage(); err != nil {
+		t.Fatalf("FlushUsage: %v", err)
+	}
+
+	// Verify task1
+	work1, err := ws.LoadWork(taskID1)
+	if err != nil {
+		t.Fatalf("LoadWork task1: %v", err)
+	}
+	if work1.Costs.TotalInputTokens != 1000 {
+		t.Errorf("task1 TotalInputTokens = %d, want 1000", work1.Costs.TotalInputTokens)
+	}
+
+	// Verify task2
+	work2, err := ws.LoadWork(taskID2)
+	if err != nil {
+		t.Fatalf("LoadWork task2: %v", err)
+	}
+	if work2.Costs.TotalInputTokens != 2000 {
+		t.Errorf("task2 TotalInputTokens = %d, want 2000", work2.Costs.TotalInputTokens)
+	}
+}
+
+func TestAddUsage_InvalidTask(t *testing.T) {
+	tmpDir := t.TempDir()
+	ws, _ := OpenWorkspace(tmpDir, nil)
+	if err := ws.EnsureInitialized(); err != nil {
+		t.Fatalf("EnsureInitialized: %v", err)
+	}
+
+	// Try to add usage for non-existent task
+	// This should not error immediately (usage is buffered)
+	// but will error on flush when trying to load the work
+	err := ws.AddUsage("nonexistent-task", "planning", 1000, 500, 100, 0.01)
+	if err != nil {
+		t.Fatalf("AddUsage should not error immediately: %v", err)
+	}
+
+	// Flush should error because task doesn't exist
+	err = ws.FlushUsage()
+	if err == nil {
+		t.Error("FlushUsage should error when task doesn't exist")
+	}
+}
