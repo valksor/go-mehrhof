@@ -1,5 +1,8 @@
 # Plugin Development Guide
 
+> **⚠️ Third-Party Integration**: The plugin system allows integrating with external services that may have changing APIs. Plugins are not fully tested beyond unit tests. Manual validation recommended before production use.
+
+
 Create custom plugins to extend Mehrhof with new task sources, AI backends, or workflow phases.
 
 ## Plugin Types

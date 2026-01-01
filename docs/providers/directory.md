@@ -1,5 +1,7 @@
 # Directory Provider
 
+> **⚠️ Experimental**: This provider is not fully tested beyond unit tests. Edge cases may exist. Manual validation recommended before production use.
+
 **Schemes:** `dir:`
 
 **Capabilities:** `read`, `list`

@@ -1,5 +1,8 @@
 # Asana Provider
 
+> **⚠️ Third-Party Integration**: This integration depends on external APIs that may change. Not fully tested beyond unit tests. Behavior may vary depending on the third-party service. Manual validation recommended before production use.
+
+
 **Schemes:** `asana:`, `as:`
 
 **Capabilities:** `read`, `list`, `fetch_comments`, `comment`, `update_status`, `manage_labels`, `snapshot`, `fetch_subtasks`

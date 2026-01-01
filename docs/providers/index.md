@@ -2,6 +2,9 @@
 
 Providers are task sources that Mehrhof can read from and interact with. Each provider supports different capabilities like reading tasks, creating issues, or managing status.
 
+> **⚠️ Integration Testing Notice**: Agent and provider implementations depend on third-party APIs that may change. While unit-tested, these integrations may have edge cases not covered by automated tests. Manual testing in your environment is recommended before production use.
+
+
 ## Available Providers
 
 | Provider | Schemes | Description |
