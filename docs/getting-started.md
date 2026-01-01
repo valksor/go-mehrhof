@@ -4,20 +4,33 @@ Get started with Mehrhof in 5 minutes.
 
 ## Prerequisites
 
-- Go 1.25 or later (for building from source)
 - Git
 - Claude CLI installed and configured (Mehrhof calls Claude for AI operations)
 
+> **Note:** Go 1.25+ is only required if building from source.
+
 ## Installation
 
+Download the latest binary for your platform:
+
+| Platform | Binary Name |
+|----------|-------------|
+| Linux AMD64 | `mehr-linux-amd64` |
+| Linux ARM64 | `mehr-linux-arm64` |
+| macOS (Intel) | `mehr-darwin-amd64` |
+| macOS (Apple Silicon) | `mehr-darwin-arm64` |
+
 ```bash
-# Clone and build
-git clone <repository-url>
-cd go-mehrhof
-make install
+# Download and install (example: macOS ARM64)
+curl -L https://github.com/valksor/go-mehrhof/releases/latest/download/mehr-darwin-arm64 -o mehr
+chmod +x mehr
+sudo mv mehr /usr/local/bin/
+
+# Verify
+mehr version
 ```
 
-This installs `mehr` to your `$GOPATH/bin`.
+For more options (nightly builds, building from source), see [Installation](installation.md).
 
 ## Setup
 

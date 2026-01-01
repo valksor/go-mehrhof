@@ -2,6 +2,8 @@
 
 Solutions for problems during installation and setup.
 
+> **Tip:** If you're having trouble building from source, consider downloading a [pre-built binary](../installation.md) instead.
+
 ## "command not found: mehr"
 
 **Cause:** Binary not in PATH.
