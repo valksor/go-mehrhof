@@ -2,6 +2,22 @@
 
 Mehrhof is a CLI tool for AI-powered task automation by Valksor. It orchestrates AI agents (calling Claude CLI) to help you plan and implement software development tasks.
 
+---
+
+**⚠️ EXPERIMENTAL INTEGRATIONS**
+
+Mehrhof's core workflow engine is stable, but **provider and agent integrations with third-party services are experimental**.
+
+Due to the large number of external APIs (GitHub, GitLab, Jira, Notion, Claude, Gemini, etc.), integrations may:
+- Break without notice due to third-party API changes
+- Have edge cases not covered by automated tests
+- Require manual validation for production use
+
+We are gradually testing and hardening integrations. Report issues at [github.com/valksor/go-mehrhof/issues](https://github.com/valksor/go-mehrhof/issues).
+
+---
+
+
 ## Key Features
 
 **AI-Powered Workflow**
