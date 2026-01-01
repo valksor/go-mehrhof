@@ -2,6 +2,8 @@ package ollama
 
 import (
 	"context"
+	"fmt"
+	"strings"
 	"testing"
 	"time"
 
@@ -446,5 +448,197 @@ func TestWithModelImmutability(t *testing.T) {
 
 	if a2.model != "llama3" {
 		t.Error("WithModel didn't set model on new agent")
+	}
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// Additional Available tests
+// ──────────────────────────────────────────────────────────────────────────────
+
+func TestAvailable_Success(t *testing.T) {
+	// Use "echo" as a mock binary that exists on all systems
+	cfg := agent.Config{
+		Command: []string{"echo"},
+	}
+	a := NewWithConfig(cfg)
+
+	// The echo binary exists but won't work with --version
+	// This tests the binary found path
+	err := a.Available()
+	// We expect either success (if echo has --version) or a "not working" error
+	// But NOT "not found"
+	if err != nil {
+		if strings.Contains(err.Error(), "not found") {
+			t.Errorf("Available should find echo binary, got: %v", err)
+		}
+		// "not working" is acceptable since echo doesn't have --version
+	}
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// Additional RunWithCallback tests
+// ──────────────────────────────────────────────────────────────────────────────
+
+func TestRunWithCallback_CallbackError(t *testing.T) {
+	cfg := agent.Config{
+		Command: []string{"echo", "-n", "test output"},
+		Timeout: 5 * time.Second,
+	}
+	a := NewWithConfig(cfg)
+
+	callbackCount := 0
+	cb := func(event agent.Event) error {
+		callbackCount++
+		// Return an error after first event
+		if callbackCount >= 1 {
+			return fmt.Errorf("callback error")
+		}
+		return nil
+	}
+
+	_, err := a.RunWithCallback(context.Background(), "test", cb)
+	if err == nil {
+		t.Error("RunWithCallback should return callback error")
+	}
+	if !strings.Contains(err.Error(), "callback error") {
+		t.Errorf("Expected callback error, got: %v", err)
+	}
+}
+
+func TestRunWithCallback_CollectsEvents(t *testing.T) {
+	cfg := agent.Config{
+		Command: []string{"echo", "-n", "test output"},
+		Timeout: 5 * time.Second,
+	}
+	a := NewWithConfig(cfg)
+
+	var collectedEvents []agent.Event
+	cb := func(event agent.Event) error {
+		collectedEvents = append(collectedEvents, event)
+		return nil
+	}
+
+	resp, err := a.RunWithCallback(context.Background(), "test", cb)
+	if err != nil {
+		t.Fatalf("RunWithCallback error = %v", err)
+	}
+
+	if len(collectedEvents) == 0 {
+		t.Error("Expected at least one event")
+	}
+	if resp == nil {
+		t.Error("Expected non-nil response")
+	}
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// Additional Run tests
+// ──────────────────────────────────────────────────────────────────────────────
+
+func TestRun_Success(t *testing.T) {
+	cfg := agent.Config{
+		Command: []string{"echo", "-n", "Here is the answer"},
+		Timeout: 5 * time.Second,
+	}
+	a := NewWithConfig(cfg)
+
+	resp, err := a.Run(context.Background(), "test")
+	if err != nil {
+		t.Fatalf("Run error = %v", err)
+	}
+
+	if resp == nil {
+		t.Fatal("Expected non-nil response")
+	}
+	if resp.Summary == "" {
+		t.Error("Expected non-empty summary")
+	}
+}
+
+func TestRun_ContextTimeout(t *testing.T) {
+	cfg := agent.Config{
+		Command: []string{"sleep", "10"}, // Will exceed timeout
+		Timeout: 100 * time.Millisecond,
+	}
+	a := NewWithConfig(cfg)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 50*time.Millisecond)
+	defer cancel()
+
+	_, err := a.Run(ctx, "test")
+	if err == nil {
+		t.Error("Run should fail with timeout")
+	}
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// Additional RunStream tests
+// ──────────────────────────────────────────────────────────────────────────────
+
+func TestRunStream_MultipleEvents(t *testing.T) {
+	cfg := agent.Config{
+		Command: []string{"echo", "-n", "line1\nline2\nline3"},
+		Timeout: 5 * time.Second,
+	}
+	a := NewWithConfig(cfg)
+
+	events, errCh := a.RunStream(context.Background(), "test")
+
+	var collected []agent.Event
+	for event := range events {
+		collected = append(collected, event)
+	}
+
+	err := <-errCh
+	if err != nil {
+		t.Fatalf("RunStream error = %v", err)
+	}
+
+	if len(collected) == 0 {
+		t.Error("Expected at least one event")
+	}
+}
+
+func TestRunStream_EmptyOutput(t *testing.T) {
+	cfg := agent.Config{
+		Command: []string{"echo", "-n", ""},
+		Timeout: 5 * time.Second,
+	}
+	a := NewWithConfig(cfg)
+
+	events, errCh := a.RunStream(context.Background(), "test")
+
+	collected := []agent.Event{}
+	for event := range events {
+		collected = append(collected, event)
+	}
+
+	err := <-errCh
+	if err != nil {
+		t.Fatalf("RunStream error = %v", err)
+	}
+
+	// Empty lines are skipped, so we might get 0 events
+	if collected == nil {
+		t.Error("collected should be initialized")
+	}
+}
+
+func TestRunStream_CommandStartError(t *testing.T) {
+	cfg := agent.Config{
+		Command: []string{"", "-n", "test"}, // Empty command name
+		Timeout: 5 * time.Second,
+	}
+	a := NewWithConfig(cfg)
+
+	events, errCh := a.RunStream(context.Background(), "test")
+
+	// Drain events
+	for range events {
+	}
+
+	err := <-errCh
+	if err == nil {
+		t.Error("RunStream should return error for empty command")
 	}
 }

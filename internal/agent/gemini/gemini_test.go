@@ -2,6 +2,8 @@ package gemini
 
 import (
 	"context"
+	"fmt"
+	"strings"
 	"testing"
 	"time"
 
@@ -486,5 +488,305 @@ func TestSummarizeOutput(t *testing.T) {
 				t.Errorf("summarizeOutput() = %q, want %q", got, tt.want)
 			}
 		})
+	}
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// GeminiParser.ParseEvent additional tests
+// ──────────────────────────────────────────────────────────────────────────────
+
+func TestGeminiParser_ParseEvent_ToolCall(t *testing.T) {
+	p := NewGeminiParser()
+
+	// Test functionCall format
+	jsonLine := []byte(`{"type":"tool_call","functionCall":{"name":"search","args":{"query":"golang"}}}`)
+
+	event, err := p.ParseEvent(jsonLine)
+	if err != nil {
+		t.Fatalf("ParseEvent failed: %v", err)
+	}
+
+	if event.Type != agent.EventToolUse {
+		t.Errorf("event.Type = %v, want %v", event.Type, agent.EventToolUse)
+	}
+	if event.ToolCall == nil {
+		t.Fatal("event.ToolCall should not be nil")
+	}
+	if event.ToolCall.Name != "search" {
+		t.Errorf("ToolCall.Name = %q, want %q", event.ToolCall.Name, "search")
+	}
+}
+
+func TestGeminiParser_ParseEvent_PartsArray(t *testing.T) {
+	p := NewGeminiParser()
+
+	// Test parts array format (common in Gemini responses)
+	jsonLine := []byte(`{"parts":[{"text":"Hello "},{"text":"World"}]}`)
+
+	event, err := p.ParseEvent(jsonLine)
+	if err != nil {
+		t.Fatalf("ParseEvent failed: %v", err)
+	}
+
+	if event.Type != agent.EventText {
+		t.Errorf("event.Type = %v, want %v", event.Type, agent.EventText)
+	}
+	if event.Text != "Hello World" {
+		t.Errorf("event.Text = %q, want %q", event.Text, "Hello World")
+	}
+}
+
+func TestGeminiParser_ParseEvent_Error(t *testing.T) {
+	p := NewGeminiParser()
+
+	jsonLine := []byte(`{"type":"error","message":"Something went wrong"}`)
+
+	event, err := p.ParseEvent(jsonLine)
+	if err != nil {
+		t.Fatalf("ParseEvent failed: %v", err)
+	}
+
+	if event.Type != agent.EventError {
+		t.Errorf("event.Type = %v, want %v", event.Type, agent.EventError)
+	}
+}
+
+func TestGeminiParser_ParseEvent_ToolResult(t *testing.T) {
+	p := NewGeminiParser()
+
+	jsonLine := []byte(`{"type":"tool_result","result":"success"}`)
+
+	event, err := p.ParseEvent(jsonLine)
+	if err != nil {
+		t.Fatalf("ParseEvent failed: %v", err)
+	}
+
+	if event.Type != agent.EventToolResult {
+		t.Errorf("event.Type = %v, want %v", event.Type, agent.EventToolResult)
+	}
+}
+
+func TestGeminiParser_ParseEvent_Complete(t *testing.T) {
+	p := NewGeminiParser()
+
+	jsonLine := []byte(`{"type":"done"}`)
+
+	event, err := p.ParseEvent(jsonLine)
+	if err != nil {
+		t.Fatalf("ParseEvent failed: %v", err)
+	}
+
+	if event.Type != agent.EventComplete {
+		t.Errorf("event.Type = %v, want %v", event.Type, agent.EventComplete)
+	}
+}
+
+func TestGeminiParser_ParseEvent_ContentType(t *testing.T) {
+	p := NewGeminiParser()
+
+	jsonLine := []byte(`{"type":"content","content":"Test content"}`)
+
+	event, err := p.ParseEvent(jsonLine)
+	if err != nil {
+		t.Fatalf("ParseEvent failed: %v", err)
+	}
+
+	if event.Type != agent.EventText {
+		t.Errorf("event.Type = %v, want %v", event.Type, agent.EventText)
+	}
+	if event.Text != "Test content" {
+		t.Errorf("event.Text = %q, want %q", event.Text, "Test content")
+	}
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// Additional Available tests
+// ──────────────────────────────────────────────────────────────────────────────
+
+func TestAvailable_Success(t *testing.T) {
+	// Use "echo" as a mock binary that exists on all systems
+	cfg := agent.Config{
+		Command: []string{"echo"},
+	}
+	a := NewWithConfig(cfg)
+
+	// The echo binary exists but won't work with --version
+	// This tests the binary found path
+	err := a.Available()
+	// We expect either success (if echo has --version) or a "not working" error
+	// But NOT "not found"
+	if err != nil {
+		if strings.Contains(err.Error(), "not found") {
+			t.Errorf("Available should find echo binary, got: %v", err)
+		}
+		// "not working" is acceptable since echo doesn't have --version
+	}
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// Additional RunWithCallback tests
+// ──────────────────────────────────────────────────────────────────────────────
+
+func TestRunWithCallback_CallbackError(t *testing.T) {
+	cfg := agent.Config{
+		Command: []string{"echo", "-n", "test output"},
+		Timeout: 5 * time.Second,
+	}
+	a := NewWithConfig(cfg)
+
+	callbackCount := 0
+	cb := func(event agent.Event) error {
+		callbackCount++
+		// Return an error after first event
+		if callbackCount >= 1 {
+			return fmt.Errorf("callback error")
+		}
+		return nil
+	}
+
+	_, err := a.RunWithCallback(context.Background(), "test", cb)
+	if err == nil {
+		t.Error("RunWithCallback should return callback error")
+	}
+	if !strings.Contains(err.Error(), "callback error") {
+		t.Errorf("Expected callback error, got: %v", err)
+	}
+}
+
+func TestRunWithCallback_CollectsEvents(t *testing.T) {
+	cfg := agent.Config{
+		Command: []string{"echo", "-n", "test output"},
+		Timeout: 5 * time.Second,
+	}
+	a := NewWithConfig(cfg)
+
+	var collectedEvents []agent.Event
+	cb := func(event agent.Event) error {
+		collectedEvents = append(collectedEvents, event)
+		return nil
+	}
+
+	resp, err := a.RunWithCallback(context.Background(), "test", cb)
+	if err != nil {
+		t.Fatalf("RunWithCallback error = %v", err)
+	}
+
+	if len(collectedEvents) == 0 {
+		t.Error("Expected at least one event")
+	}
+	if resp == nil {
+		t.Error("Expected non-nil response")
+	}
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// Additional Run tests
+// ──────────────────────────────────────────────────────────────────────────────
+
+func TestRun_Success(t *testing.T) {
+	cfg := agent.Config{
+		Command: []string{"echo", "-n", "Here is the answer"},
+		Timeout: 5 * time.Second,
+	}
+	a := NewWithConfig(cfg)
+
+	resp, err := a.Run(context.Background(), "test")
+	if err != nil {
+		t.Fatalf("Run error = %v", err)
+	}
+
+	if resp == nil {
+		t.Fatal("Expected non-nil response")
+	}
+	if resp.Summary == "" {
+		t.Error("Expected non-empty summary")
+	}
+}
+
+func TestRun_ContextTimeout(t *testing.T) {
+	cfg := agent.Config{
+		Command: []string{"sleep", "10"}, // Will exceed timeout
+		Timeout: 100 * time.Millisecond,
+	}
+	a := NewWithConfig(cfg)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 50*time.Millisecond)
+	defer cancel()
+
+	_, err := a.Run(ctx, "test")
+	if err == nil {
+		t.Error("Run should fail with timeout")
+	}
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// Additional RunStream tests
+// ──────────────────────────────────────────────────────────────────────────────
+
+func TestRunStream_MultipleEvents(t *testing.T) {
+	cfg := agent.Config{
+		Command: []string{"echo", "-n", "line1\nline2\nline3"},
+		Timeout: 5 * time.Second,
+	}
+	a := NewWithConfig(cfg)
+
+	events, errCh := a.RunStream(context.Background(), "test")
+
+	var collected []agent.Event
+	for event := range events {
+		collected = append(collected, event)
+	}
+
+	err := <-errCh
+	if err != nil {
+		t.Fatalf("RunStream error = %v", err)
+	}
+
+	if len(collected) == 0 {
+		t.Error("Expected at least one event")
+	}
+}
+
+func TestRunStream_EmptyOutput(t *testing.T) {
+	cfg := agent.Config{
+		Command: []string{"echo", "-n", ""},
+		Timeout: 5 * time.Second,
+	}
+	a := NewWithConfig(cfg)
+
+	events, errCh := a.RunStream(context.Background(), "test")
+
+	collected := []agent.Event{}
+	for event := range events {
+		collected = append(collected, event)
+	}
+
+	err := <-errCh
+	if err != nil {
+		t.Fatalf("RunStream error = %v", err)
+	}
+
+	// Empty lines are skipped, so we might get 0 events
+	if collected == nil {
+		t.Error("collected should be initialized")
+	}
+}
+
+func TestRunStream_CommandStartError(t *testing.T) {
+	cfg := agent.Config{
+		Command: []string{"", "-n", "test"}, // Empty command name
+		Timeout: 5 * time.Second,
+	}
+	a := NewWithConfig(cfg)
+
+	events, errCh := a.RunStream(context.Background(), "test")
+
+	// Drain events
+	for range events {
+	}
+
+	err := <-errCh
+	if err == nil {
+		t.Error("RunStream should return error for empty command")
 	}
 }
