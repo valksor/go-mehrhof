@@ -376,3 +376,200 @@ func contains(s, substr string) bool {
 	}
 	return false
 }
+
+// mockLinter is a test linter with configurable availability
+type mockLinter struct {
+	name      string
+	available bool
+	runResult *Result
+	runError  error
+}
+
+func (m *mockLinter) Name() string {
+	return m.name
+}
+
+func (m *mockLinter) Available() bool {
+	return m.available
+}
+
+func (m *mockLinter) Run(ctx context.Context, workDir string, files []string) (*Result, error) {
+	if m.runError != nil {
+		return nil, m.runError
+	}
+	if m.runResult != nil {
+		return m.runResult, nil
+	}
+	return &Result{Linter: m.name, Passed: true}, nil
+}
+
+// TestRegistryAvailable tests the Available() method
+func TestRegistryAvailable(t *testing.T) {
+	tests := []struct {
+		name      string
+		linters   []Linter
+		wantCount int
+		wantNames []string
+	}{
+		{
+			name:      "empty registry",
+			linters:   []Linter{},
+			wantCount: 0,
+		},
+		{
+			name: "all available",
+			linters: []Linter{
+				&mockLinter{name: "linter1", available: true},
+				&mockLinter{name: "linter2", available: true},
+			},
+			wantCount: 2,
+			wantNames: []string{"linter1", "linter2"},
+		},
+		{
+			name: "none available",
+			linters: []Linter{
+				&mockLinter{name: "linter1", available: false},
+				&mockLinter{name: "linter2", available: false},
+			},
+			wantCount: 0,
+		},
+		{
+			name: "mixed availability",
+			linters: []Linter{
+				&mockLinter{name: "available1", available: true},
+				&mockLinter{name: "not-available", available: false},
+				&mockLinter{name: "available2", available: true},
+			},
+			wantCount: 2,
+			wantNames: []string{"available1", "available2"},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			r := &Registry{}
+			for _, l := range tt.linters {
+				r.Register(l)
+			}
+
+			available := r.Available()
+
+			if len(available) != tt.wantCount {
+				t.Errorf("Available() returned %d linters, want %d", len(available), tt.wantCount)
+			}
+
+			if tt.wantNames != nil {
+				gotNames := make([]string, len(available))
+				for i, l := range available {
+					gotNames[i] = l.Name()
+				}
+				for _, want := range tt.wantNames {
+					found := false
+					for _, got := range gotNames {
+						if got == want {
+							found = true
+							break
+						}
+					}
+					if !found {
+						t.Errorf("Available() missing linter %q", want)
+					}
+				}
+			}
+		})
+	}
+}
+
+// TestRunAll tests the RunAll() method with mock linters
+func TestRunAll(t *testing.T) {
+	tests := []struct {
+		name            string
+		linters         []Linter
+		createGoMod     bool
+		wantResultCount int
+		wantErrors      int
+	}{
+		{
+			name:            "no linters",
+			linters:         []Linter{},
+			createGoMod:     false,
+			wantResultCount: 0,
+		},
+		{
+			name: "all pass",
+			linters: []Linter{
+				&mockLinter{name: "golangci-lint", available: true, runResult: &Result{Linter: "golangci-lint", Passed: true}},
+			},
+			createGoMod:     true,
+			wantResultCount: 1,
+		},
+		{
+			name: "linter fails",
+			linters: []Linter{
+				&mockLinter{name: "golangci-lint", available: true, runResult: &Result{Linter: "golangci-lint", Passed: false, Issues: []Issue{{Message: "error"}}}},
+			},
+			createGoMod:     true,
+			wantResultCount: 1,
+		},
+		{
+			name: "linter returns error",
+			linters: []Linter{
+				&mockLinter{name: "golangci-lint", available: true, runError: context.DeadlineExceeded},
+			},
+			createGoMod:     true,
+			wantResultCount: 1,
+			wantErrors:      1,
+		},
+		{
+			name: "unavailable linters are skipped",
+			linters: []Linter{
+				&mockLinter{name: "golangci-lint", available: false},
+			},
+			createGoMod:     true,
+			wantResultCount: 0, // unavailable linter won't run
+		},
+		{
+			name: "no project file = no linters run",
+			linters: []Linter{
+				&mockLinter{name: "golangci-lint", available: true, runResult: &Result{Linter: "golangci-lint", Passed: true}},
+			},
+			createGoMod:     false,
+			wantResultCount: 0, // no go.mod, so no linters detected
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tmpDir := t.TempDir()
+
+			// Create go.mod if needed for detection
+			if tt.createGoMod {
+				goMod := filepath.Join(tmpDir, "go.mod")
+				if err := os.WriteFile(goMod, []byte("module test\n"), 0o644); err != nil {
+					t.Fatal(err)
+				}
+			}
+
+			r := &Registry{}
+			for _, l := range tt.linters {
+				r.Register(l)
+			}
+
+			results := r.RunAll(context.Background(), tmpDir, nil)
+
+			if len(results) != tt.wantResultCount {
+				t.Errorf("RunAll() returned %d results, want %d", len(results), tt.wantResultCount)
+			}
+
+			errorCount := 0
+			for _, res := range results {
+				if res.Error != nil {
+					errorCount++
+				}
+			}
+			if errorCount != tt.wantErrors {
+				t.Errorf("RunAll() returned %d errors, want %d", errorCount, tt.wantErrors)
+			}
+		})
+	}
+}
