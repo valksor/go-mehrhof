@@ -135,7 +135,7 @@ mehr finish
 6. **Finish** (`mehr finish`) - Merge changes and clean up
 
 **Recovery commands**:
-- `mehr continue` - Resume work and see suggested next actions
+- `mehr continue` - Resume workflow, optionally auto-execute (`--auto`)
 - `mehr undo` / `mehr redo` - Revert to previous checkpoint
 - `mehr abandon` - Abandon task without merging
 
@@ -149,8 +149,8 @@ mehr finish
 | `mehr plan` | Generate AI implementation specifications |
 | `mehr implement` | Execute the specifications |
 | `mehr review` | Run automated code review |
-| `mehr status` | Show current task status |
-| `mehr continue` | Resume work; shows suggested next actions |
+| `mehr status` | Full task inspection: specs, checkpoints, sessions |
+| `mehr continue` | Resume workflow, optionally auto-execute (aliases: `cont`, `c`) |
 | `mehr finish` | Complete task and merge changes |
 | `mehr list` | List all tasks in workspace |
 | `mehr undo` / `mehr redo` | Navigate checkpoints |
