@@ -636,3 +636,302 @@ func TestPhaseStatesSlice(t *testing.T) {
 		}
 	}
 }
+
+// ──────────────────────────────────────────────────────────────────────────────
+// Tests for uncovered functions
+// ──────────────────────────────────────────────────────────────────────────────
+
+func TestGetStateInfo(t *testing.T) {
+	m := NewMachine(nil)
+
+	tests := []struct {
+		name     string
+		state    State
+		wantOK   bool
+		wantTerm bool
+	}{
+		{"idle state", StateIdle, true, false},
+		{"planning state", StatePlanning, true, false},
+		{"implementing state", StateImplementing, true, false},
+		{"reviewing state", StateReviewing, true, false},
+		{"done state", StateDone, true, true},
+		{"failed state", StateFailed, true, false}, // Can be recovered via EventReset
+		{"waiting state", StateWaiting, true, false},
+		{"checkpointing state", StateCheckpointing, true, false},
+		{"reverting state", StateReverting, true, false},
+		{"restoring state", StateRestoring, true, false},
+		{"invalid state", State("invalid-state"), false, false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			info, ok := m.GetStateInfo(tt.state)
+			if ok != tt.wantOK {
+				t.Errorf("GetStateInfo() ok = %v, want %v", ok, tt.wantOK)
+			}
+			if ok && info.Terminal != tt.wantTerm {
+				t.Errorf("GetStateInfo() Terminal = %v, want %v", info.Terminal, tt.wantTerm)
+			}
+		})
+	}
+}
+
+func TestPhaseOrder(t *testing.T) {
+	m := NewMachine(nil)
+
+	order := m.PhaseOrder()
+
+	if len(order) != 5 {
+		t.Errorf("PhaseOrder() length = %d, want 5", len(order))
+	}
+
+	// Verify the expected order
+	expected := []State{StateIdle, StatePlanning, StateImplementing, StateReviewing, StateDone}
+	for i, state := range order {
+		if state != expected[i] {
+			t.Errorf("PhaseOrder()[%d] = %v, want %v", i, state, expected[i])
+		}
+	}
+
+	// Verify it's a copy (modifying returned slice doesn't affect internal)
+	order[0] = StateFailed
+	newOrder := m.PhaseOrder()
+	if newOrder[0] == StateFailed {
+		t.Error("PhaseOrder() should return a copy, not reference internal slice")
+	}
+}
+
+func TestAllSteps(t *testing.T) {
+	steps := AllSteps()
+
+	expectedSteps := []Step{
+		StepPlanning,
+		StepImplementing,
+		StepReviewing,
+		StepCheckpointing,
+	}
+
+	if len(steps) != len(expectedSteps) {
+		t.Errorf("AllSteps() length = %d, want %d", len(steps), len(expectedSteps))
+	}
+
+	for i, step := range steps {
+		if step != expectedSteps[i] {
+			t.Errorf("AllSteps()[%d] = %v, want %v", i, step, expectedSteps[i])
+		}
+	}
+}
+
+func TestIsValidStep(t *testing.T) {
+	tests := []struct {
+		name string
+		step string
+		want bool
+	}{
+		{"planning", "planning", true},
+		{"implementing", "implementing", true},
+		{"reviewing", "reviewing", true},
+		{"checkpointing", "checkpointing", true},
+		{"invalid step", "invalid", false},
+		{"empty string", "", false},
+		{"mixed case", "Planning", false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := IsValidStep(tt.step)
+			if got != tt.want {
+				t.Errorf("IsValidStep(%q) = %v, want %v", tt.step, got, tt.want)
+			}
+		})
+	}
+}
+
+func TestStep_String(t *testing.T) {
+	tests := []struct {
+		step Step
+		want string
+	}{
+		{StepPlanning, "planning"},
+		{StepImplementing, "implementing"},
+		{StepReviewing, "reviewing"},
+		{StepCheckpointing, "checkpointing"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.want, func(t *testing.T) {
+			got := tt.step.String()
+			if got != tt.want {
+				t.Errorf("Step.String() = %q, want %q", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestGetTransitions(t *testing.T) {
+	tests := []struct {
+		name    string
+		from    State
+		event   Event
+		wantMin int
+		wantMax int
+	}{
+		{
+			name:    "idle to planning",
+			from:    StateIdle,
+			event:   EventPlan,
+			wantMin: 1,
+			wantMax: 10,
+		},
+		{
+			name:    "planning done",
+			from:    StatePlanning,
+			event:   EventPlanDone,
+			wantMin: 1,
+			wantMax: 10,
+		},
+		{
+			name:    "idle to implementing",
+			from:    StateIdle,
+			event:   EventImplement,
+			wantMin: 1,
+			wantMax: 10,
+		},
+		{
+			name:    "implementing done",
+			from:    StateImplementing,
+			event:   EventImplementDone,
+			wantMin: 1,
+			wantMax: 10,
+		},
+		{
+			name:    "invalid transition",
+			from:    StateIdle,
+			event:   EventImplementDone,
+			wantMin: 0,
+			wantMax: 0,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			transitions := GetTransitions(tt.from, tt.event)
+			if len(transitions) < tt.wantMin || len(transitions) > tt.wantMax {
+				t.Errorf("GetTransitions() length = %d, want between %d and %d",
+					len(transitions), tt.wantMin, tt.wantMax)
+			}
+		})
+	}
+}
+
+func TestGetGlobalTransition(t *testing.T) {
+	tests := []struct {
+		name   string
+		event  Event
+		want   State
+		wantOK bool
+	}{
+		{
+			name:   "abort event",
+			event:  EventAbort,
+			want:   StateFailed,
+			wantOK: true,
+		},
+		{
+			name:   "non-global event",
+			event:  EventPlan,
+			want:   "",
+			wantOK: false,
+		},
+		{
+			name:   "unknown event",
+			event:  Event("unknown"),
+			want:   "",
+			wantOK: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, ok := GetGlobalTransition(tt.event)
+			if ok != tt.wantOK {
+				t.Errorf("GetGlobalTransition() ok = %v, want %v", ok, tt.wantOK)
+			}
+			if ok && got != tt.want {
+				t.Errorf("GetGlobalTransition() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestCanTransition(t *testing.T) {
+	tests := []struct {
+		name  string
+		from  State
+		event Event
+		want  bool
+	}{
+		{"idle to planning", StateIdle, EventPlan, true},
+		{"idle to implementing", StateIdle, EventImplement, true},
+		{"idle to reviewing", StateIdle, EventReview, true},
+		{"idle to finish", StateIdle, EventFinish, true},
+		{"planning to plan done", StatePlanning, EventPlanDone, true},
+		{"planning error", StatePlanning, EventError, true},
+		{"implementing done", StateImplementing, EventImplementDone, true},
+		{"implementing error", StateImplementing, EventError, true},
+		{"reviewing done", StateReviewing, EventReviewDone, true},
+		{"reviewing error", StateReviewing, EventError, true},
+		{"global abort from any state", StateIdle, EventAbort, true},
+		{"global abort from planning", StatePlanning, EventAbort, true},
+		{"invalid transition", StatePlanning, EventImplement, false},
+		{"invalid event", StateIdle, Event("unknown"), false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := CanTransition(tt.from, tt.event)
+			if got != tt.want {
+				t.Errorf("CanTransition() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestEffectRegistry_Has(t *testing.T) {
+	registry := NewEffectRegistry()
+
+	// Initially empty
+	if registry.Has(EffectInitWorkUnit) {
+		t.Error("registry should not have InitWorkUnit effect initially")
+	}
+
+	// Register an effect
+	registry.Register(EffectInitWorkUnit, EffectFunc(func(ctx context.Context, wu *WorkUnit) error {
+		return nil
+	}))
+
+	// Now it should exist
+	if !registry.Has(EffectInitWorkUnit) {
+		t.Error("registry should have InitWorkUnit effect after registration")
+	}
+
+	// Unknown effect should not exist
+	if registry.Has(EffectType("unknown")) {
+		t.Error("registry should not have unknown effect type")
+	}
+}
+
+func TestStepConstants(t *testing.T) {
+	if StepPlanning != "planning" {
+		t.Errorf("StepPlanning = %q, want %q", StepPlanning, "planning")
+	}
+	if StepImplementing != "implementing" {
+		t.Errorf("StepImplementing = %q, want %q", StepImplementing, "implementing")
+	}
+	if StepReviewing != "reviewing" {
+		t.Errorf("StepReviewing = %q, want %q", StepReviewing, "reviewing")
+	}
+	if StepCheckpointing != "checkpointing" {
+		t.Errorf("StepCheckpointing = %q, want %q", StepCheckpointing, "checkpointing")
+	}
+}
