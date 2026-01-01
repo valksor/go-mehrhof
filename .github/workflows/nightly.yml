@@ -5,6 +5,10 @@ on:
         branches:
             - master
 
+permissions:
+    contents: write
+    packages: write
+
 jobs:
     manage-nightly:
         runs-on: ubuntu-slim
