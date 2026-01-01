@@ -241,5 +241,5 @@ func FindChecksumInFile(checksumsPath, assetName string) (string, error) {
 
 // GetAssetName returns the expected asset name for the current platform.
 func GetAssetName() string {
-	return fmt.Sprintf("mehrhof-%s-%s", runtime.GOOS, runtime.GOARCH)
+	return fmt.Sprintf("mehr-%s-%s", runtime.GOOS, runtime.GOARCH)
 }

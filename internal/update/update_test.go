@@ -21,40 +21,40 @@ func TestParseChecksumsFile(t *testing.T) {
 	}{
 		{
 			name: "valid checksum with text mode",
-			content: "a1b2c3d4e5f6  mehrhof-linux-amd64\n" +
-				"z9y8x7w6v5u4  mehrhof-darwin-arm64\n",
-			assetName: "mehrhof-linux-amd64",
+			content: "a1b2c3d4e5f6  mehr-linux-amd64\n" +
+				"z9y8x7w6v5u4  mehr-darwin-arm64\n",
+			assetName: "mehr-linux-amd64",
 			want:      "a1b2c3d4e5f6",
 		},
 		{
 			name: "valid checksum with binary mode",
-			content: "a1b2c3d4e5f6 *mehrhof-linux-amd64\n" +
-				"z9y8x7w6v5u4 *mehrhof-darwin-arm64\n",
-			assetName: "mehrhof-linux-amd64",
+			content: "a1b2c3d4e5f6 *mehr-linux-amd64\n" +
+				"z9y8x7w6v5u4 *mehr-darwin-arm64\n",
+			assetName: "mehr-linux-amd64",
 			want:      "a1b2c3d4e5f6",
 		},
 		{
 			name:      "asset not found",
 			content:   "a1b2c3d4e5f6  other-file\n",
-			assetName: "mehrhof-linux-amd64",
+			assetName: "mehr-linux-amd64",
 			want:      "",
 		},
 		{
 			name:      "empty content",
 			content:   "",
-			assetName: "mehrhof-linux-amd64",
+			assetName: "mehr-linux-amd64",
 			want:      "",
 		},
 		{
 			name:      "multiple spaces between checksum and file",
-			content:   "a1b2c3d4e5f6    mehrhof-linux-amd64\n",
-			assetName: "mehrhof-linux-amd64",
+			content:   "a1b2c3d4e5f6    mehr-linux-amd64\n",
+			assetName: "mehr-linux-amd64",
 			want:      "a1b2c3d4e5f6",
 		},
 		{
 			name:      "tabs instead of spaces",
-			content:   "a1b2c3d4e5f6\tmehrhof-linux-amd64\n",
-			assetName: "mehrhof-linux-amd64",
+			content:   "a1b2c3d4e5f6\tmehr-linux-amd64\n",
+			assetName: "mehr-linux-amd64",
 			want:      "a1b2c3d4e5f6",
 		},
 	}
@@ -71,7 +71,7 @@ func TestParseChecksumsFile(t *testing.T) {
 
 func TestGetAssetName(t *testing.T) {
 	got := GetAssetName()
-	want := "mehrhof-" + runtime.GOOS + "-" + runtime.GOARCH
+	want := "mehr-" + runtime.GOOS + "-" + runtime.GOARCH
 	if got != want {
 		t.Errorf("GetAssetName() = %q, want %q", got, want)
 	}
@@ -374,24 +374,24 @@ func TestFindChecksumInFile(t *testing.T) {
 	}{
 		{
 			name: "valid checksum found",
-			content: "a1b2c3d4e5f6  mehrhof-linux-amd64\n" +
-				"z9y8x7w6v5u4  mehrhof-darwin-arm64\n",
-			assetName: "mehrhof-linux-amd64",
+			content: "a1b2c3d4e5f6  mehr-linux-amd64\n" +
+				"z9y8x7w6v5u4  mehr-darwin-arm64\n",
+			assetName: "mehr-linux-amd64",
 			want:      "a1b2c3d4e5f6",
 			wantErr:   false,
 		},
 		{
 			name: "valid checksum with binary mode",
-			content: "a1b2c3d4e5f6 *mehrhof-linux-amd64\n" +
-				"z9y8x7w6v5u4 *mehrhof-darwin-arm64\n",
-			assetName: "mehrhof-linux-amd64",
+			content: "a1b2c3d4e5f6 *mehr-linux-amd64\n" +
+				"z9y8x7w6v5u4 *mehr-darwin-arm64\n",
+			assetName: "mehr-linux-amd64",
 			want:      "a1b2c3d4e5f6",
 			wantErr:   false,
 		},
 		{
 			name:        "checksum not found",
 			content:     "a1b2c3d4e5f6  other-file\n",
-			assetName:   "mehrhof-linux-amd64",
+			assetName:   "mehr-linux-amd64",
 			want:        "",
 			wantErr:     true,
 			errContains: "checksum not found",
@@ -399,7 +399,7 @@ func TestFindChecksumInFile(t *testing.T) {
 		{
 			name:        "empty file",
 			content:     "",
-			assetName:   "mehrhof-linux-amd64",
+			assetName:   "mehr-linux-amd64",
 			want:        "",
 			wantErr:     true,
 			errContains: "checksum not found",
@@ -407,16 +407,16 @@ func TestFindChecksumInFile(t *testing.T) {
 		{
 			name: "multiple entries finds correct one",
 			content: "abc123  file1\n" +
-				"def456  mehrhof-darwin-arm64\n" +
+				"def456  mehr-darwin-arm64\n" +
 				"ghi789  file3\n",
-			assetName: "mehrhof-darwin-arm64",
+			assetName: "mehr-darwin-arm64",
 			want:      "def456",
 			wantErr:   false,
 		},
 		{
 			name:      "file read error - non-existent file",
 			content:   "", // Not used for non-existent file test
-			assetName: "mehrhof-linux-amd64",
+			assetName: "mehr-linux-amd64",
 			want:      "",
 			wantErr:   true,
 		},
@@ -481,12 +481,12 @@ func TestReleaseInfoFromGitHub(t *testing.T) {
 				HTMLURL:     github.String("https://github.com/owner/repo/releases/tag/v1.2.3"),
 				Assets: []*github.ReleaseAsset{
 					{
-						Name:               github.String("mehrhof-linux-amd64"),
+						Name:               github.String("mehr-linux-amd64"),
 						BrowserDownloadURL: github.String("https://example.com/linux-amd64"),
 						Size:               github.Int(1024000),
 					},
 					{
-						Name:               github.String("mehrhof-darwin-arm64"),
+						Name:               github.String("mehr-darwin-arm64"),
 						BrowserDownloadURL: github.String("https://example.com/darwin-arm64"),
 						Size:               github.Int(980000),
 					},
@@ -500,8 +500,8 @@ func TestReleaseInfoFromGitHub(t *testing.T) {
 				PublishedAt: publishedAt,
 				HTMLURL:     "https://github.com/owner/repo/releases/tag/v1.2.3",
 				Assets: []Asset{
-					{Name: "mehrhof-linux-amd64", URL: "https://example.com/linux-amd64", Size: 1024000},
-					{Name: "mehrhof-darwin-arm64", URL: "https://example.com/darwin-arm64", Size: 980000},
+					{Name: "mehr-linux-amd64", URL: "https://example.com/linux-amd64", Size: 1024000},
+					{Name: "mehr-darwin-arm64", URL: "https://example.com/darwin-arm64", Size: 980000},
 				},
 			},
 		},

@@ -104,7 +104,7 @@ func (c *Checker) Check(ctx context.Context, opts CheckOptions) (*UpdateStatus, 
 	}
 
 	// Find the matching asset for this platform
-	expectedAsset := fmt.Sprintf("mehrhof-%s-%s", runtime.GOOS, runtime.GOARCH)
+	expectedAsset := fmt.Sprintf("mehr-%s-%s", runtime.GOOS, runtime.GOARCH)
 	var assetURL string
 	var assetSize int64
 	var checksumsURL string
