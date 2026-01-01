@@ -1,6 +1,6 @@
 # mehr status
 
-Show detailed task state (specs, checkpoints, sessions).
+Full task inspection: specs, checkpoints, sessions.
 
 ## Synopsis
 
@@ -315,13 +315,13 @@ mehr continue
 
 More contextual than `mehr status` with action suggestions.
 
-### Command Comparison
+### Choosing the Right Command
 
-| Command         | Purpose                                                  |
-| --------------- | -------------------------------------------------------- |
-| `mehr status`   | Detailed state inspection (specs, checkpoints, sessions)  |
-| `mehr guide`    | Quick, lightweight suggestions (no execution capability)  |
-| `mehr continue` | Status display with optional auto-execution capability    |
+| Command         | When to Use                                                    |
+| --------------- | -------------------------------------------------------------- |
+| `mehr guide`    | "What's my next command?" (fastest, minimal output)            |
+| `mehr status`   | "Show me everything" (full inspection, all details)            |
+| `mehr continue` | "Resume and optionally auto-execute" (`--auto` runs next step) |
 
 ## See Also
 

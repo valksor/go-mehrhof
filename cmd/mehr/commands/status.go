@@ -22,32 +22,30 @@ var (
 var statusCmd = &cobra.Command{
 	Use:     "status",
 	Aliases: []string{"st"},
-	Short:   "Show detailed task state (specifications, checkpoints, sessions)",
-	Long: `Show a detailed read-only view of the active task(s).
+	Short:   "Full task inspection: specs, checkpoints, sessions",
+	Long: `Comprehensive view of your task - everything in one place.
 
-Use this when you want comprehensive information about your task:
-- Task ID, title, state, and source reference
-- Specifications and their completion status
-- Git checkpoints for undo/redo
-- Session history and token usage
+Use this when you need the complete picture:
+  • Task metadata (ID, title, source, branch, started time)
+  • Specifications with status icons and progress summary
+  • Git checkpoints available for undo/redo
+  • Session history and token usage
+  • Agent configuration
 
-WHEN TO USE:
-  guide     - Quick "what do I do next?" (terse, suggestions only)
-  status    - Detailed inspection (all task data, checkpoints, sessions)
-  continue  - Resume workflow (with optional --auto to execute next step)
+CHOOSING THE RIGHT COMMAND:
+  guide     - "What's my next command?" (fastest, minimal output)
+  status    - "Show me everything" (full inspection, all details)  <-- you are here
+  continue  - "Resume and optionally auto-execute" (--auto runs next step)
 
 OUTPUT FORMATS:
-  Default output is human-readable text.
-  Use --json for machine-parseable JSON output (useful for scripts).
-
-See also:
-  mehr guide    - Quick next-action suggestions (less verbose)
-  mehr continue - Resume workflow with optional auto-execution
+  Default: Human-readable text with colors
+  --json:  Machine-parseable JSON (for scripts and integrations)
 
 Examples:
-  mehr status              # Show active task state
-  mehr status --all        # Show all tasks in workspace
-  mehr status --json       # Output as JSON for scripting`,
+  mehr status        # Full details for active task
+  mehr st            # Same (shorthand alias)
+  mehr status --all  # List all tasks in workspace
+  mehr status --json # JSON output for scripting`,
 	RunE: runStatus,
 }
 
@@ -255,7 +253,7 @@ func showActiveTask(ws *storage.Workspace, git *vcs.Git) error {
 			summaryParts = append(summaryParts, fmt.Sprintf("%d implementing", summary[storage.SpecificationStatusImplementing]))
 		}
 		if summary[storage.SpecificationStatusReady] > 0 {
-			summaryParts = append(summaryParts, fmt.Sprintf("%d pending", summary[storage.SpecificationStatusReady]))
+			summaryParts = append(summaryParts, fmt.Sprintf("%d ready", summary[storage.SpecificationStatusReady]))
 		}
 		if summary[storage.SpecificationStatusDraft] > 0 {
 			summaryParts = append(summaryParts, fmt.Sprintf("%d draft", summary[storage.SpecificationStatusDraft]))
@@ -423,10 +421,10 @@ func showAllTasks(ws *storage.Workspace, git *vcs.Git) error {
 func printSpecLegend() {
 	fmt.Println()
 	fmt.Println(display.Muted("Specification icons:"))
-	fmt.Println(display.Muted("  ○ = draft"))
-	fmt.Println(display.Muted("  ◐ = ready to implement"))
-	fmt.Println(display.Muted("  ◑ = implementing"))
-	fmt.Println(display.Muted("  ● = completed"))
+	fmt.Println(display.Muted("  ○ = Draft (not yet finalized)"))
+	fmt.Println(display.Muted("  ◐ = Ready (queued for implementation)"))
+	fmt.Println(display.Muted("  ◑ = Implementing (in progress)"))
+	fmt.Println(display.Muted("  ● = Completed"))
 }
 
 // JSON output structures for status command

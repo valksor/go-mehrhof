@@ -71,7 +71,7 @@ func TestStatusCommand_Flags(t *testing.T) {
 }
 
 func TestStatusCommand_ShortDescription(t *testing.T) {
-	expected := "Show detailed task state (specifications, checkpoints, sessions)"
+	expected := "Full task inspection: specs, checkpoints, sessions"
 	if statusCmd.Short != expected {
 		t.Errorf("Short = %q, want %q", statusCmd.Short, expected)
 	}
@@ -79,8 +79,8 @@ func TestStatusCommand_ShortDescription(t *testing.T) {
 
 func TestStatusCommand_LongDescriptionContains(t *testing.T) {
 	contains := []string{
-		"detailed read-only view",
-		"Task ID",
+		"Comprehensive view",
+		"Task metadata",
 		"Specifications",
 		"Git checkpoints",
 		"Session history",
@@ -96,7 +96,7 @@ func TestStatusCommand_LongDescriptionContains(t *testing.T) {
 func TestStatusCommand_WhenToUseSection(t *testing.T) {
 	// Should document when to use status vs guide vs continue
 	expected := []string{
-		"WHEN TO USE",
+		"CHOOSING THE RIGHT COMMAND",
 		"guide",
 		"status",
 		"continue",
@@ -135,10 +135,10 @@ func TestStatusCommand_Examples(t *testing.T) {
 }
 
 func TestStatusCommand_SeeAlsoSection(t *testing.T) {
-	// Should reference related commands
+	// Should reference related commands (in CHOOSING THE RIGHT COMMAND section)
 	related := []string{
-		"mehr guide",
-		"mehr continue",
+		"guide",
+		"continue",
 	}
 
 	for _, cmd := range related {
