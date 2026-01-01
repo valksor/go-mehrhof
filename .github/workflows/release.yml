@@ -69,11 +69,17 @@ jobs:
                     go mod tidy
                     git diff --exit-code go.mod
                     go mod download
+                    go install golang.org/x/vuln/cmd/govulncheck@latest
+                    go install golang.org/x/tools/cmd/goimports@latest
 
             -   name: Lint and Tests
                 run: |
                     make lint
                     make test
+
+            -   name: Generate coverage
+                if: github.event.release.prerelease && matrix.goos == 'darwin' && matrix.goarch == 'arm64'
+                run: make coverage
 
             -   name: Build binary
                 run: |
