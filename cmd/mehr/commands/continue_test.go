@@ -63,7 +63,7 @@ func TestContinueCommand_Flags(t *testing.T) {
 }
 
 func TestContinueCommand_ShortDescription(t *testing.T) {
-	expected := "Resume workflow with optional auto-execution"
+	expected := "Resume workflow, optionally auto-execute (aliases: cont, c)"
 	if continueCmd.Short != expected {
 		t.Errorf("Short = %q, want %q", continueCmd.Short, expected)
 	}
@@ -71,9 +71,9 @@ func TestContinueCommand_ShortDescription(t *testing.T) {
 
 func TestContinueCommand_LongDescriptionContains(t *testing.T) {
 	contains := []string{
-		"next workflow step",
-		"WHEN TO USE",
-		"See also",
+		"auto-pilot",
+		"CHOOSING THE RIGHT COMMAND",
+		"AUTO-EXECUTION LOGIC",
 	}
 
 	for _, substr := range contains {
@@ -145,12 +145,12 @@ func TestContinueCommand_RegisteredInRoot(t *testing.T) {
 }
 
 func TestContinueCommand_DocumentsSeeAlso(t *testing.T) {
-	// Should reference related commands
-	if !containsString(continueCmd.Long, "mehr status") {
-		t.Error("Long description does not reference 'mehr status'")
+	// Should reference related commands in CHOOSING THE RIGHT COMMAND section
+	if !containsString(continueCmd.Long, "guide") {
+		t.Error("Long description does not reference 'guide'")
 	}
 
-	if !containsString(continueCmd.Long, "mehr guide") {
-		t.Error("Long description does not reference 'mehr guide'")
+	if !containsString(continueCmd.Long, "status") {
+		t.Error("Long description does not reference 'status'")
 	}
 }

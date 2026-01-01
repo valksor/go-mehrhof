@@ -1,6 +1,6 @@
 # mehr continue
 
-Continue to the next workflow step.
+Resume workflow, optionally auto-execute with `--auto`.
 
 ## Synopsis
 
@@ -130,15 +130,15 @@ The suggested actions depend on the current task state:
 | `reviewing`    | `finish`, `implement`                              |
 | `done`         | `start` (new task)                                 |
 
-## Difference from `mehr status`
+## Choosing the Right Command
 
-| Command         | Purpose                                                  |
-| --------------- | -------------------------------------------------------- |
-| `mehr continue` | Status display with optional auto-execution capability   |
-| `mehr guide`    | Quick, lightweight suggestions (no execution capability) |
-| `mehr status`   | Detailed state inspection (read-only, full details)       |
+| Command         | When to Use                                                    |
+| --------------- | -------------------------------------------------------------- |
+| `mehr guide`    | "What's my next command?" (fastest, minimal output)            |
+| `mehr status`   | "Show me everything" (full inspection, all details)            |
+| `mehr continue` | "Resume and optionally auto-execute" (`--auto` runs next step) |
 
-Use `continue` when you want to resume work with optional auto-execution. Use `guide` for quick suggestions only. Use `status` for detailed state information.
+Use `guide` for quick suggestions. Use `status` for full inspection. Use `continue` when resuming work with optional auto-execution.
 
 ## See Also
 

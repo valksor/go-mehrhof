@@ -9,6 +9,7 @@ import (
 
 	"github.com/valksor/go-mehrhof/internal/conductor"
 	"github.com/valksor/go-mehrhof/internal/display"
+	"github.com/valksor/go-mehrhof/internal/workflow"
 )
 
 var continueAuto bool // Auto-execute the next logical step
@@ -16,26 +17,31 @@ var continueAuto bool // Auto-execute the next logical step
 var continueCmd = &cobra.Command{
 	Use:     "continue",
 	Aliases: []string{"cont", "c"},
-	Short:   "Resume workflow with optional auto-execution",
-	Long: `Continue to the next workflow step.
+	Short:   "Resume workflow, optionally auto-execute (aliases: cont, c)",
+	Long: `Resume your task with optional auto-pilot mode.
 
-This command is designed for resuming work on a task after a break.
-Without --auto, it shows status and suggested next actions.
-With --auto, it automatically executes the next logical workflow step.
+Perfect for returning after a break - see where you left off and optionally
+let the AI continue automatically.
 
-WHEN TO USE:
-  guide          - Quick "what do I do next?" (terse, suggestions only)
-  status         - Detailed inspection (all task data, checkpoints, sessions)
-  continue       - Show status + suggestions (like guide but more context)
-  continue --auto - Automatically execute the next logical step
+WITHOUT --auto: Shows current state and suggests what to do next
+WITH --auto:    Automatically runs the next logical step (plan → implement)
 
-See also:
-  mehr status - Detailed state inspection
-  mehr guide  - Quick next-action suggestions
+CHOOSING THE RIGHT COMMAND:
+  guide     - "What's my next command?" (fastest, minimal output)
+  status    - "Show me everything" (full inspection, all details)
+  continue  - "Resume and optionally auto-execute" (--auto runs next step)  <-- you are here
+
+AUTO-EXECUTION LOGIC:
+  idle (no specs)  → runs 'mehr plan'
+  idle (has specs) → runs 'mehr implement'
+  planning         → runs 'mehr implement'
+  implementing     → suggests 'mehr finish' (won't auto-run)
+  done             → nothing to do
 
 Examples:
-  mehr continue       # Show status and suggested next actions
-  mehr continue --auto # Auto-execute the next logical step`,
+  mehr continue       # See status + suggestions
+  mehr c              # Same (shorthand alias)
+  mehr continue --auto # Auto-execute next step`,
 	RunE: runContinue,
 }
 
@@ -104,8 +110,8 @@ func runContinue(cmd *cobra.Command, args []string) error {
 
 	// Otherwise, show suggested next actions
 	fmt.Println(display.Muted("Suggested actions:"))
-	switch status.State {
-	case "idle":
+	switch workflow.State(status.State) {
+	case workflow.StateIdle:
 		if status.Specifications == 0 {
 			fmt.Println("  mehr plan       # Create specifications")
 			fmt.Println("  mehr note       # Add requirements")
@@ -114,18 +120,18 @@ func runContinue(cmd *cobra.Command, args []string) error {
 			fmt.Println("  mehr plan       # Create more specifications")
 			fmt.Println("  mehr note       # Add notes")
 		}
-	case "planning":
+	case workflow.StatePlanning:
 		fmt.Println("  mehr implement  # Start implementation")
 		fmt.Println("  mehr note       # Add notes")
-	case "implementing":
+	case workflow.StateImplementing:
 		fmt.Println("  mehr implement  # Continue implementation")
 		fmt.Println("  mehr note       # Add notes")
 		fmt.Println("  mehr undo       # Revert last change")
 		fmt.Println("  mehr finish     # Complete and merge")
-	case "reviewing":
+	case workflow.StateReviewing:
 		fmt.Println("  mehr finish     # Complete and merge")
 		fmt.Println("  mehr implement  # Make more changes")
-	case "done":
+	case workflow.StateDone:
 		fmt.Println("  Task is complete!")
 		fmt.Println("  mehr start <ref>  # Start a new task")
 	default:
@@ -140,7 +146,7 @@ func runContinue(cmd *cobra.Command, args []string) error {
 	}
 
 	// Always show finish and abandon options
-	if status.State != "done" {
+	if workflow.State(status.State) != workflow.StateDone {
 		fmt.Println()
 		fmt.Println("Other options:")
 		fmt.Println("  mehr finish     # Complete and merge changes")
@@ -152,21 +158,21 @@ func runContinue(cmd *cobra.Command, args []string) error {
 
 // executeNextStep determines and executes the next logical workflow step
 func executeNextStep(ctx context.Context, cond *conductor.Conductor, status *conductor.TaskStatus) error {
-	switch status.State {
-	case "idle":
+	switch workflow.State(status.State) {
+	case workflow.StateIdle:
 		if status.Specifications == 0 {
 			fmt.Println("Running: mehr plan")
 			return cond.Plan(ctx)
 		}
 		fmt.Println("Running: mehr implement")
 		return cond.Implement(ctx)
-	case "planning":
+	case workflow.StatePlanning:
 		fmt.Println("Running: mehr implement")
 		return cond.Implement(ctx)
-	case "implementing", "reviewing":
+	case workflow.StateImplementing, workflow.StateReviewing:
 		fmt.Println("Already in progress - use 'mehr finish' when complete")
 		return nil
-	case "done":
+	case workflow.StateDone:
 		fmt.Println("Task is complete!")
 		return nil
 	default:
