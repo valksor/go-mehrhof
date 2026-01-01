@@ -1,6 +1,8 @@
 package github
 
 import (
+	"context"
+	"net/http"
 	"strings"
 	"testing"
 	"time"
@@ -776,4 +778,305 @@ func TestErrRepoNotConfigured(t *testing.T) {
 	if ErrRepoNotConfigured.Error() == "" {
 		t.Error("ErrRepoNotConfigured.Error() should not be empty")
 	}
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// New factory function tests
+// ──────────────────────────────────────────────────────────────────────────────
+
+func TestNew(t *testing.T) {
+	// Note: New() requires a valid GitHub token from env or gh CLI for full integration.
+	// These tests only verify config parsing logic with minimal setup.
+	t.Run("creates provider with minimal config", func(t *testing.T) {
+		cfg := provider.NewConfig().
+			Set("token", "test-token").
+			Set("owner", "test-owner").
+			Set("repo", "test-repo")
+
+		p, err := New(context.Background(), cfg)
+		// May fail token resolution, but we can test the structure
+		if err != nil {
+			// Token resolution may fail, skip if it does
+			t.Skipf("New() requires valid token: %v", err)
+		}
+
+		provider, ok := p.(*Provider)
+		if !ok {
+			t.Fatal("New() should return *Provider")
+		}
+
+		if provider.owner != "test-owner" {
+			t.Errorf("owner = %q, want %q", provider.owner, "test-owner")
+		}
+		if provider.repo != "test-repo" {
+			t.Errorf("repo = %q, want %q", provider.repo, "test-repo")
+		}
+	})
+
+	t.Run("creates provider with draft PR config", func(t *testing.T) {
+		cfg := provider.NewConfig().
+			Set("token", "test-token").
+			Set("owner", "owner").
+			Set("repo", "repo").
+			Set("draft_pr", true)
+
+		p, err := New(context.Background(), cfg)
+		if err != nil {
+			t.Skipf("New() requires valid token: %v", err)
+		}
+
+		provider := p.(*Provider)
+		if !provider.config.DraftPR {
+			t.Error("DraftPR should be true when configured")
+		}
+	})
+
+	t.Run("sets default values for branch pattern and commit prefix", func(t *testing.T) {
+		cfg := provider.NewConfig().
+			Set("token", "test-token").
+			Set("owner", "owner").
+			Set("repo", "repo")
+
+		p, err := New(context.Background(), cfg)
+		if err != nil {
+			t.Skipf("New() requires valid token: %v", err)
+		}
+
+		provider := p.(*Provider)
+
+		if provider.config.BranchPattern != "issue/{key}-{slug}" {
+			t.Errorf("BranchPattern = %q, want default", provider.config.BranchPattern)
+		}
+		if provider.config.CommitPrefix != "[#{key}]" {
+			t.Errorf("CommitPrefix = %q, want default", provider.config.CommitPrefix)
+		}
+	})
+
+	t.Run("uses custom target branch", func(t *testing.T) {
+		cfg := provider.NewConfig().
+			Set("token", "test-token").
+			Set("owner", "owner").
+			Set("repo", "repo").
+			Set("target_branch", "develop")
+
+		p, err := New(context.Background(), cfg)
+		if err != nil {
+			t.Skipf("New() requires valid token: %v", err)
+		}
+
+		provider := p.(*Provider)
+
+		if provider.config.TargetBranch != "develop" {
+			t.Errorf("TargetBranch = %q, want %q", provider.config.TargetBranch, "develop")
+		}
+	})
+
+	t.Run("parses comments config", func(t *testing.T) {
+		cfg := provider.NewConfig().
+			Set("token", "test-token").
+			Set("owner", "owner").
+			Set("repo", "repo").
+			Set("comments.enabled", true).
+			Set("comments.on_branch_created", true).
+			Set("comments.on_plan_done", true).
+			Set("comments.on_implement_done", true).
+			Set("comments.on_pr_created", true)
+
+		p, err := New(context.Background(), cfg)
+		if err != nil {
+			t.Skipf("New() requires valid token: %v", err)
+		}
+
+		provider := p.(*Provider)
+
+		if provider.config.Comments == nil {
+			t.Fatal("Comments config should not be nil")
+		}
+		if !provider.config.Comments.Enabled {
+			t.Error("Comments.Enabled should be true")
+		}
+		if !provider.config.Comments.OnBranchCreated {
+			t.Error("Comments.OnBranchCreated should be true")
+		}
+	})
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// FetchComments tests
+// ──────────────────────────────────────────────────────────────────────────────
+
+func TestFetchComments(t *testing.T) {
+	t.Run("successfully fetches comments from issue", func(t *testing.T) {
+		commentsResponse := `[
+			{
+				"id": 1,
+				"body": "First comment",
+				"created_at": "2024-01-01T00:00:00Z",
+				"user": {"id": 101, "login": "user1"}
+			},
+			{
+				"id": 2,
+				"body": "Second comment",
+				"created_at": "2024-01-02T00:00:00Z",
+				"user": {"id": 102, "login": "user2"}
+			}
+		]`
+
+		handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			_, _ = w.Write([]byte(commentsResponse))
+		})
+
+		client, cleanup := setupMockClient(t, handler)
+		defer cleanup()
+
+		p := &Provider{
+			client: client,
+			owner:  "owner",
+			repo:   "repo",
+		}
+
+		comments, err := p.FetchComments(context.Background(), "owner/repo#123")
+		if err != nil {
+			t.Fatalf("FetchComments() error = %v", err)
+		}
+
+		if len(comments) != 2 {
+			t.Errorf("FetchComments() returned %d comments, want 2", len(comments))
+		}
+		if comments[0].Body != "First comment" {
+			t.Errorf("comments[0].Body = %q, want %q", comments[0].Body, "First comment")
+		}
+		if comments[0].Author.Name != "user1" {
+			t.Errorf("comments[0].Author.Name = %q, want %q", comments[0].Author.Name, "user1")
+		}
+	})
+
+	t.Run("error with invalid reference format", func(t *testing.T) {
+		p := &Provider{
+			client: NewClient("", "owner", "repo"),
+			owner:  "owner",
+			repo:   "repo",
+		}
+
+		_, err := p.FetchComments(context.Background(), "invalid-format")
+		if err == nil {
+			t.Error("FetchComments() expected error for invalid format, got nil")
+		}
+	})
+
+	t.Run("uses provider owner/repo when not specified", func(t *testing.T) {
+		commentsResponse := `[]`
+
+		handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if !strings.Contains(r.URL.Path, "repos/testowner/testrepo") {
+				t.Errorf("URL does not contain expected owner/repo: %s", r.URL.Path)
+			}
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			_, _ = w.Write([]byte(commentsResponse))
+		})
+
+		client, cleanup := setupMockClient(t, handler)
+		defer cleanup()
+
+		p := &Provider{
+			client: client,
+			owner:  "testowner",
+			repo:   "testrepo",
+		}
+
+		_, err := p.FetchComments(context.Background(), "123")
+		if err != nil {
+			t.Fatalf("FetchComments() error = %v", err)
+		}
+	})
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// Provider AddComment tests
+// ──────────────────────────────────────────────────────────────────────────────
+
+func TestProvider_AddComment(t *testing.T) {
+	t.Run("successfully adds comment to issue", func(t *testing.T) {
+		commentResponse := `{
+			"id": 456,
+			"body": "New comment",
+			"created_at": "2024-01-01T00:00:00Z",
+			"user": {"id": 101, "login": "user1"}
+		}`
+
+		handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusCreated)
+			_, _ = w.Write([]byte(commentResponse))
+		})
+
+		client, cleanup := setupMockClient(t, handler)
+		defer cleanup()
+
+		p := &Provider{
+			client: client,
+			owner:  "owner",
+			repo:   "repo",
+		}
+
+		comment, err := p.AddComment(context.Background(), "owner/repo#123", "New comment")
+		if err != nil {
+			t.Fatalf("AddComment() error = %v", err)
+		}
+
+		if comment.Body != "New comment" {
+			t.Errorf("comment.Body = %q, want %q", comment.Body, "New comment")
+		}
+		if comment.ID != "456" {
+			t.Errorf("comment.ID = %q, want %q", comment.ID, "456")
+		}
+	})
+
+	t.Run("error with invalid reference format", func(t *testing.T) {
+		p := &Provider{
+			client: NewClient("", "owner", "repo"),
+			owner:  "owner",
+			repo:   "repo",
+		}
+
+		_, err := p.AddComment(context.Background(), "invalid-format", "comment")
+		if err == nil {
+			t.Error("AddComment() expected error for invalid format, got nil")
+		}
+	})
+
+	t.Run("uses provider owner/repo when not specified", func(t *testing.T) {
+		commentResponse := `{
+			"id": 789,
+			"body": "Test",
+			"created_at": "2024-01-01T00:00:00Z",
+			"user": {"id": 101, "login": "user1"}
+		}`
+
+		handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if !strings.Contains(r.URL.Path, "repos/testowner/testrepo") {
+				t.Errorf("URL does not contain expected owner/repo: %s", r.URL.Path)
+			}
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusCreated)
+			_, _ = w.Write([]byte(commentResponse))
+		})
+
+		client, cleanup := setupMockClient(t, handler)
+		defer cleanup()
+
+		p := &Provider{
+			client: client,
+			owner:  "testowner",
+			repo:   "testrepo",
+		}
+
+		_, err := p.AddComment(context.Background(), "456", "Test")
+		if err != nil {
+			t.Fatalf("AddComment() error = %v", err)
+		}
+	})
 }

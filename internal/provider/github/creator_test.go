@@ -217,3 +217,125 @@ func setupMockCreatorClient(t *testing.T, handler http.Handler) (*Client, func()
 		server.Close()
 	}
 }
+
+// ──────────────────────────────────────────────────────────────────────────────
+// lower helper function tests
+// ──────────────────────────────────────────────────────────────────────────────
+
+func TestLower(t *testing.T) {
+	tests := []struct {
+		name string
+		s    string
+		want string
+	}{
+		{
+			name: "all uppercase",
+			s:    "HELLO",
+			want: "hello",
+		},
+		{
+			name: "mixed case",
+			s:    "HeLLo WoRLd",
+			want: "hello world",
+		},
+		{
+			name: "all lowercase",
+			s:    "already lower",
+			want: "already lower",
+		},
+		{
+			name: "empty string",
+			s:    "",
+			want: "",
+		},
+		{
+			name: "with numbers",
+			s:    "TEST123",
+			want: "test123",
+		},
+		{
+			name: "special characters",
+			s:    "Hi!-@",
+			want: "hi!-@",
+		},
+		{
+			name: "single uppercase letter",
+			s:    "A",
+			want: "a",
+		},
+		{
+			name: "single lowercase letter",
+			s:    "z",
+			want: "z",
+		},
+		{
+			name: "all label types",
+			s:    "BUG FEATURE DOCS REFACTOR CHORE TEST CI",
+			want: "bug feature docs refactor chore test ci",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := lower(tt.s)
+			if got != tt.want {
+				t.Errorf("lower() = %q, want %q", got, tt.want)
+			}
+		})
+	}
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// mapGitHubAssignees edge cases
+// ──────────────────────────────────────────────────────────────────────────────
+
+func TestMapGitHubAssignees_EdgeCases(t *testing.T) {
+	tests := []struct {
+		name      string
+		assignees []string
+		want      []provider.Person
+	}{
+		{
+			name:      "empty assignees",
+			assignees: []string{},
+			want:      []provider.Person{},
+		},
+		{
+			name:      "nil assignees",
+			assignees: nil,
+			want:      []provider.Person{},
+		},
+		{
+			name:      "single assignee",
+			assignees: []string{"developer"},
+			want:      []provider.Person{{Name: "developer"}},
+		},
+		{
+			name:      "assignee with hyphen",
+			assignees: []string{"dev-user"},
+			want:      []provider.Person{{Name: "dev-user"}},
+		},
+		{
+			name:      "assignee with dot",
+			assignees: []string{"user.name"},
+			want:      []provider.Person{{Name: "user.name"}},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := mapGitHubAssignees(tt.assignees)
+
+			if len(got) != len(tt.want) {
+				t.Errorf("mapGitHubAssignees() len = %d, want %d", len(got), len(tt.want))
+				return
+			}
+
+			for i, w := range tt.want {
+				if got[i].Name != w.Name {
+					t.Errorf("mapGitHubAssignees()[%d].Name = %q, want %q", i, got[i].Name, w.Name)
+				}
+			}
+		})
+	}
+}
