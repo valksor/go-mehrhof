@@ -77,7 +77,7 @@ See the agent's reasoning and code generation in real-time.
 mehr implement --agent-implementing claude
 ```
 
-Use a specific agent for code generation. See [Per-Step Agent Configuration](../agents/per-step.md).
+Use a specific agent for code generation. See [AI Agents](../agents/index.md#per-step-agent-configuration).
 
 ## What Happens
 
@@ -172,5 +172,5 @@ mehr undo
 ## See Also
 
 - [plan](cli/plan.md) - Create specifications first
-- [undo-redo](cli/undo-redo.md) - Revert changes
+- [undo](cli/undo.md) - Revert changes
 - [finish](cli/finish.md) - Complete the task

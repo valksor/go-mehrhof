@@ -175,4 +175,4 @@ This appears to be a protected branch.
 
 - [finish](cli/finish.md) - Complete with merge
 - [start](cli/start.md) - Begin a new task
-- [undo-redo](cli/undo-redo.md) - Revert instead of abandon
+- [undo](cli/undo.md) - Revert instead of abandon

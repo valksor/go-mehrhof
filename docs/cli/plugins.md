@@ -254,4 +254,4 @@ plugins:
 ## See Also
 
 - [Plugins Concept](../concepts/plugins.md) - Understanding the plugin system
-- [Configuration Files](../configuration/files.md) - Config file reference
+- [Configuration Guide](../configuration/index.md) - Config file reference

@@ -192,7 +192,5 @@ claude --version
 
 ## See Also
 
-- [AI Agents](../agents/index.md) - How agents work
-- [Agent Aliases](../agents/aliases.md) - Alias configuration
-- [Per-Step Agent Configuration](../agents/per-step.md) - Step-specific agents
-- [Configuration Files](../configuration/files.md) - Config file reference
+- [AI Agents](../agents/index.md) - How agents work, aliases, and per-step configuration
+- [Configuration Guide](../configuration/index.md) - Config file reference

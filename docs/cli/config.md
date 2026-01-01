@@ -225,7 +225,6 @@ Fix by setting the environment variable or using a literal value.
 
 ## See Also
 
-- [Configuration Overview](../configuration/overview.md) - How configuration works
-- [Configuration Files](../configuration/files.md) - Config file reference
-- [mehr agents](agents.md) - Agent aliases
-- [Agent Aliases](../agents/aliases.md) - Alias configuration
+- [Configuration Guide](../configuration/index.md) - How configuration works and file reference
+- [mehr agents](agents.md) - Agent commands
+- [AI Agents](../agents/index.md) - Agent configuration and aliases

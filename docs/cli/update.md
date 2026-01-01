@@ -155,6 +155,6 @@ make build  # Uses actual git tag
 
 ## See Also
 
-- [Installation](../installation.md) - Installing Mehrhof
-- [Configuration](../configuration/files.md) - Configuring update behavior
-- [CLI Overview](overview.md) - All available commands
+- [Quickstart](../quickstart.md) - Installing Mehrhof
+- [Configuration](../configuration/index.md) - Configuring update behavior
+- [CLI Overview](index.md) - All available commands

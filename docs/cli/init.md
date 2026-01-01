@@ -163,5 +163,4 @@ Most commands (like `mehr start`) will automatically initialize the workspace if
 ## See Also
 
 - [start](cli/start.md) - Register a new task
-- [Configuration Overview](../configuration/overview.md) - Configuration options
-- [Configuration Files](../configuration/files.md) - File locations and formats
+- [Configuration Guide](../configuration/index.md) - Configuration options and file locations

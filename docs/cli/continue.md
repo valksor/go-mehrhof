@@ -145,4 +145,4 @@ Use `continue` when you want to resume work with optional auto-execution. Use `g
 - [status](cli/status.md) - Detailed task status
 - [plan](cli/plan.md) - Create specifications
 - [implement](cli/implement.md) - Implement specifications
-- [undo/redo](cli/undo-redo.md) - Checkpoint management
+- [undo](cli/undo.md) / [redo](cli/redo.md) - Checkpoint management

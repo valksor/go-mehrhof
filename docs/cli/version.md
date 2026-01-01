@@ -74,5 +74,5 @@ make install  # Installs with version info
 
 ## See Also
 
-- [Installation](../installation.md) - Installing Mehrhof
-- [CLI Overview](cli/overview.md) - All available commands
+- [Quickstart](../quickstart.md) - Installing Mehrhof
+- [CLI Overview](index.md) - All available commands
