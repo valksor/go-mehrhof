@@ -199,6 +199,155 @@ func TestBuildReviewPrompt(t *testing.T) {
 	}
 }
 
+// Tests for file utility functions
+
+func TestEnsureDirExists(t *testing.T) {
+	tests := []struct {
+		name    string
+		path    string
+		wantErr bool
+	}{
+		{
+			name:    "current directory (empty dir)",
+			path:    "file.txt",
+			wantErr: false,
+		},
+		{
+			name:    "current directory (dot)",
+			path:    "./file.txt",
+			wantErr: false,
+		},
+		{
+			name:    "single level directory",
+			path:    "subdir/file.txt",
+			wantErr: false,
+		},
+		{
+			name:    "nested directories",
+			path:    "a/b/c/d/file.txt",
+			wantErr: false,
+		},
+		{
+			name:    "absolute path creates directories",
+			path:    "/tmp/test-mehrhof-ensure/file.txt",
+			wantErr: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tmpDir := t.TempDir()
+
+			// For absolute path test, use tmpDir
+			var testPath string
+			if strings.HasPrefix(tt.path, "/tmp/") {
+				testPath = filepath.Join(tmpDir, "nested/dir/file.txt")
+			} else {
+				testPath = filepath.Join(tmpDir, tt.path)
+			}
+
+			err := ensureDirExists(testPath)
+
+			if tt.wantErr {
+				if err == nil {
+					t.Error("ensureDirExists() expected error, got nil")
+				}
+				return
+			}
+
+			if err != nil {
+				t.Errorf("ensureDirExists() unexpected error: %v", err)
+			}
+
+			// Verify directory exists
+			dir := filepath.Dir(testPath)
+			if info, err := os.Stat(dir); err != nil {
+				t.Errorf("directory not created: %v", err)
+			} else if !info.IsDir() {
+				t.Error("path is not a directory")
+			}
+		})
+	}
+}
+
+func TestValidatePathInWorkspace(t *testing.T) {
+	tests := []struct {
+		name     string
+		resolved string
+		root     string
+		wantErr  bool
+		errMsg   string
+	}{
+		{
+			name:     "path within workspace",
+			resolved: "/workspace/file.txt",
+			root:     "/workspace",
+			wantErr:  false,
+		},
+		{
+			name:     "nested path within workspace",
+			resolved: "/workspace/a/b/c/file.txt",
+			root:     "/workspace",
+			wantErr:  false,
+		},
+		{
+			name:     "same as root",
+			resolved: "/workspace",
+			root:     "/workspace",
+			wantErr:  false,
+		},
+		{
+			name:     "parent directory escape",
+			resolved: "/other/file.txt",
+			root:     "/workspace",
+			wantErr:  true,
+			errMsg:   "outside workspace",
+		},
+		{
+			name:     "relative path with dotdot",
+			resolved: "/workspace/../escape.txt",
+			root:     "/workspace",
+			wantErr:  true,
+			errMsg:   "outside workspace",
+		},
+		{
+			name:     "dotdot only",
+			resolved: "..",
+			root:     "/workspace",
+			wantErr:  true,
+			errMsg:   "invalid path",
+		},
+		{
+			name:     "sibling directory",
+			resolved: "/workspace/../other/file.txt",
+			root:     "/workspace",
+			wantErr:  true,
+			errMsg:   "outside workspace",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := validatePathInWorkspace(tt.resolved, tt.root)
+
+			if tt.wantErr {
+				if err == nil {
+					t.Error("validatePathInWorkspace() expected error, got nil")
+					return
+				}
+				if tt.errMsg != "" && !strings.Contains(err.Error(), tt.errMsg) {
+					t.Errorf("error = %q, want contain %q", err.Error(), tt.errMsg)
+				}
+				return
+			}
+
+			if err != nil {
+				t.Errorf("validatePathInWorkspace() unexpected error: %v", err)
+			}
+		})
+	}
+}
+
 func TestApplyFiles_Create(t *testing.T) {
 	tmpDir := t.TempDir()
 	ctx := context.Background()

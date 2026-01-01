@@ -2210,3 +2210,23 @@ func TestDeleteWorkPrecedence_Documentation(t *testing.T) {
 		}
 	})
 }
+
+// Test WithTitleOverride option
+func TestWithTitleOverride(t *testing.T) {
+	opts := DefaultOptions()
+	WithTitleOverride("Custom Task Title")(&opts)
+
+	if opts.TitleOverride != "Custom Task Title" {
+		t.Errorf("TitleOverride = %q, want %q", opts.TitleOverride, "Custom Task Title")
+	}
+}
+
+// Test WithSlugOverride option
+func TestWithSlugOverride(t *testing.T) {
+	opts := DefaultOptions()
+	WithSlugOverride("custom-task-slug")(&opts)
+
+	if opts.SlugOverride != "custom-task-slug" {
+		t.Errorf("SlugOverride = %q, want %q", opts.SlugOverride, "custom-task-slug")
+	}
+}
