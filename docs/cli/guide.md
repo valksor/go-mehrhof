@@ -1,6 +1,6 @@
 # mehr guide
 
-Show context-aware next actions based on the current task state.
+Quick next-action suggestion (1-second answer).
 
 ## Synopsis
 
@@ -117,13 +117,13 @@ State: implementing
 ...
 ```
 
-## Comparison with Other Commands
+## Choosing the Right Command
 
-| Command         | Purpose                                                        |
+| Command         | When to Use                                                    |
 | --------------- | -------------------------------------------------------------- |
-| `mehr guide`    | Quick, lightweight next-action suggestions                     |
-| `mehr status`   | Detailed state inspection (specs, checkpoints, sessions)        |
-| `mehr continue` | Status display with optional auto-execution (--auto flag)      |
+| `mehr guide`    | "What's my next command?" (fastest, minimal output)            |
+| `mehr status`   | "Show me everything" (full inspection, all details)            |
+| `mehr continue` | "Resume and optionally auto-execute" (`--auto` runs next step) |
 
 ## See Also
 

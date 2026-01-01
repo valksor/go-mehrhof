@@ -12,27 +12,27 @@ import (
 
 var guideCmd = &cobra.Command{
 	Use:   "guide",
-	Short: "Suggest what to do next (lightweight, state-aware)",
-	Long: `Show context-aware suggestions for the next action.
+	Short: "Quick next-action suggestion (1-second answer)",
+	Long: `Quick, minimal output: "What command should I run next?"
 
-This is a lightweight command for quickly answering "what do I do next?"
-It analyzes your current context (active task, state, specifications) and
-suggests the most appropriate next action without displaying verbose details.
+This is the fastest way to get back on track. It shows only your current
+state and the most relevant next command - nothing else.
 
-WHEN TO USE:
-  guide     - Quick "what do I do next?" (terse, suggestions only)
-  status    - Detailed inspection (all task data, checkpoints, sessions)
-  continue  - Resume workflow (with optional --auto to execute next step)
+CHOOSING THE RIGHT COMMAND:
+  guide     - "What's my next command?" (fastest, minimal output)
+  status    - "Show me everything" (full inspection, all details)
+  continue  - "Resume and optionally auto-execute" (--auto runs next step)
+
+OUTPUT:
+  • Task ID and title
+  • Current state
+  • Pending questions (if agent is waiting)
+  • 2-3 suggested next commands
 
 Works in both main repository and worktree environments.
 
-See also:
-  mehr status   - Detailed state with specifications/sessions/checkpoints
-  mehr continue - Resume workflow with optional auto-execution
-
 Examples:
-  mehr guide            # Show suggested next actions
-  mehr guide            # Works from any directory`,
+  mehr guide    # Quick next-action suggestions`,
 	RunE: runGuide,
 }
 
