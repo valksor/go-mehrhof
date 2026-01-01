@@ -22,7 +22,7 @@ All task data is stored in the `.mehrhof/` directory:
     └── <plan-id>/
 ```
 
-**Note:** The work directory location is configurable. See [Configuration - Storage Settings](../configuration/files.md#storage) for details.
+**Note:** The work directory location is configurable. See [Configuration Guide](../configuration/index.md#storage) for details.
 
 ## Root Files
 

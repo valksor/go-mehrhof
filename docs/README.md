@@ -1,92 +1,59 @@
 # Valksor Mehrhof
 
-Mehrhof is a CLI tool for AI-powered task automation by Valksor. It orchestrates AI agents (calling Claude CLI) to help you plan and implement software development tasks.
+AI-powered task automation for software development. Mehrhof orchestrates AI agents to help you plan, implement, and review code changes.
 
 ---
 
-**⚠️ EXPERIMENTAL INTEGRATIONS**
-
-Mehrhof's core workflow engine is stable, but **provider and agent integrations with third-party services are experimental**.
-
-Due to the large number of external APIs (GitHub, GitLab, Jira, Notion, Claude, Gemini, etc.), integrations may:
-- Break without notice due to third-party API changes
-- Have edge cases not covered by automated tests
-- Require manual validation for production use
-
-We are gradually testing and hardening integrations. Report issues at [github.com/valksor/go-mehrhof/issues](https://github.com/valksor/go-mehrhof/issues).
+**Note:** Provider and agent integrations with third-party services (GitHub, Jira, Claude, Gemini, etc.) are experimental. Report issues at [github.com/valksor/go-mehrhof/issues](https://github.com/valksor/go-mehrhof/issues).
 
 ---
 
+## Get Started in 5 Minutes
+
+```bash
+# Install
+curl -L https://github.com/valksor/go-mehrhof/releases/latest/download/mehr-darwin-arm64 -o mehr
+chmod +x mehr && sudo mv mehr /usr/local/bin/
+
+# Initialize in your project
+cd your-project && mehr init
+
+# Create and run a task
+echo "Create a /health endpoint returning JSON status" > task.md
+mehr start task.md && mehr plan && mehr implement && mehr finish
+```
+
+[Full Quickstart Guide](quickstart.md)
 
 ## Key Features
 
-**AI-Powered Workflow**
-
-- Automatic planning: AI analyzes your task and creates detailed specifications
-- Code implementation: AI generates code based on approved specs
-- Code review: Automated review of changes before merging
-
-**Git Integration**
-
-- Automatic branch creation for each task
-- Checkpoint system for safe experimentation
-- Undo/redo support for all changes
-- Squash merge for clean history
-
-**Flexible Task Sources**
-
-- Markdown files describing requirements
-- Directories containing multiple task files
-- GitHub issues (fetch, list, create, update status, manage labels, comments)
-- Notion pages and databases (fetch, list, create, update status, manage labels, comments)
-- Linear, Wrike, YouTrack issues
-- Standalone planning without formal tasks
+- **AI Workflow** - Automatic planning, implementation, and code review
+- **Git Integration** - Auto branches, checkpoints, undo/redo, squash merge
+- **15+ Task Sources** - GitHub, GitLab, Jira, Linear, Notion, Asana, and more
+- **Parallel Tasks** - Run multiple tasks in isolated git worktrees
+- **Auto Mode** - Full automation: `mehr auto task.md`
 
 ## How It Works
 
-```mermaid
-graph LR
-    A[Start Task] --> B[Planning]
-    B --> C[Review Specs]
-    C --> D[Implementation]
-    D --> E[Code Review]
-    E --> F[Finish & Merge]
-
-    C -.-> B
-    E -.-> D
+```
+mehr init → mehr start → mehr plan → mehr implement → mehr finish
 ```
 
-1. **Start** - Register a task from a file or directory
-2. **Plan** - AI creates implementation specifications
-3. **Implement** - AI generates code based on specs
-4. **Review** - Automated code review (optional)
-5. **Finish** - Merge changes to your target branch
+1. **init** - Set up workspace (one-time)
+2. **start** - Begin task, create git branch
+3. **plan** - AI generates implementation specs
+4. **implement** - AI executes the specs
+5. **finish** - Merge changes, clean up
 
-## Quick Example
+## Documentation
 
-```bash
-# Create a task file
-echo "# Add User Authentication
-Implement JWT-based authentication with login/logout endpoints." > task.md
-
-# Start the task (creates branch, registers task)
-mehr start file:task.md
-
-# Generate implementation plan (calls Claude CLI)
-mehr plan
-
-# Implement the specifications (calls Claude CLI)
-mehr implement
-
-# Complete and merge
-mehr finish
-```
-
-> **Note:** The `file:` prefix specifies the provider scheme. You can configure a default provider in `.mehrhof/config.yaml` to omit it.
-
-## Next Steps
-
-- [Quick Start Guide](getting-started.md) - Get up and running in 5 minutes
-- [Installation](installation.md) - Install Mehrhof on your system
-- [CLI Reference](cli/overview.md) - Complete command documentation
-- [Tutorials](tutorials/first-task.md) - Step-by-step guides
+| Section | Description |
+|---------|-------------|
+| [Quickstart](quickstart.md) | Install and run your first task |
+| [Guides](guides/first-task.md) | Step-by-step tutorials |
+| [Concepts](concepts/workflow.md) | Understand the workflow |
+| [AI Agents](agents/index.md) | Agent configuration and aliases |
+| [Providers](providers/index.md) | Task sources (GitHub, Jira, etc.) |
+| [Configuration](configuration/index.md) | Customize behavior |
+| [CLI Reference](cli/index.md) | All commands and flags |
+| [Troubleshooting](troubleshooting/index.md) | Common issues |

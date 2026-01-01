@@ -72,7 +72,7 @@ agent_env:
 | `agent`     | Agent name or alias to use for this task          |
 | `agent_env` | Inline environment variables for the agent        |
 
-See [Per-Task Agent Configuration](../agents/per-step.md#per-task-agent-configuration) for details on `agent` and `agent_env`.
+See [AI Agents](../agents/index.md#per-task-agent-configuration) for details on `agent` and `agent_env`.
 
 ### Directory Source
 

@@ -37,7 +37,7 @@ Mehrhof is a command-line tool that orchestrates AI agents to perform **planning
 
 - **Go 1.25+** (for building from source)
 - **Git** (for version control operations)
-- **Claude CLI** - Mehrhof wraps Claude CLI for AI operations (see [installation](https://valksor.github.io/go-mehrhof/#/installation))
+- **Claude CLI** - Mehrhof wraps Claude CLI for AI operations (see [quickstart](https://valksor.github.io/go-mehrhof/#/quickstart))
 
 ### Installation
 
@@ -86,7 +86,7 @@ make install
 mehr version
 ```
 
-### First Task (5 steps)
+### First Task
 
 ```bash
 # 1. Initialize workspace
@@ -156,7 +156,7 @@ mehr finish
 | `mehr undo` / `mehr redo` | Navigate checkpoints |
 | `mehr note <msg>` | Add notes for AI context |
 
-**See [CLI Reference](https://valksor.github.io/go-mehrhof/#/cli/) for all commands and flags.**
+**See [CLI Reference](https://valksor.github.io/go-mehrhof/#/cli/index) for all commands and flags.**
 
 ## Task Providers
 
@@ -203,6 +203,22 @@ mehr plan && mehr implement
 
 Each worktree is an isolated git checkout. Mehrhof auto-detects which task you're working on based on your current directory.
 
+## AI Agents
+
+Mehrhof supports multiple AI backends:
+
+| Agent | Description |
+|-------|-------------|
+| Claude | Default agent via Claude CLI (recommended) |
+| Gemini | Google's Gemini models |
+| Ollama | Local models (Llama, Mistral, etc.) |
+| Aider | AI pair programming tool |
+| Copilot | GitHub Copilot integration |
+| OpenRouter | Multiple models via OpenRouter API |
+| Codex | OpenAI Codex models |
+
+**See [AI Agents documentation](https://valksor.github.io/go-mehrhof/#/agents/index) for configuration and custom aliases.**
+
 ## Configuration
 
 Project-level configuration in `.mehrhof/config.yaml`:
@@ -230,18 +246,19 @@ update:
   check_interval: 24  # hours
 ```
 
-**See [Configuration Guide](https://valksor.github.io/go-mehrhof/#/configuration/) for all options including agent aliases, per-step agents, and provider settings.**
+**See [Configuration Guide](https://valksor.github.io/go-mehrhof/#/configuration/index) for all options including agent aliases, per-step agents, and provider settings.**
 
 ## Documentation
 
 - 📖 [Full Documentation](https://valksor.github.io/go-mehrhof)
-- [Getting Started](https://valksor.github.io/go-mehrhof/#/getting-started) - 5-minute walkthrough
-- [Installation](https://valksor.github.io/go-mehrhof/#/installation) - Build and setup
-- [Providers](https://valksor.github.io/go-mehrhof/#/providers) - Task source integrations
-- [CLI Reference](https://valksor.github.io/go-mehrhof/#/cli) - All commands and flags
-- [Configuration](https://valksor.github.io/go-mehrhof/#/configuration) - Customize behavior
-- [Concepts](https://valksor.github.io/go-mehrhof/#/concepts) - Workflow, storage, architecture
-- [Troubleshooting](https://valksor.github.io/go-mehrhof/#/troubleshooting) - Common issues
+- [Quickstart](https://valksor.github.io/go-mehrhof/#/quickstart) - Install and first task in 5 minutes
+- [Guides](https://valksor.github.io/go-mehrhof/#/guides/first-task) - Step-by-step tutorials
+- [Providers](https://valksor.github.io/go-mehrhof/#/providers/index) - Task source integrations
+- [AI Agents](https://valksor.github.io/go-mehrhof/#/agents/index) - Agent configuration and aliases
+- [CLI Reference](https://valksor.github.io/go-mehrhof/#/cli/index) - All commands and flags
+- [Configuration](https://valksor.github.io/go-mehrhof/#/configuration/index) - Customize behavior
+- [Concepts](https://valksor.github.io/go-mehrhof/#/concepts/workflow) - Workflow, storage, architecture
+- [Troubleshooting](https://valksor.github.io/go-mehrhof/#/troubleshooting/index) - Common issues
 
 ## Development
 
@@ -254,6 +271,10 @@ make lint         # Run golangci-lint
 make fmt          # Format code
 make tidy         # Tidy dependencies
 ```
+
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for development guidelines.
 
 ## License
 

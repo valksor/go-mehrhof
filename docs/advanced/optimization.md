@@ -263,6 +263,6 @@ The cache is in-memory and clears automatically on process exit. No manual clean
 
 ## See Also
 
-- [Per-Step Agent Configuration](../agents/per-step.md)
-- [Configuration Files](../configuration/files.md)
+- [Agent Configuration](../agents/index.md)
+- [Configuration Guide](../configuration/index.md)
 - [Tasks - Worktrees](../concepts/tasks.md#parallel-tasks-with-worktrees)
