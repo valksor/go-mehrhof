@@ -1,0 +1,41 @@
+name: Nightly Release
+
+on:
+    push:
+        branches:
+            - master
+
+jobs:
+    manage-nightly:
+        runs-on: ubuntu-slim
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v6
+
+            - name: Nightly Release
+              env:
+                  GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+              run: |
+                  # Delete the previous nightly release if it exists
+                  gh release delete nightly --yes || true
+                  
+                  # Delete the previous nightly tag if it exists
+                  git tag -d nightly || true
+                  git push origin :refs/tags/nightly || true
+                  
+                  # Wait briefly to avoid lock issues
+                  sleep 5
+                  
+                  # Fetch the latest changes and tags from the repository
+                  git fetch origin
+                  
+                  # Create a new nightly tag pointing to the latest commit on master
+                  LATEST_COMMIT=$(git rev-parse origin/master)
+                  git tag nightly $LATEST_COMMIT
+                  git push origin nightly
+                  
+                  # Ensure the tag is fully pushed and recognized by GitHub
+                  sleep 5
+                  
+                  # Create a new nightly release, explicitly targeting the latest commit
+                  gh release create nightly --notes "latest master branch build" --title "nightly" --target $LATEST_COMMIT --prerelease

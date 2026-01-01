@@ -1,0 +1,157 @@
+name: Release
+
+on:
+    release:
+        types: [ published ]
+
+concurrency:
+    group: release-${{ github.ref }}
+    cancel-in-progress: false
+
+env:
+    app_name: mehr
+
+jobs:
+    build:
+        strategy:
+            matrix:
+                include:
+                    -   goos: linux
+                        goarch: amd64
+                        runner: ubuntu-slim
+                    -   goos: linux
+                        goarch: arm64
+                        runner: ubuntu-24.04-arm
+                    -   goos: darwin
+                        goarch: amd64
+                        runner: macos-15-intel
+                    -   goos: darwin
+                        goarch: arm64
+                        runner: macos-26
+
+        runs-on: ${{ matrix.runner }}
+
+        env:
+            GO_VERSION: 1.25
+            GOLANGCI_LINT_VERSION: v2.7.2
+            CGO_ENABLED: 0
+
+        steps:
+
+            # https://github.com/marketplace/actions/setup-go-environment
+            -   name: Set up Go ${{ env.GO_VERSION }}
+                uses: actions/setup-go@v6
+                with:
+                    go-version: ${{ env.GO_VERSION }}
+                    cache: true
+
+            # https://github.com/marketplace/actions/checkout
+            -   name: Check out code
+                uses: actions/checkout@v6
+                with:
+                    fetch-depth: 0
+
+            # https://golangci-lint.run/usage/install#other-ci
+            -   name: Install golangci-lint ${{ env.GOLANGCI_LINT_VERSION }}
+                run: curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin ${GOLANGCI_LINT_VERSION}
+
+            -   name: Install goveralls
+                if: github.event.release.prerelease && matrix.goos == 'darwin' && matrix.goarch == 'arm64'
+                run: go install github.com/mattn/goveralls@latest
+
+            -   name: Check and get dependencies
+                run: |
+                    go mod tidy
+                    git diff --exit-code go.mod
+                    go mod download
+
+            -   name: Lint and Tests
+                run: |
+                    make lint
+                    make test
+
+            -   name: Build binary
+                run: |
+                    make build-cross \
+                      GOOS=${{ matrix.goos }} \
+                      GOARCH=${{ matrix.goarch }} \
+                      OUTPUT=${{ env.app_name }}-${{ matrix.goos }}-${{ matrix.goarch }} \
+                      VERSION=${{ env.VERSION }}
+                shell: bash
+
+            -   name: Smoke test
+                run: ./${{ env.app_name }}-${{ matrix.goos }}-${{ matrix.goarch }} version
+                shell: bash
+
+            -   name: Calculate SHA-256 checksum and create checksum file
+                run: |
+                    shasum -a 256 ${{ env.app_name }}-${{ matrix.goos }}-${{ matrix.goarch }} > ${{ env.app_name }}-${{ matrix.goos }}-${{ matrix.goarch }}.sha256
+                shell: bash
+
+            -   name: Upload binary and checksum file as artifacts
+                uses: actions/upload-artifact@v6
+                with:
+                    name: ${{ env.app_name }}-${{ matrix.goos }}-${{ matrix.goarch }}
+                    path: |
+                        ${{ env.app_name }}-${{ matrix.goos }}-${{ matrix.goarch }}
+                        ${{ env.app_name }}-${{ matrix.goos }}-${{ matrix.goarch }}.sha256
+
+            -   name: Send coverage
+                if: github.event.release.prerelease && matrix.goos == 'darwin' && matrix.goarch == 'arm64'
+                env:
+                    COVERALLS_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+                run: goveralls -coverprofile=covprofile -service=github
+
+    release:
+        needs: build
+        runs-on: ubuntu-slim
+        permissions:
+            contents: write
+            id-token: write
+        steps:
+            -   name: Download build artifacts
+                uses: actions/download-artifact@v6
+                with:
+                    path: ./dist
+
+            -   name: Move files to temp directory
+                run: |
+                    mkdir temp
+                    find ./dist -mindepth 2 -type f -exec mv {} temp/ \;
+
+            -   name: Cleanup and rename temp to dist
+                run: |
+                    rm -rf ./dist
+                    mv temp dist
+
+            -   name: Create combined checksums.txt
+                run: |
+                    cd dist
+                    cat *.sha256 > checksums.txt
+
+            -   name: Generate SBOM
+                uses: anchore/sbom-action@v0
+                with:
+                    path: ./dist
+                    output-file: ./dist/sbom.spdx.json
+                    format: spdx-json
+
+            -   name: Install Cosign
+                uses: sigstore/cosign-installer@v3
+
+            -   name: Sign binaries with Cosign
+                run: |
+                    for file in dist/mehr-*; do
+                        # Skip checksum files
+                        [[ "$file" == *.sha256 ]] && continue
+                        cosign sign-blob --yes "$file" \
+                            --output-signature "${file}.sig" \
+                            --output-certificate "${file}.pem"
+                    done
+
+            -   name: Upload binaries and checksums to GitHub Release
+                uses: softprops/action-gh-release@v2
+                with:
+                    files: ./dist/*
+                env:
+                    GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
