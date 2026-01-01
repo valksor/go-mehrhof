@@ -222,9 +222,7 @@ func Benchmark_Cache_MixedWorkload(b *testing.B) {
 
 	var wg sync.WaitGroup
 	for g := 0; g < 4; g++ { // 4 goroutines
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
+		wg.Go(func() {
 			for i := 0; i < b.N/4; i++ {
 				switch i % 5 {
 				case 0, 1:
@@ -241,7 +239,7 @@ func Benchmark_Cache_MixedWorkload(b *testing.B) {
 					_ = c.Size()
 				}
 			}
-		}()
+		})
 	}
 	wg.Wait()
 }

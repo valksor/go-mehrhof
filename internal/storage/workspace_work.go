@@ -3,6 +3,7 @@ package storage
 import (
 	"crypto/rand"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"log/slog"
 	"os"
@@ -188,7 +189,7 @@ func (w *Workspace) flushUsageLocked() error {
 	w.lastFlush = time.Now()
 
 	if len(errs) > 0 {
-		return fmt.Errorf("flush usage errors: %v", errs)
+		return fmt.Errorf("flush usage: %w", errors.Join(errs...))
 	}
 	return nil
 }

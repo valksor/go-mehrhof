@@ -96,7 +96,7 @@ func TestFormatSpecificationStatus(t *testing.T) {
 		want   string
 	}{
 		{"draft", storage.SpecificationStatusDraft, "Draft"},
-		{"ready", storage.SpecificationStatusReady, "Pending"},
+		{"ready", storage.SpecificationStatusReady, "Ready"},
 		{"implementing", storage.SpecificationStatusImplementing, "Implementing"},
 		{"done", storage.SpecificationStatusDone, "Completed"},
 		{"unknown", "unknown", "unknown"},
@@ -142,7 +142,7 @@ func TestFormatSpecificationStatusWithIcon(t *testing.T) {
 		want   string
 	}{
 		{"draft", storage.SpecificationStatusDraft, "○ Draft"},
-		{"ready", storage.SpecificationStatusReady, "◐ Pending"},
+		{"ready", storage.SpecificationStatusReady, "◐ Ready"},
 		{"implementing", storage.SpecificationStatusImplementing, "◑ Implementing"},
 		{"done", storage.SpecificationStatusDone, "● Completed"},
 		{"unknown", "unknown", "? unknown"},

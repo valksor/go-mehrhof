@@ -54,7 +54,7 @@ var StateAccessiblePrefix = map[workflow.State]string{
 // SpecificationStatusDisplay maps internal specification status values to user-friendly names
 var SpecificationStatusDisplay = map[string]string{
 	storage.SpecificationStatusDraft:        "Draft",
-	storage.SpecificationStatusReady:        "Pending",
+	storage.SpecificationStatusReady:        "Ready",
 	storage.SpecificationStatusImplementing: "Implementing",
 	storage.SpecificationStatusDone:         "Completed",
 }
