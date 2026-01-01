@@ -7,5 +7,7 @@
 - Undo/redo support for safe experimentation
 - Multiple task sources: files, directories, and more
 
-[Get Started](getting-started.md)
-[CLI Reference](cli/overview.md)
+[CLI Reference](cli/index.md)
+[Get Started](quickstart.md)
+
+![color](#f0eee9)

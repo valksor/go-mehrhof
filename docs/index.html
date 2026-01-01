@@ -12,14 +12,16 @@
       name="viewport"
       content="width=device-width, initial-scale=1.0, minimum-scale=1.0"
     />
-    <link
-      rel="stylesheet"
-      href="https://cdn.jsdelivr.net/npm/docsify@4/lib/themes/vue.css"
-    />
+    <link rel="stylesheet" href="//cdn.jsdelivr.net/gh/LIGMATV/docsify-theme-github/github.css">
     <style>
       :root {
-        --theme-color: #3f51b5;
-        --theme-color-dark: #303f9f;
+        --theme-color: #960018;
+      }
+      @media (prefers-color-scheme: light) {
+        :root {
+          --color-bg  : #f0eee9;
+          --color-text: #2b2c30;
+        }
       }
       .sidebar-nav > ul > li > a {
         font-weight: 600;
@@ -51,8 +53,9 @@
       window.$docsify = {
         name: "Mehrhof",
         nameLink: "/",
-        repo: "",
+        repo: "https://github.com/valksor/go-mehrhof",
         loadSidebar: true,
+        autoHeader: true,
         subMaxLevel: 3,
         auto2top: true,
         coverpage: true,
@@ -75,6 +78,8 @@
           nextText: "Next",
           crossChapter: true,
         },
+        formatUpdated: '{DD}.{MM}.{YYYY} {HH}:{mm}',
+        mergeNavbar: true,
       };
     </script>
     <!-- Docsify core -->

@@ -1,78 +1,85 @@
-- Getting Started
+- **Get Started**
   - [Home](/)
-  - [Quick Start](getting-started.md)
-  - [Installation](installation.md)
+  - [Quickstart](quickstart.md)
 
-- Concepts
+- **Guides**
+  - [Your First Task](guides/first-task.md)
+  - [Iterative Workflow](guides/iterative-workflow.md)
+  - [Recovery & Undo](guides/recovery.md)
+
+- **Core Concepts**
   - [Workflow](concepts/workflow.md)
   - [Tasks](concepts/tasks.md)
-  - [AI Agents](agents/index.md)
-  - [Plugins](concepts/plugins.md)
   - [Checkpoints](concepts/checkpoints.md)
+  - [Plugins](concepts/plugins.md)
 
-- CLI Reference
-  - [Overview](cli/overview.md)
-  - [mehr init](cli/init.md)
-  - [mehr start](cli/start.md)
-  - [mehr plan](cli/plan.md)
-  - [mehr implement](cli/implement.md)
-  - [mehr note](cli/note.md)
-  - [mehr review](cli/review.md)
-  - [mehr finish](cli/finish.md)
-  - [mehr auto](cli/auto.md)
-  - [mehr status](cli/status.md)
-  - [mehr continue](cli/continue.md)
-  - [mehr guide](cli/guide.md)
-  - [mehr providers](cli/providers.md)
-  - [Provider Login](cli/login.md)
-  - [mehr list](cli/list.md)
-  - [mehr agents](cli/agents.md)
-  - [mehr config](cli/config.md)
-  - [mehr plugins](cli/plugins.md)
-  - [mehr templates](cli/templates.md)
-  - [mehr cost](cli/cost.md)
-  - [mehr undo](cli/undo.md)
-  - [mehr redo](cli/redo.md)
-  - [mehr abandon](cli/abandon.md)
-  - [mehr version](cli/version.md)
+- **AI Agents**
+  - [Overview & Config](agents/index.md)
+  - [Claude](agents/claude.md)
+  - [Gemini](agents/gemini.md)
+  - [Ollama](agents/ollama.md)
+  - [Aider](agents/aider.md)
+  - [Copilot](agents/copilot.md)
+  - [OpenRouter](agents/openrouter.md)
+  - [Codex](agents/codex.md)
 
-- Configuration
-  - [Overview](configuration/overview.md)
-  - [Configuration Files](configuration/files.md)
-
-- Tutorials
-  - [Your First Task](tutorials/first-task.md)
-  - [Iterative Development](tutorials/iterative-development.md)
-  - [Recovering from Mistakes](tutorials/undo-mistakes.md)
-
-- Advanced
-  - [Performance & Cost Optimization](advanced/optimization.md)
-
-- Providers
+- **Task Providers**
   - [Overview](providers/index.md)
-  - [File Provider](providers/file.md)
-  - [Directory Provider](providers/directory.md)
+  - [File](providers/file.md)
+  - [Directory](providers/directory.md)
   - [GitHub](providers/github.md)
   - [GitLab](providers/gitlab.md)
+  - [Bitbucket](providers/bitbucket.md)
   - [Jira](providers/jira.md)
   - [Linear](providers/linear.md)
-  - [Notion](providers/notion.md)
-  - [Wrike](providers/wrike.md)
-  - [YouTrack](providers/youtrack.md)
-  - [Trello](providers/trello.md)
   - [Asana](providers/asana.md)
   - [ClickUp](providers/clickup.md)
   - [Azure DevOps](providers/azure-devops.md)
-  - [Bitbucket](providers/bitbucket.md)
+  - [Notion](providers/notion.md)
+  - [Trello](providers/trello.md)
+  - [Wrike](providers/wrike.md)
+  - [YouTrack](providers/youtrack.md)
 
-- Troubleshooting
-  - [Overview](troubleshooting/index.md)
-  - [Installation](troubleshooting/installation.md)
-  - [Claude CLI](troubleshooting/claude-cli.md)
-  - [Tasks](troubleshooting/tasks.md)
-  - [Git](troubleshooting/git.md)
-  - [Diagnostics](troubleshooting/diagnostics.md)
+- **Configuration**
+  - [Configuration Guide](configuration/index.md)
 
-- Reference
+- **CLI Reference**
+  - [Overview](cli/index.md)
+  - **Workflow**
+    - [start](cli/start.md)
+    - [plan](cli/plan.md)
+    - [implement](cli/implement.md)
+    - [review](cli/review.md)
+    - [finish](cli/finish.md)
+    - [auto](cli/auto.md)
+  - **Task Management**
+    - [status](cli/status.md)
+    - [continue](cli/continue.md)
+    - [note](cli/note.md)
+    - [list](cli/list.md)
+    - [abandon](cli/abandon.md)
+  - **History**
+    - [undo](cli/undo.md)
+    - [redo](cli/redo.md)
+  - **Utility**
+    - [init](cli/init.md)
+    - [guide](cli/guide.md)
+    - [cost](cli/cost.md)
+    - [agents](cli/agents.md)
+    - [providers](cli/providers.md)
+    - [plugins](cli/plugins.md)
+    - [templates](cli/templates.md)
+    - [config](cli/config.md)
+    - [login](cli/login.md)
+    - [update](cli/update.md)
+    - [version](cli/version.md)
+
+- **Reference**
   - [Storage Structure](reference/storage.md)
   - [SPEC File Format](reference/spec-format.md)
+
+- **Advanced**
+  - [Performance & Cost](advanced/optimization.md)
+
+- **Troubleshooting**
+  - [Common Issues](troubleshooting/index.md)
