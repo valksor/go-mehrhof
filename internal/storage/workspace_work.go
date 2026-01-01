@@ -113,8 +113,94 @@ func (w *Workspace) SaveWork(work *TaskWork) error {
 	return nil
 }
 
-// AddUsage adds token usage stats to a task's work and saves it
+// AddUsage adds token usage stats to a task's work with buffering.
+// Usage is accumulated in memory and flushed periodically to reduce I/O.
+// Call FlushUsage() to force an immediate flush of buffered data.
 func (w *Workspace) AddUsage(taskID, step string, inputTokens, outputTokens, cachedTokens int, costUSD float64) error {
+	w.usageMu.Lock()
+	defer w.usageMu.Unlock()
+
+	// Initialize task buffer if needed
+	if w.usageBuf[taskID] == nil {
+		w.usageBuf[taskID] = make(map[string]*usageBuffer)
+	}
+
+	// Initialize step buffer if needed
+	buf := w.usageBuf[taskID][step]
+	if buf == nil {
+		buf = &usageBuffer{}
+		w.usageBuf[taskID][step] = buf
+	}
+
+	// Accumulate usage
+	buf.inputTokens += inputTokens
+	buf.outputTokens += outputTokens
+	buf.cachedTokens += cachedTokens
+	buf.costUSD += costUSD
+	buf.callCount++
+
+	// Check if we should flush
+	totalCalls := 0
+	for _, steps := range w.usageBuf {
+		for _, stepBuf := range steps {
+			totalCalls += stepBuf.callCount
+		}
+	}
+
+	// Flush if threshold reached or time elapsed
+	if totalCalls >= defaultUsageFlushThreshold ||
+		time.Since(w.lastFlush) > defaultUsageFlushInterval {
+		return w.flushUsageLocked()
+	}
+
+	return nil
+}
+
+// FlushUsage flushes all buffered usage to disk.
+// This is called automatically by AddUsage when thresholds are met,
+// but can also be called explicitly to ensure data is persisted.
+func (w *Workspace) FlushUsage() error {
+	w.usageMu.Lock()
+	defer w.usageMu.Unlock()
+	return w.flushUsageLocked()
+}
+
+// flushUsageLocked flushes buffered usage. Must be called with usageMu held.
+func (w *Workspace) flushUsageLocked() error {
+	if len(w.usageBuf) == 0 {
+		return nil
+	}
+
+	// Collect all task IDs that need flushing
+	taskIDs := make([]string, 0, len(w.usageBuf))
+	for taskID := range w.usageBuf {
+		taskIDs = append(taskIDs, taskID)
+	}
+
+	// Flush each task
+	var errs []error
+	for _, taskID := range taskIDs {
+		if err := w.flushTaskUsageLocked(taskID); err != nil {
+			errs = append(errs, err)
+		}
+	}
+
+	w.lastFlush = time.Now()
+
+	if len(errs) > 0 {
+		return fmt.Errorf("flush usage errors: %v", errs)
+	}
+	return nil
+}
+
+// flushTaskUsageLocked flushes usage for a single task. Must be called with usageMu held.
+func (w *Workspace) flushTaskUsageLocked(taskID string) error {
+	steps, ok := w.usageBuf[taskID]
+	if !ok || len(steps) == 0 {
+		return nil
+	}
+
+	// Load current work
 	work, err := w.LoadWork(taskID)
 	if err != nil {
 		return fmt.Errorf("load work: %w", err)
@@ -125,22 +211,33 @@ func (w *Workspace) AddUsage(taskID, step string, inputTokens, outputTokens, cac
 		work.Costs.ByStep = make(map[string]StepCostStats)
 	}
 
-	// Update totals
-	work.Costs.TotalInputTokens += inputTokens
-	work.Costs.TotalOutputTokens += outputTokens
-	work.Costs.TotalCachedTokens += cachedTokens
-	work.Costs.TotalCostUSD += costUSD
+	// Accumulate all buffered steps
+	for step, buf := range steps {
+		// Update totals
+		work.Costs.TotalInputTokens += buf.inputTokens
+		work.Costs.TotalOutputTokens += buf.outputTokens
+		work.Costs.TotalCachedTokens += buf.cachedTokens
+		work.Costs.TotalCostUSD += buf.costUSD
 
-	// Update step stats
-	stepStats := work.Costs.ByStep[step]
-	stepStats.InputTokens += inputTokens
-	stepStats.OutputTokens += outputTokens
-	stepStats.CachedTokens += cachedTokens
-	stepStats.CostUSD += costUSD
-	stepStats.Calls++
-	work.Costs.ByStep[step] = stepStats
+		// Update step stats
+		stepStats := work.Costs.ByStep[step]
+		stepStats.InputTokens += buf.inputTokens
+		stepStats.OutputTokens += buf.outputTokens
+		stepStats.CachedTokens += buf.cachedTokens
+		stepStats.CostUSD += buf.costUSD
+		stepStats.Calls += buf.callCount
+		work.Costs.ByStep[step] = stepStats
+	}
 
-	return w.SaveWork(work)
+	// Save work
+	if err := w.SaveWork(work); err != nil {
+		return fmt.Errorf("save work: %w", err)
+	}
+
+	// Clear buffer for this task
+	delete(w.usageBuf, taskID)
+
+	return nil
 }
 
 // DeleteWork removes a work directory

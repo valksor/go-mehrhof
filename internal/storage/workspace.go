@@ -5,6 +5,8 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
+	"time"
 )
 
 const (
@@ -18,13 +20,31 @@ const (
 	sessionsDirName = "sessions"
 	configFileName  = "config.yaml"
 	envFileName     = ".env"
+
+	// Usage buffer configuration
+	defaultUsageFlushInterval  = 5 * time.Second // Auto-flush interval
+	defaultUsageFlushThreshold = 10              // Flush after N updates
 )
+
+// usageBuffer tracks accumulated usage for a task/step combination
+type usageBuffer struct {
+	inputTokens  int
+	outputTokens int
+	cachedTokens int
+	costUSD      float64
+	callCount    int
+}
 
 // Workspace manages task storage within a repository
 type Workspace struct {
 	root     string // Repository root
 	taskRoot string // .mehrhof directory
 	workRoot string // .mehrhof/work directory
+
+	// Usage buffering for reducing I/O
+	usageMu   sync.RWMutex
+	usageBuf  map[string]map[string]*usageBuffer // taskID -> step -> buffer
+	lastFlush time.Time
 }
 
 // OpenWorkspace opens or creates a workspace in the given directory.
@@ -46,9 +66,11 @@ func OpenWorkspace(repoRoot string, cfg *WorkspaceConfig) (*Workspace, error) {
 	workRoot := filepath.Join(absRoot, workDir)
 
 	return &Workspace{
-		root:     absRoot,
-		taskRoot: taskRoot,
-		workRoot: workRoot,
+		root:      absRoot,
+		taskRoot:  taskRoot,
+		workRoot:  workRoot,
+		usageBuf:  make(map[string]map[string]*usageBuffer),
+		lastFlush: time.Now(),
 	}, nil
 }
 
