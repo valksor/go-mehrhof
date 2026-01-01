@@ -42,6 +42,11 @@ jobs:
             CGO_ENABLED: 0
 
         steps:
+            # https://github.com/marketplace/actions/checkout
+            -   name: Check out code
+                uses: actions/checkout@v6
+                with:
+                    fetch-depth: 0
 
             # https://github.com/marketplace/actions/setup-go-environment
             -   name: Set up Go ${{ env.GO_VERSION }}
@@ -49,12 +54,6 @@ jobs:
                 with:
                     go-version: ${{ env.GO_VERSION }}
                     cache: true
-
-            # https://github.com/marketplace/actions/checkout
-            -   name: Check out code
-                uses: actions/checkout@v6
-                with:
-                    fetch-depth: 0
 
             # https://golangci-lint.run/usage/install#other-ci
             -   name: Install golangci-lint ${{ env.GOLANGCI_LINT_VERSION }}
@@ -110,7 +109,7 @@ jobs:
             -   name: Send coverage
                 if: github.event.release.prerelease && matrix.goos == 'darwin' && matrix.goarch == 'arm64'
                 env:
-                    COVERALLS_TOKEN: ${{ secrets.GH_TOKEN }}
+                    COVERALLS_TOKEN: ${{ secrets.GITHUB_TOKEN }}
                 run: goveralls -coverprofile=covprofile -service=github
 
     release:
