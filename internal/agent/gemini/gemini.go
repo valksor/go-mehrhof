@@ -10,12 +10,27 @@ import (
 	"os"
 	"os/exec"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/valksor/go-mehrhof/internal/agent"
 )
 
 const AgentName = "gemini"
+
+const (
+	// scannerBufferSize is the size of the buffer used for scanning agent output.
+	scannerBufferSize = 1024 * 1024
+)
+
+// scannerBufferPool reuses buffers for scanner operations.
+// Using *[]byte avoids slice header allocations.
+var scannerBufferPool = sync.Pool{
+	New: func() any {
+		b := make([]byte, scannerBufferSize)
+		return &b
+	},
+}
 
 // Agent wraps the Gemini CLI (https://github.com/google-gemini/gemini-cli)
 type Agent struct {
@@ -165,7 +180,10 @@ func (a *Agent) executeStream(ctx context.Context, prompt string, eventCh chan<-
 
 	// Read output line by line
 	scanner := bufio.NewScanner(stdout)
-	scanner.Buffer(make([]byte, 1024*1024), 1024*1024) // 1MB buffer for large responses
+	// Get buffer from pool for large responses, return when done
+	bufPtr := scannerBufferPool.Get().(*[]byte)
+	defer scannerBufferPool.Put(bufPtr)
+	scanner.Buffer(*bufPtr, scannerBufferSize)
 
 	for scanner.Scan() {
 		select {

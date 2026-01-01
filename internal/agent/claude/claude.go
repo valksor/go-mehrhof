@@ -8,12 +8,29 @@ import (
 	"log/slog"
 	"os"
 	"os/exec"
+	"sync"
 	"time"
 
 	"github.com/valksor/go-mehrhof/internal/agent"
 )
 
 const AgentName = "claude"
+
+const (
+	// scannerBufferSize is the size of the buffer used for scanning agent output.
+	// 1MB allows handling large responses without excessive allocations.
+	scannerBufferSize = 1024 * 1024
+)
+
+// scannerBufferPool reuses buffers for scanner operations.
+// This significantly reduces GC pressure when making many agent calls.
+// Using *[]byte avoids slice header allocations.
+var scannerBufferPool = sync.Pool{
+	New: func() any {
+		b := make([]byte, scannerBufferSize)
+		return &b
+	},
+}
 
 // Agent wraps the Claude CLI
 type Agent struct {
@@ -163,7 +180,10 @@ func (a *Agent) executeStream(ctx context.Context, prompt string, eventCh chan<-
 
 	// Read output line by line
 	scanner := bufio.NewScanner(stdout)
-	scanner.Buffer(make([]byte, 1024*1024), 1024*1024) // 1MB buffer for large responses
+	// Get buffer from pool for large responses, return when done
+	bufPtr := scannerBufferPool.Get().(*[]byte)
+	defer scannerBufferPool.Put(bufPtr)
+	scanner.Buffer(*bufPtr, scannerBufferSize)
 
 	for scanner.Scan() {
 		select {
