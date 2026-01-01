@@ -106,9 +106,10 @@ func (c *Cache) Get(key string) (any, bool) {
 		return nil, false
 	}
 
+	// Lazy expiration: just return miss for expired entries.
+	// The background cleanup scheduler will handle deletion.
+	// This avoids lock promotion (read -> write) which causes contention.
 	if e.isExpired() {
-		// Clean up expired entry
-		delete(c.store, key)
 		return nil, false
 	}
 

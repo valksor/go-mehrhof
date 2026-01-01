@@ -51,20 +51,28 @@ func TestCache_Expiration(t *testing.T) {
 	// Wait for expiration
 	time.Sleep(20 * time.Millisecond)
 
-	// Size should still reflect the entry until cleanup (Get removes expired entries)
+	// Size should still reflect the entry (lazy expiration doesn't remove during Get)
 	if c.Size() != 1 {
 		t.Fatalf("expected size 1 (expired entry), got %d", c.Size())
 	}
 
-	// Should be expired now (Get will remove the expired entry)
+	// Get should return miss for expired entry (lazy expiration)
 	_, ok = c.Get("key1")
 	if ok {
 		t.Fatal("expected key1 to be expired")
 	}
 
-	// After Get removes it, size should be 0
+	// With lazy expiration, Get doesn't remove expired entries
+	// Size is still 1 until cleanup runs
+	if c.Size() != 1 {
+		t.Fatalf("expected size 1 (lazy expiration), got %d", c.Size())
+	}
+
+	// Cleanup removes expired entries
+	c.Cleanup()
+
 	if c.Size() != 0 {
-		t.Fatalf("expected size 0 after get of expired entry, got %d", c.Size())
+		t.Fatalf("expected size 0 after cleanup, got %d", c.Size())
 	}
 }
 
@@ -202,14 +210,23 @@ func TestCache_GetRemovesExpired(t *testing.T) {
 	c.Set("key1", "value1", 10*time.Millisecond)
 	time.Sleep(20 * time.Millisecond)
 
-	// Getting an expired entry should remove it
+	// Getting an expired entry returns miss (lazy expiration)
 	_, ok := c.Get("key1")
 	if ok {
 		t.Fatal("expected cache miss for expired entry")
 	}
 
+	// With lazy expiration, Get doesn't remove entries
+	// Size is still 1 until cleanup runs
+	if c.Size() != 1 {
+		t.Fatalf("expected size 1 (lazy expiration), got %d", c.Size())
+	}
+
+	// Cleanup removes expired entries
+	c.Cleanup()
+
 	if c.Size() != 0 {
-		t.Fatalf("expected size 0 after get of expired entry, got %d", c.Size())
+		t.Fatalf("expected size 0 after cleanup, got %d", c.Size())
 	}
 }
 
