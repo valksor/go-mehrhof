@@ -1,8 +1,10 @@
+*.test
 .active_task
 .claude/
 .coverage/
 .junie/
 .mcp.json
+.mehrhof/.env
 .mehrhof/work/
 CLAUDE.md
 build/
@@ -10,5 +12,3 @@ bun.lock
 covprofile
 node_modules/
 package.json
-.mehrhof/.env
-*.test
