@@ -15,6 +15,7 @@ User → mehr plan → Agent CLI → AI Response → Mehrhof processes output
 - [Claude](claude.md) (Default) - Anthropic's Claude AI
 - [Codex](codex.md) - Alternative AI agent
 - [Aider](aider.md) - Git-aware AI pair programming assistant
+- [Gemini](gemini.md) - Google Gemini AI with 1M token context
 - [Ollama](ollama.md) - Local AI inference
 - [Copilot](copilot.md) - GitHub Copilot integration
 - [OpenRouter](openrouter.md) - Access to 100+ AI models

@@ -15,6 +15,7 @@ import (
 	"github.com/valksor/go-mehrhof/internal/agent/claude"
 	"github.com/valksor/go-mehrhof/internal/agent/codex"
 	"github.com/valksor/go-mehrhof/internal/agent/copilot"
+	"github.com/valksor/go-mehrhof/internal/agent/gemini"
 	"github.com/valksor/go-mehrhof/internal/agent/ollama"
 	"github.com/valksor/go-mehrhof/internal/agent/openrouter"
 	"github.com/valksor/go-mehrhof/internal/conductor"
@@ -99,6 +100,9 @@ func initializeConductor(ctx context.Context, opts ...conductor.Option) (*conduc
 	}
 	if err := openrouter.Register(cond.GetAgentRegistry()); err != nil {
 		return nil, fmt.Errorf("register openrouter agent: %w", err)
+	}
+	if err := gemini.Register(cond.GetAgentRegistry()); err != nil {
+		return nil, fmt.Errorf("register gemini agent: %w", err)
 	}
 
 	// Initialize the conductor (loads workspace, detects agent, etc.)
