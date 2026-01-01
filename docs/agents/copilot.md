@@ -1,5 +1,8 @@
 # GitHub Copilot Agent
 
+> **⚠️ Third-Party Integration**: This integration depends on external APIs that may change. Not fully tested beyond unit tests. Behavior may vary depending on the third-party service. Manual validation recommended before production use.
+
+
 GitHub Copilot agent wraps the `gh copilot` CLI extension for shell command suggestions and code explanations.
 
 ## Prerequisites

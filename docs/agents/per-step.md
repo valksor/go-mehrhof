@@ -1,5 +1,8 @@
 # Per-Step Agent Configuration
 
+> **⚠️ Third-Party Integration**: This integration depends on external APIs that may change. Not fully tested beyond unit tests. Behavior may vary depending on the third-party service. Manual validation recommended before production use.
+
+
 Different workflow steps can use different agents. This is useful for optimizing cost and performance - use a more capable agent for complex planning, and a faster/cheaper agent for implementation.
 
 ## Workflow Steps

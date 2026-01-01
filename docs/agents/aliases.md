@@ -1,5 +1,8 @@
 # Agent Aliases
 
+> **⚠️ Third-Party Integration**: This integration depends on external APIs that may change. Not fully tested beyond unit tests. Behavior may vary depending on the third-party service. Manual validation recommended before production use.
+
+
 Aliases let you create custom agents that wrap existing agents with specific environment variables and CLI arguments. This is useful for:
 
 - **Multiple API keys** - Different accounts or projects

@@ -1,5 +1,8 @@
 # AI Agents
 
+
+> **⚠️ Integration Testing Notice**: Agent and provider implementations depend on third-party APIs that may change. While unit-tested, these integrations may have edge cases not covered by automated tests. Manual testing in your environment is recommended before production use.
+
 Mehrhof orchestrates AI agents to help with planning and implementation. It delegates AI operations to external CLI tools.
 
 ## How It Works

@@ -1,5 +1,8 @@
 # Ollama Agent
 
+> **⚠️ Third-Party Integration**: This integration depends on external APIs that may change. Not fully tested beyond unit tests. Behavior may vary depending on the third-party service. Manual validation recommended before production use.
+
+
 Ollama provides local AI inference for privacy and cost savings. Mehrhof wraps the `ollama run` command.
 
 ## Prerequisites

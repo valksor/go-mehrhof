@@ -1,5 +1,8 @@
 # Gemini Agent
 
+> **⚠️ Third-Party Integration**: This integration depends on external APIs that may change. Not fully tested beyond unit tests. Behavior may vary depending on the third-party service. Manual validation recommended before production use.
+
+
 Gemini provides access to Google's Gemini AI models via the official Gemini CLI.
 
 ## Prerequisites

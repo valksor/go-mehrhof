@@ -1,5 +1,8 @@
 # Aider Agent
 
+> **⚠️ Third-Party Integration**: This integration depends on external APIs that may change. Not fully tested beyond unit tests. Behavior may vary depending on the third-party service. Manual validation recommended before production use.
+
+
 Aider is a Git-aware AI pair programming assistant. Mehrhof wraps the `aider` CLI for code generation tasks.
 
 ## Prerequisites

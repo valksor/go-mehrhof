@@ -1,5 +1,8 @@
 # OpenRouter Agent
 
+> **⚠️ Third-Party Integration**: This integration depends on external APIs that may change. Not fully tested beyond unit tests. Behavior may vary depending on the third-party service. Manual validation recommended before production use.
+
+
 OpenRouter provides unified access to 100+ AI models through a single API. Useful for accessing models from OpenAI, Anthropic, Google, Meta, and others.
 
 ## Prerequisites
