@@ -3,6 +3,7 @@
 .claude/
 .coverage/
 .junie/
+.local/
 .mcp.json
 .mehrhof/.env
 .mehrhof/work/
