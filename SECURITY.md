@@ -70,7 +70,7 @@ Security updates are announced via:
 - **Keep updated**: Install the latest version to get security fixes
 - **Review permissions**: Only grant necessary API tokens and permissions
 - **Secure secrets**: Store API keys in environment variables or `.mehrhof/.env` (never commit secrets)
-- **Audit dependencies**: Run `make lint` which includes `govulncheck`
+- **Audit dependencies**: Run `make quality` which includes `govulncheck`
 
 ### For Developers
 
@@ -84,7 +84,7 @@ Security updates are announced via:
 
 - **Secrets management**: API keys stored in `.mehrhof/.env` (gitignored)
 - **No credential leakage**: Secrets are never logged or included in error messages
-- **Dependency scanning**: `govulncheck` runs in `make lint`
+- **Dependency scanning**: `govulncheck` runs in `make quality`
 - **HTTPS only**: All provider communications use HTTPS/TLS
 
 ## Contact
