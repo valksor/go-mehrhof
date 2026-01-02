@@ -63,6 +63,7 @@ func NewRegistry() *Registry {
 	r.Register(NewGolangCI())
 	r.Register(NewESLint())
 	r.Register(NewRuff())
+	r.Register(NewPHPCSFixer())
 
 	return r
 }
@@ -109,6 +110,12 @@ func (r *Registry) DetectForProject(workDir string) []Linter {
 				fileExists(filepath.Join(workDir, "requirements.txt")) {
 				detected = append(detected, l)
 			}
+		case "php-cs-fixer":
+			if fileExists(filepath.Join(workDir, "composer.json")) ||
+				fileExists(filepath.Join(workDir, ".php-cs-fixer.php")) ||
+				fileExists(filepath.Join(workDir, ".php-cs-fixer.dist.php")) {
+				detected = append(detected, l)
+			}
 		}
 	}
 
@@ -143,11 +150,7 @@ func FormatResults(results []*Result) string {
 		return ""
 	}
 
-	var sb fmt.Stringer = &stringBuilder{}
-	b, ok := sb.(*stringBuilder)
-	if !ok {
-		return ""
-	}
+	var b stringBuilder
 
 	b.WriteString("## Automated Lint Results\n\n")
 

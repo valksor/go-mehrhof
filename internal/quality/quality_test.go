@@ -13,9 +13,9 @@ func TestNewRegistry(t *testing.T) {
 		t.Fatal("expected non-nil registry")
 	}
 
-	// Should have 3 standard linters registered
-	if len(r.linters) != 3 {
-		t.Errorf("expected 3 linters, got %d", len(r.linters))
+	// Should have 4 standard linters registered
+	if len(r.linters) != 4 {
+		t.Errorf("expected 4 linters, got %d", len(r.linters))
 	}
 }
 
