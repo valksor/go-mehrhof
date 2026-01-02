@@ -44,7 +44,7 @@ make coverage-html
 
 ```bash
 # Run linters (golangci-lint, govulncheck)
-make lint
+make quality
 
 # Format code
 make fmt
@@ -157,7 +157,7 @@ func TestParse(t *testing.T) {
 ### Before Submitting
 
 1. **Format your code**: `make fmt`
-2. **Run linters**: `make lint` (fix any issues)
+2. **Run linters**: `make quality` (fix any issues)
 3. **Run tests**: `make test` (ensure all pass)
 4. **Update documentation**: If adding features, update relevant docs
 
