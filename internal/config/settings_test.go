@@ -1,7 +1,6 @@
 package config
 
 import (
-	"os"
 	"path/filepath"
 	"testing"
 )
@@ -54,15 +53,7 @@ func TestSettingsAddRecentTaskMaxLimit(t *testing.T) {
 func TestSettingsSaveAndLoad(t *testing.T) {
 	// Create a temporary home directory
 	tmpDir := t.TempDir()
-	oldHome := os.Getenv("HOME")
-	if err := os.Setenv("HOME", tmpDir); err != nil {
-		t.Fatalf("Setenv(HOME): %v", err)
-	}
-	defer func() {
-		if err := os.Setenv("HOME", oldHome); err != nil {
-			t.Logf("restore Setenv(HOME): %v", err)
-		}
-	}()
+	t.Setenv("HOME", tmpDir)
 
 	s := &Settings{
 		PreferredAgent: "claude",
@@ -97,15 +88,7 @@ func TestSettingsSaveAndLoad(t *testing.T) {
 func TestLoadSettingsNonExistent(t *testing.T) {
 	// Create a temporary home directory with no settings file
 	tmpDir := t.TempDir()
-	oldHome := os.Getenv("HOME")
-	if err := os.Setenv("HOME", tmpDir); err != nil {
-		t.Fatalf("Setenv(HOME): %v", err)
-	}
-	defer func() {
-		if err := os.Setenv("HOME", oldHome); err != nil {
-			t.Logf("restore Setenv(HOME): %v", err)
-		}
-	}()
+	t.Setenv("HOME", tmpDir)
 
 	s, err := LoadSettings()
 	if err != nil {

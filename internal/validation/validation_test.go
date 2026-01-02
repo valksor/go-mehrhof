@@ -384,8 +384,7 @@ func TestValidateWorkflowSettings(t *testing.T) {
 
 func TestValidateEnvVarReferences(t *testing.T) {
 	// Set a test env var
-	_ = os.Setenv("TEST_VAR_EXISTS", "value")
-	defer func() { _ = os.Unsetenv("TEST_VAR_EXISTS") }()
+	t.Setenv("TEST_VAR_EXISTS", "value")
 
 	tests := []struct {
 		env          map[string]string

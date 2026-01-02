@@ -3,7 +3,6 @@ package gitlab
 import (
 	"context"
 	"errors"
-	"os"
 	"strings"
 	"testing"
 	"time"
@@ -866,18 +865,6 @@ func TestWrapAPIError(t *testing.T) {
 }
 
 func TestResolveToken(t *testing.T) {
-	// Save original env values
-	oldMehrToken := os.Getenv("MEHR_GITLAB_TOKEN")
-	oldGitlabToken := os.Getenv("GITLAB_TOKEN")
-	defer func() {
-		_ = os.Setenv("MEHR_GITLAB_TOKEN", oldMehrToken)
-		_ = os.Setenv("GITLAB_TOKEN", oldGitlabToken)
-	}()
-
-	// Clear env vars for testing
-	_ = os.Unsetenv("MEHR_GITLAB_TOKEN")
-	_ = os.Unsetenv("GITLAB_TOKEN")
-
 	tests := []struct {
 		name         string
 		configToken  string
@@ -928,16 +915,12 @@ func TestResolveToken(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			// Clear env vars
-			_ = os.Unsetenv("MEHR_GITLAB_TOKEN")
-			_ = os.Unsetenv("GITLAB_TOKEN")
-
 			// Set env vars as specified
 			if tt.setMehrEnv != "" {
-				_ = os.Setenv("MEHR_GITLAB_TOKEN", tt.setMehrEnv)
+				t.Setenv("MEHR_GITLAB_TOKEN", tt.setMehrEnv)
 			}
 			if tt.setGitlabEnv != "" {
-				_ = os.Setenv("GITLAB_TOKEN", tt.setGitlabEnv)
+				t.Setenv("GITLAB_TOKEN", tt.setGitlabEnv)
 			}
 
 			got, err := ResolveToken(tt.configToken)

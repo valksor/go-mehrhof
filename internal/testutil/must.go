@@ -54,10 +54,12 @@ func PanicHandler(t *testing.T) {
 
 // TempDir creates a temporary directory for testing.
 // Returns the path and a cleanup function.
+//
+// Deprecated: Use t.TempDir() directly instead.
 func TempDir(t *testing.T) (string, func()) {
 	t.Helper()
 
-	path, err := os.MkdirTemp("", "mehr-test-*")
+	path, err := os.MkdirTemp("", "mehr-test-*") //nolint:usetesting // deprecated wrapper
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -103,6 +105,8 @@ func CreateTempWorkspace(t *testing.T) (string, *storage.Workspace, func()) {
 }
 
 // Chdir changes to a directory and returns a function to restore the original directory.
+//
+// Deprecated: Use t.Chdir() directly instead.
 func Chdir(t *testing.T, dir string) func() {
 	t.Helper()
 
@@ -111,24 +115,26 @@ func Chdir(t *testing.T, dir string) func() {
 		t.Fatal(err)
 	}
 
-	if err := os.Chdir(dir); err != nil {
+	if err := os.Chdir(dir); err != nil { //nolint:usetesting // deprecated wrapper
 		t.Fatal(err)
 	}
 
 	return func() {
-		if err := os.Chdir(origDir); err != nil {
+		if err := os.Chdir(origDir); err != nil { //nolint:usetesting // deprecated wrapper
 			t.Fatalf("failed to restore original directory: %v", err)
 		}
 	}
 }
 
 // SetEnv sets an environment variable and returns a function to restore the original value.
+//
+// Deprecated: Use t.Setenv() directly instead.
 func SetEnv(t *testing.T, key, value string) func() {
 	t.Helper()
 
 	origValue, exists := os.LookupEnv(key)
 
-	if err := os.Setenv(key, value); err != nil {
+	if err := os.Setenv(key, value); err != nil { //nolint:usetesting // deprecated wrapper
 		t.Fatal(err)
 	}
 
@@ -136,7 +142,7 @@ func SetEnv(t *testing.T, key, value string) func() {
 		if !exists {
 			_ = os.Unsetenv(key)
 		} else {
-			if err := os.Setenv(key, origValue); err != nil {
+			if err := os.Setenv(key, origValue); err != nil { //nolint:usetesting // deprecated wrapper
 				t.Fatalf("failed to restore env var %s: %v", key, err)
 			}
 		}

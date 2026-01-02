@@ -15,12 +15,7 @@ func TestLoadContext_NoWorkspace(t *testing.T) {
 		t.Fatalf("mkdir: %v", err)
 	}
 
-	oldWd, _ := os.Getwd()
-	defer func() { _ = os.Chdir(oldWd) }()
-
-	if err := os.Chdir(isolatedDir); err != nil {
-		t.Fatalf("chdir: %v", err)
-	}
+	t.Chdir(isolatedDir)
 
 	ctx := LoadContext()
 
@@ -44,12 +39,7 @@ func TestLoadContext_WithWorkspaceNoTask(t *testing.T) {
 		t.Fatalf("mkdir: %v", err)
 	}
 
-	oldWd, _ := os.Getwd()
-	defer func() { _ = os.Chdir(oldWd) }()
-
-	if err := os.Chdir(tmpDir); err != nil {
-		t.Fatalf("chdir: %v", err)
-	}
+	t.Chdir(tmpDir)
 
 	ctx := LoadContext()
 
@@ -106,12 +96,7 @@ source:
 		t.Fatalf("write work.yaml: %v", err)
 	}
 
-	oldWd, _ := os.Getwd()
-	defer func() { _ = os.Chdir(oldWd) }()
-
-	if err := os.Chdir(tmpDir); err != nil {
-		t.Fatalf("chdir: %v", err)
-	}
+	t.Chdir(tmpDir)
 
 	ctx := LoadContext()
 
@@ -188,12 +173,7 @@ source:
 		t.Fatalf("write work.yaml: %v", err)
 	}
 
-	oldWd, _ := os.Getwd()
-	defer func() { _ = os.Chdir(oldWd) }()
-
-	if err := os.Chdir(tmpDir); err != nil {
-		t.Fatalf("chdir: %v", err)
-	}
+	t.Chdir(tmpDir)
 
 	ctx := LoadContext()
 
@@ -241,12 +221,7 @@ started: 2024-01-01T00:00:00Z
 		t.Fatalf("write work.yaml: %v", err)
 	}
 
-	oldWd, _ := os.Getwd()
-	defer func() { _ = os.Chdir(oldWd) }()
-
-	if err := os.Chdir(tmpDir); err != nil {
-		t.Fatalf("chdir: %v", err)
-	}
+	t.Chdir(tmpDir)
 
 	ctx := LoadContext()
 

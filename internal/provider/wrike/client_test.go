@@ -6,7 +6,6 @@ import (
 	"errors"
 	"net/http"
 	"net/http/httptest"
-	"os"
 	"testing"
 	"time"
 
@@ -58,17 +57,9 @@ func TestNewClientWithTrailingSlashHost(t *testing.T) {
 // ──────────────────────────────────────────────────────────────────────────────
 
 func TestResolveToken(t *testing.T) {
-	// Clear any existing env vars for clean test
-	originalMehr := os.Getenv("MEHR_WRIKE_TOKEN")
-	originalWrike := os.Getenv("WRIKE_TOKEN")
-	defer func() {
-		_ = os.Setenv("MEHR_WRIKE_TOKEN", originalMehr)
-		_ = os.Setenv("WRIKE_TOKEN", originalWrike)
-	}()
-
 	t.Run("MEHR_WRIKE_TOKEN priority", func(t *testing.T) {
-		_ = os.Setenv("MEHR_WRIKE_TOKEN", "mehr-token")
-		_ = os.Setenv("WRIKE_TOKEN", "wrike-token")
+		t.Setenv("MEHR_WRIKE_TOKEN", "mehr-token")
+		t.Setenv("WRIKE_TOKEN", "wrike-token")
 
 		token, err := ResolveToken("config-token")
 		if err != nil {
@@ -77,13 +68,11 @@ func TestResolveToken(t *testing.T) {
 		if token != "mehr-token" {
 			t.Errorf("token = %q, want %q", token, "mehr-token")
 		}
-
-		_ = os.Unsetenv("MEHR_WRIKE_TOKEN")
 	})
 
 	t.Run("WRIKE_TOKEN fallback", func(t *testing.T) {
-		_ = os.Unsetenv("MEHR_WRIKE_TOKEN")
-		_ = os.Setenv("WRIKE_TOKEN", "wrike-token")
+		t.Setenv("MEHR_WRIKE_TOKEN", "")
+		t.Setenv("WRIKE_TOKEN", "wrike-token")
 
 		token, err := ResolveToken("config-token")
 		if err != nil {
@@ -92,13 +81,11 @@ func TestResolveToken(t *testing.T) {
 		if token != "wrike-token" {
 			t.Errorf("token = %q, want %q", token, "wrike-token")
 		}
-
-		_ = os.Unsetenv("WRIKE_TOKEN")
 	})
 
 	t.Run("config token fallback", func(t *testing.T) {
-		_ = os.Unsetenv("MEHR_WRIKE_TOKEN")
-		_ = os.Unsetenv("WRIKE_TOKEN")
+		t.Setenv("MEHR_WRIKE_TOKEN", "")
+		t.Setenv("WRIKE_TOKEN", "")
 
 		token, err := ResolveToken("config-token")
 		if err != nil {
@@ -110,8 +97,8 @@ func TestResolveToken(t *testing.T) {
 	})
 
 	t.Run("no token available", func(t *testing.T) {
-		_ = os.Unsetenv("MEHR_WRIKE_TOKEN")
-		_ = os.Unsetenv("WRIKE_TOKEN")
+		t.Setenv("MEHR_WRIKE_TOKEN", "")
+		t.Setenv("WRIKE_TOKEN", "")
 
 		_, err := ResolveToken("")
 		if !errors.Is(err, token.ErrNoToken) {

@@ -17,9 +17,7 @@ func testUnsetenv(t *testing.T, key string) {
 // testSetenv is a helper to set env vars in tests.
 func testSetenv(t *testing.T, key, value string) {
 	t.Helper()
-	if err := os.Setenv(key, value); err != nil {
-		t.Fatalf("failed to set %s: %v", key, err)
-	}
+	t.Setenv(key, value)
 }
 
 func TestLoadDotEnv_FileNotExists(t *testing.T) {
@@ -166,26 +164,13 @@ func TestLoadDotEnvFromCwd(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// Save current working directory
-	oldCwd, err := os.Getwd()
-	if err != nil {
-		t.Fatal(err)
-	}
-
 	// Change to temp directory
-	if err := os.Chdir(tmpDir); err != nil {
-		t.Fatal(err)
-	}
-	defer func() {
-		if err := os.Chdir(oldCwd); err != nil {
-			t.Logf("restore Chdir: %v", err)
-		}
-	}()
+	t.Chdir(tmpDir)
 
 	testUnsetenv(t, "TEST_DOTENV_CWD")
 	defer testUnsetenv(t, "TEST_DOTENV_CWD")
 
-	err = LoadDotEnvFromCwd()
+	err := LoadDotEnvFromCwd()
 	if err != nil {
 		t.Errorf("unexpected error: %v", err)
 	}
@@ -199,24 +184,11 @@ func TestLoadDotEnvFromCwd_NoEnvFile(t *testing.T) {
 	// Create a temporary directory without .env
 	tmpDir := t.TempDir()
 
-	// Save current working directory
-	oldCwd, err := os.Getwd()
-	if err != nil {
-		t.Fatal(err)
-	}
-
 	// Change to temp directory
-	if err := os.Chdir(tmpDir); err != nil {
-		t.Fatal(err)
-	}
-	defer func() {
-		if err := os.Chdir(oldCwd); err != nil {
-			t.Logf("restore Chdir: %v", err)
-		}
-	}()
+	t.Chdir(tmpDir)
 
 	// Should not error when .env doesn't exist
-	err = LoadDotEnvFromCwd()
+	err := LoadDotEnvFromCwd()
 	if err != nil {
 		t.Errorf("expected nil error when .env doesn't exist, got: %v", err)
 	}

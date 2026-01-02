@@ -53,7 +53,6 @@ func TestInitCommand(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			tc := NewTestContext(t)
-			defer tc.Cleanup()
 
 			// Create a git repo if requested
 			if tt.setupGit {
@@ -113,7 +112,6 @@ func TestInitCommand(t *testing.T) {
 
 func TestInitCommand_WithGitRepo(t *testing.T) {
 	tc := NewTestContext(t)
-	defer tc.Cleanup()
 
 	// Initialize git repo first
 	tc.WithGit()
@@ -152,7 +150,6 @@ func TestInitCommand_WithGitRepo(t *testing.T) {
 
 func TestInitCommand_Twice(t *testing.T) {
 	tc := NewTestContext(t)
-	defer tc.Cleanup()
 
 	rootCmd := &cobra.Command{
 		Use:   "mehr",

@@ -7,7 +7,6 @@ import (
 	"bytes"
 	"context"
 	"io"
-	"os"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -24,7 +23,6 @@ type TestContext struct {
 	StderrBuf *bytes.Buffer
 	RootCmd   *cobra.Command
 	Workspace *storage.Workspace
-	Cleanup   func()
 	TmpDir    string
 }
 
@@ -52,14 +50,7 @@ func NewTestContext(t *testing.T) *TestContext {
 	rootCmd := createTestRootCommand(stdoutBuf, stderrBuf)
 
 	// Set working directory
-	oldWd, _ := os.Getwd()
-	if err := os.Chdir(tmpDir); err != nil {
-		t.Fatalf("Chdir: %v", err)
-	}
-
-	cleanup := func() {
-		_ = os.Chdir(oldWd)
-	}
+	t.Chdir(tmpDir)
 
 	return &TestContext{
 		T:         t,
@@ -68,7 +59,6 @@ func NewTestContext(t *testing.T) *TestContext {
 		StderrBuf: stderrBuf,
 		RootCmd:   rootCmd,
 		Workspace: ws,
-		Cleanup:   cleanup,
 	}
 }
 

@@ -79,11 +79,10 @@ func TestGetAssetName(t *testing.T) {
 
 func TestCalculateChecksum(t *testing.T) {
 	// Create a temporary file with known content
-	tmpFile, err := os.CreateTemp("", "checksum-test-*.txt")
+	tmpFile, err := os.CreateTemp(t.TempDir(), "checksum-test-*.txt")
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer func() { _ = os.Remove(tmpFile.Name()) }()
 
 	// Write known content
 	knownContent := "hello world"
@@ -146,12 +145,11 @@ func TestCalculateChecksumErrors(t *testing.T) {
 
 func TestVerifyChecksum(t *testing.T) {
 	// Create a temporary file
-	tmpFile, err := os.CreateTemp("", "verify-test-*.txt")
+	tmpFile, err := os.CreateTemp(t.TempDir(), "verify-test-*.txt")
 	if err != nil {
 		t.Fatal(err)
 	}
 	tmpPath := tmpFile.Name()
-	defer func() { _ = os.Remove(tmpPath) }()
 
 	knownContent := "test content"
 	if _, err := tmpFile.WriteString(knownContent); err != nil {
@@ -437,11 +435,10 @@ func TestFindChecksumInFile(t *testing.T) {
 			}
 
 			// Create a temporary file with the test content
-			tmpFile, err := os.CreateTemp("", "checksums-*.txt")
+			tmpFile, err := os.CreateTemp(t.TempDir(), "checksums-*.txt")
 			if err != nil {
 				t.Fatal(err)
 			}
-			defer func() { _ = os.Remove(tmpFile.Name()) }()
 
 			if _, err := tmpFile.WriteString(tt.content); err != nil {
 				t.Fatal(err)

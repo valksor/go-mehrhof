@@ -71,11 +71,11 @@ linters:
         - unconvert        # Unnecessary conversions
         - unparam
         - unused
+        - usestdlibvars
+        - usetesting
         - wastedassign
         - whitespace
-        - usestdlibvars
 #        - wsl_v5
-#        - usetesting
 #        - testpackage
 #        - tagliatelle
 #        - modernize

@@ -30,10 +30,8 @@ func cleanupEnv(vars ...string) func() {
 
 func TestResolveToken(t *testing.T) {
 	t.Run("MEHR prefixed token has priority", func(t *testing.T) {
-		defer cleanupEnv("MEHR_TEST_TOKEN", "TEST_TOKEN")()
-
-		_ = os.Setenv("MEHR_TEST_TOKEN", "mehr-token")
-		_ = os.Setenv("TEST_TOKEN", "default-token")
+		t.Setenv("MEHR_TEST_TOKEN", "mehr-token")
+		t.Setenv("TEST_TOKEN", "default-token")
 
 		tok, err := ResolveToken(Config("TEST", "config-token"))
 		if err != nil {
@@ -45,9 +43,7 @@ func TestResolveToken(t *testing.T) {
 	})
 
 	t.Run("default env var fallback", func(t *testing.T) {
-		defer cleanupEnv("MEHR_TEST_TOKEN", "TEST_TOKEN")()
-
-		_ = os.Setenv("TEST_TOKEN", "default-token")
+		t.Setenv("TEST_TOKEN", "default-token")
 
 		tok, err := ResolveToken(Config("TEST", "config-token").WithEnvVars("TEST_TOKEN"))
 		if err != nil {
@@ -59,8 +55,6 @@ func TestResolveToken(t *testing.T) {
 	})
 
 	t.Run("config token fallback", func(t *testing.T) {
-		defer cleanupEnv("MEHR_TEST_TOKEN", "TEST_TOKEN")()
-
 		tok, err := ResolveToken(Config("TEST", "config-token"))
 		if err != nil {
 			t.Fatalf("ResolveToken error = %v", err)
@@ -71,8 +65,6 @@ func TestResolveToken(t *testing.T) {
 	})
 
 	t.Run("no token available returns ErrNoToken", func(t *testing.T) {
-		defer cleanupEnv("MEHR_TEST_TOKEN", "TEST_TOKEN")()
-
 		_, err := ResolveToken(Config("TEST", ""))
 		if !errors.Is(err, ErrNoToken) {
 			t.Errorf("error = %v, want %v", err, ErrNoToken)
@@ -80,8 +72,6 @@ func TestResolveToken(t *testing.T) {
 	})
 
 	t.Run("CLI fallback is used when provided", func(t *testing.T) {
-		defer cleanupEnv("MEHR_TEST_TOKEN", "TEST_TOKEN")()
-
 		fallbackCalled := false
 		cfg := Config("TEST", "").
 			WithCLIFallback(func() string {
@@ -103,9 +93,7 @@ func TestResolveToken(t *testing.T) {
 	})
 
 	t.Run("CLI fallback is not used when env var is set", func(t *testing.T) {
-		defer cleanupEnv("MEHR_TEST_TOKEN", "TEST_TOKEN")()
-
-		_ = os.Setenv("TEST_TOKEN", "env-token")
+		t.Setenv("TEST_TOKEN", "env-token")
 
 		fallbackCalled := false
 		cfg := Config("TEST", "").
@@ -129,12 +117,10 @@ func TestResolveToken(t *testing.T) {
 	})
 
 	t.Run("multiple default env vars are checked in order", func(t *testing.T) {
-		defer cleanupEnv("MEHR_TEST_TOKEN", "TEST_TOKEN", "TEST_ALT_TOKEN")()
-
 		// First env var in list
 		cfg := Config("TEST", "").WithEnvVars("TEST_TOKEN", "TEST_ALT_TOKEN")
 
-		_ = os.Setenv("TEST_ALT_TOKEN", "alt-token")
+		t.Setenv("TEST_ALT_TOKEN", "alt-token")
 		tok, err := ResolveToken(cfg)
 		if err != nil {
 			t.Fatalf("ResolveToken error = %v", err)
@@ -143,9 +129,14 @@ func TestResolveToken(t *testing.T) {
 			t.Errorf("token = %q, want %q", tok, "alt-token")
 		}
 
-		// First env var takes priority
-		_ = os.Setenv("TEST_TOKEN", "first-token")
-		tok, err = ResolveToken(cfg)
+		// First env var takes priority - need a new subtest to test this
+	})
+
+	t.Run("first env var takes priority", func(t *testing.T) {
+		cfg := Config("TEST", "").WithEnvVars("TEST_TOKEN", "TEST_ALT_TOKEN")
+
+		t.Setenv("TEST_TOKEN", "first-token")
+		tok, err := ResolveToken(cfg)
 		if err != nil {
 			t.Fatalf("ResolveToken error = %v", err)
 		}
@@ -204,9 +195,7 @@ func TestMustResolveToken(t *testing.T) {
 	})
 
 	t.Run("returns token when available", func(t *testing.T) {
-		defer cleanupEnv("MEHR_TEST_TOKEN", "TEST_TOKEN")()
-
-		_ = os.Setenv("TEST_TOKEN", "test-token")
+		t.Setenv("TEST_TOKEN", "test-token")
 
 		tok := MustResolveToken(Config("TEST", "").WithEnvVars("TEST_TOKEN"))
 		if tok != "test-token" {

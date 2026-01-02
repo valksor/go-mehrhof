@@ -4,7 +4,6 @@ import (
 	"errors"
 	"net"
 	"net/http"
-	"os"
 	"strings"
 	"testing"
 	"time"
@@ -810,22 +809,6 @@ func TestNewClient(t *testing.T) {
 }
 
 func TestResolveToken(t *testing.T) {
-	// Save and restore original env
-	origMehr := os.Getenv("MEHR_YOUTRACK_TOKEN")
-	origYt := os.Getenv("YOUTRACK_TOKEN")
-	defer func() {
-		if origMehr != "" {
-			_ = os.Setenv("MEHR_YOUTRACK_TOKEN", origMehr)
-		} else {
-			_ = os.Unsetenv("MEHR_YOUTRACK_TOKEN")
-		}
-		if origYt != "" {
-			_ = os.Setenv("YOUTRACK_TOKEN", origYt)
-		} else {
-			_ = os.Unsetenv("YOUTRACK_TOKEN")
-		}
-	}()
-
 	tests := []struct {
 		name         string
 		configToken  string
@@ -865,16 +848,12 @@ func TestResolveToken(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			// Clear all tokens first
-			_ = os.Unsetenv("MEHR_YOUTRACK_TOKEN")
-			_ = os.Unsetenv("YOUTRACK_TOKEN")
-
 			// Set test values
 			if tt.setMehrToken != "" {
-				_ = os.Setenv("MEHR_YOUTRACK_TOKEN", tt.setMehrToken)
+				t.Setenv("MEHR_YOUTRACK_TOKEN", tt.setMehrToken)
 			}
 			if tt.setYtToken != "" {
-				_ = os.Setenv("YOUTRACK_TOKEN", tt.setYtToken)
+				t.Setenv("YOUTRACK_TOKEN", tt.setYtToken)
 			}
 
 			got, err := ResolveToken(tt.configToken)
@@ -894,10 +873,6 @@ func TestResolveToken(t *testing.T) {
 
 	// Test token priority
 	t.Run("priority order", func(t *testing.T) {
-		// Clear all tokens
-		_ = os.Unsetenv("MEHR_YOUTRACK_TOKEN")
-		_ = os.Unsetenv("YOUTRACK_TOKEN")
-
 		// Only config token
 		got, err := ResolveToken("config-token")
 		if err != nil {
@@ -908,7 +883,7 @@ func TestResolveToken(t *testing.T) {
 		}
 
 		// Set YOUTRACK_TOKEN - should take priority
-		_ = os.Setenv("YOUTRACK_TOKEN", "yt-token")
+		t.Setenv("YOUTRACK_TOKEN", "yt-token")
 		got, err = ResolveToken("config-token")
 		if err != nil {
 			t.Errorf("ResolveToken() error = %v", err)
@@ -918,7 +893,7 @@ func TestResolveToken(t *testing.T) {
 		}
 
 		// Set MEHR_YOUTRACK_TOKEN - should take highest priority
-		_ = os.Setenv("MEHR_YOUTRACK_TOKEN", "mehr-token")
+		t.Setenv("MEHR_YOUTRACK_TOKEN", "mehr-token")
 		got, err = ResolveToken("config-token")
 		if err != nil {
 			t.Errorf("ResolveToken() error = %v", err)

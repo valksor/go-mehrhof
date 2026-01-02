@@ -99,17 +99,9 @@ func TestClientOwnerRepo(t *testing.T) {
 // ──────────────────────────────────────────────────────────────────────────────
 
 func TestResolveToken(t *testing.T) {
-	// Clear any existing env vars for clean test
-	originalMehr := os.Getenv("MEHR_GITHUB_TOKEN")
-	originalGithub := os.Getenv("GITHUB_TOKEN")
-	defer func() {
-		_ = os.Setenv("MEHR_GITHUB_TOKEN", originalMehr)
-		_ = os.Setenv("GITHUB_TOKEN", originalGithub)
-	}()
-
 	t.Run("MEHR_GITHUB_TOKEN priority", func(t *testing.T) {
-		_ = os.Setenv("MEHR_GITHUB_TOKEN", "mehr-token")
-		_ = os.Setenv("GITHUB_TOKEN", "github-token")
+		t.Setenv("MEHR_GITHUB_TOKEN", "mehr-token")
+		t.Setenv("GITHUB_TOKEN", "github-token")
 
 		token, err := ResolveToken("config-token")
 		if err != nil {
@@ -118,13 +110,11 @@ func TestResolveToken(t *testing.T) {
 		if token != "mehr-token" {
 			t.Errorf("token = %q, want %q", token, "mehr-token")
 		}
-
-		_ = os.Unsetenv("MEHR_GITHUB_TOKEN")
 	})
 
 	t.Run("GITHUB_TOKEN fallback", func(t *testing.T) {
-		_ = os.Unsetenv("MEHR_GITHUB_TOKEN")
-		_ = os.Setenv("GITHUB_TOKEN", "github-token")
+		t.Setenv("MEHR_GITHUB_TOKEN", "")
+		t.Setenv("GITHUB_TOKEN", "github-token")
 
 		token, err := ResolveToken("config-token")
 		if err != nil {
@@ -133,13 +123,11 @@ func TestResolveToken(t *testing.T) {
 		if token != "github-token" {
 			t.Errorf("token = %q, want %q", token, "github-token")
 		}
-
-		_ = os.Unsetenv("GITHUB_TOKEN")
 	})
 
 	t.Run("config token fallback", func(t *testing.T) {
-		_ = os.Unsetenv("MEHR_GITHUB_TOKEN")
-		_ = os.Unsetenv("GITHUB_TOKEN")
+		t.Setenv("MEHR_GITHUB_TOKEN", "")
+		t.Setenv("GITHUB_TOKEN", "")
 
 		token, err := ResolveToken("config-token")
 		if err != nil {
