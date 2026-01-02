@@ -69,6 +69,7 @@ func (v *Validator) validateWorkspace() (*Result, error) {
 	if _, err := os.Stat(configPath); os.IsNotExist(err) {
 		// No config file is valid - defaults are used
 		result.AddInfo("CONFIG_NOT_FOUND", "No workspace config found, using defaults", "", configPath)
+
 		return result, nil
 	}
 
@@ -76,6 +77,7 @@ func (v *Validator) validateWorkspace() (*Result, error) {
 	cfg, err := ws.LoadConfig()
 	if err != nil {
 		result.AddError("YAML_SYNTAX", fmt.Sprintf("Failed to parse config: %s", err), "", configPath)
+
 		return result, nil
 	}
 

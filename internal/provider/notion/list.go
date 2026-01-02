@@ -109,6 +109,7 @@ func matchesLabels(page Page, labels []string, labelsProperty string) bool {
 			return false
 		}
 	}
+
 	return true
 }
 

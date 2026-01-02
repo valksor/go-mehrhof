@@ -72,6 +72,7 @@ func (r *Registry) Get(name string) (ProviderInfo, Factory, bool) {
 	if !ok {
 		return ProviderInfo{}, nil, false
 	}
+
 	return rp.info, rp.factory, true
 }
 
@@ -84,6 +85,7 @@ func (r *Registry) GetByScheme(scheme string) (ProviderInfo, Factory, bool) {
 	if !ok {
 		return ProviderInfo{}, nil, false
 	}
+
 	return r.Get(name)
 }
 
@@ -135,7 +137,7 @@ func (r *Registry) Resolve(ctx context.Context, input string, cfg Config, opts R
 // Returns ("file", "task.md") for "file:task.md"
 // Returns ("", "task.md") for "task.md" (no scheme)
 // Handles Windows paths like "C:\path" correctly (returns no scheme).
-func parseScheme(input string) (scheme, identifier string) {
+func parseScheme(input string) (string, string) {
 	idx := strings.Index(input, ":")
 	if idx == -1 {
 		return "", input
@@ -144,6 +146,7 @@ func parseScheme(input string) (scheme, identifier string) {
 	if idx == 1 && len(input) > 2 && (input[2] == '\\' || input[2] == '/') {
 		return "", input
 	}
+
 	return input[:idx], input[idx+1:]
 }
 
@@ -177,6 +180,7 @@ func (r *Registry) resolveWithScheme(ctx context.Context, scheme, identifier str
 // noSchemeError creates a helpful error message when no scheme is provided.
 func (r *Registry) noSchemeError(input string) error {
 	schemes := r.listSchemes()
+
 	return fmt.Errorf(
 		"no scheme provided for reference: %s\n\n"+
 			"Use format 'scheme:identifier' where scheme is one of:\n"+
@@ -200,6 +204,7 @@ func (r *Registry) listSchemes() []string {
 		schemes = append(schemes, scheme)
 	}
 	slices.Sort(schemes)
+
 	return schemes
 }
 
@@ -209,5 +214,6 @@ func (r *Registry) Create(ctx context.Context, name string, cfg Config) (any, er
 	if !ok {
 		return nil, fmt.Errorf("provider not found: %s", name)
 	}
+
 	return factory(ctx, cfg)
 }

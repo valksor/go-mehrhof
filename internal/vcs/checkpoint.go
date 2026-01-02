@@ -3,6 +3,7 @@ package vcs
 import (
 	"cmp"
 	"context"
+	"errors"
 	"fmt"
 	"regexp"
 	"slices"
@@ -29,6 +30,7 @@ var checkpointTagRe = regexp.MustCompile(`^task-checkpoint/([^/]+)/(\d+)$`)
 // CreateCheckpoint creates a checkpoint for a task with default prefix [taskID].
 func (g *Git) CreateCheckpoint(ctx context.Context, taskID, message string) (*Checkpoint, error) {
 	defaultPrefix := fmt.Sprintf("[%s]", taskID)
+
 	return g.CreateCheckpointWithPrefix(ctx, taskID, message, defaultPrefix)
 }
 
@@ -202,6 +204,7 @@ func (g *Git) CanUndo(ctx context.Context, taskID string) (bool, error) {
 	}
 
 	latest := checkpoints[len(checkpoints)-1]
+
 	return head == latest.ID, nil
 }
 
@@ -223,6 +226,7 @@ func (g *Git) CanRedo(ctx context.Context, taskID string) (bool, error) {
 	}
 
 	latest := checkpoints[len(checkpoints)-1]
+
 	return head != latest.ID, nil
 }
 
@@ -234,7 +238,7 @@ func (g *Git) Undo(ctx context.Context, taskID string) (*Checkpoint, error) {
 	}
 
 	if len(checkpoints) < 2 {
-		return nil, fmt.Errorf("nothing to undo")
+		return nil, errors.New("nothing to undo")
 	}
 
 	head, err := g.RevParse(ctx, "HEAD")
@@ -247,12 +251,13 @@ func (g *Git) Undo(ctx context.Context, taskID string) (*Checkpoint, error) {
 	for i, cp := range checkpoints {
 		if cp.ID == head {
 			currentIdx = i
+
 			break
 		}
 	}
 
 	if currentIdx < 1 {
-		return nil, fmt.Errorf("cannot undo: at earliest checkpoint")
+		return nil, errors.New("cannot undo: at earliest checkpoint")
 	}
 
 	// Restore previous checkpoint
@@ -272,7 +277,7 @@ func (g *Git) Redo(ctx context.Context, taskID string) (*Checkpoint, error) {
 	}
 
 	if len(checkpoints) < 2 {
-		return nil, fmt.Errorf("nothing to redo")
+		return nil, errors.New("nothing to redo")
 	}
 
 	head, err := g.RevParse(ctx, "HEAD")
@@ -285,12 +290,13 @@ func (g *Git) Redo(ctx context.Context, taskID string) (*Checkpoint, error) {
 	for i, cp := range checkpoints {
 		if cp.ID == head {
 			currentIdx = i
+
 			break
 		}
 	}
 
 	if currentIdx == -1 || currentIdx >= len(checkpoints)-1 {
-		return nil, fmt.Errorf("cannot redo: at latest checkpoint")
+		return nil, errors.New("cannot redo: at latest checkpoint")
 	}
 
 	// Restore next checkpoint
@@ -309,6 +315,7 @@ func (g *Git) DeleteCheckpoint(ctx context.Context, taskID string, number int) e
 	if err != nil {
 		return fmt.Errorf("delete checkpoint: %w", err)
 	}
+
 	return nil
 }
 
@@ -383,6 +390,7 @@ func (g *Git) GetChangeSummary(ctx context.Context) (*ChangeSummary, error) {
 	}
 
 	summary.Total = len(summary.Added) + len(summary.Modified) + len(summary.Deleted)
+
 	return summary, nil
 }
 
@@ -402,7 +410,7 @@ func (g *Git) GenerateAutoSummary(ctx context.Context) (string, error) {
 
 	if len(summary.Added) > 0 {
 		if len(summary.Added) == 1 {
-			parts = append(parts, fmt.Sprintf("add %s", summary.Added[0]))
+			parts = append(parts, "add "+summary.Added[0])
 		} else {
 			parts = append(parts, fmt.Sprintf("add %d files", len(summary.Added)))
 		}
@@ -410,7 +418,7 @@ func (g *Git) GenerateAutoSummary(ctx context.Context) (string, error) {
 
 	if len(summary.Modified) > 0 {
 		if len(summary.Modified) == 1 {
-			parts = append(parts, fmt.Sprintf("update %s", summary.Modified[0]))
+			parts = append(parts, "update "+summary.Modified[0])
 		} else {
 			parts = append(parts, fmt.Sprintf("update %d files", len(summary.Modified)))
 		}
@@ -418,7 +426,7 @@ func (g *Git) GenerateAutoSummary(ctx context.Context) (string, error) {
 
 	if len(summary.Deleted) > 0 {
 		if len(summary.Deleted) == 1 {
-			parts = append(parts, fmt.Sprintf("remove %s", summary.Deleted[0]))
+			parts = append(parts, "remove "+summary.Deleted[0])
 		} else {
 			parts = append(parts, fmt.Sprintf("remove %d files", len(summary.Deleted)))
 		}
@@ -433,6 +441,7 @@ func (g *Git) CreateCheckpointAutoSummary(ctx context.Context, taskID string) (*
 	if err != nil {
 		msg = "checkpoint"
 	}
+
 	return g.CreateCheckpoint(ctx, taskID, msg)
 }
 
@@ -463,12 +472,14 @@ func (t *CheckpointTracker) SaveAuto(ctx context.Context) (*Checkpoint, error) {
 // UndoAvailable checks if undo is possible.
 func (t *CheckpointTracker) UndoAvailable(ctx context.Context) bool {
 	can, _ := t.git.CanUndo(ctx, t.taskID)
+
 	return can
 }
 
 // RedoAvailable checks if redo is possible.
 func (t *CheckpointTracker) RedoAvailable(ctx context.Context) bool {
 	can, _ := t.git.CanRedo(ctx, t.taskID)
+
 	return can
 }
 

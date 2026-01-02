@@ -3,6 +3,7 @@ package github
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
 
@@ -189,7 +190,7 @@ func (p *Provider) Fetch(ctx context.Context, id string) (*provider.WorkUnit, er
 
 	// Map to WorkUnit
 	wu := &provider.WorkUnit{
-		ID:          fmt.Sprintf("%d", issue.GetNumber()),
+		ID:          strconv.Itoa(issue.GetNumber()),
 		ExternalID:  fmt.Sprintf("%s/%s#%d", owner, repo, issue.GetNumber()),
 		Provider:    ProviderName,
 		Title:       issue.GetTitle(),
@@ -207,7 +208,7 @@ func (p *Provider) Fetch(ctx context.Context, id string) (*provider.WorkUnit, er
 		},
 
 		// Naming fields for branch/commit customization
-		ExternalKey: fmt.Sprintf("%d", issue.GetNumber()),
+		ExternalKey: strconv.Itoa(issue.GetNumber()),
 		TaskType:    inferTypeFromLabels(issue.Labels),
 		Slug:        naming.Slugify(issue.GetTitle(), 50),
 
@@ -372,6 +373,7 @@ func inferTypeFromLabels(labels []*gh.Label) string {
 			return t
 		}
 	}
+
 	return "issue"
 }
 
@@ -392,6 +394,7 @@ func inferPriorityFromLabels(labels []*gh.Label) provider.Priority {
 			return p
 		}
 	}
+
 	return provider.PriorityNormal
 }
 
@@ -400,6 +403,7 @@ func extractLabelNames(labels []*gh.Label) []string {
 	for i, label := range labels {
 		names[i] = label.GetName()
 	}
+
 	return names
 }
 
@@ -407,11 +411,12 @@ func mapAssignees(assignees []*gh.User) []provider.Person {
 	persons := make([]provider.Person, len(assignees))
 	for i, u := range assignees {
 		persons[i] = provider.Person{
-			ID:    fmt.Sprintf("%d", u.GetID()),
+			ID:    strconv.FormatInt(u.GetID(), 10),
 			Name:  u.GetLogin(),
 			Email: u.GetEmail(),
 		}
 	}
+
 	return persons
 }
 
@@ -419,15 +424,16 @@ func mapComments(comments []*gh.IssueComment) []provider.Comment {
 	result := make([]provider.Comment, len(comments))
 	for i, c := range comments {
 		result[i] = provider.Comment{
-			ID:        fmt.Sprintf("%d", c.GetID()),
+			ID:        strconv.FormatInt(c.GetID(), 10),
 			Body:      c.GetBody(),
 			CreatedAt: c.GetCreatedAt().Time,
 			Author: provider.Person{
-				ID:   fmt.Sprintf("%d", c.GetUser().GetID()),
+				ID:   strconv.FormatInt(c.GetUser().GetID(), 10),
 				Name: c.GetUser().GetLogin(),
 			},
 		}
 	}
+
 	return result
 }
 

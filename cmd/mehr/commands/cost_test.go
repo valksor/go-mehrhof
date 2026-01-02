@@ -65,6 +65,7 @@ func TestCostCommand_Flags(t *testing.T) {
 			flag := costCmd.Flags().Lookup(tt.flagName)
 			if flag == nil {
 				t.Errorf("flag %q not found", tt.flagName)
+
 				return
 			}
 
@@ -126,6 +127,7 @@ func TestCostCommand_RegisteredInRoot(t *testing.T) {
 	for _, cmd := range rootCmd.Commands() {
 		if cmd.Use == "cost" {
 			found = true
+
 			break
 		}
 	}

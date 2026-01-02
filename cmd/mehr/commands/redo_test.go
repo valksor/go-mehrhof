@@ -35,6 +35,7 @@ func TestRedoCommand_Flags(t *testing.T) {
 			flag := redoCmd.Flags().Lookup(tt.flagName)
 			if flag == nil {
 				t.Errorf("flag %q not found", tt.flagName)
+
 				return
 			}
 
@@ -95,6 +96,7 @@ func TestRedoCommand_RegisteredInRoot(t *testing.T) {
 	for _, cmd := range rootCmd.Commands() {
 		if cmd.Use == "redo" {
 			found = true
+
 			break
 		}
 	}

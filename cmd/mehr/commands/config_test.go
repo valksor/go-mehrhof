@@ -64,6 +64,7 @@ func TestConfigValidateCommand_Flags(t *testing.T) {
 			flag := configValidateCmd.Flags().Lookup(tt.flagName)
 			if flag == nil {
 				t.Errorf("flag %q not found", tt.flagName)
+
 				return
 			}
 
@@ -117,6 +118,7 @@ func TestConfigCommand_RegisteredInRoot(t *testing.T) {
 	for _, cmd := range rootCmd.Commands() {
 		if cmd.Use == "config" {
 			found = true
+
 			break
 		}
 	}
@@ -131,6 +133,7 @@ func TestConfigValidateCommand_RegisteredInConfig(t *testing.T) {
 	for _, cmd := range configCmd.Commands() {
 		if cmd.Use == "validate" {
 			found = true
+
 			break
 		}
 	}

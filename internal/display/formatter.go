@@ -51,12 +51,14 @@ func NewFormatter() *Formatter {
 // SetIndent sets the current indentation level.
 func (f *Formatter) SetIndent(level int) *Formatter {
 	f.indentLevel = level
+
 	return f
 }
 
 // SetWidth sets the output width.
 func (f *Formatter) SetWidth(w int) *Formatter {
 	f.width = w
+
 	return f
 }
 
@@ -71,6 +73,7 @@ func (f *Formatter) Section(title string) string {
 	if len(title) > 0 {
 		return fmt.Sprintf("\n%s\n%s\n%s\n", Bold(title), separator, "")
 	}
+
 	return fmt.Sprintf("\n%s\n", separator)
 }
 
@@ -83,6 +86,7 @@ func (f *Formatter) Subsection(title string) string {
 func (f *Formatter) KeyValue(key, value string) string {
 	indent := f.Indent()
 	keyWidth := 12 // Standard key width
+
 	return fmt.Sprintf("%s%-*s %s\n", indent, keyWidth, key+":", value)
 }
 
@@ -187,18 +191,21 @@ func (f *Formatter) RelativeTimestamp(t time.Time) string {
 		if minutes == 1 {
 			return "1 min ago"
 		}
+
 		return fmt.Sprintf("%d mins ago", minutes)
 	case duration < 24*time.Hour:
 		hours := int(duration.Hours())
 		if hours == 1 {
 			return "1 hr ago"
 		}
+
 		return fmt.Sprintf("%d hrs ago", hours)
 	case duration < 30*24*time.Hour:
 		days := int(duration.Hours() / 24)
 		if days == 1 {
 			return "1 day ago"
 		}
+
 		return fmt.Sprintf("%d days ago", days)
 	default:
 		return t.Format("2006-01-02")
@@ -213,6 +220,7 @@ func (f *Formatter) Truncate(s string, maxLen int) string {
 	if maxLen <= 3 {
 		return "..."
 	}
+
 	return s[:maxLen-3] + "..."
 }
 

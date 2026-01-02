@@ -1,6 +1,7 @@
 package workflow
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/valksor/go-mehrhof/internal/events"
@@ -72,19 +73,19 @@ type PhaseDefinition struct {
 func (b *MachineBuilder) RegisterPhase(phase PhaseDefinition) error {
 	// Validate phase definition
 	if phase.State == "" {
-		return fmt.Errorf("phase state is required")
+		return errors.New("phase state is required")
 	}
 	if phase.EntryEvent == "" {
-		return fmt.Errorf("phase entry event is required")
+		return errors.New("phase entry event is required")
 	}
 	if phase.ExitEvent == "" {
-		return fmt.Errorf("phase exit event is required")
+		return errors.New("phase exit event is required")
 	}
 	if phase.After == "" && phase.Before == "" {
-		return fmt.Errorf("phase must specify either After or Before insertion point")
+		return errors.New("phase must specify either After or Before insertion point")
 	}
 	if phase.After != "" && phase.Before != "" {
-		return fmt.Errorf("phase cannot specify both After and Before")
+		return errors.New("phase cannot specify both After and Before")
 	}
 
 	// Check if state already exists
@@ -100,6 +101,7 @@ func (b *MachineBuilder) RegisterPhase(phase PhaseDefinition) error {
 		for i, s := range b.phaseOrder {
 			if s == anchorState {
 				insertIdx = i + 1 // Insert after anchor
+
 				break
 			}
 		}
@@ -108,6 +110,7 @@ func (b *MachineBuilder) RegisterPhase(phase PhaseDefinition) error {
 		for i, s := range b.phaseOrder {
 			if s == anchorState {
 				insertIdx = i // Insert at anchor position (before it)
+
 				break
 			}
 		}
@@ -207,12 +210,13 @@ func (b *MachineBuilder) AddEffectToTransition(from State, event Event, effect E
 // Use this for auxiliary states that don't need phase insertion logic.
 func (b *MachineBuilder) RegisterState(info StateInfo) error {
 	if info.Name == "" {
-		return fmt.Errorf("state name is required")
+		return errors.New("state name is required")
 	}
 	if _, exists := b.states[info.Name]; exists {
 		return fmt.Errorf("state %s already exists", info.Name)
 	}
 	b.states[info.Name] = info
+
 	return nil
 }
 
@@ -243,12 +247,14 @@ func (b *MachineBuilder) Build(eventBus *events.Bus) *Machine {
 func (b *MachineBuilder) PhaseOrder() []State {
 	result := make([]State, len(b.phaseOrder))
 	copy(result, b.phaseOrder)
+
 	return result
 }
 
 // HasState checks if a state is registered.
 func (b *MachineBuilder) HasState(s State) bool {
 	_, ok := b.states[s]
+
 	return ok
 }
 
@@ -256,5 +262,6 @@ func (b *MachineBuilder) HasState(s State) bool {
 func (b *MachineBuilder) HasTransition(from State, event Event) bool {
 	key := TransitionKey{From: from, Event: event}
 	transitions, ok := b.transitions[key]
+
 	return ok && len(transitions) > 0
 }

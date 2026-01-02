@@ -24,6 +24,7 @@ func (r *Ref) String() string {
 	if r.PageID != "" {
 		return r.PageID
 	}
+
 	return ""
 }
 
@@ -81,6 +82,7 @@ func ParseReference(input string) (*Ref, error) {
 	// Check for UUID with dashes (convert to 32-char format)
 	if uuidWithDashes.MatchString(pageID) {
 		normalizedID := strings.ReplaceAll(pageID, "-", "")
+
 		return &Ref{
 			PageID:     normalizedID,
 			IsExplicit: false,
@@ -104,6 +106,7 @@ func ExtractPageID(url string) string {
 	if matches := notionURLPattern.FindStringSubmatch(url); len(matches) > 3 {
 		return matches[3]
 	}
+
 	return ""
 }
 
@@ -121,5 +124,6 @@ func NormalizePageID(id string) string {
 	if extracted := ExtractPageID(id); extracted != "" {
 		return extracted
 	}
+
 	return ""
 }

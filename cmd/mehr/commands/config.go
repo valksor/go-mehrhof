@@ -2,6 +2,7 @@ package commands
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 
@@ -88,7 +89,7 @@ func runConfigValidate(cmd *cobra.Command, args []string) error {
 
 	// Return error for exit code handling
 	if !result.Valid {
-		return fmt.Errorf("validation failed")
+		return errors.New("validation failed")
 	}
 	if validateStrict && result.Warnings > 0 {
 		return fmt.Errorf("validation failed: %d warning(s) in strict mode", result.Warnings)

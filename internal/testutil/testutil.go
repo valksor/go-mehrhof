@@ -38,6 +38,7 @@ func CreateTempGitRepoWithBranch(t *testing.T, branch string) string {
 	t.Helper()
 	dir := CreateTempGitRepo(t)
 	mustRunGit(t, dir, "checkout", "-b", branch)
+
 	return dir
 }
 
@@ -72,6 +73,7 @@ func CreateTaskFile(t *testing.T, dir, filename, title, description string) stri
 	content := "---\ntitle: " + title + "\n---\n\n" + description + "\n"
 	path := filepath.Join(dir, filename)
 	WriteFile(t, path, content)
+
 	return path
 }
 
@@ -110,6 +112,7 @@ func runGit(t *testing.T, dir string, args ...string) error {
 	if err != nil {
 		t.Logf("git %v failed: %s", args, output)
 	}
+
 	return err
 }
 
@@ -131,6 +134,7 @@ func RunGit(t *testing.T, dir string, args ...string) string {
 	if err != nil {
 		t.Fatalf("git %v: %v\nOutput: %s", args, err, output)
 	}
+
 	return string(output)
 }
 
@@ -195,5 +199,6 @@ func findSubstring(s, substr string) bool {
 			return true
 		}
 	}
+
 	return false
 }

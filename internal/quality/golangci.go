@@ -25,6 +25,7 @@ func (g *GolangCI) Name() string {
 // Available checks if golangci-lint is installed.
 func (g *GolangCI) Available() bool {
 	_, err := exec.LookPath("golangci-lint")
+
 	return err == nil
 }
 
@@ -70,10 +71,11 @@ func (g *GolangCI) Run(ctx context.Context, workDir string, files []string) (*Re
 			return &Result{
 				Linter:  g.Name(),
 				Passed:  false,
-				Summary: fmt.Sprintf("Linter failed: %s", string(output)),
+				Summary: "Linter failed: " + string(output),
 				Error:   err,
 			}, nil
 		}
+
 		return nil, fmt.Errorf("parse golangci-lint output: %w", parseErr)
 	}
 
@@ -122,6 +124,7 @@ func (g *GolangCI) parseOutput(output []byte) (*Result, error) {
 				Summary: "No Go files to analyze",
 			}, nil
 		}
+
 		return nil, err
 	}
 
@@ -147,6 +150,7 @@ func (g *GolangCI) parseOutput(output []byte) (*Result, error) {
 	for _, issue := range issues {
 		if issue.Severity == SeverityError {
 			passed = false
+
 			break
 		}
 	}

@@ -222,6 +222,7 @@ func (p *YAMLBlockParser) describeToolCall(name string, input map[string]any) st
 		if path != "" {
 			return pattern + " in " + path
 		}
+
 		return pattern
 	case "Bash":
 		if desc, ok := input["description"].(string); ok && desc != "" {
@@ -231,6 +232,7 @@ func (p *YAMLBlockParser) describeToolCall(name string, input map[string]any) st
 			if len(cmd) > 60 {
 				return cmd[:60] + "..."
 			}
+
 			return cmd
 		}
 	case "Task":
@@ -239,6 +241,7 @@ func (p *YAMLBlockParser) describeToolCall(name string, input map[string]any) st
 		if subtype != "" {
 			return "[" + subtype + "] " + desc
 		}
+
 		return desc
 	case "AskUserQuestion":
 		if questions, ok := input["questions"].([]any); ok && len(questions) > 0 {
@@ -247,12 +250,15 @@ func (p *YAMLBlockParser) describeToolCall(name string, input map[string]any) st
 					if len(text) > 60 {
 						return text[:60] + "..."
 					}
+
 					return text
 				}
 			}
 		}
+
 		return "asking question"
 	}
+
 	return ""
 }
 
@@ -289,12 +295,14 @@ func (p *YAMLBlockParser) Parse(events []Event) (*Response, error) {
 		// Handle "result" event which contains the final text
 		if result, ok := event.Data["result"].(string); ok {
 			textBuilder.WriteString(result)
+
 			continue
 		}
 
 		// Use pre-extracted text if available
 		if event.Text != "" {
 			textBuilder.WriteString(event.Text)
+
 			continue
 		}
 
@@ -421,5 +429,6 @@ func (p *JSONLineParser) ParseEvent(line []byte) (Event, error) {
 func (p *JSONLineParser) Parse(events []Event) (*Response, error) {
 	// Delegate to YAML parser for now - same logic
 	yamlParser := NewYAMLBlockParser()
+
 	return yamlParser.Parse(events)
 }

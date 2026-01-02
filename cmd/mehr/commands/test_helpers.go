@@ -82,6 +82,7 @@ func createTestRootCommand(stdout, stderr io.Writer) *cobra.Command {
 	cmd.SetOut(stdout)
 	cmd.SetErr(stderr)
 	cmd.SetContext(context.Background())
+
 	return cmd
 }
 
@@ -90,6 +91,7 @@ func ExecuteCommand(cmd *cobra.Command, args ...string) error {
 	ctx := context.Background()
 	cmd.SetContext(ctx)
 	cmd.SetArgs(args)
+
 	return cmd.Execute()
 }
 
@@ -97,18 +99,21 @@ func ExecuteCommand(cmd *cobra.Command, args ...string) error {
 func ExecuteCommandWithContext(ctx context.Context, cmd *cobra.Command, args ...string) error {
 	cmd.SetContext(ctx)
 	cmd.SetArgs(args)
+
 	return cmd.Execute()
 }
 
 // SetupTestWorkspace creates a test workspace in the given directory.
 func SetupTestWorkspace(t *testing.T) string {
 	t.Helper()
+
 	return testutil.CreateTempGitRepo(t)
 }
 
 // SetupTestGitRepo creates a test git repository.
 func SetupTestGitRepo(t *testing.T) string {
 	t.Helper()
+
 	return testutil.CreateTempGitRepo(t)
 }
 
@@ -193,6 +198,7 @@ func (tc *TestContext) CreateActiveTask(taskID, ref string) *storage.ActiveTask 
 	if err := tc.Workspace.SaveActiveTask(activeTask); err != nil {
 		tc.T.Fatalf("Save active task: %v", err)
 	}
+
 	return activeTask
 }
 
@@ -210,6 +216,7 @@ func (tc *TestContext) CreateTaskWork(taskID, title string) *storage.TaskWork {
 	if err := tc.Workspace.SaveWork(work); err != nil {
 		tc.T.Fatalf("Save work: %v", err)
 	}
+
 	return work
 }
 

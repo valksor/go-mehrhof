@@ -84,6 +84,7 @@ func (c *Cache) Disable() {
 func (c *Cache) Enabled() bool {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
+
 	return c.enabled
 }
 
@@ -149,6 +150,7 @@ func (c *Cache) Clear() {
 func (c *Cache) Size() int {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
+
 	return len(c.store)
 }
 

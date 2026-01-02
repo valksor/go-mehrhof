@@ -1,8 +1,10 @@
 package commands
 
 import (
+	"errors"
 	"fmt"
 	"log/slog"
+	"strconv"
 
 	"github.com/spf13/cobra"
 
@@ -69,7 +71,8 @@ func runImplement(cmd *cobra.Command, args []string) error {
 	// Check for active task
 	if cond.GetActiveTask() == nil {
 		fmt.Print(display.NoActiveTaskError())
-		return fmt.Errorf("no active task") // Return error to exit with code 1
+
+		return errors.New("no active task") // Return error to exit with code 1
 	}
 
 	// Set up event handlers
@@ -156,7 +159,7 @@ func runImplement(cmd *cobra.Command, args []string) error {
 			fmt.Println(display.SuccessMsg("Implementation complete!"))
 		}
 	}
-	fmt.Printf("  Checkpoints: %s\n", display.Bold(fmt.Sprintf("%d", status.Checkpoints)))
+	fmt.Printf("  Checkpoints: %s\n", display.Bold(strconv.Itoa(status.Checkpoints)))
 	if implementDryRun {
 		fmt.Println()
 		fmt.Println(display.Muted("  (Dry-run mode - no files were modified)"))

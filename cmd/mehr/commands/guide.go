@@ -68,6 +68,7 @@ func runGuide(cmd *cobra.Command, args []string) error {
 			fmt.Println()
 			fmt.Println(display.Muted("Suggested actions:"))
 			fmt.Println("  mehr start <reference>   # Start a new task")
+
 			return nil
 		}
 		work, _ = ws.LoadWork(active.ID)
@@ -79,6 +80,7 @@ func runGuide(cmd *cobra.Command, args []string) error {
 			fmt.Println(display.Muted("Suggested actions:"))
 			fmt.Println("  mehr start <reference>   # Start a new task")
 			fmt.Println("  mehr status --all        # View all tasks in workspace")
+
 			return nil
 		}
 		active, err = ws.LoadActiveTask()
@@ -95,6 +97,7 @@ func runGuide(cmd *cobra.Command, args []string) error {
 		fmt.Println()
 		fmt.Println(display.Muted("Suggested actions:"))
 		fmt.Println("  mehr start <reference>   # Start a new task")
+
 		return nil
 	}
 
@@ -124,6 +127,7 @@ func runGuide(cmd *cobra.Command, args []string) error {
 		fmt.Println(display.Muted("Suggested actions:"))
 		fmt.Println("  mehr answer \"your answer\"  # Respond to the question")
 		fmt.Println("  mehr note                   # Enter interactive mode")
+
 		return nil
 	}
 
@@ -142,6 +146,7 @@ func runGuide(cmd *cobra.Command, args []string) error {
 			for _, spec := range specs {
 				if spec.Status != storage.SpecificationStatusDone {
 					hasIncomplete = true
+
 					break
 				}
 			}

@@ -8,6 +8,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 	"time"
 
@@ -83,6 +84,7 @@ func (c *Client) GetIssue(ctx context.Context, issueID string) (*Issue, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	return &response.Data, nil
 }
 
@@ -96,10 +98,10 @@ func (c *Client) GetIssuesByQuery(ctx context.Context, query string, top, skip i
 		params.Add("query", query)
 	}
 	if top > 0 {
-		params.Add("$top", fmt.Sprintf("%d", top))
+		params.Add("$top", strconv.Itoa(top))
 	}
 	if skip > 0 {
-		params.Add("$skip", fmt.Sprintf("%d", skip))
+		params.Add("$skip", strconv.Itoa(skip))
 	}
 
 	var response issuesResponse
@@ -108,6 +110,7 @@ func (c *Client) GetIssuesByQuery(ctx context.Context, query string, top, skip i
 	if err != nil {
 		return nil, err
 	}
+
 	return response.Data, nil
 }
 
@@ -120,25 +123,30 @@ func (c *Client) GetComments(ctx context.Context, issueID string) ([]Comment, er
 	if err != nil {
 		return nil, err
 	}
+
 	return response.Data, nil
 }
 
 // AddComment adds a comment to an issue.
 func (c *Client) AddComment(ctx context.Context, issueID, text string) (*Comment, error) {
 	requestBody := map[string]string{"text": text}
-	bodyBytes, _ := json.Marshal(requestBody)
+	bodyBytes, err := json.Marshal(requestBody)
+	if err != nil {
+		return nil, fmt.Errorf("marshaling request body: %w", err)
+	}
 
 	fields := url.QueryEscape("id,text,author(id,login,name),created")
 	var response commentsResponse
-	err := c.doRequestWithRetry(ctx, http.MethodPost,
+	err = c.doRequestWithRetry(ctx, http.MethodPost,
 		"/issues/"+url.PathEscape(issueID)+"/comments?fields="+fields,
 		bytesReader(bodyBytes), &response)
 	if err != nil {
 		return nil, err
 	}
 	if len(response.Data) == 0 {
-		return nil, fmt.Errorf("no comment returned")
+		return nil, errors.New("no comment returned")
 	}
+
 	return &response.Data[0], nil
 }
 
@@ -151,25 +159,30 @@ func (c *Client) GetTags(ctx context.Context, issueID string) ([]Tag, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	return response.Data, nil
 }
 
 // AddTag adds a tag to an issue by tag name (YouTrack creates tag if it doesn't exist).
 func (c *Client) AddTag(ctx context.Context, issueID, tagName string) (*Tag, error) {
 	requestBody := map[string]string{"name": tagName}
-	bodyBytes, _ := json.Marshal(requestBody)
+	bodyBytes, err := json.Marshal(requestBody)
+	if err != nil {
+		return nil, fmt.Errorf("marshaling request body: %w", err)
+	}
 
 	fields := url.QueryEscape("id,name")
 	var response tagsResponse
-	err := c.doRequestWithRetry(ctx, http.MethodPost,
+	err = c.doRequestWithRetry(ctx, http.MethodPost,
 		"/issues/"+url.PathEscape(issueID)+"/tags?fields="+fields,
 		bytesReader(bodyBytes), &response)
 	if err != nil {
 		return nil, err
 	}
 	if len(response.Data) == 0 {
-		return nil, fmt.Errorf("no tag returned")
+		return nil, errors.New("no tag returned")
 	}
+
 	return &response.Data[0], nil
 }
 
@@ -181,16 +194,20 @@ func (c *Client) RemoveTag(ctx context.Context, issueID, tagID string) error {
 
 // UpdateIssue updates an issue.
 func (c *Client) UpdateIssue(ctx context.Context, issueID string, updates map[string]interface{}) (*Issue, error) {
-	bodyBytes, _ := json.Marshal(updates)
+	bodyBytes, err := json.Marshal(updates)
+	if err != nil {
+		return nil, fmt.Errorf("marshaling request body: %w", err)
+	}
 	fields := url.QueryEscape("id,idReadable,summary,customFields(name,value)")
 
 	var response issueResponse
-	err := c.doRequestWithRetry(ctx, http.MethodPost,
+	err = c.doRequestWithRetry(ctx, http.MethodPost,
 		"/issues/"+url.PathEscape(issueID)+"?fields="+fields,
 		bytesReader(bodyBytes), &response)
 	if err != nil {
 		return nil, err
 	}
+
 	return &response.Data, nil
 }
 
@@ -207,16 +224,20 @@ func (c *Client) CreateIssue(ctx context.Context, projectID, summary, descriptio
 		requestBody["customFields"] = customFields
 	}
 
-	bodyBytes, _ := json.Marshal(requestBody)
+	bodyBytes, err := json.Marshal(requestBody)
+	if err != nil {
+		return nil, fmt.Errorf("marshaling request body: %w", err)
+	}
 	fields := url.QueryEscape("id,idReadable,summary,description,created,project(id,name)")
 
 	var response issueResponse
-	err := c.doRequestWithRetry(ctx, http.MethodPost,
+	err = c.doRequestWithRetry(ctx, http.MethodPost,
 		"/issues?fields="+fields,
 		bytesReader(bodyBytes), &response)
 	if err != nil {
 		return nil, err
 	}
+
 	return &response.Data, nil
 }
 
@@ -229,6 +250,7 @@ func (c *Client) GetAttachments(ctx context.Context, issueID string) ([]Attachme
 	if err != nil {
 		return nil, err
 	}
+
 	return response.Data.Attachments, nil
 }
 
@@ -250,6 +272,7 @@ func (c *Client) DownloadAttachment(ctx context.Context, attachmentID string) (i
 
 	if resp.StatusCode != http.StatusOK {
 		defer func() { _ = resp.Body.Close() }()
+
 		return nil, "", wrapAPIError(newHTTPError(resp.StatusCode, ""))
 	}
 

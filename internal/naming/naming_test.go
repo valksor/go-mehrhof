@@ -185,6 +185,7 @@ func TestValidatePattern(t *testing.T) {
 			got := ValidatePattern(tt.pattern)
 			if len(got) != len(tt.want) {
 				t.Errorf("ValidatePattern(%q) = %v, want %v", tt.pattern, got, tt.want)
+
 				return
 			}
 			for i, v := range got {

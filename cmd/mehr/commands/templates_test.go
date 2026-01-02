@@ -115,6 +115,7 @@ func TestTemplatesCommand_HasSubcommands(t *testing.T) {
 		for _, cmd := range subcommands {
 			if cmd.Use == exp {
 				found = true
+
 				break
 			}
 		}
@@ -129,6 +130,7 @@ func TestTemplatesCommand_RegisteredInRoot(t *testing.T) {
 	for _, cmd := range rootCmd.Commands() {
 		if cmd.Use == "templates" {
 			found = true
+
 			break
 		}
 	}

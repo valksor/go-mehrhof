@@ -60,7 +60,10 @@ func TestNewWithBasePath(t *testing.T) {
 		t.Fatalf("New: %v", err)
 	}
 
-	prov := p.(*Provider)
+	prov, ok := p.(*Provider)
+	if !ok {
+		t.Fatal("New did not return *Provider")
+	}
 	if prov.basePath != "/custom/path" {
 		t.Errorf("basePath = %q, want %q", prov.basePath, "/custom/path")
 	}

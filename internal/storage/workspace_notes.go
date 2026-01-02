@@ -33,6 +33,7 @@ func (w *Workspace) AppendNote(taskID, content, state string) error {
 	b.Grow(len(existing) + len(newNote))
 	b.Write(existing)
 	b.WriteString(newNote)
+
 	return os.WriteFile(notesPath, []byte(b.String()), 0o644)
 }
 
@@ -42,5 +43,6 @@ func (w *Workspace) ReadNotes(taskID string) (string, error) {
 	if err != nil {
 		return "", err
 	}
+
 	return string(data), nil
 }

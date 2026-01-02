@@ -153,9 +153,11 @@ func formatSpecificationContent(num int, response *agent.Response) string {
 
 	if len(response.Messages) > 0 {
 		content += "## Details\n\n"
+		var contentSb156 strings.Builder
 		for _, msg := range response.Messages {
-			content += msg + "\n\n"
+			contentSb156.WriteString(msg + "\n\n")
 		}
+		content += contentSb156.String()
 	}
 
 	return content
@@ -173,8 +175,10 @@ func extractContextSummary(response *agent.Response) string {
 		if len(msg) > 2000 {
 			return msg[:2000] + "\n[truncated...]"
 		}
+
 		return msg
 	}
+
 	return ""
 }
 
@@ -188,6 +192,7 @@ func buildFullContext(response *agent.Response) string {
 	if len(response.Messages) > 0 {
 		parts = append(parts, "## Messages\n"+strings.Join(response.Messages, "\n\n"))
 	}
+
 	return strings.Join(parts, "\n\n")
 }
 

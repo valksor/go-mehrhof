@@ -2,7 +2,6 @@ package github
 
 import (
 	"errors"
-	"fmt"
 	"net"
 	"net/http"
 	"testing"
@@ -13,7 +12,7 @@ import (
 
 func TestWrapAPIError_NetworkError(t *testing.T) {
 	// Test network error wrapping (uses shared errors)
-	netErr := &net.OpError{Op: "dial", Net: "tcp", Err: fmt.Errorf("connection refused")}
+	netErr := &net.OpError{Op: "dial", Net: "tcp", Err: errors.New("connection refused")}
 	got := wrapAPIError(netErr)
 
 	if got == nil {
@@ -29,7 +28,7 @@ func TestWrapAPIError_NetworkError(t *testing.T) {
 func TestWrapAPIError_500ServerError(t *testing.T) {
 	// Test that 500 errors pass through unchanged
 	serverErr := &github.ErrorResponse{
-		Response: &http.Response{StatusCode: 500},
+		Response: &http.Response{StatusCode: http.StatusInternalServerError},
 		Message:  "Internal Server Error",
 	}
 	got := wrapAPIError(serverErr)

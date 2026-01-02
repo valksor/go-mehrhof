@@ -73,6 +73,7 @@ func TestMachineBuilder_RegisterPhase(t *testing.T) {
 	for _, s := range order {
 		if s == phase.State {
 			found = true
+
 			break
 		}
 	}
@@ -170,6 +171,7 @@ func TestMachineBuilder_AddGuardToTransition(t *testing.T) {
 	guardCalled := false
 	guard := func(ctx context.Context, wu *WorkUnit) bool {
 		guardCalled = true
+
 		return false // Block transition
 	}
 
@@ -275,8 +277,16 @@ func TestExecuteEffects_Critical(t *testing.T) {
 	t.Run("all effects execute in order", func(t *testing.T) {
 		order := []string{}
 		effects := []CriticalEffect{
-			{Name: "first", Fn: func(ctx context.Context, wu *WorkUnit) error { order = append(order, "first"); return nil }},
-			{Name: "second", Fn: func(ctx context.Context, wu *WorkUnit) error { order = append(order, "second"); return nil }},
+			{Name: "first", Fn: func(ctx context.Context, wu *WorkUnit) error {
+				order = append(order, "first")
+
+				return nil
+			}},
+			{Name: "second", Fn: func(ctx context.Context, wu *WorkUnit) error {
+				order = append(order, "second")
+
+				return nil
+			}},
 		}
 
 		_ = ExecuteEffects(context.Background(), wu, effects)

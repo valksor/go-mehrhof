@@ -3,6 +3,7 @@ package bitbucket
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/valksor/go-mehrhof/internal/naming"
@@ -53,7 +54,7 @@ func (p *Provider) CreateWorkUnit(ctx context.Context, opts provider.CreateWorkU
 	}
 
 	return &provider.WorkUnit{
-		ID:          fmt.Sprintf("%d", issue.ID),
+		ID:          strconv.Itoa(issue.ID),
 		ExternalID:  fmt.Sprintf("%s/%s#%d", workspace, repoSlug, issue.ID),
 		Provider:    ProviderName,
 		Title:       issue.Title,
@@ -69,7 +70,7 @@ func (p *Provider) CreateWorkUnit(ctx context.Context, opts provider.CreateWorkU
 			Reference: fmt.Sprintf("%s/%s#%d", workspace, repoSlug, issue.ID),
 			SyncedAt:  time.Now(),
 		},
-		ExternalKey: fmt.Sprintf("%d", issue.ID),
+		ExternalKey: strconv.Itoa(issue.ID),
 		TaskType:    mapBitbucketKind(issue.Kind),
 		Slug:        naming.Slugify(issue.Title, 50),
 		Metadata: map[string]any{
@@ -96,5 +97,6 @@ func mapProviderPriorityToBitbucket(priority provider.Priority) string {
 	case provider.PriorityLow:
 		return "trivial"
 	}
+
 	return "minor"
 }

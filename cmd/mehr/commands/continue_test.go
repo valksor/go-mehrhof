@@ -45,6 +45,7 @@ func TestContinueCommand_Flags(t *testing.T) {
 			flag := continueCmd.Flags().Lookup(tt.flagName)
 			if flag == nil {
 				t.Errorf("flag %q not found", tt.flagName)
+
 				return
 			}
 
@@ -109,6 +110,7 @@ func TestContinueCommand_HasAliases(t *testing.T) {
 		for _, alias := range continueCmd.Aliases {
 			if alias == exp {
 				found = true
+
 				break
 			}
 		}
@@ -136,6 +138,7 @@ func TestContinueCommand_RegisteredInRoot(t *testing.T) {
 	for _, cmd := range rootCmd.Commands() {
 		if cmd.Use == "continue" {
 			found = true
+
 			break
 		}
 	}

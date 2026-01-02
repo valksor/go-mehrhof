@@ -2,6 +2,7 @@ package commands
 
 import (
 	"bufio"
+	"errors"
 	"fmt"
 	"os"
 	"strings"
@@ -60,7 +61,8 @@ func runNote(cmd *cobra.Command, args []string) error {
 	// Check for active task
 	if cond.GetActiveTask() == nil {
 		fmt.Print(display.NoActiveTaskError())
-		return fmt.Errorf("no active task")
+
+		return errors.New("no active task")
 	}
 
 	taskID := cond.GetActiveTask().ID
@@ -75,8 +77,10 @@ func runNote(cmd *cobra.Command, args []string) error {
 				return fmt.Errorf("save answer: %w", err)
 			}
 			_ = ws.ClearPendingQuestion(taskID)
+
 			return nil
 		}
+
 		return ws.AppendNote(taskID, message, cond.GetActiveTask().State)
 	}
 
@@ -92,6 +96,7 @@ func runNote(cmd *cobra.Command, args []string) error {
 		if ws.HasPendingQuestion(taskID) {
 			fmt.Println("\nRun 'mehr plan' to continue planning with your answer.")
 		}
+
 		return nil
 	}
 
@@ -141,6 +146,7 @@ func runNote(cmd *cobra.Command, args []string) error {
 
 		if err := saveNote(message); err != nil {
 			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+
 			continue
 		}
 

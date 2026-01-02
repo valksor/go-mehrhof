@@ -54,7 +54,11 @@ func TestWithTarget(t *testing.T) {
 
 func TestWithEnv(t *testing.T) {
 	a := New()
-	b := a.WithEnv("TEST_KEY", "test_value").(*Agent)
+	bAgent := a.WithEnv("TEST_KEY", "test_value")
+	b, ok := bAgent.(*Agent)
+	if !ok {
+		t.Fatal("WithEnv did not return *Agent")
+	}
 
 	// Original should not have the env var
 	if _, ok := a.config.Environment["TEST_KEY"]; ok {
@@ -69,7 +73,11 @@ func TestWithEnv(t *testing.T) {
 
 func TestWithArgs(t *testing.T) {
 	a := New()
-	b := a.WithArgs("--mode", "explain").(*Agent)
+	bAgent := a.WithArgs("--mode", "explain")
+	b, ok := bAgent.(*Agent)
+	if !ok {
+		t.Fatal("WithArgs did not return *Agent")
+	}
 
 	if len(a.config.Args) != 0 {
 		t.Error("WithArgs modified original agent")
@@ -158,6 +166,7 @@ func TestBuildArgs(t *testing.T) {
 
 			if len(got) != len(tt.want) {
 				t.Errorf("buildArgs() len = %d, want %d", len(got), len(tt.want))
+
 				return
 			}
 
@@ -422,10 +431,12 @@ func TestBuildArgs_ConfigOverrides(t *testing.T) {
 			for i, arg := range got {
 				if arg == "suggest" || arg == "explain" {
 					foundMode = arg
+
 					break
 				}
 				if i > 0 && got[i-1] == "copilot" && (arg == "suggest" || arg == "explain") {
 					foundMode = arg
+
 					break
 				}
 			}
@@ -587,7 +598,11 @@ func TestWithEnv_Chaining(t *testing.T) {
 	a := New()
 	a.config.Environment = map[string]string{"EXISTING": "value"}
 
-	b := a.WithEnv("NEW_KEY", "new_value").(*Agent)
+	bAgent := a.WithEnv("NEW_KEY", "new_value")
+	b, ok := bAgent.(*Agent)
+	if !ok {
+		t.Fatal("WithEnv did not return *Agent")
+	}
 
 	// Original should not have new key
 	if _, ok := a.config.Environment["NEW_KEY"]; ok {
@@ -613,7 +628,11 @@ func TestWithArgs_Chaining(t *testing.T) {
 	a := New()
 	a.config.Args = []string{"--existing"}
 
-	b := a.WithArgs("--new1", "--new2").(*Agent)
+	bAgent := a.WithArgs("--new1", "--new2")
+	b, ok := bAgent.(*Agent)
+	if !ok {
+		t.Fatal("WithArgs did not return *Agent")
+	}
 
 	// Original should be unchanged
 	if len(a.config.Args) != 1 {

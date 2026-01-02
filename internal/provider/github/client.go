@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os/exec"
+	"strconv"
 	"strings"
 	"time"
 
@@ -36,6 +37,7 @@ func NewClient(ctx context.Context, token, owner, repo string) *Client {
 func NewClientWithCache(ctx context.Context, token, owner, repo string, c *cache.Cache) *Client {
 	ts := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: token})
 	tc := oauth2.NewClient(ctx, ts)
+
 	return &Client{
 		gh:    github.NewClient(tc),
 		owner: owner,
@@ -76,12 +78,13 @@ func getGHCLIToken() string {
 	if err != nil {
 		return ""
 	}
+
 	return strings.TrimSpace(string(out))
 }
 
 // GetIssue fetches an issue by number.
 func (c *Client) GetIssue(ctx context.Context, number int) (*github.Issue, error) {
-	key := c.CacheKey("issue", fmt.Sprintf("%d", number))
+	key := c.CacheKey("issue", strconv.Itoa(number))
 
 	// Try cache first
 	if c.cache != nil && c.cache.Enabled() {
@@ -108,7 +111,7 @@ func (c *Client) GetIssue(ctx context.Context, number int) (*github.Issue, error
 
 // GetIssueComments fetches all comments on an issue.
 func (c *Client) GetIssueComments(ctx context.Context, number int) ([]*github.IssueComment, error) {
-	key := c.CacheKey("comments", fmt.Sprintf("%d", number))
+	key := c.CacheKey("comments", strconv.Itoa(number))
 
 	// Try cache first
 	if c.cache != nil && c.cache.Enabled() {
@@ -156,7 +159,7 @@ func (c *Client) AddComment(ctx context.Context, number int, body string) (*gith
 
 	// Invalidate comments cache for this issue
 	if c.cache != nil {
-		key := c.CacheKey("comments", fmt.Sprintf("%d", number))
+		key := c.CacheKey("comments", strconv.Itoa(number))
 		c.cache.Delete(key)
 	}
 
@@ -175,6 +178,7 @@ func (c *Client) CreatePullRequest(ctx context.Context, title, body, head, base 
 	if err != nil {
 		return nil, wrapAPIError(err)
 	}
+
 	return pr, nil
 }
 
@@ -218,6 +222,7 @@ func (c *Client) DownloadFile(ctx context.Context, path, ref string) ([]byte, er
 	if err != nil {
 		return nil, fmt.Errorf("decode content: %w", err)
 	}
+
 	return []byte(decoded), nil
 }
 

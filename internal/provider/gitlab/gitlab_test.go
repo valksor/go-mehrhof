@@ -166,16 +166,19 @@ func TestParseReference(t *testing.T) {
 			if tt.wantErr {
 				if err == nil {
 					t.Errorf("ParseReference(%q) expected error containing %q, got nil", tt.input, tt.errString)
+
 					return
 				}
 				if tt.errString != "" && !strings.Contains(err.Error(), tt.errString) {
 					t.Errorf("ParseReference(%q) error = %v, want error containing %q", tt.input, err, tt.errString)
 				}
+
 				return
 			}
 
 			if err != nil {
 				t.Errorf("ParseReference(%q) unexpected error: %v", tt.input, err)
+
 				return
 			}
 
@@ -340,11 +343,13 @@ func TestDetectProject(t *testing.T) {
 				if tt.errString != "" && !strings.Contains(err.Error(), tt.errString) {
 					t.Errorf("DetectProject(%q, %q) error = %v, want containing %q", tt.remoteURL, tt.host, err, tt.errString)
 				}
+
 				return
 			}
 
 			if err != nil {
 				t.Errorf("DetectProject(%q, %q) unexpected error: %v", tt.remoteURL, tt.host, err)
+
 				return
 			}
 
@@ -409,6 +414,7 @@ func TestExtractLinkedIssues(t *testing.T) {
 
 			if len(got) != len(tt.want) {
 				t.Errorf("ExtractLinkedIssues() = %v, want %v", got, tt.want)
+
 				return
 			}
 
@@ -475,6 +481,7 @@ func TestExtractImageURLs(t *testing.T) {
 
 			if len(got) != len(tt.want) {
 				t.Errorf("ExtractImageURLs() = %v, want %v", got, tt.want)
+
 				return
 			}
 
@@ -579,6 +586,7 @@ func TestParseTaskList(t *testing.T) {
 
 			if len(got) != len(tt.want) {
 				t.Errorf("ParseTaskList() = %d items, want %d items", len(got), len(tt.want))
+
 				return
 			}
 
@@ -838,11 +846,13 @@ func TestWrapAPIError(t *testing.T) {
 				if got != nil {
 					t.Errorf("wrapAPIError() = %v, want nil", got)
 				}
+
 				return
 			}
 
 			if got == nil {
 				t.Error("wrapAPIError() = nil, want non-nil error")
+
 				return
 			}
 
@@ -939,11 +949,13 @@ func TestResolveToken(t *testing.T) {
 				if !errors.Is(err, ErrNoToken) {
 					t.Errorf("ResolveToken() error = %v, want ErrNoToken", err)
 				}
+
 				return
 			}
 
 			if err != nil {
 				t.Errorf("ResolveToken() unexpected error: %v", err)
+
 				return
 			}
 
@@ -1084,17 +1096,20 @@ func TestProviderNew(t *testing.T) {
 				if tt.errContains != "" && !strings.Contains(err.Error(), tt.errContains) {
 					t.Errorf("New() error = %v, want containing %q", err, tt.errContains)
 				}
+
 				return
 			}
 
 			if err != nil {
 				t.Errorf("New() unexpected error: %v", err)
+
 				return
 			}
 
 			p, ok := got.(*Provider)
 			if !ok {
 				t.Errorf("New() returned type %T, want *Provider", got)
+
 				return
 			}
 
@@ -1243,11 +1258,13 @@ func TestProviderParse(t *testing.T) {
 				if tt.errContains != "" && !strings.Contains(err.Error(), tt.errContains) {
 					t.Errorf("Provider.Parse() error = %v, want containing %q", err, tt.errContains)
 				}
+
 				return
 			}
 
 			if err != nil {
 				t.Errorf("Provider.Parse() unexpected error: %v", err)
+
 				return
 			}
 
@@ -1296,6 +1313,7 @@ func TestProviderUpdateStatus(t *testing.T) {
 				if err == nil {
 					t.Errorf("Provider.UpdateStatus() expected error, got nil")
 				}
+
 				return
 			}
 

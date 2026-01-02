@@ -91,11 +91,13 @@ func TestParseReference(t *testing.T) {
 				if err == nil {
 					t.Errorf("ParseReference(%q) expected error, got nil", tt.input)
 				}
+
 				return
 			}
 
 			if err != nil {
 				t.Errorf("ParseReference(%q) unexpected error: %v", tt.input, err)
+
 				return
 			}
 
@@ -331,6 +333,7 @@ func TestExtractTaskGIDs(t *testing.T) {
 			got := ExtractTaskGIDs(tt.input)
 			if len(got) != len(tt.want) {
 				t.Errorf("ExtractTaskGIDs() returned %d GIDs, want %d", len(got), len(tt.want))
+
 				return
 			}
 			for i, gid := range got {

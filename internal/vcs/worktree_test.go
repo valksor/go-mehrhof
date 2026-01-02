@@ -108,6 +108,7 @@ func TestCreateWorktree(t *testing.T) {
 			if wt.Branch != "worktree-branch" {
 				t.Errorf("worktree branch = %q, want %q", wt.Branch, "worktree-branch")
 			}
+
 			break
 		}
 	}
@@ -148,6 +149,7 @@ func TestCreateWorktreeNewBranch(t *testing.T) {
 	for _, wt := range worktrees {
 		if wt.Branch == "new-branch" {
 			found = true
+
 			break
 		}
 	}

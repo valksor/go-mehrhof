@@ -108,6 +108,7 @@ func TestCalculateChecksum(t *testing.T) {
 	for _, c := range got {
 		if (c < '0' || c > '9') && (c < 'a' || c > 'f') {
 			t.Errorf("CalculateChecksum() returned invalid hex: %q", got)
+
 			break
 		}
 	}
@@ -431,6 +432,7 @@ func TestFindChecksumInFile(t *testing.T) {
 				if err == nil {
 					t.Error("Expected error for non-existent file, got nil")
 				}
+
 				return
 			}
 
@@ -449,6 +451,7 @@ func TestFindChecksumInFile(t *testing.T) {
 			got, err := FindChecksumInFile(tmpFile.Name(), tt.assetName)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("FindChecksumInFile() error = %v, wantErr %v", err, tt.wantErr)
+
 				return
 			}
 			if err != nil && tt.errContains != "" {

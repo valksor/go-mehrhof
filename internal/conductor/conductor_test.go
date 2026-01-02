@@ -442,7 +442,7 @@ func TestLogError_NoCallback(t *testing.T) {
 	}
 
 	// Should not panic with nil callback
-	c.logError(fmt.Errorf("test error"))
+	c.logError(errors.New("test error"))
 }
 
 func TestLogError_WithCallback(t *testing.T) {
@@ -457,7 +457,7 @@ func TestLogError_WithCallback(t *testing.T) {
 		t.Fatalf("New: %v", err)
 	}
 
-	testErr := fmt.Errorf("test error")
+	testErr := errors.New("test error")
 	c.logError(testErr)
 
 	if !callbackCalled {
@@ -748,10 +748,10 @@ func TestLogVerbose_Disabled(t *testing.T) {
 		t.Fatalf("New: %v", err)
 	}
 
-	c.logVerbose("test message %s", "arg")
+	c.logVerbosef("test message %s", "arg")
 
 	if buf.Len() != 0 {
-		t.Errorf("logVerbose wrote output when verbose is disabled: %q", buf.String())
+		t.Errorf("logVerbosef wrote output when verbose is disabled: %q", buf.String())
 	}
 }
 
@@ -762,11 +762,11 @@ func TestLogVerbose_Enabled(t *testing.T) {
 		t.Fatalf("New: %v", err)
 	}
 
-	c.logVerbose("test message %s", "arg")
+	c.logVerbosef("test message %s", "arg")
 
 	expected := "test message arg\n"
 	if buf.String() != expected {
-		t.Errorf("logVerbose output = %q, want %q", buf.String(), expected)
+		t.Errorf("logVerbosef output = %q, want %q", buf.String(), expected)
 	}
 }
 
@@ -779,7 +779,7 @@ func TestLogVerbose_NilStdout(t *testing.T) {
 	c.opts.Stdout = nil
 
 	// Should not panic
-	c.logVerbose("test message")
+	c.logVerbosef("test message")
 }
 
 // Test generatePRTitle.
@@ -1188,6 +1188,7 @@ func TestExtractExploredFiles(t *testing.T) {
 
 			if len(got) != len(tt.want) {
 				t.Errorf("extractExploredFiles() = %v, want %v", got, tt.want)
+
 				return
 			}
 			for i, want := range tt.want {
@@ -1319,6 +1320,7 @@ func TestResolveAgentForTask(t *testing.T) {
 				if gotErr == nil {
 					t.Error("resolveAgentForTask() expected error, got nil")
 				}
+
 				return
 			}
 
@@ -1504,6 +1506,7 @@ func TestResolveAgentForStep(t *testing.T) {
 				if gotErr == nil {
 					t.Error("resolveAgentForStep() expected error, got nil")
 				}
+
 				return
 			}
 
@@ -1635,11 +1638,13 @@ func TestRegisterAliasAgents(t *testing.T) {
 			if tt.wantError {
 				if gotErr == nil {
 					t.Error("registerAliasAgents() expected error, got nil")
+
 					return
 				}
 				if tt.errorContain != "" && !strings.Contains(gotErr.Error(), tt.errorContain) {
 					t.Errorf("error = %q, want contain %q", gotErr.Error(), tt.errorContain)
 				}
+
 				return
 			}
 
@@ -2005,6 +2010,7 @@ func TestBuildWorkUnit_WithSpecs(t *testing.T) {
 				if gotWorkUnit != nil {
 					t.Error("buildWorkUnit() should return nil when taskWork is nil")
 				}
+
 				return
 			}
 

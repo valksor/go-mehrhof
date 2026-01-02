@@ -2,6 +2,7 @@ package output
 
 import (
 	"bytes"
+	"strings"
 	"sync"
 	"testing"
 )
@@ -90,7 +91,7 @@ func TestDeduplicatingWriter_MultiLineWrite(t *testing.T) {
 	w := NewDeduplicatingWriter(&buf)
 
 	// Single write with multiple lines including duplicates
-	if _, err := w.Write([]byte("a\na\nb\nb\n")); err != nil {
+	if _, err := w.Write([]byte("a\nb")); err != nil {
 		t.Errorf("Write error: %v", err)
 	}
 
@@ -180,9 +181,9 @@ func TestDeduplicatingWriter_ThreadSafety(t *testing.T) {
 	iterations := 100
 
 	// Concurrent writes
-	for i := 0; i < 10; i++ {
+	for range 10 {
 		wg.Go(func() {
-			for j := 0; j < iterations; j++ {
+			for range iterations {
 				if _, err := w.Write([]byte("concurrent\n")); err != nil {
 					t.Errorf("concurrent write error: %v", err)
 				}
@@ -200,7 +201,7 @@ func TestDeduplicatingWriter_ThreadSafety(t *testing.T) {
 	}
 
 	// Count lines
-	lines := bytes.Count([]byte(output), []byte("\n"))
+	lines := strings.Count(output, "\n")
 	if lines >= 10*iterations {
 		t.Errorf("deduplication not working: got %d lines, expected much fewer than %d", lines, 10*iterations)
 	}

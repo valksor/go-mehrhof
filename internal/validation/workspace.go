@@ -73,7 +73,7 @@ func validateGitPattern(pattern, path, configPath string, result *Result) {
 				fmt.Sprintf("Unknown placeholder %q in pattern", match),
 				path,
 				configPath,
-				fmt.Sprintf("Valid placeholders: %s", strings.Join(validGitPlaceholders, ", ")),
+				"Valid placeholders: "+strings.Join(validGitPlaceholders, ", "),
 			)
 		}
 	}
@@ -99,7 +99,7 @@ func validateAgentSettings(agent storage.AgentSettings, configPath string, built
 				fmt.Sprintf("Unknown default agent %q", agent.Default),
 				"agent.default",
 				configPath,
-				fmt.Sprintf("Available agents: %s", strings.Join(builtInAgents, ", ")),
+				"Available agents: "+strings.Join(builtInAgents, ", "),
 			)
 		}
 	}
@@ -132,18 +132,21 @@ func validateStorageSettings(storage storage.StorageSettings, configPath string,
 	// Check for absolute paths
 	if strings.HasPrefix(storage.WorkDir, "/") || strings.HasPrefix(storage.WorkDir, "\\") {
 		result.AddError(CodeInvalidPath, "Work directory must be relative to project root, not absolute", "storage.work_dir", configPath)
+
 		return
 	}
 
 	// Check for home directory expansion
 	if strings.HasPrefix(storage.WorkDir, "~") {
 		result.AddError(CodeInvalidPath, "Work directory cannot use home directory (~) expansion", "storage.work_dir", configPath)
+
 		return
 	}
 
 	// Check for path traversal attempts
 	if strings.Contains(storage.WorkDir, "..") {
 		result.AddError(CodeInvalidPath, "Work directory cannot contain '..' (would escape project root)", "storage.work_dir", configPath)
+
 		return
 	}
 
@@ -176,11 +179,12 @@ func validateAgentAliases(aliases map[string]storage.AgentAliasConfig, configPat
 			chainStr := strings.Join(append(chain, name), " -> ")
 			result.AddErrorWithSuggestion(
 				CodeAgentAliasCircular,
-				fmt.Sprintf("Circular dependency detected: %s", chainStr),
-				fmt.Sprintf("agents.%s", name),
+				"Circular dependency detected: "+chainStr,
+				"agents."+name,
 				configPath,
 				"Remove circular reference in 'extends' field",
 			)
+
 			return false
 		}
 
@@ -192,6 +196,7 @@ func validateAgentAliases(aliases map[string]storage.AgentAliasConfig, configPat
 		// Validate that extends is specified
 		if alias.Extends == "" {
 			result.AddError(CodeAgentAliasNoExtends, "Alias must specify 'extends' field", fmt.Sprintf("agents.%s.extends", name), configPath)
+
 			return false
 		}
 
@@ -208,9 +213,10 @@ func validateAgentAliases(aliases map[string]storage.AgentAliasConfig, configPat
 				fmt.Sprintf("Extends unknown agent %q", alias.Extends),
 				fmt.Sprintf("agents.%s.extends", name),
 				configPath,
-				fmt.Sprintf("Available agents: %s", strings.Join(builtInAgents, ", ")),
+				"Available agents: "+strings.Join(builtInAgents, ", "),
 			)
 			resolving[name] = false
+
 			return false
 		}
 
@@ -218,6 +224,7 @@ func validateAgentAliases(aliases map[string]storage.AgentAliasConfig, configPat
 		if isAlias {
 			if !resolve(alias.Extends, newChain) {
 				resolving[name] = false
+
 				return false
 			}
 		}
@@ -227,6 +234,7 @@ func validateAgentAliases(aliases map[string]storage.AgentAliasConfig, configPat
 
 		resolved[name] = true
 		resolving[name] = false
+
 		return true
 	}
 
@@ -266,6 +274,7 @@ func validatePluginsConfig(plugins storage.PluginsConfig, configPath string, res
 		for _, enabled := range plugins.Enabled {
 			if enabled == pluginName {
 				found = true
+
 				break
 			}
 		}
@@ -273,7 +282,7 @@ func validatePluginsConfig(plugins storage.PluginsConfig, configPath string, res
 			result.AddWarning(
 				CodePluginNotFound,
 				fmt.Sprintf("Plugin %q has config but is not in enabled list", pluginName),
-				fmt.Sprintf("plugins.config.%s", pluginName),
+				"plugins.config."+pluginName,
 				configPath,
 			)
 		}

@@ -102,11 +102,13 @@ func TestParseReference(t *testing.T) {
 				if err == nil {
 					t.Errorf("ParseReference(%q) expected error, got nil", tt.input)
 				}
+
 				return
 			}
 
 			if err != nil {
 				t.Errorf("ParseReference(%q) unexpected error: %v", tt.input, err)
+
 				return
 			}
 
@@ -362,6 +364,7 @@ func TestParseTags(t *testing.T) {
 			got := parseTags(tt.tags)
 			if len(got) != len(tt.want) {
 				t.Errorf("parseTags(%q) returned %d tags, want %d", tt.tags, len(got), len(tt.want))
+
 				return
 			}
 			for i, tag := range got {
@@ -433,6 +436,7 @@ func TestExtractWorkItemIDs(t *testing.T) {
 			got := ExtractWorkItemIDs(tt.input)
 			if len(got) != len(tt.want) {
 				t.Errorf("ExtractWorkItemIDs() returned %d IDs, want %d", len(got), len(tt.want))
+
 				return
 			}
 			for i, id := range got {

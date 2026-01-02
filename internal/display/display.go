@@ -73,6 +73,7 @@ func FormatState(state workflow.State) string {
 	if name, ok := StateDisplay[state]; ok {
 		return name
 	}
+
 	return string(state)
 }
 
@@ -86,6 +87,7 @@ func GetStateDescription(state workflow.State) string {
 	if desc, ok := StateDescription[state]; ok {
 		return desc
 	}
+
 	return ""
 }
 
@@ -95,6 +97,7 @@ func FormatSpecificationStatus(status string) string {
 	if name, ok := SpecificationStatusDisplay[status]; ok {
 		return name
 	}
+
 	return status
 }
 
@@ -104,6 +107,7 @@ func GetSpecificationStatusIcon(status string) string {
 	if icon, ok := SpecificationStatusIcon[status]; ok {
 		return icon
 	}
+
 	return "?"
 }
 
@@ -119,6 +123,7 @@ func GetStateAccessiblePrefix(state workflow.State) string {
 	if prefix, ok := StateAccessiblePrefix[state]; ok {
 		return prefix
 	}
+
 	return "[?]"
 }
 
@@ -128,6 +133,7 @@ func FormatStateColored(state workflow.State) string {
 	prefix := Muted(GetStateAccessiblePrefix(state))
 	displayName := FormatState(state)
 	coloredName := ColorState(string(state), displayName)
+
 	return prefix + " " + coloredName
 }
 
@@ -139,6 +145,7 @@ func FormatStateStringColored(state string) string {
 // FormatSpecificationStatusColored returns a colored specification status.
 func FormatSpecificationStatusColored(status string) string {
 	displayName := FormatSpecificationStatus(status)
+
 	return ColorSpecStatus(status, displayName)
 }
 
@@ -146,5 +153,6 @@ func FormatSpecificationStatusColored(status string) string {
 func FormatSpecificationStatusWithIconColored(status string) string {
 	icon := GetSpecificationStatusIcon(status)
 	name := FormatSpecificationStatusColored(status)
+
 	return icon + " " + name
 }

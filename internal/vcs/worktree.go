@@ -34,6 +34,7 @@ func (g *Git) ListWorktrees(ctx context.Context) ([]Worktree, error) {
 				worktrees = append(worktrees, current)
 				current = Worktree{}
 			}
+
 			continue
 		}
 
@@ -128,6 +129,7 @@ func (g *Git) RemoveWorktree(ctx context.Context, path string, force bool) error
 // PruneWorktrees removes stale worktree information.
 func (g *Git) PruneWorktrees(ctx context.Context) error {
 	_, err := g.run(ctx, "worktree", "prune")
+
 	return err
 }
 
@@ -169,6 +171,7 @@ func (g *Git) WorktreeExists(ctx context.Context, path string) bool {
 func (g *Git) GetWorktreePath(taskID string) string {
 	repoName := filepath.Base(g.repoRoot)
 	parent := filepath.Dir(g.repoRoot)
+
 	return filepath.Join(parent, repoName+"-worktrees", taskID)
 }
 
@@ -177,5 +180,6 @@ func (g *Git) EnsureWorktreesDir() error {
 	repoName := filepath.Base(g.repoRoot)
 	parent := filepath.Dir(g.repoRoot)
 	worktreesDir := filepath.Join(parent, repoName+"-worktrees")
+
 	return os.MkdirAll(worktreesDir, 0o755)
 }

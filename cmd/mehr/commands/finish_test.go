@@ -111,6 +111,7 @@ func TestFinishCommand_Flags(t *testing.T) {
 			flag := finishCmd.Flags().Lookup(tt.flagName)
 			if flag == nil {
 				t.Errorf("flag %q not found", tt.flagName)
+
 				return
 			}
 
@@ -190,6 +191,7 @@ func TestFinishCommand_HasAliases(t *testing.T) {
 		for _, alias := range finishCmd.Aliases {
 			if alias == exp {
 				found = true
+
 				break
 			}
 		}
@@ -226,6 +228,7 @@ func TestFinishCommand_RegisteredInRoot(t *testing.T) {
 	for _, cmd := range rootCmd.Commands() {
 		if cmd.Use == "finish" {
 			found = true
+
 			break
 		}
 	}

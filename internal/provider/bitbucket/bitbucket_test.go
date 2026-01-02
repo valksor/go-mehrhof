@@ -85,11 +85,13 @@ func TestParseReference(t *testing.T) {
 				if err == nil {
 					t.Errorf("ParseReference(%q) expected error, got nil", tt.input)
 				}
+
 				return
 			}
 
 			if err != nil {
 				t.Errorf("ParseReference(%q) unexpected error: %v", tt.input, err)
+
 				return
 			}
 
@@ -344,5 +346,6 @@ func findString(haystack, needle string) bool {
 			return true
 		}
 	}
+
 	return false
 }

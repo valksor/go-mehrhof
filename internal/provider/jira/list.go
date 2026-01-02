@@ -19,6 +19,7 @@ func (p *Provider) List(ctx context.Context, opts provider.ListOptions) ([]*prov
 		for _, label := range opts.Labels {
 			if looksLikeProjectKey(label) {
 				projectKey = label
+
 				break
 			}
 		}
@@ -62,7 +63,7 @@ func buildJQL(projectKey string, opts provider.ListOptions) string {
 	var jqlParts []string
 
 	// Project filter
-	jqlParts = append(jqlParts, fmt.Sprintf("project = %s", projectKey))
+	jqlParts = append(jqlParts, "project = "+projectKey)
 
 	// Status filter
 	if opts.Status != "" {
@@ -117,6 +118,7 @@ func looksLikeProjectKey(s string) bool {
 			return false
 		}
 	}
+
 	return true
 }
 

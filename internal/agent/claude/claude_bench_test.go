@@ -11,8 +11,11 @@ import (
 // Benchmark_BufferPool_Get benchmarks buffer pool retrieval.
 func Benchmark_BufferPool_Get(b *testing.B) {
 	b.ReportAllocs()
-	for i := 0; i < b.N; i++ {
-		bufPtr := scannerBufferPool.Get().(*[]byte)
+	for range b.N {
+		bufPtr, ok := scannerBufferPool.Get().(*[]byte) //nolint:forcetypeassert,nolintlint // benchmark: controlled pool type
+		if !ok {
+			b.Fatal("scanner buffer pool returned wrong type")
+		}
 		scannerBufferPool.Put(bufPtr)
 	}
 }
@@ -22,7 +25,10 @@ func Benchmark_BufferPool_Parallel(b *testing.B) {
 	b.ReportAllocs()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
-			bufPtr := scannerBufferPool.Get().(*[]byte)
+			bufPtr, ok := scannerBufferPool.Get().(*[]byte) //nolint:forcetypeassert,nolintlint // benchmark: controlled pool type
+			if !ok {
+				b.Fatal("scanner buffer pool returned wrong type")
+			}
 			scannerBufferPool.Put(bufPtr)
 		}
 	})
@@ -31,7 +37,7 @@ func Benchmark_BufferPool_Parallel(b *testing.B) {
 // Benchmark_New benchmarks agent creation.
 func Benchmark_New(b *testing.B) {
 	b.ReportAllocs()
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		_ = New()
 	}
 }
@@ -46,7 +52,7 @@ func Benchmark_NewWithConfig(b *testing.B) {
 		RetryDelay:  time.Second,
 	}
 	b.ReportAllocs()
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		_ = NewWithConfig(cfg)
 	}
 }
@@ -55,7 +61,7 @@ func Benchmark_NewWithConfig(b *testing.B) {
 func Benchmark_WithTimeout(b *testing.B) {
 	agent := New()
 	b.ReportAllocs()
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		_ = agent.WithTimeout(5 * time.Minute)
 	}
 }
@@ -64,7 +70,7 @@ func Benchmark_WithTimeout(b *testing.B) {
 func Benchmark_WithEnv(b *testing.B) {
 	agent := New()
 	b.ReportAllocs()
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		_ = agent.WithEnv("KEY", "value")
 	}
 }
@@ -73,7 +79,7 @@ func Benchmark_WithEnv(b *testing.B) {
 func Benchmark_WithArgs(b *testing.B) {
 	agent := New()
 	b.ReportAllocs()
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		_ = agent.WithArgs([]string{"--model", "claude-sonnet-4"}...)
 	}
 }
@@ -103,7 +109,7 @@ func Benchmark_Agent_ConcurrentWithEnv(b *testing.B) {
 func Benchmark_BuildArgs(b *testing.B) {
 	agent := New()
 	b.ReportAllocs()
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		_ = agent.buildArgs("test prompt")
 	}
 }
@@ -116,7 +122,7 @@ func Benchmark_BuildArgs_WithExtraArgs(b *testing.B) {
 	}
 	agent := NewWithConfig(cfg)
 	b.ReportAllocs()
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		_ = agent.buildArgs("test prompt")
 	}
 }

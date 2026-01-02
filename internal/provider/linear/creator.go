@@ -95,6 +95,7 @@ func inferTaskTypeFromLabels(labels []string) string {
 			return "ci"
 		}
 	}
+
 	return "issue"
 }
 
@@ -108,5 +109,6 @@ func lower(s string) string {
 			result = append(result, r)
 		}
 	}
+
 	return string(result)
 }

@@ -415,6 +415,7 @@ func TestDetectChangedFiles(t *testing.T) {
 				t.Errorf("detectChangedFiles() got %d files, want %d", len(gotMap), len(wantMap))
 				t.Errorf("got: %v", got)
 				t.Errorf("want: %v", tt.wantChanged)
+
 				return
 			}
 

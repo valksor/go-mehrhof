@@ -104,6 +104,7 @@ func (r *Registry) DiscoverAndLoad(ctx context.Context) error {
 				// Initialization failed, unload
 				_ = proc.Stop(ctx)
 				info.Process = nil
+
 				continue
 			}
 		}
@@ -134,6 +135,7 @@ func (r *Registry) Get(name string) (*PluginInfo, bool) {
 	defer r.mu.RUnlock()
 
 	info, ok := r.plugins[name]
+
 	return info, ok
 }
 
@@ -146,6 +148,7 @@ func (r *Registry) GetProcess(name string) (*Process, bool) {
 	if !ok || info.Process == nil {
 		return nil, false
 	}
+
 	return info.Process, true
 }
 
@@ -156,6 +159,7 @@ func (r *Registry) List() []*PluginInfo {
 
 	// Collect values into a slice, then clip excess capacity
 	result := _slices.Collect(_maps.Values(r.plugins))
+
 	return _slices.Clip(result)
 }
 
@@ -171,6 +175,7 @@ func (r *Registry) ListEnabled() []*PluginInfo {
 			result = append(result, info)
 		}
 	}
+
 	return _slices.Clip(result)
 }
 
@@ -186,6 +191,7 @@ func (r *Registry) ListByType(t PluginType) []*PluginInfo {
 			result = append(result, info)
 		}
 	}
+
 	return _slices.Clip(result)
 }
 
@@ -201,6 +207,7 @@ func (r *Registry) ListEnabledByType(t PluginType) []*PluginInfo {
 			result = append(result, info)
 		}
 	}
+
 	return _slices.Clip(result)
 }
 
@@ -246,6 +253,7 @@ func (r *Registry) Enable(ctx context.Context, name string) error {
 	}
 	if _, err := proc.Call(ctx, initMethod(info.Manifest.Type), &InitParams{Config: cfg}); err != nil {
 		_ = proc.Stop(ctx)
+
 		return fmt.Errorf("initialize plugin: %w", err)
 	}
 
@@ -316,6 +324,7 @@ func (r *Registry) Shutdown(ctx context.Context) error {
 	if len(errs) > 0 {
 		return errors.Join(errs...)
 	}
+
 	return nil
 }
 

@@ -111,6 +111,7 @@ func AssertState(t *testing.T, c *conductor.Conductor, expected string) {
 	machine := c.GetMachine()
 	if machine == nil {
 		t.Error("conductor has no state machine")
+
 		return
 	}
 

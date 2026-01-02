@@ -88,8 +88,12 @@ func TestWithTimeout(t *testing.T) {
 func TestWithEnv(t *testing.T) {
 	a := New()
 	aAgent := a.WithEnv("API_KEY", "secret123")
-	if aAgent.(*Agent).config.Environment["API_KEY"] != "secret123" {
-		t.Errorf("Environment[API_KEY] = %q, want %q", aAgent.(*Agent).config.Environment["API_KEY"], "secret123")
+	agent, ok := aAgent.(*Agent)
+	if !ok {
+		t.Fatal("WithEnv did not return *Agent")
+	}
+	if agent.config.Environment["API_KEY"] != "secret123" {
+		t.Errorf("Environment[API_KEY] = %q, want %q", agent.config.Environment["API_KEY"], "secret123")
 	}
 }
 
@@ -109,10 +113,14 @@ func TestMethodChaining(t *testing.T) {
 	if a.config.Timeout != 15*time.Minute {
 		t.Error("WithTimeout chain failed")
 	}
-	if aAgent.(*Agent).config.Environment["KEY1"] != "val1" {
+	typed, ok := aAgent.(*Agent)
+	if !ok {
+		t.Fatal("WithEnv did not return *Agent")
+	}
+	if typed.config.Environment["KEY1"] != "val1" {
 		t.Error("WithEnv(KEY1) chain failed")
 	}
-	if aAgent.(*Agent).config.Environment["KEY2"] != "val2" {
+	if typed.config.Environment["KEY2"] != "val2" {
 		t.Error("WithEnv(KEY2) chain failed")
 	}
 }
@@ -252,6 +260,7 @@ func TestRunWithCallback_NoCLI(t *testing.T) {
 	callbackCalled := false
 	cb := func(event agent.Event) error {
 		callbackCalled = true
+
 		return nil
 	}
 
@@ -313,7 +322,10 @@ func TestWithArgs(t *testing.T) {
 
 			// WithArgs returns agent.Agent interface
 			aAgent := a.WithArgs(tt.newArgs...)
-			resultAgent := aAgent.(*Agent)
+			resultAgent, ok := aAgent.(*Agent)
+			if !ok {
+				t.Fatal("WithArgs did not return *Agent")
+			}
 
 			if len(resultAgent.config.Args) != tt.wantLen {
 				t.Errorf("Args length = %d, want %d", len(resultAgent.config.Args), tt.wantLen)
@@ -322,6 +334,7 @@ func TestWithArgs(t *testing.T) {
 			for i, want := range tt.wantLast {
 				if i >= len(resultAgent.config.Args) {
 					t.Errorf("Missing arg at index %d", i)
+
 					continue
 				}
 				if resultAgent.config.Args[i] != want {
@@ -341,7 +354,10 @@ func TestWithArgs_Chaining(t *testing.T) {
 	aAgent = aAgent.WithArgs("--max-tokens", "4096")
 	aAgent = aAgent.WithArgs("--temperature", "0.7")
 
-	resultAgent := aAgent.(*Agent)
+	resultAgent, ok := aAgent.(*Agent)
+	if !ok {
+		t.Fatal("WithArgs did not return *Agent")
+	}
 	expectedArgs := []string{"--model", "opus", "--max-tokens", "4096", "--temperature", "0.7"}
 
 	if len(resultAgent.config.Args) != len(expectedArgs) {
@@ -370,7 +386,11 @@ func TestWithArgs_OriginalUnmodified(t *testing.T) {
 		t.Errorf("Original agent was modified (len = %d, want %d)", len(originalAgent.config.Args), originalLen)
 	}
 
-	if len(newAgent.(*Agent).config.Args) != originalLen+1 {
-		t.Errorf("New agent has wrong arg count (len = %d, want %d)", len(newAgent.(*Agent).config.Args), originalLen+1)
+	typedNew, ok := newAgent.(*Agent)
+	if !ok {
+		t.Fatal("WithArgs did not return *Agent")
+	}
+	if len(typedNew.config.Args) != originalLen+1 {
+		t.Errorf("New agent has wrong arg count (len = %d, want %d)", len(typedNew.config.Args), originalLen+1)
 	}
 }

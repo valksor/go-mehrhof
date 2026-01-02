@@ -2,6 +2,7 @@ package commands
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"slices"
@@ -117,7 +118,7 @@ type jsonSummaryOutput struct {
 
 func showWorktreeCost(ws *storage.Workspace, git interface{}) error {
 	if git == nil {
-		return fmt.Errorf("not in a worktree")
+		return errors.New("not in a worktree")
 	}
 	active, err := ws.FindTaskByWorktreePath(ws.Root())
 	if err != nil {
@@ -132,6 +133,7 @@ func showWorktreeCost(ws *storage.Workspace, git interface{}) error {
 				{Command: "mehr list --all", Description: "View all tasks in workspace"},
 			},
 		))
+
 		return nil
 	}
 
@@ -141,6 +143,7 @@ func showWorktreeCost(ws *storage.Workspace, git interface{}) error {
 func showActiveCost(ws *storage.Workspace) error {
 	if !ws.HasActiveTask() {
 		fmt.Print(display.NoActiveTaskError())
+
 		return nil
 	}
 
@@ -175,6 +178,7 @@ func showTaskCost(ws *storage.Workspace, taskID, label string) error {
 		}
 		fmt.Printf("No cost data available for task: %s\n", display.Bold(label))
 		fmt.Printf("\nRun 'mehr plan' or 'mehr implement' to generate costs.\n")
+
 		return nil
 	}
 
@@ -214,6 +218,7 @@ func showTaskCost(ws *storage.Workspace, taskID, label string) error {
 				}
 			}
 		}
+
 		return outputJSON(output)
 	}
 
@@ -269,6 +274,7 @@ func showTaskCost(ws *storage.Workspace, taskID, label string) error {
 func outputJSON(v any) error {
 	enc := json.NewEncoder(os.Stdout)
 	enc.SetIndent("", "  ")
+
 	return enc.Encode(v)
 }
 
@@ -286,6 +292,7 @@ func showAllCosts(ws *storage.Workspace, summaryMode bool) error {
 			})
 		}
 		fmt.Println("No tasks found in workspace.")
+
 		return nil
 	}
 
@@ -457,6 +464,7 @@ func showCostSummary(ws *storage.Workspace, taskIDs []string) error {
 			})
 		}
 		fmt.Println("No tasks found.")
+
 		return nil
 	}
 
@@ -573,6 +581,7 @@ func formatCost(cost float64) string {
 	if cost < 0.01 {
 		return fmt.Sprintf("$%.4f", cost)
 	}
+
 	return fmt.Sprintf("$%.2f", cost)
 }
 
@@ -582,5 +591,6 @@ func formatStepName(step string) string {
 	if len(step) == 0 {
 		return step
 	}
+
 	return strings.ToUpper(step[:1]) + step[1:]
 }

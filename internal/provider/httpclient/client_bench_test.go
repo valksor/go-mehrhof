@@ -14,7 +14,7 @@ import (
 // After optimization, this should return a shared singleton instance.
 func Benchmark_NewHTTPClient_Default(b *testing.B) {
 	b.ReportAllocs()
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		_ = NewHTTPClient()
 	}
 }
@@ -33,7 +33,7 @@ func Benchmark_HTTPClient_SequentialRequests(b *testing.B) {
 	b.ResetTimer()
 	b.ReportAllocs()
 
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		//nolint:noctx // Benchmark: no context cancellation needed
 		resp, err := client.Get(server.URL)
 		if err != nil {
@@ -80,7 +80,7 @@ func Benchmark_HTTPClient_NoPooling(b *testing.B) {
 	b.ResetTimer()
 	b.ReportAllocs()
 
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		// Create a new client each time - no pooling (old behavior)
 		client := &http.Client{Timeout: 30 * time.Second}
 		//nolint:noctx // Benchmark: no context cancellation needed
@@ -96,7 +96,7 @@ func Benchmark_HTTPClient_NoPooling(b *testing.B) {
 // This should be fast as it's created once and reused.
 func Benchmark_DefaultTransport_Creation(b *testing.B) {
 	b.ReportAllocs()
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		_ = defaultTransport()
 	}
 }
@@ -104,7 +104,7 @@ func Benchmark_DefaultTransport_Creation(b *testing.B) {
 // Benchmark_NewHTTPClientWithTimeout benchmarks custom timeout client creation.
 func Benchmark_NewHTTPClientWithTimeout(b *testing.B) {
 	b.ReportAllocs()
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		_ = NewHTTPClientWithTimeout(60 * time.Second)
 	}
 }
@@ -126,7 +126,7 @@ func Benchmark_WithRetry_NoFailure(b *testing.B) {
 	config := DefaultRetryConfig()
 	b.ReportAllocs()
 
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		err := WithRetry(ctx, config, func() error {
 			return nil // No error
 		})
@@ -144,7 +144,7 @@ func Benchmark_SharedClient_Singleton(b *testing.B) {
 	sharedClientOnce = sync.Once{}
 
 	b.ReportAllocs()
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		_ = NewHTTPClient()
 	}
 }

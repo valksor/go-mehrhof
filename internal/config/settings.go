@@ -30,6 +30,7 @@ type Settings struct {
 // SettingsPath returns the path to the settings file.
 func SettingsPath() string {
 	home, _ := os.UserHomeDir()
+
 	return filepath.Join(home, ".mehrhof", "settings.json")
 }
 
@@ -42,6 +43,7 @@ func LoadSettings() (*Settings, error) {
 		if os.IsNotExist(err) {
 			return &Settings{}, nil // Return empty settings if file doesn't exist
 		}
+
 		return nil, err
 	}
 

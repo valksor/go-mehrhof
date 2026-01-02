@@ -240,6 +240,7 @@ func mapProviderPriorityToJira(priority provider.Priority) string {
 	case provider.PriorityLow:
 		return "Low"
 	}
+
 	return "Medium"
 }
 
@@ -248,6 +249,7 @@ func mapAssignees(assignee *User) []provider.Person {
 	if assignee == nil {
 		return []provider.Person{}
 	}
+
 	return []provider.Person{
 		{
 			ID:    assignee.AccountID,
@@ -280,6 +282,7 @@ func mapComments(comments []*Comment) []provider.Comment {
 			Author:    author,
 		})
 	}
+
 	return result
 }
 
@@ -300,6 +303,7 @@ func mapAttachments(attachments []*Attachment) []provider.Attachment {
 			CreatedAt:   a.Created,
 		})
 	}
+
 	return result
 }
 
@@ -323,6 +327,7 @@ func inferTaskTypeFromLabels(labels []string) string {
 			return "ci"
 		}
 	}
+
 	return "issue"
 }
 

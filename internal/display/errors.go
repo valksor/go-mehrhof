@@ -116,7 +116,7 @@ func NoActiveTaskError() string {
 func TaskFailedError(step string, err error) string {
 	return ErrorWithContext(
 		err,
-		fmt.Sprintf("Task failed during %s", step),
+		"Task failed during "+step,
 		[]Suggestion{
 			{Command: "mehr status", Description: "View detailed error information"},
 			{Command: "mehr note", Description: "Add notes about the error"},
@@ -129,7 +129,7 @@ func TaskFailedError(step string, err error) string {
 func ConfigError(err error, configPath string) string {
 	return ErrorWithContext(
 		err,
-		fmt.Sprintf("Configuration error in %s", configPath),
+		"Configuration error in "+configPath,
 		[]Suggestion{
 			{Command: "mehr config validate", Description: "Validate workspace configuration"},
 			{Command: "cat .mehrhof/config.yaml", Description: "View configuration file"},
@@ -141,7 +141,7 @@ func ConfigError(err error, configPath string) string {
 func AgentError(agent string, err error) string {
 	return ErrorWithContext(
 		err,
-		fmt.Sprintf("Agent error: %s", agent),
+		"Agent error: "+agent,
 		[]Suggestion{
 			{Command: "mehr agents list", Description: "List available agents"},
 			{Command: "mehr --agent=<name> <ref>", Description: "Try with a different agent"},

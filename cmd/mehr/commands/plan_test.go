@@ -65,6 +65,7 @@ func TestPlanCommand_Flags(t *testing.T) {
 			flag := planCmd.Flags().Lookup(tt.flagName)
 			if flag == nil {
 				t.Errorf("flag %q not found", tt.flagName)
+
 				return
 			}
 
@@ -132,6 +133,7 @@ func TestPlanCommand_HasAliases(t *testing.T) {
 	for _, alias := range planCmd.Aliases {
 		if alias == "p" {
 			found = true
+
 			break
 		}
 	}
@@ -145,6 +147,7 @@ func TestPlanCommand_RegisteredInRoot(t *testing.T) {
 	for _, cmd := range rootCmd.Commands() {
 		if cmd.Use == "plan [seed-topic]" {
 			found = true
+
 			break
 		}
 	}

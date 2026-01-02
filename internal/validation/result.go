@@ -116,6 +116,7 @@ func (r *Result) formatJSON() string {
 	if err != nil {
 		return fmt.Sprintf(`{"error": "failed to marshal result: %s"}`, err)
 	}
+
 	return string(data)
 }
 
@@ -134,7 +135,7 @@ func (r *Result) formatText() string {
 
 	// Print findings grouped by file
 	for file, findings := range byFile {
-		sb.WriteString(fmt.Sprintf("%s:\n", file))
+		sb.WriteString(file + ":\n")
 		for _, f := range findings {
 			severityStr := strings.ToUpper(string(f.Severity))
 			sb.WriteString(fmt.Sprintf("  %s [%s] %s: %s\n", severityStr, f.Code, f.Path, f.Message))

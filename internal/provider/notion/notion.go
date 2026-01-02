@@ -98,6 +98,7 @@ func (p *Provider) Parse(input string) (string, error) {
 	if err != nil {
 		return "", err
 	}
+
 	return ref.PageID, nil
 }
 
@@ -184,6 +185,7 @@ func extractTitle(page Page) string {
 	if page.URL != "" {
 		return page.URL
 	}
+
 	return "Untitled"
 }
 
@@ -215,6 +217,7 @@ func extractStatus(page Page, statusProperty string) provider.Status {
 			return mapNotionStatus(prop.Select.Name)
 		}
 	}
+
 	return provider.StatusOpen
 }
 
@@ -259,6 +262,7 @@ func extractLabelsFromPage(page Page, labelsProperty string) []string {
 	if prop, ok := GetProperty(page, labelsProperty); ok {
 		return ExtractLabels(prop)
 	}
+
 	return []string{}
 }
 
@@ -275,9 +279,11 @@ func extractAssignees(page Page) []provider.Person {
 					Email: getEmail(user),
 				}
 			}
+
 			return assignees
 		}
 	}
+
 	return []provider.Person{}
 }
 
@@ -286,6 +292,7 @@ func getEmail(user User) string {
 	if user.Person != nil {
 		return user.Person.Email
 	}
+
 	return ""
 }
 

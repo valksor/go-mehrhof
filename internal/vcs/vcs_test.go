@@ -359,6 +359,7 @@ func TestGitIntegration(t *testing.T) {
 		for _, b := range branches {
 			if b.IsCurrent {
 				hasCurrent = true
+
 				break
 			}
 		}
@@ -468,6 +469,7 @@ func TestGitIntegration(t *testing.T) {
 // Helper to initialize git repo.
 func runGitInit(dir string) error {
 	_, err := runGitCommandContext(context.Background(), dir, "init")
+
 	return err
 }
 

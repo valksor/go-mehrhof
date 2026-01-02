@@ -24,7 +24,7 @@ func NewDeduplicatingWriter(w io.Writer) *DeduplicatingWriter {
 
 // Write implements io.Writer. It buffers input until complete lines are available,
 // then writes only lines that differ from the previous line.
-func (d *DeduplicatingWriter) Write(p []byte) (n int, err error) {
+func (d *DeduplicatingWriter) Write(p []byte) (int, error) {
 	d.mu.Lock()
 	defer d.mu.Unlock()
 
@@ -34,12 +34,16 @@ func (d *DeduplicatingWriter) Write(p []byte) (n int, err error) {
 	// Append to buffer
 	d.buffer.Write(p)
 
+	// Track if we processed any complete line (for auto-flush decision below)
+	processedCompleteLine := false
+
 	// Process complete lines
 	for {
 		line, err := d.buffer.ReadString('\n')
 		if err != nil {
 			// No complete line yet, put back in buffer
 			d.buffer.WriteString(line)
+
 			break
 		}
 
@@ -57,6 +61,25 @@ func (d *DeduplicatingWriter) Write(p []byte) (n int, err error) {
 			d.hasWritten = true
 		}
 		// If same as last line, skip (deduplicate)
+		processedCompleteLine = true
+	}
+
+	// If we processed at least one complete line and have remaining buffer,
+	// auto-flush the partial (it's a trailing partial from a multi-line write).
+	if processedCompleteLine && d.buffer.Len() > 0 {
+		remaining := d.buffer.String()
+		d.buffer.Reset()
+
+		// Write remaining partial if different from last line
+		if !d.hasWritten || remaining != d.lastLine {
+			// Append newline when auto-flushing partial line
+			_, err := d.w.Write([]byte(remaining + "\n"))
+			if err != nil {
+				return 0, err
+			}
+			d.lastLine = remaining
+			d.hasWritten = true
+		}
 	}
 
 	return originalLen, nil

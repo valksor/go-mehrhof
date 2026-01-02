@@ -570,8 +570,14 @@ func testJSONRoundtrip[T any](t *testing.T, original T) {
 	}
 
 	// Re-marshal to compare (handles field ordering differences)
-	data1, _ := json.Marshal(original)
-	data2, _ := json.Marshal(unmarshaled)
+	data1, err := json.Marshal(original)
+	if err != nil {
+		t.Fatalf("json.Marshal error = %v", err)
+	}
+	data2, err := json.Marshal(unmarshaled)
+	if err != nil {
+		t.Fatalf("json.Marshal error = %v", err)
+	}
 
 	if string(data1) != string(data2) {
 		t.Errorf("roundtrip mismatch:\noriginal:    %s\nunmarshaled: %s", data1, data2)

@@ -546,6 +546,7 @@ func TestDoRequestWithRetry(t *testing.T) {
 			if attempts < 2 {
 				// First attempt: rate limited
 				w.WriteHeader(http.StatusTooManyRequests)
+
 				return
 			}
 			// Second attempt: success

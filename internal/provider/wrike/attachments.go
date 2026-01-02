@@ -14,6 +14,7 @@ func (p *Provider) DownloadAttachment(ctx context.Context, workUnitID, attachmen
 	if err != nil {
 		return nil, fmt.Errorf("download attachment: %w", err)
 	}
+
 	return rc, nil
 }
 
@@ -28,5 +29,6 @@ func mapAttachments(wrikeAttachments []Attachment) []provider.Attachment {
 			CreatedAt: a.CreatedDate,
 		})
 	}
+
 	return result
 }

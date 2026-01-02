@@ -117,6 +117,7 @@ func TestExtractPlannedFiles(t *testing.T) {
 			if len(result) != len(tt.expected) {
 				t.Errorf("extractPlannedFiles() returned %d files, want %d", len(result), len(tt.expected))
 				t.Errorf("got: %v, want: %v", result, tt.expected)
+
 				return
 			}
 			for i, f := range result {

@@ -78,6 +78,7 @@ func NewProviderError(provider string, err error) error {
 	if err == nil {
 		return nil
 	}
+
 	return &ProviderError{Provider: provider, Err: err}
 }
 

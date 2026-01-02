@@ -53,6 +53,7 @@ func (p *Provider) AddLabels(ctx context.Context, workUnitID string, labels []st
 	}
 
 	_, err = p.client.UpdatePage(ctx, workUnitID, update)
+
 	return err
 }
 
@@ -98,5 +99,6 @@ func (p *Provider) RemoveLabels(ctx context.Context, workUnitID string, labels [
 	}
 
 	_, err = p.client.UpdatePage(ctx, workUnitID, update)
+
 	return err
 }

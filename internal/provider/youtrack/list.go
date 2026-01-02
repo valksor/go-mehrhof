@@ -42,7 +42,7 @@ func buildQuery(opts provider.ListOptions) string {
 
 	// Label/Tag filter - YouTrack uses tag: syntax
 	for _, label := range opts.Labels {
-		parts = append(parts, fmt.Sprintf("tag: %s", label))
+		parts = append(parts, "tag: "+label)
 	}
 
 	// Order by

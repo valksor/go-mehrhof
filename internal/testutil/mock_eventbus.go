@@ -36,6 +36,7 @@ func (m *MockEventBus) Subscribe(eventType events.Type, handler events.Handler) 
 
 	// Store handler by string event type
 	m.subscriptions[string(eventType)] = append(m.subscriptions[string(eventType)], handler)
+
 	return "mock_id"
 }
 
@@ -45,6 +46,7 @@ func (m *MockEventBus) SubscribeAll(handler events.Handler) string {
 	defer m.mu.Unlock()
 
 	m.allHandlers = append(m.allHandlers, handler)
+
 	return "mock_id"
 }
 
@@ -91,6 +93,7 @@ func (m *MockEventBus) Close() error {
 	defer m.mu.Unlock()
 
 	m.closed = true
+
 	return m.closeError
 }
 
@@ -102,6 +105,7 @@ func (m *MockEventBus) Events() []events.Event {
 	// Return a copy to avoid race conditions
 	eventsCopy := make([]events.Event, len(m.events))
 	copy(eventsCopy, m.events)
+
 	return eventsCopy
 }
 
@@ -112,6 +116,7 @@ func (m *MockEventBus) PublishedRaw() []events.Event {
 
 	eventsCopy := make([]events.Event, len(m.publishedRaw))
 	copy(eventsCopy, m.publishedRaw)
+
 	return eventsCopy
 }
 
@@ -128,6 +133,7 @@ func (m *MockEventBus) Clear() {
 func (m *MockEventBus) Count() int {
 	m.mu.Lock()
 	defer m.mu.Unlock()
+
 	return len(m.events)
 }
 
@@ -142,6 +148,7 @@ func (m *MockEventBus) CountByType(eventType events.Type) int {
 			count++
 		}
 	}
+
 	return count
 }
 
@@ -156,6 +163,7 @@ func (m *MockEventBus) FindByType(eventType events.Type) []events.Event {
 			found = append(found, e)
 		}
 	}
+
 	return found
 }
 
@@ -168,6 +176,7 @@ func (m *MockEventBus) LastEvent() *events.Event {
 		return nil
 	}
 	last := m.events[len(m.events)-1]
+
 	return &last
 }
 
@@ -181,8 +190,10 @@ func (m *MockEventBus) AssertEventType(t TestingT, eventType events.Type) bool {
 	t.Helper()
 	if !m.HasEventType(eventType) {
 		t.Errorf("expected event type %q, but none was published. Got events: %v", eventType, m.events)
+
 		return false
 	}
+
 	return true
 }
 
@@ -192,19 +203,23 @@ func (m *MockEventBus) AssertEventCount(t TestingT, eventType events.Type, expec
 	count := m.CountByType(eventType)
 	if count != expected {
 		t.Errorf("expected %d events of type %q, got %d", expected, eventType, count)
+
 		return false
 	}
+
 	return true
 }
 
 // AssertMinEventCount asserts at least N events of a type.
-func (m *MockEventBus) AssertMinEventCount(t TestingT, eventType events.Type, min int) bool {
+func (m *MockEventBus) AssertMinEventCount(t TestingT, eventType events.Type, minimum int) bool {
 	t.Helper()
 	count := m.CountByType(eventType)
-	if count < min {
-		t.Errorf("expected at least %d events of type %q, got %d", min, eventType, count)
+	if count < minimum {
+		t.Errorf("expected at least %d events of type %q, got %d", minimum, eventType, count)
+
 		return false
 	}
+
 	return true
 }
 
@@ -219,6 +234,7 @@ func (m *MockEventBus) SetCloseError(err error) {
 func (m *MockEventBus) SubscriberCount(eventType events.Type) int {
 	m.mu.Lock()
 	defer m.mu.Unlock()
+
 	return len(m.subscriptions[string(eventType)])
 }
 
@@ -226,6 +242,7 @@ func (m *MockEventBus) SubscriberCount(eventType events.Type) int {
 func (m *MockEventBus) AllSubscriberCount() int {
 	m.mu.Lock()
 	defer m.mu.Unlock()
+
 	return len(m.allHandlers)
 }
 
@@ -270,5 +287,6 @@ func (a *AssertHelper) GetErrors() []string {
 func (m *MockEventBus) AssertEventTypeWithoutT(eventType events.Type) *AssertHelper {
 	h := &AssertHelper{}
 	m.AssertEventType(h, eventType)
+
 	return h
 }

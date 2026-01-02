@@ -89,6 +89,7 @@ func TestWorkflowCommand_RegisteredInRoot(t *testing.T) {
 	for _, cmd := range rootCmd.Commands() {
 		if cmd.Use == "workflow" {
 			found = true
+
 			break
 		}
 	}

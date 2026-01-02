@@ -27,7 +27,7 @@ func Benchmark_AddUsage_Sequential(b *testing.B) {
 	b.ResetTimer()
 	b.ReportAllocs()
 
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		if err := ws.AddUsage(taskID, "planning", 1000, 500, 100, 0.01); err != nil {
 			b.Fatal(err)
 		}
@@ -52,8 +52,8 @@ func Benchmark_AddUsage_Flush(b *testing.B) {
 	b.ResetTimer()
 	b.ReportAllocs()
 
-	for i := 0; i < b.N; i++ {
-		for j := 0; j < 10; j++ {
+	for range b.N {
+		for range 10 {
 			if err := ws.AddUsage(taskID, "planning", 1000, 500, 100, 0.01); err != nil {
 				b.Fatal(err)
 			}
@@ -101,7 +101,7 @@ func Benchmark_AddUsage_MultipleTasks(b *testing.B) {
 
 	// Create 10 tasks
 	taskIDs := make([]string, 10)
-	for i := 0; i < 10; i++ {
+	for i := range 10 {
 		taskID := GenerateTaskID()
 		taskIDs[i] = taskID
 		source := SourceInfo{Type: "file", Ref: "test"}
@@ -115,7 +115,7 @@ func Benchmark_AddUsage_MultipleTasks(b *testing.B) {
 	b.ResetTimer()
 	b.ReportAllocs()
 
-	for i := 0; i < b.N; i++ {
+	for i := range b.N {
 		taskID := taskIDs[i%10]
 		if err := ws.AddUsage(taskID, "planning", 1000, 500, 100, 0.01); err != nil {
 			b.Fatal(err)
@@ -139,7 +139,7 @@ func Benchmark_FlushUsage(b *testing.B) {
 	_ = work
 
 	// Pre-populate buffer
-	for i := 0; i < 100; i++ {
+	for range 100 {
 		if err := ws.AddUsage(taskID, "planning", 1000, 500, 100, 0.01); err != nil {
 			b.Fatal(err)
 		}
@@ -148,9 +148,9 @@ func Benchmark_FlushUsage(b *testing.B) {
 	b.ResetTimer()
 	b.ReportAllocs()
 
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		// Add more usage
-		for j := 0; j < 10; j++ {
+		for range 10 {
 			if err := ws.AddUsage(taskID, "implementing", 1000, 500, 100, 0.01); err != nil {
 				b.Fatal(err)
 			}
@@ -175,7 +175,7 @@ func Benchmark_LoadWork(b *testing.B) {
 		b.Fatal(err)
 	}
 	// Add some usage data
-	for i := 0; i < 100; i++ {
+	for range 100 {
 		if err := ws.AddUsage(taskID, "planning", 1000, 500, 100, 0.01); err != nil {
 			b.Fatal(err)
 		}
@@ -188,7 +188,7 @@ func Benchmark_LoadWork(b *testing.B) {
 	b.ResetTimer()
 	b.ReportAllocs()
 
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		_, err := ws.LoadWork(taskID)
 		if err != nil {
 			b.Fatal(err)
@@ -213,7 +213,7 @@ func Benchmark_SaveWork(b *testing.B) {
 	b.ResetTimer()
 	b.ReportAllocs()
 
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		if err := ws.SaveWork(work); err != nil {
 			b.Fatal(err)
 		}
@@ -232,7 +232,7 @@ func Benchmark_CreateWork(b *testing.B) {
 	b.ResetTimer()
 	b.ReportAllocs()
 
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		taskID := GenerateTaskID()
 		_, err := ws.CreateWork(taskID, source)
 		if err != nil {
@@ -246,7 +246,7 @@ func Benchmark_CreateWork(b *testing.B) {
 // Benchmark_GenerateTaskID benchmarks task ID generation.
 func Benchmark_GenerateTaskID(b *testing.B) {
 	b.ReportAllocs()
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		_ = GenerateTaskID()
 	}
 }
@@ -261,7 +261,7 @@ func Benchmark_WorkPath(b *testing.B) {
 	taskID := "test-task-abc123"
 
 	b.ReportAllocs()
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		_ = ws.WorkPath(taskID)
 	}
 }
@@ -271,7 +271,7 @@ func Benchmark_OpenWorkspace(b *testing.B) {
 	tmpDir := b.TempDir()
 
 	b.ReportAllocs()
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		_, err := OpenWorkspace(tmpDir, nil)
 		if err != nil {
 			b.Fatal(err)
@@ -298,7 +298,7 @@ func Benchmark_AddUsage_WithoutBuffering(b *testing.B) {
 	b.ResetTimer()
 	b.ReportAllocs()
 
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		// Simulate old behavior: load, modify, save
 		work, err := ws.LoadWork(taskID)
 		if err != nil {
@@ -329,7 +329,7 @@ func Benchmark_YAMLMarshal(b *testing.B) {
 	source := SourceInfo{Type: "file", Ref: "test"}
 	work := NewTaskWork("test-id", source)
 	// Add some realistic data
-	for i := 0; i < 50; i++ {
+	for range 50 {
 		work.Costs.ByStep["step"] = StepCostStats{
 			InputTokens:  1000,
 			OutputTokens: 500,
@@ -340,7 +340,7 @@ func Benchmark_YAMLMarshal(b *testing.B) {
 	}
 
 	b.ReportAllocs()
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		_, err := yaml.Marshal(work)
 		if err != nil {
 			b.Fatal(err)
@@ -358,7 +358,7 @@ func Benchmark_WorkPath_Join(b *testing.B) {
 	taskID := "test-task-abc123"
 
 	b.ReportAllocs()
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		_ = filepath.Join(ws.WorkRoot(), taskID)
 	}
 }

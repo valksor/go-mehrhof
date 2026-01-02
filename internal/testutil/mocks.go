@@ -23,8 +23,9 @@ type MockAgent struct {
 	Args         []string
 
 	// Callbacks for verifying calls
-	RunCalled     bool
-	RunPrompt     string
+	RunCalled bool
+	RunPrompt string
+	//nolint:containedctx // test mock: captures context for verification
 	RunCtx        context.Context
 	StreamEvents  []agent.Event
 	StreamErr     error
@@ -52,6 +53,7 @@ func (m *MockAgent) Run(ctx context.Context, prompt string) (*agent.Response, er
 	if m.RunErr != nil {
 		return nil, m.RunErr
 	}
+
 	return m.Response, nil
 }
 
@@ -73,6 +75,7 @@ func (m *MockAgent) RunStream(ctx context.Context, prompt string) (<-chan agent.
 			case eventCh <- event:
 			case <-ctx.Done():
 				errCh <- ctx.Err()
+
 				return
 			}
 		}
@@ -101,6 +104,7 @@ func (m *MockAgent) RunWithCallback(ctx context.Context, prompt string, cb agent
 	if m.RunErr != nil {
 		return nil, m.RunErr
 	}
+
 	return m.Response, nil
 }
 
@@ -125,6 +129,7 @@ func (m *MockAgent) WithEnv(key, value string) agent.Agent {
 		newMock.EnvVars[k] = v
 	}
 	newMock.EnvVars[key] = value
+
 	return newMock
 }
 
@@ -149,24 +154,28 @@ func (m *MockAgent) WithArgs(args ...string) agent.Agent {
 // WithResponse configures the response to return.
 func (m *MockAgent) WithResponse(resp *agent.Response) *MockAgent {
 	m.Response = resp
+
 	return m
 }
 
 // WithError configures the error to return.
 func (m *MockAgent) WithError(err error) *MockAgent {
 	m.RunErr = err
+
 	return m
 }
 
 // WithAvailableError configures the availability error.
 func (m *MockAgent) WithAvailableError(err error) *MockAgent {
 	m.AvailableErr = err
+
 	return m
 }
 
 // WithStreamEvents configures events to stream.
 func (m *MockAgent) WithStreamEvents(events []agent.Event) *MockAgent {
 	m.StreamEvents = events
+
 	return m
 }
 
@@ -268,6 +277,7 @@ func (m *MockProcess) Stop() error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	m.Running = false
+
 	return m.StopErr
 }
 
@@ -275,6 +285,7 @@ func (m *MockProcess) Stop() error {
 func (m *MockProcess) IsRunning() bool {
 	m.mu.Lock()
 	defer m.mu.Unlock()
+
 	return m.Running
 }
 
@@ -287,6 +298,7 @@ func (m *MockProcess) SetCallResponse(method string, response any) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	m.CallResponses[method] = data
+
 	return nil
 }
 
@@ -310,6 +322,7 @@ func (m *MockProcess) SetStreamEvents(events []any) error {
 		}
 		m.StreamEvents = append(m.StreamEvents, data)
 	}
+
 	return nil
 }
 
@@ -319,6 +332,7 @@ func (m *MockProcess) GetCalls() []MockProcessCall {
 	defer m.mu.Unlock()
 	result := make([]MockProcessCall, len(m.Calls))
 	copy(result, m.Calls)
+
 	return result
 }
 
@@ -372,6 +386,7 @@ func NewMockProvider() *MockProvider {
 // Match checks if a reference matches this provider.
 func (m *MockProvider) Match(ref string) bool {
 	m.MatchCalls = append(m.MatchCalls, ref)
+
 	return m.MatchResult
 }
 
@@ -381,6 +396,7 @@ func (m *MockProvider) Parse(ref string) (string, error) {
 	if m.ParseErr != nil {
 		return "", m.ParseErr
 	}
+
 	return m.ParseResult, nil
 }
 
@@ -390,17 +406,20 @@ func (m *MockProvider) Fetch(ctx context.Context, ref string) (*MockWorkUnit, er
 	if m.FetchErr != nil {
 		return nil, m.FetchErr
 	}
+
 	return m.FetchResult, nil
 }
 
 // WithFetchResult configures the fetch result.
 func (m *MockProvider) WithFetchResult(wu *MockWorkUnit) *MockProvider {
 	m.FetchResult = wu
+
 	return m
 }
 
 // WithFetchError configures a fetch error.
 func (m *MockProvider) WithFetchError(err error) *MockProvider {
 	m.FetchErr = err
+
 	return m
 }

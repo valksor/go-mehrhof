@@ -76,6 +76,7 @@ func TestBuiltInTemplates(t *testing.T) {
 		for _, name := range names {
 			if name == exp {
 				found = true
+
 				break
 			}
 		}
@@ -196,6 +197,7 @@ func TestTemplateGitConfig(t *testing.T) {
 
 			if tpl.Git == nil {
 				t.Error("template.Git is nil")
+
 				return
 			}
 
@@ -471,5 +473,6 @@ func findInString(s, substr string) bool {
 			return true
 		}
 	}
+
 	return false
 }

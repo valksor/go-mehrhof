@@ -21,7 +21,7 @@ func (m *mockLinter) Available() bool {
 }
 
 func (m *mockLinter) Run(ctx context.Context, workDir string, files []string) (*quality.Result, error) {
-	return nil, nil
+	return &quality.Result{Passed: true}, nil
 }
 
 // Test linterNames utility function.

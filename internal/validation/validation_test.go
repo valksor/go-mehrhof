@@ -105,6 +105,7 @@ func TestValidateAgentAliases_CircularDependency(t *testing.T) {
 	for _, f := range result.Findings {
 		if f.Code == CodeAgentAliasCircular {
 			foundCircular = true
+
 			break
 		}
 	}
@@ -130,6 +131,7 @@ func TestValidateAgentAliases_UndefinedExtends(t *testing.T) {
 	for _, f := range result.Findings {
 		if f.Code == CodeAgentAliasUndefined {
 			foundUndefined = true
+
 			break
 		}
 	}

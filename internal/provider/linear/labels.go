@@ -2,7 +2,7 @@ package linear
 
 import (
 	"context"
-	"fmt"
+	"errors"
 )
 
 // AddLabels adds labels to a Linear issue
@@ -98,5 +98,5 @@ func GetLabelIDs(ctx context.Context, client *Client, teamKey string, labelNames
 	// 3. Return the corresponding IDs for the given names
 	//
 	// For now, we'll return the names as-is with a note
-	return labelNames, fmt.Errorf("label name to ID resolution not fully implemented - labels must be passed as IDs")
+	return labelNames, errors.New("label name to ID resolution not fully implemented - labels must be passed as IDs")
 }

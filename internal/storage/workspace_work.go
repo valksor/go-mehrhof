@@ -23,6 +23,7 @@ func (w *Workspace) WorkPath(taskID string) string {
 func (w *Workspace) WorkExists(taskID string) bool {
 	workPath := w.WorkPath(taskID)
 	info, err := os.Stat(workPath)
+
 	return err == nil && info.IsDir()
 }
 
@@ -32,6 +33,7 @@ func GenerateTaskID() string {
 	if _, err := rand.Read(bytes); err != nil {
 		return fmt.Sprintf("task-%06x", time.Now().UnixNano()&0xffffff)
 	}
+
 	return hex.EncodeToString(bytes)
 }
 
@@ -108,6 +110,7 @@ func (w *Workspace) SaveWork(work *TaskWork) error {
 		if removeErr := os.Remove(tmpFile); removeErr != nil {
 			slog.Warn("failed to clean up temp file after rename error", "path", tmpFile, "error", removeErr)
 		}
+
 		return fmt.Errorf("save work: %w", err)
 	}
 
@@ -163,6 +166,7 @@ func (w *Workspace) AddUsage(taskID, step string, inputTokens, outputTokens, cac
 func (w *Workspace) FlushUsage() error {
 	w.usageMu.Lock()
 	defer w.usageMu.Unlock()
+
 	return w.flushUsageLocked()
 }
 
@@ -191,6 +195,7 @@ func (w *Workspace) flushUsageLocked() error {
 	if len(errs) > 0 {
 		return fmt.Errorf("flush usage: %w", errors.Join(errs...))
 	}
+
 	return nil
 }
 
@@ -244,6 +249,7 @@ func (w *Workspace) flushTaskUsageLocked(taskID string) error {
 // DeleteWork removes a work directory.
 func (w *Workspace) DeleteWork(taskID string) error {
 	workPath := w.WorkPath(taskID)
+
 	return os.RemoveAll(workPath)
 }
 

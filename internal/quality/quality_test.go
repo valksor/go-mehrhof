@@ -374,6 +374,7 @@ func contains(s, substr string) bool {
 			return true
 		}
 	}
+
 	return false
 }
 
@@ -400,6 +401,7 @@ func (m *mockLinter) Run(ctx context.Context, workDir string, files []string) (*
 	if m.runResult != nil {
 		return m.runResult, nil
 	}
+
 	return &Result{Linter: m.name, Passed: true}, nil
 }
 
@@ -468,6 +470,7 @@ func TestRegistryAvailable(t *testing.T) {
 					for _, got := range gotNames {
 						if got == want {
 							found = true
+
 							break
 						}
 					}

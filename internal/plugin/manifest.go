@@ -2,6 +2,7 @@
 package plugin
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -126,51 +127,52 @@ func LoadManifest(path string) (*Manifest, error) {
 	}
 
 	m.Dir = filepath.Dir(path)
+
 	return &m, nil
 }
 
 // Validate checks that the manifest has required fields and is internally consistent.
 func (m *Manifest) Validate() error {
 	if m.Version == "" {
-		return fmt.Errorf("version is required")
+		return errors.New("version is required")
 	}
 	if m.Name == "" {
-		return fmt.Errorf("name is required")
+		return errors.New("name is required")
 	}
 	if m.Type == "" {
-		return fmt.Errorf("type is required")
+		return errors.New("type is required")
 	}
 	if m.Protocol == "" {
-		return fmt.Errorf("protocol is required")
+		return errors.New("protocol is required")
 	}
 
 	// Validate executable configuration
 	if m.Executable.Path == "" && len(m.Executable.Command) == 0 {
-		return fmt.Errorf("executable.path or executable.command is required")
+		return errors.New("executable.path or executable.command is required")
 	}
 
 	// Validate type matches configuration
 	switch m.Type {
 	case PluginTypeProvider:
 		if m.Provider == nil {
-			return fmt.Errorf("provider configuration required for provider plugin")
+			return errors.New("provider configuration required for provider plugin")
 		}
 		if m.Provider.Name == "" {
-			return fmt.Errorf("provider.name is required")
+			return errors.New("provider.name is required")
 		}
 		if len(m.Provider.Schemes) == 0 {
-			return fmt.Errorf("provider.schemes is required")
+			return errors.New("provider.schemes is required")
 		}
 	case PluginTypeAgent:
 		if m.Agent == nil {
-			return fmt.Errorf("agent configuration required for agent plugin")
+			return errors.New("agent configuration required for agent plugin")
 		}
 		if m.Agent.Name == "" {
-			return fmt.Errorf("agent.name is required")
+			return errors.New("agent.name is required")
 		}
 	case PluginTypeWorkflow:
 		if m.Workflow == nil {
-			return fmt.Errorf("workflow configuration required for workflow plugin")
+			return errors.New("workflow configuration required for workflow plugin")
 		}
 	default:
 		return fmt.Errorf("invalid plugin type: %s", m.Type)
@@ -187,6 +189,7 @@ func (m *Manifest) ExecutablePath() string {
 	if filepath.IsAbs(m.Executable.Path) {
 		return m.Executable.Path
 	}
+
 	return filepath.Join(m.Dir, m.Executable.Path)
 }
 
@@ -202,20 +205,23 @@ func (m *Manifest) ExecutableCommand() []string {
 				cmd[1] = filepath.Join(m.Dir, cmd[1])
 			}
 		}
+
 		return cmd
 	}
+
 	return []string{m.ExecutablePath()}
 }
 
 // HasCapability checks if a provider plugin has the specified capability.
-func (m *Manifest) HasCapability(cap string) bool {
+func (m *Manifest) HasCapability(capability string) bool {
 	if m.Provider == nil {
 		return false
 	}
 	for _, c := range m.Provider.Capabilities {
-		if c == cap {
+		if c == capability {
 			return true
 		}
 	}
+
 	return false
 }

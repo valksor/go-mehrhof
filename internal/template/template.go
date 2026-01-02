@@ -97,17 +97,18 @@ func (t *Template) GetDescription() string {
 
 	var details []string
 	if t.Agent != "" {
-		details = append(details, fmt.Sprintf("Agent: %s", t.Agent))
+		details = append(details, "Agent: "+t.Agent)
 	}
 	if t.Frontmatter != nil {
 		if taskType, ok := t.Frontmatter["type"].(string); ok {
-			details = append(details, fmt.Sprintf("Type: %s", taskType))
+			details = append(details, "Type: "+taskType)
 		}
 	}
 
 	if len(details) > 0 {
 		return fmt.Sprintf("%s (%s)", desc, strings.Join(details, ", "))
 	}
+
 	return desc
 }
 

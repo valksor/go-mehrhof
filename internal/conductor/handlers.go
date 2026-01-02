@@ -97,6 +97,7 @@ func (c *Conductor) RunPlanning(ctx context.Context) error {
 		if statusLine != nil {
 			_ = statusLine.OnEvent(event)
 		}
+
 		return nil
 	})
 	if err != nil {
@@ -108,6 +109,7 @@ func (c *Conductor) RunPlanning(ctx context.Context) error {
 			c.logError(fmt.Errorf("save active task after planning error: %w", err))
 		}
 		_ = c.machine.Dispatch(ctx, workflow.EventError)
+
 		return fmt.Errorf("agent planning: %w", err)
 	}
 
@@ -157,6 +159,7 @@ func (c *Conductor) RunPlanning(ctx context.Context) error {
 			if err := c.workspace.SaveActiveTask(c.activeTask); err != nil {
 				c.logError(fmt.Errorf("save active task after pending question: %w", err))
 			}
+
 			return ErrPendingQuestion
 		}
 	}
@@ -192,6 +195,7 @@ func (c *Conductor) RunPlanning(ctx context.Context) error {
 	c.saveCurrentSession(taskID)
 
 	c.publishProgress("Planning complete", 100)
+
 	return nil
 }
 
@@ -229,7 +233,7 @@ func (c *Conductor) RunImplementation(ctx context.Context) error {
 		return fmt.Errorf("get latest specification: %w", err)
 	}
 	if specContent == "" {
-		return fmt.Errorf("no specifications found - run 'task plan' first")
+		return errors.New("no specifications found - run 'task plan' first")
 	}
 
 	c.publishProgress(fmt.Sprintf("Using specification-%d for implementation...", specNum), 5)
@@ -258,6 +262,7 @@ func (c *Conductor) RunImplementation(ctx context.Context) error {
 		if statusLine != nil {
 			_ = statusLine.OnEvent(event)
 		}
+
 		return nil
 	})
 	if err != nil {
@@ -269,6 +274,7 @@ func (c *Conductor) RunImplementation(ctx context.Context) error {
 			c.logError(fmt.Errorf("save active task after implementation error: %w", err))
 		}
 		_ = c.machine.Dispatch(ctx, workflow.EventError)
+
 		return fmt.Errorf("agent implementation: %w", err)
 	}
 
@@ -294,7 +300,7 @@ func (c *Conductor) RunImplementation(ctx context.Context) error {
 	}
 
 	// Create checkpoint if git is available
-	if event := c.createCheckpointIfNeeded(ctx, taskID, fmt.Sprintf("Implement task %s", taskID)); event != nil {
+	if event := c.createCheckpointIfNeeded(ctx, taskID, "Implement task "+taskID); event != nil {
 		c.eventBus.PublishRaw(*event)
 	}
 
@@ -311,6 +317,7 @@ func (c *Conductor) RunImplementation(ctx context.Context) error {
 	c.saveCurrentSession(taskID)
 
 	c.publishProgress("Implementation complete", 100)
+
 	return nil
 }
 
@@ -373,6 +380,7 @@ func (c *Conductor) RunReview(ctx context.Context) error {
 		if statusLine != nil {
 			_ = statusLine.OnEvent(event)
 		}
+
 		return nil
 	})
 	if err != nil {
@@ -384,6 +392,7 @@ func (c *Conductor) RunReview(ctx context.Context) error {
 			c.logError(fmt.Errorf("save active task after review error: %w", err))
 		}
 		_ = c.machine.Dispatch(ctx, workflow.EventError)
+
 		return fmt.Errorf("agent review: %w", err)
 	}
 
@@ -419,7 +428,7 @@ func (c *Conductor) RunReview(ctx context.Context) error {
 		}
 
 		// Create checkpoint for review fixes
-		c.createCheckpointIfNeeded(ctx, taskID, fmt.Sprintf("Apply review fixes for task %s", taskID))
+		c.createCheckpointIfNeeded(ctx, taskID, "Apply review fixes for task "+taskID)
 	}
 
 	// Update state back to idle
@@ -435,5 +444,6 @@ func (c *Conductor) RunReview(ctx context.Context) error {
 	c.saveCurrentSession(taskID)
 
 	c.publishProgress("Review complete", 100)
+
 	return nil
 }

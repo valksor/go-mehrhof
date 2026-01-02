@@ -135,16 +135,19 @@ func TestParseReference(t *testing.T) {
 			if tt.wantErr {
 				if err == nil {
 					t.Errorf("ParseReference(%q) expected error containing %q, got nil", tt.input, tt.errString)
+
 					return
 				}
 				if tt.errString != "" && !contains(err.Error(), tt.errString) {
 					t.Errorf("ParseReference(%q) error = %v, want error containing %q", tt.input, err, tt.errString)
 				}
+
 				return
 			}
 
 			if err != nil {
 				t.Errorf("ParseReference(%q) unexpected error: %v", tt.input, err)
+
 				return
 			}
 
@@ -227,11 +230,13 @@ func TestDetectRepository(t *testing.T) {
 				if err == nil {
 					t.Errorf("DetectRepository(%q) expected error, got nil", tt.remoteURL)
 				}
+
 				return
 			}
 
 			if err != nil {
 				t.Errorf("DetectRepository(%q) unexpected error: %v", tt.remoteURL, err)
+
 				return
 			}
 
@@ -289,6 +294,7 @@ func TestExtractLinkedIssues(t *testing.T) {
 
 			if len(got) != len(tt.want) {
 				t.Errorf("ExtractLinkedIssues() = %v, want %v", got, tt.want)
+
 				return
 			}
 
@@ -345,6 +351,7 @@ func TestExtractImageURLs(t *testing.T) {
 
 			if len(got) != len(tt.want) {
 				t.Errorf("ExtractImageURLs() = %v, want %v", got, tt.want)
+
 				return
 			}
 
@@ -371,6 +378,7 @@ func containsHelper(s, substr string) bool {
 			return true
 		}
 	}
+
 	return false
 }
 
@@ -520,6 +528,7 @@ func TestParseTaskList(t *testing.T) {
 
 			if len(got) != len(tt.want) {
 				t.Errorf("ParseTaskList() = %d items, want %d items", len(got), len(tt.want))
+
 				return
 			}
 
@@ -554,7 +563,7 @@ func TestWrapAPIError(t *testing.T) {
 		{
 			name: "401 unauthorized",
 			err: &github.ErrorResponse{
-				Response: &http.Response{StatusCode: 401},
+				Response: &http.Response{StatusCode: http.StatusUnauthorized},
 				Message:  "Bad credentials",
 			},
 			wantErr:     providererrors.ErrUnauthorized,
@@ -564,7 +573,7 @@ func TestWrapAPIError(t *testing.T) {
 			name: "403 rate limit",
 			err: &github.ErrorResponse{
 				Response: &http.Response{
-					StatusCode: 403,
+					StatusCode: http.StatusForbidden,
 					Header:     http.Header{"X-RateLimit-Reset": []string{"1234567890"}},
 				},
 				Message: "API rate limit exceeded",
@@ -575,7 +584,7 @@ func TestWrapAPIError(t *testing.T) {
 		{
 			name: "403 insufficient scope",
 			err: &github.ErrorResponse{
-				Response: &http.Response{StatusCode: 403},
+				Response: &http.Response{StatusCode: http.StatusForbidden},
 				Message:  "Resource not accessible",
 			},
 			wantErr:     ErrInsufficientScope,
@@ -584,7 +593,7 @@ func TestWrapAPIError(t *testing.T) {
 		{
 			name: "404 not found",
 			err: &github.ErrorResponse{
-				Response: &http.Response{StatusCode: 404},
+				Response: &http.Response{StatusCode: http.StatusNotFound},
 				Message:  "Not Found",
 			},
 			wantErr:     ErrIssueNotFound,
@@ -605,11 +614,13 @@ func TestWrapAPIError(t *testing.T) {
 				if got != nil {
 					t.Errorf("wrapAPIError() = %v, want nil", got)
 				}
+
 				return
 			}
 
 			if got == nil {
 				t.Error("wrapAPIError() = nil, want non-nil error")
+
 				return
 			}
 

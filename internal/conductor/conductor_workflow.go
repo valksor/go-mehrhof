@@ -2,6 +2,7 @@ package conductor
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/valksor/go-mehrhof/internal/events"
@@ -15,7 +16,7 @@ func (c *Conductor) Plan(ctx context.Context) error {
 	defer c.mu.Unlock()
 
 	if c.activeTask == nil {
-		return fmt.Errorf("no active task")
+		return errors.New("no active task")
 	}
 
 	// Update state
@@ -38,7 +39,7 @@ func (c *Conductor) Implement(ctx context.Context) error {
 	defer c.mu.Unlock()
 
 	if c.activeTask == nil {
-		return fmt.Errorf("no active task")
+		return errors.New("no active task")
 	}
 
 	// Check for specifications
@@ -47,7 +48,7 @@ func (c *Conductor) Implement(ctx context.Context) error {
 		return fmt.Errorf("list specifications: %w", err)
 	}
 	if len(specifications) == 0 {
-		return fmt.Errorf("no specifications found - run 'task plan' first")
+		return errors.New("no specifications found - run 'task plan' first")
 	}
 
 	// Update machine with specifications
@@ -79,7 +80,7 @@ func (c *Conductor) Review(ctx context.Context) error {
 	defer c.mu.Unlock()
 
 	if c.activeTask == nil {
-		return fmt.Errorf("no active task")
+		return errors.New("no active task")
 	}
 
 	// Update state
@@ -102,11 +103,11 @@ func (c *Conductor) Undo(ctx context.Context) error {
 	defer c.mu.Unlock()
 
 	if c.activeTask == nil {
-		return fmt.Errorf("no active task")
+		return errors.New("no active task")
 	}
 
 	if c.git == nil {
-		return fmt.Errorf("git not available")
+		return errors.New("git not available")
 	}
 
 	taskID := c.activeTask.ID
@@ -117,7 +118,7 @@ func (c *Conductor) Undo(ctx context.Context) error {
 		return err
 	}
 	if !can {
-		return fmt.Errorf("nothing to undo")
+		return errors.New("nothing to undo")
 	}
 
 	// Dispatch undo event
@@ -153,11 +154,11 @@ func (c *Conductor) Redo(ctx context.Context) error {
 	defer c.mu.Unlock()
 
 	if c.activeTask == nil {
-		return fmt.Errorf("no active task")
+		return errors.New("no active task")
 	}
 
 	if c.git == nil {
-		return fmt.Errorf("git not available")
+		return errors.New("git not available")
 	}
 
 	taskID := c.activeTask.ID
@@ -168,7 +169,7 @@ func (c *Conductor) Redo(ctx context.Context) error {
 		return err
 	}
 	if !can {
-		return fmt.Errorf("nothing to redo")
+		return errors.New("nothing to redo")
 	}
 
 	// Dispatch redo event
@@ -204,7 +205,7 @@ func (c *Conductor) Finish(ctx context.Context, opts FinishOptions) error {
 	defer c.mu.Unlock()
 
 	if c.activeTask == nil {
-		return fmt.Errorf("no active task")
+		return errors.New("no active task")
 	}
 
 	// Determine action based on flags and provider support
@@ -221,7 +222,7 @@ func (c *Conductor) Finish(ctx context.Context, opts FinishOptions) error {
 		}
 		// Store PR info for later reference
 		if prResult != nil {
-			c.logVerbose("Created PR #%d: %s", prResult.Number, prResult.URL)
+			c.logVerbosef("Created PR #%d: %s", prResult.Number, prResult.URL)
 		}
 	} else if c.git != nil && c.activeTask.UseGit && c.activeTask.Branch != "" {
 		// Provider doesn't support PR, ask user what to do
@@ -233,13 +234,13 @@ func (c *Conductor) Finish(ctx context.Context, opts FinishOptions) error {
 			}
 		case "done":
 			// Just mark as done, no merge
-			c.logVerbose("Marking task as done without merging")
+			c.logVerbosef("Marking task as done without merging")
 		case "cancel":
-			return fmt.Errorf("cancelled by user")
+			return errors.New("cancelled by user")
 		}
 	} else {
 		// No git, just mark as done
-		c.logVerbose("No git branch associated, marking task as done")
+		c.logVerbosef("No git branch associated, marking task as done")
 	}
 
 	// Update state
@@ -331,6 +332,7 @@ func (c *Conductor) countCheckpoints() int {
 	if err != nil {
 		return 0
 	}
+
 	return len(checkpoints)
 }
 
@@ -353,7 +355,7 @@ func (c *Conductor) publishProgress(message string, percent int) {
 func (c *Conductor) finishWithMerge(ctx context.Context, opts FinishOptions) error {
 	// Handle git merge operations if applicable
 	if c.git == nil || !c.activeTask.UseGit || c.activeTask.Branch == "" {
-		return fmt.Errorf("git not available or no branch associated with task")
+		return errors.New("git not available or no branch associated with task")
 	}
 
 	if err := c.performMerge(ctx, opts); err != nil {
@@ -370,6 +372,7 @@ func (c *Conductor) finishWithMerge(ctx context.Context, opts FinishOptions) err
 
 	// Cleanup branch and worktree if requested
 	c.cleanupAfterMerge(ctx, opts)
+
 	return nil
 }
 
@@ -390,6 +393,7 @@ func (c *Conductor) providerSupportsPR(ctx context.Context) bool {
 
 	// Check if provider implements PRCreator interface
 	_, ok := p.(provider.PRCreator)
+
 	return ok
 }
 
@@ -412,6 +416,7 @@ func (c *Conductor) askUserFinishAction() string {
 		if _, err := fmt.Scanln(&choice); err != nil {
 			// Handle EOF or empty input
 			fmt.Println("\nCancelled")
+
 			return "cancel"
 		}
 

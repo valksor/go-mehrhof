@@ -39,6 +39,7 @@ func (r Reference) String() string {
 	if r.Organization != "" && r.Project != "" {
 		return r.Organization + "/" + r.Project + "#" + strconv.Itoa(r.WorkItemID)
 	}
+
 	return strconv.Itoa(r.WorkItemID)
 }
 
@@ -61,6 +62,7 @@ func ParseReference(input string) (*Reference, error) {
 	// Try dev.azure.com URL pattern
 	if matches := devAzureURLPattern.FindStringSubmatch(input); matches != nil {
 		id, _ := strconv.Atoi(matches[3])
+
 		return &Reference{
 			Organization: matches[1],
 			Project:      matches[2],
@@ -72,6 +74,7 @@ func ParseReference(input string) (*Reference, error) {
 	// Try visualstudio.com URL pattern
 	if matches := visualStudioURLPattern.FindStringSubmatch(input); matches != nil {
 		id, _ := strconv.Atoi(matches[3])
+
 		return &Reference{
 			Organization: matches[1],
 			Project:      matches[2],
@@ -83,6 +86,7 @@ func ParseReference(input string) (*Reference, error) {
 	// Try org/project#ID format
 	if matches := orgProjectIDPattern.FindStringSubmatch(input); matches != nil {
 		id, _ := strconv.Atoi(matches[3])
+
 		return &Reference{
 			Organization: matches[1],
 			Project:      matches[2],
@@ -97,6 +101,7 @@ func ParseReference(input string) (*Reference, error) {
 		if err != nil || id <= 0 {
 			return nil, ErrInvalidReference
 		}
+
 		return &Reference{
 			WorkItemID: id,
 			IsExplicit: false,

@@ -54,6 +54,7 @@ func (a *AliasAgent) configured() Agent {
 	if len(a.args) > 0 {
 		agent = agent.WithArgs(a.args...)
 	}
+
 	return agent
 }
 
@@ -82,6 +83,7 @@ func (a *AliasAgent) Available() error {
 func (a *AliasAgent) WithEnv(key, value string) Agent {
 	newEnv := _maps.Clone(a.env)
 	newEnv[key] = value
+
 	return &AliasAgent{
 		name:        a.name,
 		description: a.description,
@@ -95,6 +97,7 @@ func (a *AliasAgent) WithEnv(key, value string) Agent {
 // This creates a new AliasAgent with the combined arguments.
 func (a *AliasAgent) WithArgs(args ...string) Agent {
 	newArgs := _slices.Concat(a.args, args)
+
 	return &AliasAgent{
 		name:        a.name,
 		description: a.description,

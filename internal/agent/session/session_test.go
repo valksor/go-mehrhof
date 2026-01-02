@@ -221,7 +221,7 @@ func TestManager_List(t *testing.T) {
 	m := NewManager(tempDir)
 
 	// Save multiple sessions
-	for i := 0; i < 3; i++ {
+	for range 3 {
 		state := &State{
 			ID:        generateID(),
 			TaskID:    "test-task",
@@ -247,7 +247,7 @@ func TestManager_List(t *testing.T) {
 	}
 
 	// Verify sorted by newest first
-	for i := 0; i < len(sessions)-1; i++ {
+	for i := range len(sessions) - 1 {
 		if sessions[i].CheckpointedAt.Before(sessions[i+1].CheckpointedAt) {
 			t.Error("List() sessions not sorted by newest first")
 		}
@@ -325,7 +325,7 @@ func TestManager_Clean(t *testing.T) {
 	m := NewManager(tempDir)
 
 	// Save 5 sessions
-	for i := 0; i < 5; i++ {
+	for range 5 {
 		state := &State{
 			ID:        generateID(),
 			TaskID:    "test-task",

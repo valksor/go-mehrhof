@@ -557,6 +557,7 @@ func TestCheckpointTagRegexp(t *testing.T) {
 		matches := checkpointTagRe.FindStringSubmatch(tt.tag)
 		if matches == nil {
 			t.Errorf("tag %q should match", tt.tag)
+
 			continue
 		}
 		if matches[1] != tt.wantTask {

@@ -21,12 +21,14 @@ func (w *Workspace) SpecificationsDir(taskID string) string {
 // SpecificationPath returns the path for a specification file.
 func (w *Workspace) SpecificationPath(taskID string, number int) string {
 	filename := fmt.Sprintf("specification-%d.md", number)
+
 	return filepath.Join(w.SpecificationsDir(taskID), filename)
 }
 
 // SaveSpecification saves a specification file (markdown).
 func (w *Workspace) SaveSpecification(taskID string, number int, content string) error {
 	specPath := w.SpecificationPath(taskID, number)
+
 	return os.WriteFile(specPath, []byte(content), 0o644)
 }
 
@@ -37,6 +39,7 @@ func (w *Workspace) LoadSpecification(taskID string, number int) (string, error)
 	if err != nil {
 		return "", err
 	}
+
 	return string(data), nil
 }
 
@@ -49,6 +52,7 @@ func (w *Workspace) ListSpecifications(taskID string) ([]int, error) {
 		if os.IsNotExist(err) {
 			return []int{}, nil
 		}
+
 		return nil, fmt.Errorf("read specifications directory: %w", err)
 	}
 
@@ -67,6 +71,7 @@ func (w *Workspace) ListSpecifications(taskID string) ([]int, error) {
 	}
 
 	slices.Sort(numbers)
+
 	return numbers, nil
 }
 
@@ -161,6 +166,7 @@ func (w *Workspace) ParseSpecification(taskID string, number int) (*Specificatio
 	for _, line := range lines {
 		if strings.HasPrefix(line, "# ") {
 			spec.Title = strings.TrimPrefix(line, "# ")
+
 			break
 		}
 	}
@@ -224,6 +230,7 @@ func (w *Workspace) ListSpecificationsWithStatus(taskID string) ([]*Specificatio
 		if err != nil {
 			// Include specification with error status
 			specifications = append(specifications, &Specification{Number: num, Status: "error"})
+
 			continue
 		}
 		specifications = append(specifications, specification)

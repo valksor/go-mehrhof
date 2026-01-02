@@ -75,7 +75,10 @@ func TestMatch(t *testing.T) {
 		Set("token", "test")
 
 	p, _ := New(context.Background(), cfg)
-	prov := p.(*Provider)
+	prov, ok := p.(*Provider)
+	if !ok {
+		t.Fatal("New did not return *Provider")
+	}
 
 	tests := []struct {
 		input string
@@ -156,6 +159,7 @@ func TestParseReference(t *testing.T) {
 				if err == nil {
 					t.Error("expected error")
 				}
+
 				return
 			}
 			if err != nil {
@@ -409,6 +413,7 @@ func findSubstring(s, substr string) bool {
 			return true
 		}
 	}
+
 	return false
 }
 

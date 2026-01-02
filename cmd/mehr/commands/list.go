@@ -67,6 +67,7 @@ func runList(cmd *cobra.Command, args []string) error {
 		}
 		fmt.Println("No tasks found in workspace.")
 		fmt.Println("\nUse 'mehr start <reference>' to create a new task.")
+
 		return nil
 	}
 

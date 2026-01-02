@@ -86,6 +86,7 @@ func (p *Provider) Match(input string) bool {
 
 	// Check for bare task ID or custom ID pattern
 	_, err := ParseReference(input)
+
 	return err == nil
 }
 
@@ -98,6 +99,7 @@ func (p *Provider) Parse(input string) (string, error) {
 	if ref.CustomID != "" {
 		return ref.CustomID, nil
 	}
+
 	return ref.TaskID, nil
 }
 
@@ -230,7 +232,7 @@ func (p *Provider) FetchComments(ctx context.Context, id string) ([]*provider.Co
 		createdAt := parseTimestamp(comment.Date)
 
 		author := provider.Person{
-			ID:    fmt.Sprintf("%d", comment.User.ID),
+			ID:    strconv.Itoa(comment.User.ID),
 			Name:  comment.User.Username,
 			Email: comment.User.Email,
 		}
@@ -262,6 +264,7 @@ func (p *Provider) AddComment(ctx context.Context, id string, body string) error
 	if err != nil {
 		return fmt.Errorf("add comment to %s: %w", id, err)
 	}
+
 	return nil
 }
 
@@ -287,6 +290,7 @@ func (p *Provider) UpdateStatus(ctx context.Context, id string, status provider.
 	if err != nil {
 		return fmt.Errorf("update task status %s: %w", id, err)
 	}
+
 	return nil
 }
 
@@ -328,7 +332,7 @@ func (p *Provider) taskToWorkUnit(task *Task) *provider.WorkUnit {
 	// Set assignees
 	for _, assignee := range task.Assignees {
 		unit.Assignees = append(unit.Assignees, provider.Person{
-			ID:    fmt.Sprintf("%d", assignee.ID),
+			ID:    strconv.Itoa(assignee.ID),
 			Name:  assignee.Username,
 			Email: assignee.Email,
 		})
@@ -423,6 +427,7 @@ func statusMatches(taskStatus, filterStatus provider.Status) bool {
 	if filterStatus == provider.StatusClosed && taskStatus == provider.StatusDone {
 		return true
 	}
+
 	return false
 }
 
@@ -450,6 +455,7 @@ func extractTagNames(tags []Tag) []string {
 	for _, tag := range tags {
 		names = append(names, tag.Name)
 	}
+
 	return names
 }
 
@@ -462,6 +468,7 @@ func hasAnyTag(tags []Tag, tagNames []string) bool {
 			}
 		}
 	}
+
 	return false
 }
 
@@ -487,6 +494,7 @@ func getListID(task *Task) string {
 	if task.List != nil {
 		return task.List.ID
 	}
+
 	return ""
 }
 
@@ -494,6 +502,7 @@ func getFolderID(task *Task) string {
 	if task.Folder != nil {
 		return task.Folder.ID
 	}
+
 	return ""
 }
 
@@ -501,6 +510,7 @@ func getSpaceID(task *Task) string {
 	if task.Space != nil {
 		return task.Space.ID
 	}
+
 	return ""
 }
 
@@ -599,7 +609,7 @@ func buildSnapshotContent(task *Task) string {
 func (p *Provider) GetBranchSuggestion(task *provider.WorkUnit) string {
 	if p.config.BranchPattern == "" {
 		// Default pattern
-		return fmt.Sprintf("task/%s", task.ExternalKey)
+		return "task/" + task.ExternalKey
 	}
 
 	// Simple template replacement
@@ -624,6 +634,7 @@ func slugify(s string) string {
 		if r == ' ' || r == '-' || r == '_' {
 			return '-'
 		}
+
 		return -1
 	}, s)
 

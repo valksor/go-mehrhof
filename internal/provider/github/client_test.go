@@ -330,7 +330,7 @@ func TestGetIssueComments(t *testing.T) {
 func TestAddComment(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			if r.Method != "POST" {
+			if r.Method != http.MethodPost {
 				t.Errorf("expected POST, got %s", r.Method)
 			}
 
@@ -372,7 +372,7 @@ func TestAddComment(t *testing.T) {
 func TestCreatePullRequest(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			if r.Method != "POST" {
+			if r.Method != http.MethodPost {
 				t.Errorf("expected POST, got %s", r.Method)
 			}
 
@@ -658,7 +658,7 @@ func TestClientCache(t *testing.T) {
 		callCount := 0
 		handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			callCount++
-			if r.Method == "POST" {
+			if r.Method == http.MethodPost {
 				// AddComment response
 				comment := gh.IssueComment{
 					ID:   ptr(int64(999)),
@@ -666,6 +666,7 @@ func TestClientCache(t *testing.T) {
 				}
 				w.WriteHeader(http.StatusCreated)
 				_ = json.NewEncoder(w).Encode(comment)
+
 				return
 			}
 			// GetIssueComments response

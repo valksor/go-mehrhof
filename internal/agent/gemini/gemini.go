@@ -29,6 +29,7 @@ const (
 var scannerBufferPool = sync.Pool{
 	New: func() any {
 		b := make([]byte, scannerBufferSize)
+
 		return &b
 	},
 }
@@ -58,6 +59,7 @@ func NewWithConfig(cfg agent.Config) *Agent {
 	if len(cfg.Command) == 0 {
 		cfg.Command = []string{"gemini"}
 	}
+
 	return &Agent{
 		config: cfg,
 		parser: NewGeminiParser(),
@@ -182,14 +184,18 @@ func (a *Agent) executeStream(ctx context.Context, prompt string, eventCh chan<-
 	// Read output line by line
 	scanner := bufio.NewScanner(stdout)
 	// Get buffer from pool for large responses, return when done
-	bufPtr := scannerBufferPool.Get().(*[]byte)
-	defer scannerBufferPool.Put(bufPtr)
-	scanner.Buffer(*bufPtr, scannerBufferSize)
+	buf, ok := scannerBufferPool.Get().(*[]byte)
+	if !ok {
+		return errors.New("scanner buffer pool returned wrong type")
+	}
+	defer scannerBufferPool.Put(buf)
+	scanner.Buffer(*buf, scannerBufferSize)
 
 	for scanner.Scan() {
 		select {
 		case <-timeoutCtx.Done():
 			_ = cmd.Process.Kill()
+
 			return timeoutCtx.Err()
 		default:
 		}
@@ -233,9 +239,11 @@ func (a *Agent) executeStream(ctx context.Context, prompt string, eventCh chan<-
 				if stderrBytes != "" {
 					return fmt.Errorf("gemini exited with code %d: %s", exitErr.ExitCode(), stderrBytes)
 				}
+
 				return fmt.Errorf("gemini exited with code %d", exitErr.ExitCode())
 			}
 		}
+
 		return fmt.Errorf("wait error: %w", err)
 	}
 
@@ -274,6 +282,7 @@ func (a *Agent) SetParser(p agent.Parser) {
 func (a *Agent) WithWorkDir(dir string) *Agent {
 	newConfig := a.config
 	newConfig.WorkDir = dir
+
 	return &Agent{
 		config: newConfig,
 		parser: a.parser,
@@ -285,6 +294,7 @@ func (a *Agent) WithWorkDir(dir string) *Agent {
 func (a *Agent) WithTimeout(d time.Duration) *Agent {
 	newConfig := a.config
 	newConfig.Timeout = d
+
 	return &Agent{
 		config: newConfig,
 		parser: a.parser,
@@ -300,6 +310,7 @@ func (a *Agent) WithEnv(key, value string) agent.Agent {
 		newConfig.Environment[k] = v
 	}
 	newConfig.Environment[key] = value
+
 	return &Agent{
 		config: newConfig,
 		parser: a.parser,
@@ -313,6 +324,7 @@ func (a *Agent) WithArgs(args ...string) agent.Agent {
 	newArgs := make([]string, len(a.config.Args), len(a.config.Args)+len(args))
 	copy(newArgs, a.config.Args)
 	newConfig.Args = append(newArgs, args...)
+
 	return &Agent{
 		config: newConfig,
 		parser: a.parser,
@@ -538,6 +550,7 @@ func summarizeOutput(text string) string {
 			if len(line) > 200 {
 				return line[:200] + "..."
 			}
+
 			return line
 		}
 	}

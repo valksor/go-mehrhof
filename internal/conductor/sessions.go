@@ -19,6 +19,7 @@ func (c *Conductor) createCheckpointIfNeeded(ctx context.Context, taskID, messag
 		// If we can't determine changes, log but continue (treat as no changes)
 		// This allows checkpoint creation to fail gracefully
 		c.publishProgress(fmt.Sprintf("Warning: could not check git changes: %v", err), 0)
+
 		return nil
 	}
 	if !hasChanges {
@@ -37,6 +38,7 @@ func (c *Conductor) createCheckpointIfNeeded(ctx context.Context, taskID, messag
 	checkpoint, err := c.git.CreateCheckpointWithPrefix(ctx, taskID, message, commitPrefix)
 	if err != nil {
 		c.logError(fmt.Errorf("create checkpoint: %w", err))
+
 		return nil
 	}
 

@@ -2,7 +2,7 @@ package ollama
 
 import (
 	"context"
-	"fmt"
+	"errors"
 	"strings"
 	"testing"
 	"time"
@@ -113,16 +113,23 @@ func TestWithModel(t *testing.T) {
 func TestWithEnv(t *testing.T) {
 	a := New()
 	aAgent := a.WithEnv("OLLAMA_HOST", "http://localhost:11434")
-	if aAgent.(*Agent).config.Environment["OLLAMA_HOST"] != "http://localhost:11434" {
+	agent, ok := aAgent.(*Agent)
+	if !ok {
+		t.Fatal("WithEnv did not return *Agent")
+	}
+	if agent.config.Environment["OLLAMA_HOST"] != "http://localhost:11434" {
 		t.Errorf("Environment[OLLAMA_HOST] = %q, want %q",
-			aAgent.(*Agent).config.Environment["OLLAMA_HOST"], "http://localhost:11434")
+			agent.config.Environment["OLLAMA_HOST"], "http://localhost:11434")
 	}
 }
 
 func TestWithArgs(t *testing.T) {
 	a := New()
 	aAgent := a.WithArgs("--verbose")
-	typed := aAgent.(*Agent)
+	typed, ok := aAgent.(*Agent)
+	if !ok {
+		t.Fatal("WithArgs did not return *Agent")
+	}
 	if len(typed.config.Args) != 1 {
 		t.Fatalf("Args length = %d, want 1", len(typed.config.Args))
 	}
@@ -151,10 +158,14 @@ func TestMethodChaining(t *testing.T) {
 	if a.model != "llama3" {
 		t.Error("WithModel chain failed")
 	}
-	if aAgent.(*Agent).config.Environment["KEY1"] != "val1" {
+	typed, ok := aAgent.(*Agent)
+	if !ok {
+		t.Fatal("WithEnv did not return *Agent")
+	}
+	if typed.config.Environment["KEY1"] != "val1" {
 		t.Error("WithEnv(KEY1) chain failed")
 	}
-	if aAgent.(*Agent).config.Environment["KEY2"] != "val2" {
+	if typed.config.Environment["KEY2"] != "val2" {
 		t.Error("WithEnv(KEY2) chain failed")
 	}
 }
@@ -214,7 +225,11 @@ func TestBuildArgs_WithModelFlag(t *testing.T) {
 	a := New()
 	aAgent := a.WithArgs("--model", "llama3")
 
-	args := aAgent.(*Agent).buildArgs("test")
+	agent, ok := aAgent.(*Agent)
+	if !ok {
+		t.Fatal("WithArgs did not return *Agent")
+	}
+	args := agent.buildArgs("test")
 
 	// Model from --model flag should be used
 	if len(args) < 2 {
@@ -314,6 +329,7 @@ func TestRunWithCallback_NoCLI(t *testing.T) {
 	callbackCalled := false
 	cb := func(event agent.Event) error {
 		callbackCalled = true
+
 		return nil
 	}
 
@@ -420,7 +436,11 @@ func TestWithEnvImmutability(t *testing.T) {
 		t.Error("WithEnv modified original agent")
 	}
 
-	if a2.(*Agent).config.Environment["KEY"] != "value" {
+	typed2, ok := a2.(*Agent)
+	if !ok {
+		t.Fatal("WithEnv did not return *Agent")
+	}
+	if typed2.config.Environment["KEY"] != "value" {
 		t.Error("WithEnv didn't set value on new agent")
 	}
 }
@@ -433,7 +453,11 @@ func TestWithArgsImmutability(t *testing.T) {
 		t.Error("WithArgs modified original agent")
 	}
 
-	if len(a2.(*Agent).config.Args) != 1 || a2.(*Agent).config.Args[0] != "--flag" {
+	typed2, ok := a2.(*Agent)
+	if !ok {
+		t.Fatal("WithArgs did not return *Agent")
+	}
+	if len(typed2.config.Args) != 1 || typed2.config.Args[0] != "--flag" {
 		t.Error("WithArgs didn't set args on new agent")
 	}
 }
@@ -491,8 +515,9 @@ func TestRunWithCallback_CallbackError(t *testing.T) {
 		callbackCount++
 		// Return an error after first event
 		if callbackCount >= 1 {
-			return fmt.Errorf("callback error")
+			return errors.New("callback error")
 		}
+
 		return nil
 	}
 
@@ -515,6 +540,7 @@ func TestRunWithCallback_CollectsEvents(t *testing.T) {
 	var collectedEvents []agent.Event
 	cb := func(event agent.Event) error {
 		collectedEvents = append(collectedEvents, event)
+
 		return nil
 	}
 

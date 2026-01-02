@@ -55,6 +55,7 @@ func checkForUpdatesInBackground(ctx context.Context) {
 		// Silently skip on errors - don't bother the user
 		// Update the timestamp so we don't check again too soon
 		_ = saveUpdateCheckTime(settings)
+
 		return
 	}
 
@@ -73,6 +74,7 @@ func checkForUpdatesInBackground(ctx context.Context) {
 // saveUpdateCheckTime saves the current time as the last update check time.
 func saveUpdateCheckTime(settings *config.Settings) error {
 	settings.LastUpdateCheck = time.Now()
+
 	return settings.Save()
 }
 

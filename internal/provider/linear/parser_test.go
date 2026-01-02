@@ -175,16 +175,19 @@ func TestParseReference(t *testing.T) {
 			if tt.wantErr {
 				if err == nil {
 					t.Errorf("ParseReference(%q) expected error, got nil", tt.input)
+
 					return
 				}
 				if tt.errContains != "" && !strings.Contains(err.Error(), tt.errContains) {
 					t.Errorf("ParseReference(%q) error = %q, want to contain %q", tt.input, err.Error(), tt.errContains)
 				}
+
 				return
 			}
 
 			if err != nil {
 				t.Errorf("ParseReference(%q) unexpected error: %v", tt.input, err)
+
 				return
 			}
 

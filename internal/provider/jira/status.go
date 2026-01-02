@@ -36,6 +36,7 @@ func (p *Provider) UpdateStatus(ctx context.Context, workUnitID string, status p
 		for _, name := range possibleNames {
 			if strings.EqualFold(transition.Name, name) {
 				transitionID = transition.ID
+
 				break
 			}
 		}

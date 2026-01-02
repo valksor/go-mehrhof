@@ -23,6 +23,7 @@ func (r *Ref) String() string {
 	if r.ProjectID > 0 {
 		return fmt.Sprintf("%d#%d", r.ProjectID, r.IssueIID)
 	}
+
 	return fmt.Sprintf("#%d", r.IssueIID)
 }
 
@@ -58,6 +59,7 @@ func ParseReference(input string) (*Ref, error) {
 		if err != nil {
 			return nil, fmt.Errorf("%w: invalid issue IID: %s", ErrInvalidReference, matches[3])
 		}
+
 		return &Ref{
 			ProjectPath: matches[1] + "/" + matches[2],
 			IssueIID:    iid,
@@ -75,6 +77,7 @@ func ParseReference(input string) (*Ref, error) {
 		if err != nil {
 			return nil, fmt.Errorf("%w: invalid issue IID: %s", ErrInvalidReference, matches[2])
 		}
+
 		return &Ref{
 			ProjectID:  pid,
 			IssueIID:   iid,
@@ -88,6 +91,7 @@ func ParseReference(input string) (*Ref, error) {
 		if err != nil {
 			return nil, fmt.Errorf("%w: invalid issue IID: %s", ErrInvalidReference, matches[1])
 		}
+
 		return &Ref{
 			IssueIID:   iid,
 			IsExplicit: false,
@@ -103,22 +107,24 @@ func ParseReference(input string) (*Ref, error) {
 //   - https://gitlab.com/group/project.git
 //   - https://gitlab.com/group/project
 //   - https://custom.gitlab.host/group/project.git (self-hosted)
-func DetectProject(remoteURL, host string) (projectPath string, err error) {
+func DetectProject(remoteURL, host string) (string, error) {
 	remoteURL = strings.TrimSpace(remoteURL)
 	if remoteURL == "" {
 		return "", ErrProjectNotDetected
 	}
 
 	// Default to gitlab.com if no host specified
-	if host == "" {
-		host = "gitlab.com"
+	projectHost := host
+	if projectHost == "" {
+		projectHost = "gitlab.com"
 	}
 
 	// SSH format: git@gitlab.com:group/project.git
-	sshPrefix := "git@" + host + ":"
+	sshPrefix := "git@" + projectHost + ":"
 	if strings.HasPrefix(remoteURL, sshPrefix) {
 		path := strings.TrimPrefix(remoteURL, sshPrefix)
 		path = strings.TrimSuffix(path, ".git")
+
 		return path, nil
 	}
 
@@ -128,12 +134,13 @@ func DetectProject(remoteURL, host string) (projectPath string, err error) {
 		if idx >= 0 {
 			path := remoteURL[idx+1:]
 			path = strings.TrimSuffix(path, ".git")
+
 			return path, nil
 		}
 	}
 
 	// HTTPS format: https://gitlab.com/group/project.git or similar
-	hostPattern := host + "/"
+	hostPattern := projectHost + "/"
 	if strings.Contains(remoteURL, hostPattern) {
 		// Extract path after host/
 		idx := strings.Index(remoteURL, hostPattern)
@@ -141,6 +148,7 @@ func DetectProject(remoteURL, host string) (projectPath string, err error) {
 			path := remoteURL[idx+len(hostPattern):]
 			path = strings.TrimSuffix(path, ".git")
 			path = strings.TrimSuffix(path, "/")
+
 			return path, nil
 		}
 	}
@@ -155,6 +163,7 @@ func DetectProject(remoteURL, host string) (projectPath string, err error) {
 			path := strings.Join(pathParts, "/")
 			path = strings.TrimSuffix(path, ".git")
 			path = strings.TrimSuffix(path, "/")
+
 			return path, nil
 		}
 	}
@@ -179,6 +188,7 @@ func ExtractLinkedIssues(body string) []int64 {
 			issues = append(issues, num)
 		}
 	}
+
 	return issues
 }
 
@@ -197,6 +207,7 @@ func ExtractImageURLs(body string) []string {
 			urls = append(urls, url)
 		}
 	}
+
 	return urls
 }
 

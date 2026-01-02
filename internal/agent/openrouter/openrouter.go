@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -61,6 +62,7 @@ func NewWithConfig(cfg agent.Config) *Agent {
 func NewWithModel(model string) *Agent {
 	a := New()
 	a.model = model
+
 	return a
 }
 
@@ -72,6 +74,7 @@ func resolveAPIKey(configKey string) string {
 	if key := os.Getenv("OPENROUTER_API_KEY"); key != "" {
 		return key
 	}
+
 	return configKey
 }
 
@@ -83,8 +86,9 @@ func (a *Agent) Name() string {
 // Available checks if the OpenRouter API is accessible.
 func (a *Agent) Available() error {
 	if a.apiKey == "" {
-		return fmt.Errorf("OpenRouter API key not configured. Set OPENROUTER_API_KEY environment variable")
+		return errors.New("OpenRouter API key not configured. Set OPENROUTER_API_KEY environment variable")
 	}
+
 	return nil
 }
 
@@ -196,6 +200,7 @@ func (a *Agent) executeStream(ctx context.Context, prompt string, eventCh chan<-
 	for i, arg := range a.config.Args {
 		if arg == "--model" && i+1 < len(a.config.Args) {
 			model = a.config.Args[i+1]
+
 			break
 		}
 	}
@@ -228,7 +233,7 @@ func (a *Agent) executeStream(ctx context.Context, prompt string, eventCh chan<-
 
 	req.Header.Set("Authorization", "Bearer "+apiKey)
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("HTTP-Referer", "https://github.com/valksor/go-mehrhof")
+	req.Header.Set("Http-Referer", "https://github.com/valksor/go-mehrhof")
 	req.Header.Set("X-Title", "Mehrhof CLI")
 
 	// Execute request
@@ -240,6 +245,7 @@ func (a *Agent) executeStream(ctx context.Context, prompt string, eventCh chan<-
 
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)
+
 		return fmt.Errorf("API error %d: %s", resp.StatusCode, string(body))
 	}
 
@@ -355,9 +361,11 @@ func extractSummary(text string) string {
 			if len(line) > 200 {
 				return line[:200] + "..."
 			}
+
 			return line
 		}
 	}
+
 	return ""
 }
 
@@ -375,6 +383,7 @@ func (a *Agent) GetModel() string {
 func (a *Agent) WithWorkDir(dir string) *Agent {
 	newConfig := a.config
 	newConfig.WorkDir = dir
+
 	return &Agent{
 		httpClient: a.httpClient,
 		config:     newConfig,
@@ -387,6 +396,7 @@ func (a *Agent) WithWorkDir(dir string) *Agent {
 func (a *Agent) WithTimeout(d time.Duration) *Agent {
 	newConfig := a.config
 	newConfig.Timeout = d
+
 	return &Agent{
 		httpClient: &http.Client{Timeout: d},
 		config:     newConfig,
@@ -434,6 +444,7 @@ func (a *Agent) WithArgs(args ...string) agent.Agent {
 	newArgs := make([]string, len(a.config.Args), len(a.config.Args)+len(args))
 	copy(newArgs, a.config.Args)
 	newConfig.Args = append(newArgs, args...)
+
 	return &Agent{
 		httpClient: a.httpClient,
 		config:     newConfig,

@@ -49,6 +49,7 @@ func New(_ context.Context, cfg provider.Config) (any, error) {
 // Match checks if the input matches a Wrike reference.
 func (p *Provider) Match(input string) bool {
 	input = strings.TrimSpace(input)
+
 	return strings.HasPrefix(input, "wrike:") ||
 		strings.HasPrefix(input, "wk:") ||
 		permalinkPattern.MatchString(input) ||
@@ -277,6 +278,7 @@ func mapComments(comments []Comment) []provider.Comment {
 			UpdatedAt: c.UpdatedDate,
 		})
 	}
+
 	return result
 }
 

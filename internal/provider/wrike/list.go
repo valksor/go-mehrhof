@@ -2,6 +2,7 @@ package wrike
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/valksor/go-mehrhof/internal/provider"
@@ -25,7 +26,7 @@ func (p *Provider) List(ctx context.Context, opts provider.ListOptions) ([]*prov
 	case spaceID != "":
 		tasks, err = p.client.GetTasksInSpace(ctx, spaceID)
 	default:
-		return nil, fmt.Errorf("wrike: List requires folder_id or space_id configuration")
+		return nil, errors.New("wrike: List requires folder_id or space_id configuration")
 	}
 
 	if err != nil {

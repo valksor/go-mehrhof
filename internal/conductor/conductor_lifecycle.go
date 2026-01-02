@@ -2,6 +2,7 @@ package conductor
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -172,6 +173,7 @@ func (c *Conductor) Start(ctx context.Context, reference string) error {
 	// Reject starting new tasks from within a worktree
 	if c.git != nil && c.git.IsWorktree() {
 		mainRepo, _ := c.git.GetMainWorktreePath(ctx)
+
 		return fmt.Errorf("this command must be run from the main repository; you are currently in a worktree, return to the main repository first: cd %s", mainRepo)
 	}
 
@@ -215,6 +217,7 @@ func (c *Conductor) Start(ctx context.Context, reference string) error {
 	}
 
 	c.publishProgress("Task registered", 100)
+
 	return nil
 }
 
@@ -229,8 +232,9 @@ func (c *Conductor) ensureCleanWorkspace(ctx context.Context) error {
 		return fmt.Errorf("check git status: %w", err)
 	}
 	if hasChanges {
-		return fmt.Errorf("workspace has uncommitted changes\nPlease commit or stash your changes, or use --no-branch to work on the current branch")
+		return errors.New("workspace has uncommitted changes\nPlease commit or stash your changes, or use --no-branch to work on the current branch")
 	}
+
 	return nil
 }
 
@@ -246,7 +250,7 @@ func (c *Conductor) fetchWorkUnit(ctx context.Context, reference string) (any, *
 
 	reader, ok := p.(provider.Reader)
 	if !ok {
-		return nil, nil, fmt.Errorf("provider does not support reading")
+		return nil, nil, errors.New("provider does not support reading")
 	}
 
 	workUnit, err := reader.Fetch(ctx, id)
@@ -437,7 +441,7 @@ func (c *Conductor) Resume(ctx context.Context) error {
 	defer c.mu.Unlock()
 
 	if !c.workspace.HasActiveTask() {
-		return fmt.Errorf("no active task")
+		return errors.New("no active task")
 	}
 
 	active, err := c.workspace.LoadActiveTask()
@@ -463,7 +467,7 @@ func (c *Conductor) Delete(ctx context.Context, opts DeleteOptions) error {
 	defer c.mu.Unlock()
 
 	if c.activeTask == nil {
-		return fmt.Errorf("no active task")
+		return errors.New("no active task")
 	}
 
 	taskID := c.activeTask.ID
@@ -533,6 +537,7 @@ func (c *Conductor) Delete(ctx context.Context, opts DeleteOptions) error {
 	c.taskWork = nil
 
 	c.publishProgress("Task deleted", 100)
+
 	return nil
 }
 
@@ -542,7 +547,7 @@ func (c *Conductor) Status() (*TaskStatus, error) {
 	defer c.mu.RUnlock()
 
 	if c.activeTask == nil {
-		return nil, fmt.Errorf("no active task")
+		return nil, errors.New("no active task")
 	}
 
 	// Count specifications - errors ignored; empty list is acceptable for status display

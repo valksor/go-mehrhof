@@ -2,6 +2,7 @@
 package token
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"strings"
@@ -11,7 +12,7 @@ import (
 const DefaultEnvSuffix = "_TOKEN"
 
 // ErrNoToken is returned when no token can be resolved.
-var ErrNoToken = fmt.Errorf("no token found")
+var ErrNoToken = errors.New("no token found")
 
 // ResolverConfig defines the token sources for a provider.
 type ResolverConfig struct {
@@ -82,6 +83,7 @@ func MustResolveToken(cfg ResolverConfig) string {
 		panic(fmt.Sprintf("%s: %s (set %s_TOKEN environment variable)",
 			strings.ToLower(provider), ErrNoToken, strings.ToUpper(provider)))
 	}
+
 	return token
 }
 
@@ -97,11 +99,13 @@ func Config(providerName, configToken string) ResolverConfig {
 // WithCLIFallback adds a CLI fallback function to the config.
 func (c ResolverConfig) WithCLIFallback(fn func() string) ResolverConfig {
 	c.OptionalCLIFallback = fn
+
 	return c
 }
 
 // WithEnvVars adds environment variables to check.
 func (c ResolverConfig) WithEnvVars(envVars ...string) ResolverConfig {
 	c.DefaultEnvVars = append(c.DefaultEnvVars, envVars...)
+
 	return c
 }

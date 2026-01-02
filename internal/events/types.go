@@ -46,6 +46,7 @@ func (e StateChangedEvent) ToEvent() Event {
 	if e.Timestamp.IsZero() {
 		e.Timestamp = time.Now()
 	}
+
 	return Event{
 		Type:      TypeStateChanged,
 		Timestamp: e.Timestamp,
@@ -72,6 +73,7 @@ func (e ProgressEvent) ToEvent() Event {
 	if e.Timestamp.IsZero() {
 		e.Timestamp = time.Now()
 	}
+
 	return Event{
 		Type:      TypeProgress,
 		Timestamp: e.Timestamp,
@@ -101,6 +103,7 @@ func (e ErrorEvent) ToEvent() Event {
 	if e.Error != nil {
 		errMsg = e.Error.Error()
 	}
+
 	return Event{
 		Type:      TypeError,
 		Timestamp: e.Timestamp,
@@ -124,6 +127,7 @@ func (e FileChangedEvent) ToEvent() Event {
 	if e.Timestamp.IsZero() {
 		e.Timestamp = time.Now()
 	}
+
 	return Event{
 		Type:      TypeFileChanged,
 		Timestamp: e.Timestamp,
@@ -147,6 +151,7 @@ func (e CheckpointEvent) ToEvent() Event {
 	if e.Timestamp.IsZero() {
 		e.Timestamp = time.Now()
 	}
+
 	return Event{
 		Type:      TypeCheckpoint,
 		Timestamp: e.Timestamp,
@@ -170,6 +175,7 @@ func (e AgentMessageEvent) ToEvent() Event {
 	if e.Timestamp.IsZero() {
 		e.Timestamp = time.Now()
 	}
+
 	return Event{
 		Type:      TypeAgentMessage,
 		Timestamp: e.Timestamp,
@@ -192,6 +198,7 @@ func (e BlueprintReadyEvent) ToEvent() Event {
 	if e.Timestamp.IsZero() {
 		e.Timestamp = time.Now()
 	}
+
 	return Event{
 		Type:      TypeBlueprintReady,
 		Timestamp: e.Timestamp,
@@ -213,6 +220,7 @@ func (e BranchCreatedEvent) ToEvent() Event {
 	if e.Timestamp.IsZero() {
 		e.Timestamp = time.Now()
 	}
+
 	return Event{
 		Type:      TypeBranchCreated,
 		Timestamp: e.Timestamp,
@@ -234,6 +242,7 @@ func (e PlanCompletedEvent) ToEvent() Event {
 	if e.Timestamp.IsZero() {
 		e.Timestamp = time.Now()
 	}
+
 	return Event{
 		Type:      TypePlanCompleted,
 		Timestamp: e.Timestamp,
@@ -255,6 +264,7 @@ func (e ImplementDoneEvent) ToEvent() Event {
 	if e.Timestamp.IsZero() {
 		e.Timestamp = time.Now()
 	}
+
 	return Event{
 		Type:      TypeImplementDone,
 		Timestamp: e.Timestamp,
@@ -277,6 +287,7 @@ func (e PRCreatedEvent) ToEvent() Event {
 	if e.Timestamp.IsZero() {
 		e.Timestamp = time.Now()
 	}
+
 	return Event{
 		Type:      TypePRCreated,
 		Timestamp: e.Timestamp,

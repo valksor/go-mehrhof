@@ -28,6 +28,7 @@ func (r *Ref) String() string {
 	if r.TeamKey != "" {
 		return fmt.Sprintf("%s-%d", r.TeamKey, r.Number)
 	}
+
 	return ""
 }
 
@@ -67,6 +68,7 @@ func ParseReference(input string) (*Ref, error) {
 		}
 		ref.URL = input
 		ref.IsExplicit = true
+
 		return ref, nil
 	}
 
@@ -79,6 +81,7 @@ func ParseReference(input string) (*Ref, error) {
 		}
 		ref.URL = schemeStripped
 		ref.IsExplicit = true
+
 		return ref, nil
 	}
 
@@ -102,6 +105,7 @@ func parseIssueID(issueID string) (*Ref, error) {
 		if _, err := fmt.Sscanf(matches[2], "%d", &number); err != nil {
 			return nil, fmt.Errorf("%w: invalid issue number: %s", providererrors.ErrInvalidReference, matches[2])
 		}
+
 		return &Ref{
 			IssueID:    issueID,
 			TeamKey:    teamKey,
@@ -109,6 +113,7 @@ func parseIssueID(issueID string) (*Ref, error) {
 			IsExplicit: false,
 		}, nil
 	}
+
 	return nil, fmt.Errorf("%w: invalid issue ID format: %s (expected TEAM-123)", providererrors.ErrInvalidReference, issueID)
 }
 
@@ -118,5 +123,6 @@ func ExtractIssueID(url string) string {
 	if matches := linearURLPattern.FindStringSubmatch(url); matches != nil {
 		return matches[1]
 	}
+
 	return ""
 }

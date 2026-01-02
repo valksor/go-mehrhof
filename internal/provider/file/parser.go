@@ -49,6 +49,7 @@ func ParseMarkdownFile(path, fallbackTitle string) (*ParsedMarkdown, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	return ParseMarkdown(string(content), fallbackTitle)
 }
 
@@ -76,6 +77,7 @@ func ParseMarkdown(content, fallbackTitle string) (*ParsedMarkdown, error) {
 		if strings.HasPrefix(trimmed, "# ") {
 			result.Title = strings.TrimPrefix(trimmed, "# ")
 			bodyStart = i + 1
+
 			break
 		}
 		// Stop looking if we hit non-empty, non-heading content

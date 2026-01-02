@@ -2,6 +2,7 @@ package azuredevops
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strconv"
 	"strings"
@@ -103,6 +104,7 @@ func (p *Provider) Match(input string) bool {
 
 	// Check for bare work item ID or org/project#ID pattern
 	_, err := ParseReference(input)
+
 	return err == nil
 }
 
@@ -112,6 +114,7 @@ func (p *Provider) Parse(input string) (string, error) {
 	if err != nil {
 		return "", err
 	}
+
 	return strconv.Itoa(ref.WorkItemID), nil
 }
 
@@ -241,6 +244,7 @@ func (p *Provider) AddComment(ctx context.Context, id string, body string) error
 	if err != nil {
 		return fmt.Errorf("add comment to %d: %w", ref.WorkItemID, err)
 	}
+
 	return nil
 }
 
@@ -261,6 +265,7 @@ func (p *Provider) UpdateStatus(ctx context.Context, id string, status provider.
 	if err != nil {
 		return fmt.Errorf("update work item state %d: %w", ref.WorkItemID, err)
 	}
+
 	return nil
 }
 
@@ -275,7 +280,7 @@ func (p *Provider) CreatePullRequest(ctx context.Context, opts provider.PullRequ
 			return nil, fmt.Errorf("get repositories: %w", err)
 		}
 		if len(repos) == 0 {
-			return nil, fmt.Errorf("no repositories found in project")
+			return nil, errors.New("no repositories found in project")
 		}
 		repoName = repos[0].Name
 	}
@@ -333,6 +338,7 @@ func (p *Provider) LinkBranch(ctx context.Context, id string, branch string) err
 	if err != nil {
 		return fmt.Errorf("link branch to %d: %w", ref.WorkItemID, err)
 	}
+
 	return nil
 }
 
@@ -403,6 +409,7 @@ func mapAzureState(state string) provider.Status {
 	case contains(stateLower, "new") || contains(stateLower, "to do") || contains(stateLower, "proposed"):
 		return provider.StatusOpen
 	}
+
 	return provider.StatusOpen
 }
 
@@ -450,6 +457,7 @@ func mapWorkItemType(wiType string) string {
 	case contains(typeLower, "issue"):
 		return "issue"
 	}
+
 	return "task"
 }
 
@@ -466,6 +474,7 @@ func parseTags(tags string) []string {
 			result = append(result, tag)
 		}
 	}
+
 	return result
 }
 
@@ -608,7 +617,7 @@ func buildSnapshotContent(wi *WorkItem) string {
 func (p *Provider) GetBranchSuggestion(task *provider.WorkUnit) string {
 	if p.config.BranchPattern == "" {
 		// Default pattern
-		return fmt.Sprintf("ab%s", task.ID)
+		return "ab" + task.ID
 	}
 
 	// Simple template replacement
@@ -633,6 +642,7 @@ func slugify(s string) string {
 		if r == ' ' || r == '-' || r == '_' {
 			return '-'
 		}
+
 		return -1
 	}, s)
 

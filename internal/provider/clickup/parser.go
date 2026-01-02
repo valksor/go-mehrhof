@@ -37,6 +37,7 @@ func (r Reference) String() string {
 	if r.CustomID != "" {
 		return r.CustomID
 	}
+
 	return r.TaskID
 }
 
@@ -65,6 +66,7 @@ func ParseReference(input string) (*Reference, error) {
 		if matches[1] != "" {
 			ref.TeamID = matches[1]
 		}
+
 		return ref, nil
 	}
 

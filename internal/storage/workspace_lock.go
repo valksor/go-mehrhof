@@ -87,7 +87,7 @@ func (w *Workspace) FindTaskByWorktreePath(worktreePath string) (*ActiveTask, er
 		}
 	}
 
-	return nil, nil // No task found for this worktree
+	return nil, nil //nolint:nilnil // No task found for this worktree (not an error)
 }
 
 // ListTasksWithWorktrees returns all tasks that have associated worktrees.

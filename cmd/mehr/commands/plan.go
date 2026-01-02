@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 
 	"github.com/spf13/cobra"
@@ -148,6 +149,7 @@ func runPlan(cmd *cobra.Command, args []string) error {
 			fmt.Printf("  %s\n", display.Cyan("mehr answer \"your response\""))
 			fmt.Printf("  %s\n", display.Cyan("mehr plan")+" "+display.Muted("(to continue after answering)"))
 		}
+
 		return nil
 	}
 
@@ -165,7 +167,7 @@ func runPlan(cmd *cobra.Command, args []string) error {
 		fmt.Println()
 		fmt.Println(display.SuccessMsg("Planning complete!"))
 	}
-	fmt.Printf("  Specifications created: %s\n", display.Bold(fmt.Sprintf("%d", status.Specifications)))
+	fmt.Printf("  Specifications created: %s\n", display.Bold(strconv.Itoa(status.Specifications)))
 
 	PrintNextSteps(
 		"mehr status - View task status and specifications",
@@ -245,6 +247,7 @@ func runStandalonePlan() error {
 			fmt.Printf("  History: %s/plan-history.md\n", ws.PlannedPath(planID))
 			fmt.Println("\nTo continue later, review the history file.")
 			fmt.Println("To create a task from this plan, copy relevant content to a task file.")
+
 			return nil
 
 		case "save":
@@ -261,6 +264,7 @@ func runStandalonePlan() error {
 			}
 			fmt.Printf("\nPlan saved.\n")
 			fmt.Printf("  Location: %s\n", ws.PlannedPath(planID))
+
 			return nil
 
 		case "status":
@@ -270,6 +274,7 @@ func runStandalonePlan() error {
 			fmt.Printf("  Created: %s\n", plan.Created.Format("2006-01-02 15:04:05"))
 			fmt.Printf("  Updated: %s\n", plan.Updated.Format("2006-01-02 15:04:05"))
 			fmt.Println()
+
 			continue
 
 		case "help":
@@ -280,6 +285,7 @@ func runStandalonePlan() error {
 			fmt.Println("  help       - Show this help")
 			fmt.Println("\nAnything else is recorded as a planning entry.")
 			fmt.Println()
+
 			continue
 		}
 

@@ -251,6 +251,7 @@ func (c *Client) ListIssues(ctx context.Context, teamKey string, filters ListFil
 			if len(allIssues) > 0 {
 				break // Return what we have
 			}
+
 			return nil, err
 		}
 

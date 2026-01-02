@@ -17,6 +17,7 @@ func (w *Workspace) ActiveTaskPath() string {
 // HasActiveTask checks if there's an active task.
 func (w *Workspace) HasActiveTask() bool {
 	_, err := os.Stat(w.ActiveTaskPath())
+
 	return err == nil
 }
 
@@ -54,6 +55,7 @@ func (w *Workspace) SaveActiveTask(active *ActiveTask) error {
 		if removeErr := os.Remove(tmpPath); removeErr != nil {
 			slog.Warn("failed to clean up temp file after rename error", "path", tmpPath, "error", removeErr)
 		}
+
 		return fmt.Errorf("save active task: %w", err)
 	}
 
@@ -66,6 +68,7 @@ func (w *Workspace) ClearActiveTask() error {
 	if os.IsNotExist(err) {
 		return nil
 	}
+
 	return err
 }
 
@@ -76,5 +79,6 @@ func (w *Workspace) UpdateActiveTaskState(state string) error {
 		return err
 	}
 	active.State = state
+
 	return w.SaveActiveTask(active)
 }

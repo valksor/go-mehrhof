@@ -29,6 +29,7 @@ func (r *Ref) String() string {
 	if r.ProjectKey != "" {
 		return fmt.Sprintf("%s-%d", r.ProjectKey, r.Number)
 	}
+
 	return ""
 }
 
@@ -70,6 +71,7 @@ func ParseReference(input string) (*Ref, error) {
 		ref.URL = input
 		ref.BaseURL = extractBaseURL(input)
 		ref.IsExplicit = true
+
 		return ref, nil
 	}
 
@@ -83,6 +85,7 @@ func ParseReference(input string) (*Ref, error) {
 		ref.URL = schemeStripped
 		ref.BaseURL = extractBaseURL(schemeStripped)
 		ref.IsExplicit = true
+
 		return ref, nil
 	}
 
@@ -106,6 +109,7 @@ func parseIssueKey(issueKey string) (*Ref, error) {
 		if _, err := fmt.Sscanf(matches[2], "%d", &number); err != nil {
 			return nil, fmt.Errorf("%w: invalid issue number: %s", providererrors.ErrInvalidReference, matches[2])
 		}
+
 		return &Ref{
 			IssueKey:   issueKey,
 			ProjectKey: projectKey,
@@ -113,6 +117,7 @@ func parseIssueKey(issueKey string) (*Ref, error) {
 			IsExplicit: false,
 		}, nil
 	}
+
 	return nil, fmt.Errorf("%w: invalid issue key format: %s (expected PROJ-123)", providererrors.ErrInvalidReference, issueKey)
 }
 
@@ -122,6 +127,7 @@ func ExtractIssueKey(url string) string {
 	if matches := jiraURLPattern.FindStringSubmatch(url); matches != nil {
 		return matches[1]
 	}
+
 	return ""
 }
 

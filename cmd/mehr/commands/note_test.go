@@ -35,6 +35,7 @@ func TestNoteCommand_Aliases(t *testing.T) {
 		for _, alias := range noteCmd.Aliases {
 			if alias == expected {
 				found = true
+
 				break
 			}
 		}
@@ -87,6 +88,7 @@ func TestNoteCommand_RegisteredInRoot(t *testing.T) {
 	for _, cmd := range rootCmd.Commands() {
 		if cmd.Use == "note [message]" {
 			found = true
+
 			break
 		}
 	}

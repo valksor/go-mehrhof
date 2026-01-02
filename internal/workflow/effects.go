@@ -58,12 +58,14 @@ func (r *EffectRegistry) Execute(ctx context.Context, effectType EffectType, wu 
 	if !ok {
 		return nil // No handler registered, skip
 	}
+
 	return handler(ctx, wu)
 }
 
 // Has checks if an effect handler is registered.
 func (r *EffectRegistry) Has(effectType EffectType) bool {
 	_, ok := r.handlers[effectType]
+
 	return ok
 }
 
@@ -98,6 +100,7 @@ func ExecuteEffects(ctx context.Context, wu *WorkUnit, effects []CriticalEffect)
 			slog.Debug("non-critical effect failed", "effect", eff.Name, "error", err)
 		}
 	}
+
 	return nil
 }
 

@@ -36,6 +36,7 @@ func (p *Provider) UpdateStatus(ctx context.Context, workUnitID string, status p
 	_, _, err = p.client.EditIssue(ctx, ref.IssueNumber, &github.IssueRequest{
 		State: &githubState,
 	})
+
 	return err
 }
 

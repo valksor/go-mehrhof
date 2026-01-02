@@ -23,6 +23,7 @@ func (m *mockAgent) Run(ctx context.Context, prompt string) (*Response, error) {
 	if m.runErr != nil {
 		return nil, m.runErr
 	}
+
 	return m.response, nil
 }
 
@@ -31,6 +32,7 @@ func (m *mockAgent) RunStream(ctx context.Context, prompt string) (<-chan Event,
 	errs := make(chan error)
 	close(events)
 	close(errs)
+
 	return events, errs
 }
 

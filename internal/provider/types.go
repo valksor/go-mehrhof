@@ -137,8 +137,8 @@ const (
 type CapabilitySet map[Capability]bool
 
 // Has checks if capability is present.
-func (cs CapabilitySet) Has(cap Capability) bool {
-	return cs[cap]
+func (cs CapabilitySet) Has(c Capability) bool {
+	return cs[c]
 }
 
 // InferCapabilities uses type assertions to determine capabilities.
@@ -198,6 +198,7 @@ func NewConfig() Config {
 // Set sets an option.
 func (c Config) Set(key string, value any) Config {
 	c.options[key] = value
+
 	return c
 }
 
@@ -211,6 +212,7 @@ func (c Config) GetString(key string) string {
 	if v, ok := c.options[key].(string); ok {
 		return v
 	}
+
 	return ""
 }
 
@@ -219,5 +221,6 @@ func (c Config) GetBool(key string) bool {
 	if v, ok := c.options[key].(bool); ok {
 		return v
 	}
+
 	return false
 }

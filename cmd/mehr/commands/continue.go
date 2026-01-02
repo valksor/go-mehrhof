@@ -2,6 +2,7 @@ package commands
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 
@@ -72,6 +73,7 @@ func runContinue(cmd *cobra.Command, args []string) error {
 				fmt.Printf("But no active task found with ID: %s\n\n", taskID)
 				fmt.Println("The task may have been completed or deleted.")
 				fmt.Println("To start a new task, run: mehr start <reference>")
+
 				return nil
 			}
 		}
@@ -81,6 +83,7 @@ func runContinue(cmd *cobra.Command, args []string) error {
 		fmt.Println(display.Muted("Suggested actions:"))
 		fmt.Println("  mehr start <file.md>       # Start from markdown file")
 		fmt.Println("  mehr start <directory/>    # Start from directory")
+
 		return nil
 	}
 
@@ -174,31 +177,40 @@ func executeNextStep(ctx context.Context, cond *conductor.Conductor, status *con
 	case workflow.StateIdle:
 		if status.Specifications == 0 {
 			fmt.Println("Running: mehr plan")
+
 			return cond.Plan(ctx)
 		}
 		fmt.Println("Running: mehr implement")
+
 		return cond.Implement(ctx)
 	case workflow.StatePlanning:
 		fmt.Println("Running: mehr implement")
+
 		return cond.Implement(ctx)
 	case workflow.StateImplementing, workflow.StateReviewing:
 		fmt.Println("Already in progress - use 'mehr finish' when complete")
+
 		return nil
 	case workflow.StateFailed:
 		fmt.Println("Task failed - cannot auto-continue")
-		return fmt.Errorf("task is in failed state")
+
+		return errors.New("task is in failed state")
 	case workflow.StateWaiting:
 		fmt.Println("Agent is waiting for a response - cannot auto-continue")
-		return fmt.Errorf("agent is waiting for user input")
+
+		return errors.New("agent is waiting for user input")
 	case workflow.StateCheckpointing, workflow.StateReverting, workflow.StateRestoring:
 		fmt.Println("Operation in progress - please wait")
+
 		return nil
 	case workflow.StateDone:
 		fmt.Println("Task is complete!")
+
 		return nil
 	default:
 		fmt.Printf("State '%s' doesn't have an auto-continue action\n", status.State)
 		fmt.Println("Use 'mehr guide' to see available options")
+
 		return nil
 	}
 }

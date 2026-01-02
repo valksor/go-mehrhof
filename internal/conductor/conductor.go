@@ -140,8 +140,9 @@ func (c *Conductor) GetActiveTask() *storage.ActiveTask {
 		return nil
 	}
 	// Return a copy to prevent caller from mutating internal state without lock
-	copy := *c.activeTask
-	return &copy
+	taskCopy := *c.activeTask
+
+	return &taskCopy
 }
 
 // GetTaskWork returns the current task work
@@ -153,14 +154,16 @@ func (c *Conductor) GetTaskWork() *storage.TaskWork {
 		return nil
 	}
 	// Return a copy to prevent caller from mutating internal state without lock
-	copy := *c.taskWork
-	return &copy
+	workCopy := *c.taskWork
+
+	return &workCopy
 }
 
 // GetActiveAgent returns the active agent.
 func (c *Conductor) GetActiveAgent() agent.Agent {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
+
 	return c.activeAgent
 }
 
@@ -179,8 +182,8 @@ func (c *Conductor) GetStderr() io.Writer {
 	return c.opts.Stderr
 }
 
-// logVerbose logs a message if verbose mode is enabled.
-func (c *Conductor) logVerbose(format string, args ...any) {
+// logVerbosef logs a message if verbose mode is enabled.
+func (c *Conductor) logVerbosef(format string, args ...any) {
 	if c.opts.Verbose && c.opts.Stdout != nil {
 		_, _ = fmt.Fprintf(c.opts.Stdout, format+"\n", args...)
 	}

@@ -2,7 +2,7 @@ package aider
 
 import (
 	"context"
-	"fmt"
+	"errors"
 	"strings"
 	"testing"
 	"time"
@@ -90,15 +90,22 @@ func TestWithTimeout(t *testing.T) {
 func TestWithEnv(t *testing.T) {
 	a := New()
 	aAgent := a.WithEnv("API_KEY", "secret123")
-	if aAgent.(*Agent).config.Environment["API_KEY"] != "secret123" {
-		t.Errorf("Environment[API_KEY] = %q, want %q", aAgent.(*Agent).config.Environment["API_KEY"], "secret123")
+	agent, ok := aAgent.(*Agent)
+	if !ok {
+		t.Fatal("WithEnv did not return *Agent")
+	}
+	if agent.config.Environment["API_KEY"] != "secret123" {
+		t.Errorf("Environment[API_KEY] = %q, want %q", agent.config.Environment["API_KEY"], "secret123")
 	}
 }
 
 func TestWithArgs(t *testing.T) {
 	a := New()
 	aAgent := a.WithArgs("--model", "gpt-4")
-	typed := aAgent.(*Agent)
+	typed, ok := aAgent.(*Agent)
+	if !ok {
+		t.Fatal("WithArgs did not return *Agent")
+	}
 	if len(typed.config.Args) != 2 {
 		t.Fatalf("Args length = %d, want 2", len(typed.config.Args))
 	}
@@ -123,10 +130,14 @@ func TestMethodChaining(t *testing.T) {
 	if a.config.Timeout != 15*time.Minute {
 		t.Error("WithTimeout chain failed")
 	}
-	if aAgent.(*Agent).config.Environment["KEY1"] != "val1" {
+	typed, ok := aAgent.(*Agent)
+	if !ok {
+		t.Fatal("WithEnv did not return *Agent")
+	}
+	if typed.config.Environment["KEY1"] != "val1" {
 		t.Error("WithEnv(KEY1) chain failed")
 	}
-	if aAgent.(*Agent).config.Environment["KEY2"] != "val2" {
+	if typed.config.Environment["KEY2"] != "val2" {
 		t.Error("WithEnv(KEY2) chain failed")
 	}
 }
@@ -155,6 +166,7 @@ func TestBuildArgs_BasicPrompt(t *testing.T) {
 		for _, arg := range args {
 			if arg == expected {
 				found = true
+
 				break
 			}
 		}
@@ -184,6 +196,7 @@ func TestBuildArgs_WithConfigArgs(t *testing.T) {
 	for i, arg := range args {
 		if arg == "--message" && i+1 < len(args) && args[i+1] == "test" {
 			found = true
+
 			break
 		}
 	}
@@ -276,6 +289,7 @@ func TestRunWithCallback_NoCLI(t *testing.T) {
 	callbackCalled := false
 	cb := func(event agent.Event) error {
 		callbackCalled = true
+
 		return nil
 	}
 
@@ -385,6 +399,7 @@ func findSubstring(s, substr string) bool {
 			return true
 		}
 	}
+
 	return false
 }
 
@@ -399,7 +414,11 @@ func TestWithEnvImmutability(t *testing.T) {
 	}
 
 	// New agent should have the value
-	if a2.(*Agent).config.Environment["KEY"] != "value" {
+	typed2, ok := a2.(*Agent)
+	if !ok {
+		t.Fatal("WithEnv did not return *Agent")
+	}
+	if typed2.config.Environment["KEY"] != "value" {
 		t.Error("WithEnv didn't set value on new agent")
 	}
 }
@@ -414,7 +433,11 @@ func TestWithArgsImmutability(t *testing.T) {
 	}
 
 	// New agent should have the args
-	if len(a2.(*Agent).config.Args) != 1 || a2.(*Agent).config.Args[0] != "--flag" {
+	typed2, ok := a2.(*Agent)
+	if !ok {
+		t.Fatal("WithArgs did not return *Agent")
+	}
+	if len(typed2.config.Args) != 1 || typed2.config.Args[0] != "--flag" {
 		t.Error("WithArgs didn't set args on new agent")
 	}
 }
@@ -459,8 +482,9 @@ func TestRunWithCallback_CallbackError(t *testing.T) {
 		callbackCount++
 		// Return an error after first event
 		if callbackCount >= 1 {
-			return fmt.Errorf("callback error")
+			return errors.New("callback error")
 		}
+
 		return nil
 	}
 
@@ -483,6 +507,7 @@ func TestRunWithCallback_CollectsEvents(t *testing.T) {
 	var collectedEvents []agent.Event
 	cb := func(event agent.Event) error {
 		collectedEvents = append(collectedEvents, event)
+
 		return nil
 	}
 

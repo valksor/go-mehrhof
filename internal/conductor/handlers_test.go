@@ -252,6 +252,7 @@ func TestEnsureDirExists(t *testing.T) {
 				if err == nil {
 					t.Error("ensureDirExists() expected error, got nil")
 				}
+
 				return
 			}
 
@@ -333,11 +334,13 @@ func TestValidatePathInWorkspace(t *testing.T) {
 			if tt.wantErr {
 				if err == nil {
 					t.Error("validatePathInWorkspace() expected error, got nil")
+
 					return
 				}
 				if tt.errMsg != "" && !strings.Contains(err.Error(), tt.errMsg) {
 					t.Errorf("error = %q, want contain %q", err.Error(), tt.errMsg)
 				}
+
 				return
 			}
 

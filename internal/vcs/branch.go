@@ -2,6 +2,7 @@ package vcs
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 )
@@ -24,6 +25,7 @@ func (g *Git) CreateBranch(ctx context.Context, name string, base string) error 
 	if err != nil {
 		return fmt.Errorf("create branch %s: %w", name, err)
 	}
+
 	return nil
 }
 
@@ -37,6 +39,7 @@ func (g *Git) CreateBranchNoCheckout(ctx context.Context, name string, base stri
 	if err != nil {
 		return fmt.Errorf("create branch %s: %w", name, err)
 	}
+
 	return nil
 }
 
@@ -50,18 +53,21 @@ func (g *Git) DeleteBranch(ctx context.Context, name string, force bool) error {
 	if err != nil {
 		return fmt.Errorf("delete branch %s: %w", name, err)
 	}
+
 	return nil
 }
 
 // BranchExists checks if a branch exists.
 func (g *Git) BranchExists(ctx context.Context, name string) bool {
 	_, err := g.run(ctx, "rev-parse", "--verify", "refs/heads/"+name)
+
 	return err == nil
 }
 
 // RemoteBranchExists checks if a remote branch exists.
 func (g *Git) RemoteBranchExists(ctx context.Context, remote, name string) bool {
 	_, err := g.run(ctx, "rev-parse", "--verify", fmt.Sprintf("refs/remotes/%s/%s", remote, name))
+
 	return err == nil
 }
 
@@ -124,7 +130,7 @@ func (g *Git) GetBaseBranch(ctx context.Context) (string, error) {
 		return branches[0].Name, nil
 	}
 
-	return "", fmt.Errorf("no base branch found")
+	return "", errors.New("no base branch found")
 }
 
 // GetTrackingBranch returns the remote tracking branch for a local branch.
@@ -133,12 +139,14 @@ func (g *Git) GetTrackingBranch(ctx context.Context, name string) (string, error
 	if err != nil {
 		return "", fmt.Errorf("no tracking branch for %s", name)
 	}
+
 	return strings.TrimSpace(out), nil
 }
 
 // SetTrackingBranch sets the remote tracking branch.
 func (g *Git) SetTrackingBranch(ctx context.Context, local, remote, branch string) error {
 	_, err := g.run(ctx, "branch", "-u", fmt.Sprintf("%s/%s", remote, branch), local)
+
 	return err
 }
 
@@ -148,6 +156,7 @@ func (g *Git) RenameBranch(ctx context.Context, oldName, newName string) error {
 	if err != nil {
 		return fmt.Errorf("rename branch %s to %s: %w", oldName, newName, err)
 	}
+
 	return nil
 }
 
@@ -158,30 +167,35 @@ func (g *Git) MergeBranch(ctx context.Context, name string, noFF bool) error {
 		args = append(args, "--no-ff")
 	}
 	_, err := g.run(ctx, args...)
+
 	return err
 }
 
 // MergeSquash performs a squash merge.
 func (g *Git) MergeSquash(ctx context.Context, name string) error {
 	_, err := g.run(ctx, "merge", "--squash", name)
+
 	return err
 }
 
 // RebaseBranch rebases current branch onto another.
 func (g *Git) RebaseBranch(ctx context.Context, onto string) error {
 	_, err := g.run(ctx, "rebase", onto)
+
 	return err
 }
 
 // AbortRebase aborts an in-progress rebase.
 func (g *Git) AbortRebase(ctx context.Context) error {
 	_, err := g.run(ctx, "rebase", "--abort")
+
 	return err
 }
 
 // ContinueRebase continues a rebase after resolving conflicts.
 func (g *Git) ContinueRebase(ctx context.Context) error {
 	_, err := g.run(ctx, "rebase", "--continue")
+
 	return err
 }
 
@@ -194,6 +208,7 @@ func (g *Git) GetBranchCommitCount(ctx context.Context, branch, base string) (in
 
 	var count int
 	_, err = fmt.Sscanf(strings.TrimSpace(out), "%d", &count)
+
 	return count, err
 }
 
@@ -203,6 +218,7 @@ func (g *Git) GetMergeBase(ctx context.Context, a, b string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("merge-base %s %s: %w", a, b, err)
 	}
+
 	return strings.TrimSpace(out), nil
 }
 
@@ -222,13 +238,15 @@ func (g *Git) IsMerged(ctx context.Context, branch, into string) (bool, error) {
 }
 
 // GetAheadBehind returns commits ahead and behind remote.
-func (g *Git) GetAheadBehind(ctx context.Context, local, remote string) (ahead, behind int, err error) {
+func (g *Git) GetAheadBehind(ctx context.Context, local, remote string) (int, int, error) {
 	out, err := g.run(ctx, "rev-list", "--left-right", "--count", fmt.Sprintf("%s...%s", local, remote))
 	if err != nil {
 		return 0, 0, err
 	}
 
+	var ahead, behind int
 	_, err = fmt.Sscanf(strings.TrimSpace(out), "%d\t%d", &ahead, &behind)
+
 	return ahead, behind, err
 }
 
@@ -239,11 +257,13 @@ func (g *Git) PushBranch(ctx context.Context, branch, remote string, setUpstream
 		args = []string{"push", "-u", remote, branch}
 	}
 	_, err := g.run(ctx, args...)
+
 	return err
 }
 
 // ForcePushBranch force pushes a branch (use with caution).
 func (g *Git) ForcePushBranch(ctx context.Context, branch, remote string) error {
 	_, err := g.run(ctx, "push", "--force-with-lease", remote, branch)
+
 	return err
 }

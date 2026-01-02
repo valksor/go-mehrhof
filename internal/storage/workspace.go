@@ -97,6 +97,7 @@ func (w *Workspace) ConfigPath() string {
 // HasConfig returns true if the config file exists.
 func (w *Workspace) HasConfig() bool {
 	_, err := os.Stat(w.ConfigPath())
+
 	return err == nil
 }
 
@@ -113,6 +114,7 @@ func (w *Workspace) LoadEnv() (map[string]string, error) {
 		if os.IsNotExist(err) {
 			return make(map[string]string), nil
 		}
+
 		return nil, fmt.Errorf("read .env: %w", err)
 	}
 
@@ -130,6 +132,7 @@ func (w *Workspace) LoadEnv() (map[string]string, error) {
 			result[strings.TrimSpace(parts[0])] = strings.TrimSpace(parts[1])
 		}
 	}
+
 	return result, nil
 }
 
@@ -185,6 +188,7 @@ func (w *Workspace) UpdateGitignore() error {
 		for _, line := range lines {
 			if strings.TrimSpace(line) == entry {
 				found = true
+
 				break
 			}
 		}

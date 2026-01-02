@@ -3,6 +3,7 @@ package gitlab
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/valksor/go-mehrhof/internal/provider"
@@ -46,7 +47,7 @@ func (p *Provider) CreatePullRequest(ctx context.Context, opts provider.PullRequ
 	}
 
 	return &provider.PullRequest{
-		ID:     fmt.Sprintf("%d", mr.ID),
+		ID:     strconv.FormatInt(mr.ID, 10),
 		Number: int(mr.IID),
 		URL:    mr.WebURL,
 		Title:  mr.Title,
@@ -59,6 +60,7 @@ func (p *Provider) GetDefaultBranch(ctx context.Context) (string, error) {
 	if p.config.TargetBranch != "" {
 		return p.config.TargetBranch, nil
 	}
+
 	return p.client.GetDefaultBranch(ctx)
 }
 

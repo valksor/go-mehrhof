@@ -4,11 +4,13 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
 	"net/url"
 	"os"
+	"strconv"
 	"time"
 )
 
@@ -50,6 +52,7 @@ func ResolveToken(configToken string) (string, error) {
 	if configToken != "" {
 		return configToken, nil
 	}
+
 	return "", ErrNoToken
 }
 
@@ -280,7 +283,7 @@ func (c *Client) ListProjectTasks(ctx context.Context, projectGID string, comple
 		params.Set("completed_since", completedSince.Format(time.RFC3339))
 	}
 	if limit > 0 {
-		params.Set("limit", fmt.Sprintf("%d", limit))
+		params.Set("limit", strconv.Itoa(limit))
 	}
 
 	path := fmt.Sprintf("/projects/%s/tasks?%s", projectGID, params.Encode())
@@ -340,7 +343,7 @@ func (c *Client) AddTaskComment(ctx context.Context, taskGID string, text string
 
 // UpdateTask updates task fields.
 func (c *Client) UpdateTask(ctx context.Context, taskGID string, updates map[string]any) (*Task, error) {
-	path := fmt.Sprintf("/tasks/%s", taskGID)
+	path := "/tasks/" + taskGID
 
 	respBody, err := c.doRequest(ctx, http.MethodPut, path, updates)
 	if err != nil {
@@ -369,6 +372,7 @@ func (c *Client) AddTaskToSection(ctx context.Context, sectionGID, taskGID strin
 	}
 
 	_, err := c.doRequest(ctx, http.MethodPost, path, reqBody)
+
 	return err
 }
 
@@ -376,7 +380,7 @@ func (c *Client) AddTaskToSection(ctx context.Context, sectionGID, taskGID strin
 
 // GetProject fetches project details.
 func (c *Client) GetProject(ctx context.Context, projectGID string) (*Project, error) {
-	path := fmt.Sprintf("/projects/%s", projectGID)
+	path := "/projects/" + projectGID
 
 	body, err := c.doRequest(ctx, http.MethodGet, path, nil)
 	if err != nil {
@@ -413,7 +417,7 @@ func (c *Client) GetProjectSections(ctx context.Context, projectGID string) ([]S
 // GetWorkspaceTags fetches all tags in the workspace.
 func (c *Client) GetWorkspaceTags(ctx context.Context) ([]Tag, error) {
 	if c.workspaceGID == "" {
-		return nil, fmt.Errorf("workspace GID required")
+		return nil, errors.New("workspace GID required")
 	}
 
 	path := fmt.Sprintf("/workspaces/%s/tags?opt_fields=gid,name,color", c.workspaceGID)
@@ -434,7 +438,7 @@ func (c *Client) GetWorkspaceTags(ctx context.Context) ([]Tag, error) {
 // CreateTag creates a new tag in the workspace.
 func (c *Client) CreateTag(ctx context.Context, name string) (*Tag, error) {
 	if c.workspaceGID == "" {
-		return nil, fmt.Errorf("workspace GID required")
+		return nil, errors.New("workspace GID required")
 	}
 
 	path := "/tags"
@@ -466,6 +470,7 @@ func (c *Client) AddTagToTask(ctx context.Context, taskGID, tagGID string) error
 	}
 
 	_, err := c.doRequest(ctx, http.MethodPost, path, reqBody)
+
 	return err
 }
 
@@ -478,6 +483,7 @@ func (c *Client) RemoveTagFromTask(ctx context.Context, taskGID, tagGID string) 
 	}
 
 	_, err := c.doRequest(ctx, http.MethodPost, path, reqBody)
+
 	return err
 }
 

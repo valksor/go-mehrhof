@@ -138,6 +138,7 @@ func TestAgentsCommand_Structure(t *testing.T) {
 			if cmd.RunE == nil {
 				t.Error("agents list RunE not set")
 			}
+
 			break
 		}
 	}
@@ -164,6 +165,7 @@ func TestConfigCommand_Structure(t *testing.T) {
 			if cmd.Short == "" {
 				t.Error("config validate Short description is empty")
 			}
+
 			break
 		}
 	}
@@ -223,6 +225,7 @@ func getCommandNames(commands []*cobra.Command) []string {
 	for i, cmd := range commands {
 		names[i] = cmd.Use
 	}
+
 	return names
 }
 

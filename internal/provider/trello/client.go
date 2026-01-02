@@ -148,7 +148,7 @@ type ActionMember struct {
 
 // GetCard fetches a card by ID.
 func (c *Client) GetCard(ctx context.Context, cardID string) (*Card, error) {
-	endpoint := fmt.Sprintf("/cards/%s", cardID)
+	endpoint := "/cards/" + cardID
 	params := url.Values{
 		"fields":      {"all"},
 		"members":     {"true"},
@@ -160,17 +160,19 @@ func (c *Client) GetCard(ctx context.Context, cardID string) (*Card, error) {
 	if err := c.get(ctx, endpoint, params, &card); err != nil {
 		return nil, err
 	}
+
 	return &card, nil
 }
 
 // GetList fetches a list by ID.
 func (c *Client) GetList(ctx context.Context, listID string) (*List, error) {
-	endpoint := fmt.Sprintf("/lists/%s", listID)
+	endpoint := "/lists/" + listID
 
 	var list List
 	if err := c.get(ctx, endpoint, nil, &list); err != nil {
 		return nil, err
 	}
+
 	return &list, nil
 }
 
@@ -186,6 +188,7 @@ func (c *Client) GetBoardCards(ctx context.Context, boardID string) ([]Card, err
 	if err := c.get(ctx, endpoint, params, &cards); err != nil {
 		return nil, err
 	}
+
 	return cards, nil
 }
 
@@ -197,6 +200,7 @@ func (c *Client) GetBoardLists(ctx context.Context, boardID string) ([]List, err
 	if err := c.get(ctx, endpoint, nil, &lists); err != nil {
 		return nil, err
 	}
+
 	return lists, nil
 }
 
@@ -212,6 +216,7 @@ func (c *Client) GetCardActions(ctx context.Context, cardID, filter string) ([]A
 	if err := c.get(ctx, endpoint, params, &actions); err != nil {
 		return nil, err
 	}
+
 	return actions, nil
 }
 
@@ -226,12 +231,13 @@ func (c *Client) AddComment(ctx context.Context, cardID, text string) (*Action, 
 	if err := c.post(ctx, endpoint, params, &action); err != nil {
 		return nil, err
 	}
+
 	return &action, nil
 }
 
 // MoveCard moves a card to a different list.
 func (c *Client) MoveCard(ctx context.Context, cardID, listID string) error {
-	endpoint := fmt.Sprintf("/cards/%s", cardID)
+	endpoint := "/cards/" + cardID
 	params := url.Values{
 		"idList": {listID},
 	}
@@ -269,6 +275,7 @@ func (c *Client) AddLabel(ctx context.Context, cardID, labelID string) error {
 // RemoveLabel removes a label from a card.
 func (c *Client) RemoveLabel(ctx context.Context, cardID, labelID string) error {
 	endpoint := fmt.Sprintf("/cards/%s/idLabels/%s", cardID, labelID)
+
 	return c.delete(ctx, endpoint)
 }
 
@@ -287,6 +294,7 @@ func (c *Client) CreateCard(ctx context.Context, listID, name, desc string) (*Ca
 	if err := c.post(ctx, endpoint, params, &card); err != nil {
 		return nil, err
 	}
+
 	return &card, nil
 }
 
@@ -313,6 +321,7 @@ func (c *Client) DownloadAttachment(ctx context.Context, cardID, attachmentID st
 
 	if resp.StatusCode != http.StatusOK {
 		_ = resp.Body.Close()
+
 		return nil, httpclient.NewHTTPError(resp.StatusCode, "failed to download attachment")
 	}
 
@@ -371,6 +380,7 @@ func (c *Client) request(ctx context.Context, method, endpoint string, params ur
 	err = httpclient.WithRetry(ctx, httpclient.DefaultRetryConfig(), func() error {
 		var err error
 		resp, err = c.http.Do(req) //nolint:bodyclose // closed after WithRetry
+
 		return err
 	})
 	if err != nil {
@@ -380,6 +390,7 @@ func (c *Client) request(ctx context.Context, method, endpoint string, params ur
 
 	if resp.StatusCode >= 400 {
 		bodyBytes, _ := io.ReadAll(resp.Body)
+
 		return httpclient.NewHTTPError(resp.StatusCode, string(bodyBytes))
 	}
 

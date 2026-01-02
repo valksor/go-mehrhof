@@ -14,5 +14,6 @@ func ResolveEnvReferences(env map[string]string) map[string]string {
 	for k, v := range env {
 		result[k] = os.ExpandEnv(v)
 	}
+
 	return result
 }

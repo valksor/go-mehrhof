@@ -32,6 +32,7 @@ func (e *ESLint) Available() bool {
 	}
 	// Check for npx (Node.js package runner)
 	_, err := exec.LookPath("npx")
+
 	return err == nil
 }
 
@@ -87,7 +88,7 @@ func (e *ESLint) Run(ctx context.Context, workDir string, files []string) (*Resu
 			return &Result{
 				Linter:  e.Name(),
 				Passed:  false,
-				Summary: fmt.Sprintf("Linter failed: %s", string(output)),
+				Summary: "Linter failed: " + string(output),
 				Error:   err,
 			}, nil
 		}
@@ -169,6 +170,7 @@ func (e *ESLint) parseOutput(output []byte) (*Result, error) {
 	for _, issue := range issues {
 		if issue.Severity == SeverityError {
 			passed = false
+
 			break
 		}
 	}

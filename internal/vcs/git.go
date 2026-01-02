@@ -22,6 +22,7 @@ package vcs
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"os/exec"
@@ -50,6 +51,7 @@ func New(ctx context.Context, path string) (*Git, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	return &Git{repoRoot: root}, nil
 }
 
@@ -61,6 +63,7 @@ func (g *Git) Root() string {
 // IsRepo checks if the path is inside a git repository.
 func IsRepo(ctx context.Context, path string) bool {
 	_, err := findRepoRoot(ctx, path)
+
 	return err == nil
 }
 
@@ -85,6 +88,7 @@ func (g *Git) CurrentBranch(ctx context.Context) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("get current branch: %w", err)
 	}
+
 	return strings.TrimSpace(out), nil
 }
 
@@ -139,6 +143,7 @@ func (g *Git) HasChanges(ctx context.Context) (bool, error) {
 	if err != nil {
 		return false, err
 	}
+
 	return len(files) > 0, nil
 }
 
@@ -149,6 +154,7 @@ func (g *Git) Add(ctx context.Context, paths ...string) error {
 	if err != nil {
 		return fmt.Errorf("git add: %w", err)
 	}
+
 	return nil
 }
 
@@ -193,18 +199,21 @@ func (g *Git) Checkout(ctx context.Context, ref string) error {
 	if err != nil {
 		return fmt.Errorf("git checkout %s: %w", ref, err)
 	}
+
 	return nil
 }
 
 // Diff returns diff output.
 func (g *Git) Diff(ctx context.Context, args ...string) (string, error) {
 	cmdArgs := append([]string{"diff"}, args...)
+
 	return g.run(ctx, cmdArgs...)
 }
 
 // Log returns commit logs.
 func (g *Git) Log(ctx context.Context, args ...string) (string, error) {
 	cmdArgs := append([]string{"log"}, args...)
+
 	return g.run(ctx, cmdArgs...)
 }
 
@@ -214,6 +223,7 @@ func (g *Git) RevParse(ctx context.Context, ref string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("rev-parse %s: %w", ref, err)
 	}
+
 	return strings.TrimSpace(out), nil
 }
 
@@ -223,6 +233,7 @@ func (g *Git) GetCommitMessage(ctx context.Context, ref string) (string, error) 
 	if err != nil {
 		return "", fmt.Errorf("get commit message: %w", err)
 	}
+
 	return strings.TrimSpace(out), nil
 }
 
@@ -232,6 +243,7 @@ func (g *Git) GetCommitAuthor(ctx context.Context, ref string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("get commit author: %w", err)
 	}
+
 	return strings.TrimSpace(out), nil
 }
 
@@ -241,6 +253,7 @@ func (g *Git) ResetHard(ctx context.Context, ref string) error {
 	if err != nil {
 		return fmt.Errorf("reset hard to %s: %w", ref, err)
 	}
+
 	return nil
 }
 
@@ -250,6 +263,7 @@ func (g *Git) ResetSoft(ctx context.Context, ref string) error {
 	if err != nil {
 		return fmt.Errorf("reset soft to %s: %w", ref, err)
 	}
+
 	return nil
 }
 
@@ -260,6 +274,7 @@ func (g *Git) Clean(ctx context.Context, force bool) error {
 		args = append(args, "-f")
 	}
 	_, err := g.run(ctx, args...)
+
 	return err
 }
 
@@ -270,12 +285,14 @@ func (g *Git) Stash(ctx context.Context, message string) error {
 		args = append(args, "-m", message)
 	}
 	_, err := g.run(ctx, args...)
+
 	return err
 }
 
 // StashPop applies and removes the top stash entry.
 func (g *Git) StashPop(ctx context.Context) error {
 	_, err := g.run(ctx, "stash", "pop")
+
 	return err
 }
 
@@ -299,6 +316,7 @@ func runGitCommandContext(ctx context.Context, dir string, args ...string) (stri
 		if errMsg == "" {
 			errMsg = err.Error()
 		}
+
 		return "", fmt.Errorf("%s", strings.TrimSpace(errMsg))
 	}
 
@@ -317,12 +335,14 @@ func (g *Git) GetConfig(ctx context.Context, key string) (string, error) {
 	if err != nil {
 		return "", err
 	}
+
 	return strings.TrimSpace(out), nil
 }
 
 // SetConfig sets a git config value.
 func (g *Git) SetConfig(ctx context.Context, key, value string) error {
 	_, err := g.run(ctx, "config", key, value)
+
 	return err
 }
 
@@ -332,6 +352,7 @@ func (g *Git) RemoteURL(ctx context.Context, name string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("get remote URL %s: %w", name, err)
 	}
+
 	return strings.TrimSpace(out), nil
 }
 
@@ -339,12 +360,14 @@ func (g *Git) RemoteURL(ctx context.Context, name string) (string, error) {
 func (g *Git) Fetch(ctx context.Context, remote string, args ...string) error {
 	cmdArgs := append([]string{"fetch", remote}, args...)
 	_, err := g.run(ctx, cmdArgs...)
+
 	return err
 }
 
 // Pull pulls from a remote.
 func (g *Git) Pull(ctx context.Context, remote, branch string) error {
 	_, err := g.run(ctx, "pull", remote, branch)
+
 	return err
 }
 
@@ -352,6 +375,7 @@ func (g *Git) Pull(ctx context.Context, remote, branch string) error {
 func (g *Git) Push(ctx context.Context, remote, branch string, args ...string) error {
 	cmdArgs := append([]string{"push", remote, branch}, args...)
 	_, err := g.run(ctx, cmdArgs...)
+
 	return err
 }
 
@@ -372,7 +396,7 @@ func (g *Git) IsWorktree() bool {
 // from within a worktree. Returns an error if not in a worktree.
 func (g *Git) GetMainWorktreePath(ctx context.Context) (string, error) {
 	if !g.IsWorktree() {
-		return "", fmt.Errorf("not in a worktree")
+		return "", errors.New("not in a worktree")
 	}
 
 	// git rev-parse --git-common-dir returns the shared .git directory

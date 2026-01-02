@@ -16,6 +16,7 @@ func cleanupEnv(vars ...string) func() {
 		saved[v] = val
 		_ = os.Unsetenv(v)
 	}
+
 	return func() {
 		for k := range saved {
 			if wasSet[k] {
@@ -85,6 +86,7 @@ func TestResolveToken(t *testing.T) {
 		cfg := Config("TEST", "").
 			WithCLIFallback(func() string {
 				fallbackCalled = true
+
 				return "cli-token"
 			})
 
@@ -110,6 +112,7 @@ func TestResolveToken(t *testing.T) {
 			WithEnvVars("TEST_TOKEN").
 			WithCLIFallback(func() string {
 				fallbackCalled = true
+
 				return "cli-token"
 			})
 

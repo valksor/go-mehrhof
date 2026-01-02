@@ -37,12 +37,14 @@ func InitColors(noColor bool) {
 	// Disable colors if --no-color flag is set
 	if noColor {
 		colorEnabled = false
+
 		return
 	}
 
 	// Respect NO_COLOR environment variable (https://no-color.org/)
 	if _, exists := os.LookupEnv("NO_COLOR"); exists {
 		colorEnabled = false
+
 		return
 	}
 
@@ -78,6 +80,7 @@ func colorize(text, color string) string {
 	if !ColorsEnabled() {
 		return text
 	}
+
 	return color + text + reset
 }
 
@@ -145,24 +148,28 @@ func InfoPrefix() string {
 // SuccessMsg formats a success message with prefix.
 func SuccessMsg(format string, args ...any) string {
 	msg := fmt.Sprintf(format, args...)
+
 	return fmt.Sprintf("%s %s", SuccessPrefix(), msg)
 }
 
 // ErrorMsg formats an error message with prefix.
 func ErrorMsg(format string, args ...any) string {
 	msg := fmt.Sprintf(format, args...)
+
 	return fmt.Sprintf("%s %s", ErrorPrefix(), Error(msg))
 }
 
 // WarningMsg formats a warning message with prefix.
 func WarningMsg(format string, args ...any) string {
 	msg := fmt.Sprintf(format, args...)
+
 	return fmt.Sprintf("%s %s", WarningPrefix(), Warning(msg))
 }
 
 // InfoMsg formats an info message with prefix.
 func InfoMsg(format string, args ...any) string {
 	msg := fmt.Sprintf(format, args...)
+
 	return fmt.Sprintf("%s %s", InfoPrefix(), msg)
 }
 
@@ -208,5 +215,6 @@ func WorktreeIndicator(isWorktree bool) string {
 	if isWorktree {
 		return Muted("[worktree]")
 	}
+
 	return ""
 }

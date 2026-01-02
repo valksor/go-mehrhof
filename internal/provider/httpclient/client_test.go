@@ -126,6 +126,7 @@ func TestWithRetry(t *testing.T) {
 		attempts := 0
 		err := WithRetry(context.Background(), DefaultRetryConfig(), func() error {
 			attempts++
+
 			return nil
 		})
 		if err != nil {
@@ -150,6 +151,7 @@ func TestWithRetry(t *testing.T) {
 			if attempts < 3 {
 				return NewHTTPError(http.StatusTooManyRequests, "rate limit")
 			}
+
 			return nil
 		})
 		if err != nil {
@@ -171,6 +173,7 @@ func TestWithRetry(t *testing.T) {
 
 		err := WithRetry(context.Background(), config, func() error {
 			attempts++
+
 			return NewHTTPError(http.StatusTooManyRequests, "rate limit")
 		})
 
@@ -186,6 +189,7 @@ func TestWithRetry(t *testing.T) {
 		attempts := 0
 		err := WithRetry(context.Background(), DefaultRetryConfig(), func() error {
 			attempts++
+
 			return NewHTTPError(http.StatusNotFound, "not found")
 		})
 
@@ -215,6 +219,7 @@ func TestWithRetry(t *testing.T) {
 
 		err := WithRetry(ctx, config, func() error {
 			attempts++
+
 			return NewHTTPError(http.StatusTooManyRequests, "rate limit")
 		})
 

@@ -32,6 +32,7 @@ type Bus struct {
 	// wg tracks active async publishes for graceful shutdown
 	wg sync.WaitGroup
 	// ctx is used for cancellation
+	//nolint:containedctx // stored for managing async goroutine lifecycle
 	ctx    context.Context
 	cancel context.CancelFunc
 }
@@ -39,6 +40,7 @@ type Bus struct {
 // NewBus creates a new event bus.
 func NewBus() *Bus {
 	ctx, cancel := context.WithCancel(context.Background())
+
 	return &Bus{
 		handlers:    make(map[Type][]Subscription),
 		allHandlers: make([]Subscription, 0),
@@ -64,6 +66,7 @@ func (b *Bus) Subscribe(eventType Type, handler Handler) string {
 	}
 
 	b.handlers[eventType] = append(b.handlers[eventType], sub)
+
 	return id
 }
 
@@ -82,6 +85,7 @@ func (b *Bus) SubscribeAll(handler Handler) string {
 	}
 
 	b.allHandlers = append(b.allHandlers, sub)
+
 	return id
 }
 
@@ -95,6 +99,7 @@ func (b *Bus) Unsubscribe(id string) {
 		for i, sub := range subs {
 			if sub.ID == id {
 				b.handlers[eventType] = append(subs[:i], subs[i+1:]...)
+
 				return
 			}
 		}
@@ -104,6 +109,7 @@ func (b *Bus) Unsubscribe(id string) {
 	for i, sub := range b.allHandlers {
 		if sub.ID == id {
 			b.allHandlers = append(b.allHandlers[:i], b.allHandlers[i+1:]...)
+
 			return
 		}
 	}
@@ -172,6 +178,7 @@ func (b *Bus) HasSubscribers(eventType Type) bool {
 	if len(b.allHandlers) > 0 {
 		return true
 	}
+
 	return len(b.handlers[eventType]) > 0
 }
 

@@ -2,6 +2,7 @@ package wrike
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -20,7 +21,7 @@ func (p *Provider) CreateWorkUnit(ctx context.Context, opts provider.CreateWorkU
 		folderID = p.client.folderID
 	}
 	if folderID == "" {
-		return nil, fmt.Errorf("wrike: CreateWorkUnit requires folder_id or ParentID")
+		return nil, errors.New("wrike: CreateWorkUnit requires folder_id or ParentID")
 	}
 
 	// Build create options
@@ -85,5 +86,6 @@ func mapProviderPriorityToWrike(priority provider.Priority) string {
 	case provider.PriorityLow:
 		return "Low"
 	}
+
 	return "Normal"
 }

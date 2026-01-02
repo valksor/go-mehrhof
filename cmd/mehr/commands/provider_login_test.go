@@ -19,6 +19,7 @@ func TestProviderRegistry(t *testing.T) {
 		cfg := getProviderLoginConfig(provider)
 		if cfg == nil {
 			t.Errorf("Provider %q not found in registry", provider)
+
 			continue
 		}
 

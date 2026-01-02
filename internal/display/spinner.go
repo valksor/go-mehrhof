@@ -41,6 +41,7 @@ func (s *Spinner) Start() {
 	s.mu.Lock()
 	if s.running {
 		s.mu.Unlock()
+
 		return
 	}
 	s.running = true
@@ -56,6 +57,7 @@ func (s *Spinner) Stop() {
 	s.mu.Lock()
 	if !s.running {
 		s.mu.Unlock()
+
 		return
 	}
 	s.running = false
@@ -108,6 +110,7 @@ func (s *Spinner) run() {
 		select {
 		case <-s.stopCh:
 			s.clearLine()
+
 			return
 		case <-ticker.C:
 			s.mu.Lock()

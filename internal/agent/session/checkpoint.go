@@ -3,6 +3,7 @@ package session
 import (
 	"crypto/rand"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -108,7 +109,7 @@ func (m *Manager) LoadLatest() (*State, error) {
 		}
 	}
 
-	return nil, fmt.Errorf("no recoverable sessions found")
+	return nil, errors.New("no recoverable sessions found")
 }
 
 // List returns summaries of all sessions, sorted by checkpoint time (newest first).
@@ -118,6 +119,7 @@ func (m *Manager) List() ([]Summary, error) {
 		if os.IsNotExist(err) {
 			return nil, nil
 		}
+
 		return nil, err
 	}
 
@@ -220,6 +222,7 @@ func (m *Manager) MarkInterrupted(id string, errorMsg string) error {
 
 	state.Status = StatusInterrupted
 	state.Error = errorMsg
+
 	return m.Save(state)
 }
 
@@ -231,6 +234,7 @@ func (m *Manager) MarkCompleted(id string) error {
 	}
 
 	state.Status = StatusCompleted
+
 	return m.Save(state)
 }
 
@@ -276,6 +280,7 @@ func generateID() string {
 		// Fallback to timestamp-based ID
 		return fmt.Sprintf("ses-%d", time.Now().UnixNano())
 	}
+
 	return "ses-" + hex.EncodeToString(bytes)
 }
 
@@ -289,6 +294,7 @@ func sanitizeFilename(s string) string {
 		if r == ' ' || r == '-' || r == '_' {
 			return '-'
 		}
+
 		return -1
 	}, s)
 
@@ -296,5 +302,6 @@ func sanitizeFilename(s string) string {
 	for strings.Contains(s, "--") {
 		s = strings.ReplaceAll(s, "--", "-")
 	}
+
 	return strings.Trim(s, "-")
 }

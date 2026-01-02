@@ -27,6 +27,7 @@ func (p *Provider) FetchComments(ctx context.Context, workUnitID string) ([]prov
 			UpdatedAt: timeFromMillis(c.Updated),
 		})
 	}
+
 	return result, nil
 }
 

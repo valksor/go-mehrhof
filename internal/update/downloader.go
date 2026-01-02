@@ -37,21 +37,24 @@ func (d *Downloader) Download(ctx context.Context, url, expectedChecksum string)
 	defer func() { _ = tmpFile.Close() }()
 
 	// Download the file
-	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
 		_ = os.Remove(tmpPath)
+
 		return "", fmt.Errorf("%w: create request: %w", ErrDownloadFailed, err)
 	}
 
 	resp, err := d.client.Do(req)
 	if err != nil {
 		_ = os.Remove(tmpPath)
+
 		return "", fmt.Errorf("%w: %w", ErrDownloadFailed, err)
 	}
 	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		_ = os.Remove(tmpPath)
+
 		return "", fmt.Errorf("%w: unexpected status: %d", ErrDownloadFailed, resp.StatusCode)
 	}
 
@@ -62,6 +65,7 @@ func (d *Downloader) Download(ctx context.Context, url, expectedChecksum string)
 	_, err = io.Copy(writer, resp.Body)
 	if err != nil {
 		_ = os.Remove(tmpPath)
+
 		return "", fmt.Errorf("%w: %w", ErrDownloadFailed, err)
 	}
 
@@ -70,6 +74,7 @@ func (d *Downloader) Download(ctx context.Context, url, expectedChecksum string)
 		actualChecksum := hex.EncodeToString(hasher.Sum(nil))
 		if !strings.EqualFold(actualChecksum, expectedChecksum) {
 			_ = os.Remove(tmpPath)
+
 			return "", fmt.Errorf("%w: expected %s, got %s", ErrChecksumFailed, expectedChecksum, actualChecksum)
 		}
 	}
@@ -99,7 +104,7 @@ func (d *Downloader) DownloadWithChecksums(ctx context.Context, binaryURL, check
 // fetchChecksum downloads and parses the checksums file to find the checksum for the given asset.
 // Returns empty string if checksum is not found (graceful degradation).
 func (d *Downloader) fetchChecksum(ctx context.Context, url, assetName string) (string, error) {
-	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
 		return "", err
 	}
@@ -145,6 +150,7 @@ func ParseChecksumsFile(content, assetName string) string {
 			return parts[0] // First part is the checksum
 		}
 	}
+
 	return ""
 }
 
@@ -193,7 +199,7 @@ func CalculateChecksum(filePath string) (string, error) {
 // DownloadChecksumsFile downloads the checksums file from a URL.
 // Returns the path to the downloaded file.
 func (d *Downloader) DownloadChecksumsFile(ctx context.Context, url string) (string, error) {
-	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
 		return "", err
 	}
@@ -218,6 +224,7 @@ func (d *Downloader) DownloadChecksumsFile(ctx context.Context, url string) (str
 	_, err = io.Copy(tmpFile, resp.Body)
 	if err != nil {
 		_ = os.Remove(tmpFile.Name())
+
 		return "", err
 	}
 

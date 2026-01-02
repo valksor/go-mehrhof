@@ -3,6 +3,7 @@ package gitlab
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
 
@@ -179,14 +180,14 @@ func (p *Provider) Fetch(ctx context.Context, id string) (*provider.WorkUnit, er
 	// Determine the project path for ExternalID
 	displayProject := projectPath
 	if displayProject == "" && ref.ProjectID > 0 {
-		displayProject = fmt.Sprintf("%d", ref.ProjectID)
+		displayProject = strconv.FormatInt(ref.ProjectID, 10)
 	} else if displayProject == "" && issue.ProjectID != 0 {
-		displayProject = fmt.Sprintf("%d", issue.ProjectID)
+		displayProject = strconv.FormatInt(issue.ProjectID, 10)
 	}
 
 	// Map to WorkUnit
 	wu := &provider.WorkUnit{
-		ID:          fmt.Sprintf("%d", issue.IID),
+		ID:          strconv.FormatInt(issue.IID, 10),
 		ExternalID:  fmt.Sprintf("%s#%d", displayProject, issue.IID),
 		Provider:    ProviderName,
 		Title:       issue.Title,
@@ -204,7 +205,7 @@ func (p *Provider) Fetch(ctx context.Context, id string) (*provider.WorkUnit, er
 		},
 
 		// Naming fields for branch/commit customization
-		ExternalKey: fmt.Sprintf("%d", issue.IID),
+		ExternalKey: strconv.FormatInt(issue.IID, 10),
 		TaskType:    inferTypeFromLabels(issue.Labels),
 		Slug:        naming.Slugify(issue.Title, 50),
 
@@ -351,7 +352,7 @@ func (p *Provider) List(ctx context.Context, opts provider.ListOptions) ([]*prov
 	result := make([]*provider.WorkUnit, len(issues))
 	for i, issue := range issues {
 		result[i] = &provider.WorkUnit{
-			ID:          fmt.Sprintf("%d", issue.IID),
+			ID:          strconv.FormatInt(issue.IID, 10),
 			ExternalID:  fmt.Sprintf("%s#%d", p.config.ProjectPath, issue.IID),
 			Provider:    ProviderName,
 			Title:       issue.Title,
@@ -396,7 +397,7 @@ func (p *Provider) AddComment(ctx context.Context, workUnitID string, body strin
 	}
 
 	author := provider.Person{
-		ID:   fmt.Sprintf("%d", note.Author.ID),
+		ID:   strconv.FormatInt(note.Author.ID, 10),
 		Name: note.Author.Username,
 	}
 
@@ -413,7 +414,7 @@ func (p *Provider) AddComment(ctx context.Context, workUnitID string, body strin
 	}
 
 	return &provider.Comment{
-		ID:        fmt.Sprintf("%d", note.ID),
+		ID:        strconv.FormatInt(note.ID, 10),
 		Body:      note.Body,
 		CreatedAt: *note.CreatedAt,
 		UpdatedAt: updatedAt,
@@ -452,6 +453,7 @@ func (p *Provider) AddLabels(ctx context.Context, workUnitID string, labels []st
 	if err != nil {
 		return err
 	}
+
 	return p.client.AddLabels(ctx, ref.IssueIID, labels)
 }
 
@@ -467,6 +469,7 @@ func (p *Provider) RemoveLabels(ctx context.Context, workUnitID string, labels [
 			return err
 		}
 	}
+
 	return nil
 }
 
@@ -489,7 +492,7 @@ func (p *Provider) CreateWorkUnit(ctx context.Context, opts provider.CreateWorkU
 		return nil, err
 	}
 
-	return p.Fetch(ctx, fmt.Sprintf("%d", issue.IID))
+	return p.Fetch(ctx, strconv.FormatInt(issue.IID, 10))
 }
 
 // GetConfig returns the provider configuration.
@@ -537,6 +540,7 @@ func inferTypeFromLabels(labels []string) string {
 			return t
 		}
 	}
+
 	return "issue"
 }
 
@@ -557,6 +561,7 @@ func inferPriorityFromLabels(labels []string) provider.Priority {
 			return p
 		}
 	}
+
 	return provider.PriorityNormal
 }
 
@@ -564,10 +569,11 @@ func mapAssignees(assignees []*gitlab.IssueAssignee) []provider.Person {
 	persons := make([]provider.Person, len(assignees))
 	for i, a := range assignees {
 		persons[i] = provider.Person{
-			ID:   fmt.Sprintf("%d", a.ID),
+			ID:   strconv.FormatInt(a.ID, 10),
 			Name: a.Username,
 		}
 	}
+
 	return persons
 }
 
@@ -575,7 +581,7 @@ func mapNotes(notes []*gitlab.Note) []provider.Comment {
 	result := make([]provider.Comment, len(notes))
 	for i, n := range notes {
 		author := provider.Person{
-			ID:   fmt.Sprintf("%d", n.Author.ID),
+			ID:   strconv.FormatInt(n.Author.ID, 10),
 			Name: n.Author.Username,
 		}
 
@@ -587,13 +593,14 @@ func mapNotes(notes []*gitlab.Note) []provider.Comment {
 		}
 
 		result[i] = provider.Comment{
-			ID:        fmt.Sprintf("%d", n.ID),
+			ID:        strconv.FormatInt(n.ID, 10),
 			Body:      n.Body,
 			CreatedAt: *n.CreatedAt,
 			UpdatedAt: updatedAt,
 			Author:    author,
 		}
 	}
+
 	return result
 }
 

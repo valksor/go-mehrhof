@@ -264,6 +264,7 @@ func TestMapComments(t *testing.T) {
 			got := mapComments(tt.comments)
 			if len(got) != tt.wantLen {
 				t.Errorf("mapComments() len = %d, want %d", len(got), tt.wantLen)
+
 				return
 			}
 
@@ -532,16 +533,19 @@ func TestProvider_Parse(t *testing.T) {
 			if tt.wantErr {
 				if err == nil {
 					t.Errorf("Parse(%q) expected error, got nil", tt.input)
+
 					return
 				}
 				if tt.errContains != "" && !strings.Contains(err.Error(), tt.errContains) {
 					t.Errorf("Parse(%q) error = %q, want to contain %q", tt.input, err.Error(), tt.errContains)
 				}
+
 				return
 			}
 
 			if err != nil {
 				t.Errorf("Parse(%q) unexpected error: %v", tt.input, err)
+
 				return
 			}
 

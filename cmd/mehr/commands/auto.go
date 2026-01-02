@@ -178,6 +178,7 @@ func runAuto(cmd *cobra.Command, args []string) error {
 		fmt.Printf("  Implementation: %s\n", boolToStatus(result.ImplementDone))
 		fmt.Printf("  Quality:        %d attempt(s), passed=%v\n", result.QualityAttempts, result.QualityPassed)
 		fmt.Printf("  Finish:         %s\n", boolToStatus(result.FinishDone))
+
 		return err
 	}
 
@@ -198,5 +199,6 @@ func boolToStatus(done bool) string {
 	if done {
 		return "done"
 	}
+
 	return "pending"
 }

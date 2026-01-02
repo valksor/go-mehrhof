@@ -3,6 +3,7 @@ package commands
 import (
 	"cmp"
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"os/exec"
@@ -151,6 +152,7 @@ func runPluginsList(cmd *cobra.Command, args []string) error {
 		fmt.Printf("Plugin locations:\n")
 		fmt.Printf("  Global:  %s\n", discovery.GlobalDir())
 		fmt.Printf("  Project: %s\n", discovery.ProjectDir())
+
 		return nil
 	}
 
@@ -266,6 +268,7 @@ func installFromGit(url, targetDir string) error {
 	if _, err := plugin.LoadManifest(manifestPath); err != nil {
 		// Clean up on validation failure
 		_ = os.RemoveAll(pluginDir)
+
 		return fmt.Errorf("invalid plugin (missing or invalid plugin.yaml): %w", err)
 	}
 
@@ -375,6 +378,7 @@ func runPluginsValidate(cmd *cobra.Command, args []string) error {
 
 	if len(manifests) == 0 {
 		fmt.Println("No plugins to validate.")
+
 		return nil
 	}
 
@@ -391,6 +395,7 @@ func runPluginsValidate(cmd *cobra.Command, args []string) error {
 			if _, err := os.Stat(execPath); err != nil {
 				fmt.Printf("  ERROR: Executable not found: %s\n", execPath)
 				hasErrors = true
+
 				continue
 			}
 		}
@@ -400,6 +405,7 @@ func runPluginsValidate(cmd *cobra.Command, args []string) error {
 		if err != nil {
 			fmt.Printf("  ERROR: Failed to load: %v\n", err)
 			hasErrors = true
+
 			continue
 		}
 
@@ -419,6 +425,7 @@ func runPluginsValidate(cmd *cobra.Command, args []string) error {
 			fmt.Printf("  ERROR: Init failed: %v\n", err)
 			_ = proc.Stop(ctx)
 			hasErrors = true
+
 			continue
 		}
 
@@ -427,10 +434,11 @@ func runPluginsValidate(cmd *cobra.Command, args []string) error {
 	}
 
 	if hasErrors {
-		return fmt.Errorf("some plugins failed validation")
+		return errors.New("some plugins failed validation")
 	}
 
 	fmt.Println("\nAll plugins validated successfully.")
+
 	return nil
 }
 

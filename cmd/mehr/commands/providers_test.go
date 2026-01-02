@@ -92,5 +92,6 @@ func hasCommand(cmd *cobra.Command, name string) bool {
 			return true
 		}
 	}
+
 	return false
 }

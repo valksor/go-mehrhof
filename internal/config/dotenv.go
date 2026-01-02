@@ -37,5 +37,6 @@ func LoadDotEnvFromCwd() error {
 	if err != nil {
 		return err
 	}
+
 	return LoadDotEnv(cwd)
 }

@@ -29,6 +29,7 @@ func (p *Provider) AddLabels(ctx context.Context, workUnitID string, labels []st
 	p.client.SetOwnerRepo(owner, repo)
 
 	_, _, err = p.client.AddLabelsToIssue(ctx, ref.IssueNumber, labels)
+
 	return err
 }
 

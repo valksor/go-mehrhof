@@ -2,6 +2,7 @@ package commands
 
 import (
 	"bufio"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -80,6 +81,7 @@ func getProviderLoginConfig(name string) *providerLoginConfig {
 	if cfg, ok := providerLoginConfigs[normalized]; ok {
 		return &cfg
 	}
+
 	return nil
 }
 
@@ -170,6 +172,7 @@ func getConfigToken(cfg *storage.WorkspaceConfig, fieldPath string) string {
 			return cfg.YouTrack.Token
 		}
 	}
+
 	return ""
 }
 
@@ -178,6 +181,7 @@ func maskToken(token string) string {
 	if len(token) <= 8 {
 		return "*******"
 	}
+
 	return token[:4] + "..." + token[len(token)-4:]
 }
 
@@ -194,6 +198,7 @@ func confirmOverride(cmd *cobra.Command, source, maskedValue string) (bool, erro
 	}
 
 	response = strings.TrimSpace(strings.ToLower(response))
+
 	return response == "y" || response == "yes", nil
 }
 
@@ -215,7 +220,7 @@ func promptForToken(cmd *cobra.Command, cfg providerLoginConfig) (string, error)
 
 	token = strings.TrimSpace(token)
 	if token == "" {
-		return "", fmt.Errorf("cancelled")
+		return "", errors.New("cancelled")
 	}
 
 	// Optional: validate token prefix
@@ -272,6 +277,7 @@ func writeTokenToEnv(envPath, key, value string) error {
 	if err := os.Rename(tmpPath, envPath); err != nil {
 		// Clean up temp file on error
 		_ = os.Remove(tmpPath)
+
 		return fmt.Errorf("rename .env: %w", err)
 	}
 
@@ -307,6 +313,7 @@ func runProviderLogin(providerName string) func(*cobra.Command, []string) error 
 			}
 			if !override {
 				_, _ = fmt.Fprintln(cmd.OutOrStdout(), "Cancelled.")
+
 				return nil
 			}
 		}
@@ -315,6 +322,7 @@ func runProviderLogin(providerName string) func(*cobra.Command, []string) error 
 		token, err := promptForToken(cmd, *cfg)
 		if err != nil && err.Error() == "cancelled" {
 			_, _ = fmt.Fprintln(cmd.OutOrStdout(), "Cancelled.")
+
 			return nil
 		}
 		if err != nil {
@@ -328,6 +336,7 @@ func runProviderLogin(providerName string) func(*cobra.Command, []string) error 
 		}
 
 		_, _ = fmt.Fprintf(cmd.OutOrStdout(), "\nToken saved to %s\n", envPath)
+
 		return nil
 	}
 }

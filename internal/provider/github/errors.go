@@ -3,6 +3,7 @@ package github
 import (
 	"errors"
 	"fmt"
+	"net/http"
 	"strings"
 
 	"github.com/google/go-github/v67/github"
@@ -28,15 +29,17 @@ func wrapAPIError(err error) error {
 	var ghErr *github.ErrorResponse
 	if errors.As(err, &ghErr) {
 		switch ghErr.Response.StatusCode {
-		case 401:
+		case http.StatusUnauthorized:
 			return providererrors.UnauthorizedError("github", err)
-		case 403:
+		case http.StatusForbidden:
 			if strings.Contains(ghErr.Message, "rate limit") {
-				resetHeader := ghErr.Response.Header.Get("X-RateLimit-Reset")
+				resetHeader := ghErr.Response.Header.Get("X-Ratelimit-Reset")
+
 				return providererrors.RateLimitedError("github", "retry after "+resetHeader)
 			}
+
 			return fmt.Errorf("%w: %w", ErrInsufficientScope, err)
-		case 404:
+		case http.StatusNotFound:
 			return fmt.Errorf("%w: %w", ErrIssueNotFound, err)
 		}
 	}

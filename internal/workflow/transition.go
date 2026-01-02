@@ -120,12 +120,14 @@ var GlobalTransitions = map[Event]State{
 // GetTransitions returns possible transitions for a state/event pair.
 func GetTransitions(from State, event Event) []Transition {
 	key := TransitionKey{From: from, Event: event}
+
 	return TransitionTable[key]
 }
 
 // GetGlobalTransition returns the target state for global events.
 func GetGlobalTransition(event Event) (State, bool) {
 	to, ok := GlobalTransitions[event]
+
 	return to, ok
 }
 
@@ -137,5 +139,6 @@ func CanTransition(from State, event Event) bool {
 	}
 	key := TransitionKey{From: from, Event: event}
 	transitions, ok := TransitionTable[key]
+
 	return ok && len(transitions) > 0
 }

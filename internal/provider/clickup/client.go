@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"strconv"
 	"time"
 )
 
@@ -48,6 +49,7 @@ func ResolveToken(configToken string) (string, error) {
 	if configToken != "" {
 		return configToken, nil
 	}
+
 	return "", ErrNoToken
 }
 
@@ -310,9 +312,9 @@ func (c *Client) GetTaskByCustomID(ctx context.Context, teamID, customID string)
 // ListTasks lists tasks in a list.
 func (c *Client) ListTasks(ctx context.Context, listID string, archived bool, limit int) ([]Task, error) {
 	params := url.Values{}
-	params.Set("archived", fmt.Sprintf("%t", archived))
+	params.Set("archived", strconv.FormatBool(archived))
 	if limit > 0 {
-		params.Set("page_size", fmt.Sprintf("%d", limit))
+		params.Set("page_size", strconv.Itoa(limit))
 	}
 	params.Set("include_closed", "true")
 
@@ -371,7 +373,7 @@ func (c *Client) AddTaskComment(ctx context.Context, taskID string, text string)
 
 // UpdateTask updates task fields.
 func (c *Client) UpdateTask(ctx context.Context, taskID string, updates map[string]any) (*Task, error) {
-	path := fmt.Sprintf("/task/%s", taskID)
+	path := "/task/" + taskID
 
 	respBody, err := c.doRequest(ctx, http.MethodPut, path, updates)
 	if err != nil {
@@ -393,7 +395,7 @@ func (c *Client) UpdateTaskStatus(ctx context.Context, taskID string, status str
 
 // GetListStatuses fetches available statuses for a list.
 func (c *Client) GetListStatuses(ctx context.Context, listID string) ([]Status, error) {
-	path := fmt.Sprintf("/list/%s", listID)
+	path := "/list/" + listID
 
 	body, err := c.doRequest(ctx, http.MethodGet, path, nil)
 	if err != nil {

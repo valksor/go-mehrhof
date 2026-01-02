@@ -312,6 +312,7 @@ func TestExtractLabelNames(t *testing.T) {
 			got := extractLabelNames(tt.labels)
 			if len(got) != len(tt.want) {
 				t.Errorf("extractLabelNames() len = %d, want %d", len(got), len(tt.want))
+
 				return
 			}
 			for i, name := range tt.want {
@@ -370,6 +371,7 @@ func TestMapAssignees(t *testing.T) {
 			got := mapAssignees(tt.assignees)
 			if len(got) != len(tt.want) {
 				t.Errorf("mapAssignees() len = %d, want %d", len(got), len(tt.want))
+
 				return
 			}
 			for i, p := range tt.want {
@@ -434,6 +436,7 @@ func TestMapComments(t *testing.T) {
 			got := mapComments(tt.comments)
 			if len(got) != tt.wantLen {
 				t.Errorf("mapComments() len = %d, want %d", len(got), tt.wantLen)
+
 				return
 			}
 
@@ -748,16 +751,19 @@ func TestProvider_Parse(t *testing.T) {
 			if tt.wantErr {
 				if err == nil {
 					t.Errorf("Parse(%q) expected error, got nil", tt.input)
+
 					return
 				}
 				if tt.errContains != "" && !strings.Contains(err.Error(), tt.errContains) {
 					t.Errorf("Parse(%q) error = %q, want to contain %q", tt.input, err.Error(), tt.errContains)
 				}
+
 				return
 			}
 
 			if err != nil {
 				t.Errorf("Parse(%q) unexpected error: %v", tt.input, err)
+
 				return
 			}
 
@@ -826,7 +832,10 @@ func TestNew(t *testing.T) {
 			t.Skipf("New() requires valid token: %v", err)
 		}
 
-		provider := p.(*Provider)
+		provider, ok := p.(*Provider)
+		if !ok {
+			t.Fatal("New did not return *Provider")
+		}
 		if !provider.config.DraftPR {
 			t.Error("DraftPR should be true when configured")
 		}
@@ -843,7 +852,10 @@ func TestNew(t *testing.T) {
 			t.Skipf("New() requires valid token: %v", err)
 		}
 
-		provider := p.(*Provider)
+		provider, ok := p.(*Provider)
+		if !ok {
+			t.Fatal("New did not return *Provider")
+		}
 
 		if provider.config.BranchPattern != "issue/{key}-{slug}" {
 			t.Errorf("BranchPattern = %q, want default", provider.config.BranchPattern)
@@ -865,7 +877,10 @@ func TestNew(t *testing.T) {
 			t.Skipf("New() requires valid token: %v", err)
 		}
 
-		provider := p.(*Provider)
+		provider, ok := p.(*Provider)
+		if !ok {
+			t.Fatal("New did not return *Provider")
+		}
 
 		if provider.config.TargetBranch != "develop" {
 			t.Errorf("TargetBranch = %q, want %q", provider.config.TargetBranch, "develop")
@@ -888,7 +903,10 @@ func TestNew(t *testing.T) {
 			t.Skipf("New() requires valid token: %v", err)
 		}
 
-		provider := p.(*Provider)
+		provider, ok := p.(*Provider)
+		if !ok {
+			t.Fatal("New did not return *Provider")
+		}
 
 		if provider.config.Comments == nil {
 			t.Fatal("Comments config should not be nil")

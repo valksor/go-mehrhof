@@ -51,5 +51,6 @@ func EvaluateGuards(ctx context.Context, wu *WorkUnit, guards []GuardFunc) bool 
 			return false
 		}
 	}
+
 	return true
 }

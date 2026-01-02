@@ -88,15 +88,23 @@ func TestWithTimeout(t *testing.T) {
 func TestWithEnv(t *testing.T) {
 	a := New()
 	aAgent := a.WithEnv("API_KEY", "secret123")
-	if aAgent.(*Agent).config.Environment["API_KEY"] != "secret123" {
-		t.Errorf("Environment[API_KEY] = %q, want %q", aAgent.(*Agent).config.Environment["API_KEY"], "secret123")
+	agent, ok := aAgent.(*Agent)
+	if !ok {
+		t.Fatal("WithEnv did not return *Agent")
+	}
+	if agent.config.Environment["API_KEY"] != "secret123" {
+		t.Errorf("Environment[API_KEY] = %q, want %q", agent.config.Environment["API_KEY"], "secret123")
 	}
 }
 
 func TestWithArgs(t *testing.T) {
 	a := New()
 	aAgent := a.WithArgs("--model", "gpt-4o")
-	cfg := aAgent.(*Agent).config
+	agent, ok := aAgent.(*Agent)
+	if !ok {
+		t.Fatal("WithArgs did not return *Agent")
+	}
+	cfg := agent.config
 
 	if len(cfg.Args) != 2 {
 		t.Errorf("Args length = %d, want 2", len(cfg.Args))
@@ -125,10 +133,14 @@ func TestMethodChaining(t *testing.T) {
 	if a.config.Timeout != 15*time.Minute {
 		t.Error("WithTimeout chain failed")
 	}
-	if aAgent.(*Agent).config.Environment["KEY1"] != "val1" {
+	typed, ok := aAgent.(*Agent)
+	if !ok {
+		t.Fatal("WithEnv did not return *Agent")
+	}
+	if typed.config.Environment["KEY1"] != "val1" {
 		t.Error("WithEnv(KEY1) chain failed")
 	}
-	if aAgent.(*Agent).config.Environment["KEY2"] != "val2" {
+	if typed.config.Environment["KEY2"] != "val2" {
 		t.Error("WithEnv(KEY2) chain failed")
 	}
 }
@@ -268,6 +280,7 @@ func TestRunWithCallback_NoCLI(t *testing.T) {
 	callbackCalled := false
 	cb := func(event agent.Event) error {
 		callbackCalled = true
+
 		return nil
 	}
 

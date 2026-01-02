@@ -3,6 +3,7 @@ package bitbucket
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
 
@@ -166,7 +167,7 @@ func (p *Provider) Fetch(ctx context.Context, id string) (*provider.WorkUnit, er
 	}
 
 	wu := &provider.WorkUnit{
-		ID:          fmt.Sprintf("%d", issue.ID),
+		ID:          strconv.Itoa(issue.ID),
 		ExternalID:  fmt.Sprintf("%s/%s#%d", workspace, repoSlug, issue.ID),
 		Provider:    ProviderName,
 		Title:       issue.Title,
@@ -184,7 +185,7 @@ func (p *Provider) Fetch(ctx context.Context, id string) (*provider.WorkUnit, er
 		},
 
 		// Naming fields
-		ExternalKey: fmt.Sprintf("%d", issue.ID),
+		ExternalKey: strconv.Itoa(issue.ID),
 		TaskType:    mapBitbucketKind(issue.Kind),
 		Slug:        naming.Slugify(issue.Title, 50),
 
@@ -326,7 +327,7 @@ func (p *Provider) List(ctx context.Context, opts provider.ListOptions) ([]*prov
 		}
 
 		result[i] = &provider.WorkUnit{
-			ID:          fmt.Sprintf("%d", issue.ID),
+			ID:          strconv.Itoa(issue.ID),
 			ExternalID:  fmt.Sprintf("%s/%s#%d", workspace, repoSlug, issue.ID),
 			Provider:    ProviderName,
 			Title:       issue.Title,
@@ -408,7 +409,7 @@ func (p *Provider) AddComment(ctx context.Context, workUnitID string, body strin
 	}
 
 	return &provider.Comment{
-		ID:        fmt.Sprintf("%d", comment.ID),
+		ID:        strconv.Itoa(comment.ID),
 		Body:      content,
 		CreatedAt: comment.CreatedOn,
 		UpdatedAt: comment.UpdatedOn,
@@ -449,6 +450,7 @@ func (p *Provider) UpdateStatus(ctx context.Context, workUnitID string, status p
 	}
 
 	_, err = p.client.UpdateIssueState(ctx, ref.IssueID, state)
+
 	return err
 }
 
@@ -547,13 +549,14 @@ func mapComments(comments []Comment) []provider.Comment {
 		}
 
 		result[i] = provider.Comment{
-			ID:        fmt.Sprintf("%d", c.ID),
+			ID:        strconv.Itoa(c.ID),
 			Body:      content,
 			CreatedAt: c.CreatedOn,
 			UpdatedAt: c.UpdatedOn,
 			Author:    author,
 		}
 	}
+
 	return result
 }
 

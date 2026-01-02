@@ -3,6 +3,7 @@ package update
 import (
 	"cmp"
 	"context"
+	"errors"
 	"fmt"
 	"runtime"
 	"strings"
@@ -69,7 +70,7 @@ func (c *Checker) Check(ctx context.Context, opts CheckOptions) (*UpdateStatus, 
 	}
 
 	if len(releases) == 0 {
-		return nil, fmt.Errorf("no releases found")
+		return nil, errors.New("no releases found")
 	}
 
 	// Find the latest release (stable or pre-release based on options)
@@ -82,11 +83,12 @@ func (c *Checker) Check(ctx context.Context, opts CheckOptions) (*UpdateStatus, 
 			continue // Skip pre-releases if not requested
 		}
 		latestRelease = r
+
 		break // First matching release is the latest (API returns in descending order)
 	}
 
 	if latestRelease == nil {
-		return nil, fmt.Errorf("no suitable release found")
+		return nil, errors.New("no suitable release found")
 	}
 
 	// Normalize version strings for comparison
@@ -163,6 +165,7 @@ func versionNewer(a, b string) bool {
 	if !strings.HasPrefix(b, "v") {
 		b = "v" + b
 	}
+
 	return semver.Compare(a, b) > 0
 }
 

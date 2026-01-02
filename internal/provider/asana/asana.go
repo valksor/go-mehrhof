@@ -84,6 +84,7 @@ func (p *Provider) Match(input string) bool {
 
 	// Check for bare GID pattern (long numeric string)
 	_, err := ParseReference(input)
+
 	return err == nil
 }
 
@@ -93,6 +94,7 @@ func (p *Provider) Parse(input string) (string, error) {
 	if err != nil {
 		return "", err
 	}
+
 	return ref.TaskGID, nil
 }
 
@@ -205,6 +207,7 @@ func (p *Provider) AddComment(ctx context.Context, id string, body string) error
 	if err != nil {
 		return fmt.Errorf("add comment to %s: %w", id, err)
 	}
+
 	return nil
 }
 
@@ -221,6 +224,7 @@ func (p *Provider) UpdateStatus(ctx context.Context, id string, status provider.
 		// but this requires project context
 		return nil
 	}
+
 	return nil
 }
 
@@ -338,6 +342,7 @@ func extractTagNames(tags []Tag) []string {
 	for _, tag := range tags {
 		names = append(names, tag.Name)
 	}
+
 	return names
 }
 
@@ -346,6 +351,7 @@ func extractProjectNames(projects []Project) []string {
 	for _, proj := range projects {
 		names = append(names, proj.Name)
 	}
+
 	return names
 }
 
@@ -358,6 +364,7 @@ func hasAnyTag(tags []Tag, tagNames []string) bool {
 			}
 		}
 	}
+
 	return false
 }
 
@@ -414,7 +421,7 @@ func buildSnapshotContent(task *Task) string {
 func (p *Provider) GetBranchSuggestion(task *provider.WorkUnit) string {
 	if p.config.BranchPattern == "" {
 		// Default pattern
-		return fmt.Sprintf("task/%s", task.ID)
+		return "task/" + task.ID
 	}
 
 	// Simple template replacement
@@ -439,6 +446,7 @@ func slugify(s string) string {
 		if r == ' ' || r == '-' || r == '_' {
 			return '-'
 		}
+
 		return -1
 	}, s)
 

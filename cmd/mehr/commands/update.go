@@ -76,6 +76,7 @@ func runUpdate(cmd *cobra.Command, args []string) error {
 		if errors.Is(err, update.ErrNoUpdateAvailable) {
 			display.Success("Already up to date")
 			fmt.Printf("Current version: %s\n", Version)
+
 			return nil
 		}
 		if errors.Is(err, update.ErrDevBuild) {
@@ -83,8 +84,10 @@ func runUpdate(cmd *cobra.Command, args []string) error {
 			fmt.Println("Update checks are not available for dev builds.")
 			fmt.Println("Install a release version to enable updates:")
 			fmt.Println("  https://github.com/valksor/go-mehrhof/releases")
+
 			return nil
 		}
+
 		return fmt.Errorf("check for updates: %w", err)
 	}
 
@@ -113,6 +116,7 @@ func runUpdate(cmd *cobra.Command, args []string) error {
 		}
 		if !confirmed {
 			fmt.Println(display.Muted("Update cancelled"))
+
 			return nil
 		}
 	}
@@ -141,6 +145,7 @@ func runUpdate(cmd *cobra.Command, args []string) error {
 	)
 	if err != nil {
 		spinner.StopWithError(fmt.Sprintf("Download failed: %v", err))
+
 		return err
 	}
 
@@ -158,6 +163,7 @@ func runUpdate(cmd *cobra.Command, args []string) error {
 
 	if err := installer.Install(downloadedPath); err != nil {
 		spinner.StopWithError(fmt.Sprintf("Installation failed: %v", err))
+
 		return err
 	}
 
@@ -178,5 +184,6 @@ func getChecksumsURL(_ context.Context, _ *update.Checker, status *update.Update
 
 	// Extract tag from status.LatestVersion
 	tag := status.LatestVersion
+
 	return fmt.Sprintf("https://github.com/valksor/go-mehrhof/releases/download/%s/checksums.txt", tag)
 }

@@ -87,6 +87,7 @@ func TestParseReference(t *testing.T) {
 			ref, err := ParseReference(tt.input)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("ParseReference() error = %v, wantErr %v", err, tt.wantErr)
+
 				return
 			}
 			if !tt.wantErr && ref.ID != tt.wantID {
@@ -485,6 +486,7 @@ func TestWrapAPIError(t *testing.T) {
 				if !tt.wantUnwrapped || tt.err != nil {
 					t.Errorf("wrapAPIError() = nil, want non-nil")
 				}
+
 				return
 			}
 			if tt.wantUnwrapped {
@@ -556,6 +558,7 @@ func findInStr(s, substr string) bool {
 			return true
 		}
 	}
+
 	return false
 }
 
@@ -877,6 +880,7 @@ func TestResolveToken(t *testing.T) {
 			got, err := ResolveToken(tt.configToken)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("ResolveToken() error = %v, wantErr %v", err, tt.wantErr)
+
 				return
 			}
 			if !tt.wantErr {

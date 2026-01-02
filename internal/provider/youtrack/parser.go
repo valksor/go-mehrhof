@@ -74,6 +74,7 @@ func extractHost(rawURL string) string {
 	if len(parts) >= 3 {
 		return parts[2]
 	}
+
 	return ""
 }
 

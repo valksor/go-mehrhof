@@ -113,6 +113,7 @@ func TestStartCommand_Flags(t *testing.T) {
 			flag := startCmd.Flags().Lookup(tt.flagName)
 			if flag == nil {
 				t.Errorf("flag %q not found", tt.flagName)
+
 				return
 			}
 
@@ -199,6 +200,7 @@ func TestStartCommand_RegisteredInRoot(t *testing.T) {
 	for _, cmd := range rootCmd.Commands() {
 		if cmd.Use == "start <reference>" {
 			found = true
+
 			break
 		}
 	}

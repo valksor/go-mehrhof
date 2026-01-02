@@ -21,11 +21,12 @@ func (c *Conductor) runLinters(ctx context.Context) string {
 	linters := registry.DetectForProject(workDir)
 
 	if len(linters) == 0 {
-		c.logVerbose("No linters detected for this project")
+		c.logVerbosef("No linters detected for this project")
+
 		return ""
 	}
 
-	c.logVerbose("Running %d linter(s): %s", len(linters), linterNames(linters))
+	c.logVerbosef("Running %d linter(s): %s", len(linters), linterNames(linters))
 
 	// Get changed files if git is available (only lint changed files for efficiency)
 	var files []string
@@ -69,5 +70,6 @@ func linterNames(linters []quality.Linter) string {
 	for i, l := range linters {
 		names[i] = l.Name()
 	}
+
 	return strings.Join(names, ", ")
 }

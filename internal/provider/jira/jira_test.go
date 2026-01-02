@@ -213,16 +213,19 @@ func TestParseReference(t *testing.T) {
 			if tt.wantErr {
 				if err == nil {
 					t.Errorf("ParseReference(%q) expected error, got nil", tt.input)
+
 					return
 				}
 				if tt.errContains != "" && !strings.Contains(err.Error(), tt.errContains) {
 					t.Errorf("ParseReference(%q) error = %q, want to contain %q", tt.input, err.Error(), tt.errContains)
 				}
+
 				return
 			}
 
 			if err != nil {
 				t.Errorf("ParseReference(%q) unexpected error: %v", tt.input, err)
+
 				return
 			}
 
@@ -951,6 +954,7 @@ func TestMapProviderStatusToJiraTransitions(t *testing.T) {
 			got := mapProviderStatusToJiraTransitions(tt.status)
 			if len(got) != len(tt.expected) {
 				t.Errorf("mapProviderStatusToJiraTransitions(%v) length = %d, want %d", tt.status, len(got), len(tt.expected))
+
 				return
 			}
 			for i := range got {
@@ -997,6 +1001,7 @@ func TestMapAssignees(t *testing.T) {
 			got := mapAssignees(tt.assignee)
 			if len(got) != tt.wantCount {
 				t.Errorf("mapAssignees() length = %d, want %d", len(got), tt.wantCount)
+
 				return
 			}
 			if tt.wantCount > 0 {
@@ -1080,6 +1085,7 @@ func TestMapComments(t *testing.T) {
 				if got != nil {
 					t.Errorf("mapComments() = %v, want nil", got)
 				}
+
 				return
 			}
 			if len(got) != tt.wantLen {
@@ -1148,6 +1154,7 @@ func TestMapAttachments(t *testing.T) {
 				if got != nil {
 					t.Errorf("mapAttachments() = %v, want nil", got)
 				}
+
 				return
 			}
 			if len(got) != tt.wantLen {
@@ -1207,6 +1214,7 @@ func TestBuildMetadata(t *testing.T) {
 			got := buildMetadata(tt.issue)
 			if len(got) != len(tt.wantKeys) {
 				t.Errorf("buildMetadata() keys = %v, want %v", got, tt.wantKeys)
+
 				return
 			}
 			for _, key := range tt.wantKeys {

@@ -103,6 +103,7 @@ func (a *WorkflowAdapter) ExecuteEffect(ctx context.Context, name string, wu *wo
 		if resp.Error != "" {
 			return fmt.Errorf("effect error: %s", resp.Error)
 		}
+
 		return fmt.Errorf("effect %s failed", name)
 	}
 
@@ -121,6 +122,7 @@ func (a *WorkflowAdapter) CreateGuardFunc(name string) workflow.GuardFunc {
 			// Guard errors are treated as failure
 			return false
 		}
+
 		return passed
 	}
 }
@@ -208,6 +210,7 @@ func (a *WorkflowAdapter) GetEffectInfo(name string) (EffectInfo, bool) {
 			return e, true
 		}
 	}
+
 	return EffectInfo{}, false
 }
 

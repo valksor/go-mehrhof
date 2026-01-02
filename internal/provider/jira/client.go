@@ -83,7 +83,7 @@ func ResolveToken(configToken string) (string, error) {
 // buildAPIURL constructs the full API URL for a given endpoint.
 func (c *Client) buildAPIURL(endpoint string) (string, error) {
 	if c.baseURL == "" {
-		return "", fmt.Errorf("base URL not set")
+		return "", errors.New("base URL not set")
 	}
 
 	// Clean base URL
@@ -91,7 +91,7 @@ func (c *Client) buildAPIURL(endpoint string) (string, error) {
 
 	// Add /rest/api if not present
 	if !strings.Contains(baseURL, "/rest/api") {
-		baseURL += fmt.Sprintf("/rest/api/%s", c.apiVersion)
+		baseURL += "/rest/api/" + c.apiVersion
 	}
 
 	return baseURL + endpoint, nil
@@ -102,6 +102,7 @@ func (c *Client) getAuthHeader() string {
 	if c.email != "" {
 		// Jira Cloud uses email + token as Basic Auth
 		auth := base64.StdEncoding.EncodeToString([]byte(c.email + ":" + c.token))
+
 		return "Basic " + auth
 	}
 	// Jira Server/Data Center may use PAT as Bearer
@@ -110,6 +111,7 @@ func (c *Client) getAuthHeader() string {
 	}
 	// Try Basic Auth with token as password
 	auth := base64.StdEncoding.EncodeToString([]byte(": " + c.token))
+
 	return "Basic " + auth
 }
 
@@ -164,7 +166,7 @@ func (c *Client) doRequest(ctx context.Context, method, endpoint string, body an
 
 // GetIssue fetches an issue by key.
 func (c *Client) GetIssue(ctx context.Context, issueKey string) (*Issue, error) {
-	endpoint := fmt.Sprintf("/issue/%s", issueKey)
+	endpoint := "/issue/" + issueKey
 
 	var response Issue
 	if err := c.doRequest(ctx, http.MethodGet, endpoint, nil, &response); err != nil {
@@ -200,7 +202,8 @@ func (c *Client) CreateIssue(ctx context.Context, input CreateIssueInput) (*Issu
 
 // UpdateIssue updates an existing issue.
 func (c *Client) UpdateIssue(ctx context.Context, issueKey string, input UpdateIssueInput) error {
-	endpoint := fmt.Sprintf("/issue/%s", issueKey)
+	endpoint := "/issue/" + issueKey
+
 	return c.doRequest(ctx, http.MethodPut, endpoint, input, nil)
 }
 
@@ -222,6 +225,7 @@ func (c *Client) DoTransition(ctx context.Context, issueKey, transitionID string
 	input := map[string]any{
 		"transition": map[string]string{"id": transitionID},
 	}
+
 	return c.doRequest(ctx, http.MethodPost, endpoint, input, nil)
 }
 
@@ -277,6 +281,7 @@ func (c *Client) DownloadAttachment(ctx context.Context, attachmentURL string) (
 
 	if resp.StatusCode != http.StatusOK {
 		defer func() { _ = resp.Body.Close() }()
+
 		return nil, "", wrapAPIError(&httpError{code: resp.StatusCode, message: "download failed"})
 	}
 

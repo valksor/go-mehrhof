@@ -45,7 +45,11 @@ func TestWithModel(t *testing.T) {
 
 func TestWithEnv(t *testing.T) {
 	a := New()
-	b := a.WithEnv("TEST_KEY", "test_value").(*Agent)
+	bAgent := a.WithEnv("TEST_KEY", "test_value")
+	b, ok := bAgent.(*Agent)
+	if !ok {
+		t.Fatal("WithEnv did not return *Agent")
+	}
 
 	// Original should not have the env var
 	if _, ok := a.config.Environment["TEST_KEY"]; ok {
@@ -60,7 +64,11 @@ func TestWithEnv(t *testing.T) {
 
 func TestWithEnv_APIKey(t *testing.T) {
 	a := New()
-	b := a.WithEnv("OPENROUTER_API_KEY", "test-key").(*Agent)
+	bAgent := a.WithEnv("OPENROUTER_API_KEY", "test-key")
+	b, ok := bAgent.(*Agent)
+	if !ok {
+		t.Fatal("WithEnv did not return *Agent")
+	}
 
 	if b.apiKey != "test-key" {
 		t.Errorf("WithEnv(OPENROUTER_API_KEY) apiKey = %q, want %q", b.apiKey, "test-key")
@@ -69,7 +77,11 @@ func TestWithEnv_APIKey(t *testing.T) {
 
 func TestWithArgs(t *testing.T) {
 	a := New()
-	b := a.WithArgs("--model", "openai/gpt-4").(*Agent)
+	bAgent := a.WithArgs("--model", "openai/gpt-4")
+	b, ok := bAgent.(*Agent)
+	if !ok {
+		t.Fatal("WithArgs did not return *Agent")
+	}
 
 	if len(a.config.Args) != 0 {
 		t.Error("WithArgs modified original agent")
@@ -152,6 +164,7 @@ func TestMetadata(t *testing.T) {
 	for _, m := range meta.Models {
 		if m.Default {
 			foundDefault = true
+
 			break
 		}
 	}
@@ -321,7 +334,11 @@ func TestNewWithConfig_HTTPClientTimeout(t *testing.T) {
 
 func TestWithEnv_MehrAPIKey(t *testing.T) {
 	a := New()
-	b := a.WithEnv("MEHR_OPENROUTER_API_KEY", "mehr-test-key").(*Agent)
+	bAgent := a.WithEnv("MEHR_OPENROUTER_API_KEY", "mehr-test-key")
+	b, ok := bAgent.(*Agent)
+	if !ok {
+		t.Fatal("WithEnv did not return *Agent")
+	}
 
 	if b.apiKey != "mehr-test-key" {
 		t.Errorf("WithEnv(MEHR_OPENROUTER_API_KEY) apiKey = %q, want %q", b.apiKey, "mehr-test-key")
@@ -332,7 +349,11 @@ func TestWithEnv_Chaining(t *testing.T) {
 	a := New()
 	a.config.Environment = map[string]string{"EXISTING": "value"}
 
-	b := a.WithEnv("NEW_KEY", "new_value").(*Agent)
+	bAgent := a.WithEnv("NEW_KEY", "new_value")
+	b, ok := bAgent.(*Agent)
+	if !ok {
+		t.Fatal("WithEnv did not return *Agent")
+	}
 
 	// Original should not have new key
 	if _, ok := a.config.Environment["NEW_KEY"]; ok {
@@ -358,7 +379,11 @@ func TestWithArgs_Chaining(t *testing.T) {
 	a := New()
 	a.config.Args = []string{"--existing"}
 
-	b := a.WithArgs("--new1", "--new2").(*Agent)
+	bAgent := a.WithArgs("--new1", "--new2")
+	b, ok := bAgent.(*Agent)
+	if !ok {
+		t.Fatal("WithArgs did not return *Agent")
+	}
 
 	// Original should be unchanged
 	if len(a.config.Args) != 1 {

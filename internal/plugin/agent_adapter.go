@@ -3,6 +3,7 @@ package plugin
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"time"
 
@@ -38,6 +39,7 @@ func (a *AgentAdapter) Name() string {
 	if a.manifest.Agent != nil {
 		return a.manifest.Agent.Name
 	}
+
 	return a.manifest.Name
 }
 
@@ -60,8 +62,10 @@ func (a *AgentAdapter) Available() error {
 		if resp.Error != "" {
 			return fmt.Errorf("agent error: %s", resp.Error)
 		}
-		return fmt.Errorf("agent not available")
+
+		return errors.New("agent not available")
 	}
+
 	return nil
 }
 
@@ -97,6 +101,7 @@ func (a *AgentAdapter) RunStream(ctx context.Context, prompt string) (<-chan age
 		})
 		if err != nil {
 			errCh <- fmt.Errorf("start agent run: %w", err)
+
 			return
 		}
 
@@ -105,6 +110,7 @@ func (a *AgentAdapter) RunStream(ctx context.Context, prompt string) (<-chan age
 			select {
 			case <-ctx.Done():
 				errCh <- ctx.Err()
+
 				return
 			case raw, ok := <-streamCh:
 				if !ok {
@@ -124,6 +130,7 @@ func (a *AgentAdapter) RunStream(ctx context.Context, prompt string) (<-chan age
 				case eventCh <- event:
 				case <-ctx.Done():
 					errCh <- ctx.Err()
+
 					return
 				}
 

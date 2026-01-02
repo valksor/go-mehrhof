@@ -42,6 +42,7 @@ func NewWithConfig(cfg agent.Config) *Agent {
 	if len(cfg.Command) == 0 {
 		cfg.Command = []string{"aider"}
 	}
+
 	return &Agent{
 		config: cfg,
 		parser: NewPlainTextParser(),
@@ -171,6 +172,7 @@ func (a *Agent) executeStream(ctx context.Context, prompt string, eventCh chan<-
 		select {
 		case <-timeoutCtx.Done():
 			_ = cmd.Process.Kill()
+
 			return timeoutCtx.Err()
 		default:
 		}
@@ -214,9 +216,11 @@ func (a *Agent) executeStream(ctx context.Context, prompt string, eventCh chan<-
 				if stderrBytes != "" {
 					return fmt.Errorf("aider exited with code %d: %s", exitErr.ExitCode(), stderrBytes)
 				}
+
 				return fmt.Errorf("aider exited with code %d", exitErr.ExitCode())
 			}
 		}
+
 		return fmt.Errorf("wait error: %w", err)
 	}
 
@@ -258,6 +262,7 @@ func (a *Agent) SetParser(p agent.Parser) {
 func (a *Agent) WithWorkDir(dir string) *Agent {
 	newConfig := a.config
 	newConfig.WorkDir = dir
+
 	return &Agent{
 		config: newConfig,
 		parser: a.parser,
@@ -269,6 +274,7 @@ func (a *Agent) WithWorkDir(dir string) *Agent {
 func (a *Agent) WithTimeout(d time.Duration) *Agent {
 	newConfig := a.config
 	newConfig.Timeout = d
+
 	return &Agent{
 		config: newConfig,
 		parser: a.parser,
@@ -289,6 +295,7 @@ func (a *Agent) WithEnv(key, value string) agent.Agent {
 		newConfig.Environment[k] = v
 	}
 	newConfig.Environment[key] = value
+
 	return &Agent{
 		config: newConfig,
 		parser: a.parser,
@@ -302,6 +309,7 @@ func (a *Agent) WithArgs(args ...string) agent.Agent {
 	newArgs := make([]string, len(a.config.Args), len(a.config.Args)+len(args))
 	copy(newArgs, a.config.Args)
 	newConfig.Args = append(newArgs, args...)
+
 	return &Agent{
 		config: newConfig,
 		parser: a.parser,
@@ -397,6 +405,7 @@ func summarizeAiderOutput(text string) string {
 			if len(line) > 200 {
 				return line[:200] + "..."
 			}
+
 			return line
 		}
 	}

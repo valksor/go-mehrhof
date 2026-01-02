@@ -13,7 +13,7 @@ func Benchmark_Cache_Get_NoExpiration(b *testing.B) {
 	c.Set("key", "value", 1*time.Hour)
 
 	b.ReportAllocs()
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		_, _ = c.Get("key")
 	}
 }
@@ -24,7 +24,7 @@ func Benchmark_Cache_Get_WithExpiration(b *testing.B) {
 	c.Set("key", "value", 100*time.Millisecond)
 
 	b.ReportAllocs()
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		_, _ = c.Get("key")
 	}
 }
@@ -35,7 +35,7 @@ func Benchmark_Cache_Get_Miss(b *testing.B) {
 	c.Set("key", "value", 1*time.Hour)
 
 	b.ReportAllocs()
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		_, _ = c.Get("notfound")
 	}
 }
@@ -45,14 +45,14 @@ func Benchmark_Cache_Get_Miss(b *testing.B) {
 func Benchmark_Cache_Get_Expired(b *testing.B) {
 	c := New()
 	// Set entries that will expire
-	for i := 0; i < 100; i++ {
+	for i := range 100 {
 		c.Set(string(rune('a'+i)), "value", 1*time.Millisecond)
 	}
 	// Wait for expiration
 	time.Sleep(10 * time.Millisecond)
 
 	b.ReportAllocs()
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		// These will all be expired but lazy expiration avoids write locks
 		_, _ = c.Get("a")
 	}
@@ -63,7 +63,7 @@ func Benchmark_Cache_Set(b *testing.B) {
 	c := New()
 	b.ReportAllocs()
 
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		c.Set("key", "value", 1*time.Hour)
 	}
 }
@@ -72,7 +72,7 @@ func Benchmark_Cache_Set(b *testing.B) {
 func Benchmark_Cache_GetSet_Concurrent(b *testing.B) {
 	c := New()
 	// Pre-populate some entries
-	for i := 0; i < 100; i++ {
+	for i := range 100 {
 		c.Set(string(rune(i)), "value", 1*time.Hour)
 	}
 
@@ -108,7 +108,7 @@ func Benchmark_Cache_Get_ConcurrentContention(b *testing.B) {
 func Benchmark_Cache_ExpiredWithContention(b *testing.B) {
 	c := New()
 	// Create entries that will be expired
-	for i := 0; i < 100; i++ {
+	for i := range 100 {
 		c.Set(string(rune('a'+i)), "value", -1*time.Hour) // Already expired
 	}
 
@@ -128,7 +128,7 @@ func Benchmark_Cache_Cleanup(b *testing.B) {
 	b.StopTimer()
 	c := New()
 	// Add many entries, half expired
-	for i := 0; i < 1000; i++ {
+	for i := range 1000 {
 		ttl := 1 * time.Hour
 		if i%2 == 0 {
 			ttl = -1 * time.Hour // Expired
@@ -138,7 +138,7 @@ func Benchmark_Cache_Cleanup(b *testing.B) {
 	b.StartTimer()
 
 	b.ReportAllocs()
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		c.Cleanup()
 	}
 }
@@ -146,7 +146,7 @@ func Benchmark_Cache_Cleanup(b *testing.B) {
 // Benchmark_Cache_New benchmarks cache creation.
 func Benchmark_Cache_New(b *testing.B) {
 	b.ReportAllocs()
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		_ = New()
 	}
 }
@@ -156,7 +156,7 @@ func Benchmark_Cache_EnableDisable(b *testing.B) {
 	c := New()
 	b.ReportAllocs()
 
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		c.Enable()
 		c.Disable()
 	}
@@ -165,12 +165,12 @@ func Benchmark_Cache_EnableDisable(b *testing.B) {
 // Benchmark_Cache_Size benchmarks getting cache size.
 func Benchmark_Cache_Size(b *testing.B) {
 	c := New()
-	for i := 0; i < 100; i++ {
+	for i := range 100 {
 		c.Set(string(rune(i)), "value", 1*time.Hour)
 	}
 
 	b.ReportAllocs()
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		_ = c.Size()
 	}
 }
@@ -179,13 +179,13 @@ func Benchmark_Cache_Size(b *testing.B) {
 func Benchmark_Cache_Delete(b *testing.B) {
 	b.StopTimer()
 	c := New()
-	for i := 0; i < 100; i++ {
+	for i := range 100 {
 		c.Set(string(rune(i)), "value", 1*time.Hour)
 	}
 	b.StartTimer()
 
 	b.ReportAllocs()
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		c.Delete("key50")
 		c.Set("key50", "value", 1*time.Hour) // Re-add for next iteration
 	}
@@ -198,9 +198,9 @@ func Benchmark_Cache_Clear(b *testing.B) {
 	b.StartTimer()
 	b.ReportAllocs()
 
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		// Populate
-		for j := 0; j < 100; j++ {
+		for j := range 100 {
 			c.Set(string(rune(j)), "value", 1*time.Hour)
 		}
 		c.Clear()
@@ -212,7 +212,7 @@ func Benchmark_Cache_MixedWorkload(b *testing.B) {
 	c := New()
 	// Seed with initial data
 	keys := make([]string, 100)
-	for i := 0; i < 100; i++ {
+	for i := range 100 {
 		keys[i] = string(rune('a' + i))
 		c.Set(keys[i], "value", 1*time.Hour)
 	}
@@ -221,9 +221,9 @@ func Benchmark_Cache_MixedWorkload(b *testing.B) {
 	b.ReportAllocs()
 
 	var wg sync.WaitGroup
-	for g := 0; g < 4; g++ { // 4 goroutines
+	for range 4 { // 4 goroutines
 		wg.Go(func() {
-			for i := 0; i < b.N/4; i++ {
+			for i := range b.N / 4 {
 				switch i % 5 {
 				case 0, 1:
 					// 40% reads (hot keys)

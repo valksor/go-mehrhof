@@ -20,6 +20,7 @@ func (r *Ref) String() string {
 	if r.Owner != "" && r.Repo != "" {
 		return fmt.Sprintf("%s/%s#%d", r.Owner, r.Repo, r.IssueNumber)
 	}
+
 	return fmt.Sprintf("#%d", r.IssueNumber)
 }
 
@@ -52,6 +53,7 @@ func ParseReference(input string) (*Ref, error) {
 		if err != nil {
 			return nil, fmt.Errorf("%w: invalid issue number: %s", ErrInvalidReference, matches[3])
 		}
+
 		return &Ref{
 			Owner:       matches[1],
 			Repo:        matches[2],
@@ -66,6 +68,7 @@ func ParseReference(input string) (*Ref, error) {
 		if err != nil {
 			return nil, fmt.Errorf("%w: invalid issue number: %s", ErrInvalidReference, matches[1])
 		}
+
 		return &Ref{
 			IssueNumber: num,
 			IsExplicit:  false,
@@ -80,7 +83,7 @@ func ParseReference(input string) (*Ref, error) {
 //   - git@github.com:owner/repo.git
 //   - https://github.com/owner/repo.git
 //   - https://github.com/owner/repo
-func DetectRepository(remoteURL string) (owner, repo string, err error) {
+func DetectRepository(remoteURL string) (string, string, error) {
 	remoteURL = strings.TrimSpace(remoteURL)
 	if remoteURL == "" {
 		return "", "", ErrRepoNotDetected
@@ -131,6 +134,7 @@ func ExtractLinkedIssues(body string) []int {
 			issues = append(issues, num)
 		}
 	}
+
 	return issues
 }
 
@@ -149,6 +153,7 @@ func ExtractImageURLs(body string) []string {
 			urls = append(urls, url)
 		}
 	}
+
 	return urls
 }
 

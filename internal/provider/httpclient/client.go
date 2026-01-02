@@ -57,6 +57,7 @@ func (e *HTTPError) Error() string {
 	if e.Message != "" {
 		return fmt.Sprintf("HTTP %d: %s", e.Code, e.Message)
 	}
+
 	return fmt.Sprintf("HTTP %d", e.Code)
 }
 
@@ -107,6 +108,7 @@ func ShouldRetry(err error) bool {
 	var httpErr interface{ HTTPStatusCode() int }
 	if errors.As(err, &httpErr) {
 		code := httpErr.HTTPStatusCode()
+
 		return code == http.StatusTooManyRequests ||
 			code == http.StatusServiceUnavailable ||
 			code == http.StatusGatewayTimeout ||
@@ -168,6 +170,7 @@ func NewHTTPClient() *http.Client {
 			Transport: defaultTransport(),
 		}
 	})
+
 	return sharedClient
 }
 

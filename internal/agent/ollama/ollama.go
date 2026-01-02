@@ -47,6 +47,7 @@ func NewWithConfig(cfg agent.Config) *Agent {
 	if len(cfg.Command) == 0 {
 		cfg.Command = []string{"ollama"}
 	}
+
 	return &Agent{
 		config: cfg,
 		model:  DefaultModel,
@@ -58,6 +59,7 @@ func NewWithConfig(cfg agent.Config) *Agent {
 func NewWithModel(model string) *Agent {
 	a := New()
 	a.model = model
+
 	return a
 }
 
@@ -184,6 +186,7 @@ func (a *Agent) executeStream(ctx context.Context, prompt string, eventCh chan<-
 		select {
 		case <-timeoutCtx.Done():
 			_ = cmd.Process.Kill()
+
 			return timeoutCtx.Err()
 		default:
 		}
@@ -227,9 +230,11 @@ func (a *Agent) executeStream(ctx context.Context, prompt string, eventCh chan<-
 				if stderrBytes != "" {
 					return fmt.Errorf("ollama exited with code %d: %s", exitErr.ExitCode(), stderrBytes)
 				}
+
 				return fmt.Errorf("ollama exited with code %d", exitErr.ExitCode())
 			}
 		}
+
 		return fmt.Errorf("wait error: %w", err)
 	}
 
@@ -246,6 +251,7 @@ func (a *Agent) buildArgs(prompt string) []string {
 	for i, arg := range a.config.Args {
 		if arg == "--model" && i+1 < len(a.config.Args) {
 			model = a.config.Args[i+1]
+
 			break
 		}
 	}
@@ -257,6 +263,7 @@ func (a *Agent) buildArgs(prompt string) []string {
 	for i := 0; i < len(a.config.Args); i++ {
 		if a.config.Args[i] == "--model" && i+1 < len(a.config.Args) {
 			i++ // Skip the model value
+
 			continue
 		}
 		args = append(args, a.config.Args[i])
@@ -288,6 +295,7 @@ func (a *Agent) GetModel() string {
 func (a *Agent) WithWorkDir(dir string) *Agent {
 	newConfig := a.config
 	newConfig.WorkDir = dir
+
 	return &Agent{
 		config: newConfig,
 		model:  a.model,
@@ -300,6 +308,7 @@ func (a *Agent) WithWorkDir(dir string) *Agent {
 func (a *Agent) WithTimeout(d time.Duration) *Agent {
 	newConfig := a.config
 	newConfig.Timeout = d
+
 	return &Agent{
 		config: newConfig,
 		model:  a.model,
@@ -310,6 +319,7 @@ func (a *Agent) WithTimeout(d time.Duration) *Agent {
 // WithModel returns a new Agent instance with a different model.
 func (a *Agent) WithModel(model string) *Agent {
 	newConfig := a.config
+
 	return &Agent{
 		config: newConfig,
 		model:  model,
@@ -331,6 +341,7 @@ func (a *Agent) WithEnv(key, value string) agent.Agent {
 		newConfig.Environment[k] = v
 	}
 	newConfig.Environment[key] = value
+
 	return &Agent{
 		config: newConfig,
 		model:  a.model,
@@ -345,6 +356,7 @@ func (a *Agent) WithArgs(args ...string) agent.Agent {
 	newArgs := make([]string, len(a.config.Args), len(a.config.Args)+len(args))
 	copy(newArgs, a.config.Args)
 	newConfig.Args = append(newArgs, args...)
+
 	return &Agent{
 		config: newConfig,
 		model:  a.model,
@@ -418,6 +430,7 @@ func summarizeOllamaOutput(text string) string {
 			if len(line) > 200 {
 				return line[:200] + "..."
 			}
+
 			return line
 		}
 	}

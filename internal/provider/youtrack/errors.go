@@ -20,6 +20,7 @@ func (e *httpError) Error() string {
 	if e.message != "" {
 		return fmt.Sprintf("HTTP %d: %s", e.code, e.message)
 	}
+
 	return fmt.Sprintf("HTTP %d", e.code)
 }
 

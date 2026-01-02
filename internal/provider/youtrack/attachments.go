@@ -12,5 +12,6 @@ func (p *Provider) DownloadAttachment(ctx context.Context, workUnitID, attachmen
 	if err != nil {
 		return nil, fmt.Errorf("download attachment: %w", err)
 	}
+
 	return rc, nil
 }

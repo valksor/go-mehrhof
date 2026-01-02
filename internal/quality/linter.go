@@ -63,6 +63,7 @@ func NewRegistry() *Registry {
 	r.Register(NewGolangCI())
 	r.Register(NewESLint())
 	r.Register(NewRuff())
+
 	return r
 }
 
@@ -79,6 +80,7 @@ func (r *Registry) Available() []Linter {
 			available = append(available, l)
 		}
 	}
+
 	return available
 }
 
@@ -125,6 +127,7 @@ func (r *Registry) RunAll(ctx context.Context, workDir string, files []string) [
 				Linter: l.Name(),
 				Error:  err,
 			})
+
 			continue
 		}
 		results = append(results, result)
@@ -141,7 +144,10 @@ func FormatResults(results []*Result) string {
 	}
 
 	var sb fmt.Stringer = &stringBuilder{}
-	b := sb.(*stringBuilder)
+	b, ok := sb.(*stringBuilder)
+	if !ok {
+		return ""
+	}
 
 	b.WriteString("## Automated Lint Results\n\n")
 
@@ -150,6 +156,7 @@ func FormatResults(results []*Result) string {
 		if r.Error != nil {
 			b.WriteString(fmt.Sprintf("### %s (error)\n", r.Linter))
 			b.WriteString(fmt.Sprintf("Failed to run: %v\n\n", r.Error))
+
 			continue
 		}
 
@@ -158,6 +165,7 @@ func FormatResults(results []*Result) string {
 		if len(r.Issues) == 0 {
 			b.WriteString(fmt.Sprintf("### %s ✓\n", r.Linter))
 			b.WriteString("No issues found.\n\n")
+
 			continue
 		}
 
@@ -196,6 +204,7 @@ func FormatResults(results []*Result) string {
 // Helper to check if a file exists.
 func fileExists(path string) bool {
 	_, err := os.Stat(path)
+
 	return err == nil
 }
 

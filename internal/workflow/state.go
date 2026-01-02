@@ -139,12 +139,14 @@ var StateRegistry = map[State]StateInfo{
 // IsPhaseState returns true if the state is a main phase.
 func IsPhaseState(s State) bool {
 	info, ok := StateRegistry[s]
+
 	return ok && info.Phase
 }
 
 // IsTerminal returns true if the state is terminal.
 func IsTerminal(s State) bool {
 	info, ok := StateRegistry[s]
+
 	return ok && info.Terminal
 }
 

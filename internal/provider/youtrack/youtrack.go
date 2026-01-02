@@ -40,6 +40,7 @@ func New(_ context.Context, cfg provider.Config) (any, error) {
 // Match checks if input matches a YouTrack reference.
 func (p *Provider) Match(input string) bool {
 	input = strings.TrimSpace(input)
+
 	return strings.HasPrefix(input, "youtrack:") ||
 		strings.HasPrefix(input, "yt:") ||
 		urlPattern.MatchString(input) ||
@@ -52,6 +53,7 @@ func (p *Provider) Parse(input string) (string, error) {
 	if err != nil {
 		return "", err
 	}
+
 	return ref.ID, nil
 }
 
@@ -143,7 +145,7 @@ func (p *Provider) issueToWorkUnit(issue *Issue, comments []Comment, attachments
 	// Build URL
 	issueURL := ""
 	if issue.Project.ShortName != "" {
-		issueURL = fmt.Sprintf("https://youtrack.cloud/issue/%s", issue.IDReadable)
+		issueURL = "https://youtrack.cloud/issue/" + issue.IDReadable
 	}
 
 	return &provider.WorkUnit{
@@ -186,6 +188,7 @@ func (p *Provider) extractAssignees(issue *Issue) []provider.Person {
 			return mapAssigneeValue(cf.Value)
 		}
 	}
+
 	return []provider.Person{}
 }
 
@@ -196,6 +199,7 @@ func (p *Provider) mapPriority(issue *Issue) provider.Priority {
 			return mapPriorityValue(cf.Value)
 		}
 	}
+
 	return provider.PriorityNormal
 }
 
@@ -211,6 +215,7 @@ func (p *Provider) mapStatus(issue *Issue) provider.Status {
 			return mapStatusValue(cf.Value)
 		}
 	}
+
 	return provider.StatusOpen
 }
 
@@ -223,6 +228,7 @@ func (p *Provider) inferTaskType(issue *Issue) string {
 			}
 		}
 	}
+
 	return "issue"
 }
 
@@ -298,6 +304,7 @@ func mapAssigneeValue(value interface{}) []provider.Person {
 	if len(result) == 0 {
 		return []provider.Person{}
 	}
+
 	return result
 }
 
@@ -309,6 +316,7 @@ func extractNameFromValue(value interface{}) string {
 	case string:
 		return v
 	}
+
 	return ""
 }
 
@@ -319,6 +327,7 @@ func getValue(m map[string]interface{}, key string) string {
 			return s
 		}
 	}
+
 	return ""
 }
 

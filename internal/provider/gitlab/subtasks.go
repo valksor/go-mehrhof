@@ -3,6 +3,7 @@ package gitlab
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/valksor/go-mehrhof/internal/naming"
@@ -50,9 +51,9 @@ func (p *Provider) FetchSubtasks(ctx context.Context, workUnitID string) ([]*pro
 	// Determine display project path
 	displayProject := projectPath
 	if displayProject == "" && ref.ProjectID > 0 {
-		displayProject = fmt.Sprintf("%d", ref.ProjectID)
+		displayProject = strconv.FormatInt(ref.ProjectID, 10)
 	} else if displayProject == "" && issue.ProjectID != 0 {
-		displayProject = fmt.Sprintf("%d", issue.ProjectID)
+		displayProject = strconv.FormatInt(issue.ProjectID, 10)
 	}
 
 	// Convert to WorkUnits

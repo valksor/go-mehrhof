@@ -81,6 +81,7 @@ func EnableDebug() {
 func Logger() *slog.Logger {
 	mu.RLock()
 	defer mu.RUnlock()
+
 	return logger
 }
 

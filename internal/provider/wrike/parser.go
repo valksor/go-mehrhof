@@ -17,6 +17,7 @@ func (r *Ref) String() string {
 	if r.Permalink != "" {
 		return r.Permalink
 	}
+
 	return r.TaskID
 }
 
@@ -79,5 +80,6 @@ func ExtractNumericID(permalink string) string {
 	if matches := permalinkPattern.FindStringSubmatch(permalink); matches != nil {
 		return matches[1]
 	}
+
 	return ""
 }

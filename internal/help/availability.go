@@ -74,6 +74,7 @@ func IsAvailable(cmdName string, ctx *HelpContext) bool {
 		// Unknown commands are always available
 		return true
 	}
+
 	return rule.Available(ctx)
 }
 
@@ -83,5 +84,6 @@ func GetReason(cmdName string) string {
 	if !ok {
 		return ""
 	}
+
 	return rule.Reason
 }

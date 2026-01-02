@@ -31,6 +31,7 @@ func IsValidStep(s string) bool {
 			return true
 		}
 	}
+
 	return false
 }
 

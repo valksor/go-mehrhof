@@ -57,6 +57,7 @@ func TestUpdateCommand_Flags(t *testing.T) {
 			flag := updateCmd.Flags().Lookup(tt.flagName)
 			if flag == nil {
 				t.Errorf("flag %q not found", tt.flagName)
+
 				return
 			}
 
@@ -115,6 +116,7 @@ func TestUpdateCommand_RegisteredInRoot(t *testing.T) {
 	for _, cmd := range rootCmd.Commands() {
 		if cmd.Use == "update" {
 			found = true
+
 			break
 		}
 	}

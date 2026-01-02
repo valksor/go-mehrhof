@@ -2,6 +2,7 @@ package provider
 
 import (
 	"context"
+	"errors"
 	"testing"
 	"time"
 )
@@ -299,7 +300,7 @@ func TestRegistryRegister(t *testing.T) {
 		Schemes: []string{"test://"},
 	}
 	factory := func(ctx context.Context, cfg Config) (any, error) {
-		return nil, nil
+		return nil, errors.New("test provider not implemented")
 	}
 
 	err := r.Register(info, factory)
@@ -324,7 +325,9 @@ func TestRegistryRegisterDuplicate(t *testing.T) {
 	r := NewRegistry()
 
 	info := ProviderInfo{Name: "test"}
-	factory := func(ctx context.Context, cfg Config) (any, error) { return nil, nil }
+	factory := func(ctx context.Context, cfg Config) (any, error) {
+		return nil, errors.New("test provider not implemented")
+	}
 
 	if err := r.Register(info, factory); err != nil {
 		t.Fatalf("Register first: %v", err)
@@ -340,7 +343,9 @@ func TestRegistryGet(t *testing.T) {
 	r := NewRegistry()
 
 	info := ProviderInfo{Name: "test"}
-	factory := func(ctx context.Context, cfg Config) (any, error) { return nil, nil }
+	factory := func(ctx context.Context, cfg Config) (any, error) {
+		return nil, errors.New("test provider not implemented")
+	}
 	if err := r.Register(info, factory); err != nil {
 		t.Fatalf("Register(test): %v", err)
 	}
@@ -370,7 +375,7 @@ func TestRegistryGetByScheme(t *testing.T) {
 		Name:    "test",
 		Schemes: []string{"test://", "t://"},
 	}
-	factory := func(ctx context.Context, cfg Config) (any, error) { return nil, nil }
+	factory := func(ctx context.Context, cfg Config) (any, error) { return nil, nil } //nolint:nilnil // test mock
 	if err := r.Register(info, factory); err != nil {
 		t.Fatalf("Register(test): %v", err)
 	}
@@ -405,7 +410,7 @@ func TestRegistryGetBySchemeNotFound(t *testing.T) {
 func TestRegistryList(t *testing.T) {
 	r := NewRegistry()
 
-	factory := func(ctx context.Context, cfg Config) (any, error) { return nil, nil }
+	factory := func(ctx context.Context, cfg Config) (any, error) { return nil, nil } //nolint:nilnil // test mock
 
 	if err := r.Register(ProviderInfo{Name: "low", Priority: 1}, factory); err != nil {
 		t.Fatalf("Register(low): %v", err)
@@ -440,6 +445,7 @@ func TestRegistryCreate(t *testing.T) {
 	created := false
 	factory := func(ctx context.Context, cfg Config) (any, error) {
 		created = true
+
 		return "instance", nil
 	}
 
@@ -489,7 +495,7 @@ func (m *mockIdentifier) Parse(input string) (string, error) {
 type mockReader struct{}
 
 func (m *mockReader) Fetch(ctx context.Context, id string) (*WorkUnit, error) {
-	return nil, nil
+	return nil, nil //nolint:nilnil // test mock
 }
 
 // mockLister implements Lister interface.
@@ -724,6 +730,7 @@ func containsHelper(s, substr string) bool {
 			return true
 		}
 	}
+
 	return false
 }
 

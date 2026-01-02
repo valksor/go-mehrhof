@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"os/exec"
@@ -64,13 +65,14 @@ func runReview(cmd *cobra.Command, args []string) error {
 	activeTask := cond.GetActiveTask()
 	if activeTask == nil {
 		fmt.Print(display.NoActiveTaskError())
-		return fmt.Errorf("no active task")
+
+		return errors.New("no active task")
 	}
 
 	// Get workspace
 	ws := cond.GetWorkspace()
 	if ws == nil {
-		return fmt.Errorf("workspace not available")
+		return errors.New("workspace not available")
 	}
 
 	// Check if review tool is available
@@ -168,5 +170,6 @@ func getNextReviewFilename(workDir string) string {
 			return filename
 		}
 	}
+
 	return fmt.Sprintf("review-%d.txt", time.Now().Unix())
 }

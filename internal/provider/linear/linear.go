@@ -76,6 +76,7 @@ func (p *Provider) Parse(input string) (string, error) {
 	if err != nil {
 		return "", err
 	}
+
 	return ref.IssueID, nil
 }
 
@@ -207,6 +208,7 @@ func mapProviderPriorityToLinear(priority provider.Priority) *int {
 	case provider.PriorityLow:
 		p = 4 // Low
 	}
+
 	return &p
 }
 
@@ -237,6 +239,7 @@ func extractLabelNames(labels []*Label) []string {
 	for i, label := range labels {
 		names[i] = label.Name
 	}
+
 	return names
 }
 
@@ -245,6 +248,7 @@ func mapAssignees(assignee *User) []provider.Person {
 	if assignee == nil {
 		return []provider.Person{}
 	}
+
 	return []provider.Person{
 		{
 			ID:    assignee.ID,
@@ -277,6 +281,7 @@ func mapComments(comments []*Comment) []provider.Comment {
 			Author:    author,
 		})
 	}
+
 	return result
 }
 

@@ -51,6 +51,7 @@ func (l *Loader) Load(ctx context.Context, manifest *Manifest) (*Process, error)
 	if ok {
 		if proc.started && !proc.stopping {
 			l.mu.Unlock()
+
 			return proc, nil
 		}
 		// Previous process is stopping, wait for it
@@ -72,6 +73,7 @@ func (l *Loader) Load(ctx context.Context, manifest *Manifest) (*Process, error)
 	if proc, ok := l.processes[manifest.Name]; ok {
 		if proc.started && !proc.stopping {
 			l.mu.Unlock()
+
 			return proc, nil
 		}
 	}
@@ -80,11 +82,13 @@ func (l *Loader) Load(ctx context.Context, manifest *Manifest) (*Process, error)
 	proc, err := startProcess(ctx, manifest)
 	if err != nil {
 		l.mu.Unlock()
+
 		return nil, err
 	}
 
 	l.processes[manifest.Name] = proc
 	l.mu.Unlock()
+
 	return proc, nil
 }
 
@@ -93,6 +97,7 @@ func (l *Loader) Get(name string) (*Process, bool) {
 	l.mu.RLock()
 	defer l.mu.RUnlock()
 	proc, ok := l.processes[name]
+
 	return proc, ok
 }
 
@@ -102,6 +107,7 @@ func (l *Loader) Unload(ctx context.Context, name string) error {
 	proc, ok := l.processes[name]
 	if !ok {
 		l.mu.Unlock()
+
 		return nil
 	}
 	delete(l.processes, name)
@@ -129,5 +135,6 @@ func (l *Loader) UnloadAll(ctx context.Context) error {
 	if len(errs) > 0 {
 		return errors.Join(errs...)
 	}
+
 	return nil
 }

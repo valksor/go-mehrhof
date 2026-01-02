@@ -53,6 +53,7 @@ func TestStatusCommand_Flags(t *testing.T) {
 			flag := statusCmd.Flags().Lookup(tt.flagName)
 			if flag == nil {
 				t.Errorf("flag %q not found", tt.flagName)
+
 				return
 			}
 
@@ -153,6 +154,7 @@ func TestStatusCommand_RegisteredInRoot(t *testing.T) {
 	for _, cmd := range rootCmd.Commands() {
 		if cmd.Use == "status" {
 			found = true
+
 			break
 		}
 	}
@@ -171,6 +173,7 @@ func TestStatusCommand_HasAliases(t *testing.T) {
 	for _, alias := range statusCmd.Aliases {
 		if alias == "st" {
 			found = true
+
 			break
 		}
 	}

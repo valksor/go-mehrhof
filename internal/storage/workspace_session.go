@@ -79,6 +79,7 @@ func (w *Workspace) ListSessions(taskID string) ([]*Session, error) {
 		if os.IsNotExist(err) {
 			return nil, nil
 		}
+
 		return nil, err
 	}
 
@@ -93,6 +94,7 @@ func (w *Workspace) ListSessions(taskID string) ([]*Session, error) {
 		}
 		sessions = append(sessions, session)
 	}
+
 	return sessions, nil
 }
 
@@ -156,6 +158,7 @@ func (w *Workspace) PendingQuestionPath(taskID string) string {
 // HasPendingQuestion checks if there's a pending question.
 func (w *Workspace) HasPendingQuestion(taskID string) bool {
 	_, err := os.Stat(w.PendingQuestionPath(taskID))
+
 	return err == nil
 }
 
@@ -165,6 +168,7 @@ func (w *Workspace) SavePendingQuestion(taskID string, q *PendingQuestion) error
 	if err != nil {
 		return fmt.Errorf("marshal question: %w", err)
 	}
+
 	return os.WriteFile(w.PendingQuestionPath(taskID), data, 0o644)
 }
 
@@ -178,6 +182,7 @@ func (w *Workspace) LoadPendingQuestion(taskID string) (*PendingQuestion, error)
 	if err := yaml.Unmarshal(data, &q); err != nil {
 		return nil, fmt.Errorf("parse question: %w", err)
 	}
+
 	return &q, nil
 }
 
@@ -187,5 +192,6 @@ func (w *Workspace) ClearPendingQuestion(taskID string) error {
 	if os.IsNotExist(err) {
 		return nil
 	}
+
 	return err
 }

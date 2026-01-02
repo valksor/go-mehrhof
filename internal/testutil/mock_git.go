@@ -2,6 +2,7 @@
 package testutil
 
 import (
+	"errors"
 	"fmt"
 	"path/filepath"
 	"sync"
@@ -100,6 +101,7 @@ func (m *MockGit) GetMainWorktreePath() (string, error) {
 	if m.isWorktree {
 		return filepath.Dir(m.RootDir), nil
 	}
+
 	return m.RootDir, nil
 }
 
@@ -124,6 +126,7 @@ func (m *MockGit) CreateBranch(name, base string) error {
 
 	m.Branches[name] = true
 	m.CreatesBranch = append(m.CreatesBranch, name)
+
 	return nil
 }
 
@@ -138,6 +141,7 @@ func (m *MockGit) Checkout(name string) error {
 
 	m.currentBranch = name
 	m.Checkouts = append(m.Checkouts, name)
+
 	return nil
 }
 
@@ -148,6 +152,7 @@ func (m *MockGit) DeleteBranch(name string, force bool) error {
 
 	delete(m.Branches, name)
 	m.DeletesBranch = append(m.DeletesBranch, name)
+
 	return nil
 }
 
@@ -155,6 +160,7 @@ func (m *MockGit) DeleteBranch(name string, force bool) error {
 func (m *MockGit) BranchExists(name string) bool {
 	m.mu.Lock()
 	defer m.mu.Unlock()
+
 	return m.Branches[name]
 }
 
@@ -176,6 +182,7 @@ func (m *MockGit) CreateWorktreeNewBranch(path, branch, base string) error {
 	m.Worktrees[path] = branch
 	m.Branches[branch] = true
 	m.CreatesWorktree = append(m.CreatesWorktree, path)
+
 	return nil
 }
 
@@ -186,6 +193,7 @@ func (m *MockGit) RemoveWorktree(path string, force bool) error {
 
 	delete(m.Worktrees, path)
 	m.DeletesWorktree = append(m.DeletesWorktree, path)
+
 	return nil
 }
 
@@ -198,6 +206,7 @@ func (m *MockGit) ListWorktrees() ([]string, error) {
 	for path := range m.Worktrees {
 		paths = append(paths, path)
 	}
+
 	return paths, nil
 }
 
@@ -206,6 +215,7 @@ func (m *MockGit) HasChanges() (bool, error) {
 	if m.HasChangesError != nil {
 		return false, m.HasChangesError
 	}
+
 	return m.HasChangesValue, nil
 }
 
@@ -246,6 +256,7 @@ func (m *MockGit) CanUndo(taskID string) (bool, error) {
 	defer m.mu.Unlock()
 
 	idx, ok := m.CheckpointIndex[taskID]
+
 	return ok && idx > 1, nil
 }
 
@@ -256,6 +267,7 @@ func (m *MockGit) CanRedo(taskID string) (bool, error) {
 
 	idx, ok := m.CheckpointIndex[taskID]
 	checkpoints := m.Checkpoints[taskID]
+
 	return ok && idx < len(checkpoints), nil
 }
 
@@ -270,7 +282,7 @@ func (m *MockGit) Undo(taskID string) (vcs.Checkpoint, error) {
 
 	idx := m.CheckpointIndex[taskID]
 	if idx <= 1 {
-		return vcs.Checkpoint{}, fmt.Errorf("nothing to undo")
+		return vcs.Checkpoint{}, errors.New("nothing to undo")
 	}
 
 	idx--
@@ -293,7 +305,7 @@ func (m *MockGit) Redo(taskID string) (vcs.Checkpoint, error) {
 	checkpoints := m.Checkpoints[taskID]
 
 	if idx >= len(checkpoints) {
-		return vcs.Checkpoint{}, fmt.Errorf("nothing to redo")
+		return vcs.Checkpoint{}, errors.New("nothing to redo")
 	}
 
 	idx++
@@ -310,6 +322,7 @@ func (m *MockGit) DeleteAllCheckpoints(taskID string) error {
 
 	delete(m.Checkpoints, taskID)
 	delete(m.CheckpointIndex, taskID)
+
 	return nil
 }
 
@@ -344,6 +357,7 @@ func (m *MockGit) Commit(message string) (string, error) {
 
 	// Create a fake commit ID
 	commitID := fmt.Sprintf("commit-%d", len(m.Checkpoints)+1)
+
 	return commitID, nil
 }
 

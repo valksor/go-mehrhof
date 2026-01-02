@@ -99,6 +99,7 @@ func TestAutoCommand_Flags(t *testing.T) {
 			flag := autoCmd.Flags().Lookup(tt.flagName)
 			if flag == nil {
 				t.Errorf("flag %q not found", tt.flagName)
+
 				return
 			}
 
@@ -180,6 +181,7 @@ func TestAutoCommand_RegisteredInRoot(t *testing.T) {
 	for _, cmd := range rootCmd.Commands() {
 		if cmd.Use == "auto <reference>" {
 			found = true
+
 			break
 		}
 	}

@@ -87,6 +87,7 @@ func TaskTypeFromFilename(filename string) string {
 //   - "my task.md" -> "my task"
 func KeyFromFilename(filename string) string {
 	base := filepath.Base(filename)
+
 	return strings.TrimSuffix(base, filepath.Ext(base))
 }
 
@@ -107,6 +108,7 @@ func isKnownType(prefix string) bool {
 			return true
 		}
 	}
+
 	return false
 }
 
@@ -115,6 +117,7 @@ func normalizeType(prefix string) string {
 	if canonical, ok := typeAliases[prefix]; ok {
 		return canonical
 	}
+
 	return prefix
 }
 
@@ -130,5 +133,6 @@ func ParseTicketID(s string) (string, bool) {
 	if match != "" {
 		return match, true
 	}
+
 	return "", false
 }

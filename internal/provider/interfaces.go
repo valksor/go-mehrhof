@@ -149,6 +149,8 @@ type CreateWorkUnitOptions struct {
 
 // FullProvider is a comprehensive interface combining all capabilities
 // This is primarily for documentation; actual providers implement subsets.
+//
+//nolint:interfacebloat // documentation interface combining all provider capabilities
 type FullProvider interface {
 	ReadOnlyProvider
 	Lister

@@ -114,6 +114,7 @@ func TestExtractRepoFileLinks(t *testing.T) {
 				for _, link := range got {
 					if link == want {
 						found = true
+
 						break
 					}
 				}

@@ -42,6 +42,7 @@ func DefaultGlobalDir() (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("get home directory: %w", err)
 	}
+
 	return filepath.Join(home, ".mehrhof", "plugins"), nil
 }
 
@@ -85,6 +86,7 @@ func (d *Discovery) Discover() ([]*Manifest, error) {
 
 	// Convert map to slice and clip excess capacity
 	result := _slices.Collect(_maps.Values(plugins))
+
 	return _slices.Clip(result), nil
 }
 
@@ -102,6 +104,7 @@ func (d *Discovery) DiscoverByType(pluginType PluginType) ([]*Manifest, error) {
 			result = append(result, p)
 		}
 	}
+
 	return _slices.Clip(result), nil
 }
 
@@ -118,7 +121,8 @@ func (d *Discovery) DiscoverByName(name string) (*Manifest, error) {
 			return p, nil
 		}
 	}
-	return nil, nil
+
+	return nil, nil //nolint:nilnil // Plugin not found (not an error)
 }
 
 // scanDir scans a directory for plugin manifests.

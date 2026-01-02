@@ -2,6 +2,7 @@ package commands
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"strings"
@@ -86,7 +87,7 @@ func runStatus(cmd *cobra.Command, args []string) error {
 func showWorktreeTask(ctx context.Context, ws *storage.Workspace, git *vcs.Git) error {
 	// Auto-detect task from current worktree
 	if git == nil {
-		return fmt.Errorf("not in a worktree")
+		return errors.New("not in a worktree")
 	}
 	active, err := ws.FindTaskByWorktreePath(git.Root())
 	if err != nil {
@@ -104,6 +105,7 @@ func showWorktreeTask(ctx context.Context, ws *storage.Workspace, git *vcs.Git) 
 				{Command: "mehr list --all", Description: "View all tasks in workspace"},
 			},
 		))
+
 		return nil
 	}
 
@@ -191,6 +193,7 @@ func showActiveTask(ctx context.Context, ws *storage.Workspace, git *vcs.Git) er
 			return outputJSON(jsonStatusTask{})
 		}
 		fmt.Print(display.NoActiveTaskError())
+
 		return nil
 	}
 
@@ -324,6 +327,7 @@ func showAllTasks(ws *storage.Workspace) error {
 			return outputJSON(jsonStatusAllOutput{Tasks: []jsonStatusTask{}})
 		}
 		fmt.Println("No tasks found in workspace.")
+
 		return nil
 	}
 
@@ -365,6 +369,7 @@ func showAllTasks(ws *storage.Workspace) error {
 				IsActive: isActive,
 			})
 		}
+
 		return outputJSON(jsonStatusAllOutput{Tasks: tasks})
 	}
 
@@ -417,6 +422,7 @@ func showAllTasks(ws *storage.Workspace) error {
 	fmt.Println(display.Muted("Legend:"))
 	fmt.Println(display.Muted("  * = active task"))
 	printSpecLegend()
+
 	return nil
 }
 

@@ -1,6 +1,7 @@
 package display
 
 import (
+	"errors"
 	"fmt"
 	"testing"
 	"time"
@@ -550,7 +551,7 @@ func TestErrorWithContext(t *testing.T) {
 		},
 		{
 			name:    "with error",
-			err:     fmt.Errorf("underlying issue"),
+			err:     errors.New("underlying issue"),
 			context: "operation failed",
 			suggestions: []Suggestion{
 				{Command: "mehr status", Description: "Check status"},
@@ -620,7 +621,7 @@ func TestProviderError(t *testing.T) {
 	SetColorsEnabled(false)
 	defer SetColorsEnabled(true)
 
-	got := ProviderError("jira", fmt.Errorf("API error"), []Suggestion{
+	got := ProviderError("jira", errors.New("API error"), []Suggestion{
 		{Command: "mehr config validate", Description: "Validate config"},
 	})
 
@@ -654,7 +655,7 @@ func TestTaskFailedError(t *testing.T) {
 	SetColorsEnabled(false)
 	defer SetColorsEnabled(true)
 
-	got := TaskFailedError("implementation", fmt.Errorf("syntax error"))
+	got := TaskFailedError("implementation", errors.New("syntax error"))
 
 	wantContains := []string{"✗", "Error:", "Task failed during implementation", "Cause: syntax error", "Suggested actions", "mehr status", "mehr note", "mehr undo"}
 	for _, want := range wantContains {
@@ -670,7 +671,7 @@ func TestConfigError(t *testing.T) {
 	SetColorsEnabled(false)
 	defer SetColorsEnabled(true)
 
-	got := ConfigError(fmt.Errorf("invalid YAML"), ".mehrhof/config.yaml")
+	got := ConfigError(errors.New("invalid YAML"), ".mehrhof/config.yaml")
 
 	wantContains := []string{"✗", "Error:", "Configuration error in .mehrhof/config.yaml", "Cause: invalid YAML", "Suggested actions", "mehr config validate", "cat .mehrhof/config.yaml"}
 	for _, want := range wantContains {
@@ -686,7 +687,7 @@ func TestAgentError(t *testing.T) {
 	SetColorsEnabled(false)
 	defer SetColorsEnabled(true)
 
-	got := AgentError("opus", fmt.Errorf("model not available"))
+	got := AgentError("opus", errors.New("model not available"))
 
 	wantContains := []string{"✗", "Error:", "Agent error: opus", "Cause: model not available", "Suggested actions", "mehr agents list", "mehr --agent="}
 	for _, want := range wantContains {
@@ -702,7 +703,7 @@ func TestGitError(t *testing.T) {
 	SetColorsEnabled(false)
 	defer SetColorsEnabled(true)
 
-	got := GitError("branch creation", fmt.Errorf("detached HEAD"))
+	got := GitError("branch creation", errors.New("detached HEAD"))
 
 	wantContains := []string{"✗", "Error:", "Git branch creation failed", "Cause: detached HEAD", "Suggested actions", "git status", "mehr start --no-branch"}
 	for _, want := range wantContains {
@@ -724,6 +725,7 @@ func findInString(s, substr string) bool {
 			return true
 		}
 	}
+
 	return false
 }
 

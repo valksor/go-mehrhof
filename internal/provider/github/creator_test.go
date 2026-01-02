@@ -329,6 +329,7 @@ func TestMapGitHubAssignees_EdgeCases(t *testing.T) {
 
 			if len(got) != len(tt.want) {
 				t.Errorf("mapGitHubAssignees() len = %d, want %d", len(got), len(tt.want))
+
 				return
 			}
 

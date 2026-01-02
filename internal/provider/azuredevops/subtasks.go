@@ -78,7 +78,7 @@ func (p *Provider) fetchSubtasksFromRelations(ctx context.Context, workItemID in
 	for _, rel := range workItem.Relations {
 		if rel.Rel == "System.LinkTypes.Hierarchy-Forward" {
 			// Extract ID from URL
-			// URL format: https://dev.azure.com/{org}/{project}/_apis/wit/workItems/{id}
+			// format: https://dev.azure.com/{org}/{project}/_apis/wit/workItems/{id}
 			parts := strings.Split(rel.URL, "/")
 			if len(parts) > 0 {
 				idStr := parts[len(parts)-1]

@@ -32,6 +32,7 @@ func (p *Provider) DownloadAttachment(ctx context.Context, workUnitID, attachmen
 	for _, att := range attachments {
 		if att.ID == attachmentID {
 			attachmentURL = att.Content
+
 			break
 		}
 	}

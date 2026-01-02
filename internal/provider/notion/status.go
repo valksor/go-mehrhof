@@ -20,6 +20,7 @@ func (p *Provider) UpdateStatus(ctx context.Context, workUnitID string, status p
 	for key, prop := range page.Properties {
 		if (prop.Type == "status" || prop.Type == "select") && key == p.statusProperty {
 			statusPropID = prop.ID
+
 			break
 		}
 	}
@@ -45,5 +46,6 @@ func (p *Provider) UpdateStatus(ctx context.Context, workUnitID string, status p
 	}
 
 	_, err = p.client.UpdatePage(ctx, workUnitID, update)
+
 	return err
 }

@@ -91,6 +91,7 @@ func runAgentsList(cmd *cobra.Command, args []string) error {
 
 	if len(agentNames) == 0 {
 		fmt.Println("No agents registered.")
+
 		return nil
 	}
 

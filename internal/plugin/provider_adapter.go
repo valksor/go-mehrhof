@@ -3,6 +3,7 @@ package plugin
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"strings"
@@ -49,6 +50,7 @@ func (a *ProviderAdapter) Match(input string) bool {
 	if err := json.Unmarshal(result, &resp); err != nil {
 		return false
 	}
+
 	return resp.Matches
 }
 
@@ -70,6 +72,7 @@ func (a *ProviderAdapter) Parse(input string) (string, error) {
 	if resp.Error != "" {
 		return "", fmt.Errorf("parse error: %s", resp.Error)
 	}
+
 	return resp.ID, nil
 }
 
@@ -99,7 +102,7 @@ func (a *ProviderAdapter) Fetch(ctx context.Context, id string) (*provider.WorkU
 // List enumerates work units.
 func (a *ProviderAdapter) List(ctx context.Context, opts provider.ListOptions) ([]*provider.WorkUnit, error) {
 	if !a.manifest.HasCapability("list") {
-		return nil, fmt.Errorf("plugin does not support listing")
+		return nil, errors.New("plugin does not support listing")
 	}
 
 	params := &ListParams{
@@ -123,13 +126,14 @@ func (a *ProviderAdapter) List(ctx context.Context, opts provider.ListOptions) (
 	for i, wu := range resp {
 		workUnits[i] = convertWorkUnit(&wu)
 	}
+
 	return workUnits, nil
 }
 
 // AddComment adds a comment to a work unit.
 func (a *ProviderAdapter) AddComment(ctx context.Context, workUnitID string, body string) (*provider.Comment, error) {
 	if !a.manifest.HasCapability("comment") {
-		return nil, fmt.Errorf("plugin does not support commenting")
+		return nil, errors.New("plugin does not support commenting")
 	}
 
 	result, err := a.proc.Call(ctx, "provider.addComment", &AddCommentParams{
@@ -160,20 +164,21 @@ func (a *ProviderAdapter) AddComment(ctx context.Context, workUnitID string, bod
 // UpdateStatus changes a work unit's status.
 func (a *ProviderAdapter) UpdateStatus(ctx context.Context, workUnitID string, status provider.Status) error {
 	if !a.manifest.HasCapability("update_status") {
-		return fmt.Errorf("plugin does not support status updates")
+		return errors.New("plugin does not support status updates")
 	}
 
 	_, err := a.proc.Call(ctx, "provider.updateStatus", &UpdateStatusParams{
 		WorkUnitID: workUnitID,
 		Status:     string(status),
 	})
+
 	return err
 }
 
 // CreatePullRequest creates a pull request.
 func (a *ProviderAdapter) CreatePullRequest(ctx context.Context, opts provider.PullRequestOptions) (*provider.PullRequest, error) {
 	if !a.manifest.HasCapability("create_pr") {
-		return nil, fmt.Errorf("plugin does not support PR creation")
+		return nil, errors.New("plugin does not support PR creation")
 	}
 
 	result, err := a.proc.Call(ctx, "provider.createPR", &CreatePRParams{
@@ -203,7 +208,7 @@ func (a *ProviderAdapter) CreatePullRequest(ctx context.Context, opts provider.P
 // Snapshot captures source content.
 func (a *ProviderAdapter) Snapshot(ctx context.Context, id string) (*provider.Snapshot, error) {
 	if !a.manifest.HasCapability("snapshot") {
-		return nil, fmt.Errorf("plugin does not support snapshots")
+		return nil, errors.New("plugin does not support snapshots")
 	}
 
 	result, err := a.proc.Call(ctx, "provider.snapshot", &SnapshotParams{ID: id})
@@ -225,7 +230,7 @@ func (a *ProviderAdapter) Snapshot(ctx context.Context, id string) (*provider.Sn
 // FetchComments retrieves comments for a work unit.
 func (a *ProviderAdapter) FetchComments(ctx context.Context, workUnitID string) ([]provider.Comment, error) {
 	if !a.manifest.HasCapability("fetch_comments") {
-		return nil, fmt.Errorf("plugin does not support fetching comments")
+		return nil, errors.New("plugin does not support fetching comments")
 	}
 
 	result, err := a.proc.Call(ctx, "provider.fetchComments", map[string]string{"workUnitId": workUnitID})
@@ -251,65 +256,70 @@ func (a *ProviderAdapter) FetchComments(ctx context.Context, workUnitID string) 
 			CreatedAt: c.CreatedAt,
 		}
 	}
+
 	return comments, nil
 }
 
 // AddLabels adds labels to a work unit.
 func (a *ProviderAdapter) AddLabels(ctx context.Context, workUnitID string, labels []string) error {
 	if !a.manifest.HasCapability("manage_labels") {
-		return fmt.Errorf("plugin does not support label management")
+		return errors.New("plugin does not support label management")
 	}
 
 	_, err := a.proc.Call(ctx, "provider.addLabels", map[string]any{
 		"workUnitId": workUnitID,
 		"labels":     labels,
 	})
+
 	return err
 }
 
 // RemoveLabels removes labels from a work unit.
 func (a *ProviderAdapter) RemoveLabels(ctx context.Context, workUnitID string, labels []string) error {
 	if !a.manifest.HasCapability("manage_labels") {
-		return fmt.Errorf("plugin does not support label management")
+		return errors.New("plugin does not support label management")
 	}
 
 	_, err := a.proc.Call(ctx, "provider.removeLabels", map[string]any{
 		"workUnitId": workUnitID,
 		"labels":     labels,
 	})
+
 	return err
 }
 
 // LinkBranch links a work unit to a git branch.
 func (a *ProviderAdapter) LinkBranch(ctx context.Context, workUnitID, branch string) error {
 	if !a.manifest.HasCapability("link_branch") {
-		return fmt.Errorf("plugin does not support branch linking")
+		return errors.New("plugin does not support branch linking")
 	}
 
 	_, err := a.proc.Call(ctx, "provider.linkBranch", map[string]string{
 		"workUnitId": workUnitID,
 		"branch":     branch,
 	})
+
 	return err
 }
 
 // UnlinkBranch unlinks a work unit from a git branch.
 func (a *ProviderAdapter) UnlinkBranch(ctx context.Context, workUnitID, branch string) error {
 	if !a.manifest.HasCapability("link_branch") {
-		return fmt.Errorf("plugin does not support branch linking")
+		return errors.New("plugin does not support branch linking")
 	}
 
 	_, err := a.proc.Call(ctx, "provider.unlinkBranch", map[string]string{
 		"workUnitId": workUnitID,
 		"branch":     branch,
 	})
+
 	return err
 }
 
 // GetLinkedBranch returns the linked branch for a work unit.
 func (a *ProviderAdapter) GetLinkedBranch(ctx context.Context, workUnitID string) (string, error) {
 	if !a.manifest.HasCapability("link_branch") {
-		return "", fmt.Errorf("plugin does not support branch linking")
+		return "", errors.New("plugin does not support branch linking")
 	}
 
 	result, err := a.proc.Call(ctx, "provider.getLinkedBranch", map[string]string{"workUnitId": workUnitID})
@@ -323,13 +333,14 @@ func (a *ProviderAdapter) GetLinkedBranch(ctx context.Context, workUnitID string
 	if err := json.Unmarshal(result, &resp); err != nil {
 		return "", fmt.Errorf("parse response: %w", err)
 	}
+
 	return resp.Branch, nil
 }
 
 // DownloadAttachment downloads an attachment.
 func (a *ProviderAdapter) DownloadAttachment(ctx context.Context, workUnitID, attachmentID string) (io.ReadCloser, error) {
 	if !a.manifest.HasCapability("download_attachment") {
-		return nil, fmt.Errorf("plugin does not support attachment download")
+		return nil, errors.New("plugin does not support attachment download")
 	}
 
 	result, err := a.proc.Call(ctx, "provider.downloadAttachment", map[string]string{
@@ -377,8 +388,8 @@ func (a *ProviderAdapter) Capabilities() provider.CapabilitySet {
 	caps[provider.CapRead] = true
 
 	for _, c := range a.manifest.Provider.Capabilities {
-		if cap, ok := capMap[c]; ok {
-			caps[cap] = true
+		if mappedCap, ok := capMap[c]; ok {
+			caps[mappedCap] = true
 		}
 	}
 

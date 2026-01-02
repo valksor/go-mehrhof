@@ -66,6 +66,7 @@ func NewMachine(eventBus *events.Bus) *Machine {
 func (m *Machine) State() State {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
+
 	return m.state
 }
 
@@ -73,6 +74,7 @@ func (m *Machine) State() State {
 func (m *Machine) WorkUnit() *WorkUnit {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
+
 	return m.workUnit
 }
 
@@ -122,6 +124,7 @@ func (m *Machine) Dispatch(ctx context.Context, event Event) error {
 			return fmt.Errorf("state changed from %s to %s during dispatch", from, m.state)
 		}
 		m.transitionTo(ctx, from, globalTo, event)
+
 		return nil
 	}
 
@@ -135,6 +138,7 @@ func (m *Machine) Dispatch(ctx context.Context, event Event) error {
 	for _, t := range transitions {
 		if EvaluateGuards(ctx, wu, t.Guards) {
 			validTransition = &t
+
 			break
 		}
 	}
@@ -153,6 +157,7 @@ func (m *Machine) Dispatch(ctx context.Context, event Event) error {
 	}
 
 	m.transitionTo(ctx, from, validTransition.To, event)
+
 	return nil
 }
 
@@ -247,6 +252,7 @@ func (m *Machine) getTaskID() string {
 	if m.workUnit != nil {
 		return m.workUnit.ID
 	}
+
 	return ""
 }
 
@@ -257,6 +263,7 @@ func (m *Machine) History() []HistoryEntry {
 
 	history := make([]HistoryEntry, len(m.history))
 	copy(history, m.history)
+
 	return history
 }
 
@@ -294,6 +301,7 @@ func (m *Machine) PopUndo() (string, bool) {
 	checkpoint := m.undoStack[len(m.undoStack)-1]
 	m.undoStack = m.undoStack[:len(m.undoStack)-1]
 	m.redoStack = append(m.redoStack, checkpoint)
+
 	return checkpoint, true
 }
 
@@ -309,6 +317,7 @@ func (m *Machine) PopRedo() (string, bool) {
 	checkpoint := m.redoStack[len(m.redoStack)-1]
 	m.redoStack = m.redoStack[:len(m.redoStack)-1]
 	m.undoStack = append(m.undoStack, checkpoint)
+
 	return checkpoint, true
 }
 
@@ -316,6 +325,7 @@ func (m *Machine) PopRedo() (string, bool) {
 func (m *Machine) CanUndo() bool {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
+
 	return len(m.undoStack) > 0
 }
 
@@ -323,6 +333,7 @@ func (m *Machine) CanUndo() bool {
 func (m *Machine) CanRedo() bool {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
+
 	return len(m.redoStack) > 0
 }
 
@@ -335,6 +346,7 @@ func (m *Machine) IsTerminal() bool {
 	if !ok {
 		return false
 	}
+
 	return info.Terminal
 }
 
@@ -343,6 +355,7 @@ func (m *Machine) GetStateInfo(s State) (StateInfo, bool) {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 	info, ok := m.stateRegistry[s]
+
 	return info, ok
 }
 
@@ -352,5 +365,6 @@ func (m *Machine) PhaseOrder() []State {
 	defer m.mu.RUnlock()
 	result := make([]State, len(m.phaseOrder))
 	copy(result, m.phaseOrder)
+
 	return result
 }

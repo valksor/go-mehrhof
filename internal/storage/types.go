@@ -192,6 +192,7 @@ func NewActiveTask(id, ref, workDir string) *ActiveTask {
 // NewTaskWork creates a new task work structure.
 func NewTaskWork(id string, source SourceInfo) *TaskWork {
 	now := time.Now()
+
 	return &TaskWork{
 		Version: "1",
 		Metadata: WorkMetadata{
@@ -206,6 +207,7 @@ func NewTaskWork(id string, source SourceInfo) *TaskWork {
 // NewSession creates a new session with defaults.
 func NewSession(sessionType, agent, state string) *Session {
 	now := time.Now()
+
 	return &Session{
 		Version: "1",
 		Kind:    "Session",

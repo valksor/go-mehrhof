@@ -80,6 +80,7 @@ func TestParseReference(t *testing.T) {
 			ref, err := ParseReference(tt.input)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("ParseReference() error = %v, wantErr %v", err, tt.wantErr)
+
 				return
 			}
 			if !tt.wantErr && ref.PageID != tt.want {
@@ -594,21 +595,21 @@ func TestRefString(t *testing.T) {
 // Benchmark tests.
 func BenchmarkParseReference(b *testing.B) {
 	input := "notion:a1b2c3d4e5f678901234567890abcdef"
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		_, _ = ParseReference(input)
 	}
 }
 
 func BenchmarkExtractPageID(b *testing.B) {
 	url := "https://www.notion.so/Page-Title-a1b2c3d4e5f678901234567890abcdef"
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		ExtractPageID(url)
 	}
 }
 
 func BenchmarkMapNotionStatus(b *testing.B) {
 	status := "In Progress"
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		mapNotionStatus(status)
 	}
 }
@@ -641,28 +642,28 @@ func BenchmarkBlocksToMarkdown(b *testing.B) {
 		},
 	}
 	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		BlocksToMarkdown(blocks)
 	}
 }
 
 func BenchmarkMakeTitleProperty(b *testing.B) {
 	title := "Test Task Title"
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		MakeTitleProperty(title)
 	}
 }
 
 func BenchmarkMakeStatusProperty(b *testing.B) {
 	status := "In Progress"
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		MakeStatusProperty(status)
 	}
 }
 
 func BenchmarkMakeMultiSelectProperty(b *testing.B) {
 	labels := []string{"bug", "urgent", "enhancement"}
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		MakeMultiSelectProperty(labels)
 	}
 }
@@ -678,7 +679,7 @@ func BenchmarkExtractPlainText(b *testing.B) {
 		},
 	}
 	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		ExtractPlainText(prop)
 	}
 }
@@ -686,7 +687,7 @@ func BenchmarkExtractPlainText(b *testing.B) {
 func BenchmarkNormalizePageID(b *testing.B) {
 	id := "a1b2c3d4-e5f6-7890-1234-567890abcdef"
 	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		NormalizePageID(id)
 	}
 }
@@ -695,7 +696,7 @@ func BenchmarkMatch(b *testing.B) {
 	p := &Provider{}
 	input := "notion:a1b2c3d4e5f678901234567890abcdef"
 	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		p.Match(input)
 	}
 }

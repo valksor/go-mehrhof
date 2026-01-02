@@ -42,6 +42,7 @@ func New(ctx context.Context, cfg provider.Config) (any, error) {
 	if basePath == "" {
 		basePath = "."
 	}
+
 	return &Provider{basePath: basePath}, nil
 }
 
@@ -223,6 +224,7 @@ func (p *Provider) resolvePath(path string) string {
 	if filepath.IsAbs(path) {
 		return path
 	}
+
 	return filepath.Join(p.basePath, path)
 }
 
@@ -230,7 +232,7 @@ func (p *Provider) generateID(path string) string {
 	return filepath.Base(path)
 }
 
-func (p *Provider) findReadme(dir string) (path, title, description string, frontmatter *file.Frontmatter) {
+func (p *Provider) findReadme(dir string) (string, string, string, *file.Frontmatter) {
 	// Check for README files in order of preference
 	candidates := []string{
 		"README.md",

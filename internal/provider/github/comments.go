@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
 
@@ -37,11 +38,11 @@ func (p *Provider) FetchComments(ctx context.Context, workUnitID string) ([]prov
 	result := make([]provider.Comment, len(comments))
 	for i, c := range comments {
 		result[i] = provider.Comment{
-			ID:        fmt.Sprintf("%d", c.GetID()),
+			ID:        strconv.FormatInt(c.GetID(), 10),
 			Body:      c.GetBody(),
 			CreatedAt: c.GetCreatedAt().Time,
 			Author: provider.Person{
-				ID:   fmt.Sprintf("%d", c.GetUser().GetID()),
+				ID:   strconv.FormatInt(c.GetUser().GetID(), 10),
 				Name: c.GetUser().GetLogin(),
 			},
 		}
@@ -74,11 +75,11 @@ func (p *Provider) AddComment(ctx context.Context, workUnitID string, body strin
 	}
 
 	return &provider.Comment{
-		ID:        fmt.Sprintf("%d", comment.GetID()),
+		ID:        strconv.FormatInt(comment.GetID(), 10),
 		Body:      comment.GetBody(),
 		CreatedAt: comment.GetCreatedAt().Time,
 		Author: provider.Person{
-			ID:   fmt.Sprintf("%d", comment.GetUser().GetID()),
+			ID:   strconv.FormatInt(comment.GetUser().GetID(), 10),
 			Name: comment.GetUser().GetLogin(),
 		},
 	}, nil
@@ -321,6 +322,7 @@ func (p *Provider) PostCommentIfEnabled(ctx context.Context, workUnitID string, 
 	}
 
 	_, err := p.AddComment(ctx, workUnitID, body)
+
 	return err
 }
 

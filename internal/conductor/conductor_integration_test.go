@@ -49,6 +49,7 @@ func runGitCmd(ctx context.Context, dir string, args ...string) error {
 		"GIT_AUTHOR_DATE=2020-01-01T00:00:00Z",
 		"GIT_COMMITTER_DATE=2020-01-01T00:00:00Z",
 	)
+
 	return cmd.Run()
 }
 
@@ -679,6 +680,7 @@ func findSubstring(s, substr string) bool {
 			return true
 		}
 	}
+
 	return false
 }
 

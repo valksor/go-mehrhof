@@ -35,6 +35,7 @@ func TestUndoCommand_Flags(t *testing.T) {
 			flag := undoCmd.Flags().Lookup(tt.flagName)
 			if flag == nil {
 				t.Errorf("flag %q not found", tt.flagName)
+
 				return
 			}
 
@@ -95,6 +96,7 @@ func TestUndoCommand_RegisteredInRoot(t *testing.T) {
 	for _, cmd := range rootCmd.Commands() {
 		if cmd.Use == "undo" {
 			found = true
+
 			break
 		}
 	}
@@ -114,5 +116,6 @@ func contains(s, substr string) bool {
 			return true
 		}
 	}
+
 	return false
 }

@@ -3,6 +3,7 @@ package bitbucket
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/valksor/go-mehrhof/internal/provider"
@@ -52,7 +53,7 @@ func (p *Provider) CreatePullRequest(ctx context.Context, opts provider.PullRequ
 	}
 
 	return &provider.PullRequest{
-		ID:     fmt.Sprintf("%d", pr.ID),
+		ID:     strconv.Itoa(pr.ID),
 		Number: pr.ID,
 		URL:    webURL,
 		Title:  pr.Title,
@@ -74,6 +75,7 @@ func (p *Provider) GetDefaultBranch(ctx context.Context) (string, error) {
 	}
 
 	p.client.SetWorkspaceRepo(workspace, repoSlug)
+
 	return p.client.GetDefaultBranch(ctx)
 }
 

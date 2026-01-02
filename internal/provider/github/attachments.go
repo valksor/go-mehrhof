@@ -43,6 +43,7 @@ func (p *Provider) DownloadAttachment(ctx context.Context, workUnitID, attachmen
 	for i, url := range urls {
 		if attachmentID == fmt.Sprintf("img-%d", i) {
 			targetURL = url
+
 			break
 		}
 	}
@@ -69,6 +70,7 @@ func downloadURL(ctx context.Context, url string) (io.ReadCloser, error) {
 
 	if resp.StatusCode != http.StatusOK {
 		_ = resp.Body.Close()
+
 		return nil, fmt.Errorf("download failed: status %d", resp.StatusCode)
 	}
 
@@ -86,7 +88,7 @@ func (p *Provider) FetchLinkedIssueContent(ctx context.Context, issueNumber int)
 	// Extract linked issue numbers
 	linkedNums := ExtractLinkedIssues(issue.GetBody())
 	if len(linkedNums) == 0 {
-		return nil, nil
+		return nil, nil //nolint:nilnil // No linked issues found (not an error)
 	}
 
 	result := make(map[int]string)

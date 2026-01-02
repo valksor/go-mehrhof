@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"log/slog"
@@ -28,19 +29,20 @@ type Process struct {
 	stdin      io.WriteCloser
 	stderr     io.ReadCloser
 	stdoutPipe io.ReadCloser // Original stdout pipe for explicit cleanup
-	ctx        context.Context
-	err        error
-	done       chan struct{}
-	cmd        *exec.Cmd
-	stdout     *bufio.Reader
-	cancel     context.CancelFunc
-	manifest   *Manifest
-	pending    map[int64]chan *Response
-	streamCh   chan json.RawMessage
-	reqID      atomic.Int64
-	mu         sync.Mutex
-	stopping   bool
-	started    bool
+	//nolint:containedctx // stored for plugin process lifecycle management
+	ctx      context.Context
+	err      error
+	done     chan struct{}
+	cmd      *exec.Cmd
+	stdout   *bufio.Reader
+	cancel   context.CancelFunc
+	manifest *Manifest
+	pending  map[int64]chan *Response
+	streamCh chan json.RawMessage
+	reqID    atomic.Int64
+	mu       sync.Mutex
+	stopping bool
+	started  bool
 }
 
 // startProcess spawns the plugin executable and sets up communication.
@@ -88,6 +90,7 @@ func startProcess(ctx context.Context, manifest *Manifest) (*Process, error) {
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
 		_ = stdin.Close()
+
 		return nil, fmt.Errorf("create stdout pipe: %w", err)
 	}
 
@@ -95,6 +98,7 @@ func startProcess(ctx context.Context, manifest *Manifest) (*Process, error) {
 	if err != nil {
 		_ = stdin.Close()
 		_ = stdout.Close()
+
 		return nil, fmt.Errorf("create stderr pipe: %w", err)
 	}
 
@@ -116,6 +120,7 @@ func startProcess(ctx context.Context, manifest *Manifest) (*Process, error) {
 
 	if err := cmd.Start(); err != nil {
 		procCancel()
+
 		return nil, fmt.Errorf("start plugin %s: %w", manifest.Name, err)
 	}
 
@@ -149,6 +154,7 @@ func (p *Process) readResponses() {
 				p.streamCh = nil
 			}
 			p.mu.Unlock()
+
 			return
 		default:
 			// Continue reading
@@ -170,6 +176,7 @@ func (p *Process) readResponses() {
 				p.streamCh = nil
 			}
 			p.mu.Unlock()
+
 			return
 		}
 
@@ -231,7 +238,8 @@ func (p *Process) Call(ctx context.Context, method string, params any) (json.Raw
 	p.mu.Lock()
 	if p.stopping {
 		p.mu.Unlock()
-		return nil, fmt.Errorf("plugin is stopping")
+
+		return nil, errors.New("plugin is stopping")
 	}
 
 	id := p.reqID.Add(1)
@@ -245,6 +253,7 @@ func (p *Process) Call(ctx context.Context, method string, params any) (json.Raw
 		p.mu.Lock()
 		delete(p.pending, id)
 		p.mu.Unlock()
+
 		return nil, fmt.Errorf("marshal request: %w", err)
 	}
 	data = append(data, '\n')
@@ -256,6 +265,7 @@ func (p *Process) Call(ctx context.Context, method string, params any) (json.Raw
 		p.mu.Lock()
 		delete(p.pending, id)
 		p.mu.Unlock()
+
 		return nil, fmt.Errorf("write request: %w", err)
 	}
 
@@ -263,16 +273,18 @@ func (p *Process) Call(ctx context.Context, method string, params any) (json.Raw
 	select {
 	case resp, ok := <-ch:
 		if !ok {
-			return nil, fmt.Errorf("plugin process closed")
+			return nil, errors.New("plugin process closed")
 		}
 		if resp.Error != nil {
 			return nil, resp.Error
 		}
+
 		return resp.Result, nil
 	case <-ctx.Done():
 		p.mu.Lock()
 		delete(p.pending, id)
 		p.mu.Unlock()
+
 		return nil, ctx.Err()
 	}
 }
@@ -283,7 +295,8 @@ func (p *Process) Stream(ctx context.Context, method string, params any) (<-chan
 	p.mu.Lock()
 	if p.stopping {
 		p.mu.Unlock()
-		return nil, fmt.Errorf("plugin is stopping")
+
+		return nil, errors.New("plugin is stopping")
 	}
 
 	// Set up stream channel
@@ -341,6 +354,7 @@ func (p *Process) Stop(ctx context.Context) error {
 	if p.stopping {
 		p.mu.Unlock()
 		<-p.done
+
 		return p.err
 	}
 	p.stopping = true

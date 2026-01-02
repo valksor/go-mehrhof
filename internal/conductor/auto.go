@@ -51,6 +51,7 @@ func (c *Conductor) RunAuto(ctx context.Context, reference string, opts AutoOpti
 	if err := c.Start(ctx, reference); err != nil {
 		result.Error = err
 		result.FailedAt = "start"
+
 		return result, fmt.Errorf("start: %w", err)
 	}
 	c.publishProgress("Task registered", 10)
@@ -60,6 +61,7 @@ func (c *Conductor) RunAuto(ctx context.Context, reference string, opts AutoOpti
 	if err := c.Plan(ctx); err != nil {
 		result.Error = err
 		result.FailedAt = "plan"
+
 		return result, fmt.Errorf("enter planning: %w", err)
 	}
 
@@ -67,6 +69,7 @@ func (c *Conductor) RunAuto(ctx context.Context, reference string, opts AutoOpti
 		// In auto mode, ErrPendingQuestion should not occur (skipped in handlers.go)
 		result.Error = err
 		result.FailedAt = "planning"
+
 		return result, fmt.Errorf("planning: %w", err)
 	}
 	result.PlanningDone = true
@@ -77,12 +80,14 @@ func (c *Conductor) RunAuto(ctx context.Context, reference string, opts AutoOpti
 	if err := c.Implement(ctx); err != nil {
 		result.Error = err
 		result.FailedAt = "implement"
+
 		return result, fmt.Errorf("enter implementation: %w", err)
 	}
 
 	if err := c.RunImplementation(ctx); err != nil {
 		result.Error = err
 		result.FailedAt = "implementation"
+
 		return result, fmt.Errorf("implementation: %w", err)
 	}
 	result.ImplementDone = true
@@ -108,6 +113,7 @@ func (c *Conductor) RunAuto(ctx context.Context, reference string, opts AutoOpti
 				// Quality command itself failed (not just checks)
 				result.Error = err
 				result.FailedAt = "quality"
+
 				return result, fmt.Errorf("quality check attempt %d: %w", attempt, err)
 			}
 
@@ -115,6 +121,7 @@ func (c *Conductor) RunAuto(ctx context.Context, reference string, opts AutoOpti
 			if qualityResult.Passed {
 				result.QualityPassed = true
 				c.publishProgress("Quality checks passed", 80)
+
 				break
 			}
 
@@ -126,14 +133,17 @@ func (c *Conductor) RunAuto(ctx context.Context, reference string, opts AutoOpti
 				if err := c.reImplementWithFeedback(ctx, qualityResult.Output); err != nil {
 					result.Error = err
 					result.FailedAt = "re-implementation"
+
 					return result, fmt.Errorf("re-implementation attempt %d: %w", attempt, err)
 				}
+
 				continue
 			}
 
 			// Max retries exceeded
 			result.Error = fmt.Errorf("quality check failed after %d attempts", maxRetries)
 			result.FailedAt = "quality"
+
 			return result, result.Error
 		}
 	} else {
@@ -154,6 +164,7 @@ func (c *Conductor) RunAuto(ctx context.Context, reference string, opts AutoOpti
 	if err := c.Finish(ctx, finishOpts); err != nil {
 		result.Error = err
 		result.FailedAt = "finish"
+
 		return result, fmt.Errorf("finish: %w", err)
 	}
 	result.FinishDone = true

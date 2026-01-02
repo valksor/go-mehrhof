@@ -22,17 +22,17 @@ func (e *mockHTTPError) StatusCode() int {
 	return e.status
 }
 
-// mockHTTPStatuser is a mock error that implements HTTPStatusCode().
-type mockHTTPStatuser struct {
+// mockHTTPStatusError is a mock error that implements HTTPStatusCode().
+type mockHTTPStatusError struct {
 	msg    string
 	status int
 }
 
-func (e *mockHTTPStatuser) Error() string {
+func (e *mockHTTPStatusError) Error() string {
 	return e.msg
 }
 
-func (e *mockHTTPStatuser) HTTPStatusCode() int {
+func (e *mockHTTPStatusError) HTTPStatusCode() int {
 	return e.status
 }
 
@@ -143,6 +143,7 @@ func TestWrapHTTPError(t *testing.T) {
 				if wrapped != nil {
 					t.Errorf("WrapHTTPError(nil) should return nil, got %v", wrapped)
 				}
+
 				return
 			}
 
@@ -177,7 +178,7 @@ func TestHTTPStatusCodeInterface(t *testing.T) {
 	}
 
 	// Test HTTPStatusCode() interface
-	err2 := &mockHTTPStatuser{status: http.StatusUnauthorized}
+	err2 := &mockHTTPStatusError{status: http.StatusUnauthorized}
 	wrapped2 := WrapHTTPError(err2, "test", nil)
 	if !IsUnauthorized(wrapped2) {
 		t.Error("HTTPStatusCode() interface should work")

@@ -1,6 +1,7 @@
 package trello
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"regexp"
@@ -9,8 +10,8 @@ import (
 
 // Common errors.
 var (
-	ErrInvalidReference  = fmt.Errorf("invalid Trello reference")
-	ErrNoBoardConfigured = fmt.Errorf("no board configured")
+	ErrInvalidReference  = errors.New("invalid Trello reference")
+	ErrNoBoardConfigured = errors.New("no board configured")
 )
 
 // Ref represents a parsed Trello card reference.
@@ -24,6 +25,7 @@ func (r *Ref) String() string {
 	if r.URL != "" {
 		return "trello:" + r.URL
 	}
+
 	return "trello:" + r.CardID
 }
 
@@ -93,6 +95,7 @@ func isCardID(s string) bool {
 			return false
 		}
 	}
+
 	return true
 }
 
@@ -109,6 +112,7 @@ func isShortLink(s string) bool {
 			return false
 		}
 	}
+
 	return true
 }
 

@@ -18,6 +18,7 @@ func (r *Reference) String() string {
 	if r.ProjectGID != "" {
 		return fmt.Sprintf("%s/%s", r.ProjectGID, r.TaskGID)
 	}
+
 	return r.TaskGID
 }
 

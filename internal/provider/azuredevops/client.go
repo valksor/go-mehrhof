@@ -9,6 +9,8 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"strconv"
+	"strings"
 	"time"
 )
 
@@ -54,6 +56,7 @@ func ResolveToken(configToken string) (string, error) {
 	if configToken != "" {
 		return configToken, nil
 	}
+
 	return "", ErrNoToken
 }
 
@@ -286,7 +289,7 @@ func (c *Client) GetWorkItems(ctx context.Context, ids []int) ([]WorkItem, error
 	// Build comma-separated ID list
 	var idStrs []string
 	for _, id := range ids {
-		idStrs = append(idStrs, fmt.Sprintf("%d", id))
+		idStrs = append(idStrs, strconv.Itoa(id))
 	}
 
 	url := c.buildURL("/wit/workitems")
@@ -403,6 +406,7 @@ func (c *Client) UpdateWorkItemState(ctx context.Context, id int, state string) 
 			Value: state,
 		},
 	}
+
 	return c.UpdateWorkItem(ctx, id, updates)
 }
 
@@ -425,7 +429,7 @@ func (c *Client) CreatePullRequest(ctx context.Context, repoID, sourceBranch, ta
 		var workItemRefs []map[string]any
 		for _, id := range workItemIDs {
 			workItemRefs = append(workItemRefs, map[string]any{
-				"id":  fmt.Sprintf("%d", id),
+				"id":  strconv.Itoa(id),
 				"url": fmt.Sprintf("https://dev.azure.com/%s/%s/_apis/wit/workitems/%d", c.organization, c.project, id),
 			})
 		}
@@ -560,8 +564,11 @@ func joinStrings(strs []string, sep string) string {
 		return ""
 	}
 	result := strs[0]
+	var resultSb563 strings.Builder
 	for i := 1; i < len(strs); i++ {
-		result += sep + strs[i]
+		resultSb563.WriteString(sep + strs[i])
 	}
+	result += resultSb563.String()
+
 	return result
 }

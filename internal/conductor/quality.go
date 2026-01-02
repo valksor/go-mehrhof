@@ -131,6 +131,7 @@ func (c *Conductor) RunQuality(ctx context.Context, opts QualityOptions) (*Quali
 		response = strings.TrimSpace(strings.ToLower(response))
 		if response == "n" || response == "no" {
 			result.UserAborted = true
+
 			return result, nil
 		}
 
@@ -170,5 +171,6 @@ func detectChangedFiles(beforePaths []string, afterFiles []vcs.FileStatus) []str
 	for path := range changedSet {
 		changed = append(changed, path)
 	}
+
 	return changed
 }

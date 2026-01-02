@@ -64,6 +64,7 @@ func TestParseEvent_JSON(t *testing.T) {
 			input:    `{"usage":{"input_tokens":100,"output_tokens":50}}`,
 			wantType: EventUsage,
 			checkData: func(t *testing.T, event Event) {
+				t.Helper()
 				if event.Data["input_tokens"] != float64(100) {
 					t.Errorf("input_tokens = %v, want 100", event.Data["input_tokens"])
 				}
@@ -267,6 +268,7 @@ func TestExtractQuestion(t *testing.T) {
 				if got != nil {
 					t.Errorf("extractQuestion() = %v, want nil", got)
 				}
+
 				return
 			}
 			if got == nil {
@@ -322,6 +324,7 @@ func TestExtractToolCall(t *testing.T) {
 				if got != nil {
 					t.Errorf("extractToolCall() = %v, want nil", got)
 				}
+
 				return
 			}
 			if got == nil {

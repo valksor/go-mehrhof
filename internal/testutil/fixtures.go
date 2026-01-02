@@ -45,6 +45,7 @@ func SampleWorkUnitWithOptions(opts func(*provider.WorkUnit)) *provider.WorkUnit
 	if opts != nil {
 		opts(wu)
 	}
+
 	return wu
 }
 
@@ -113,6 +114,7 @@ func SampleActiveTask(taskID, title string) *storage.ActiveTask {
 // SampleTaskWork returns sample task work for testing.
 func SampleTaskWork(taskID, title string) *storage.TaskWork {
 	now := time.Now()
+
 	return &storage.TaskWork{
 		Version: "1",
 		Metadata: storage.WorkMetadata{
@@ -174,6 +176,7 @@ func SamplePendingQuestion() *storage.PendingQuestion {
 // SampleSession returns a sample session for testing.
 func SampleSession() *storage.Session {
 	now := time.Now()
+
 	return &storage.Session{
 		Version: "1",
 		Kind:    "Session",

@@ -14,6 +14,7 @@ func GetHelpContext() *HelpContext {
 	if cachedContext == nil {
 		cachedContext = LoadContext()
 	}
+
 	return cachedContext
 }
 
@@ -31,6 +32,7 @@ func FilterAvailable(commands []*cobra.Command, ctx *HelpContext) []*cobra.Comma
 			available = append(available, cmd)
 		}
 	}
+
 	return available
 }
 
@@ -42,6 +44,7 @@ func FilterUnavailable(commands []*cobra.Command, ctx *HelpContext) []*cobra.Com
 			unavailable = append(unavailable, cmd)
 		}
 	}
+
 	return unavailable
 }
 

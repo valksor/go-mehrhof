@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"strings"
@@ -114,7 +115,7 @@ func runStart(cmd *cobra.Command, args []string) error {
 	// Apply template if specified (only works for file: provider)
 	if startTemplate != "" {
 		if !strings.HasPrefix(reference, "file:") {
-			return fmt.Errorf("--template only works with file: provider")
+			return errors.New("--template only works with file: provider")
 		}
 
 		filePath := strings.TrimPrefix(reference, "file:")

@@ -86,6 +86,7 @@ func (c *Client) getProjectID(ctx context.Context) (int64, error) {
 	}
 
 	c.projectID = project.ID
+
 	return c.projectID, nil
 }
 
@@ -100,6 +101,7 @@ func (c *Client) GetIssue(ctx context.Context, iid int64) (*gitlab.Issue, error)
 	if err != nil {
 		return nil, wrapAPIError(err)
 	}
+
 	return issue, nil
 }
 
@@ -126,6 +128,7 @@ func (c *Client) GetIssueNotes(ctx context.Context, iid int64) ([]*gitlab.Note, 
 		}
 		opts.Page = resp.NextPage
 	}
+
 	return allNotes, nil
 }
 
@@ -142,6 +145,7 @@ func (c *Client) AddNote(ctx context.Context, iid int64, body string) (*gitlab.N
 	if err != nil {
 		return nil, wrapAPIError(err)
 	}
+
 	return note, nil
 }
 
@@ -156,6 +160,7 @@ func (c *Client) UpdateIssue(ctx context.Context, iid int64, opts *gitlab.Update
 	if err != nil {
 		return nil, wrapAPIError(err)
 	}
+
 	return issue, nil
 }
 
@@ -183,6 +188,7 @@ func (c *Client) ListIssues(ctx context.Context, opts *gitlab.ListProjectIssuesO
 		}
 		opts.Page = resp.NextPage
 	}
+
 	return allIssues, nil
 }
 
@@ -197,6 +203,7 @@ func (c *Client) CreateIssue(ctx context.Context, opts *gitlab.CreateIssueOption
 	if err != nil {
 		return nil, wrapAPIError(err)
 	}
+
 	return issue, nil
 }
 
@@ -212,6 +219,7 @@ func (c *Client) SetLabels(ctx context.Context, iid int64, labels []string) erro
 	_, _, err = c.gl.Issues.UpdateIssue(pid, iid, &gitlab.UpdateIssueOptions{
 		Labels: &labelOpts,
 	}, gitlab.WithContext(ctx))
+
 	return err
 }
 
@@ -245,6 +253,7 @@ func (c *Client) AddLabels(ctx context.Context, iid int64, labels []string) erro
 	_, _, err = c.gl.Issues.UpdateIssue(pid, iid, &gitlab.UpdateIssueOptions{
 		Labels: &labelOpts,
 	}, gitlab.WithContext(ctx))
+
 	return err
 }
 
@@ -274,6 +283,7 @@ func (c *Client) RemoveLabel(ctx context.Context, iid int64, label string) error
 	_, _, err = c.gl.Issues.UpdateIssue(pid, iid, &gitlab.UpdateIssueOptions{
 		Labels: &labelOpts,
 	}, gitlab.WithContext(ctx))
+
 	return err
 }
 
@@ -303,6 +313,7 @@ func (c *Client) Host() string {
 	if c.host != "" {
 		return c.host
 	}
+
 	return "gitlab.com"
 }
 

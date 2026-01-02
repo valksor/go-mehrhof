@@ -53,6 +53,7 @@ func TestImplementCommand_Flags(t *testing.T) {
 			flag := implementCmd.Flags().Lookup(tt.flagName)
 			if flag == nil {
 				t.Errorf("flag %q not found", tt.flagName)
+
 				return
 			}
 
@@ -103,6 +104,7 @@ func TestImplementCommand_HasAliases(t *testing.T) {
 		for _, alias := range implementCmd.Aliases {
 			if alias == exp {
 				found = true
+
 				break
 			}
 		}
@@ -117,6 +119,7 @@ func TestImplementCommand_RegisteredInRoot(t *testing.T) {
 	for _, cmd := range rootCmd.Commands() {
 		if cmd.Use == "implement" {
 			found = true
+
 			break
 		}
 	}

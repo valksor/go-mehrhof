@@ -3,6 +3,7 @@ package github
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"time"
 
 	gh "github.com/google/go-github/v67/github"
@@ -59,6 +60,7 @@ func (p *Provider) List(ctx context.Context, opts provider.ListOptions) ([]*prov
 		// Apply limit if specified
 		if opts.Limit > 0 && len(allIssues) >= opts.Limit {
 			allIssues = allIssues[:opts.Limit]
+
 			break
 		}
 
@@ -84,7 +86,7 @@ func (p *Provider) List(ctx context.Context, opts provider.ListOptions) ([]*prov
 		}
 
 		wu := &provider.WorkUnit{
-			ID:          fmt.Sprintf("%d", issue.GetNumber()),
+			ID:          strconv.Itoa(issue.GetNumber()),
 			ExternalID:  fmt.Sprintf("%s/%s#%d", owner, repo, issue.GetNumber()),
 			Provider:    ProviderName,
 			Title:       issue.GetTitle(),
@@ -100,7 +102,7 @@ func (p *Provider) List(ctx context.Context, opts provider.ListOptions) ([]*prov
 				Reference: fmt.Sprintf("%s/%s#%d", owner, repo, issue.GetNumber()),
 				SyncedAt:  time.Now(),
 			},
-			ExternalKey: fmt.Sprintf("%d", issue.GetNumber()),
+			ExternalKey: strconv.Itoa(issue.GetNumber()),
 			TaskType:    inferTypeFromLabels(issue.Labels),
 			Slug:        naming.Slugify(issue.GetTitle(), 50),
 			Metadata: map[string]any{

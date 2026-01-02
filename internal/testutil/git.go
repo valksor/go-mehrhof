@@ -28,12 +28,14 @@ func CreateCheckpoint(t *testing.T, repoDir, taskID, message string) string {
 
 	// Get commit hash
 	output := RunGit(t, repoDir, "rev-parse", "HEAD")
+
 	return strings.TrimSpace(output)
 }
 
 // GetCurrentBranch returns the current branch name.
 func GetCurrentBranch(t *testing.T, repoDir string) string {
 	t.Helper()
+
 	return strings.TrimSpace(RunGit(t, repoDir, "branch", "--show-current"))
 }
 
@@ -49,6 +51,7 @@ func GetCheckpointCount(t *testing.T, repoDir, taskID string) int {
 			count++
 		}
 	}
+
 	return count
 }
 
@@ -141,6 +144,7 @@ func GetCommitCount(t *testing.T, repoDir string) int {
 	if _, err := fmt.Sscanf(strings.TrimSpace(output), "%d", &count); err == nil {
 		return count
 	}
+
 	return 0
 }
 
@@ -150,6 +154,7 @@ func GitCommit(t *testing.T, repoDir, message string) string {
 
 	mustRunGit(t, repoDir, "add", ".")
 	mustRunGit(t, repoDir, "commit", "-m", message)
+
 	return strings.TrimSpace(RunGit(t, repoDir, "rev-parse", "HEAD"))
 }
 
@@ -207,6 +212,7 @@ func runGitCmd(ctx context.Context, dir string, args ...string) error {
 		"GIT_AUTHOR_DATE=2020-01-01T00:00:00Z",
 		"GIT_COMMITTER_DATE=2020-01-01T00:00:00Z",
 	)
+
 	return cmd.Run()
 }
 

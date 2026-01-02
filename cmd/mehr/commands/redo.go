@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/spf13/cobra"
@@ -42,7 +43,8 @@ func runRedo(cmd *cobra.Command, args []string) error {
 	activeTask := cond.GetActiveTask()
 	if activeTask == nil {
 		fmt.Print(display.NoActiveTaskError())
-		return fmt.Errorf("no active task")
+
+		return errors.New("no active task")
 	}
 
 	// Get status for confirmation
@@ -54,9 +56,9 @@ func runRedo(cmd *cobra.Command, args []string) error {
 	// Build confirmation prompt
 	promptLines := "About to redo changes and restore to next checkpoint"
 	if status.Title != "" {
-		promptLines += fmt.Sprintf("\n  Task: %s", status.Title)
+		promptLines += "\n  Task: " + status.Title
 	}
-	promptLines += fmt.Sprintf("\n  State: %s", status.State)
+	promptLines += "\n  State: " + status.State
 
 	// Confirmation prompt (unless --yes)
 	confirmed, err := confirmAction(promptLines, redoYes)
@@ -65,6 +67,7 @@ func runRedo(cmd *cobra.Command, args []string) error {
 	}
 	if !confirmed {
 		fmt.Println("Cancelled")
+
 		return nil
 	}
 
@@ -74,5 +77,6 @@ func runRedo(cmd *cobra.Command, args []string) error {
 	}
 
 	fmt.Println("Restored to next checkpoint")
+
 	return nil
 }

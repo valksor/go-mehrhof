@@ -116,6 +116,7 @@ func (c *Conductor) createBranchOrWorktree(ctx context.Context, taskID string, n
 		if err := c.git.CreateWorktreeNewBranch(ctx, worktreePath, branchName, baseBranch); err != nil {
 			return nil, fmt.Errorf("create worktree: %w", err)
 		}
+
 		return &gitInfo{
 			branchName:    branchName,
 			baseBranch:    baseBranch,
@@ -134,6 +135,7 @@ func (c *Conductor) createBranchOrWorktree(ctx context.Context, taskID string, n
 	if err := c.git.Checkout(ctx, branchName); err != nil {
 		// Try to clean up the branch we just created
 		_ = c.git.DeleteBranch(ctx, branchName, false)
+
 		return nil, fmt.Errorf("checkout branch: %w", err)
 	}
 
@@ -158,6 +160,7 @@ func (c *Conductor) resolveTargetBranch(ctx context.Context, requested string) s
 
 	// Fallback to detecting base branch
 	baseBranch, _ := c.git.GetBaseBranch(ctx)
+
 	return baseBranch
 }
 
@@ -176,6 +179,7 @@ func (c *Conductor) performMerge(ctx context.Context, opts FinishOptions) error 
 	if opts.SquashMerge {
 		if err := c.git.MergeSquash(ctx, currentBranch); err != nil {
 			_ = c.git.Checkout(ctx, currentBranch)
+
 			return fmt.Errorf("squash merge: %w", err)
 		}
 		// Use stored commit prefix, fallback to task ID if not set
@@ -186,11 +190,13 @@ func (c *Conductor) performMerge(ctx context.Context, opts FinishOptions) error 
 		msg := fmt.Sprintf("%s merged from %s", prefix, currentBranch)
 		if _, err := c.git.Commit(ctx, msg); err != nil {
 			_ = c.git.Checkout(ctx, currentBranch)
+
 			return fmt.Errorf("commit merge: %w", err)
 		}
 	} else {
 		if err := c.git.MergeBranch(ctx, currentBranch, true); err != nil {
 			_ = c.git.Checkout(ctx, currentBranch)
+
 			return fmt.Errorf("merge: %w", err)
 		}
 	}

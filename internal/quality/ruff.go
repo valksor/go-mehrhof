@@ -26,6 +26,7 @@ func (r *Ruff) Name() string {
 // Available checks if ruff is installed.
 func (r *Ruff) Available() bool {
 	_, err := exec.LookPath("ruff")
+
 	return err == nil
 }
 
@@ -71,10 +72,11 @@ func (r *Ruff) Run(ctx context.Context, workDir string, files []string) (*Result
 			return &Result{
 				Linter:  r.Name(),
 				Passed:  false,
-				Summary: fmt.Sprintf("Linter failed: %s", string(output)),
+				Summary: "Linter failed: " + string(output),
 				Error:   err,
 			}, nil
 		}
+
 		return nil, fmt.Errorf("parse ruff output: %w", parseErr)
 	}
 
@@ -150,6 +152,7 @@ func (r *Ruff) parseOutput(output []byte) (*Result, error) {
 	for _, issue := range issues {
 		if issue.Severity == SeverityError {
 			passed = false
+
 			break
 		}
 	}

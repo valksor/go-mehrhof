@@ -692,6 +692,7 @@ func TestRegister(t *testing.T) {
 		for _, p := range providers {
 			if p.Name == ProviderName {
 				found = true
+
 				break
 			}
 		}

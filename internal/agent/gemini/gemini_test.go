@@ -2,7 +2,7 @@ package gemini
 
 import (
 	"context"
-	"fmt"
+	"errors"
 	"strings"
 	"testing"
 	"time"
@@ -90,22 +90,30 @@ func TestWithTimeout(t *testing.T) {
 func TestWithEnv(t *testing.T) {
 	a := New()
 	aAgent := a.WithEnv("GEMINI_API_KEY", "secret123")
-	if aAgent.(*Agent).config.Environment["GEMINI_API_KEY"] != "secret123" {
-		t.Errorf("Environment[GEMINI_API_KEY] = %q, want %q", aAgent.(*Agent).config.Environment["GEMINI_API_KEY"], "secret123")
+	agent, ok := aAgent.(*Agent)
+	if !ok {
+		t.Fatal("WithEnv did not return *Agent")
+	}
+	if agent.config.Environment["GEMINI_API_KEY"] != "secret123" {
+		t.Errorf("Environment[GEMINI_API_KEY] = %q, want %q", agent.config.Environment["GEMINI_API_KEY"], "secret123")
 	}
 }
 
 func TestWithArgs(t *testing.T) {
 	a := New()
 	aAgent := a.WithArgs("-m", "gemini-2.5-flash")
-	if len(aAgent.(*Agent).config.Args) != 2 {
-		t.Errorf("Args length = %d, want 2", len(aAgent.(*Agent).config.Args))
+	agent, ok := aAgent.(*Agent)
+	if !ok {
+		t.Fatal("WithArgs did not return *Agent")
 	}
-	if aAgent.(*Agent).config.Args[0] != "-m" {
-		t.Errorf("Args[0] = %q, want %q", aAgent.(*Agent).config.Args[0], "-m")
+	if len(agent.config.Args) != 2 {
+		t.Errorf("Args length = %d, want 2", len(agent.config.Args))
 	}
-	if aAgent.(*Agent).config.Args[1] != "gemini-2.5-flash" {
-		t.Errorf("Args[1] = %q, want %q", aAgent.(*Agent).config.Args[1], "gemini-2.5-flash")
+	if agent.config.Args[0] != "-m" {
+		t.Errorf("Args[0] = %q, want %q", agent.config.Args[0], "-m")
+	}
+	if agent.config.Args[1] != "gemini-2.5-flash" {
+		t.Errorf("Args[1] = %q, want %q", agent.config.Args[1], "gemini-2.5-flash")
 	}
 }
 
@@ -125,10 +133,14 @@ func TestMethodChaining(t *testing.T) {
 	if a.config.Timeout != 15*time.Minute {
 		t.Error("WithTimeout chain failed")
 	}
-	if aAgent.(*Agent).config.Environment["KEY1"] != "val1" {
+	typed, ok := aAgent.(*Agent)
+	if !ok {
+		t.Fatal("WithEnv did not return *Agent")
+	}
+	if typed.config.Environment["KEY1"] != "val1" {
 		t.Error("WithEnv(KEY1) chain failed")
 	}
-	if aAgent.(*Agent).config.Environment["KEY2"] != "val2" {
+	if typed.config.Environment["KEY2"] != "val2" {
 		t.Error("WithEnv(KEY2) chain failed")
 	}
 }
@@ -248,6 +260,7 @@ func TestMetadata(t *testing.T) {
 	for _, m := range meta.Models {
 		if m.Default {
 			hasDefault = true
+
 			break
 		}
 	}
@@ -310,6 +323,7 @@ func TestRunWithCallback_NoCLI(t *testing.T) {
 	callbackCalled := false
 	cb := func(event agent.Event) error {
 		callbackCalled = true
+
 		return nil
 	}
 
@@ -639,8 +653,9 @@ func TestRunWithCallback_CallbackError(t *testing.T) {
 		callbackCount++
 		// Return an error after first event
 		if callbackCount >= 1 {
-			return fmt.Errorf("callback error")
+			return errors.New("callback error")
 		}
+
 		return nil
 	}
 
@@ -663,6 +678,7 @@ func TestRunWithCallback_CollectsEvents(t *testing.T) {
 	var collectedEvents []agent.Event
 	cb := func(event agent.Event) error {
 		collectedEvents = append(collectedEvents, event)
+
 		return nil
 	}
 

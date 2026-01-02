@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/spf13/cobra"
@@ -116,7 +117,8 @@ func runFinish(cmd *cobra.Command, args []string) error {
 	activeTask := cond.GetActiveTask()
 	if activeTask == nil {
 		fmt.Print(display.NoActiveTaskError())
-		return fmt.Errorf("no active task")
+
+		return errors.New("no active task")
 	}
 
 	// Get status for display
@@ -126,14 +128,14 @@ func runFinish(cmd *cobra.Command, args []string) error {
 	}
 
 	// Build confirmation prompt
-	promptLines := fmt.Sprintf("About to finish task: %s", status.TaskID)
+	promptLines := "About to finish task: " + status.TaskID
 	if status.Title != "" {
-		promptLines += fmt.Sprintf("\n  Title: %s", status.Title)
+		promptLines += "\n  Title: " + status.Title
 	}
 	if status.Branch != "" {
-		promptLines += fmt.Sprintf("\n  Branch: %s", status.Branch)
+		promptLines += "\n  Branch: " + status.Branch
 	}
-	promptLines += fmt.Sprintf("\n  State: %s", status.State)
+	promptLines += "\n  State: " + status.State
 	promptLines += fmt.Sprintf("\n  Specifications: %d", status.Specifications)
 
 	if finishMerge {
@@ -160,6 +162,7 @@ func runFinish(cmd *cobra.Command, args []string) error {
 	}
 	if !confirmed {
 		fmt.Println("Cancelled")
+
 		return nil
 	}
 
@@ -177,6 +180,7 @@ func runFinish(cmd *cobra.Command, args []string) error {
 		if result.Ran {
 			if result.UserAborted {
 				fmt.Println("Finish cancelled by user")
+
 				return nil
 			}
 
@@ -217,5 +221,6 @@ func runFinish(cmd *cobra.Command, args []string) error {
 	} else {
 		fmt.Println(display.SuccessMsg("Task completed"))
 	}
+
 	return nil
 }

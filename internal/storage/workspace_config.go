@@ -206,6 +206,7 @@ func (cfg *WorkspaceConfig) GetEnvForAgent(agentName string) map[string]string {
 			result[stripped] = v
 		}
 	}
+
 	return result
 }
 
@@ -334,6 +335,7 @@ func (w *Workspace) LoadConfig() (*WorkspaceConfig, error) {
 			// Return defaults if config doesn't exist
 			return NewDefaultWorkspaceConfig(), nil
 		}
+
 		return nil, fmt.Errorf("read config file: %w", err)
 	}
 

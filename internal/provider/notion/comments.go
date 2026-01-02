@@ -2,6 +2,7 @@ package notion
 
 import (
 	"context"
+	"strings"
 
 	"github.com/valksor/go-mehrhof/internal/provider"
 )
@@ -42,9 +43,11 @@ func (p *Provider) FetchComments(ctx context.Context, id string) ([]provider.Com
 	for _, c := range comments {
 		// Extract comment text from rich text
 		body := ""
+		var bodySb45 strings.Builder
 		for _, rt := range c.RichText {
-			body += rt.PlainText
+			bodySb45.WriteString(rt.PlainText)
 		}
+		body += bodySb45.String()
 
 		// Extract author info from created_by (which is a RichText in Notion's API)
 		var author provider.Person

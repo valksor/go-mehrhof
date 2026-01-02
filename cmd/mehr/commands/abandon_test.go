@@ -41,6 +41,7 @@ func TestAbandonCommand_Flags(t *testing.T) {
 			flag := abandonCmd.Flags().Lookup(tt.flagName)
 			if flag == nil {
 				t.Errorf("flag %q not found", tt.flagName)
+
 				return
 			}
 

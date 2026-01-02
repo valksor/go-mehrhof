@@ -1687,6 +1687,7 @@ func containsHelper(s, substr string) bool {
 			return true
 		}
 	}
+
 	return false
 }
 
@@ -2200,7 +2201,7 @@ func TestAddUsage_MultipleCallsAccumulate(t *testing.T) {
 	}
 
 	// Add usage multiple times
-	for i := 0; i < 5; i++ {
+	for i := range 5 {
 		if err := ws.AddUsage(taskID, "planning", 1000, 500, 100, 0.01); err != nil {
 			t.Fatalf("AddUsage %d: %v", i, err)
 		}
@@ -2316,7 +2317,7 @@ func TestAddUsage_AutoFlushOnThreshold(t *testing.T) {
 
 	// Add enough usage to trigger auto-flush (threshold is 100 calls)
 	// The auto-flush should happen when totalCalls >= defaultUsageFlushThreshold
-	for i := 0; i < 100; i++ {
+	for i := range 100 {
 		if err := ws.AddUsage(taskID, "planning", 100, 50, 10, 0.001); err != nil {
 			t.Fatalf("AddUsage %d: %v", i, err)
 		}

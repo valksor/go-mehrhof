@@ -3,6 +3,7 @@ package wrike
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -172,6 +173,7 @@ func (c *Client) GetTasksInFolder(ctx context.Context, folderID string) ([]Task,
 	if err := c.doRequestWithRetry(ctx, http.MethodGet, "/folders/"+url.PathEscape(folderID)+"/tasks", nil, &response); err != nil {
 		return nil, err
 	}
+
 	return response.Data, nil
 }
 
@@ -181,6 +183,7 @@ func (c *Client) GetTasksInSpace(ctx context.Context, spaceID string) ([]Task, e
 	if err := c.doRequestWithRetry(ctx, http.MethodGet, "/spaces/"+url.PathEscape(spaceID)+"/tasks", nil, &response); err != nil {
 		return nil, err
 	}
+
 	return response.Data, nil
 }
 
@@ -195,6 +198,7 @@ func (c *Client) GetComments(ctx context.Context, taskID string) ([]Comment, err
 			if len(allComments) == 0 {
 				return nil, err
 			}
+
 			break // Return what we have on error after first page
 		}
 
@@ -238,6 +242,7 @@ func (c *Client) DownloadAttachment(ctx context.Context, attachmentID string) (i
 
 	if resp.StatusCode != http.StatusOK {
 		defer func() { _ = resp.Body.Close() }()
+
 		return nil, "", wrapAPIError(httpclient.NewHTTPError(resp.StatusCode, "download failed"))
 	}
 
@@ -261,7 +266,7 @@ func (c *Client) PostComment(ctx context.Context, taskID, text string) (*Comment
 	}
 
 	if len(response.Data) == 0 {
-		return nil, fmt.Errorf("no comment returned")
+		return nil, errors.New("no comment returned")
 	}
 
 	return &response.Data[0], nil
@@ -321,7 +326,7 @@ func (c *Client) CreateTask(ctx context.Context, folderID string, opts CreateTas
 	}
 
 	if len(response.Data) == 0 {
-		return nil, fmt.Errorf("no task returned")
+		return nil, errors.New("no task returned")
 	}
 
 	return &response.Data[0], nil

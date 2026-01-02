@@ -13,33 +13,75 @@ linters:
         - asciicheck
         - bidichk
         - bodyclose        # HTTP body close
+        - canonicalheader
+        - containedctx
+        - contextcheck
         - copyloopvar
         - decorder
+        - dogsled
+        - dupword
+        - durationcheck
+        - embeddedstructfieldcheck
         - errcheck         # Unchecked errors
+        - errchkjson
+        - errname
         - errorlint
         - exhaustive
+        - exptostd
+        - fatcontext
+        - forcetypeassert
+        - gocheckcompilerdirectives
         - gocritic         # Advanced checks
         - godot
         - godox
+        - goprintffuncname
         - gosec            # Security issues
         - govet            # Built-in vet
+        - grouper
+        - iface
+        - inamedparam
         - ineffassign
+        - interfacebloat
+        - intrange
+        - iotamixing
+        - loggercheck
+        - makezero
+        - mirror
         - misspell         # Typos in comments/strings
         - musttag
+        - nakedret
         - nilerr
+        - nilnesserr
+        - nilnil
+        - nlreturn
         - noctx
         - nolintlint       # Enforce nolint comments
+        - nonamedreturns
+        - perfsprint
+        - predeclared
+        - protogetter
+        - reassign
+        - recvcheck
         - rowserrcheck
+        - sloglint
         - sqlclosecheck
         - staticcheck      # Go vet++
+        - testableexamples
+        - thelper
         - unconvert        # Unnecessary conversions
         - unparam
         - unused
         - wastedassign
         - whitespace
+        - usestdlibvars
+#        - wsl_v5
+#        - usetesting
+#        - testpackage
+#        - tagliatelle
+#        - modernize
+#        - ireturn
 #        - varnamelen
 #        - prealloc
-#        - contextcheck
 
     settings:
         gofumpt:

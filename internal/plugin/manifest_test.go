@@ -381,6 +381,7 @@ func TestManifestExecutableCommand(t *testing.T) {
 			got := tt.manifest.ExecutableCommand()
 			if len(got) != len(tt.want) {
 				t.Errorf("ExecutableCommand() len = %d, want %d", len(got), len(tt.want))
+
 				return
 			}
 			for i := range got {

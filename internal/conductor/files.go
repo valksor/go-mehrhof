@@ -22,6 +22,7 @@ func ensureDirExists(path string) error {
 	if dir == "" || dir == "." {
 		return nil
 	}
+
 	return os.MkdirAll(dir, 0o755)
 }
 
@@ -37,6 +38,7 @@ func validatePathInWorkspace(resolved, root string) error {
 	if strings.HasPrefix(rel, ".."+string(filepath.Separator)) || rel == ".." {
 		return fmt.Errorf("path outside workspace: %s", resolved)
 	}
+
 	return nil
 }
 

@@ -121,6 +121,7 @@ func createEnvTemplate(path string) error {
 # Example: GitHub token
 # GITHUB_TOKEN=ghp_...
 `
+
 	return os.WriteFile(path, []byte(template), 0o600) // 0600 for secrets
 }
 
@@ -195,5 +196,6 @@ func interactiveSetup(cmd *cobra.Command, ws *storage.Workspace, envPath string)
 
 	_, _ = fmt.Fprintln(out)
 	_, _ = fmt.Fprintln(out, "Configuration saved!")
+
 	return nil
 }

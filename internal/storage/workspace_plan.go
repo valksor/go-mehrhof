@@ -146,6 +146,7 @@ func (w *Workspace) AppendPlanHistory(planID, role, content string) error {
 	}
 	_, err = fmt.Fprintf(f, "## %s (%s)\n\n%s\n\n---\n\n",
 		roleLabel, entry.Timestamp.Format("15:04:05"), content)
+
 	return err
 }
 

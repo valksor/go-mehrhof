@@ -121,6 +121,7 @@ func TestAgentsCommand_HasSubcommands(t *testing.T) {
 		for _, cmd := range subcommands {
 			if cmd.Use == exp {
 				found = true
+
 				break
 			}
 		}
@@ -135,6 +136,7 @@ func TestAgentsCommand_RegisteredInRoot(t *testing.T) {
 	for _, cmd := range rootCmd.Commands() {
 		if cmd.Use == "agents" {
 			found = true
+
 			break
 		}
 	}

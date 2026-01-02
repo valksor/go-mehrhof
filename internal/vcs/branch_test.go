@@ -45,6 +45,7 @@ func runGit(ctx context.Context, dir string, args ...string) error {
 		"GIT_AUTHOR_DATE=2020-01-01T00:00:00Z",
 		"GIT_COMMITTER_DATE=2020-01-01T00:00:00Z",
 	)
+
 	return cmd.Run()
 }
 
@@ -281,6 +282,7 @@ func TestListBranches(t *testing.T) {
 	for _, b := range branches {
 		if b.IsCurrent {
 			hasCurrent = true
+
 			break
 		}
 	}

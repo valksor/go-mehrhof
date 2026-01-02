@@ -77,9 +77,11 @@ func (p *Provider) Snapshot(ctx context.Context, id string) (*provider.Snapshot,
 		for _, c := range comments {
 			// Extract comment text
 			body := ""
+			var bodySb80 strings.Builder
 			for _, rt := range c.RichText {
-				body += rt.PlainText
+				bodySb80.WriteString(rt.PlainText)
 			}
+			body += bodySb80.String()
 
 			// Get author name
 			authorName := "Unknown"

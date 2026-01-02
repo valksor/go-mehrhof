@@ -110,16 +110,19 @@ func TestProviderParse(t *testing.T) {
 			if tt.wantErr {
 				if err == nil {
 					t.Errorf("Provider.Parse(%q) expected error, got nil", tt.input)
+
 					return
 				}
 				if tt.errContains != "" && !containsString(err.Error(), tt.errContains) {
 					t.Errorf("Provider.Parse(%q) error = %v, want to contain %q", tt.input, err, tt.errContains)
 				}
+
 				return
 			}
 
 			if err != nil {
 				t.Errorf("Provider.Parse(%q) unexpected error: %v", tt.input, err)
+
 				return
 			}
 
@@ -398,6 +401,7 @@ func TestMapProviderPriorityToLinear(t *testing.T) {
 			got := mapProviderPriorityToLinear(tt.priority)
 			if got == nil {
 				t.Errorf("mapProviderPriorityToLinear(%v) = nil, want %d", tt.priority, tt.want)
+
 				return
 			}
 			if *got != tt.want {
@@ -422,5 +426,6 @@ func contains(s, substr string) bool {
 			return true
 		}
 	}
+
 	return false
 }

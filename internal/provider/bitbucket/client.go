@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"strconv"
 	"time"
 )
 
@@ -44,7 +45,8 @@ func NewClient(username, appPassword, workspace, repoSlug string) *Client {
 //  1. MEHR_BITBUCKET_USERNAME / MEHR_BITBUCKET_APP_PASSWORD
 //  2. BITBUCKET_USERNAME / BITBUCKET_APP_PASSWORD
 //  3. Config values
-func ResolveCredentials(configUsername, configAppPassword string) (username, appPassword string, err error) {
+func ResolveCredentials(configUsername, configAppPassword string) (string, string, error) {
+	var username, appPassword string
 	// Username resolution
 	if u := os.Getenv("MEHR_BITBUCKET_USERNAME"); u != "" {
 		username = u
@@ -287,7 +289,7 @@ func (c *Client) ListIssues(ctx context.Context, state string, limit int) ([]Iss
 		params.Set("q", fmt.Sprintf(`state="%s"`, state))
 	}
 	if limit > 0 {
-		params.Set("pagelen", fmt.Sprintf("%d", limit))
+		params.Set("pagelen", strconv.Itoa(limit))
 	}
 
 	if len(params) > 0 {

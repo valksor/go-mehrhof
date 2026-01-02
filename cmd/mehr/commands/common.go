@@ -51,6 +51,7 @@ func getDeduplicatingStdout() io.Writer {
 	dedupStdout.Do(func() {
 		dedupWriter = output.NewDeduplicatingWriter(os.Stdout)
 	})
+
 	return dedupWriter
 }
 
@@ -130,6 +131,7 @@ func confirmAction(prompt string, skipConfirm bool) (bool, error) {
 	}
 
 	response = strings.TrimSpace(strings.ToLower(response))
+
 	return response == "y" || response == "yes", nil
 }
 
@@ -200,6 +202,7 @@ func deriveStepName(agentVar string) string {
 	if step, ok := stepMap[strings.ToLower(agentVar)]; ok {
 		return step
 	}
+
 	return ""
 }
 
@@ -208,8 +211,10 @@ func deriveStepName(agentVar string) string {
 func RequireActiveTask(cond *conductor.Conductor) bool {
 	if cond.GetActiveTask() == nil {
 		fmt.Print(display.NoActiveTaskError())
+
 		return false
 	}
+
 	return true
 }
 
@@ -312,6 +317,7 @@ func ResolveWorkspaceRoot(ctx context.Context) (WorkspaceResolution, error) {
 		if err != nil {
 			return WorkspaceResolution{}, fmt.Errorf("get main repo from worktree: %w", err)
 		}
+
 		return WorkspaceResolution{
 			Root:       mainRepo,
 			Git:        git,

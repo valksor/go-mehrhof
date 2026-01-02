@@ -1,6 +1,7 @@
 package agent
 
 import (
+	"errors"
 	"fmt"
 	"sync"
 
@@ -61,7 +62,7 @@ func (r *Registry) GetDefault() (Agent, error) {
 	defer r.mu.RUnlock()
 
 	if r.fallback == "" {
-		return nil, fmt.Errorf("no agents registered")
+		return nil, errors.New("no agents registered")
 	}
 
 	return r.agents[r.fallback], nil
@@ -77,6 +78,7 @@ func (r *Registry) SetDefault(name string) error {
 	}
 
 	r.fallback = name
+
 	return nil
 }
 
@@ -88,6 +90,7 @@ func (r *Registry) List() []string {
 	// Collect keys into a slice, then clip excess capacity
 	names := _slices.Collect(_maps.Keys(r.agents))
 	_slices.Sort(names)
+
 	return _slices.Clip(names)
 }
 
@@ -102,6 +105,7 @@ func (r *Registry) Available() []string {
 			available = append(available, name)
 		}
 	}
+
 	return available
 }
 
@@ -126,5 +130,5 @@ func (r *Registry) Detect() (Agent, error) {
 		}
 	}
 
-	return nil, fmt.Errorf("no available agents found")
+	return nil, errors.New("no available agents found")
 }

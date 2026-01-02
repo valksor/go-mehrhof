@@ -51,6 +51,7 @@ func TestListCommand_Flags(t *testing.T) {
 			flag := listCmd.Flags().Lookup(tt.flagName)
 			if flag == nil {
 				t.Errorf("flag %q not found", tt.flagName)
+
 				return
 			}
 
@@ -109,6 +110,7 @@ func TestListCommand_RegisteredInRoot(t *testing.T) {
 	for _, cmd := range rootCmd.Commands() {
 		if cmd.Use == "list" {
 			found = true
+
 			break
 		}
 	}

@@ -20,7 +20,8 @@ func (r *Reference) String() string {
 	if r.Workspace != "" && r.RepoSlug != "" {
 		return fmt.Sprintf("%s/%s#%d", r.Workspace, r.RepoSlug, r.IssueID)
 	}
-	return fmt.Sprintf("%d", r.IssueID)
+
+	return strconv.Itoa(r.IssueID)
 }
 
 // Patterns for parsing Bitbucket references.
@@ -64,6 +65,7 @@ func ParseReference(input string) (*Reference, error) {
 		if err != nil || issueID <= 0 {
 			return nil, fmt.Errorf("%w: invalid issue number", ErrInvalidReference)
 		}
+
 		return &Reference{
 			Workspace:  matches[1],
 			RepoSlug:   matches[2],
@@ -78,6 +80,7 @@ func ParseReference(input string) (*Reference, error) {
 		if err != nil || issueID <= 0 {
 			return nil, fmt.Errorf("%w: invalid issue number", ErrInvalidReference)
 		}
+
 		return &Reference{
 			Workspace:  matches[1],
 			RepoSlug:   matches[2],
@@ -92,6 +95,7 @@ func ParseReference(input string) (*Reference, error) {
 		if err != nil || issueID <= 0 {
 			return nil, fmt.Errorf("%w: invalid issue number", ErrInvalidReference)
 		}
+
 		return &Reference{
 			IssueID:    issueID,
 			IsExplicit: false,

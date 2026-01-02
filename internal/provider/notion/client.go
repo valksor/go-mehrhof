@@ -98,7 +98,7 @@ func (c *Client) GetPage(ctx context.Context, pageID string) (*Page, error) {
 	normalizedID := NormalizePageID(pageID)
 
 	var page Page
-	path := fmt.Sprintf("/v1/pages/%s", normalizedID)
+	path := "/v1/pages/" + normalizedID
 
 	if err := c.doRequest(ctx, http.MethodGet, path, nil, &page); err != nil {
 		return nil, err
@@ -126,6 +126,7 @@ func (c *Client) GetPageContent(ctx context.Context, pageID string) ([]Block, er
 			if len(allBlocks) > 0 {
 				break // Return what we have
 			}
+
 			return nil, err
 		}
 
@@ -182,6 +183,7 @@ func (c *Client) QueryDatabaseAll(ctx context.Context, databaseID string, req *D
 			if len(allPages) > 0 {
 				break // Return what we have
 			}
+
 			return nil, err
 		}
 
@@ -202,7 +204,7 @@ func (c *Client) UpdatePage(ctx context.Context, pageID string, input *UpdatePag
 	normalizedID := NormalizePageID(pageID)
 
 	var page Page
-	path := fmt.Sprintf("/v1/pages/%s", normalizedID)
+	path := "/v1/pages/" + normalizedID
 
 	if err := c.doRequest(ctx, http.MethodPatch, path, input, &page); err != nil {
 		return nil, err
@@ -228,7 +230,7 @@ func (c *Client) GetComments(ctx context.Context, pageID string) ([]Comment, err
 	normalizedID := NormalizePageID(pageID)
 
 	var response CommentResponse
-	path := fmt.Sprintf("/v1/comments?block_id=%s", normalizedID)
+	path := "/v1/comments?block_id=" + normalizedID
 	allComments := []Comment{}
 
 	for {
@@ -236,6 +238,7 @@ func (c *Client) GetComments(ctx context.Context, pageID string) ([]Comment, err
 			if len(allComments) > 0 {
 				break // Return what we have
 			}
+
 			return nil, err
 		}
 
@@ -269,7 +272,7 @@ func (c *Client) GetDatabase(ctx context.Context, databaseID string) (*Database,
 	normalizedID := NormalizePageID(databaseID)
 
 	var database Database
-	path := fmt.Sprintf("/v1/databases/%s", normalizedID)
+	path := "/v1/databases/" + normalizedID
 
 	if err := c.doRequest(ctx, http.MethodGet, path, nil, &database); err != nil {
 		return nil, err
@@ -344,6 +347,7 @@ func MakeStatusProperty(status string) Property {
 			},
 		}
 	}
+
 	return Property{
 		Type: "status",
 		Status: &StatusProp{
@@ -360,6 +364,7 @@ func MakeMultiSelectProperty(labels []string) Property {
 			Name: label,
 		}
 	}
+
 	return Property{
 		Type: "multi_select",
 		MultiSelect: &MultiSelectProp{
@@ -393,6 +398,7 @@ func ExtractLabels(prop Property) []string {
 	for i, opt := range prop.MultiSelect.Options {
 		labels[i] = opt.Name
 	}
+
 	return labels
 }
 
@@ -503,6 +509,7 @@ func GetProperty(page Page, name string) (Property, bool) {
 			return prop, true
 		}
 	}
+
 	return Property{}, false
 }
 
@@ -513,5 +520,6 @@ func GetPropertyID(page Page, name string) (string, bool) {
 			return prop.ID, true
 		}
 	}
+
 	return "", false
 }

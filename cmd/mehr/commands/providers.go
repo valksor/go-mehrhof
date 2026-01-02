@@ -93,6 +93,7 @@ func runProvidersInfo(cmd *cobra.Command, args []string) error {
 	if info == nil {
 		fmt.Printf("Unknown provider: %s\n\n", providerName)
 		fmt.Println("Run 'mehr providers list' to see available providers.")
+
 		return nil
 	}
 

@@ -23,6 +23,7 @@ func (p *Provider) List(ctx context.Context, opts provider.ListOptions) ([]*prov
 				parts := strings.Split(label, "-")
 				if len(parts) == 2 {
 					teamKey = parts[0]
+
 					break
 				}
 			}
@@ -97,6 +98,7 @@ func matchesLabels(issue *Issue, labels []string) bool {
 			return false
 		}
 	}
+
 	return true
 }
 

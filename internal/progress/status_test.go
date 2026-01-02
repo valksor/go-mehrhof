@@ -86,7 +86,7 @@ func TestStatusLineConcurrent(t *testing.T) {
 
 	// Test concurrent access
 	var wg sync.WaitGroup
-	for i := 0; i < 10; i++ {
+	for range 10 {
 		wg.Go(func() {
 			_ = sl.OnEvent(agent.Event{
 				Type: agent.EventToolUse,

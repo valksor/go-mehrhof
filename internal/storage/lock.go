@@ -38,10 +38,12 @@ func (l *FileLock) Lock() error {
 	// Acquire exclusive lock (blocks until available)
 	if err := syscall.Flock(int(f.Fd()), syscall.LOCK_EX); err != nil {
 		_ = f.Close()
+
 		return fmt.Errorf("acquire lock: %w", err)
 	}
 
 	l.file = f
+
 	return nil
 }
 
@@ -66,10 +68,12 @@ func (l *FileLock) TryLock() (bool, error) {
 		if errors.Is(err, syscall.EWOULDBLOCK) {
 			return false, nil // Lock held by another process
 		}
+
 		return false, fmt.Errorf("try lock: %w", err)
 	}
 
 	l.file = f
+
 	return true, nil
 }
 
@@ -117,6 +121,7 @@ func (l *FileLock) Unlock() error {
 	}
 
 	l.file = nil
+
 	return nil
 }
 
@@ -128,6 +133,7 @@ func WithLock(lockPath string, fn func() error) error {
 		return err
 	}
 	defer func() { _ = lock.Unlock() }()
+
 	return fn()
 }
 
@@ -139,5 +145,6 @@ func WithLockTimeout(lockPath string, timeout time.Duration, fn func() error) er
 		return err
 	}
 	defer func() { _ = lock.Unlock() }()
+
 	return fn()
 }

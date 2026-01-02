@@ -78,6 +78,7 @@ func (p *Provider) Parse(input string) (string, error) {
 	if err != nil {
 		return "", err
 	}
+
 	return ref.CardID, nil
 }
 
@@ -259,6 +260,7 @@ func (p *Provider) AddLabels(ctx context.Context, workUnitID string, labels []st
 			return err
 		}
 	}
+
 	return nil
 }
 
@@ -269,6 +271,7 @@ func (p *Provider) RemoveLabels(ctx context.Context, workUnitID string, labels [
 			return err
 		}
 	}
+
 	return nil
 }
 
@@ -342,6 +345,7 @@ func extractLabels(card *Card) []string {
 			labels[i] = label.Color
 		}
 	}
+
 	return labels
 }
 
@@ -354,6 +358,7 @@ func extractMembers(card *Card) []provider.Person {
 			Name: member.FullName,
 		}
 	}
+
 	return members
 }
 
@@ -370,6 +375,7 @@ func extractAttachments(card *Card) []provider.Attachment {
 			CreatedAt:   att.Date,
 		}
 	}
+
 	return attachments
 }
 
@@ -381,6 +387,7 @@ func extractCreatedAt(cardID string) time.Time {
 	// Trello card IDs start with 8 hex chars representing timestamp
 	var timestamp int64
 	parseHexTimestamp(cardID[:8], &timestamp)
+
 	return time.Unix(timestamp, 0)
 }
 
@@ -401,6 +408,7 @@ func parseHexTimestamp(hex string, result *int64) int {
 		}
 	}
 	*result = n
+
 	return 8
 }
 
@@ -416,6 +424,7 @@ func hasAnyLabel(card Card, targetLabels []string) bool {
 			return true
 		}
 	}
+
 	return false
 }
 

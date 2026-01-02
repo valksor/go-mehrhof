@@ -2,9 +2,10 @@
 package testutil
 
 import (
-	"fmt"
+	"errors"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 	"time"
 
@@ -83,12 +84,14 @@ func (m *MockWorkspace) EnsureInitialized() error {
 		return err
 	}
 	mehrhofDir := filepath.Join(m.RootDir, ".mehrhof")
+
 	return os.MkdirAll(mehrhofDir, 0o755)
 }
 
 // IsInitialized checks if the workspace is initialized.
 func (m *MockWorkspace) IsInitialized() bool {
 	_, err := os.Stat(filepath.Join(m.RootDir, ".mehrhof"))
+
 	return err == nil
 }
 
@@ -100,6 +103,7 @@ func (m *MockWorkspace) LoadConfig() (*storage.WorkspaceConfig, error) {
 // SaveConfig saves the workspace configuration.
 func (m *MockWorkspace) SaveConfig(cfg *storage.WorkspaceConfig) error {
 	m.Config = cfg
+
 	return nil
 }
 
@@ -112,6 +116,7 @@ func (m *MockWorkspace) HasActiveTask() bool {
 			return true
 		}
 	}
+
 	return false
 }
 
@@ -130,7 +135,8 @@ func (m *MockWorkspace) LoadActiveTask() (*storage.ActiveTask, error) {
 			return task, nil
 		}
 	}
-	return nil, fmt.Errorf("no active task")
+
+	return nil, errors.New("no active task")
 }
 
 // SaveActiveTask saves the active task.
@@ -144,6 +150,7 @@ func (m *MockWorkspace) SaveActiveTask(task *storage.ActiveTask) error {
 	}
 
 	m.Tasks[task.ID] = task
+
 	return nil
 }
 
@@ -154,6 +161,7 @@ func (m *MockWorkspace) ClearActiveTask() error {
 	m.ClearActiveTaskCalls++
 
 	m.Tasks = make(map[string]*storage.ActiveTask)
+
 	return nil
 }
 
@@ -177,6 +185,7 @@ func (m *MockWorkspace) CreateWork(taskID string, source storage.SourceInfo) (*s
 
 	m.TaskWorks[taskID] = work
 	m.Specs[taskID] = make(map[int]string)
+
 	return work, nil
 }
 
@@ -192,8 +201,9 @@ func (m *MockWorkspace) LoadWork(taskID string) (*storage.TaskWork, error) {
 
 	work, ok := m.TaskWorks[taskID]
 	if !ok {
-		return nil, fmt.Errorf("task not found")
+		return nil, errors.New("task not found")
 	}
+
 	return work, nil
 }
 
@@ -208,6 +218,7 @@ func (m *MockWorkspace) SaveWork(work *storage.TaskWork) error {
 	}
 
 	m.TaskWorks[work.Metadata.ID] = work
+
 	return nil
 }
 
@@ -220,6 +231,7 @@ func (m *MockWorkspace) DeleteWork(taskID string) error {
 	delete(m.TaskWorks, taskID)
 	delete(m.Specs, taskID)
 	delete(m.Notes, taskID)
+
 	return nil
 }
 
@@ -232,6 +244,7 @@ func (m *MockWorkspace) ListTasks() ([]string, error) {
 	for id := range m.TaskWorks {
 		ids = append(ids, id)
 	}
+
 	return ids, nil
 }
 
@@ -245,7 +258,8 @@ func (m *MockWorkspace) FindTaskByWorktreePath(path string) (*storage.ActiveTask
 			return task, nil
 		}
 	}
-	return nil, fmt.Errorf("task not found")
+
+	return nil, errors.New("task not found")
 }
 
 // GetSourceContent retrieves the source content for a task.
@@ -257,6 +271,7 @@ func (m *MockWorkspace) GetSourceContent(taskID string) (string, error) {
 	if !ok {
 		return "", nil
 	}
+
 	return work.Source.Content, nil
 }
 
@@ -275,6 +290,7 @@ func (m *MockWorkspace) NextSpecificationNumber(taskID string) (int, error) {
 			maxNum = num
 		}
 	}
+
 	return maxNum + 1, nil
 }
 
@@ -292,6 +308,7 @@ func (m *MockWorkspace) SaveSpecification(taskID string, num int, content string
 		m.Specs[taskID] = make(map[int]string)
 	}
 	m.Specs[taskID][num] = content
+
 	return nil
 }
 
@@ -303,12 +320,13 @@ func (m *MockWorkspace) LoadSpecification(taskID string, num int) (string, error
 
 	specs, ok := m.Specs[taskID]
 	if !ok {
-		return "", fmt.Errorf("not found")
+		return "", errors.New("not found")
 	}
 	content, ok := specs[num]
 	if !ok {
-		return "", fmt.Errorf("not found")
+		return "", errors.New("not found")
 	}
+
 	return content, nil
 }
 
@@ -323,6 +341,7 @@ func (m *MockWorkspace) ListSpecifications(taskID string) ([]int, error) {
 	for num := range specs {
 		nums = append(nums, num)
 	}
+
 	return nums, nil
 }
 
@@ -333,11 +352,14 @@ func (m *MockWorkspace) GatherSpecificationsContent(taskID string) (string, erro
 
 	specs := m.Specs[taskID]
 	var content string
+	var contentSb336 strings.Builder
 	for num := 1; num <= len(specs); num++ {
 		if specContent, ok := specs[num]; ok {
-			content += specContent + "\n\n"
+			contentSb336.WriteString(specContent + "\n\n")
 		}
 	}
+	content += contentSb336.String()
+
 	return content, nil
 }
 
@@ -356,6 +378,7 @@ func (m *MockWorkspace) GetLatestSpecificationContent(taskID string) (string, in
 			maxNum = num
 		}
 	}
+
 	return specs[maxNum], maxNum, nil
 }
 
@@ -371,6 +394,7 @@ func (m *MockWorkspace) AppendNote(taskID, content, phase string) error {
 
 	existing := m.Notes[taskID]
 	m.Notes[taskID] = existing + "\n\n" + content
+
 	return nil
 }
 
@@ -423,9 +447,11 @@ func (m *MockWorkspace) SaveSession(taskID string, filename string, session *sto
 		// Match by started time as a proxy
 		if s.Metadata.StartedAt.Equal(session.Metadata.StartedAt) {
 			sessions[i] = session
+
 			return nil
 		}
 	}
+
 	return nil
 }
 
@@ -439,6 +465,7 @@ func (m *MockWorkspace) ListSessions(taskID string) ([]string, error) {
 	for i, s := range sessions {
 		filenames[i] = s.Metadata.StartedAt.Format("20060102-150405") + "-" + s.Metadata.Type + ".yaml"
 	}
+
 	return filenames, nil
 }
 
@@ -454,7 +481,8 @@ func (m *MockWorkspace) LoadSession(taskID, filename string) (*storage.Session, 
 			return s, nil
 		}
 	}
-	return nil, fmt.Errorf("not found")
+
+	return nil, errors.New("not found")
 }
 
 // SavePendingQuestion saves a pending agent question.
@@ -463,6 +491,7 @@ func (m *MockWorkspace) SavePendingQuestion(taskID string, pq *storage.PendingQu
 	defer m.mu.Unlock()
 
 	m.Questions[taskID] = pq
+
 	return nil
 }
 
@@ -488,6 +517,7 @@ func (m *MockWorkspace) ClearPendingQuestion(taskID string) error {
 	defer m.mu.Unlock()
 
 	delete(m.Questions, taskID)
+
 	return nil
 }
 
@@ -534,6 +564,7 @@ func (m *MockWorkspace) SetConfig(cfg *storage.WorkspaceConfig) {
 func (m *MockWorkspace) GetTaskCount() int {
 	m.mu.Lock()
 	defer m.mu.Unlock()
+
 	return len(m.TaskWorks)
 }
 
@@ -541,5 +572,6 @@ func (m *MockWorkspace) GetTaskCount() int {
 func (m *MockWorkspace) GetSpecificationCount(taskID string) int {
 	m.mu.Lock()
 	defer m.mu.Unlock()
+
 	return len(m.Specs[taskID])
 }

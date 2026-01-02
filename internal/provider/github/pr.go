@@ -3,6 +3,7 @@ package github
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/valksor/go-mehrhof/internal/provider"
@@ -50,7 +51,7 @@ func (p *Provider) CreatePullRequest(ctx context.Context, opts provider.PullRequ
 	}
 
 	return &provider.PullRequest{
-		ID:     fmt.Sprintf("%d", ghPR.GetID()),
+		ID:     strconv.FormatInt(ghPR.GetID(), 10),
 		Number: ghPR.GetNumber(),
 		URL:    ghPR.GetHTMLURL(),
 		Title:  ghPR.GetTitle(),
@@ -137,6 +138,7 @@ func (p *Provider) GetDefaultBranch(ctx context.Context) (string, error) {
 	if p.config != nil && p.config.TargetBranch != "" {
 		return p.config.TargetBranch, nil
 	}
+
 	return p.client.GetDefaultBranch(ctx)
 }
 

@@ -23,6 +23,7 @@ func applyAgentEnv(agentInst agent.Agent, env map[string]string) agent.Agent {
 	for k, v := range resolvedEnv {
 		agentInst = agentInst.WithEnv(k, v)
 	}
+
 	return agentInst
 }
 
@@ -52,6 +53,7 @@ func (c *Conductor) resolveAgentForTask() (agent.Agent, string, error) {
 			if err != nil {
 				return nil, "", fmt.Errorf("detect agent: %w", err)
 			}
+
 			return agentInst, "auto", nil
 		}
 	}
@@ -139,6 +141,7 @@ func (c *Conductor) resolveAgentForStep(step workflow.Step) (*AgentResolution, e
 		if err != nil {
 			return nil, fmt.Errorf("detect agent for step %s: %w", step, err)
 		}
+
 		return &AgentResolution{
 			Agent:    agentInst,
 			Source:   "auto",
@@ -186,6 +189,7 @@ func (c *Conductor) GetAgentForStep(step workflow.Step) (agent.Agent, error) {
 				if len(stepInfo.Args) > 0 {
 					agentInst = agentInst.WithArgs(stepInfo.Args...)
 				}
+
 				return agentInst, nil
 			}
 			// Fall through to re-resolve if stored agent not found
@@ -277,6 +281,7 @@ func (c *Conductor) registerAliasAgents(cfg *storage.WorkspaceConfig) error {
 
 		resolved[name] = true
 		resolving[name] = false
+
 		return nil
 	}
 

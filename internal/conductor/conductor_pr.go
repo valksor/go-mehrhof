@@ -2,6 +2,7 @@ package conductor
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 
@@ -13,11 +14,11 @@ import (
 // finishWithPR creates a pull request instead of merging locally.
 func (c *Conductor) finishWithPR(ctx context.Context, opts FinishOptions) (*provider.PullRequest, error) {
 	if c.git == nil {
-		return nil, fmt.Errorf("git not available for PR creation")
+		return nil, errors.New("git not available for PR creation")
 	}
 
 	if c.activeTask.Branch == "" {
-		return nil, fmt.Errorf("no branch associated with task for PR creation")
+		return nil, errors.New("no branch associated with task for PR creation")
 	}
 
 	taskID := c.activeTask.ID
@@ -37,7 +38,7 @@ func (c *Conductor) finishWithPR(ctx context.Context, opts FinishOptions) (*prov
 	// Check if provider supports PR creation
 	prCreator, ok := p.(provider.PRCreator)
 	if !ok {
-		return nil, fmt.Errorf("provider does not support PR creation")
+		return nil, errors.New("provider does not support PR creation")
 	}
 
 	// Load specifications for PR body
@@ -107,7 +108,7 @@ func (c *Conductor) finishWithPR(ctx context.Context, opts FinishOptions) (*prov
 // resolveTaskProvider resolves the provider from the task's original reference.
 func (c *Conductor) resolveTaskProvider(ctx context.Context) (any, error) {
 	if c.activeTask == nil || c.activeTask.Ref == "" {
-		return nil, fmt.Errorf("no task reference available")
+		return nil, errors.New("no task reference available")
 	}
 
 	// Resolve provider from the stored reference
@@ -246,5 +247,6 @@ func (c *Conductor) generatePRBody(specs []*storage.Specification, diffStat stri
 	for _, p := range parts {
 		sb.WriteString(p)
 	}
+
 	return sb.String()
 }

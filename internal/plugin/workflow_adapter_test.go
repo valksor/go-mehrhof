@@ -60,6 +60,7 @@ func TestWorkUnitToMap(t *testing.T) {
 				if got != nil {
 					t.Errorf("workUnitToMap() = %v, want nil", got)
 				}
+
 				return
 			}
 

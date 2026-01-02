@@ -139,6 +139,7 @@ func (s *State) IsRecoverable() bool {
 	case StatusActive, StatusCompleted:
 		return false
 	}
+
 	return false
 }
 
@@ -154,6 +155,7 @@ func (s *State) GetLastUserMessage() *Message {
 			return &s.Messages[i]
 		}
 	}
+
 	return nil
 }
 
@@ -164,5 +166,6 @@ func (s *State) GetLastAssistantMessage() *Message {
 			return &s.Messages[i]
 		}
 	}
+
 	return nil
 }

@@ -22,6 +22,7 @@ type StatusLine struct {
 // NewStatusLine creates a new status line for the given phase.
 func NewStatusLine(phase string) *StatusLine {
 	now := time.Now()
+
 	return &StatusLine{
 		phase:      phase,
 		startTime:  now,
@@ -96,5 +97,6 @@ func (s *StatusLine) Done() {
 func formatDuration(d time.Duration) string {
 	minutes := int(d.Minutes())
 	seconds := int(d.Seconds()) % 60
+
 	return fmt.Sprintf("%d:%02d", minutes, seconds)
 }

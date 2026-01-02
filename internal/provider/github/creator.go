@@ -3,6 +3,7 @@ package github
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/google/go-github/v67/github"
@@ -42,7 +43,7 @@ func (p *Provider) CreateWorkUnit(ctx context.Context, opts provider.CreateWorkU
 
 	// Convert to WorkUnit
 	wu := &provider.WorkUnit{
-		ID:          fmt.Sprintf("%d", issue.GetNumber()),
+		ID:          strconv.Itoa(issue.GetNumber()),
 		ExternalID:  fmt.Sprintf("%s/%s#%d", owner, repo, issue.GetNumber()),
 		Provider:    ProviderName,
 		Title:       issue.GetTitle(),
@@ -58,7 +59,7 @@ func (p *Provider) CreateWorkUnit(ctx context.Context, opts provider.CreateWorkU
 			Reference: fmt.Sprintf("%s/%s#%d", owner, repo, issue.GetNumber()),
 			SyncedAt:  time.Now(),
 		},
-		ExternalKey: fmt.Sprintf("%d", issue.GetNumber()),
+		ExternalKey: strconv.Itoa(issue.GetNumber()),
 		TaskType:    inferTaskTypeFromLabels(opts.Labels),
 		Slug:        naming.Slugify(opts.Title, 50),
 		Metadata: map[string]any{
@@ -85,6 +86,7 @@ func mapGitHubAssignees(assignees []string) []provider.Person {
 			Name: a,
 		}
 	}
+
 	return persons
 }
 
@@ -96,6 +98,7 @@ func inferTaskTypeFromLabels(labels []string) string {
 			return t
 		}
 	}
+
 	return "issue"
 }
 
@@ -110,5 +113,6 @@ func lower(s string) string {
 			result = append(result, r)
 		}
 	}
+
 	return string(result)
 }

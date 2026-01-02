@@ -39,6 +39,7 @@ func New(ctx context.Context, cfg provider.Config) (any, error) {
 	if basePath == "" {
 		basePath = "."
 	}
+
 	return &Provider{basePath: basePath}, nil
 }
 
@@ -156,6 +157,7 @@ func (p *Provider) resolvePath(path string) string {
 	if filepath.IsAbs(path) {
 		return path
 	}
+
 	return filepath.Join(p.basePath, path)
 }
 
@@ -163,6 +165,7 @@ func (p *Provider) generateID(path string) string {
 	// Use filename without extension as ID
 	base := filepath.Base(path)
 	ext := filepath.Ext(base)
+
 	return strings.TrimSuffix(base, ext)
 }
 
