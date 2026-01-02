@@ -399,6 +399,7 @@ func (p *JSONLineParser) ParseEvent(line []byte) (Event, error) {
 	if err := json.Unmarshal(line, &event.Data); err != nil {
 		event.Type = EventText
 		event.Data["text"] = string(line)
+		//nolint:nilerr // JSON parse failure: treat as plain text
 		return event, nil
 	}
 

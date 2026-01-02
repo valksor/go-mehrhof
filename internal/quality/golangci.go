@@ -66,6 +66,7 @@ func (g *GolangCI) Run(ctx context.Context, workDir string, files []string) (*Re
 	if parseErr != nil {
 		// If parsing fails but we got an error, include the raw output
 		if err != nil {
+			//nolint:nilerr // Error embedded in Result struct
 			return &Result{
 				Linter:  g.Name(),
 				Passed:  false,

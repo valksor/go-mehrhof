@@ -9,15 +9,36 @@ formatters:
 
 linters:
     enable:
+        - bodyclose        # HTTP body close
+        - errcheck         # Unchecked errors
         - gocritic         # Advanced checks
         - gosec            # Security issues
-        - errcheck         # Unchecked errors
-        - staticcheck      # Go vet++
-        - unconvert        # Unnecessary conversions
+        - govet            # Built-in vet
         - misspell         # Typos in comments/strings
         - nolintlint       # Enforce nolint comments
-        - bodyclose        # HTTP body close
-        - govet            # Built-in vet
+        - staticcheck      # Go vet++
+        - unconvert        # Unnecessary conversions
+        - asasalint
+        - asciicheck
+        - bidichk
+        - copyloopvar
+        - decorder
+        - ineffassign
+        - musttag
+        - rowserrcheck
+        - sqlclosecheck
+        - unused
+        - whitespace
+        - wastedassign
+#        - varnamelen
+#        - unparam
+#        - prealloc
+        - noctx
+        - nilerr
+        - godot
+#        - exhaustive
+#        - errorlint
+#        - contextcheck
 
     settings:
         gofumpt:
@@ -48,3 +69,17 @@ issues:
             linters:
                 - gosec
                 - errcheck
+
+output:
+    path-mode: "abs"
+    sort-results: true
+    formats:
+        text:
+            colors: true
+            path: stdout
+            print-issued-lines: true
+            print-linter-name: true
+    sort-order:
+        - linter
+        - file
+        - severity

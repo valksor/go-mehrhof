@@ -51,6 +51,7 @@ func (i *Installer) IsWritable() (bool, error) {
 	dir := filepath.Dir(self)
 	tmpFile, err := os.CreateTemp(dir, ".mehrhof-update-test-")
 	if err != nil {
+		//nolint:nilerr // Can't create temp file = dir not writable
 		return false, nil
 	}
 

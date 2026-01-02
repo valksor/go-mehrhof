@@ -294,5 +294,6 @@ func runStandalonePlan(cmd *cobra.Command) error {
 		plan, _ = ws.LoadPlan(planID)
 	}
 
+	//nolint:nilerr // EOF from ReadString ends REPL gracefully
 	return nil
 }

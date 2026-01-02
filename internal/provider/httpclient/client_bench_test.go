@@ -34,6 +34,7 @@ func Benchmark_HTTPClient_SequentialRequests(b *testing.B) {
 	b.ReportAllocs()
 
 	for i := 0; i < b.N; i++ {
+		//nolint:noctx // Benchmark: no context cancellation needed
 		resp, err := client.Get(server.URL)
 		if err != nil {
 			b.Fatal(err)
@@ -57,6 +58,7 @@ func Benchmark_HTTPClient_ConcurrentRequests(b *testing.B) {
 
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
+			//nolint:noctx // Benchmark: no context cancellation needed
 			resp, err := client.Get(server.URL)
 			if err != nil {
 				b.Fatal(err)
@@ -81,6 +83,7 @@ func Benchmark_HTTPClient_NoPooling(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		// Create a new client each time - no pooling (old behavior)
 		client := &http.Client{Timeout: 30 * time.Second}
+		//nolint:noctx // Benchmark: no context cancellation needed
 		resp, err := client.Get(server.URL)
 		if err != nil {
 			b.Fatal(err)

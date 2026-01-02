@@ -295,6 +295,7 @@ func ResolveWorkspaceRoot() (WorkspaceResolution, error) {
 	git, err := vcs.New(cwd)
 	if err != nil {
 		// Not in a git repository, use cwd as root
+		//nolint:nilerr // Intentional: non-git repos return valid resolution without error
 		return WorkspaceResolution{
 			Root: cwd,
 			Git:  nil,

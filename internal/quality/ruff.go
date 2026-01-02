@@ -67,6 +67,7 @@ func (r *Ruff) Run(ctx context.Context, workDir string, files []string) (*Result
 	if parseErr != nil {
 		// If parsing fails but we got output, include it
 		if err != nil {
+			//nolint:nilerr // Error embedded in Result struct
 			return &Result{
 				Linter:  r.Name(),
 				Passed:  false,

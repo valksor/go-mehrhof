@@ -312,6 +312,7 @@ func (p *Provider) Snapshot(ctx context.Context, id string) (*provider.Snapshot,
 
 		content, err := os.ReadFile(path)
 		if err != nil {
+			//nolint:nilerr // Skip unreadable files in WalkDir
 			return nil // Skip files we can't read
 		}
 

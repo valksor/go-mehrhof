@@ -414,6 +414,7 @@ func (c *Conductor) askUserFinishAction() (string, error) {
 		if _, err := fmt.Scanln(&choice); err != nil {
 			// Handle EOF or empty input
 			fmt.Println("\nCancelled")
+			//nolint:nilerr // EOF from Scanln: cancel gracefully
 			return "cancel", nil
 		}
 
