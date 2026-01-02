@@ -149,8 +149,6 @@ Skip running `make quality`.
 mehr finish --quality-target lint
 ```
 
-Run `make lint` instead of `make quality`.
-
 ### Delete Work Directory
 
 ```bash
