@@ -25,7 +25,7 @@ func (p *Provider) List(ctx context.Context, opts provider.ListOptions) ([]*prov
 		req.Filter = &Filter{
 			Property: p.statusProperty,
 			Status: &StatusFilter{
-				Equals: mapProviderStatusToNotion(provider.Status(opts.Status)),
+				Equals: mapProviderStatusToNotion(opts.Status),
 			},
 		}
 	}

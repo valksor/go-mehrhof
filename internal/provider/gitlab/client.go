@@ -85,7 +85,7 @@ func (c *Client) getProjectID(ctx context.Context) (int64, error) {
 		return 0, wrapAPIError(err)
 	}
 
-	c.projectID = int64(project.ID)
+	c.projectID = project.ID
 	return c.projectID, nil
 }
 

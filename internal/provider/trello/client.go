@@ -370,7 +370,7 @@ func (c *Client) request(ctx context.Context, method, endpoint string, params ur
 	var resp *http.Response
 	err = httpclient.WithRetry(ctx, httpclient.DefaultRetryConfig(), func() error {
 		var err error
-		resp, err = c.http.Do(req)
+		resp, err = c.http.Do(req) //nolint:bodyclose // closed after WithRetry
 		return err
 	})
 	if err != nil {
