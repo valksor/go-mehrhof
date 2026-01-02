@@ -76,7 +76,6 @@ linters:
         - wastedassign
         - whitespace
 #        - wsl_v5
-#        - testpackage
 #        - tagliatelle
 #        - modernize
 #        - ireturn
