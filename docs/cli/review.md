@@ -21,6 +21,7 @@ Before the AI review, Mehrhof automatically detects and runs appropriate linters
 | Go | golangci-lint | `go.mod` present |
 | JavaScript/TypeScript | ESLint | `package.json` present |
 | Python | Ruff | `pyproject.toml` or `requirements.txt` present |
+| PHP | php-cs-fixer | `composer.json` or `.php-cs-fixer.php` present |
 
 Lint results are included in the AI agent's review context, allowing it to address both lint issues and higher-level code quality concerns.
 
