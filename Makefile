@@ -1,4 +1,4 @@
-.PHONY: build test lint install clean run
+.PHONY: build test lint install clean run hooks
 
 help: ## Outputs this help screen
 	@grep -E '(^[a-zA-Z0-9_-]+:.*?##.*$$)|(^##)' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}{printf "\033[32m%-30s\033[0m %s\n", $$1, $$2}' | sed -e 's/\[32m##/[33m/'
@@ -72,3 +72,7 @@ deps: ## Download dependencies
 
 version: build ## Show version info
 	$(BUILD_DIR)/$(BINARY_NAME) version
+
+hooks: ## Configure git to use versioned hooks
+	git config core.hooksPath .githooks
+	@echo "Git hooks configured to use .githooks/"
