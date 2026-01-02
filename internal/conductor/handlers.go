@@ -177,7 +177,7 @@ func (c *Conductor) RunPlanning(ctx context.Context) error {
 	}
 
 	// Create checkpoint if git is available
-	c.createCheckpointIfNeeded(taskID, fmt.Sprintf("Add specification-%d for task %s", nextNum, taskID))
+	c.createCheckpointIfNeeded(ctx, taskID, fmt.Sprintf("Add specification-%d for task %s", nextNum, taskID))
 
 	// Update state back to idle
 	c.activeTask.State = "idle"
@@ -294,7 +294,7 @@ func (c *Conductor) RunImplementation(ctx context.Context) error {
 	}
 
 	// Create checkpoint if git is available
-	if event := c.createCheckpointIfNeeded(taskID, fmt.Sprintf("Implement task %s", taskID)); event != nil {
+	if event := c.createCheckpointIfNeeded(ctx, taskID, fmt.Sprintf("Implement task %s", taskID)); event != nil {
 		c.eventBus.PublishRaw(*event)
 	}
 
@@ -419,7 +419,7 @@ func (c *Conductor) RunReview(ctx context.Context) error {
 		}
 
 		// Create checkpoint for review fixes
-		c.createCheckpointIfNeeded(taskID, fmt.Sprintf("Apply review fixes for task %s", taskID))
+		c.createCheckpointIfNeeded(ctx, taskID, fmt.Sprintf("Apply review fixes for task %s", taskID))
 	}
 
 	// Update state back to idle

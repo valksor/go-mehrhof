@@ -119,26 +119,28 @@ func TestFetchSubtasks(t *testing.T) {
 	})
 
 	t.Run("error when repo not configured", func(t *testing.T) {
+		ctx := context.Background()
 		p := &Provider{
-			client: NewClient("", "", ""),
+			client: NewClient(ctx, "", "", ""),
 			owner:  "",
 			repo:   "",
 		}
 
-		_, err := p.FetchSubtasks(context.Background(), "123")
+		_, err := p.FetchSubtasks(ctx, "123")
 		if err == nil {
 			t.Error("FetchSubtasks() expected error for unconfigured repo, got nil")
 		}
 	})
 
 	t.Run("error with invalid reference format", func(t *testing.T) {
+		ctx := context.Background()
 		p := &Provider{
-			client: NewClient("", "owner", "repo"),
+			client: NewClient(ctx, "", "owner", "repo"),
 			owner:  "owner",
 			repo:   "repo",
 		}
 
-		_, err := p.FetchSubtasks(context.Background(), "invalid-format")
+		_, err := p.FetchSubtasks(ctx, "invalid-format")
 		if err == nil {
 			t.Error("FetchSubtasks() expected error for invalid format, got nil")
 		}

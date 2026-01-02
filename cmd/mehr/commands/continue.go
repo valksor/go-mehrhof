@@ -65,7 +65,7 @@ func runContinue(cmd *cobra.Command, args []string) error {
 		// Try to detect from branch
 		git := cond.GetGit()
 		if git != nil {
-			branch, err := git.CurrentBranch()
+			branch, err := git.CurrentBranch(ctx)
 			if err == nil && strings.HasPrefix(branch, "task/") {
 				taskID := strings.TrimPrefix(branch, "task/")
 				fmt.Printf("On task branch: %s\n", branch)

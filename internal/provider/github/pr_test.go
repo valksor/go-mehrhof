@@ -481,14 +481,15 @@ func TestCreatePullRequest_Success(t *testing.T) {
 
 func TestProvider_GetDefaultBranch(t *testing.T) {
 	t.Run("returns config target branch when set", func(t *testing.T) {
+		ctx := context.Background()
 		p := &Provider{
 			config: &Config{TargetBranch: "develop"},
-			client: NewClient("", "owner", "repo"),
+			client: NewClient(ctx, "", "owner", "repo"),
 			owner:  "owner",
 			repo:   "repo",
 		}
 
-		branch, err := p.GetDefaultBranch(context.Background())
+		branch, err := p.GetDefaultBranch(ctx)
 		if err != nil {
 			t.Fatalf("GetDefaultBranch() error = %v", err)
 		}
@@ -653,8 +654,9 @@ func TestCreatePRFromTask_Success(t *testing.T) {
 	})
 
 	t.Run("error when repo not configured", func(t *testing.T) {
+		ctx := context.Background()
 		p := &Provider{
-			client: NewClient("", "", ""),
+			client: NewClient(ctx, "", "", ""),
 			config: &Config{},
 			owner:  "",
 			repo:   "",
@@ -666,7 +668,7 @@ func TestCreatePRFromTask_Success(t *testing.T) {
 			},
 		}
 
-		_, err := p.CreatePRFromTask(context.Background(), taskWork, nil, "feature", "")
+		_, err := p.CreatePRFromTask(ctx, taskWork, nil, "feature", "")
 		if err == nil {
 			t.Error("CreatePRFromTask() expected error for unconfigured repo, got nil")
 		}

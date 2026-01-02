@@ -40,8 +40,10 @@ func init() {
 }
 
 func runList(cmd *cobra.Command, args []string) error {
+	ctx := cmd.Context()
+
 	// Resolve workspace root and git context
-	res, err := ResolveWorkspaceRoot()
+	res, err := ResolveWorkspaceRoot(ctx)
 	if err != nil {
 		return err
 	}

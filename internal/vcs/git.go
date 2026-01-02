@@ -45,8 +45,8 @@ type Git struct {
 }
 
 // New creates a Git instance for the given path.
-func New(path string) (*Git, error) {
-	root, err := findRepoRoot(path)
+func New(ctx context.Context, path string) (*Git, error) {
+	root, err := findRepoRoot(ctx, path)
 	if err != nil {
 		return nil, err
 	}
@@ -59,20 +59,19 @@ func (g *Git) Root() string {
 }
 
 // IsRepo checks if the path is inside a git repository.
-func IsRepo(path string) bool {
-	_, err := findRepoRoot(path)
+func IsRepo(ctx context.Context, path string) bool {
+	_, err := findRepoRoot(ctx, path)
 	return err == nil
 }
 
 // findRepoRoot locates the git repository root.
-func findRepoRoot(path string) (string, error) {
+func findRepoRoot(ctx context.Context, path string) (string, error) {
 	absPath, err := filepath.Abs(path)
 	if err != nil {
 		return "", err
 	}
 
-	// Use background context for repo discovery (this is a fast local operation)
-	out, err := runGitCommandContext(context.Background(), absPath, "rev-parse", "--show-toplevel")
+	out, err := runGitCommandContext(ctx, absPath, "rev-parse", "--show-toplevel")
 	if err != nil {
 		return "", fmt.Errorf("not a git repository: %w", err)
 	}
@@ -81,8 +80,8 @@ func findRepoRoot(path string) (string, error) {
 }
 
 // CurrentBranch returns the current branch name.
-func (g *Git) CurrentBranch() (string, error) {
-	out, err := g.run("rev-parse", "--abbrev-ref", "HEAD")
+func (g *Git) CurrentBranch(ctx context.Context) (string, error) {
+	out, err := g.run(ctx, "rev-parse", "--abbrev-ref", "HEAD")
 	if err != nil {
 		return "", fmt.Errorf("get current branch: %w", err)
 	}
@@ -90,8 +89,8 @@ func (g *Git) CurrentBranch() (string, error) {
 }
 
 // Status returns uncommitted changes.
-func (g *Git) Status() ([]FileStatus, error) {
-	out, err := g.run("status", "--porcelain", "-z")
+func (g *Git) Status(ctx context.Context) ([]FileStatus, error) {
+	out, err := g.run(ctx, "status", "--porcelain", "-z")
 	if err != nil {
 		return nil, fmt.Errorf("git status: %w", err)
 	}
@@ -135,8 +134,8 @@ func (f FileStatus) IsModified() bool {
 }
 
 // HasChanges returns true if there are uncommitted changes.
-func (g *Git) HasChanges() (bool, error) {
-	files, err := g.Status()
+func (g *Git) HasChanges(ctx context.Context) (bool, error) {
+	files, err := g.Status(ctx)
 	if err != nil {
 		return false, err
 	}
@@ -144,9 +143,9 @@ func (g *Git) HasChanges() (bool, error) {
 }
 
 // Add stages files for commit.
-func (g *Git) Add(paths ...string) error {
+func (g *Git) Add(ctx context.Context, paths ...string) error {
 	args := append([]string{"add"}, paths...)
-	_, err := g.run(args...)
+	_, err := g.run(ctx, args...)
 	if err != nil {
 		return fmt.Errorf("git add: %w", err)
 	}
@@ -154,8 +153,8 @@ func (g *Git) Add(paths ...string) error {
 }
 
 // AddAll stages all changes.
-func (g *Git) AddAll() error {
-	return g.Add("-A")
+func (g *Git) AddAll(ctx context.Context) error {
+	return g.Add(ctx, "-A")
 }
 
 // CommitOptions configures commit behavior.
@@ -165,7 +164,7 @@ type CommitOptions struct {
 
 // Commit creates a commit with the given message.
 // Optional CommitOptions can be provided to modify behavior.
-func (g *Git) Commit(message string, opts ...CommitOptions) (string, error) {
+func (g *Git) Commit(ctx context.Context, message string, opts ...CommitOptions) (string, error) {
 	args := []string{"commit"}
 
 	// Apply options if provided
@@ -175,12 +174,12 @@ func (g *Git) Commit(message string, opts ...CommitOptions) (string, error) {
 
 	args = append(args, "-m", message)
 
-	if _, err := g.run(args...); err != nil {
+	if _, err := g.run(ctx, args...); err != nil {
 		return "", fmt.Errorf("git commit: %w", err)
 	}
 
 	// Get the commit hash
-	out, err := g.run("rev-parse", "HEAD")
+	out, err := g.run(ctx, "rev-parse", "HEAD")
 	if err != nil {
 		return "", fmt.Errorf("get commit hash: %w", err)
 	}
@@ -189,8 +188,8 @@ func (g *Git) Commit(message string, opts ...CommitOptions) (string, error) {
 }
 
 // Checkout switches to a branch.
-func (g *Git) Checkout(ref string) error {
-	_, err := g.run("checkout", ref)
+func (g *Git) Checkout(ctx context.Context, ref string) error {
+	_, err := g.run(ctx, "checkout", ref)
 	if err != nil {
 		return fmt.Errorf("git checkout %s: %w", ref, err)
 	}
@@ -198,20 +197,20 @@ func (g *Git) Checkout(ref string) error {
 }
 
 // Diff returns diff output.
-func (g *Git) Diff(args ...string) (string, error) {
+func (g *Git) Diff(ctx context.Context, args ...string) (string, error) {
 	cmdArgs := append([]string{"diff"}, args...)
-	return g.run(cmdArgs...)
+	return g.run(ctx, cmdArgs...)
 }
 
 // Log returns commit logs.
-func (g *Git) Log(args ...string) (string, error) {
+func (g *Git) Log(ctx context.Context, args ...string) (string, error) {
 	cmdArgs := append([]string{"log"}, args...)
-	return g.run(cmdArgs...)
+	return g.run(ctx, cmdArgs...)
 }
 
 // RevParse resolves a git reference.
-func (g *Git) RevParse(ref string) (string, error) {
-	out, err := g.run("rev-parse", ref)
+func (g *Git) RevParse(ctx context.Context, ref string) (string, error) {
+	out, err := g.run(ctx, "rev-parse", ref)
 	if err != nil {
 		return "", fmt.Errorf("rev-parse %s: %w", ref, err)
 	}
@@ -219,8 +218,8 @@ func (g *Git) RevParse(ref string) (string, error) {
 }
 
 // GetCommitMessage returns the message for a commit.
-func (g *Git) GetCommitMessage(ref string) (string, error) {
-	out, err := g.run("log", "-1", "--format=%B", ref)
+func (g *Git) GetCommitMessage(ctx context.Context, ref string) (string, error) {
+	out, err := g.run(ctx, "log", "-1", "--format=%B", ref)
 	if err != nil {
 		return "", fmt.Errorf("get commit message: %w", err)
 	}
@@ -228,8 +227,8 @@ func (g *Git) GetCommitMessage(ref string) (string, error) {
 }
 
 // GetCommitAuthor returns the author of a commit.
-func (g *Git) GetCommitAuthor(ref string) (string, error) {
-	out, err := g.run("log", "-1", "--format=%an <%ae>", ref)
+func (g *Git) GetCommitAuthor(ctx context.Context, ref string) (string, error) {
+	out, err := g.run(ctx, "log", "-1", "--format=%an <%ae>", ref)
 	if err != nil {
 		return "", fmt.Errorf("get commit author: %w", err)
 	}
@@ -237,8 +236,8 @@ func (g *Git) GetCommitAuthor(ref string) (string, error) {
 }
 
 // ResetHard resets to a ref, discarding all changes.
-func (g *Git) ResetHard(ref string) error {
-	_, err := g.run("reset", "--hard", ref)
+func (g *Git) ResetHard(ctx context.Context, ref string) error {
+	_, err := g.run(ctx, "reset", "--hard", ref)
 	if err != nil {
 		return fmt.Errorf("reset hard to %s: %w", ref, err)
 	}
@@ -246,8 +245,8 @@ func (g *Git) ResetHard(ref string) error {
 }
 
 // ResetSoft resets to a ref, keeping changes staged.
-func (g *Git) ResetSoft(ref string) error {
-	_, err := g.run("reset", "--soft", ref)
+func (g *Git) ResetSoft(ctx context.Context, ref string) error {
+	_, err := g.run(ctx, "reset", "--soft", ref)
 	if err != nil {
 		return fmt.Errorf("reset soft to %s: %w", ref, err)
 	}
@@ -255,40 +254,33 @@ func (g *Git) ResetSoft(ref string) error {
 }
 
 // Clean removes untracked files.
-func (g *Git) Clean(force bool) error {
+func (g *Git) Clean(ctx context.Context, force bool) error {
 	args := []string{"clean", "-d"}
 	if force {
 		args = append(args, "-f")
 	}
-	_, err := g.run(args...)
+	_, err := g.run(ctx, args...)
 	return err
 }
 
 // Stash saves changes to stash.
-func (g *Git) Stash(message string) error {
+func (g *Git) Stash(ctx context.Context, message string) error {
 	args := []string{"stash", "push"}
 	if message != "" {
 		args = append(args, "-m", message)
 	}
-	_, err := g.run(args...)
+	_, err := g.run(ctx, args...)
 	return err
 }
 
 // StashPop applies and removes the top stash entry.
-func (g *Git) StashPop() error {
-	_, err := g.run("stash", "pop")
+func (g *Git) StashPop(ctx context.Context) error {
+	_, err := g.run(ctx, "stash", "pop")
 	return err
 }
 
-// run executes a git command in the repo root.
-// Note: This uses a background context and does not propagate cancellation.
-// For operations that need context cancellation or deadlines, use RunContext().
-func (g *Git) run(args ...string) (string, error) {
-	return runGitCommandContext(context.Background(), g.repoRoot, args...)
-}
-
-// RunContext executes a git command with context.
-func (g *Git) RunContext(ctx context.Context, args ...string) (string, error) {
+// run executes a git command in the repo root with context.
+func (g *Git) run(ctx context.Context, args ...string) (string, error) {
 	return runGitCommandContext(ctx, g.repoRoot, args...)
 }
 
@@ -320,8 +312,8 @@ type Config struct {
 }
 
 // GetConfig reads a git config value.
-func (g *Git) GetConfig(key string) (string, error) {
-	out, err := g.run("config", "--get", key)
+func (g *Git) GetConfig(ctx context.Context, key string) (string, error) {
+	out, err := g.run(ctx, "config", "--get", key)
 	if err != nil {
 		return "", err
 	}
@@ -329,14 +321,14 @@ func (g *Git) GetConfig(key string) (string, error) {
 }
 
 // SetConfig sets a git config value.
-func (g *Git) SetConfig(key, value string) error {
-	_, err := g.run("config", key, value)
+func (g *Git) SetConfig(ctx context.Context, key, value string) error {
+	_, err := g.run(ctx, "config", key, value)
 	return err
 }
 
 // RemoteURL returns the URL for a remote.
-func (g *Git) RemoteURL(name string) (string, error) {
-	out, err := g.run("remote", "get-url", name)
+func (g *Git) RemoteURL(ctx context.Context, name string) (string, error) {
+	out, err := g.run(ctx, "remote", "get-url", name)
 	if err != nil {
 		return "", fmt.Errorf("get remote URL %s: %w", name, err)
 	}
@@ -344,22 +336,22 @@ func (g *Git) RemoteURL(name string) (string, error) {
 }
 
 // Fetch fetches from a remote.
-func (g *Git) Fetch(remote string, args ...string) error {
+func (g *Git) Fetch(ctx context.Context, remote string, args ...string) error {
 	cmdArgs := append([]string{"fetch", remote}, args...)
-	_, err := g.run(cmdArgs...)
+	_, err := g.run(ctx, cmdArgs...)
 	return err
 }
 
 // Pull pulls from a remote.
-func (g *Git) Pull(remote, branch string) error {
-	_, err := g.run("pull", remote, branch)
+func (g *Git) Pull(ctx context.Context, remote, branch string) error {
+	_, err := g.run(ctx, "pull", remote, branch)
 	return err
 }
 
 // Push pushes to a remote.
-func (g *Git) Push(remote, branch string, args ...string) error {
+func (g *Git) Push(ctx context.Context, remote, branch string, args ...string) error {
 	cmdArgs := append([]string{"push", remote, branch}, args...)
-	_, err := g.run(cmdArgs...)
+	_, err := g.run(ctx, cmdArgs...)
 	return err
 }
 
@@ -378,14 +370,14 @@ func (g *Git) IsWorktree() bool {
 
 // GetMainWorktreePath returns the path to the main repository when called
 // from within a worktree. Returns an error if not in a worktree.
-func (g *Git) GetMainWorktreePath() (string, error) {
+func (g *Git) GetMainWorktreePath(ctx context.Context) (string, error) {
 	if !g.IsWorktree() {
 		return "", fmt.Errorf("not in a worktree")
 	}
 
 	// git rev-parse --git-common-dir returns the shared .git directory
 	// e.g., /path/to/main-repo/.git
-	out, err := g.run("rev-parse", "--git-common-dir")
+	out, err := g.run(ctx, "rev-parse", "--git-common-dir")
 	if err != nil {
 		return "", fmt.Errorf("get git common dir: %w", err)
 	}

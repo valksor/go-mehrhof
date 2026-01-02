@@ -1,6 +1,7 @@
 package vcs
 
 import (
+	"context"
 	"os"
 	"path/filepath"
 	"testing"
@@ -11,8 +12,9 @@ func TestCreateCheckpoint(t *testing.T) {
 		t.Skip("skipping integration test")
 	}
 
+	ctx := context.Background()
 	dir := initTestRepo(t)
-	g, err := New(dir)
+	g, err := New(ctx, dir)
 	if err != nil {
 		t.Fatalf("New: %v", err)
 	}
@@ -22,7 +24,7 @@ func TestCreateCheckpoint(t *testing.T) {
 		t.Fatalf("WriteFile: %v", err)
 	}
 
-	cp, err := g.CreateCheckpoint("task-123", "first checkpoint")
+	cp, err := g.CreateCheckpoint(ctx, "task-123", "first checkpoint")
 	if err != nil {
 		t.Fatalf("CreateCheckpoint: %v", err)
 	}
@@ -43,8 +45,9 @@ func TestCreateMultipleCheckpoints(t *testing.T) {
 		t.Skip("skipping integration test")
 	}
 
+	ctx := context.Background()
 	dir := initTestRepo(t)
-	g, err := New(dir)
+	g, err := New(ctx, dir)
 	if err != nil {
 		t.Fatalf("New: %v", err)
 	}
@@ -53,7 +56,7 @@ func TestCreateMultipleCheckpoints(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(dir, "file1.txt"), []byte("1"), 0o644); err != nil {
 		t.Fatalf("WriteFile: %v", err)
 	}
-	cp1, err := g.CreateCheckpoint("task-456", "checkpoint 1")
+	cp1, err := g.CreateCheckpoint(ctx, "task-456", "checkpoint 1")
 	if err != nil {
 		t.Fatalf("CreateCheckpoint 1: %v", err)
 	}
@@ -62,7 +65,7 @@ func TestCreateMultipleCheckpoints(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(dir, "file2.txt"), []byte("2"), 0o644); err != nil {
 		t.Fatalf("WriteFile: %v", err)
 	}
-	cp2, err := g.CreateCheckpoint("task-456", "checkpoint 2")
+	cp2, err := g.CreateCheckpoint(ctx, "task-456", "checkpoint 2")
 	if err != nil {
 		t.Fatalf("CreateCheckpoint 2: %v", err)
 	}
@@ -80,14 +83,15 @@ func TestCreateCheckpointNoChanges(t *testing.T) {
 		t.Skip("skipping integration test")
 	}
 
+	ctx := context.Background()
 	dir := initTestRepo(t)
-	g, err := New(dir)
+	g, err := New(ctx, dir)
 	if err != nil {
 		t.Fatalf("New: %v", err)
 	}
 
 	// No changes - should still create checkpoint using current HEAD
-	cp, err := g.CreateCheckpoint("task-empty", "empty checkpoint")
+	cp, err := g.CreateCheckpoint(ctx, "task-empty", "empty checkpoint")
 	if err != nil {
 		t.Fatalf("CreateCheckpoint: %v", err)
 	}
@@ -105,8 +109,9 @@ func TestListCheckpoints(t *testing.T) {
 		t.Skip("skipping integration test")
 	}
 
+	ctx := context.Background()
 	dir := initTestRepo(t)
-	g, err := New(dir)
+	g, err := New(ctx, dir)
 	if err != nil {
 		t.Fatalf("New: %v", err)
 	}
@@ -117,23 +122,23 @@ func TestListCheckpoints(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(dir, "a.txt"), []byte("a"), 0o644); err != nil {
 		t.Fatalf("WriteFile: %v", err)
 	}
-	if _, err := g.CreateCheckpoint(taskID, "cp1"); err != nil {
+	if _, err := g.CreateCheckpoint(ctx, taskID, "cp1"); err != nil {
 		t.Fatalf("CreateCheckpoint: %v", err)
 	}
 	if err := os.WriteFile(filepath.Join(dir, "b.txt"), []byte("b"), 0o644); err != nil {
 		t.Fatalf("WriteFile: %v", err)
 	}
-	if _, err := g.CreateCheckpoint(taskID, "cp2"); err != nil {
+	if _, err := g.CreateCheckpoint(ctx, taskID, "cp2"); err != nil {
 		t.Fatalf("CreateCheckpoint: %v", err)
 	}
 	if err := os.WriteFile(filepath.Join(dir, "c.txt"), []byte("c"), 0o644); err != nil {
 		t.Fatalf("WriteFile: %v", err)
 	}
-	if _, err := g.CreateCheckpoint(taskID, "cp3"); err != nil {
+	if _, err := g.CreateCheckpoint(ctx, taskID, "cp3"); err != nil {
 		t.Fatalf("CreateCheckpoint: %v", err)
 	}
 
-	checkpoints, err := g.ListCheckpoints(taskID)
+	checkpoints, err := g.ListCheckpoints(ctx, taskID)
 	if err != nil {
 		t.Fatalf("ListCheckpoints: %v", err)
 	}
@@ -156,13 +161,14 @@ func TestListCheckpointsEmpty(t *testing.T) {
 		t.Skip("skipping integration test")
 	}
 
+	ctx := context.Background()
 	dir := initTestRepo(t)
-	g, err := New(dir)
+	g, err := New(ctx, dir)
 	if err != nil {
 		t.Fatalf("New: %v", err)
 	}
 
-	checkpoints, err := g.ListCheckpoints("nonexistent-task")
+	checkpoints, err := g.ListCheckpoints(ctx, "nonexistent-task")
 	if err != nil {
 		t.Fatalf("ListCheckpoints: %v", err)
 	}
@@ -177,8 +183,9 @@ func TestGetCheckpoint(t *testing.T) {
 		t.Skip("skipping integration test")
 	}
 
+	ctx := context.Background()
 	dir := initTestRepo(t)
-	g, err := New(dir)
+	g, err := New(ctx, dir)
 	if err != nil {
 		t.Fatalf("New: %v", err)
 	}
@@ -188,19 +195,19 @@ func TestGetCheckpoint(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(dir, "x.txt"), []byte("x"), 0o644); err != nil {
 		t.Fatalf("WriteFile: %v", err)
 	}
-	if _, err := g.CreateCheckpoint(taskID, "checkpoint one"); err != nil {
+	if _, err := g.CreateCheckpoint(ctx, taskID, "checkpoint one"); err != nil {
 		t.Fatalf("CreateCheckpoint: %v", err)
 	}
 	if err := os.WriteFile(filepath.Join(dir, "y.txt"), []byte("y"), 0o644); err != nil {
 		t.Fatalf("WriteFile: %v", err)
 	}
-	cp2, err := g.CreateCheckpoint(taskID, "checkpoint two")
+	cp2, err := g.CreateCheckpoint(ctx, taskID, "checkpoint two")
 	if err != nil {
 		t.Fatalf("CreateCheckpoint: %v", err)
 	}
 
 	// Get checkpoint 2
-	cp, err := g.GetCheckpoint(taskID, 2)
+	cp, err := g.GetCheckpoint(ctx, taskID, 2)
 	if err != nil {
 		t.Fatalf("GetCheckpoint: %v", err)
 	}
@@ -218,13 +225,14 @@ func TestGetCheckpointNotFound(t *testing.T) {
 		t.Skip("skipping integration test")
 	}
 
+	ctx := context.Background()
 	dir := initTestRepo(t)
-	g, err := New(dir)
+	g, err := New(ctx, dir)
 	if err != nil {
 		t.Fatalf("New: %v", err)
 	}
 
-	_, err = g.GetCheckpoint("task-x", 99)
+	_, err = g.GetCheckpoint(ctx, "task-x", 99)
 	if err == nil {
 		t.Error("GetCheckpoint should fail for non-existent checkpoint")
 	}
@@ -235,8 +243,9 @@ func TestGetLatestCheckpoint(t *testing.T) {
 		t.Skip("skipping integration test")
 	}
 
+	ctx := context.Background()
 	dir := initTestRepo(t)
-	g, err := New(dir)
+	g, err := New(ctx, dir)
 	if err != nil {
 		t.Fatalf("New: %v", err)
 	}
@@ -246,18 +255,18 @@ func TestGetLatestCheckpoint(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(dir, "1.txt"), []byte("1"), 0o644); err != nil {
 		t.Fatalf("WriteFile: %v", err)
 	}
-	if _, err := g.CreateCheckpoint(taskID, "first"); err != nil {
+	if _, err := g.CreateCheckpoint(ctx, taskID, "first"); err != nil {
 		t.Fatalf("CreateCheckpoint: %v", err)
 	}
 	if err := os.WriteFile(filepath.Join(dir, "2.txt"), []byte("2"), 0o644); err != nil {
 		t.Fatalf("WriteFile: %v", err)
 	}
-	cp2, err := g.CreateCheckpoint(taskID, "second")
+	cp2, err := g.CreateCheckpoint(ctx, taskID, "second")
 	if err != nil {
 		t.Fatalf("CreateCheckpoint: %v", err)
 	}
 
-	latest, err := g.GetLatestCheckpoint(taskID)
+	latest, err := g.GetLatestCheckpoint(ctx, taskID)
 	if err != nil {
 		t.Fatalf("GetLatestCheckpoint: %v", err)
 	}
@@ -272,13 +281,14 @@ func TestGetLatestCheckpointNone(t *testing.T) {
 		t.Skip("skipping integration test")
 	}
 
+	ctx := context.Background()
 	dir := initTestRepo(t)
-	g, err := New(dir)
+	g, err := New(ctx, dir)
 	if err != nil {
 		t.Fatalf("New: %v", err)
 	}
 
-	_, err = g.GetLatestCheckpoint("no-checkpoints")
+	_, err = g.GetLatestCheckpoint(ctx, "no-checkpoints")
 	if err == nil {
 		t.Error("GetLatestCheckpoint should fail when no checkpoints")
 	}
@@ -289,8 +299,9 @@ func TestCanUndo(t *testing.T) {
 		t.Skip("skipping integration test")
 	}
 
+	ctx := context.Background()
 	dir := initTestRepo(t)
-	g, err := New(dir)
+	g, err := New(ctx, dir)
 	if err != nil {
 		t.Fatalf("New: %v", err)
 	}
@@ -298,7 +309,7 @@ func TestCanUndo(t *testing.T) {
 	taskID := "task-undo"
 
 	// No checkpoints - can't undo
-	can, err := g.CanUndo(taskID)
+	can, err := g.CanUndo(ctx, taskID)
 	if err != nil {
 		t.Fatalf("CanUndo: %v", err)
 	}
@@ -310,11 +321,11 @@ func TestCanUndo(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(dir, "undo1.txt"), []byte("undo1"), 0o644); err != nil {
 		t.Fatalf("WriteFile: %v", err)
 	}
-	if _, err := g.CreateCheckpoint(taskID, "checkpoint 1"); err != nil {
+	if _, err := g.CreateCheckpoint(ctx, taskID, "checkpoint 1"); err != nil {
 		t.Fatalf("CreateCheckpoint: %v", err)
 	}
 
-	can, err = g.CanUndo(taskID)
+	can, err = g.CanUndo(ctx, taskID)
 	if err != nil {
 		t.Fatalf("CanUndo: %v", err)
 	}
@@ -326,11 +337,11 @@ func TestCanUndo(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(dir, "undo2.txt"), []byte("undo2"), 0o644); err != nil {
 		t.Fatalf("WriteFile: %v", err)
 	}
-	if _, err := g.CreateCheckpoint(taskID, "checkpoint 2"); err != nil {
+	if _, err := g.CreateCheckpoint(ctx, taskID, "checkpoint 2"); err != nil {
 		t.Fatalf("CreateCheckpoint: %v", err)
 	}
 
-	can, err = g.CanUndo(taskID)
+	can, err = g.CanUndo(ctx, taskID)
 	if err != nil {
 		t.Fatalf("CanUndo: %v", err)
 	}
@@ -344,8 +355,9 @@ func TestCanRedo(t *testing.T) {
 		t.Skip("skipping integration test")
 	}
 
+	ctx := context.Background()
 	dir := initTestRepo(t)
-	g, err := New(dir)
+	g, err := New(ctx, dir)
 	if err != nil {
 		t.Fatalf("New: %v", err)
 	}
@@ -353,7 +365,7 @@ func TestCanRedo(t *testing.T) {
 	taskID := "task-redo"
 
 	// No checkpoints - can't redo
-	can, err := g.CanRedo(taskID)
+	can, err := g.CanRedo(ctx, taskID)
 	if err != nil {
 		t.Fatalf("CanRedo: %v", err)
 	}
@@ -367,8 +379,9 @@ func TestUndoRedo(t *testing.T) {
 		t.Skip("skipping integration test")
 	}
 
+	ctx := context.Background()
 	dir := initTestRepo(t)
-	g, err := New(dir)
+	g, err := New(ctx, dir)
 	if err != nil {
 		t.Fatalf("New: %v", err)
 	}
@@ -380,7 +393,7 @@ func TestUndoRedo(t *testing.T) {
 	if err := os.WriteFile(testFile, []byte("v1"), 0o644); err != nil {
 		t.Fatalf("WriteFile: %v", err)
 	}
-	if _, err := g.CreateCheckpoint(taskID, "v1"); err != nil {
+	if _, err := g.CreateCheckpoint(ctx, taskID, "v1"); err != nil {
 		t.Fatalf("CreateCheckpoint: %v", err)
 	}
 
@@ -388,12 +401,12 @@ func TestUndoRedo(t *testing.T) {
 	if err := os.WriteFile(testFile, []byte("v2"), 0o644); err != nil {
 		t.Fatalf("WriteFile: %v", err)
 	}
-	if _, err := g.CreateCheckpoint(taskID, "v2"); err != nil {
+	if _, err := g.CreateCheckpoint(ctx, taskID, "v2"); err != nil {
 		t.Fatalf("CreateCheckpoint: %v", err)
 	}
 
 	// Undo should go back to v1
-	cp, err := g.Undo(taskID)
+	cp, err := g.Undo(ctx, taskID)
 	if err != nil {
 		t.Fatalf("Undo: %v", err)
 	}
@@ -407,7 +420,7 @@ func TestUndoRedo(t *testing.T) {
 	}
 
 	// Redo should go back to v2
-	cp, err = g.Redo(taskID)
+	cp, err = g.Redo(ctx, taskID)
 	if err != nil {
 		t.Fatalf("Redo: %v", err)
 	}
@@ -426,8 +439,9 @@ func TestDeleteCheckpoint(t *testing.T) {
 		t.Skip("skipping integration test")
 	}
 
+	ctx := context.Background()
 	dir := initTestRepo(t)
-	g, err := New(dir)
+	g, err := New(ctx, dir)
 	if err != nil {
 		t.Fatalf("New: %v", err)
 	}
@@ -437,16 +451,16 @@ func TestDeleteCheckpoint(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(dir, "del.txt"), []byte("del"), 0o644); err != nil {
 		t.Fatalf("WriteFile: %v", err)
 	}
-	if _, err := g.CreateCheckpoint(taskID, "to delete"); err != nil {
+	if _, err := g.CreateCheckpoint(ctx, taskID, "to delete"); err != nil {
 		t.Fatalf("CreateCheckpoint: %v", err)
 	}
 
-	err = g.DeleteCheckpoint(taskID, 1)
+	err = g.DeleteCheckpoint(ctx, taskID, 1)
 	if err != nil {
 		t.Fatalf("DeleteCheckpoint: %v", err)
 	}
 
-	checkpoints, _ := g.ListCheckpoints(taskID)
+	checkpoints, _ := g.ListCheckpoints(ctx, taskID)
 	if len(checkpoints) != 0 {
 		t.Errorf("expected 0 checkpoints after delete, got %d", len(checkpoints))
 	}
@@ -457,8 +471,9 @@ func TestDeleteAllCheckpoints(t *testing.T) {
 		t.Skip("skipping integration test")
 	}
 
+	ctx := context.Background()
 	dir := initTestRepo(t)
-	g, err := New(dir)
+	g, err := New(ctx, dir)
 	if err != nil {
 		t.Fatalf("New: %v", err)
 	}
@@ -468,22 +483,22 @@ func TestDeleteAllCheckpoints(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(dir, "a.txt"), []byte("a"), 0o644); err != nil {
 		t.Fatalf("WriteFile: %v", err)
 	}
-	if _, err := g.CreateCheckpoint(taskID, "cp1"); err != nil {
+	if _, err := g.CreateCheckpoint(ctx, taskID, "cp1"); err != nil {
 		t.Fatalf("CreateCheckpoint: %v", err)
 	}
 	if err := os.WriteFile(filepath.Join(dir, "b.txt"), []byte("b"), 0o644); err != nil {
 		t.Fatalf("WriteFile: %v", err)
 	}
-	if _, err := g.CreateCheckpoint(taskID, "cp2"); err != nil {
+	if _, err := g.CreateCheckpoint(ctx, taskID, "cp2"); err != nil {
 		t.Fatalf("CreateCheckpoint: %v", err)
 	}
 
-	err = g.DeleteAllCheckpoints(taskID)
+	err = g.DeleteAllCheckpoints(ctx, taskID)
 	if err != nil {
 		t.Fatalf("DeleteAllCheckpoints: %v", err)
 	}
 
-	checkpoints, _ := g.ListCheckpoints(taskID)
+	checkpoints, _ := g.ListCheckpoints(ctx, taskID)
 	if len(checkpoints) != 0 {
 		t.Errorf("expected 0 checkpoints, got %d", len(checkpoints))
 	}
@@ -494,8 +509,9 @@ func TestCheckpointTrackerBasic(t *testing.T) {
 		t.Skip("skipping integration test")
 	}
 
+	ctx := context.Background()
 	dir := initTestRepo(t)
-	g, err := New(dir)
+	g, err := New(ctx, dir)
 	if err != nil {
 		t.Fatalf("New: %v", err)
 	}
@@ -507,7 +523,7 @@ func TestCheckpointTrackerBasic(t *testing.T) {
 	}
 
 	// Initially no checkpoints
-	checkpoints, err := tracker.List()
+	checkpoints, err := tracker.List(ctx)
 	if err != nil {
 		t.Fatalf("List: %v", err)
 	}
@@ -516,12 +532,12 @@ func TestCheckpointTrackerBasic(t *testing.T) {
 	}
 
 	// UndoAvailable should be false
-	if tracker.UndoAvailable() {
+	if tracker.UndoAvailable(ctx) {
 		t.Error("undo should not be available initially")
 	}
 
 	// RedoAvailable should be false
-	if tracker.RedoAvailable() {
+	if tracker.RedoAvailable(ctx) {
 		t.Error("redo should not be available initially")
 	}
 }
@@ -572,8 +588,9 @@ func TestRestoreCheckpoint(t *testing.T) {
 		t.Skip("skipping integration test")
 	}
 
+	ctx := context.Background()
 	dir := initTestRepo(t)
-	g, err := New(dir)
+	g, err := New(ctx, dir)
 	if err != nil {
 		t.Fatalf("New: %v", err)
 	}
@@ -585,26 +602,26 @@ func TestRestoreCheckpoint(t *testing.T) {
 	if err := os.WriteFile(testFile, []byte("v1"), 0o644); err != nil {
 		t.Fatalf("WriteFile: %v", err)
 	}
-	if _, err := g.CreateCheckpoint(taskID, "version 1"); err != nil {
+	if _, err := g.CreateCheckpoint(ctx, taskID, "version 1"); err != nil {
 		t.Fatalf("CreateCheckpoint: %v", err)
 	}
 
 	if err := os.WriteFile(testFile, []byte("v2"), 0o644); err != nil {
 		t.Fatalf("WriteFile: %v", err)
 	}
-	if _, err := g.CreateCheckpoint(taskID, "version 2"); err != nil {
+	if _, err := g.CreateCheckpoint(ctx, taskID, "version 2"); err != nil {
 		t.Fatalf("CreateCheckpoint: %v", err)
 	}
 
 	if err := os.WriteFile(testFile, []byte("v3"), 0o644); err != nil {
 		t.Fatalf("WriteFile: %v", err)
 	}
-	if _, err := g.CreateCheckpoint(taskID, "version 3"); err != nil {
+	if _, err := g.CreateCheckpoint(ctx, taskID, "version 3"); err != nil {
 		t.Fatalf("CreateCheckpoint: %v", err)
 	}
 
 	// Restore to checkpoint 1
-	err = g.RestoreCheckpoint(taskID, 1)
+	err = g.RestoreCheckpoint(ctx, taskID, 1)
 	if err != nil {
 		t.Fatalf("RestoreCheckpoint: %v", err)
 	}
@@ -620,8 +637,9 @@ func TestGetChangeSummary(t *testing.T) {
 		t.Skip("skipping integration test")
 	}
 
+	ctx := context.Background()
 	dir := initTestRepo(t)
-	g, err := New(dir)
+	g, err := New(ctx, dir)
 	if err != nil {
 		t.Fatalf("New: %v", err)
 	}
@@ -635,7 +653,7 @@ func TestGetChangeSummary(t *testing.T) {
 	}
 
 	// GetChangeSummary returns current working directory changes (not per-checkpoint)
-	summary, err := g.GetChangeSummary()
+	summary, err := g.GetChangeSummary(ctx)
 	if err != nil {
 		t.Fatalf("GetChangeSummary: %v", err)
 	}
@@ -651,8 +669,9 @@ func TestGenerateAutoSummary(t *testing.T) {
 		t.Skip("skipping integration test")
 	}
 
+	ctx := context.Background()
 	dir := initTestRepo(t)
-	g, err := New(dir)
+	g, err := New(ctx, dir)
 	if err != nil {
 		t.Fatalf("New: %v", err)
 	}
@@ -663,7 +682,7 @@ func TestGenerateAutoSummary(t *testing.T) {
 	}
 
 	// GenerateAutoSummary() returns a summary of current working directory changes
-	summary, err := g.GenerateAutoSummary()
+	summary, err := g.GenerateAutoSummary(ctx)
 	if err != nil {
 		t.Fatalf("GenerateAutoSummary: %v", err)
 	}
@@ -677,14 +696,15 @@ func TestGenerateAutoSummary_NoChanges(t *testing.T) {
 		t.Skip("skipping integration test")
 	}
 
+	ctx := context.Background()
 	dir := initTestRepo(t)
-	g, err := New(dir)
+	g, err := New(ctx, dir)
 	if err != nil {
 		t.Fatalf("New: %v", err)
 	}
 
 	// No changes
-	summary, err := g.GenerateAutoSummary()
+	summary, err := g.GenerateAutoSummary(ctx)
 	if err != nil {
 		t.Fatalf("GenerateAutoSummary: %v", err)
 	}
@@ -698,8 +718,9 @@ func TestCreateCheckpointAutoSummary(t *testing.T) {
 		t.Skip("skipping integration test")
 	}
 
+	ctx := context.Background()
 	dir := initTestRepo(t)
-	g, err := New(dir)
+	g, err := New(ctx, dir)
 	if err != nil {
 		t.Fatalf("New: %v", err)
 	}
@@ -711,7 +732,7 @@ func TestCreateCheckpointAutoSummary(t *testing.T) {
 		t.Fatalf("WriteFile: %v", err)
 	}
 
-	cp, err := g.CreateCheckpointAutoSummary(taskID)
+	cp, err := g.CreateCheckpointAutoSummary(ctx, taskID)
 	if err != nil {
 		t.Fatalf("CreateCheckpointAutoSummary: %v", err)
 	}
@@ -729,8 +750,9 @@ func TestCheckpointTracker_SaveAndUndoRedo(t *testing.T) {
 		t.Skip("skipping integration test")
 	}
 
+	ctx := context.Background()
 	dir := initTestRepo(t)
-	g, err := New(dir)
+	g, err := New(ctx, dir)
 	if err != nil {
 		t.Fatalf("New: %v", err)
 	}
@@ -742,7 +764,7 @@ func TestCheckpointTracker_SaveAndUndoRedo(t *testing.T) {
 	if err := os.WriteFile(testFile, []byte("v1"), 0o644); err != nil {
 		t.Fatalf("WriteFile: %v", err)
 	}
-	_, err = tracker.Save("version 1")
+	_, err = tracker.Save(ctx, "version 1")
 	if err != nil {
 		t.Fatalf("Save 1: %v", err)
 	}
@@ -750,18 +772,18 @@ func TestCheckpointTracker_SaveAndUndoRedo(t *testing.T) {
 	if err := os.WriteFile(testFile, []byte("v2"), 0o644); err != nil {
 		t.Fatalf("WriteFile: %v", err)
 	}
-	_, err = tracker.Save("version 2")
+	_, err = tracker.Save(ctx, "version 2")
 	if err != nil {
 		t.Fatalf("Save 2: %v", err)
 	}
 
 	// Check UndoAvailable
-	if !tracker.UndoAvailable() {
+	if !tracker.UndoAvailable(ctx) {
 		t.Error("undo should be available after 2 saves")
 	}
 
 	// Undo
-	cp, err := tracker.Undo()
+	cp, err := tracker.Undo(ctx)
 	if err != nil {
 		t.Fatalf("Undo: %v", err)
 	}
@@ -770,12 +792,12 @@ func TestCheckpointTracker_SaveAndUndoRedo(t *testing.T) {
 	}
 
 	// Check RedoAvailable
-	if !tracker.RedoAvailable() {
+	if !tracker.RedoAvailable(ctx) {
 		t.Error("redo should be available after undo")
 	}
 
 	// Redo
-	cp, err = tracker.Redo()
+	cp, err = tracker.Redo(ctx)
 	if err != nil {
 		t.Fatalf("Redo: %v", err)
 	}
@@ -789,8 +811,9 @@ func TestCheckpointTracker_SaveAuto(t *testing.T) {
 		t.Skip("skipping integration test")
 	}
 
+	ctx := context.Background()
 	dir := initTestRepo(t)
-	g, err := New(dir)
+	g, err := New(ctx, dir)
 	if err != nil {
 		t.Fatalf("New: %v", err)
 	}
@@ -802,7 +825,7 @@ func TestCheckpointTracker_SaveAuto(t *testing.T) {
 		t.Fatalf("WriteFile: %v", err)
 	}
 
-	cp, err := tracker.SaveAuto()
+	cp, err := tracker.SaveAuto(ctx)
 	if err != nil {
 		t.Fatalf("SaveAuto: %v", err)
 	}

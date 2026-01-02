@@ -97,7 +97,7 @@ func (l *Loader) Get(name string) (*Process, bool) {
 }
 
 // Unload stops and removes a plugin process.
-func (l *Loader) Unload(name string) error {
+func (l *Loader) Unload(ctx context.Context, name string) error {
 	l.mu.Lock()
 	proc, ok := l.processes[name]
 	if !ok {
@@ -107,11 +107,11 @@ func (l *Loader) Unload(name string) error {
 	delete(l.processes, name)
 	l.mu.Unlock()
 
-	return proc.Stop()
+	return proc.Stop(ctx)
 }
 
 // UnloadAll stops all plugin processes.
-func (l *Loader) UnloadAll() error {
+func (l *Loader) UnloadAll(ctx context.Context) error {
 	l.mu.Lock()
 	procs := make([]*Process, 0, len(l.processes))
 	for _, proc := range l.processes {
@@ -122,7 +122,7 @@ func (l *Loader) UnloadAll() error {
 
 	var errs []error
 	for _, proc := range procs {
-		if err := proc.Stop(); err != nil {
+		if err := proc.Stop(ctx); err != nil {
 			errs = append(errs, err)
 		}
 	}

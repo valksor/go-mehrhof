@@ -417,12 +417,12 @@ func runPluginsValidate(cmd *cobra.Command, args []string) error {
 		_, err = proc.Call(ctx, initMethod, &plugin.InitParams{Config: make(map[string]any)})
 		if err != nil {
 			fmt.Printf("  ERROR: Init failed: %v\n", err)
-			_ = proc.Stop()
+			_ = proc.Stop(ctx)
 			hasErrors = true
 			continue
 		}
 
-		_ = proc.Stop()
+		_ = proc.Stop(ctx)
 		fmt.Printf("  OK\n")
 	}
 

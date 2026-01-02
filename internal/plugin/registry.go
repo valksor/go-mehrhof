@@ -102,7 +102,7 @@ func (r *Registry) DiscoverAndLoad(ctx context.Context) error {
 			}
 			if _, err := proc.Call(ctx, initMethod(manifest.Type), &InitParams{Config: cfg}); err != nil {
 				// Initialization failed, unload
-				_ = proc.Stop()
+				_ = proc.Stop(ctx)
 				info.Process = nil
 				continue
 			}
@@ -245,7 +245,7 @@ func (r *Registry) Enable(ctx context.Context, name string) error {
 		cfg = make(map[string]any)
 	}
 	if _, err := proc.Call(ctx, initMethod(info.Manifest.Type), &InitParams{Config: cfg}); err != nil {
-		_ = proc.Stop()
+		_ = proc.Stop(ctx)
 		return fmt.Errorf("initialize plugin: %w", err)
 	}
 
@@ -257,7 +257,7 @@ func (r *Registry) Enable(ctx context.Context, name string) error {
 }
 
 // Disable disables a specific plugin and unloads it.
-func (r *Registry) Disable(name string) error {
+func (r *Registry) Disable(ctx context.Context, name string) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
@@ -272,7 +272,7 @@ func (r *Registry) Disable(name string) error {
 
 	if info.Process != nil {
 		// Stop the process - errors are expected if already stopped
-		_ = info.Process.Stop()
+		_ = info.Process.Stop(ctx)
 		info.Process = nil
 	}
 
@@ -288,7 +288,7 @@ func (r *Registry) Reload(ctx context.Context) error {
 	r.mu.Lock()
 	for _, info := range r.plugins {
 		if info.Process != nil {
-			_ = info.Process.Stop()
+			_ = info.Process.Stop(ctx)
 		}
 	}
 	r.plugins = make(map[string]*PluginInfo)
@@ -299,14 +299,14 @@ func (r *Registry) Reload(ctx context.Context) error {
 }
 
 // Shutdown stops all running plugins.
-func (r *Registry) Shutdown() error {
+func (r *Registry) Shutdown(ctx context.Context) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
 	var errs []error
 	for _, info := range r.plugins {
 		if info.Process != nil {
-			if err := info.Process.Stop(); err != nil {
+			if err := info.Process.Stop(ctx); err != nil {
 				errs = append(errs, fmt.Errorf("stop %s: %w", info.Manifest.Name, err))
 			}
 			info.Process = nil

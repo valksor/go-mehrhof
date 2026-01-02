@@ -290,13 +290,13 @@ type WorkspaceResolution struct {
 // If in a git worktree, it returns the main repository path as the root.
 // If not in git, it returns the current working directory.
 // The git instance is only non-nil if successfully created.
-func ResolveWorkspaceRoot() (WorkspaceResolution, error) {
+func ResolveWorkspaceRoot(ctx context.Context) (WorkspaceResolution, error) {
 	cwd, err := os.Getwd()
 	if err != nil {
 		return WorkspaceResolution{}, fmt.Errorf("get working directory: %w", err)
 	}
 
-	git, err := vcs.New(cwd)
+	git, err := vcs.New(ctx, cwd)
 	if err != nil {
 		// Not in a git repository, use cwd as root
 		//nolint:nilerr // Intentional: non-git repos return valid resolution without error
@@ -308,7 +308,7 @@ func ResolveWorkspaceRoot() (WorkspaceResolution, error) {
 
 	// In a git repository - check if we're in a worktree
 	if git.IsWorktree() {
-		mainRepo, err := git.GetMainWorktreePath()
+		mainRepo, err := git.GetMainWorktreePath(ctx)
 		if err != nil {
 			return WorkspaceResolution{}, fmt.Errorf("get main repo from worktree: %w", err)
 		}

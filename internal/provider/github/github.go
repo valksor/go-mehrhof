@@ -122,7 +122,7 @@ func New(ctx context.Context, cfg provider.Config) (any, error) {
 	}
 
 	return &Provider{
-		client: NewClientWithCache(resolvedToken, owner, repo, providerCache),
+		client: NewClientWithCache(ctx, resolvedToken, owner, repo, providerCache),
 		owner:  owner,
 		repo:   repo,
 		config: config,

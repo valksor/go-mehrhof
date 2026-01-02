@@ -2,6 +2,7 @@ package vcs
 
 import (
 	"cmp"
+	"context"
 	"fmt"
 	"regexp"
 	"slices"
@@ -26,15 +27,15 @@ const CheckpointPrefix = "task-checkpoint"
 var checkpointTagRe = regexp.MustCompile(`^task-checkpoint/([^/]+)/(\d+)$`)
 
 // CreateCheckpoint creates a checkpoint for a task with default prefix [taskID].
-func (g *Git) CreateCheckpoint(taskID, message string) (*Checkpoint, error) {
+func (g *Git) CreateCheckpoint(ctx context.Context, taskID, message string) (*Checkpoint, error) {
 	defaultPrefix := fmt.Sprintf("[%s]", taskID)
-	return g.CreateCheckpointWithPrefix(taskID, message, defaultPrefix)
+	return g.CreateCheckpointWithPrefix(ctx, taskID, message, defaultPrefix)
 }
 
 // CreateCheckpointWithPrefix creates a checkpoint for a task with a custom commit prefix.
-func (g *Git) CreateCheckpointWithPrefix(taskID, message, commitPrefix string) (*Checkpoint, error) {
+func (g *Git) CreateCheckpointWithPrefix(ctx context.Context, taskID, message, commitPrefix string) (*Checkpoint, error) {
 	// Get next checkpoint number
-	existing, err := g.ListCheckpoints(taskID)
+	existing, err := g.ListCheckpoints(ctx, taskID)
 	if err != nil {
 		return nil, err
 	}
@@ -45,24 +46,24 @@ func (g *Git) CreateCheckpointWithPrefix(taskID, message, commitPrefix string) (
 	}
 
 	// Create commit if there are changes
-	hasChanges, err := g.HasChanges()
+	hasChanges, err := g.HasChanges(ctx)
 	if err != nil {
 		return nil, err
 	}
 
 	var commitHash string
 	if hasChanges {
-		if err := g.AddAll(); err != nil {
+		if err := g.AddAll(ctx); err != nil {
 			return nil, fmt.Errorf("stage changes: %w", err)
 		}
 		commitMsg := fmt.Sprintf("%s checkpoint %d: %s", commitPrefix, number, message)
-		commitHash, err = g.Commit(commitMsg)
+		commitHash, err = g.Commit(ctx, commitMsg)
 		if err != nil {
 			return nil, fmt.Errorf("create commit: %w", err)
 		}
 	} else {
 		// Use current HEAD for empty checkpoint
-		commitHash, err = g.RevParse("HEAD")
+		commitHash, err = g.RevParse(ctx, "HEAD")
 		if err != nil {
 			return nil, err
 		}
@@ -70,7 +71,7 @@ func (g *Git) CreateCheckpointWithPrefix(taskID, message, commitPrefix string) (
 
 	// Create tag for checkpoint
 	tagName := fmt.Sprintf("%s/%s/%d", CheckpointPrefix, taskID, number)
-	_, err = g.run("tag", tagName, commitHash)
+	_, err = g.run(ctx, "tag", tagName, commitHash)
 	if err != nil {
 		return nil, fmt.Errorf("create checkpoint tag: %w", err)
 	}
@@ -85,9 +86,9 @@ func (g *Git) CreateCheckpointWithPrefix(taskID, message, commitPrefix string) (
 }
 
 // ListCheckpoints returns all checkpoints for a task.
-func (g *Git) ListCheckpoints(taskID string) ([]*Checkpoint, error) {
+func (g *Git) ListCheckpoints(ctx context.Context, taskID string) ([]*Checkpoint, error) {
 	prefix := fmt.Sprintf("%s/%s/", CheckpointPrefix, taskID)
-	out, err := g.run("tag", "-l", prefix+"*")
+	out, err := g.run(ctx, "tag", "-l", prefix+"*")
 	if err != nil {
 		return nil, err
 	}
@@ -107,12 +108,12 @@ func (g *Git) ListCheckpoints(taskID string) ([]*Checkpoint, error) {
 		num, _ := strconv.Atoi(matches[2])
 
 		// Get commit info for this tag
-		hash, err := g.RevParse(tag)
+		hash, err := g.RevParse(ctx, tag)
 		if err != nil {
 			continue
 		}
 
-		msg, _ := g.GetCommitMessage(hash)
+		msg, _ := g.GetCommitMessage(ctx, hash)
 
 		cp := &Checkpoint{
 			ID:      hash,
@@ -122,7 +123,7 @@ func (g *Git) ListCheckpoints(taskID string) ([]*Checkpoint, error) {
 		}
 
 		// Get timestamp
-		out, err := g.run("log", "-1", "--format=%aI", hash)
+		out, err := g.run(ctx, "log", "-1", "--format=%aI", hash)
 		if err == nil {
 			cp.Timestamp, _ = time.Parse(time.RFC3339, strings.TrimSpace(out))
 		}
@@ -139,8 +140,8 @@ func (g *Git) ListCheckpoints(taskID string) ([]*Checkpoint, error) {
 }
 
 // GetCheckpoint returns a specific checkpoint.
-func (g *Git) GetCheckpoint(taskID string, number int) (*Checkpoint, error) {
-	checkpoints, err := g.ListCheckpoints(taskID)
+func (g *Git) GetCheckpoint(ctx context.Context, taskID string, number int) (*Checkpoint, error) {
+	checkpoints, err := g.ListCheckpoints(ctx, taskID)
 	if err != nil {
 		return nil, err
 	}
@@ -155,8 +156,8 @@ func (g *Git) GetCheckpoint(taskID string, number int) (*Checkpoint, error) {
 }
 
 // GetLatestCheckpoint returns the most recent checkpoint.
-func (g *Git) GetLatestCheckpoint(taskID string) (*Checkpoint, error) {
-	checkpoints, err := g.ListCheckpoints(taskID)
+func (g *Git) GetLatestCheckpoint(ctx context.Context, taskID string) (*Checkpoint, error) {
+	checkpoints, err := g.ListCheckpoints(ctx, taskID)
 	if err != nil {
 		return nil, err
 	}
@@ -169,14 +170,14 @@ func (g *Git) GetLatestCheckpoint(taskID string) (*Checkpoint, error) {
 }
 
 // RestoreCheckpoint reverts to a checkpoint state.
-func (g *Git) RestoreCheckpoint(taskID string, number int) error {
-	cp, err := g.GetCheckpoint(taskID, number)
+func (g *Git) RestoreCheckpoint(ctx context.Context, taskID string, number int) error {
+	cp, err := g.GetCheckpoint(ctx, taskID, number)
 	if err != nil {
 		return err
 	}
 
 	// Hard reset to checkpoint
-	if err := g.ResetHard(cp.ID); err != nil {
+	if err := g.ResetHard(ctx, cp.ID); err != nil {
 		return fmt.Errorf("restore checkpoint: %w", err)
 	}
 
@@ -184,8 +185,8 @@ func (g *Git) RestoreCheckpoint(taskID string, number int) error {
 }
 
 // CanUndo checks if undo is possible for a task.
-func (g *Git) CanUndo(taskID string) (bool, error) {
-	checkpoints, err := g.ListCheckpoints(taskID)
+func (g *Git) CanUndo(ctx context.Context, taskID string) (bool, error) {
+	checkpoints, err := g.ListCheckpoints(ctx, taskID)
 	if err != nil {
 		return false, err
 	}
@@ -195,7 +196,7 @@ func (g *Git) CanUndo(taskID string) (bool, error) {
 	}
 
 	// Check if current HEAD is at the latest checkpoint
-	head, err := g.RevParse("HEAD")
+	head, err := g.RevParse(ctx, "HEAD")
 	if err != nil {
 		return false, err
 	}
@@ -205,8 +206,8 @@ func (g *Git) CanUndo(taskID string) (bool, error) {
 }
 
 // CanRedo checks if redo is possible for a task.
-func (g *Git) CanRedo(taskID string) (bool, error) {
-	checkpoints, err := g.ListCheckpoints(taskID)
+func (g *Git) CanRedo(ctx context.Context, taskID string) (bool, error) {
+	checkpoints, err := g.ListCheckpoints(ctx, taskID)
 	if err != nil {
 		return false, err
 	}
@@ -216,7 +217,7 @@ func (g *Git) CanRedo(taskID string) (bool, error) {
 	}
 
 	// Check if we're not at the latest checkpoint
-	head, err := g.RevParse("HEAD")
+	head, err := g.RevParse(ctx, "HEAD")
 	if err != nil {
 		return false, err
 	}
@@ -226,8 +227,8 @@ func (g *Git) CanRedo(taskID string) (bool, error) {
 }
 
 // Undo reverts to the previous checkpoint.
-func (g *Git) Undo(taskID string) (*Checkpoint, error) {
-	checkpoints, err := g.ListCheckpoints(taskID)
+func (g *Git) Undo(ctx context.Context, taskID string) (*Checkpoint, error) {
+	checkpoints, err := g.ListCheckpoints(ctx, taskID)
 	if err != nil {
 		return nil, err
 	}
@@ -236,7 +237,7 @@ func (g *Git) Undo(taskID string) (*Checkpoint, error) {
 		return nil, fmt.Errorf("nothing to undo")
 	}
 
-	head, err := g.RevParse("HEAD")
+	head, err := g.RevParse(ctx, "HEAD")
 	if err != nil {
 		return nil, err
 	}
@@ -256,7 +257,7 @@ func (g *Git) Undo(taskID string) (*Checkpoint, error) {
 
 	// Restore previous checkpoint
 	previous := checkpoints[currentIdx-1]
-	if err := g.ResetHard(previous.ID); err != nil {
+	if err := g.ResetHard(ctx, previous.ID); err != nil {
 		return nil, fmt.Errorf("undo: %w", err)
 	}
 
@@ -264,8 +265,8 @@ func (g *Git) Undo(taskID string) (*Checkpoint, error) {
 }
 
 // Redo moves forward to the next checkpoint.
-func (g *Git) Redo(taskID string) (*Checkpoint, error) {
-	checkpoints, err := g.ListCheckpoints(taskID)
+func (g *Git) Redo(ctx context.Context, taskID string) (*Checkpoint, error) {
+	checkpoints, err := g.ListCheckpoints(ctx, taskID)
 	if err != nil {
 		return nil, err
 	}
@@ -274,7 +275,7 @@ func (g *Git) Redo(taskID string) (*Checkpoint, error) {
 		return nil, fmt.Errorf("nothing to redo")
 	}
 
-	head, err := g.RevParse("HEAD")
+	head, err := g.RevParse(ctx, "HEAD")
 	if err != nil {
 		return nil, err
 	}
@@ -294,7 +295,7 @@ func (g *Git) Redo(taskID string) (*Checkpoint, error) {
 
 	// Restore next checkpoint
 	next := checkpoints[currentIdx+1]
-	if err := g.ResetHard(next.ID); err != nil {
+	if err := g.ResetHard(ctx, next.ID); err != nil {
 		return nil, fmt.Errorf("redo: %w", err)
 	}
 
@@ -302,9 +303,9 @@ func (g *Git) Redo(taskID string) (*Checkpoint, error) {
 }
 
 // DeleteCheckpoint removes a checkpoint tag.
-func (g *Git) DeleteCheckpoint(taskID string, number int) error {
+func (g *Git) DeleteCheckpoint(ctx context.Context, taskID string, number int) error {
 	tagName := fmt.Sprintf("%s/%s/%d", CheckpointPrefix, taskID, number)
-	_, err := g.run("tag", "-d", tagName)
+	_, err := g.run(ctx, "tag", "-d", tagName)
 	if err != nil {
 		return fmt.Errorf("delete checkpoint: %w", err)
 	}
@@ -312,14 +313,14 @@ func (g *Git) DeleteCheckpoint(taskID string, number int) error {
 }
 
 // DeleteAllCheckpoints removes all checkpoints for a task.
-func (g *Git) DeleteAllCheckpoints(taskID string) error {
-	checkpoints, err := g.ListCheckpoints(taskID)
+func (g *Git) DeleteAllCheckpoints(ctx context.Context, taskID string) error {
+	checkpoints, err := g.ListCheckpoints(ctx, taskID)
 	if err != nil {
 		return err
 	}
 
 	for _, cp := range checkpoints {
-		if err := g.DeleteCheckpoint(taskID, cp.Number); err != nil {
+		if err := g.DeleteCheckpoint(ctx, taskID, cp.Number); err != nil {
 			// Continue on error, best effort
 			continue
 		}
@@ -337,9 +338,9 @@ type ChangeSummary struct {
 }
 
 // GetChangeSummary returns a summary of staged and unstaged changes.
-func (g *Git) GetChangeSummary() (*ChangeSummary, error) {
+func (g *Git) GetChangeSummary(ctx context.Context) (*ChangeSummary, error) {
 	// Get status output (porcelain format for parsing)
-	out, err := g.run("status", "--porcelain", "-uall")
+	out, err := g.run(ctx, "status", "--porcelain", "-uall")
 	if err != nil {
 		return nil, err
 	}
@@ -386,8 +387,8 @@ func (g *Git) GetChangeSummary() (*ChangeSummary, error) {
 }
 
 // GenerateAutoSummary creates an automatic commit message based on changes.
-func (g *Git) GenerateAutoSummary() (string, error) {
-	summary, err := g.GetChangeSummary()
+func (g *Git) GenerateAutoSummary(ctx context.Context) (string, error) {
+	summary, err := g.GetChangeSummary(ctx)
 	if err != nil {
 		return "", err
 	}
@@ -427,12 +428,12 @@ func (g *Git) GenerateAutoSummary() (string, error) {
 }
 
 // CreateCheckpointAutoSummary creates a checkpoint with auto-generated message.
-func (g *Git) CreateCheckpointAutoSummary(taskID string) (*Checkpoint, error) {
-	msg, err := g.GenerateAutoSummary()
+func (g *Git) CreateCheckpointAutoSummary(ctx context.Context, taskID string) (*Checkpoint, error) {
+	msg, err := g.GenerateAutoSummary(ctx)
 	if err != nil {
 		msg = "checkpoint"
 	}
-	return g.CreateCheckpoint(taskID, msg)
+	return g.CreateCheckpoint(ctx, taskID, msg)
 }
 
 // CheckpointTracker provides higher-level checkpoint tracking.
@@ -450,38 +451,38 @@ func NewCheckpointTracker(git *Git, taskID string) *CheckpointTracker {
 }
 
 // Save creates a new checkpoint.
-func (t *CheckpointTracker) Save(message string) (*Checkpoint, error) {
-	return t.git.CreateCheckpoint(t.taskID, message)
+func (t *CheckpointTracker) Save(ctx context.Context, message string) (*Checkpoint, error) {
+	return t.git.CreateCheckpoint(ctx, t.taskID, message)
 }
 
 // SaveAuto creates a checkpoint with auto-generated message.
-func (t *CheckpointTracker) SaveAuto() (*Checkpoint, error) {
-	return t.git.CreateCheckpointAutoSummary(t.taskID)
+func (t *CheckpointTracker) SaveAuto(ctx context.Context) (*Checkpoint, error) {
+	return t.git.CreateCheckpointAutoSummary(ctx, t.taskID)
 }
 
 // UndoAvailable checks if undo is possible.
-func (t *CheckpointTracker) UndoAvailable() bool {
-	can, _ := t.git.CanUndo(t.taskID)
+func (t *CheckpointTracker) UndoAvailable(ctx context.Context) bool {
+	can, _ := t.git.CanUndo(ctx, t.taskID)
 	return can
 }
 
 // RedoAvailable checks if redo is possible.
-func (t *CheckpointTracker) RedoAvailable() bool {
-	can, _ := t.git.CanRedo(t.taskID)
+func (t *CheckpointTracker) RedoAvailable(ctx context.Context) bool {
+	can, _ := t.git.CanRedo(ctx, t.taskID)
 	return can
 }
 
 // Undo reverts to the previous state.
-func (t *CheckpointTracker) Undo() (*Checkpoint, error) {
-	return t.git.Undo(t.taskID)
+func (t *CheckpointTracker) Undo(ctx context.Context) (*Checkpoint, error) {
+	return t.git.Undo(ctx, t.taskID)
 }
 
 // Redo moves forward to the next state.
-func (t *CheckpointTracker) Redo() (*Checkpoint, error) {
-	return t.git.Redo(t.taskID)
+func (t *CheckpointTracker) Redo(ctx context.Context) (*Checkpoint, error) {
+	return t.git.Redo(ctx, t.taskID)
 }
 
 // List returns all checkpoints.
-func (t *CheckpointTracker) List() ([]*Checkpoint, error) {
-	return t.git.ListCheckpoints(t.taskID)
+func (t *CheckpointTracker) List(ctx context.Context) ([]*Checkpoint, error) {
+	return t.git.ListCheckpoints(ctx, t.taskID)
 }

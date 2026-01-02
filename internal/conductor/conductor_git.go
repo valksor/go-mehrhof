@@ -1,6 +1,7 @@
 package conductor
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/valksor/go-mehrhof/internal/naming"
@@ -99,12 +100,12 @@ func (c *Conductor) resolveNaming(workUnit *provider.WorkUnit, taskID string) *n
 }
 
 // createBranchOrWorktree creates a git branch or worktree for the task.
-func (c *Conductor) createBranchOrWorktree(taskID string, ni *namingInfo) (*gitInfo, error) {
+func (c *Conductor) createBranchOrWorktree(ctx context.Context, taskID string, ni *namingInfo) (*gitInfo, error) {
 	if c.git == nil || !c.opts.CreateBranch {
 		return &gitInfo{}, nil
 	}
 
-	baseBranch, _ := c.git.GetBaseBranch()
+	baseBranch, _ := c.git.GetBaseBranch(ctx)
 	branchName := ni.branchName // Use resolved branch name from naming
 
 	if c.opts.UseWorktree {
@@ -112,7 +113,7 @@ func (c *Conductor) createBranchOrWorktree(taskID string, ni *namingInfo) (*gitI
 		if err := c.git.EnsureWorktreesDir(); err != nil {
 			return nil, fmt.Errorf("create worktrees directory: %w", err)
 		}
-		if err := c.git.CreateWorktreeNewBranch(worktreePath, branchName, baseBranch); err != nil {
+		if err := c.git.CreateWorktreeNewBranch(ctx, worktreePath, branchName, baseBranch); err != nil {
 			return nil, fmt.Errorf("create worktree: %w", err)
 		}
 		return &gitInfo{
@@ -125,14 +126,14 @@ func (c *Conductor) createBranchOrWorktree(taskID string, ni *namingInfo) (*gitI
 	}
 
 	// Create and checkout the branch
-	if err := c.git.CreateBranch(branchName, baseBranch); err != nil {
+	if err := c.git.CreateBranch(ctx, branchName, baseBranch); err != nil {
 		return nil, fmt.Errorf("create branch: %w", err)
 	}
 
 	// Switch to the new branch
-	if err := c.git.Checkout(branchName); err != nil {
+	if err := c.git.Checkout(ctx, branchName); err != nil {
 		// Try to clean up the branch we just created
-		_ = c.git.DeleteBranch(branchName, false)
+		_ = c.git.DeleteBranch(ctx, branchName, false)
 		return nil, fmt.Errorf("checkout branch: %w", err)
 	}
 
@@ -145,7 +146,7 @@ func (c *Conductor) createBranchOrWorktree(taskID string, ni *namingInfo) (*gitI
 }
 
 // resolveTargetBranch determines the target branch for merging.
-func (c *Conductor) resolveTargetBranch(requested string) string {
+func (c *Conductor) resolveTargetBranch(ctx context.Context, requested string) string {
 	if requested != "" {
 		return requested
 	}
@@ -156,25 +157,25 @@ func (c *Conductor) resolveTargetBranch(requested string) string {
 	}
 
 	// Fallback to detecting base branch
-	baseBranch, _ := c.git.GetBaseBranch()
+	baseBranch, _ := c.git.GetBaseBranch(ctx)
 	return baseBranch
 }
 
 // performMerge handles the merge operation (squash or regular).
-func (c *Conductor) performMerge(opts FinishOptions) error {
-	targetBranch := c.resolveTargetBranch(opts.TargetBranch)
+func (c *Conductor) performMerge(ctx context.Context, opts FinishOptions) error {
+	targetBranch := c.resolveTargetBranch(ctx, opts.TargetBranch)
 	currentBranch := c.activeTask.Branch
 	taskID := c.activeTask.ID
 
 	// Checkout target branch
-	if err := c.git.Checkout(targetBranch); err != nil {
+	if err := c.git.Checkout(ctx, targetBranch); err != nil {
 		return fmt.Errorf("checkout target: %w", err)
 	}
 
 	// Merge (squash or regular)
 	if opts.SquashMerge {
-		if err := c.git.MergeSquash(currentBranch); err != nil {
-			_ = c.git.Checkout(currentBranch)
+		if err := c.git.MergeSquash(ctx, currentBranch); err != nil {
+			_ = c.git.Checkout(ctx, currentBranch)
 			return fmt.Errorf("squash merge: %w", err)
 		}
 		// Use stored commit prefix, fallback to task ID if not set
@@ -183,13 +184,13 @@ func (c *Conductor) performMerge(opts FinishOptions) error {
 			prefix = fmt.Sprintf("(%s)", taskID)
 		}
 		msg := fmt.Sprintf("%s merged from %s", prefix, currentBranch)
-		if _, err := c.git.Commit(msg); err != nil {
-			_ = c.git.Checkout(currentBranch)
+		if _, err := c.git.Commit(ctx, msg); err != nil {
+			_ = c.git.Checkout(ctx, currentBranch)
 			return fmt.Errorf("commit merge: %w", err)
 		}
 	} else {
-		if err := c.git.MergeBranch(currentBranch, true); err != nil {
-			_ = c.git.Checkout(currentBranch)
+		if err := c.git.MergeBranch(ctx, currentBranch, true); err != nil {
+			_ = c.git.Checkout(ctx, currentBranch)
 			return fmt.Errorf("merge: %w", err)
 		}
 	}
@@ -200,9 +201,9 @@ func (c *Conductor) performMerge(opts FinishOptions) error {
 // cleanupAfterMerge removes the branch and worktree after successful merge
 // NOTE: Errors are logged but not returned intentionally.
 // The merge succeeded, so cleanup failures should not undo the user's work.
-func (c *Conductor) cleanupAfterMerge(opts FinishOptions) {
+func (c *Conductor) cleanupAfterMerge(ctx context.Context, opts FinishOptions) {
 	currentBranch := c.activeTask.Branch
-	targetBranch := c.resolveTargetBranch(opts.TargetBranch)
+	targetBranch := c.resolveTargetBranch(ctx, opts.TargetBranch)
 	taskID := c.activeTask.ID
 
 	if !opts.DeleteBranch || currentBranch == targetBranch {
@@ -210,16 +211,16 @@ func (c *Conductor) cleanupAfterMerge(opts FinishOptions) {
 	}
 
 	// Checkpoint deletion is best-effort; ignore errors
-	_ = c.git.DeleteAllCheckpoints(taskID)
+	_ = c.git.DeleteAllCheckpoints(ctx, taskID)
 
 	// If using worktree, remove it first
 	if worktreePath := c.activeTask.WorktreePath; worktreePath != "" {
-		if err := c.git.RemoveWorktree(worktreePath, true); err != nil {
+		if err := c.git.RemoveWorktree(ctx, worktreePath, true); err != nil {
 			c.logError(fmt.Errorf("remove worktree: %w", err))
 		}
 	}
 
-	if err := c.git.DeleteBranch(currentBranch, true); err != nil {
+	if err := c.git.DeleteBranch(ctx, currentBranch, true); err != nil {
 		c.logError(fmt.Errorf("delete branch: %w", err))
 	}
 }

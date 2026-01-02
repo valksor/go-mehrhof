@@ -24,7 +24,7 @@ func (c *Conductor) finishWithPR(ctx context.Context, opts FinishOptions) (*prov
 	sourceBranch := c.activeTask.Branch
 
 	// Push the branch to remote first
-	if err := c.git.PushBranch(sourceBranch, "origin", true); err != nil {
+	if err := c.git.PushBranch(ctx, sourceBranch, "origin", true); err != nil {
 		return nil, fmt.Errorf("push branch: %w", err)
 	}
 
@@ -48,12 +48,12 @@ func (c *Conductor) finishWithPR(ctx context.Context, opts FinishOptions) (*prov
 	}
 
 	// Get diff stats
-	diffStat := c.getDiffStats()
+	diffStat := c.getDiffStats(ctx)
 
 	// Determine target branch
 	targetBranch := opts.TargetBranch
 	if targetBranch == "" {
-		targetBranch = c.resolveTargetBranch("")
+		targetBranch = c.resolveTargetBranch(ctx, "")
 	}
 
 	// Build PR options
@@ -150,14 +150,14 @@ func (c *Conductor) loadSpecificationsForPR() ([]*storage.Specification, error) 
 }
 
 // getDiffStats returns git diff stats for the current branch vs base.
-func (c *Conductor) getDiffStats() string {
+func (c *Conductor) getDiffStats(ctx context.Context) string {
 	if c.git == nil || c.taskWork == nil {
 		return ""
 	}
 
 	baseBranch := c.taskWork.Git.BaseBranch
 	if baseBranch == "" {
-		baseBranch, _ = c.git.GetBaseBranch()
+		baseBranch, _ = c.git.GetBaseBranch(ctx)
 	}
 
 	if baseBranch == "" {
@@ -165,7 +165,7 @@ func (c *Conductor) getDiffStats() string {
 	}
 
 	// git diff --stat base..HEAD
-	stat, err := c.git.Diff("--stat", baseBranch+"..HEAD")
+	stat, err := c.git.Diff(ctx, "--stat", baseBranch+"..HEAD")
 	if err != nil {
 		return ""
 	}

@@ -314,14 +314,15 @@ func TestDownloader_Download(t *testing.T) {
 }
 
 func TestNewChecker(t *testing.T) {
+	ctx := context.Background()
 	// Test that checker can be created
-	checker := NewChecker("", "valksor", "go-mehrhof")
+	checker := NewChecker(ctx, "", "valksor", "go-mehrhof")
 	if checker == nil {
 		t.Fatal("NewChecker() returned nil")
 	}
 
 	// Test with empty owner/repo (should use defaults)
-	checker = NewChecker("", "", "")
+	checker = NewChecker(ctx, "", "", "")
 	if checker == nil {
 		t.Fatal("NewChecker() with empty strings returned nil")
 	}

@@ -112,7 +112,7 @@ func (c *Conductor) Undo(ctx context.Context) error {
 	taskID := c.activeTask.ID
 
 	// Check if undo is possible
-	can, err := c.git.CanUndo(taskID)
+	can, err := c.git.CanUndo(ctx, taskID)
 	if err != nil {
 		return err
 	}
@@ -126,7 +126,7 @@ func (c *Conductor) Undo(ctx context.Context) error {
 	}
 
 	// Perform git undo
-	checkpoint, err := c.git.Undo(taskID)
+	checkpoint, err := c.git.Undo(ctx, taskID)
 	if err != nil {
 		return fmt.Errorf("git undo: %w", err)
 	}
@@ -163,7 +163,7 @@ func (c *Conductor) Redo(ctx context.Context) error {
 	taskID := c.activeTask.ID
 
 	// Check if redo is possible
-	can, err := c.git.CanRedo(taskID)
+	can, err := c.git.CanRedo(ctx, taskID)
 	if err != nil {
 		return err
 	}
@@ -177,7 +177,7 @@ func (c *Conductor) Redo(ctx context.Context) error {
 	}
 
 	// Perform git redo
-	checkpoint, err := c.git.Redo(taskID)
+	checkpoint, err := c.git.Redo(ctx, taskID)
 	if err != nil {
 		return fmt.Errorf("git redo: %w", err)
 	}
@@ -326,7 +326,8 @@ func (c *Conductor) countCheckpoints() int {
 	if c.activeTask == nil || c.git == nil {
 		return 0
 	}
-	checkpoints, err := c.git.ListCheckpoints(c.activeTask.ID)
+	// Use background context since this is called from Status() which doesn't take context
+	checkpoints, err := c.git.ListCheckpoints(context.Background(), c.activeTask.ID)
 	if err != nil {
 		return 0
 	}
@@ -349,26 +350,26 @@ func (c *Conductor) publishProgress(message string, percent int) {
 }
 
 // finishWithMerge performs a local merge operation.
-func (c *Conductor) finishWithMerge(_ context.Context, opts FinishOptions) error {
+func (c *Conductor) finishWithMerge(ctx context.Context, opts FinishOptions) error {
 	// Handle git merge operations if applicable
 	if c.git == nil || !c.activeTask.UseGit || c.activeTask.Branch == "" {
 		return fmt.Errorf("git not available or no branch associated with task")
 	}
 
-	if err := c.performMerge(opts); err != nil {
+	if err := c.performMerge(ctx, opts); err != nil {
 		return err
 	}
 
 	// Push if requested
 	if opts.PushAfter {
-		targetBranch := c.resolveTargetBranch(opts.TargetBranch)
-		if err := c.git.PushBranch(targetBranch, "origin", false); err != nil {
+		targetBranch := c.resolveTargetBranch(ctx, opts.TargetBranch)
+		if err := c.git.PushBranch(ctx, targetBranch, "origin", false); err != nil {
 			return fmt.Errorf("push: %w", err)
 		}
 	}
 
 	// Cleanup branch and worktree if requested
-	c.cleanupAfterMerge(opts)
+	c.cleanupAfterMerge(ctx, opts)
 	return nil
 }
 

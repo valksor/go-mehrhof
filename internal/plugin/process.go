@@ -336,7 +336,7 @@ func (p *Process) Stream(ctx context.Context, method string, params any) (<-chan
 }
 
 // Stop gracefully stops the plugin process.
-func (p *Process) Stop() error {
+func (p *Process) Stop(ctx context.Context) error {
 	p.mu.Lock()
 	if p.stopping {
 		p.mu.Unlock()
@@ -352,9 +352,9 @@ func (p *Process) Stop() error {
 	}
 
 	// Try to send shutdown request - log error but continue with cleanup
-	ctx, cancel := context.WithTimeout(context.Background(), pluginStopTimeout)
+	shutdownCtx, cancel := context.WithTimeout(ctx, pluginStopTimeout)
 	defer cancel()
-	if _, err := p.Call(ctx, "shutdown", nil); err != nil {
+	if _, err := p.Call(shutdownCtx, "shutdown", nil); err != nil {
 		slog.Warn("plugin shutdown request failed", "plugin", p.manifest.Name, "error", err)
 	}
 

@@ -736,10 +736,11 @@ func TestProvider_Parse(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			ctx := context.Background()
 			p := &Provider{
 				owner:  tt.owner,
 				repo:   tt.repo,
-				client: NewClient("test-token", tt.owner, tt.repo),
+				client: NewClient(ctx, "test-token", tt.owner, tt.repo),
 			}
 
 			got, err := p.Parse(tt.input)
@@ -954,13 +955,14 @@ func TestFetchComments(t *testing.T) {
 	})
 
 	t.Run("error with invalid reference format", func(t *testing.T) {
+		ctx := context.Background()
 		p := &Provider{
-			client: NewClient("", "owner", "repo"),
+			client: NewClient(ctx, "", "owner", "repo"),
 			owner:  "owner",
 			repo:   "repo",
 		}
 
-		_, err := p.FetchComments(context.Background(), "invalid-format")
+		_, err := p.FetchComments(ctx, "invalid-format")
 		if err == nil {
 			t.Error("FetchComments() expected error for invalid format, got nil")
 		}
@@ -1036,13 +1038,14 @@ func TestProvider_AddComment(t *testing.T) {
 	})
 
 	t.Run("error with invalid reference format", func(t *testing.T) {
+		ctx := context.Background()
 		p := &Provider{
-			client: NewClient("", "owner", "repo"),
+			client: NewClient(ctx, "", "owner", "repo"),
 			owner:  "owner",
 			repo:   "repo",
 		}
 
-		_, err := p.AddComment(context.Background(), "invalid-format", "comment")
+		_, err := p.AddComment(ctx, "invalid-format", "comment")
 		if err == nil {
 			t.Error("AddComment() expected error for invalid format, got nil")
 		}

@@ -86,7 +86,7 @@ func (c *Conductor) RunQuality(ctx context.Context, opts QualityOptions) (*Quali
 	// Get git status before running quality
 	var beforeFiles []string
 	if c.git != nil {
-		files, _ := c.git.Status()
+		files, _ := c.git.Status(ctx)
 		for _, f := range files {
 			beforeFiles = append(beforeFiles, f.Path)
 		}
@@ -109,7 +109,7 @@ func (c *Conductor) RunQuality(ctx context.Context, opts QualityOptions) (*Quali
 
 	// Check if files changed after running quality
 	if c.git != nil {
-		afterFiles, _ := c.git.Status()
+		afterFiles, _ := c.git.Status(ctx)
 		result.FilesChanged = detectChangedFiles(beforeFiles, afterFiles)
 	}
 
@@ -136,7 +136,7 @@ func (c *Conductor) RunQuality(ctx context.Context, opts QualityOptions) (*Quali
 
 		// Stage the changes
 		if c.git != nil {
-			if err := c.git.AddAll(); err != nil {
+			if err := c.git.AddAll(ctx); err != nil {
 				return result, fmt.Errorf("stage quality changes: %w", err)
 			}
 		}

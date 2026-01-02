@@ -28,6 +28,7 @@ func init() {
 }
 
 func runInit(cmd *cobra.Command, args []string) error {
+	ctx := cmd.Context()
 	out := cmd.OutOrStdout()
 	errOut := cmd.ErrOrStderr()
 
@@ -37,7 +38,7 @@ func runInit(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("get current directory: %w", err)
 	}
 
-	git, err := vcs.New(workDir)
+	git, err := vcs.New(ctx, workDir)
 	root := workDir
 	if err == nil {
 		root = git.Root()

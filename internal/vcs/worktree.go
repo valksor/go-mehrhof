@@ -1,6 +1,7 @@
 package vcs
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -17,8 +18,8 @@ type Worktree struct {
 }
 
 // ListWorktrees returns all worktrees in the repository.
-func (g *Git) ListWorktrees() ([]Worktree, error) {
-	out, err := g.run("worktree", "list", "--porcelain")
+func (g *Git) ListWorktrees(ctx context.Context) ([]Worktree, error) {
+	out, err := g.run(ctx, "worktree", "list", "--porcelain")
 	if err != nil {
 		return nil, fmt.Errorf("list worktrees: %w", err)
 	}
@@ -63,7 +64,7 @@ func (g *Git) ListWorktrees() ([]Worktree, error) {
 }
 
 // CreateWorktree creates a new worktree for a branch.
-func (g *Git) CreateWorktree(path, branch string) error {
+func (g *Git) CreateWorktree(ctx context.Context, path, branch string) error {
 	absPath, err := filepath.Abs(path)
 	if err != nil {
 		return fmt.Errorf("resolve path: %w", err)
@@ -75,7 +76,7 @@ func (g *Git) CreateWorktree(path, branch string) error {
 		return fmt.Errorf("create parent directory: %w", err)
 	}
 
-	_, err = g.run("worktree", "add", absPath, branch)
+	_, err = g.run(ctx, "worktree", "add", absPath, branch)
 	if err != nil {
 		return fmt.Errorf("create worktree: %w", err)
 	}
@@ -84,7 +85,7 @@ func (g *Git) CreateWorktree(path, branch string) error {
 }
 
 // CreateWorktreeNewBranch creates a worktree with a new branch.
-func (g *Git) CreateWorktreeNewBranch(path, branch, base string) error {
+func (g *Git) CreateWorktreeNewBranch(ctx context.Context, path, branch, base string) error {
 	absPath, err := filepath.Abs(path)
 	if err != nil {
 		return fmt.Errorf("resolve path: %w", err)
@@ -101,7 +102,7 @@ func (g *Git) CreateWorktreeNewBranch(path, branch, base string) error {
 		args = append(args, base)
 	}
 
-	_, err = g.run(args...)
+	_, err = g.run(ctx, args...)
 	if err != nil {
 		return fmt.Errorf("create worktree with new branch: %w", err)
 	}
@@ -110,13 +111,13 @@ func (g *Git) CreateWorktreeNewBranch(path, branch, base string) error {
 }
 
 // RemoveWorktree removes a worktree.
-func (g *Git) RemoveWorktree(path string, force bool) error {
+func (g *Git) RemoveWorktree(ctx context.Context, path string, force bool) error {
 	args := []string{"worktree", "remove", path}
 	if force {
 		args = []string{"worktree", "remove", "--force", path}
 	}
 
-	_, err := g.run(args...)
+	_, err := g.run(ctx, args...)
 	if err != nil {
 		return fmt.Errorf("remove worktree: %w", err)
 	}
@@ -125,14 +126,14 @@ func (g *Git) RemoveWorktree(path string, force bool) error {
 }
 
 // PruneWorktrees removes stale worktree information.
-func (g *Git) PruneWorktrees() error {
-	_, err := g.run("worktree", "prune")
+func (g *Git) PruneWorktrees(ctx context.Context) error {
+	_, err := g.run(ctx, "worktree", "prune")
 	return err
 }
 
 // GetWorktreeForBranch finds the worktree for a given branch.
-func (g *Git) GetWorktreeForBranch(branch string) (*Worktree, error) {
-	worktrees, err := g.ListWorktrees()
+func (g *Git) GetWorktreeForBranch(ctx context.Context, branch string) (*Worktree, error) {
+	worktrees, err := g.ListWorktrees(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -147,8 +148,8 @@ func (g *Git) GetWorktreeForBranch(branch string) (*Worktree, error) {
 }
 
 // WorktreeExists checks if a worktree exists at the given path.
-func (g *Git) WorktreeExists(path string) bool {
-	worktrees, err := g.ListWorktrees()
+func (g *Git) WorktreeExists(ctx context.Context, path string) bool {
+	worktrees, err := g.ListWorktrees(ctx)
 	if err != nil {
 		return false
 	}

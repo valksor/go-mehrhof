@@ -43,7 +43,7 @@ func checkForUpdatesInBackground(ctx context.Context) {
 	token, _ := github.ResolveToken("")
 
 	// Create checker and check for updates
-	checker := update.NewChecker(token, "valksor", "go-mehrhof")
+	checker := update.NewChecker(timeoutCtx, token, "valksor", "go-mehrhof")
 
 	opts := update.CheckOptions{
 		CurrentVersion:    Version,

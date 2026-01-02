@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"strings"
@@ -57,8 +58,10 @@ func init() {
 }
 
 func runStatus(cmd *cobra.Command, args []string) error {
+	ctx := cmd.Context()
+
 	// Resolve workspace root and git context
-	res, err := ResolveWorkspaceRoot()
+	res, err := ResolveWorkspaceRoot(ctx)
 	if err != nil {
 		return err
 	}
@@ -74,13 +77,13 @@ func runStatus(cmd *cobra.Command, args []string) error {
 
 	// If in a worktree, auto-detect task from worktree path
 	if res.IsWorktree {
-		return showWorktreeTask(ws, res.Git)
+		return showWorktreeTask(ctx, ws, res.Git)
 	}
 
-	return showActiveTask(ws, res.Git)
+	return showActiveTask(ctx, ws, res.Git)
 }
 
-func showWorktreeTask(ws *storage.Workspace, git *vcs.Git) error {
+func showWorktreeTask(ctx context.Context, ws *storage.Workspace, git *vcs.Git) error {
 	// Auto-detect task from current worktree
 	if git == nil {
 		return fmt.Errorf("not in a worktree")
@@ -111,7 +114,7 @@ func showWorktreeTask(ws *storage.Workspace, git *vcs.Git) error {
 
 	// JSON output path
 	if statusJSON {
-		return outputJSON(buildJSONStatusTask(ws, git, active, work, git.Root()))
+		return outputJSON(buildJSONStatusTask(ctx, ws, git, active, work, git.Root()))
 	}
 
 	fmt.Printf("Worktree Task: %s\n", display.Bold(active.ID))
@@ -155,7 +158,7 @@ func showWorktreeTask(ws *storage.Workspace, git *vcs.Git) error {
 	}
 
 	// Show checkpoints
-	checkpoints, _ := git.ListCheckpoints(active.ID)
+	checkpoints, _ := git.ListCheckpoints(ctx, active.ID)
 	if len(checkpoints) > 0 {
 		fmt.Printf("\nCheckpoints: %d\n", len(checkpoints))
 		for _, cp := range checkpoints {
@@ -182,7 +185,7 @@ func showWorktreeTask(ws *storage.Workspace, git *vcs.Git) error {
 	return nil
 }
 
-func showActiveTask(ws *storage.Workspace, git *vcs.Git) error {
+func showActiveTask(ctx context.Context, ws *storage.Workspace, git *vcs.Git) error {
 	if !ws.HasActiveTask() {
 		if statusJSON {
 			return outputJSON(jsonStatusTask{})
@@ -203,7 +206,7 @@ func showActiveTask(ws *storage.Workspace, git *vcs.Git) error {
 
 	// JSON output path
 	if statusJSON {
-		return outputJSON(buildJSONStatusTask(ws, git, active, work, ""))
+		return outputJSON(buildJSONStatusTask(ctx, ws, git, active, work, ""))
 	}
 
 	fmt.Printf("Active Task: %s\n", display.Bold(active.ID))
@@ -267,7 +270,7 @@ func showActiveTask(ws *storage.Workspace, git *vcs.Git) error {
 
 	// Show checkpoints
 	if git != nil {
-		checkpoints, err := git.ListCheckpoints(active.ID)
+		checkpoints, err := git.ListCheckpoints(ctx, active.ID)
 		if err == nil && len(checkpoints) > 0 {
 			fmt.Printf("\nCheckpoints: %d\n", len(checkpoints))
 			for _, cp := range checkpoints {
@@ -483,7 +486,7 @@ type jsonStatusAllOutput struct {
 }
 
 // buildJSONStatusTask constructs a jsonStatusTask from workspace data.
-func buildJSONStatusTask(ws *storage.Workspace, git *vcs.Git, active *storage.ActiveTask, work *storage.TaskWork, worktreePath string) jsonStatusTask {
+func buildJSONStatusTask(ctx context.Context, ws *storage.Workspace, git *vcs.Git, active *storage.ActiveTask, work *storage.TaskWork, worktreePath string) jsonStatusTask {
 	task := jsonStatusTask{
 		TaskID:       active.ID,
 		Title:        work.Metadata.Title,
@@ -523,7 +526,7 @@ func buildJSONStatusTask(ws *storage.Workspace, git *vcs.Git, active *storage.Ac
 
 	// Get checkpoints if git is available
 	if git != nil {
-		checkpoints, _ := git.ListCheckpoints(active.ID)
+		checkpoints, _ := git.ListCheckpoints(ctx, active.ID)
 		for _, cp := range checkpoints {
 			task.Checkpoints = append(task.Checkpoints, jsonCheckpoint{
 				Number:    cp.Number,

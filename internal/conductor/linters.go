@@ -30,7 +30,7 @@ func (c *Conductor) runLinters(ctx context.Context) string {
 	// Get changed files if git is available (only lint changed files for efficiency)
 	var files []string
 	if c.git != nil {
-		changedFiles, err := c.git.Status()
+		changedFiles, err := c.git.Status(ctx)
 		if err == nil {
 			for _, f := range changedFiles {
 				// Check if file is modified, staged, or untracked ('?' in index)

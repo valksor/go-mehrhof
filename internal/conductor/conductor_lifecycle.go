@@ -21,7 +21,7 @@ func (c *Conductor) Initialize(ctx context.Context) error {
 	defer c.mu.Unlock()
 
 	// Initialize git (optional - might not be in a git repo)
-	git, err := vcs.New(c.opts.WorkDir)
+	git, err := vcs.New(ctx, c.opts.WorkDir)
 	if err == nil {
 		c.git = git
 	}
@@ -32,7 +32,7 @@ func (c *Conductor) Initialize(ctx context.Context) error {
 	if c.git != nil {
 		if c.git.IsWorktree() {
 			// Get main repo path for shared storage
-			mainRepo, err := c.git.GetMainWorktreePath()
+			mainRepo, err := c.git.GetMainWorktreePath(ctx)
 			if err != nil {
 				return fmt.Errorf("get main repo from worktree: %w", err)
 			}
@@ -171,7 +171,7 @@ func (c *Conductor) Start(ctx context.Context, reference string) error {
 
 	// Reject starting new tasks from within a worktree
 	if c.git != nil && c.git.IsWorktree() {
-		mainRepo, _ := c.git.GetMainWorktreePath()
+		mainRepo, _ := c.git.GetMainWorktreePath(ctx)
 		return fmt.Errorf("this command must be run from the main repository; you are currently in a worktree, return to the main repository first: cd %s", mainRepo)
 	}
 
@@ -181,7 +181,7 @@ func (c *Conductor) Start(ctx context.Context, reference string) error {
 	}
 
 	// If git is available and branch creation requested, check for clean workspace FIRST
-	if err := c.ensureCleanWorkspace(); err != nil {
+	if err := c.ensureCleanWorkspace(ctx); err != nil {
 		return err
 	}
 
@@ -201,7 +201,7 @@ func (c *Conductor) Start(ctx context.Context, reference string) error {
 	namingInfo := c.resolveNaming(workUnit, taskID)
 
 	// Create and switch to branch (or worktree) BEFORE creating work directory
-	gitInfo, err := c.createBranchOrWorktree(taskID, namingInfo)
+	gitInfo, err := c.createBranchOrWorktree(ctx, taskID, namingInfo)
 	if err != nil {
 		return err
 	}
@@ -219,12 +219,12 @@ func (c *Conductor) Start(ctx context.Context, reference string) error {
 }
 
 // ensureCleanWorkspace checks if workspace is clean when branch creation is requested.
-func (c *Conductor) ensureCleanWorkspace() error {
+func (c *Conductor) ensureCleanWorkspace(ctx context.Context) error {
 	if c.git == nil || !c.opts.CreateBranch {
 		return nil
 	}
 
-	hasChanges, err := c.git.HasChanges()
+	hasChanges, err := c.git.HasChanges(ctx)
 	if err != nil {
 		return fmt.Errorf("check git status: %w", err)
 	}
@@ -470,7 +470,7 @@ func (c *Conductor) Delete(ctx context.Context, opts DeleteOptions) error {
 
 	// Handle git operations if applicable
 	if c.git != nil && c.activeTask.UseGit && c.activeTask.Branch != "" && !opts.KeepBranch {
-		currentBranch, _ := c.git.CurrentBranch()
+		currentBranch, _ := c.git.CurrentBranch(ctx)
 		taskBranch := c.activeTask.Branch
 		worktreePath := c.activeTask.WorktreePath
 
@@ -480,7 +480,7 @@ func (c *Conductor) Delete(ctx context.Context, opts DeleteOptions) error {
 
 		// If using worktree, remove it first
 		if worktreePath != "" {
-			if err := c.git.RemoveWorktree(worktreePath, true); err != nil {
+			if err := c.git.RemoveWorktree(ctx, worktreePath, true); err != nil {
 				c.logError(fmt.Errorf("remove worktree: %w", err))
 			}
 		} else if currentBranch == taskBranch {
@@ -490,22 +490,22 @@ func (c *Conductor) Delete(ctx context.Context, opts DeleteOptions) error {
 				baseBranch = c.taskWork.Git.BaseBranch
 			} else {
 				var err error
-				baseBranch, err = c.git.GetBaseBranch()
+				baseBranch, err = c.git.GetBaseBranch(ctx)
 				if err != nil {
 					return fmt.Errorf("get base branch: %w", err)
 				}
 			}
 
-			if err := c.git.Checkout(baseBranch); err != nil {
+			if err := c.git.Checkout(ctx, baseBranch); err != nil {
 				return fmt.Errorf("checkout base branch: %w", err)
 			}
 		}
 
 		// Checkpoint deletion is best-effort; ignore errors
-		_ = c.git.DeleteAllCheckpoints(taskID)
+		_ = c.git.DeleteAllCheckpoints(ctx, taskID)
 
 		// Delete the branch
-		if err := c.git.DeleteBranch(taskBranch, true); err != nil {
+		if err := c.git.DeleteBranch(ctx, taskBranch, true); err != nil {
 			c.logError(fmt.Errorf("delete branch: %w", err))
 		}
 	}

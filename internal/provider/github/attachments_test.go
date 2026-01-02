@@ -169,13 +169,14 @@ func TestDownloadAttachment_Errors(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			ctx := context.Background()
 			p := &Provider{
-				client: NewClient("", tt.owner, tt.repo),
+				client: NewClient(ctx, "", tt.owner, tt.repo),
 				owner:  tt.owner,
 				repo:   tt.repo,
 			}
 
-			_, err := p.DownloadAttachment(context.Background(), tt.workUnitID, tt.attachmentID)
+			_, err := p.DownloadAttachment(ctx, tt.workUnitID, tt.attachmentID)
 
 			if (err != nil) != tt.wantErr {
 				t.Errorf("DownloadAttachment() error = %v, wantErr %v", err, tt.wantErr)
@@ -213,16 +214,17 @@ func TestFetchLinkedIssueContent_Errors(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			ctx := context.Background()
 			// Validate error handling for unconfigured provider
 			if tt.owner == "" || tt.repo == "" {
 				// Provider is not configured, error is expected
 				p := &Provider{
-					client: NewClient("", tt.owner, tt.repo),
+					client: NewClient(ctx, "", tt.owner, tt.repo),
 					owner:  tt.owner,
 					repo:   tt.repo,
 				}
 
-				_, err := p.FetchLinkedIssueContent(context.Background(), 123)
+				_, err := p.FetchLinkedIssueContent(ctx, 123)
 				if err == nil {
 					t.Errorf("FetchLinkedIssueContent() expected error for unconfigured provider, got nil")
 				}
@@ -531,13 +533,14 @@ func TestFetchRepoFile(t *testing.T) {
 	})
 
 	t.Run("error when repo not configured", func(t *testing.T) {
+		ctx := context.Background()
 		p := &Provider{
-			client: NewClient("", "", ""),
+			client: NewClient(ctx, "", "", ""),
 			owner:  "",
 			repo:   "",
 		}
 
-		_, err := p.FetchRepoFile(context.Background(), "docs/spec.md", "main")
+		_, err := p.FetchRepoFile(ctx, "docs/spec.md", "main")
 		if err == nil {
 			t.Error("FetchRepoFile() expected error for unconfigured repo, got nil")
 		}

@@ -166,22 +166,25 @@ func TestConfigStruct(t *testing.T) {
 }
 
 func TestIsRepo(t *testing.T) {
+	ctx := context.Background()
+
 	// Test with non-repo directory
 	tmpDir := t.TempDir()
-	if IsRepo(tmpDir) {
+	if IsRepo(ctx, tmpDir) {
 		t.Error("IsRepo should return false for non-git directory")
 	}
 
 	// Test with non-existent directory
-	if IsRepo("/nonexistent/path") {
+	if IsRepo(ctx, "/nonexistent/path") {
 		t.Error("IsRepo should return false for non-existent path")
 	}
 }
 
 func TestNewGitNonRepo(t *testing.T) {
+	ctx := context.Background()
 	tmpDir := t.TempDir()
 
-	_, err := New(tmpDir)
+	_, err := New(ctx, tmpDir)
 	if err == nil {
 		t.Error("New should fail for non-git directory")
 	}
@@ -234,7 +237,7 @@ func TestGitIntegration(t *testing.T) {
 	}
 
 	// Now test Git operations
-	g, err := New(tmpDir)
+	g, err := New(ctx, tmpDir)
 	if err != nil {
 		t.Fatalf("New failed: %v", err)
 	}
@@ -250,7 +253,7 @@ func TestGitIntegration(t *testing.T) {
 	})
 
 	t.Run("CurrentBranch", func(t *testing.T) {
-		branch, err := g.CurrentBranch()
+		branch, err := g.CurrentBranch(ctx)
 		if err != nil {
 			t.Fatalf("CurrentBranch failed: %v", err)
 		}
@@ -261,7 +264,7 @@ func TestGitIntegration(t *testing.T) {
 	})
 
 	t.Run("HasChanges_NoChanges", func(t *testing.T) {
-		hasChanges, err := g.HasChanges()
+		hasChanges, err := g.HasChanges(ctx)
 		if err != nil {
 			t.Fatalf("HasChanges failed: %v", err)
 		}
@@ -276,7 +279,7 @@ func TestGitIntegration(t *testing.T) {
 			t.Fatalf("WriteFile %s: %v", testFile, err)
 		}
 
-		hasChanges, err := g.HasChanges()
+		hasChanges, err := g.HasChanges(ctx)
 		if err != nil {
 			t.Fatalf("HasChanges failed: %v", err)
 		}
@@ -285,7 +288,7 @@ func TestGitIntegration(t *testing.T) {
 		}
 
 		// Reset for other tests
-		_, resetErr := g.run("checkout", "--", testFile)
+		_, resetErr := g.run(ctx, "checkout", "--", testFile)
 		if resetErr != nil {
 			t.Fatalf("git checkout %s: %v", testFile, resetErr)
 		}
@@ -297,7 +300,7 @@ func TestGitIntegration(t *testing.T) {
 			t.Fatalf("WriteFile %s: %v", testFile, err)
 		}
 
-		status, err := g.Status()
+		status, err := g.Status(ctx)
 		if err != nil {
 			t.Fatalf("Status failed: %v", err)
 		}
@@ -306,44 +309,44 @@ func TestGitIntegration(t *testing.T) {
 		}
 
 		// Reset
-		_, err = g.run("checkout", "--", testFile)
+		_, err = g.run(ctx, "checkout", "--", testFile)
 		if err != nil {
 			t.Fatalf("git checkout %s: %v", testFile, err)
 		}
 	})
 
 	t.Run("BranchExists", func(t *testing.T) {
-		branch, _ := g.CurrentBranch()
-		if !g.BranchExists(branch) {
+		branch, _ := g.CurrentBranch(ctx)
+		if !g.BranchExists(ctx, branch) {
 			t.Errorf("BranchExists(%q) = false, want true", branch)
 		}
-		if g.BranchExists("nonexistent-branch") {
+		if g.BranchExists(ctx, "nonexistent-branch") {
 			t.Error("BranchExists(nonexistent) = true, want false")
 		}
 	})
 
 	t.Run("CreateAndDeleteBranch", func(t *testing.T) {
-		err := g.CreateBranchNoCheckout("test-branch", "")
+		err := g.CreateBranchNoCheckout(ctx, "test-branch", "")
 		if err != nil {
 			t.Fatalf("CreateBranchNoCheckout failed: %v", err)
 		}
 
-		if !g.BranchExists("test-branch") {
+		if !g.BranchExists(ctx, "test-branch") {
 			t.Error("Branch was not created")
 		}
 
-		err = g.DeleteBranch("test-branch", false)
+		err = g.DeleteBranch(ctx, "test-branch", false)
 		if err != nil {
 			t.Fatalf("DeleteBranch failed: %v", err)
 		}
 
-		if g.BranchExists("test-branch") {
+		if g.BranchExists(ctx, "test-branch") {
 			t.Error("Branch was not deleted")
 		}
 	})
 
 	t.Run("ListBranches", func(t *testing.T) {
-		branches, err := g.ListBranches()
+		branches, err := g.ListBranches(ctx)
 		if err != nil {
 			t.Fatalf("ListBranches failed: %v", err)
 		}
@@ -365,7 +368,7 @@ func TestGitIntegration(t *testing.T) {
 	})
 
 	t.Run("RevParse", func(t *testing.T) {
-		hash, err := g.RevParse("HEAD")
+		hash, err := g.RevParse(ctx, "HEAD")
 		if err != nil {
 			t.Fatalf("RevParse failed: %v", err)
 		}
@@ -375,7 +378,7 @@ func TestGitIntegration(t *testing.T) {
 	})
 
 	t.Run("GetCommitMessage", func(t *testing.T) {
-		msg, err := g.GetCommitMessage("HEAD")
+		msg, err := g.GetCommitMessage(ctx, "HEAD")
 		if err != nil {
 			t.Fatalf("GetCommitMessage failed: %v", err)
 		}
@@ -391,12 +394,12 @@ func TestGitIntegration(t *testing.T) {
 			t.Fatalf("WriteFile(%q): %v", newFile, err)
 		}
 
-		err := g.Add(newFile)
+		err := g.Add(ctx, newFile)
 		if err != nil {
 			t.Fatalf("Add failed: %v", err)
 		}
 
-		hash, err := g.Commit("test commit")
+		hash, err := g.Commit(ctx, "test commit")
 		if err != nil {
 			t.Fatalf("Commit failed: %v", err)
 		}
@@ -406,7 +409,7 @@ func TestGitIntegration(t *testing.T) {
 	})
 
 	t.Run("GetConfig", func(t *testing.T) {
-		email, err := g.GetConfig("user.email")
+		email, err := g.GetConfig(ctx, "user.email")
 		if err != nil {
 			t.Fatalf("GetConfig failed: %v", err)
 		}
@@ -416,12 +419,12 @@ func TestGitIntegration(t *testing.T) {
 	})
 
 	t.Run("SetConfig", func(t *testing.T) {
-		err := g.SetConfig("test.key", "test-value")
+		err := g.SetConfig(ctx, "test.key", "test-value")
 		if err != nil {
 			t.Fatalf("SetConfig failed: %v", err)
 		}
 
-		val, err := g.GetConfig("test.key")
+		val, err := g.GetConfig(ctx, "test.key")
 		if err != nil {
 			t.Fatalf("GetConfig failed: %v", err)
 		}
@@ -436,7 +439,7 @@ func TestGitIntegration(t *testing.T) {
 			t.Fatalf("WriteFile %s: %v", testFile, err)
 		}
 
-		diff, err := g.Diff()
+		diff, err := g.Diff(ctx)
 		if err != nil {
 			t.Fatalf("Diff failed: %v", err)
 		}
@@ -445,14 +448,14 @@ func TestGitIntegration(t *testing.T) {
 		}
 
 		// Reset
-		_, err = g.run("checkout", "--", testFile)
+		_, err = g.run(ctx, "checkout", "--", testFile)
 		if err != nil {
 			t.Fatalf("git checkout %s: %v", testFile, err)
 		}
 	})
 
 	t.Run("Log", func(t *testing.T) {
-		log, err := g.Log("-1")
+		log, err := g.Log(ctx, "-1")
 		if err != nil {
 			t.Fatalf("Log failed: %v", err)
 		}
@@ -539,7 +542,7 @@ func TestCommitWithOptions(t *testing.T) {
 		t.Fatalf("git commit: %v", err)
 	}
 
-	g, err := New(tmpDir)
+	g, err := New(ctx, tmpDir)
 	if err != nil {
 		t.Fatalf("New: %v", err)
 	}
@@ -549,11 +552,11 @@ func TestCommitWithOptions(t *testing.T) {
 		if err := os.WriteFile(testFile, []byte("changed"), 0o644); err != nil {
 			t.Fatalf("WriteFile: %v", err)
 		}
-		if err := g.Add(testFile); err != nil {
+		if err := g.Add(ctx, testFile); err != nil {
 			t.Fatalf("Add: %v", err)
 		}
 
-		hash, err := g.Commit("regular commit")
+		hash, err := g.Commit(ctx, "regular commit")
 		if err != nil {
 			t.Fatalf("Commit: %v", err)
 		}
@@ -564,7 +567,7 @@ func TestCommitWithOptions(t *testing.T) {
 
 	t.Run("CommitAllowEmpty", func(t *testing.T) {
 		// No changes staged, but should succeed with AllowEmpty
-		hash, err := g.Commit("empty commit", CommitOptions{AllowEmpty: true})
+		hash, err := g.Commit(ctx, "empty commit", CommitOptions{AllowEmpty: true})
 		if err != nil {
 			t.Fatalf("Commit with AllowEmpty: %v", err)
 		}
@@ -579,13 +582,14 @@ func TestGetCommitAuthor(t *testing.T) {
 		t.Skip("skipping integration test")
 	}
 
+	ctx := context.Background()
 	dir := initTestRepo(t)
-	g, err := New(dir)
+	g, err := New(ctx, dir)
 	if err != nil {
 		t.Fatalf("New: %v", err)
 	}
 
-	author, err := g.GetCommitAuthor("HEAD")
+	author, err := g.GetCommitAuthor(ctx, "HEAD")
 	if err != nil {
 		t.Fatalf("GetCommitAuthor: %v", err)
 	}
@@ -601,8 +605,9 @@ func TestResetSoft(t *testing.T) {
 		t.Skip("skipping integration test")
 	}
 
+	ctx := context.Background()
 	dir := initTestRepo(t)
-	g, err := New(dir)
+	g, err := New(ctx, dir)
 	if err != nil {
 		t.Fatalf("New: %v", err)
 	}
@@ -612,41 +617,41 @@ func TestResetSoft(t *testing.T) {
 	if err := os.WriteFile(testFile, []byte("content"), 0o644); err != nil {
 		t.Fatalf("WriteFile: %v", err)
 	}
-	if err := g.Add(testFile); err != nil {
+	if err := g.Add(ctx, testFile); err != nil {
 		t.Fatalf("Add: %v", err)
 	}
-	if _, err := g.Commit("commit to reset"); err != nil {
+	if _, err := g.Commit(ctx, "commit to reset"); err != nil {
 		t.Fatalf("Commit: %v", err)
 	}
 
 	// Get current HEAD
-	originalHead, _ := g.RevParse("HEAD")
+	originalHead, _ := g.RevParse(ctx, "HEAD")
 
 	// Make another commit
 	if err := os.WriteFile(testFile, []byte("changed"), 0o644); err != nil {
 		t.Fatalf("WriteFile: %v", err)
 	}
-	if err := g.Add(testFile); err != nil {
+	if err := g.Add(ctx, testFile); err != nil {
 		t.Fatalf("Add: %v", err)
 	}
-	if _, err := g.Commit("another commit"); err != nil {
+	if _, err := g.Commit(ctx, "another commit"); err != nil {
 		t.Fatalf("Commit: %v", err)
 	}
 
 	// Soft reset back
-	err = g.ResetSoft(originalHead)
+	err = g.ResetSoft(ctx, originalHead)
 	if err != nil {
 		t.Fatalf("ResetSoft: %v", err)
 	}
 
 	// HEAD should be back to original
-	newHead, _ := g.RevParse("HEAD")
+	newHead, _ := g.RevParse(ctx, "HEAD")
 	if newHead != originalHead {
 		t.Errorf("HEAD = %q, want %q", newHead, originalHead)
 	}
 
 	// But file should still be staged (soft reset keeps changes)
-	status, _ := g.Status()
+	status, _ := g.Status(ctx)
 	if len(status) == 0 {
 		t.Error("soft reset should keep changes staged")
 	}
@@ -657,8 +662,9 @@ func TestClean(t *testing.T) {
 		t.Skip("skipping integration test")
 	}
 
+	ctx := context.Background()
 	dir := initTestRepo(t)
-	g, err := New(dir)
+	g, err := New(ctx, dir)
 	if err != nil {
 		t.Fatalf("New: %v", err)
 	}
@@ -670,7 +676,7 @@ func TestClean(t *testing.T) {
 	}
 
 	// Clean without force (should work but may not remove files depending on git version)
-	err = g.Clean(false)
+	err = g.Clean(ctx, false)
 	// Error expected on some git versions without -f
 	_ = err
 
@@ -681,7 +687,7 @@ func TestClean(t *testing.T) {
 	}
 
 	// Clean with force should remove it
-	err = g.Clean(true)
+	err = g.Clean(ctx, true)
 	if err != nil {
 		t.Fatalf("Clean(force): %v", err)
 	}
@@ -697,8 +703,9 @@ func TestStashAndPop(t *testing.T) {
 		t.Skip("skipping integration test")
 	}
 
+	ctx := context.Background()
 	dir := initTestRepo(t)
-	g, err := New(dir)
+	g, err := New(ctx, dir)
 	if err != nil {
 		t.Fatalf("New: %v", err)
 	}
@@ -710,7 +717,7 @@ func TestStashAndPop(t *testing.T) {
 	}
 
 	// Stash with message
-	err = g.Stash("test stash")
+	err = g.Stash(ctx, "test stash")
 	if err != nil {
 		t.Fatalf("Stash: %v", err)
 	}
@@ -722,7 +729,7 @@ func TestStashAndPop(t *testing.T) {
 	}
 
 	// Pop the stash
-	err = g.StashPop()
+	err = g.StashPop(ctx)
 	if err != nil {
 		t.Fatalf("StashPop: %v", err)
 	}
@@ -739,8 +746,9 @@ func TestStash_NoMessage(t *testing.T) {
 		t.Skip("skipping integration test")
 	}
 
+	ctx := context.Background()
 	dir := initTestRepo(t)
-	g, err := New(dir)
+	g, err := New(ctx, dir)
 	if err != nil {
 		t.Fatalf("New: %v", err)
 	}
@@ -752,13 +760,13 @@ func TestStash_NoMessage(t *testing.T) {
 	}
 
 	// Stash without message
-	err = g.Stash("")
+	err = g.Stash(ctx, "")
 	if err != nil {
 		t.Fatalf("Stash (no message): %v", err)
 	}
 
 	// Pop it back
-	if err := g.StashPop(); err != nil {
+	if err := g.StashPop(ctx); err != nil {
 		t.Fatalf("StashPop: %v", err)
 	}
 }
@@ -768,14 +776,15 @@ func TestRemoteURL_NoRemote(t *testing.T) {
 		t.Skip("skipping integration test")
 	}
 
+	ctx := context.Background()
 	dir := initTestRepo(t)
-	g, err := New(dir)
+	g, err := New(ctx, dir)
 	if err != nil {
 		t.Fatalf("New: %v", err)
 	}
 
 	// Should fail without a remote
-	_, err = g.RemoteURL("origin")
+	_, err = g.RemoteURL(ctx, "origin")
 	if err == nil {
 		t.Error("RemoteURL should fail without remote")
 	}
@@ -786,14 +795,15 @@ func TestFetch_NoRemote(t *testing.T) {
 		t.Skip("skipping integration test")
 	}
 
+	ctx := context.Background()
 	dir := initTestRepo(t)
-	g, err := New(dir)
+	g, err := New(ctx, dir)
 	if err != nil {
 		t.Fatalf("New: %v", err)
 	}
 
 	// Should fail without a remote
-	err = g.Fetch("origin")
+	err = g.Fetch(ctx, "origin")
 	if err == nil {
 		t.Error("Fetch should fail without remote")
 	}
@@ -804,14 +814,15 @@ func TestPull_NoRemote(t *testing.T) {
 		t.Skip("skipping integration test")
 	}
 
+	ctx := context.Background()
 	dir := initTestRepo(t)
-	g, err := New(dir)
+	g, err := New(ctx, dir)
 	if err != nil {
 		t.Fatalf("New: %v", err)
 	}
 
 	// Should fail without a remote
-	err = g.Pull("origin", "main")
+	err = g.Pull(ctx, "origin", "main")
 	if err == nil {
 		t.Error("Pull should fail without remote")
 	}
@@ -822,16 +833,17 @@ func TestPush_NoRemote(t *testing.T) {
 		t.Skip("skipping integration test")
 	}
 
+	ctx := context.Background()
 	dir := initTestRepo(t)
-	g, err := New(dir)
+	g, err := New(ctx, dir)
 	if err != nil {
 		t.Fatalf("New: %v", err)
 	}
 
-	baseBranch, _ := g.CurrentBranch()
+	baseBranch, _ := g.CurrentBranch(ctx)
 
 	// Should fail without a remote
-	err = g.Push("origin", baseBranch)
+	err = g.Push(ctx, "origin", baseBranch)
 	if err == nil {
 		t.Error("Push should fail without remote")
 	}
@@ -842,47 +854,48 @@ func TestRebaseBranch(t *testing.T) {
 		t.Skip("skipping integration test")
 	}
 
+	ctx := context.Background()
 	dir := initTestRepo(t)
-	g, err := New(dir)
+	g, err := New(ctx, dir)
 	if err != nil {
 		t.Fatalf("New: %v", err)
 	}
 
-	baseBranch, _ := g.CurrentBranch()
+	baseBranch, _ := g.CurrentBranch(ctx)
 
 	// Create a feature branch with a commit
-	if err := g.CreateBranch("feature/rebase", ""); err != nil {
+	if err := g.CreateBranch(ctx, "feature/rebase", ""); err != nil {
 		t.Fatalf("CreateBranch: %v", err)
 	}
 	if err := os.WriteFile(filepath.Join(dir, "feature.txt"), []byte("feature"), 0o644); err != nil {
 		t.Fatalf("WriteFile: %v", err)
 	}
-	if err := g.Add(filepath.Join(dir, "feature.txt")); err != nil {
+	if err := g.Add(ctx, filepath.Join(dir, "feature.txt")); err != nil {
 		t.Fatalf("Add: %v", err)
 	}
-	if _, err := g.Commit("feature commit"); err != nil {
+	if _, err := g.Commit(ctx, "feature commit"); err != nil {
 		t.Fatalf("Commit: %v", err)
 	}
 
 	// Go back to base and make a commit
-	if err := g.Checkout(baseBranch); err != nil {
+	if err := g.Checkout(ctx, baseBranch); err != nil {
 		t.Fatalf("Checkout: %v", err)
 	}
 	if err := os.WriteFile(filepath.Join(dir, "base.txt"), []byte("base"), 0o644); err != nil {
 		t.Fatalf("WriteFile: %v", err)
 	}
-	if err := g.Add(filepath.Join(dir, "base.txt")); err != nil {
+	if err := g.Add(ctx, filepath.Join(dir, "base.txt")); err != nil {
 		t.Fatalf("Add: %v", err)
 	}
-	if _, err := g.Commit("base commit"); err != nil {
+	if _, err := g.Commit(ctx, "base commit"); err != nil {
 		t.Fatalf("Commit: %v", err)
 	}
 
 	// Switch to feature and rebase onto base
-	if err := g.Checkout("feature/rebase"); err != nil {
+	if err := g.Checkout(ctx, "feature/rebase"); err != nil {
 		t.Fatalf("Checkout: %v", err)
 	}
-	err = g.RebaseBranch(baseBranch)
+	err = g.RebaseBranch(ctx, baseBranch)
 	if err != nil {
 		t.Fatalf("RebaseBranch: %v", err)
 	}
@@ -901,14 +914,15 @@ func TestAbortRebase_NoRebaseInProgress(t *testing.T) {
 		t.Skip("skipping integration test")
 	}
 
+	ctx := context.Background()
 	dir := initTestRepo(t)
-	g, err := New(dir)
+	g, err := New(ctx, dir)
 	if err != nil {
 		t.Fatalf("New: %v", err)
 	}
 
 	// Should fail when no rebase is in progress
-	err = g.AbortRebase()
+	err = g.AbortRebase(ctx)
 	if err == nil {
 		t.Error("AbortRebase should fail when no rebase in progress")
 	}
@@ -919,34 +933,35 @@ func TestContinueRebase_NoRebaseInProgress(t *testing.T) {
 		t.Skip("skipping integration test")
 	}
 
+	ctx := context.Background()
 	dir := initTestRepo(t)
-	g, err := New(dir)
+	g, err := New(ctx, dir)
 	if err != nil {
 		t.Fatalf("New: %v", err)
 	}
 
 	// Should fail when no rebase is in progress
-	err = g.ContinueRebase()
+	err = g.ContinueRebase(ctx)
 	if err == nil {
 		t.Error("ContinueRebase should fail when no rebase in progress")
 	}
 }
 
-func TestRunContext(t *testing.T) {
+func TestRun(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping integration test")
 	}
 
+	ctx := context.Background()
 	dir := initTestRepo(t)
-	g, err := New(dir)
+	g, err := New(ctx, dir)
 	if err != nil {
 		t.Fatalf("New: %v", err)
 	}
 
-	ctx := context.Background()
-	out, err := g.RunContext(ctx, "status", "--porcelain")
+	out, err := g.run(ctx, "status", "--porcelain")
 	if err != nil {
-		t.Fatalf("RunContext: %v", err)
+		t.Fatalf("run: %v", err)
 	}
 	// Output could be empty if no changes - that's fine
 	_ = out
@@ -979,8 +994,9 @@ func TestGetChangeSummary_WithDeletions(t *testing.T) {
 		t.Skip("skipping integration test")
 	}
 
+	ctx := context.Background()
 	dir := initTestRepo(t)
-	g, err := New(dir)
+	g, err := New(ctx, dir)
 	if err != nil {
 		t.Fatalf("New: %v", err)
 	}
@@ -990,7 +1006,7 @@ func TestGetChangeSummary_WithDeletions(t *testing.T) {
 		t.Fatalf("Remove: %v", err)
 	}
 
-	summary, err := g.GetChangeSummary()
+	summary, err := g.GetChangeSummary(ctx)
 	if err != nil {
 		t.Fatalf("GetChangeSummary: %v", err)
 	}

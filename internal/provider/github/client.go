@@ -28,14 +28,14 @@ type Client struct {
 }
 
 // NewClient creates a new GitHub API client.
-func NewClient(token, owner, repo string) *Client {
-	return NewClientWithCache(token, owner, repo, nil)
+func NewClient(ctx context.Context, token, owner, repo string) *Client {
+	return NewClientWithCache(ctx, token, owner, repo, nil)
 }
 
 // NewClientWithCache creates a new GitHub API client with an optional cache.
-func NewClientWithCache(token, owner, repo string, c *cache.Cache) *Client {
+func NewClientWithCache(ctx context.Context, token, owner, repo string, c *cache.Cache) *Client {
 	ts := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: token})
-	tc := oauth2.NewClient(context.Background(), ts)
+	tc := oauth2.NewClient(ctx, ts)
 	return &Client{
 		gh:    github.NewClient(tc),
 		owner: owner,

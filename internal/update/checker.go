@@ -22,11 +22,11 @@ type Checker struct {
 
 // NewChecker creates a new update checker.
 // If token is empty, the client will make unauthenticated requests (subject to rate limits).
-func NewChecker(token, owner, repo string) *Checker {
+func NewChecker(ctx context.Context, token, owner, repo string) *Checker {
 	var tc *github.Client
 	if token != "" {
 		ts := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: token})
-		httpClient := oauth2.NewClient(context.Background(), ts)
+		httpClient := oauth2.NewClient(ctx, ts)
 		tc = github.NewClient(httpClient)
 	} else {
 		tc = github.NewClient(nil)

@@ -1,6 +1,7 @@
 package vcs
 
 import (
+	"context"
 	"os"
 	"path/filepath"
 	"testing"
@@ -37,13 +38,14 @@ func TestListWorktrees(t *testing.T) {
 		t.Skip("skipping integration test")
 	}
 
+	ctx := context.Background()
 	dir := initTestRepo(t)
-	g, err := New(dir)
+	g, err := New(ctx, dir)
 	if err != nil {
 		t.Fatalf("New: %v", err)
 	}
 
-	worktrees, err := g.ListWorktrees()
+	worktrees, err := g.ListWorktrees(ctx)
 	if err != nil {
 		t.Fatalf("ListWorktrees: %v", err)
 	}
@@ -71,20 +73,21 @@ func TestCreateWorktree(t *testing.T) {
 		t.Skip("skipping integration test")
 	}
 
+	ctx := context.Background()
 	dir := initTestRepo(t)
-	g, err := New(dir)
+	g, err := New(ctx, dir)
 	if err != nil {
 		t.Fatalf("New: %v", err)
 	}
 
 	// Create a branch for the worktree
-	if err := g.CreateBranchNoCheckout("worktree-branch", ""); err != nil {
+	if err := g.CreateBranchNoCheckout(ctx, "worktree-branch", ""); err != nil {
 		t.Fatalf("CreateBranchNoCheckout: %v", err)
 	}
 
 	// Create worktree
 	wtPath := filepath.Join(t.TempDir(), "worktree1")
-	err = g.CreateWorktree(wtPath, "worktree-branch")
+	err = g.CreateWorktree(ctx, wtPath, "worktree-branch")
 	if err != nil {
 		t.Fatalf("CreateWorktree: %v", err)
 	}
@@ -95,7 +98,7 @@ func TestCreateWorktree(t *testing.T) {
 	}
 
 	// Verify it's listed (resolve symlinks for comparison on macOS)
-	worktrees, _ := g.ListWorktrees()
+	worktrees, _ := g.ListWorktrees(ctx)
 	expectedPath, _ := filepath.EvalSymlinks(wtPath)
 	found := false
 	for _, wt := range worktrees {
@@ -118,28 +121,29 @@ func TestCreateWorktreeNewBranch(t *testing.T) {
 		t.Skip("skipping integration test")
 	}
 
+	ctx := context.Background()
 	dir := initTestRepo(t)
-	g, err := New(dir)
+	g, err := New(ctx, dir)
 	if err != nil {
 		t.Fatalf("New: %v", err)
 	}
 
-	baseBranch, _ := g.CurrentBranch()
+	baseBranch, _ := g.CurrentBranch(ctx)
 
 	// Create worktree with new branch
 	wtPath := filepath.Join(t.TempDir(), "worktree-new")
-	err = g.CreateWorktreeNewBranch(wtPath, "new-branch", baseBranch)
+	err = g.CreateWorktreeNewBranch(ctx, wtPath, "new-branch", baseBranch)
 	if err != nil {
 		t.Fatalf("CreateWorktreeNewBranch: %v", err)
 	}
 
 	// Verify branch exists
-	if !g.BranchExists("new-branch") {
+	if !g.BranchExists(ctx, "new-branch") {
 		t.Error("new-branch should exist")
 	}
 
 	// Verify worktree exists with branch
-	worktrees, _ := g.ListWorktrees()
+	worktrees, _ := g.ListWorktrees(ctx)
 	found := false
 	for _, wt := range worktrees {
 		if wt.Branch == "new-branch" {
@@ -157,21 +161,22 @@ func TestCreateWorktreeNewBranch_NoBase(t *testing.T) {
 		t.Skip("skipping integration test")
 	}
 
+	ctx := context.Background()
 	dir := initTestRepo(t)
-	g, err := New(dir)
+	g, err := New(ctx, dir)
 	if err != nil {
 		t.Fatalf("New: %v", err)
 	}
 
 	// Create worktree with new branch, no explicit base
 	wtPath := filepath.Join(t.TempDir(), "worktree-nobase")
-	err = g.CreateWorktreeNewBranch(wtPath, "nobase-branch", "")
+	err = g.CreateWorktreeNewBranch(ctx, wtPath, "nobase-branch", "")
 	if err != nil {
 		t.Fatalf("CreateWorktreeNewBranch: %v", err)
 	}
 
 	// Verify branch exists
-	if !g.BranchExists("nobase-branch") {
+	if !g.BranchExists(ctx, "nobase-branch") {
 		t.Error("nobase-branch should exist")
 	}
 }
@@ -181,29 +186,30 @@ func TestRemoveWorktree(t *testing.T) {
 		t.Skip("skipping integration test")
 	}
 
+	ctx := context.Background()
 	dir := initTestRepo(t)
-	g, err := New(dir)
+	g, err := New(ctx, dir)
 	if err != nil {
 		t.Fatalf("New: %v", err)
 	}
 
 	// Create a worktree first
-	if err := g.CreateBranchNoCheckout("to-remove-branch", ""); err != nil {
+	if err := g.CreateBranchNoCheckout(ctx, "to-remove-branch", ""); err != nil {
 		t.Fatalf("CreateBranchNoCheckout: %v", err)
 	}
 	wtPath := filepath.Join(t.TempDir(), "to-remove")
-	if err := g.CreateWorktree(wtPath, "to-remove-branch"); err != nil {
+	if err := g.CreateWorktree(ctx, wtPath, "to-remove-branch"); err != nil {
 		t.Fatalf("CreateWorktree: %v", err)
 	}
 
 	// Remove it
-	err = g.RemoveWorktree(wtPath, false)
+	err = g.RemoveWorktree(ctx, wtPath, false)
 	if err != nil {
 		t.Fatalf("RemoveWorktree: %v", err)
 	}
 
 	// Verify it's no longer listed
-	worktrees, _ := g.ListWorktrees()
+	worktrees, _ := g.ListWorktrees(ctx)
 	for _, wt := range worktrees {
 		if wt.Path == wtPath {
 			t.Error("removed worktree should not be in list")
@@ -216,18 +222,19 @@ func TestRemoveWorktree_Force(t *testing.T) {
 		t.Skip("skipping integration test")
 	}
 
+	ctx := context.Background()
 	dir := initTestRepo(t)
-	g, err := New(dir)
+	g, err := New(ctx, dir)
 	if err != nil {
 		t.Fatalf("New: %v", err)
 	}
 
 	// Create a worktree
-	if err := g.CreateBranchNoCheckout("force-remove-branch", ""); err != nil {
+	if err := g.CreateBranchNoCheckout(ctx, "force-remove-branch", ""); err != nil {
 		t.Fatalf("CreateBranchNoCheckout: %v", err)
 	}
 	wtPath := filepath.Join(t.TempDir(), "force-remove")
-	if err := g.CreateWorktree(wtPath, "force-remove-branch"); err != nil {
+	if err := g.CreateWorktree(ctx, wtPath, "force-remove-branch"); err != nil {
 		t.Fatalf("CreateWorktree: %v", err)
 	}
 
@@ -237,7 +244,7 @@ func TestRemoveWorktree_Force(t *testing.T) {
 	}
 
 	// Force remove should work even with dirty files
-	err = g.RemoveWorktree(wtPath, true)
+	err = g.RemoveWorktree(ctx, wtPath, true)
 	if err != nil {
 		t.Fatalf("RemoveWorktree (force): %v", err)
 	}
@@ -248,14 +255,15 @@ func TestPruneWorktrees(t *testing.T) {
 		t.Skip("skipping integration test")
 	}
 
+	ctx := context.Background()
 	dir := initTestRepo(t)
-	g, err := New(dir)
+	g, err := New(ctx, dir)
 	if err != nil {
 		t.Fatalf("New: %v", err)
 	}
 
 	// Prune should work even with no stale worktrees
-	err = g.PruneWorktrees()
+	err = g.PruneWorktrees(ctx)
 	if err != nil {
 		t.Fatalf("PruneWorktrees: %v", err)
 	}
@@ -266,16 +274,17 @@ func TestGetWorktreeForBranch(t *testing.T) {
 		t.Skip("skipping integration test")
 	}
 
+	ctx := context.Background()
 	dir := initTestRepo(t)
-	g, err := New(dir)
+	g, err := New(ctx, dir)
 	if err != nil {
 		t.Fatalf("New: %v", err)
 	}
 
-	baseBranch, _ := g.CurrentBranch()
+	baseBranch, _ := g.CurrentBranch(ctx)
 
 	// Main worktree should be found for current branch
-	wt, err := g.GetWorktreeForBranch(baseBranch)
+	wt, err := g.GetWorktreeForBranch(ctx, baseBranch)
 	if err != nil {
 		t.Fatalf("GetWorktreeForBranch: %v", err)
 	}
@@ -293,14 +302,15 @@ func TestGetWorktreeForBranch_NotFound(t *testing.T) {
 		t.Skip("skipping integration test")
 	}
 
+	ctx := context.Background()
 	dir := initTestRepo(t)
-	g, err := New(dir)
+	g, err := New(ctx, dir)
 	if err != nil {
 		t.Fatalf("New: %v", err)
 	}
 
 	// Non-existent branch should return error
-	_, err = g.GetWorktreeForBranch("nonexistent-branch-xyz")
+	_, err = g.GetWorktreeForBranch(ctx, "nonexistent-branch-xyz")
 	if err == nil {
 		t.Error("GetWorktreeForBranch should fail for non-existent branch")
 	}
@@ -311,14 +321,15 @@ func TestWorktreeExists(t *testing.T) {
 		t.Skip("skipping integration test")
 	}
 
+	ctx := context.Background()
 	dir := initTestRepo(t)
-	g, err := New(dir)
+	g, err := New(ctx, dir)
 	if err != nil {
 		t.Fatalf("New: %v", err)
 	}
 
 	// Get the actual worktree path from listing (avoids symlink issues)
-	worktrees, err := g.ListWorktrees()
+	worktrees, err := g.ListWorktrees(ctx)
 	if err != nil {
 		t.Fatalf("ListWorktrees: %v", err)
 	}
@@ -327,12 +338,12 @@ func TestWorktreeExists(t *testing.T) {
 	}
 
 	// Main repo path should exist as worktree (use the path from ListWorktrees)
-	if !g.WorktreeExists(worktrees[0].Path) {
+	if !g.WorktreeExists(ctx, worktrees[0].Path) {
 		t.Error("main repo should exist as worktree")
 	}
 
 	// Random path should not exist
-	if g.WorktreeExists("/nonexistent/path/xyz") {
+	if g.WorktreeExists(ctx, "/nonexistent/path/xyz") {
 		t.Error("nonexistent path should not be a worktree")
 	}
 }
@@ -342,8 +353,9 @@ func TestGetWorktreePath(t *testing.T) {
 		t.Skip("skipping integration test")
 	}
 
+	ctx := context.Background()
 	dir := initTestRepo(t)
-	g, err := New(dir)
+	g, err := New(ctx, dir)
 	if err != nil {
 		t.Fatalf("New: %v", err)
 	}
@@ -368,8 +380,9 @@ func TestEnsureWorktreesDir(t *testing.T) {
 		t.Skip("skipping integration test")
 	}
 
+	ctx := context.Background()
 	dir := initTestRepo(t)
-	g, err := New(dir)
+	g, err := New(ctx, dir)
 	if err != nil {
 		t.Fatalf("New: %v", err)
 	}
@@ -394,8 +407,9 @@ func TestIsWorktree_MainRepo(t *testing.T) {
 		t.Skip("skipping integration test")
 	}
 
+	ctx := context.Background()
 	dir := initTestRepo(t)
-	g, err := New(dir)
+	g, err := New(ctx, dir)
 	if err != nil {
 		t.Fatalf("New: %v", err)
 	}
@@ -411,23 +425,24 @@ func TestIsWorktree_ActualWorktree(t *testing.T) {
 		t.Skip("skipping integration test")
 	}
 
+	ctx := context.Background()
 	dir := initTestRepo(t)
-	g, err := New(dir)
+	g, err := New(ctx, dir)
 	if err != nil {
 		t.Fatalf("New: %v", err)
 	}
 
 	// Create a worktree
-	if err := g.CreateBranchNoCheckout("wt-test-branch", ""); err != nil {
+	if err := g.CreateBranchNoCheckout(ctx, "wt-test-branch", ""); err != nil {
 		t.Fatalf("CreateBranchNoCheckout: %v", err)
 	}
 	wtPath := filepath.Join(t.TempDir(), "wt-test")
-	if err := g.CreateWorktree(wtPath, "wt-test-branch"); err != nil {
+	if err := g.CreateWorktree(ctx, wtPath, "wt-test-branch"); err != nil {
 		t.Fatalf("CreateWorktree: %v", err)
 	}
 
 	// Create a Git instance from the worktree
-	wtGit, err := New(wtPath)
+	wtGit, err := New(ctx, wtPath)
 	if err != nil {
 		t.Fatalf("New for worktree: %v", err)
 	}
@@ -443,29 +458,30 @@ func TestGetMainWorktreePath(t *testing.T) {
 		t.Skip("skipping integration test")
 	}
 
+	ctx := context.Background()
 	dir := initTestRepo(t)
-	g, err := New(dir)
+	g, err := New(ctx, dir)
 	if err != nil {
 		t.Fatalf("New: %v", err)
 	}
 
 	// Create a worktree
-	if err := g.CreateBranchNoCheckout("main-path-test-branch", ""); err != nil {
+	if err := g.CreateBranchNoCheckout(ctx, "main-path-test-branch", ""); err != nil {
 		t.Fatalf("CreateBranchNoCheckout: %v", err)
 	}
 	wtPath := filepath.Join(t.TempDir(), "main-path-test")
-	if err := g.CreateWorktree(wtPath, "main-path-test-branch"); err != nil {
+	if err := g.CreateWorktree(ctx, wtPath, "main-path-test-branch"); err != nil {
 		t.Fatalf("CreateWorktree: %v", err)
 	}
 
 	// Create a Git instance from the worktree
-	wtGit, err := New(wtPath)
+	wtGit, err := New(ctx, wtPath)
 	if err != nil {
 		t.Fatalf("New for worktree: %v", err)
 	}
 
 	// Get main repo path from worktree
-	mainPath, err := wtGit.GetMainWorktreePath()
+	mainPath, err := wtGit.GetMainWorktreePath(ctx)
 	if err != nil {
 		t.Fatalf("GetMainWorktreePath: %v", err)
 	}
@@ -484,14 +500,15 @@ func TestGetMainWorktreePath_NotWorktree(t *testing.T) {
 		t.Skip("skipping integration test")
 	}
 
+	ctx := context.Background()
 	dir := initTestRepo(t)
-	g, err := New(dir)
+	g, err := New(ctx, dir)
 	if err != nil {
 		t.Fatalf("New: %v", err)
 	}
 
 	// Should error when called on main repo
-	_, err = g.GetMainWorktreePath()
+	_, err = g.GetMainWorktreePath(ctx)
 	if err == nil {
 		t.Error("GetMainWorktreePath should fail on main repo")
 	}

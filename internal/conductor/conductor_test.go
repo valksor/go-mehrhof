@@ -996,13 +996,14 @@ func TestResolveTargetBranch(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			ctx := context.Background()
 			c, err := New()
 			if err != nil {
 				t.Fatalf("New: %v", err)
 			}
 			c.taskWork = tt.taskWork
 
-			got := c.resolveTargetBranch(tt.requested)
+			got := c.resolveTargetBranch(ctx, tt.requested)
 			if got != tt.want {
 				t.Errorf("resolveTargetBranch(%q) = %q, want %q", tt.requested, got, tt.want)
 			}
@@ -1012,6 +1013,7 @@ func TestResolveTargetBranch(t *testing.T) {
 
 // Test getDiffStats with nil git.
 func TestGetDiffStats_NilGit(t *testing.T) {
+	ctx := context.Background()
 	c, err := New()
 	if err != nil {
 		t.Fatalf("New: %v", err)
@@ -1023,7 +1025,7 @@ func TestGetDiffStats_NilGit(t *testing.T) {
 		},
 	}
 
-	got := c.getDiffStats()
+	got := c.getDiffStats(ctx)
 	if got != "" {
 		t.Errorf("getDiffStats() = %q, want empty string", got)
 	}
@@ -1031,13 +1033,14 @@ func TestGetDiffStats_NilGit(t *testing.T) {
 
 // Test getDiffStats with nil taskWork.
 func TestGetDiffStats_NilTaskWork(t *testing.T) {
+	ctx := context.Background()
 	c, err := New()
 	if err != nil {
 		t.Fatalf("New: %v", err)
 	}
 	c.taskWork = nil
 
-	got := c.getDiffStats()
+	got := c.getDiffStats(ctx)
 	if got != "" {
 		t.Errorf("getDiffStats() = %q, want empty string", got)
 	}

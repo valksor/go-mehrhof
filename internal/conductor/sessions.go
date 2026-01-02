@@ -1,6 +1,7 @@
 package conductor
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -8,12 +9,12 @@ import (
 )
 
 // createCheckpointIfNeeded creates a git checkpoint if there are changes.
-func (c *Conductor) createCheckpointIfNeeded(taskID, message string) *events.Event {
+func (c *Conductor) createCheckpointIfNeeded(ctx context.Context, taskID, message string) *events.Event {
 	if c.git == nil || !c.activeTask.UseGit {
 		return nil
 	}
 
-	hasChanges, err := c.git.HasChanges()
+	hasChanges, err := c.git.HasChanges(ctx)
 	if err != nil {
 		// If we can't determine changes, log but continue (treat as no changes)
 		// This allows checkpoint creation to fail gracefully
@@ -33,7 +34,7 @@ func (c *Conductor) createCheckpointIfNeeded(taskID, message string) *events.Eve
 		commitPrefix = fmt.Sprintf("[%s]", taskID)
 	}
 
-	checkpoint, err := c.git.CreateCheckpointWithPrefix(taskID, message, commitPrefix)
+	checkpoint, err := c.git.CreateCheckpointWithPrefix(ctx, taskID, message, commitPrefix)
 	if err != nil {
 		c.logError(fmt.Errorf("create checkpoint: %w", err))
 		return nil

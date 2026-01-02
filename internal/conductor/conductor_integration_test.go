@@ -504,9 +504,10 @@ func TestEnsureCleanWorkspace_NoGit(t *testing.T) {
 		t.Fatalf("New: %v", err)
 	}
 
+	ctx := context.Background()
 	// No git, no branch creation - should pass
 	c.opts.CreateBranch = false
-	err = c.ensureCleanWorkspace()
+	err = c.ensureCleanWorkspace(ctx)
 	if err != nil {
 		t.Errorf("ensureCleanWorkspace should pass without git: %v", err)
 	}
@@ -537,7 +538,7 @@ func TestEnsureCleanWorkspace_NoBranchCreation(t *testing.T) {
 		t.Fatalf("WriteFile: %v", err)
 	}
 
-	err = c.ensureCleanWorkspace()
+	err = c.ensureCleanWorkspace(ctx)
 	if err != nil {
 		t.Errorf("ensureCleanWorkspace should pass when CreateBranch=false: %v", err)
 	}
@@ -560,7 +561,7 @@ func TestEnsureCleanWorkspace_CleanWorkspace(t *testing.T) {
 	ctx := context.Background()
 	_ = c.Initialize(ctx)
 
-	err = c.ensureCleanWorkspace()
+	err = c.ensureCleanWorkspace(ctx)
 	if err != nil {
 		t.Errorf("ensureCleanWorkspace should pass with clean workspace: %v", err)
 	}
@@ -588,7 +589,7 @@ func TestEnsureCleanWorkspace_DirtyWorkspace(t *testing.T) {
 		t.Fatalf("WriteFile: %v", err)
 	}
 
-	err = c.ensureCleanWorkspace()
+	err = c.ensureCleanWorkspace(ctx)
 	if err == nil {
 		t.Error("ensureCleanWorkspace should fail with dirty workspace")
 	}
@@ -1003,7 +1004,7 @@ func TestCreateCheckpoint_WithChanges(t *testing.T) {
 		t.Fatalf("git add: %v", err)
 	}
 
-	event := c.createCheckpointIfNeeded("test-task", "test checkpoint")
+	event := c.createCheckpointIfNeeded(ctx, "test-task", "test checkpoint")
 	if event == nil {
 		// The test passes if checkpoint is created; if not (due to git state) that's okay too
 		t.Log("createCheckpointIfNeeded returned nil (possibly no changes or git error)")

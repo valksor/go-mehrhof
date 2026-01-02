@@ -56,9 +56,6 @@ func runUpdate(cmd *cobra.Command, args []string) error {
 			display.Warning("→"))
 	}
 
-	// Create checker
-	checker := update.NewChecker(token, "valksor", "go-mehrhof")
-
 	opts := update.CheckOptions{
 		CurrentVersion:    Version,
 		IncludePreRelease: updatePreRelease,
@@ -70,6 +67,9 @@ func runUpdate(cmd *cobra.Command, args []string) error {
 	// Check for updates
 	ctx, cancel := context.WithTimeout(cmd.Context(), 30*time.Second)
 	defer cancel()
+
+	// Create checker
+	checker := update.NewChecker(ctx, token, "valksor", "go-mehrhof")
 
 	status, err := checker.Check(ctx, opts)
 	if err != nil {

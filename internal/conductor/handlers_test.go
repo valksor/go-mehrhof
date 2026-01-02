@@ -625,6 +625,7 @@ func TestErrPendingQuestion(t *testing.T) {
 }
 
 func TestCreateCheckpointIfNeeded_NoGit(t *testing.T) {
+	ctx := context.Background()
 	c, err := New()
 	if err != nil {
 		t.Fatalf("New: %v", err)
@@ -635,7 +636,7 @@ func TestCreateCheckpointIfNeeded_NoGit(t *testing.T) {
 		ID:     "test",
 		UseGit: true,
 	}
-	event := c.createCheckpointIfNeeded("test", "message")
+	event := c.createCheckpointIfNeeded(ctx, "test", "message")
 	if event != nil {
 		t.Error("createCheckpointIfNeeded should return nil when git is nil")
 	}
@@ -664,7 +665,7 @@ func TestCreateCheckpointIfNeeded_GitNotUsed(t *testing.T) {
 		UseGit: false,
 	}
 
-	event := c.createCheckpointIfNeeded("test", "message")
+	event := c.createCheckpointIfNeeded(ctx, "test", "message")
 	if event != nil {
 		t.Error("createCheckpointIfNeeded should return nil when UseGit is false")
 	}
@@ -694,7 +695,7 @@ func TestCreateCheckpointIfNeeded_NoChanges(t *testing.T) {
 	}
 
 	// No changes - should return nil
-	event := c.createCheckpointIfNeeded("test", "message")
+	event := c.createCheckpointIfNeeded(ctx, "test", "message")
 	if event != nil {
 		t.Error("createCheckpointIfNeeded should return nil when no changes")
 	}

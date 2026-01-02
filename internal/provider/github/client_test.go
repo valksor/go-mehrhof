@@ -170,7 +170,8 @@ func TestResolveToken(t *testing.T) {
 // ──────────────────────────────────────────────────────────────────────────────
 
 func TestNewClient(t *testing.T) {
-	c := NewClient("test-token", "owner", "repo")
+	ctx := context.Background()
+	c := NewClient(ctx, "test-token", "owner", "repo")
 
 	if c == nil {
 		t.Fatal("NewClient returned nil")
@@ -776,7 +777,8 @@ func TestClientCache(t *testing.T) {
 	})
 
 	t.Run("CacheKey generates correct keys", func(t *testing.T) {
-		c := NewClient("token", "owner", "repo")
+		ctx := context.Background()
+		c := NewClient(ctx, "token", "owner", "repo")
 
 		tests := []struct {
 			resourceType string
@@ -799,7 +801,8 @@ func TestClientCache(t *testing.T) {
 	})
 
 	t.Run("Cache respects owner/repo changes", func(t *testing.T) {
-		c := NewClient("token", "owner1", "repo1")
+		ctx := context.Background()
+		c := NewClient(ctx, "token", "owner1", "repo1")
 
 		key1 := c.CacheKey("issue", "123")
 		c.SetOwnerRepo("owner2", "repo2")
@@ -861,9 +864,10 @@ func TestCacheExpiration(t *testing.T) {
 }
 
 func TestNewClientWithCache(t *testing.T) {
+	ctx := context.Background()
 	t.Run("creates client with cache", func(t *testing.T) {
 		c := cache.New()
-		client := NewClientWithCache("token", "owner", "repo", c)
+		client := NewClientWithCache(ctx, "token", "owner", "repo", c)
 
 		if client == nil {
 			t.Fatal("NewClientWithCache returned nil")
@@ -874,7 +878,7 @@ func TestNewClientWithCache(t *testing.T) {
 	})
 
 	t.Run("creates client with nil cache", func(t *testing.T) {
-		client := NewClientWithCache("token", "owner", "repo", nil)
+		client := NewClientWithCache(ctx, "token", "owner", "repo", nil)
 
 		if client == nil {
 			t.Fatal("NewClientWithCache returned nil")
