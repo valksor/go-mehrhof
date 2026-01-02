@@ -55,7 +55,7 @@ jobs:
                     git diff --exit-code go.mod go.sum
 
             -   name: Lint
-                run: make lint
+                run: make quality
 
             -   name: Test
                 run: make test
