@@ -3,6 +3,7 @@ package github
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -157,7 +158,7 @@ func TestResolveToken(t *testing.T) {
 		// unless gh is installed and authenticated
 		_, err := ResolveToken("")
 		// We can't predict if gh CLI is installed, so just check it doesn't panic
-		if err != nil && err != token.ErrNoToken {
+		if err != nil && !errors.Is(err, token.ErrNoToken) {
 			// gh might return a token, which is fine
 			t.Logf("ResolveToken returned error (expected if gh not installed): %v", err)
 		}

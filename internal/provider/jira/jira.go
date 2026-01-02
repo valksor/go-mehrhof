@@ -235,11 +235,12 @@ func mapProviderPriorityToJira(priority provider.Priority) string {
 		return "Highest"
 	case provider.PriorityHigh:
 		return "High"
+	case provider.PriorityNormal:
+		return "Medium"
 	case provider.PriorityLow:
 		return "Low"
-	default:
-		return "Medium"
 	}
+	return "Medium"
 }
 
 // mapAssignees converts Jira assignee to provider Person.

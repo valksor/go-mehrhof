@@ -332,6 +332,8 @@ func parseEvents(events []agent.Event) (*agent.Response, error) {
 			if usage, ok := event.Data["usage"].(*agent.UsageStats); ok {
 				response.Usage = usage
 			}
+		case agent.EventToolUse, agent.EventToolResult, agent.EventFile, agent.EventError, agent.EventUsage:
+			// Ignore other event types
 		}
 	}
 

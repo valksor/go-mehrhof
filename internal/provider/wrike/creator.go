@@ -80,9 +80,10 @@ func mapProviderPriorityToWrike(priority provider.Priority) string {
 		return "High"
 	case provider.PriorityHigh:
 		return "High"
+	case provider.PriorityNormal:
+		return "Normal"
 	case provider.PriorityLow:
 		return "Low"
-	default:
-		return "Normal"
 	}
+	return "Normal"
 }

@@ -2,6 +2,7 @@ package github
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -57,7 +58,7 @@ func TestAddLabels(t *testing.T) {
 		}
 
 		err := p.AddLabels(context.Background(), "123", []string{"bug"})
-		if err != ErrRepoNotConfigured {
+		if !errors.Is(err, ErrRepoNotConfigured) {
 			t.Errorf("error = %v, want %v", err, ErrRepoNotConfigured)
 		}
 	})
@@ -139,7 +140,7 @@ func TestRemoveLabels(t *testing.T) {
 		}
 
 		err := p.RemoveLabels(context.Background(), "123", []string{"bug"})
-		if err != ErrRepoNotConfigured {
+		if !errors.Is(err, ErrRepoNotConfigured) {
 			t.Errorf("error = %v, want %v", err, ErrRepoNotConfigured)
 		}
 	})

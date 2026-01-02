@@ -136,6 +136,8 @@ func (s *State) IsRecoverable() bool {
 	case StatusFailed:
 		// Failed sessions can be recovered if they have messages
 		return len(s.Messages) > 0
+	case StatusActive, StatusCompleted:
+		return false
 	}
 	return false
 }

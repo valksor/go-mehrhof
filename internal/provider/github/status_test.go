@@ -2,6 +2,7 @@ package github
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -106,7 +107,7 @@ func TestUpdateStatus(t *testing.T) {
 		}
 
 		err := p.UpdateStatus(context.Background(), "123", provider.StatusClosed)
-		if err != ErrRepoNotConfigured {
+		if !errors.Is(err, ErrRepoNotConfigured) {
 			t.Errorf("error = %v, want %v", err, ErrRepoNotConfigured)
 		}
 	})

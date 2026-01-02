@@ -26,16 +26,16 @@ func wrapAPIError(err error) error {
 
 	// Check for common HTTP status codes
 	if contains(errStr, "401") || contains(errStr, "Unauthorized") {
-		return fmt.Errorf("%w: %v", providererrors.ErrUnauthorized, err)
+		return fmt.Errorf("%w: %w", providererrors.ErrUnauthorized, err)
 	}
 	if contains(errStr, "403") || contains(errStr, "Forbidden") {
-		return fmt.Errorf("%w: %v", providererrors.ErrUnauthorized, err)
+		return fmt.Errorf("%w: %w", providererrors.ErrUnauthorized, err)
 	}
 	if contains(errStr, "404") || contains(errStr, "Not Found") {
-		return fmt.Errorf("%w: %v", ErrTaskNotFound, err)
+		return fmt.Errorf("%w: %w", ErrTaskNotFound, err)
 	}
 	if contains(errStr, "429") || contains(errStr, "rate limit") {
-		return fmt.Errorf("%w: %v", ErrRateLimited, err)
+		return fmt.Errorf("%w: %w", ErrRateLimited, err)
 	}
 
 	return fmt.Errorf("clickup API error: %w", err)

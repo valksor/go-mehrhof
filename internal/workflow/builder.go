@@ -133,15 +133,13 @@ func (b *MachineBuilder) RegisterPhase(phase PhaseDefinition) error {
 	b.phaseOrder = newPhaseOrder
 
 	// Rewire transitions
-	if err := b.rewireTransitions(phase, anchorState); err != nil {
-		return fmt.Errorf("rewire transitions: %w", err)
-	}
+	b.rewireTransitions(phase, anchorState)
 
 	return nil
 }
 
 // rewireTransitions modifies transitions to route through the new phase.
-func (b *MachineBuilder) rewireTransitions(phase PhaseDefinition, anchorState State) error {
+func (b *MachineBuilder) rewireTransitions(phase PhaseDefinition, anchorState State) {
 	// Add entry transition: anchorState --entryEvent--> newPhase
 	entryKey := TransitionKey{From: anchorState, Event: phase.EntryEvent}
 	entryGuards := append([]GuardFunc{}, phase.Guards...)
@@ -167,8 +165,6 @@ func (b *MachineBuilder) rewireTransitions(phase PhaseDefinition, anchorState St
 		Event: EventError,
 		To:    StateIdle,
 	}}
-
-	return nil
 }
 
 // AddGuardToTransition adds a guard to an existing transition.

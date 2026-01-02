@@ -3,6 +3,7 @@ package wrike
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -113,7 +114,7 @@ func TestResolveToken(t *testing.T) {
 		_ = os.Unsetenv("WRIKE_TOKEN")
 
 		_, err := ResolveToken("")
-		if err != token.ErrNoToken {
+		if !errors.Is(err, token.ErrNoToken) {
 			t.Errorf("error = %v, want %v", err, token.ErrNoToken)
 		}
 	})
@@ -227,7 +228,7 @@ func TestGetTask(t *testing.T) {
 		defer cleanup()
 
 		_, err := client.GetTask(context.Background(), "IEAAJTASKID")
-		if err != ErrTaskNotFound {
+		if !errors.Is(err, ErrTaskNotFound) {
 			t.Errorf("error = %v, want %v", err, ErrTaskNotFound)
 		}
 	})

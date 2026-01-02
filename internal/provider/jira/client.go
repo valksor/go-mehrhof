@@ -474,13 +474,13 @@ func wrapAPIError(err error) error {
 	if errors.As(err, &httpErr) {
 		switch httpErr.HTTPStatusCode() {
 		case http.StatusUnauthorized:
-			return fmt.Errorf("%w: %v", providererrors.ErrUnauthorized, err)
+			return fmt.Errorf("%w: %w", providererrors.ErrUnauthorized, err)
 		case http.StatusForbidden:
-			return fmt.Errorf("%w: %v", providererrors.ErrRateLimited, err)
+			return fmt.Errorf("%w: %w", providererrors.ErrRateLimited, err)
 		case http.StatusNotFound:
-			return fmt.Errorf("%w: %v", providererrors.ErrNotFound, err)
+			return fmt.Errorf("%w: %w", providererrors.ErrNotFound, err)
 		case http.StatusTooManyRequests:
-			return fmt.Errorf("%w: %v", providererrors.ErrRateLimited, err)
+			return fmt.Errorf("%w: %w", providererrors.ErrRateLimited, err)
 		}
 	}
 

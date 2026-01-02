@@ -2,6 +2,7 @@ package github
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"strings"
 	"testing"
@@ -302,7 +303,7 @@ func TestCreatePullRequest_ProviderErrors(t *testing.T) {
 				t.Errorf("CreatePullRequest() error = %v, wantErr %v", err, tt.wantErr)
 			}
 
-			if tt.wantErr && err != ErrRepoNotConfigured {
+			if tt.wantErr && !errors.Is(err, ErrRepoNotConfigured) {
 				t.Errorf("CreatePullRequest() error = %v, want ErrRepoNotConfigured", err)
 			}
 		})

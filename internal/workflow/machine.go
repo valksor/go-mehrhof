@@ -121,7 +121,8 @@ func (m *Machine) Dispatch(ctx context.Context, event Event) error {
 		if m.state != from {
 			return fmt.Errorf("state changed from %s to %s during dispatch", from, m.state)
 		}
-		return m.transitionTo(ctx, from, globalTo, event)
+		m.transitionTo(ctx, from, globalTo, event)
+		return nil
 	}
 
 	// No transitions available
@@ -151,7 +152,8 @@ func (m *Machine) Dispatch(ctx context.Context, event Event) error {
 		return fmt.Errorf("state changed from %s to %s during dispatch", from, m.state)
 	}
 
-	return m.transitionTo(ctx, from, validTransition.To, event)
+	m.transitionTo(ctx, from, validTransition.To, event)
+	return nil
 }
 
 // CanDispatch checks if a transition is possible.
@@ -184,7 +186,7 @@ func (m *Machine) CanDispatch(ctx context.Context, event Event) (bool, string) {
 }
 
 // transitionTo performs the actual state change (must hold lock).
-func (m *Machine) transitionTo(ctx context.Context, from, to State, event Event) error {
+func (m *Machine) transitionTo(ctx context.Context, from, to State, event Event) {
 	// Record history
 	m.history = append(m.history, HistoryEntry{
 		From:  from,
@@ -238,8 +240,6 @@ func (m *Machine) transitionTo(ctx context.Context, from, to State, event Event)
 			}
 		}()
 	}
-
-	return nil
 }
 
 // getTaskID returns the current task ID (must hold lock or be called from locked context).

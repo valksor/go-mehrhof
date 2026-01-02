@@ -33,7 +33,7 @@ func buildQuery(opts provider.ListOptions) string {
 	// Status filter
 	if opts.Status != "" {
 		switch opts.Status {
-		case provider.StatusOpen:
+		case provider.StatusOpen, provider.StatusInProgress, provider.StatusReview:
 			parts = append(parts, "Unresolved")
 		case provider.StatusDone, provider.StatusClosed:
 			parts = append(parts, "Resolved")

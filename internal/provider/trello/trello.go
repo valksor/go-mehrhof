@@ -380,15 +380,12 @@ func extractCreatedAt(cardID string) time.Time {
 	}
 	// Trello card IDs start with 8 hex chars representing timestamp
 	var timestamp int64
-	_, err := parseHexTimestamp(cardID[:8], &timestamp)
-	if err != nil {
-		return time.Time{}
-	}
+	parseHexTimestamp(cardID[:8], &timestamp)
 	return time.Unix(timestamp, 0)
 }
 
 // parseHexTimestamp parses the first 8 chars of Trello ID as Unix timestamp.
-func parseHexTimestamp(hex string, result *int64) (int, error) {
+func parseHexTimestamp(hex string, result *int64) int {
 	var n int64
 	for _, c := range hex {
 		n *= 16
@@ -400,11 +397,11 @@ func parseHexTimestamp(hex string, result *int64) (int, error) {
 		case c >= 'A' && c <= 'F':
 			n += int64(c - 'A' + 10)
 		default:
-			return 0, nil
+			return 0
 		}
 	}
 	*result = n
-	return 8, nil
+	return 8
 }
 
 // hasAnyLabel checks if a card has any of the specified labels.

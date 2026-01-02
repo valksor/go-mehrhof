@@ -41,7 +41,7 @@ func validatePathInWorkspace(resolved, root string) error {
 }
 
 // applyFiles writes agent file changes to disk.
-func applyFiles(ctx context.Context, c *Conductor, files []agent.FileChange) error {
+func applyFiles(_ context.Context, c *Conductor, files []agent.FileChange) error {
 	root := c.opts.WorkDir
 	if c.git != nil {
 		root = c.git.Root()

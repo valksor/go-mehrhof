@@ -1,6 +1,7 @@
 package token
 
 import (
+	"errors"
 	"os"
 	"testing"
 )
@@ -72,7 +73,7 @@ func TestResolveToken(t *testing.T) {
 		defer cleanupEnv("MEHR_TEST_TOKEN", "TEST_TOKEN")()
 
 		_, err := ResolveToken(Config("TEST", ""))
-		if err != ErrNoToken {
+		if !errors.Is(err, ErrNoToken) {
 			t.Errorf("error = %v, want %v", err, ErrNoToken)
 		}
 	})

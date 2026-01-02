@@ -50,6 +50,8 @@ func (s *StatusLine) OnEvent(event agent.Event) error {
 		if time.Since(s.lastUpdate) > 3*time.Second {
 			s.update("generating response...")
 		}
+	case agent.EventToolResult, agent.EventFile, agent.EventError, agent.EventUsage, agent.EventComplete:
+		// Ignore other event types
 	}
 
 	return nil

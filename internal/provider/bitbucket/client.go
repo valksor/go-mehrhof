@@ -93,12 +93,13 @@ func (c *Client) RepoSlug() string {
 
 // Issue represents a Bitbucket issue.
 type Issue struct {
-	ID        int        `json:"id"`
-	Title     string     `json:"title"`
-	Content   *Content   `json:"content"`
-	State     string     `json:"state"`    // new, open, resolved, on hold, invalid, duplicate, wontfix, closed
-	Priority  string     `json:"priority"` // trivial, minor, major, critical, blocker
-	Kind      string     `json:"kind"`     // bug, enhancement, proposal, task
+	ID       int      `json:"id"`
+	Title    string   `json:"title"`
+	Content  *Content `json:"content"`
+	State    string   `json:"state"`    // new, open, resolved, on hold, invalid, duplicate, wontfix, closed
+	Priority string   `json:"priority"` // trivial, minor, major, critical, blocker
+	//nolint:godox
+	Kind      string     `json:"kind"` // bug, enhancement, proposal, task
 	Assignee  *User      `json:"assignee"`
 	Reporter  *User      `json:"reporter"`
 	CreatedOn time.Time  `json:"created_on"`

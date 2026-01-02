@@ -225,10 +225,7 @@ func (c *Conductor) Finish(ctx context.Context, opts FinishOptions) error {
 		}
 	} else if c.git != nil && c.activeTask.UseGit && c.activeTask.Branch != "" {
 		// Provider doesn't support PR, ask user what to do
-		action, err := c.askUserFinishAction()
-		if err != nil {
-			return err
-		}
+		action := c.askUserFinishAction()
 		switch action {
 		case "merge":
 			if err := c.finishWithMerge(ctx, opts); err != nil {
@@ -352,7 +349,7 @@ func (c *Conductor) publishProgress(message string, percent int) {
 }
 
 // finishWithMerge performs a local merge operation.
-func (c *Conductor) finishWithMerge(ctx context.Context, opts FinishOptions) error {
+func (c *Conductor) finishWithMerge(_ context.Context, opts FinishOptions) error {
 	// Handle git merge operations if applicable
 	if c.git == nil || !c.activeTask.UseGit || c.activeTask.Branch == "" {
 		return fmt.Errorf("git not available or no branch associated with task")
@@ -396,10 +393,10 @@ func (c *Conductor) providerSupportsPR(ctx context.Context) bool {
 }
 
 // askUserFinishAction prompts the user to choose an action when PR is not supported.
-func (c *Conductor) askUserFinishAction() (string, error) {
+func (c *Conductor) askUserFinishAction() string {
 	// For non-interactive use (auto mode), default to "done"
 	if c.opts.AutoMode || c.opts.SkipAgentQuestions {
-		return "done", nil
+		return "done"
 	}
 
 	fmt.Println("\nThe provider for this task does not support pull requests.")
@@ -414,17 +411,16 @@ func (c *Conductor) askUserFinishAction() (string, error) {
 		if _, err := fmt.Scanln(&choice); err != nil {
 			// Handle EOF or empty input
 			fmt.Println("\nCancelled")
-			//nolint:nilerr // EOF from Scanln: cancel gracefully
-			return "cancel", nil
+			return "cancel"
 		}
 
 		switch choice {
 		case "1", "merge":
-			return "merge", nil
+			return "merge"
 		case "2", "done":
-			return "done", nil
+			return "done"
 		case "3", "cancel", "q":
-			return "cancel", nil
+			return "cancel"
 		default:
 			fmt.Println("Invalid choice. Please enter 1, 2, or 3.")
 		}

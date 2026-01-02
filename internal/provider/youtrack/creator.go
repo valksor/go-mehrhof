@@ -60,9 +60,10 @@ func priorityToYouTrack(p provider.Priority) string {
 		return "Critical"
 	case provider.PriorityHigh:
 		return "High"
+	case provider.PriorityNormal:
+		return "Normal"
 	case provider.PriorityLow:
 		return "Low"
-	default:
-		return "Normal"
 	}
+	return "Normal"
 }

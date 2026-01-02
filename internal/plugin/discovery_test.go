@@ -11,7 +11,7 @@ import (
 // ──────────────────────────────────────────────────────────────────────────────
 
 // createTestPlugin creates a valid plugin directory with manifest.
-func createTestPlugin(t *testing.T, baseDir, name string, pluginType PluginType) string {
+func createTestPlugin(t *testing.T, baseDir, name string, pluginType PluginType) {
 	t.Helper()
 
 	pluginDir := filepath.Join(baseDir, name)
@@ -24,8 +24,6 @@ func createTestPlugin(t *testing.T, baseDir, name string, pluginType PluginType)
 	if err := os.WriteFile(manifestPath, []byte(manifest), 0o644); err != nil {
 		t.Fatalf("write manifest: %v", err)
 	}
-
-	return pluginDir
 }
 
 // buildManifest creates a valid manifest YAML for the given type.

@@ -216,8 +216,8 @@ func (p *Provider) UpdateStatus(ctx context.Context, id string, status provider.
 		if err != nil {
 			return fmt.Errorf("complete task %s: %w", id, err)
 		}
-	default:
-		// For other statuses, we could potentially move to sections
+	case provider.StatusOpen, provider.StatusInProgress, provider.StatusReview:
+		// For these statuses, we could potentially move to sections
 		// but this requires project context
 		return nil
 	}

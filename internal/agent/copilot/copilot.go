@@ -3,6 +3,7 @@ package copilot
 import (
 	"bufio"
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"log/slog"
@@ -222,13 +223,14 @@ func (a *Agent) executeStream(ctx context.Context, prompt string, eventCh chan<-
 
 	// Read stderr
 	stderrBytes, err := bufio.NewReader(stderr).ReadString('\n')
-	if err != nil && err != io.EOF {
+	if err != nil && !errors.Is(err, io.EOF) {
 		slog.Debug("error reading stderr", "error", err)
 	}
 
 	// Wait for command
 	if err := cmd.Wait(); err != nil {
-		if exitErr, ok := err.(*exec.ExitError); ok {
+		var exitErr *exec.ExitError
+		if errors.As(err, &exitErr) {
 			if exitErr.ExitCode() != 0 {
 				if stderrBytes != "" {
 					return fmt.Errorf("gh copilot exited with code %d: %s", exitErr.ExitCode(), stderrBytes)

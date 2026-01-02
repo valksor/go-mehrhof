@@ -274,7 +274,7 @@ func (c *Conductor) snapshotSource(ctx context.Context, p any, reference string,
 }
 
 // buildSourceInfo creates storage.SourceInfo from provider snapshot (metadata only).
-func (c *Conductor) buildSourceInfo(snapshot *provider.Snapshot, taskID string) storage.SourceInfo {
+func (c *Conductor) buildSourceInfo(snapshot *provider.Snapshot) storage.SourceInfo {
 	info := storage.SourceInfo{
 		Type:   snapshot.Type,
 		Ref:    snapshot.Ref,
@@ -360,7 +360,7 @@ func (c *Conductor) registerTask(taskID, reference string, workUnit *provider.Wo
 	c.activeAgent = agentInst
 
 	// Build SourceInfo with metadata (files will be written separately)
-	sourceInfo := c.buildSourceInfo(snapshot, taskID)
+	sourceInfo := c.buildSourceInfo(snapshot)
 
 	// Create work directory (creates source/ subdirectory)
 	work, err := c.workspace.CreateWork(taskID, sourceInfo)

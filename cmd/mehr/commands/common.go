@@ -224,6 +224,8 @@ func SetupVerboseEventHandlers(cond *conductor.Conductor) {
 			switch e.Type {
 			case events.TypeProgress, events.TypeFileChanged, events.TypeCheckpoint:
 				return
+			case events.TypeStateChanged, events.TypeError, events.TypeAgentMessage, events.TypeBlueprintReady, events.TypeBranchCreated, events.TypePlanCompleted, events.TypeImplementDone, events.TypePRCreated:
+				// Let other events through
 			}
 		}
 
@@ -254,6 +256,8 @@ func SetupVerboseEventHandlers(cond *conductor.Conductor) {
 			if agentEvent, ok := e.Data["event"].(agent.Event); ok {
 				printAgentEventTo(w, agentEvent)
 			}
+		case events.TypeStateChanged, events.TypeError, events.TypeBlueprintReady, events.TypeBranchCreated, events.TypePlanCompleted, events.TypeImplementDone, events.TypePRCreated:
+			// Ignore other event types
 		}
 	})
 }

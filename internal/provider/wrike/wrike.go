@@ -110,7 +110,7 @@ func (p *Provider) Fetch(ctx context.Context, id string) (*provider.WorkUnit, er
 	var subtaskInfos []SubtaskInfo
 	if len(task.SubTaskIDs) > 0 {
 		var err error
-		subtaskInfos, _, err = p.fetchSubtasks(ctx, task.SubTaskIDs, 0)
+		subtaskInfos, err = p.fetchSubtasks(ctx, task.SubTaskIDs, 0)
 		_ = err // Subtasks are optional, ignore fetch errors
 	}
 

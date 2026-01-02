@@ -90,21 +90,21 @@ func (p *Provider) subtaskToWorkUnit(task *Task, parentID string) *provider.Work
 }
 
 // fetchSubtasks recursively fetches all subtasks for a task (internal helper)
-// Returns a list of subtask info and combined comments from all subtasks.
-func (p *Provider) fetchSubtasks(ctx context.Context, subtaskIDs []string, depth int) ([]SubtaskInfo, []string, error) {
+// Returns a list of subtask info.
+func (p *Provider) fetchSubtasks(ctx context.Context, subtaskIDs []string, depth int) ([]SubtaskInfo, error) {
 	const maxDepth = 5 // Prevent infinite recursion
 	if depth > maxDepth {
-		return nil, nil, nil
+		return nil, nil
 	}
 
 	if len(subtaskIDs) == 0 {
-		return nil, nil, nil
+		return nil, nil
 	}
 
 	// Fetch all subtasks in one batch
 	tasks, err := p.client.GetTasks(ctx, subtaskIDs)
 	if err != nil {
-		return nil, nil, fmt.Errorf("fetch subtasks: %w", err)
+		return nil, fmt.Errorf("fetch subtasks: %w", err)
 	}
 
 	var infos []SubtaskInfo
@@ -126,12 +126,12 @@ func (p *Provider) fetchSubtasks(ctx context.Context, subtaskIDs []string, depth
 
 	// Recursively fetch nested subtasks
 	if len(allSubtaskIDs) > 0 {
-		nestedInfos, _, err := p.fetchSubtasks(ctx, allSubtaskIDs, depth+1)
+		nestedInfos, err := p.fetchSubtasks(ctx, allSubtaskIDs, depth+1)
 		if err != nil {
-			return infos, nil, err // Return what we have so far
+			return infos, err // Return what we have so far
 		}
 		infos = append(infos, nestedInfos...)
 	}
 
-	return infos, nil, nil
+	return infos, nil
 }

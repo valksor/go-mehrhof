@@ -33,6 +33,7 @@ coverage-html: coverage ## Generate HTML coverage report
 	go tool cover -html=covprofile -o .coverage/coverage.html
 
 lint: ## Run linter (golangci-lint)
+	${MAKE} fmt
 	golangci-lint run ./...
 	govulncheck ./...
 

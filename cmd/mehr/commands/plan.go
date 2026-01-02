@@ -71,7 +71,7 @@ func runPlan(cmd *cobra.Command, args []string) error {
 
 	// Standalone planning mode
 	if planStandalone {
-		return runStandalonePlan(cmd)
+		return runStandalonePlan()
 	}
 
 	// Build conductor options using helper
@@ -177,7 +177,7 @@ func runPlan(cmd *cobra.Command, args []string) error {
 }
 
 // runStandalonePlan runs an interactive planning session without a task.
-func runStandalonePlan(cmd *cobra.Command) error {
+func runStandalonePlan() error {
 	// Get current directory as workspace root
 	cwd, err := os.Getwd()
 	if err != nil {

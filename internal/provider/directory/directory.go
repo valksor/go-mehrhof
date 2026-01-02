@@ -185,7 +185,7 @@ func (p *Provider) List(ctx context.Context, opts provider.ListOptions) ([]*prov
 	return units, nil
 }
 
-func (p *Provider) fetchFile(ctx context.Context, path string) (*provider.WorkUnit, error) {
+func (p *Provider) fetchFile(_ context.Context, path string) (*provider.WorkUnit, error) {
 	// Extract filename without extension for fallback title
 	filename := strings.TrimSuffix(filepath.Base(path), filepath.Ext(path))
 

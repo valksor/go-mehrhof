@@ -131,6 +131,18 @@ func runContinue(cmd *cobra.Command, args []string) error {
 	case workflow.StateReviewing:
 		fmt.Println("  mehr finish     # Complete and merge")
 		fmt.Println("  mehr implement  # Make more changes")
+	case workflow.StateFailed:
+		fmt.Println("  mehr status     # View error details")
+		fmt.Println("  mehr note       # Add notes")
+		fmt.Println("  mehr implement  # Retry implementation")
+	case workflow.StateWaiting:
+		fmt.Println("  mehr answer     # Respond to agent question")
+	case workflow.StateCheckpointing:
+		fmt.Println("  Please wait...  # Creating checkpoint")
+	case workflow.StateReverting:
+		fmt.Println("  Please wait...  # Reverting to checkpoint")
+	case workflow.StateRestoring:
+		fmt.Println("  Please wait...  # Restoring checkpoint")
 	case workflow.StateDone:
 		fmt.Println("  Task is complete!")
 		fmt.Println("  mehr start <ref>  # Start a new task")
@@ -171,6 +183,15 @@ func executeNextStep(ctx context.Context, cond *conductor.Conductor, status *con
 		return cond.Implement(ctx)
 	case workflow.StateImplementing, workflow.StateReviewing:
 		fmt.Println("Already in progress - use 'mehr finish' when complete")
+		return nil
+	case workflow.StateFailed:
+		fmt.Println("Task failed - cannot auto-continue")
+		return fmt.Errorf("task is in failed state")
+	case workflow.StateWaiting:
+		fmt.Println("Agent is waiting for a response - cannot auto-continue")
+		return fmt.Errorf("agent is waiting for user input")
+	case workflow.StateCheckpointing, workflow.StateReverting, workflow.StateRestoring:
+		fmt.Println("Operation in progress - please wait")
 		return nil
 	case workflow.StateDone:
 		fmt.Println("Task is complete!")

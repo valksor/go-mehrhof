@@ -69,7 +69,7 @@ func runStatus(cmd *cobra.Command, args []string) error {
 	}
 
 	if statusAll {
-		return showAllTasks(ws, res.Git)
+		return showAllTasks(ws)
 	}
 
 	// If in a worktree, auto-detect task from worktree path
@@ -111,7 +111,7 @@ func showWorktreeTask(ws *storage.Workspace, git *vcs.Git) error {
 
 	// JSON output path
 	if statusJSON {
-		return outputJSON(buildJSONStatusTask(ws, git, active, work, git.Root(), true))
+		return outputJSON(buildJSONStatusTask(ws, git, active, work, git.Root()))
 	}
 
 	fmt.Printf("Worktree Task: %s\n", display.Bold(active.ID))
@@ -203,7 +203,7 @@ func showActiveTask(ws *storage.Workspace, git *vcs.Git) error {
 
 	// JSON output path
 	if statusJSON {
-		return outputJSON(buildJSONStatusTask(ws, git, active, work, "", false))
+		return outputJSON(buildJSONStatusTask(ws, git, active, work, ""))
 	}
 
 	fmt.Printf("Active Task: %s\n", display.Bold(active.ID))
@@ -310,7 +310,7 @@ func showActiveTask(ws *storage.Workspace, git *vcs.Git) error {
 	return nil
 }
 
-func showAllTasks(ws *storage.Workspace, git *vcs.Git) error {
+func showAllTasks(ws *storage.Workspace) error {
 	taskIDs, err := ws.ListWorks()
 	if err != nil {
 		return fmt.Errorf("list tasks: %w", err)
@@ -483,7 +483,7 @@ type jsonStatusAllOutput struct {
 }
 
 // buildJSONStatusTask constructs a jsonStatusTask from workspace data.
-func buildJSONStatusTask(ws *storage.Workspace, git *vcs.Git, active *storage.ActiveTask, work *storage.TaskWork, worktreePath string, isWorktree bool) jsonStatusTask {
+func buildJSONStatusTask(ws *storage.Workspace, git *vcs.Git, active *storage.ActiveTask, work *storage.TaskWork, worktreePath string) jsonStatusTask {
 	task := jsonStatusTask{
 		TaskID:       active.ID,
 		Title:        work.Metadata.Title,

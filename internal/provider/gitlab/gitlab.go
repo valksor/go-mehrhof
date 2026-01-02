@@ -320,6 +320,9 @@ func (p *Provider) List(ctx context.Context, opts provider.ListOptions) ([]*prov
 			listOpts.State = ptr("opened")
 		case provider.StatusClosed:
 			listOpts.State = ptr("closed")
+		case provider.StatusInProgress, provider.StatusReview, provider.StatusDone:
+			// GitLab doesn't have these exact states, treat as opened
+			listOpts.State = ptr("opened")
 		}
 	}
 
@@ -431,6 +434,9 @@ func (p *Provider) UpdateStatus(ctx context.Context, workUnitID string, status p
 		stateEvent = ptr("reopen")
 	case provider.StatusClosed:
 		stateEvent = ptr("close")
+	case provider.StatusInProgress, provider.StatusReview, provider.StatusDone:
+		// GitLab doesn't have these exact states, no state change
+		stateEvent = nil
 	}
 
 	_, err = p.client.UpdateIssue(ctx, ref.IssueIID, &gitlab.UpdateIssueOptions{

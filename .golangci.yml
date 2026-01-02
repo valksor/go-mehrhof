@@ -9,35 +9,36 @@ formatters:
 
 linters:
     enable:
-        - bodyclose        # HTTP body close
-        - errcheck         # Unchecked errors
-        - gocritic         # Advanced checks
-        - gosec            # Security issues
-        - govet            # Built-in vet
-        - misspell         # Typos in comments/strings
-        - nolintlint       # Enforce nolint comments
-        - staticcheck      # Go vet++
-        - unconvert        # Unnecessary conversions
         - asasalint
         - asciicheck
         - bidichk
+        - bodyclose        # HTTP body close
         - copyloopvar
         - decorder
+        - errcheck         # Unchecked errors
+        - errorlint
+        - exhaustive
+        - gocritic         # Advanced checks
+        - godot
+        - godox
+        - gosec            # Security issues
+        - govet            # Built-in vet
         - ineffassign
+        - misspell         # Typos in comments/strings
         - musttag
+        - nilerr
+        - noctx
+        - nolintlint       # Enforce nolint comments
         - rowserrcheck
         - sqlclosecheck
+        - staticcheck      # Go vet++
+        - unconvert        # Unnecessary conversions
+        - unparam
         - unused
-        - whitespace
         - wastedassign
+        - whitespace
 #        - varnamelen
-#        - unparam
 #        - prealloc
-        - noctx
-        - nilerr
-        - godot
-#        - exhaustive
-#        - errorlint
 #        - contextcheck
 
     settings:

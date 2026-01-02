@@ -488,7 +488,7 @@ func TestWrapAPIError(t *testing.T) {
 				return
 			}
 			if tt.wantUnwrapped {
-				if got != tt.err {
+				if !errors.Is(got, tt.err) {
 					t.Errorf("wrapAPIError() should return same error, got %v, want %v", got, tt.err)
 				}
 			}

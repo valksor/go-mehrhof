@@ -91,9 +91,10 @@ func mapProviderPriorityToBitbucket(priority provider.Priority) string {
 		return "critical"
 	case provider.PriorityHigh:
 		return "major"
+	case provider.PriorityNormal:
+		return "minor"
 	case provider.PriorityLow:
 		return "trivial"
-	default:
-		return "minor"
 	}
+	return "minor"
 }

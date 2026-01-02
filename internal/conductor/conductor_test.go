@@ -3,6 +3,7 @@ package conductor
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"strings"
@@ -462,7 +463,7 @@ func TestLogError_WithCallback(t *testing.T) {
 	if !callbackCalled {
 		t.Error("error callback was not called")
 	}
-	if capturedErr != testErr {
+	if !errors.Is(capturedErr, testErr) {
 		t.Errorf("captured error = %v, want %v", capturedErr, testErr)
 	}
 }

@@ -122,7 +122,7 @@ func WrapHTTPError(err error, providerName string, baseErrors map[int]error) err
 	// Check for network errors first
 	var netErr net.Error
 	if errors.As(err, &netErr) {
-		return NewProviderError(providerName, fmt.Errorf("%w: %v", ErrNetworkError, err))
+		return NewProviderError(providerName, fmt.Errorf("%w: %w", ErrNetworkError, err))
 	}
 
 	// Check for HTTP errors
@@ -146,19 +146,19 @@ func WrapHTTPError(err error, providerName string, baseErrors map[int]error) err
 
 	// Check provider-specific mappings first
 	if baseErr, ok := baseErrors[statusCode]; ok {
-		return NewProviderError(providerName, fmt.Errorf("%w: %v", baseErr, err))
+		return NewProviderError(providerName, fmt.Errorf("%w: %w", baseErr, err))
 	}
 
 	// Default mappings
 	switch statusCode {
 	case http.StatusUnauthorized:
-		return NewProviderError(providerName, fmt.Errorf("%w: %v", ErrUnauthorized, err))
+		return NewProviderError(providerName, fmt.Errorf("%w: %w", ErrUnauthorized, err))
 	case http.StatusForbidden:
-		return NewProviderError(providerName, fmt.Errorf("%w: %v", ErrRateLimited, err))
+		return NewProviderError(providerName, fmt.Errorf("%w: %w", ErrRateLimited, err))
 	case http.StatusNotFound:
-		return NewProviderError(providerName, fmt.Errorf("%w: %v", ErrNotFound, err))
+		return NewProviderError(providerName, fmt.Errorf("%w: %w", ErrNotFound, err))
 	case http.StatusTooManyRequests:
-		return NewProviderError(providerName, fmt.Errorf("%w: %v", ErrRateLimited, err))
+		return NewProviderError(providerName, fmt.Errorf("%w: %w", ErrRateLimited, err))
 	default:
 		return err
 	}
@@ -171,7 +171,7 @@ func NoTokenError(provider string) error {
 
 // UnauthorizedError creates a provider-specific unauthorized error.
 func UnauthorizedError(provider string, err error) error {
-	return NewProviderError(provider, fmt.Errorf("%w: %v", ErrUnauthorized, err))
+	return NewProviderError(provider, fmt.Errorf("%w: %w", ErrUnauthorized, err))
 }
 
 // RateLimitedError creates a provider-specific rate limit error.

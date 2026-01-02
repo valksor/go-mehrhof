@@ -146,6 +146,8 @@ func runAuto(cmd *cobra.Command, args []string) error {
 					}
 				}
 			}
+		case events.TypeStateChanged, events.TypeError, events.TypeAgentMessage, events.TypeBlueprintReady, events.TypeBranchCreated, events.TypePlanCompleted, events.TypeImplementDone, events.TypePRCreated:
+			// Ignore other event types in auto mode
 		}
 	})
 

@@ -2,6 +2,7 @@ package commands
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"time"
@@ -72,12 +73,12 @@ func runUpdate(cmd *cobra.Command, args []string) error {
 
 	status, err := checker.Check(ctx, opts)
 	if err != nil {
-		if err == update.ErrNoUpdateAvailable {
+		if errors.Is(err, update.ErrNoUpdateAvailable) {
 			display.Success("Already up to date")
 			fmt.Printf("Current version: %s\n", Version)
 			return nil
 		}
-		if err == update.ErrDevBuild {
+		if errors.Is(err, update.ErrDevBuild) {
 			fmt.Printf(display.Warning("⚠")+" Dev build detected (%s)\n", Version)
 			fmt.Println("Update checks are not available for dev builds.")
 			fmt.Println("Install a release version to enable updates:")
@@ -130,11 +131,7 @@ func runUpdate(cmd *cobra.Command, args []string) error {
 	spinner.Start()
 
 	// Fetch checksums URL from the release assets
-	checksumsURL, err := getChecksumsURL(ctx, checker, status)
-	if err != nil {
-		spinner.StopWithError("Failed to get release info")
-		return fmt.Errorf("get checksums URL: %w", err)
-	}
+	checksumsURL := getChecksumsURL(ctx, checker, status)
 
 	downloadedPath, err := downloader.DownloadWithChecksums(
 		ctx,
@@ -173,7 +170,7 @@ func runUpdate(cmd *cobra.Command, args []string) error {
 }
 
 // getChecksumsURL fetches the checksums file URL from the release assets.
-func getChecksumsURL(ctx context.Context, checker *update.Checker, status *update.UpdateStatus) (string, error) {
+func getChecksumsURL(_ context.Context, _ *update.Checker, status *update.UpdateStatus) string {
 	// We need to fetch the release info to get the checksums URL
 	// For now, construct it from the release URL pattern
 	// GitHub releases follow: /owner/repo/releases/download/tag/asset
@@ -181,5 +178,5 @@ func getChecksumsURL(ctx context.Context, checker *update.Checker, status *updat
 
 	// Extract tag from status.LatestVersion
 	tag := status.LatestVersion
-	return fmt.Sprintf("https://github.com/valksor/go-mehrhof/releases/download/%s/checksums.txt", tag), nil
+	return fmt.Sprintf("https://github.com/valksor/go-mehrhof/releases/download/%s/checksums.txt", tag)
 }

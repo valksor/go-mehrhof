@@ -3,6 +3,7 @@ package claude
 import (
 	"bufio"
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"log/slog"
@@ -218,7 +219,7 @@ func (a *Agent) executeStream(ctx context.Context, prompt string, eventCh chan<-
 
 	// Read any stderr output
 	stderrBytes, err := bufio.NewReader(stderr).ReadString('\n')
-	if err != nil && err != io.EOF {
+	if err != nil && !errors.Is(err, io.EOF) {
 		// Log but don't fail - stderr may not have content
 		slog.Debug("error reading stderr", "error", err)
 	}
@@ -226,7 +227,8 @@ func (a *Agent) executeStream(ctx context.Context, prompt string, eventCh chan<-
 	// Wait for command to finish
 	if err := cmd.Wait(); err != nil {
 		// Check if it's just a non-zero exit (which might be okay)
-		if exitErr, ok := err.(*exec.ExitError); ok {
+		var exitErr *exec.ExitError
+		if errors.As(err, &exitErr) {
 			if exitErr.ExitCode() != 0 {
 				if stderrBytes != "" {
 					return fmt.Errorf("claude exited with code %d: %s", exitErr.ExitCode(), stderrBytes)

@@ -30,21 +30,21 @@ func wrapAPIError(err error) error {
 
 	// Check for specific error patterns
 	if strings.Contains(errMsg, "401") {
-		return fmt.Errorf("%w: %v", ErrUnauthorized, err)
+		return fmt.Errorf("%w: %w", ErrUnauthorized, err)
 	}
 	if strings.Contains(errMsg, "403") {
-		return fmt.Errorf("%w: %v", ErrUnauthorized, err)
+		return fmt.Errorf("%w: %w", ErrUnauthorized, err)
 	}
 	if strings.Contains(errMsg, "429") {
-		return fmt.Errorf("%w: %v", ErrRateLimited, err)
+		return fmt.Errorf("%w: %w", ErrRateLimited, err)
 	}
 	if strings.Contains(errMsg, "404") {
-		return fmt.Errorf("%w: %v", ErrIssueNotFound, err)
+		return fmt.Errorf("%w: %w", ErrIssueNotFound, err)
 	}
 
 	var netErr net.Error
 	if errors.As(err, &netErr) {
-		return fmt.Errorf("%w: %v", ErrNetworkError, err)
+		return fmt.Errorf("%w: %w", ErrNetworkError, err)
 	}
 
 	return err

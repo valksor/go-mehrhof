@@ -2,6 +2,7 @@ package github
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"strings"
 	"testing"
@@ -152,7 +153,7 @@ func TestList(t *testing.T) {
 		}
 
 		_, err := p.List(context.Background(), provider.ListOptions{})
-		if err != ErrRepoNotConfigured {
+		if !errors.Is(err, ErrRepoNotConfigured) {
 			t.Errorf("error = %v, want %v", err, ErrRepoNotConfigured)
 		}
 	})

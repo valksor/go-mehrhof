@@ -2,6 +2,7 @@ package github
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -143,7 +144,7 @@ func TestCreateWorkUnit(t *testing.T) {
 		}
 
 		_, err := p.CreateWorkUnit(context.Background(), opts)
-		if err != ErrRepoNotConfigured {
+		if !errors.Is(err, ErrRepoNotConfigured) {
 			t.Errorf("error = %v, want %v", err, ErrRepoNotConfigured)
 		}
 	})

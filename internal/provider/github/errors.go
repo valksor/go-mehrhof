@@ -35,9 +35,9 @@ func wrapAPIError(err error) error {
 				resetHeader := ghErr.Response.Header.Get("X-RateLimit-Reset")
 				return providererrors.RateLimitedError("github", "retry after "+resetHeader)
 			}
-			return fmt.Errorf("%w: %v", ErrInsufficientScope, err)
+			return fmt.Errorf("%w: %w", ErrInsufficientScope, err)
 		case 404:
-			return fmt.Errorf("%w: %v", ErrIssueNotFound, err)
+			return fmt.Errorf("%w: %w", ErrIssueNotFound, err)
 		}
 	}
 

@@ -324,6 +324,8 @@ func (p *YAMLBlockParser) Parse(events []Event) (*Response, error) {
 			}
 		case EventUsage:
 			response.Usage = p.parseUsage(event.Data)
+		case EventToolUse, EventToolResult, EventFile, EventError, EventComplete:
+			// Ignore other event types
 		}
 	}
 

@@ -202,10 +202,10 @@ func mapProviderPriorityToLinear(priority provider.Priority) *int {
 		p = 1 // Urgent
 	case provider.PriorityHigh:
 		p = 2 // High
+	case provider.PriorityNormal:
+		p = 3 // Medium
 	case provider.PriorityLow:
 		p = 4 // Low
-	default:
-		p = 3 // Medium
 	}
 	return &p
 }

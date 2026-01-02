@@ -408,6 +408,8 @@ func runPluginsValidate(cmd *cobra.Command, args []string) error {
 		switch m.Type {
 		case plugin.PluginTypeAgent:
 			initMethod = "agent.init"
+		case plugin.PluginTypeProvider:
+			initMethod = "provider.init"
 		case plugin.PluginTypeWorkflow:
 			initMethod = "workflow.init"
 		}

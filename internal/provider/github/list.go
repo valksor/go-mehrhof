@@ -34,7 +34,8 @@ func (p *Provider) List(ctx context.Context, opts provider.ListOptions) ([]*prov
 			ghOpts.State = "open"
 		case provider.StatusClosed, provider.StatusDone:
 			ghOpts.State = "closed"
-		default:
+		case provider.StatusInProgress, provider.StatusReview:
+			// GitHub doesn't have these states, use all
 			ghOpts.State = "all"
 		}
 	} else {

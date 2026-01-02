@@ -83,6 +83,8 @@ func (r *Result) addFinding(severity Severity, code, message, path, file, sugges
 		r.Valid = false
 	case SeverityWarning:
 		r.Warnings++
+	case SeverityInfo:
+		// Info level findings don't affect validation result
 	}
 }
 

@@ -297,7 +297,7 @@ func showAllCosts(ws *storage.Workspace, summaryMode bool) error {
 	}
 
 	if summaryMode {
-		return showCostSummary(ws, taskIDs, activeID)
+		return showCostSummary(ws, taskIDs)
 	}
 
 	// JSON output
@@ -410,7 +410,7 @@ func showAllCosts(ws *storage.Workspace, summaryMode bool) error {
 	return nil
 }
 
-func showCostSummary(ws *storage.Workspace, taskIDs []string, activeID string) error {
+func showCostSummary(ws *storage.Workspace, taskIDs []string) error {
 	var grandTotalInput, grandTotalOutput, grandTotalCached int
 	var grandTotalCost float64
 	var taskCount int

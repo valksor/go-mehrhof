@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -62,7 +63,7 @@ func (l *FileLock) TryLock() (bool, error) {
 	err = syscall.Flock(int(f.Fd()), syscall.LOCK_EX|syscall.LOCK_NB)
 	if err != nil {
 		_ = f.Close()
-		if err == syscall.EWOULDBLOCK {
+		if errors.Is(err, syscall.EWOULDBLOCK) {
 			return false, nil // Lock held by another process
 		}
 		return false, fmt.Errorf("try lock: %w", err)

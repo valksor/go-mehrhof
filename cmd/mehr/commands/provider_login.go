@@ -107,17 +107,17 @@ type tokenSource struct {
 
 // detectExistingToken checks if a token is already configured.
 // Returns (source, value) or ("", "") if not found.
-func detectExistingToken(cfg providerLoginConfig, ws *storage.Workspace) (*tokenSource, error) {
+func detectExistingToken(cfg providerLoginConfig, ws *storage.Workspace) *tokenSource {
 	// 1. Check system environment variable
 	if val := os.Getenv(cfg.EnvVar); val != "" {
-		return &tokenSource{Source: cfg.EnvVar + " environment variable", Value: maskToken(val)}, nil
+		return &tokenSource{Source: cfg.EnvVar + " environment variable", Value: maskToken(val)}
 	}
 
 	// 2. Check .env file
 	envVars, err := ws.LoadEnv()
 	if err == nil {
 		if val, ok := envVars[cfg.EnvVar]; ok && val != "" {
-			return &tokenSource{Source: ".mehrhof/.env file", Value: maskToken(val)}, nil
+			return &tokenSource{Source: ".mehrhof/.env file", Value: maskToken(val)}
 		}
 	}
 
@@ -126,11 +126,11 @@ func detectExistingToken(cfg providerLoginConfig, ws *storage.Workspace) (*token
 	if err == nil {
 		val := getConfigToken(workspaceCfg, cfg.ConfigField)
 		if val != "" {
-			return &tokenSource{Source: "config.yaml", Value: maskToken(val)}, nil
+			return &tokenSource{Source: "config.yaml", Value: maskToken(val)}
 		}
 	}
 
-	return nil, nil
+	return nil
 }
 
 // getConfigToken retrieves a token from WorkspaceConfig using field path (e.g., "GitHub.Token").
@@ -182,7 +182,7 @@ func maskToken(token string) string {
 }
 
 // confirmOverride asks the user if they want to replace an existing token.
-func confirmOverride(cmd *cobra.Command, providerName, source, maskedValue string) (bool, error) {
+func confirmOverride(cmd *cobra.Command, source, maskedValue string) (bool, error) {
 	out := cmd.OutOrStdout()
 	_, _ = fmt.Fprintf(out, "Token already configured via %s: %s\n", source, maskedValue)
 	_, _ = fmt.Fprintf(out, "Override? [y/N]: ")
@@ -298,13 +298,10 @@ func runProviderLogin(providerName string) func(*cobra.Command, []string) error 
 		}
 
 		// Check for existing token
-		existing, err := detectExistingToken(*cfg, ws)
-		if err != nil {
-			return fmt.Errorf("detect existing token: %w", err)
-		}
+		existing := detectExistingToken(*cfg, ws)
 
 		if existing != nil {
-			override, err := confirmOverride(cmd, cfg.Name, existing.Source, existing.Value)
+			override, err := confirmOverride(cmd, existing.Source, existing.Value)
 			if err != nil {
 				return err
 			}

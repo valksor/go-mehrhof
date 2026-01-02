@@ -3,6 +3,7 @@ package conductor
 import (
 	"bufio"
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"os/exec"
@@ -60,7 +61,8 @@ func (c *Conductor) HasQualityTarget(ctx context.Context) bool {
 	cmd.Dir = c.workspace.Root()
 	err := cmd.Run()
 
-	if exitErr, ok := err.(*exec.ExitError); ok {
+	var exitErr *exec.ExitError
+	if errors.As(err, &exitErr) {
 		return exitErr.ExitCode() != makeTargetNotFound
 	}
 

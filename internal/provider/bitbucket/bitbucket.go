@@ -303,6 +303,9 @@ func (p *Provider) List(ctx context.Context, opts provider.ListOptions) ([]*prov
 		state = "open"
 	case provider.StatusClosed:
 		state = "closed"
+	case provider.StatusInProgress, provider.StatusReview, provider.StatusDone:
+		// Bitbucket doesn't have these states, treat as open
+		state = "open"
 	}
 
 	limit := opts.Limit
@@ -440,7 +443,8 @@ func (p *Provider) UpdateStatus(ctx context.Context, workUnitID string, status p
 		state = "closed"
 	case provider.StatusDone:
 		state = "resolved"
-	default:
+	case provider.StatusInProgress, provider.StatusReview:
+		// Bitbucket doesn't have these states, treat as open
 		state = "open"
 	}
 
