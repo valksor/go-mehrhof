@@ -1,4 +1,4 @@
-.PHONY: build test lint install clean run hooks
+.PHONY: build test lint install clean run hooks lefthook
 
 help: ## Outputs this help screen
 	@grep -E '(^[a-zA-Z0-9_-]+:.*?##.*$$)|(^##)' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}{printf "\033[32m%-30s\033[0m %s\n", $$1, $$2}' | sed -e 's/\[32m##/[33m/'
@@ -76,3 +76,8 @@ version: build ## Show version info
 hooks: ## Configure git to use versioned hooks
 	git config core.hooksPath .githooks
 	@echo "Git hooks configured to use .githooks/"
+
+lefthook: ## Install and configure Lefthook pre-commit hooks
+	go install github.com/evilmartians/lefthook@latest
+	lefthook install
+	@echo "Lefthook installed. Pre-commit hooks active."

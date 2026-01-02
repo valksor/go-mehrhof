@@ -269,10 +269,14 @@ make build        # Build binary to ./build/mehr
 make install      # Install to $GOPATH/bin
 make test         # Run tests with coverage
 make coverage     # Generate coverage report
-make lint         # Run golangci-lint
-make fmt          # Format code
+make lint         # Run golangci-lint + govulncheck
+make fmt          # Format code (gofmt, goimports, gofumpt)
 make tidy         # Tidy dependencies
+make hooks        # Enable versioned git hooks
+make lefthook     # Install pre-commit hooks (auto-format + lint)
 ```
+
+**CI/CD**: PRs trigger lint/test/build via GitHub Actions. Releases use [GoReleaser](https://goreleaser.com/) with Cosign signing and SBOM generation.
 
 ## Contributing
 
