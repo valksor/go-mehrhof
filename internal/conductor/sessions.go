@@ -7,7 +7,7 @@ import (
 	"github.com/valksor/go-mehrhof/internal/events"
 )
 
-// createCheckpointIfNeeded creates a git checkpoint if there are changes
+// createCheckpointIfNeeded creates a git checkpoint if there are changes.
 func (c *Conductor) createCheckpointIfNeeded(taskID, message string) *events.Event {
 	if c.git == nil || !c.activeTask.UseGit {
 		return nil
@@ -49,7 +49,7 @@ func (c *Conductor) createCheckpointIfNeeded(taskID, message string) *events.Eve
 	}
 }
 
-// saveCurrentSession saves the current session if one exists
+// saveCurrentSession saves the current session if one exists.
 func (c *Conductor) saveCurrentSession(taskID string) {
 	if c.currentSession == nil || c.currentSessionFile == "" {
 		return

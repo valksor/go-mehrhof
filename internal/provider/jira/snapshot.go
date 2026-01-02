@@ -9,7 +9,7 @@ import (
 	"github.com/valksor/go-mehrhof/internal/provider"
 )
 
-// Snapshot captures the issue content from Jira
+// Snapshot captures the issue content from Jira.
 func (p *Provider) Snapshot(ctx context.Context, id string) (*provider.Snapshot, error) {
 	ref, err := ParseReference(id)
 	if err != nil {

@@ -202,7 +202,7 @@ func TestSpecificationStatusMapsCompleteness(t *testing.T) {
 	}
 }
 
-// TestColoredFormatFunctions tests the new color-aware formatting functions
+// TestColoredFormatFunctions tests the new color-aware formatting functions.
 func TestFormatStateColored(t *testing.T) {
 	// Disable colors for predictable test output
 	SetColorsEnabled(false)
@@ -230,7 +230,7 @@ func TestFormatStateColored(t *testing.T) {
 	}
 }
 
-// TestInitColors tests the color initialization function
+// TestInitColors tests the color initialization function.
 func TestInitColors(t *testing.T) {
 	// Save original state
 	wasEnabled := ColorsEnabled()
@@ -268,7 +268,7 @@ func TestInitColors(t *testing.T) {
 	SetColorsEnabled(wasEnabled)
 }
 
-// TestSetColorsEnabled tests manual color control
+// TestSetColorsEnabled tests manual color control.
 func TestSetColorsEnabled(t *testing.T) {
 	// Save original state
 	original := ColorsEnabled()
@@ -292,7 +292,7 @@ func TestSetColorsEnabled(t *testing.T) {
 	}
 }
 
-// TestColorFunctions tests the color formatting functions
+// TestColorFunctions tests the color formatting functions.
 func TestColorFunctions(t *testing.T) {
 	// Disable colors for predictable output
 	SetColorsEnabled(false)
@@ -322,7 +322,7 @@ func TestColorFunctions(t *testing.T) {
 	}
 }
 
-// TestColorPrefixes tests the prefix functions
+// TestColorPrefixes tests the prefix functions.
 func TestColorPrefixes(t *testing.T) {
 	// Disable colors for predictable output
 	SetColorsEnabled(false)
@@ -349,7 +349,7 @@ func TestColorPrefixes(t *testing.T) {
 	}
 }
 
-// TestMessageFormatters tests the formatted message functions
+// TestMessageFormatters tests the formatted message functions.
 func TestMessageFormatters(t *testing.T) {
 	// Disable colors for predictable output
 	SetColorsEnabled(false)
@@ -380,7 +380,7 @@ func TestMessageFormatters(t *testing.T) {
 	}
 }
 
-// TestColorState tests state-based color formatting
+// TestColorState tests state-based color formatting.
 func TestColorState(t *testing.T) {
 	// Disable colors for predictable output
 	SetColorsEnabled(false)
@@ -412,7 +412,7 @@ func TestColorState(t *testing.T) {
 	}
 }
 
-// TestColorSpecStatus tests specification status color formatting
+// TestColorSpecStatus tests specification status color formatting.
 func TestColorSpecStatus(t *testing.T) {
 	// Disable colors for predictable output
 	SetColorsEnabled(false)
@@ -440,7 +440,7 @@ func TestColorSpecStatus(t *testing.T) {
 	}
 }
 
-// TestWorktreeIndicator tests the worktree indicator function
+// TestWorktreeIndicator tests the worktree indicator function.
 func TestWorktreeIndicator(t *testing.T) {
 	// Disable colors for predictable output
 	SetColorsEnabled(false)
@@ -466,7 +466,7 @@ func TestWorktreeIndicator(t *testing.T) {
 	}
 }
 
-// TestColorsWithEnabled tests that colors are actually applied when enabled
+// TestColorsWithEnabled tests that colors are actually applied when enabled.
 func TestColorsWithEnabled(t *testing.T) {
 	// Save original state
 	original := ColorsEnabled()
@@ -487,7 +487,7 @@ func TestColorsWithEnabled(t *testing.T) {
 	}
 }
 
-// TestErrorWithSuggestions tests error formatting with suggestions
+// TestErrorWithSuggestions tests error formatting with suggestions.
 func TestErrorWithSuggestions(t *testing.T) {
 	// Disable colors for predictable output
 	SetColorsEnabled(false)
@@ -528,7 +528,7 @@ func TestErrorWithSuggestions(t *testing.T) {
 	}
 }
 
-// TestErrorWithContext tests error formatting with context
+// TestErrorWithContext tests error formatting with context.
 func TestErrorWithContext(t *testing.T) {
 	// Disable colors for predictable output
 	SetColorsEnabled(false)
@@ -571,7 +571,7 @@ func TestErrorWithContext(t *testing.T) {
 	}
 }
 
-// TestValidationError tests validation error formatting
+// TestValidationError tests validation error formatting.
 func TestValidationError(t *testing.T) {
 	// Disable colors for predictable output
 	SetColorsEnabled(false)
@@ -614,7 +614,7 @@ func TestValidationError(t *testing.T) {
 	}
 }
 
-// TestProviderError tests provider error formatting
+// TestProviderError tests provider error formatting.
 func TestProviderError(t *testing.T) {
 	// Disable colors for predictable output
 	SetColorsEnabled(false)
@@ -632,7 +632,7 @@ func TestProviderError(t *testing.T) {
 	}
 }
 
-// TestNoActiveTaskError tests the no active task error
+// TestNoActiveTaskError tests the no active task error.
 func TestNoActiveTaskError(t *testing.T) {
 	// Disable colors for predictable output
 	SetColorsEnabled(false)
@@ -648,7 +648,7 @@ func TestNoActiveTaskError(t *testing.T) {
 	}
 }
 
-// TestTaskFailedError tests task failure error formatting
+// TestTaskFailedError tests task failure error formatting.
 func TestTaskFailedError(t *testing.T) {
 	// Disable colors for predictable output
 	SetColorsEnabled(false)
@@ -664,7 +664,7 @@ func TestTaskFailedError(t *testing.T) {
 	}
 }
 
-// TestConfigError tests configuration error formatting
+// TestConfigError tests configuration error formatting.
 func TestConfigError(t *testing.T) {
 	// Disable colors for predictable output
 	SetColorsEnabled(false)
@@ -680,7 +680,7 @@ func TestConfigError(t *testing.T) {
 	}
 }
 
-// TestAgentError tests agent error formatting
+// TestAgentError tests agent error formatting.
 func TestAgentError(t *testing.T) {
 	// Disable colors for predictable output
 	SetColorsEnabled(false)
@@ -696,7 +696,7 @@ func TestAgentError(t *testing.T) {
 	}
 }
 
-// TestGitError tests git error formatting
+// TestGitError tests git error formatting.
 func TestGitError(t *testing.T) {
 	// Disable colors for predictable output
 	SetColorsEnabled(false)
@@ -712,7 +712,7 @@ func TestGitError(t *testing.T) {
 	}
 }
 
-// Helper function to check if a string contains a substring
+// Helper function to check if a string contains a substring.
 func contains(s, substr string) bool {
 	return len(s) >= len(substr) && (s == substr || len(substr) == 0 ||
 		(len(s) > 0 && len(substr) > 0 && findInString(s, substr)))
@@ -727,7 +727,7 @@ func findInString(s, substr string) bool {
 	return false
 }
 
-// TestFormatter tests the Formatter type methods
+// TestFormatter tests the Formatter type methods.
 func TestFormatter(t *testing.T) {
 	// Disable colors for predictable output
 	SetColorsEnabled(false)
@@ -968,7 +968,7 @@ func TestFormatter(t *testing.T) {
 	})
 }
 
-// TestFormatterHelperFunctions tests the global helper functions
+// TestFormatterHelperFunctions tests the global helper functions.
 func TestFormatterHelperFunctions(t *testing.T) {
 	// Disable colors for predictable output
 	SetColorsEnabled(false)
@@ -1003,7 +1003,7 @@ func TestFormatterHelperFunctions(t *testing.T) {
 	})
 }
 
-// TestRelativeTimestamp tests the relative timestamp formatting
+// TestRelativeTimestamp tests the relative timestamp formatting.
 func TestRelativeTimestamp(t *testing.T) {
 	f := NewFormatter()
 

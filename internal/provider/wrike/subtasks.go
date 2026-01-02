@@ -9,7 +9,7 @@ import (
 	"github.com/valksor/go-mehrhof/internal/provider"
 )
 
-// SubtaskInfo holds summary information about a subtask
+// SubtaskInfo holds summary information about a subtask.
 type SubtaskInfo struct {
 	ID     string
 	Title  string
@@ -49,7 +49,7 @@ func (p *Provider) FetchSubtasks(ctx context.Context, workUnitID string) ([]*pro
 	return workUnits, nil
 }
 
-// subtaskToWorkUnit converts a subtask Task to a WorkUnit with parent reference
+// subtaskToWorkUnit converts a subtask Task to a WorkUnit with parent reference.
 func (p *Provider) subtaskToWorkUnit(task *Task, parentID string) *provider.WorkUnit {
 	numericID := ExtractNumericID(task.Permalink)
 	if numericID == "" {
@@ -90,7 +90,7 @@ func (p *Provider) subtaskToWorkUnit(task *Task, parentID string) *provider.Work
 }
 
 // fetchSubtasks recursively fetches all subtasks for a task (internal helper)
-// Returns a list of subtask info and combined comments from all subtasks
+// Returns a list of subtask info and combined comments from all subtasks.
 func (p *Provider) fetchSubtasks(ctx context.Context, subtaskIDs []string, depth int) ([]SubtaskInfo, []string, error) {
 	const maxDepth = 5 // Prevent infinite recursion
 	if depth > maxDepth {

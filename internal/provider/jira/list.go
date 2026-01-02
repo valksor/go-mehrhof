@@ -10,7 +10,7 @@ import (
 	"github.com/valksor/go-mehrhof/internal/provider"
 )
 
-// List retrieves issues from Jira
+// List retrieves issues from Jira.
 func (p *Provider) List(ctx context.Context, opts provider.ListOptions) ([]*provider.WorkUnit, error) {
 	projectKey := p.defaultProject
 
@@ -57,7 +57,7 @@ func (p *Provider) List(ctx context.Context, opts provider.ListOptions) ([]*prov
 	return result, nil
 }
 
-// buildJQL constructs a JQL query from list options
+// buildJQL constructs a JQL query from list options.
 func buildJQL(projectKey string, opts provider.ListOptions) string {
 	var jqlParts []string
 
@@ -104,7 +104,7 @@ func buildJQL(projectKey string, opts provider.ListOptions) string {
 	return jql
 }
 
-// looksLikeProjectKey checks if a string looks like a Jira project key
+// looksLikeProjectKey checks if a string looks like a Jira project key.
 func looksLikeProjectKey(s string) bool {
 	// Project keys are typically 2-10 uppercase letters/numbers
 	if len(s) < 2 || len(s) > 10 {
@@ -120,8 +120,8 @@ func looksLikeProjectKey(s string) bool {
 	return true
 }
 
-// issueToWorkUnit converts an Issue to a WorkUnit without fetching nested data
-// Used by List for efficiency when listing multiple issues
+// issueToWorkUnit converts an Issue to a WorkUnit without fetching nested data.
+// Used by List for efficiency when listing multiple issues.
 func issueToWorkUnit(issue *Issue) *provider.WorkUnit {
 	return &provider.WorkUnit{
 		ID:          issue.ID,

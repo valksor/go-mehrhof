@@ -30,17 +30,17 @@ func NewAlias(name string, base Agent, env map[string]string, args []string, des
 	}
 }
 
-// Name returns the alias name
+// Name returns the alias name.
 func (a *AliasAgent) Name() string {
 	return a.name
 }
 
-// Description returns the human-readable description
+// Description returns the human-readable description.
 func (a *AliasAgent) Description() string {
 	return a.description
 }
 
-// BaseAgent returns the underlying agent being wrapped
+// BaseAgent returns the underlying agent being wrapped.
 func (a *AliasAgent) BaseAgent() Agent {
 	return a.base
 }
@@ -57,22 +57,22 @@ func (a *AliasAgent) configured() Agent {
 	return agent
 }
 
-// Run executes the prompt by delegating to the base agent with env vars and args applied
+// Run executes the prompt by delegating to the base agent with env vars and args applied.
 func (a *AliasAgent) Run(ctx context.Context, prompt string) (*Response, error) {
 	return a.configured().Run(ctx, prompt)
 }
 
-// RunStream executes the prompt and streams events
+// RunStream executes the prompt and streams events.
 func (a *AliasAgent) RunStream(ctx context.Context, prompt string) (<-chan Event, <-chan error) {
 	return a.configured().RunStream(ctx, prompt)
 }
 
-// RunWithCallback executes with a callback for each event
+// RunWithCallback executes with a callback for each event.
 func (a *AliasAgent) RunWithCallback(ctx context.Context, prompt string, cb StreamCallback) (*Response, error) {
 	return a.configured().RunWithCallback(ctx, prompt, cb)
 }
 
-// Available checks if the base agent is available
+// Available checks if the base agent is available.
 func (a *AliasAgent) Available() error {
 	return a.base.Available()
 }
@@ -104,5 +104,5 @@ func (a *AliasAgent) WithArgs(args ...string) Agent {
 	}
 }
 
-// Ensure AliasAgent implements Agent interface
+// Ensure AliasAgent implements Agent interface.
 var _ Agent = (*AliasAgent)(nil)

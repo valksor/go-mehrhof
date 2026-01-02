@@ -7,7 +7,7 @@ import (
 	providererrors "github.com/valksor/go-mehrhof/internal/provider/errors"
 )
 
-// Sentinel errors for the ClickUp provider
+// Sentinel errors for the ClickUp provider.
 var (
 	ErrNoToken          = errors.New("clickup token not found")
 	ErrListRequired     = errors.New("list ID is required for list operations")
@@ -16,7 +16,7 @@ var (
 	ErrRateLimited      = errors.New("rate limited")
 )
 
-// wrapAPIError wraps API errors with appropriate provider error types
+// wrapAPIError wraps API errors with appropriate provider error types.
 func wrapAPIError(err error) error {
 	if err == nil {
 		return nil

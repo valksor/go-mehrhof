@@ -191,7 +191,7 @@ func runAuto(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-// boolToStatus converts a boolean to a status string
+// boolToStatus converts a boolean to a status string.
 func boolToStatus(done bool) string {
 	if done {
 		return "done"

@@ -7,7 +7,7 @@ import (
 	"strings"
 )
 
-// Worktree represents a git worktree
+// Worktree represents a git worktree.
 type Worktree struct {
 	Path   string // Absolute path to worktree
 	Branch string // Branch checked out in worktree
@@ -16,7 +16,7 @@ type Worktree struct {
 	Main   bool   // Is this the main worktree
 }
 
-// ListWorktrees returns all worktrees in the repository
+// ListWorktrees returns all worktrees in the repository.
 func (g *Git) ListWorktrees() ([]Worktree, error) {
 	out, err := g.run("worktree", "list", "--porcelain")
 	if err != nil {
@@ -62,7 +62,7 @@ func (g *Git) ListWorktrees() ([]Worktree, error) {
 	return worktrees, nil
 }
 
-// CreateWorktree creates a new worktree for a branch
+// CreateWorktree creates a new worktree for a branch.
 func (g *Git) CreateWorktree(path, branch string) error {
 	absPath, err := filepath.Abs(path)
 	if err != nil {
@@ -83,7 +83,7 @@ func (g *Git) CreateWorktree(path, branch string) error {
 	return nil
 }
 
-// CreateWorktreeNewBranch creates a worktree with a new branch
+// CreateWorktreeNewBranch creates a worktree with a new branch.
 func (g *Git) CreateWorktreeNewBranch(path, branch, base string) error {
 	absPath, err := filepath.Abs(path)
 	if err != nil {
@@ -109,7 +109,7 @@ func (g *Git) CreateWorktreeNewBranch(path, branch, base string) error {
 	return nil
 }
 
-// RemoveWorktree removes a worktree
+// RemoveWorktree removes a worktree.
 func (g *Git) RemoveWorktree(path string, force bool) error {
 	args := []string{"worktree", "remove", path}
 	if force {
@@ -124,13 +124,13 @@ func (g *Git) RemoveWorktree(path string, force bool) error {
 	return nil
 }
 
-// PruneWorktrees removes stale worktree information
+// PruneWorktrees removes stale worktree information.
 func (g *Git) PruneWorktrees() error {
 	_, err := g.run("worktree", "prune")
 	return err
 }
 
-// GetWorktreeForBranch finds the worktree for a given branch
+// GetWorktreeForBranch finds the worktree for a given branch.
 func (g *Git) GetWorktreeForBranch(branch string) (*Worktree, error) {
 	worktrees, err := g.ListWorktrees()
 	if err != nil {
@@ -146,7 +146,7 @@ func (g *Git) GetWorktreeForBranch(branch string) (*Worktree, error) {
 	return nil, fmt.Errorf("no worktree for branch: %s", branch)
 }
 
-// WorktreeExists checks if a worktree exists at the given path
+// WorktreeExists checks if a worktree exists at the given path.
 func (g *Git) WorktreeExists(path string) bool {
 	worktrees, err := g.ListWorktrees()
 	if err != nil {
@@ -164,14 +164,14 @@ func (g *Git) WorktreeExists(path string) bool {
 }
 
 // GetWorktreePath returns a standard worktree path for a task
-// Worktrees are created as siblings of the main repo: ../repo-worktrees/task-id
+// Worktrees are created as siblings of the main repo: ../repo-worktrees/task-id.
 func (g *Git) GetWorktreePath(taskID string) string {
 	repoName := filepath.Base(g.repoRoot)
 	parent := filepath.Dir(g.repoRoot)
 	return filepath.Join(parent, repoName+"-worktrees", taskID)
 }
 
-// EnsureWorktreesDir creates the worktrees directory if it doesn't exist
+// EnsureWorktreesDir creates the worktrees directory if it doesn't exist.
 func (g *Git) EnsureWorktreesDir() error {
 	repoName := filepath.Base(g.repoRoot)
 	parent := filepath.Dir(g.repoRoot)

@@ -781,7 +781,7 @@ func TestLogVerbose_NilStdout(t *testing.T) {
 	c.logVerbose("test message")
 }
 
-// Test generatePRTitle
+// Test generatePRTitle.
 func TestGeneratePRTitle(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -846,7 +846,7 @@ func TestGeneratePRTitle(t *testing.T) {
 	}
 }
 
-// Test generatePRBody
+// Test generatePRBody.
 func TestGeneratePRBody(t *testing.T) {
 	tests := []struct {
 		name        string
@@ -957,7 +957,7 @@ func TestGeneratePRBody(t *testing.T) {
 	}
 }
 
-// Test resolveTargetBranch
+// Test resolveTargetBranch.
 func TestResolveTargetBranch(t *testing.T) {
 	tests := []struct {
 		name      string
@@ -1009,7 +1009,7 @@ func TestResolveTargetBranch(t *testing.T) {
 	}
 }
 
-// Test getDiffStats with nil git
+// Test getDiffStats with nil git.
 func TestGetDiffStats_NilGit(t *testing.T) {
 	c, err := New()
 	if err != nil {
@@ -1028,7 +1028,7 @@ func TestGetDiffStats_NilGit(t *testing.T) {
 	}
 }
 
-// Test getDiffStats with nil taskWork
+// Test getDiffStats with nil taskWork.
 func TestGetDiffStats_NilTaskWork(t *testing.T) {
 	c, err := New()
 	if err != nil {
@@ -1042,7 +1042,7 @@ func TestGetDiffStats_NilTaskWork(t *testing.T) {
 	}
 }
 
-// Test extractContextSummary
+// Test extractContextSummary.
 func TestExtractContextSummary(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -1092,7 +1092,7 @@ func TestExtractContextSummary(t *testing.T) {
 	}
 }
 
-// Test buildFullContext
+// Test buildFullContext.
 func TestBuildFullContext(t *testing.T) {
 	tests := []struct {
 		name        string
@@ -1143,7 +1143,7 @@ func TestBuildFullContext(t *testing.T) {
 	}
 }
 
-// Test extractExploredFiles
+// Test extractExploredFiles.
 func TestExtractExploredFiles(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -1195,7 +1195,7 @@ func TestExtractExploredFiles(t *testing.T) {
 	}
 }
 
-// Test resolveAgentForTask - agent resolution with 7-level priority
+// Test resolveAgentForTask - agent resolution with 7-level priority.
 func TestResolveAgentForTask(t *testing.T) {
 	tests := []struct {
 		name             string
@@ -1332,7 +1332,7 @@ func TestResolveAgentForTask(t *testing.T) {
 	}
 }
 
-// Test resolveAgentForStep - per-step agent resolution with 7-level priority
+// Test resolveAgentForStep - per-step agent resolution with 7-level priority.
 func TestResolveAgentForStep(t *testing.T) {
 	tests := []struct {
 		name            string
@@ -1517,7 +1517,7 @@ func TestResolveAgentForStep(t *testing.T) {
 	}
 }
 
-// Test registerAliasAgents - simple alias, chained aliases, circular dependency
+// Test registerAliasAgents - simple alias, chained aliases, circular dependency.
 func TestRegisterAliasAgents(t *testing.T) {
 	tests := []struct {
 		name         string
@@ -1657,7 +1657,7 @@ func TestRegisterAliasAgents(t *testing.T) {
 	}
 }
 
-// Test GetAgentForStep - cache hit/miss, persistence
+// Test GetAgentForStep - cache hit/miss, persistence.
 func TestGetAgentForStep(t *testing.T) {
 	tests := []struct {
 		existingStep   *storage.StepAgentInfo
@@ -1750,7 +1750,7 @@ func TestGetAgentForStep(t *testing.T) {
 	}
 }
 
-// Test resolveNaming - external key resolution, template expansion
+// Test resolveNaming - external key resolution, template expansion.
 func TestResolveNaming(t *testing.T) {
 	tests := []struct {
 		name              string
@@ -1896,7 +1896,7 @@ func TestResolveNaming(t *testing.T) {
 	}
 }
 
-// Test buildWorkUnit - WorkUnit construction with specifications
+// Test buildWorkUnit - WorkUnit construction with specifications.
 func TestBuildWorkUnit_WithSpecs(t *testing.T) {
 	tests := []struct {
 		taskWork       *storage.TaskWork
@@ -2023,7 +2023,7 @@ func TestBuildWorkUnit_WithSpecs(t *testing.T) {
 	}
 }
 
-// testAgent is a minimal mock agent for testing
+// testAgent is a minimal mock agent for testing.
 type testAgent struct {
 	name string
 }
@@ -2166,7 +2166,7 @@ func TestDeleteOptions_DeleteWork_TriState(t *testing.T) {
 	}
 }
 
-// Test precedence logic: CLI flag > config > default
+// Test precedence logic: CLI flag > config > default.
 func TestDeleteWorkPrecedence_Documentation(t *testing.T) {
 	// This test documents the expected precedence behavior.
 	// The actual precedence logic is in Finish() and Delete() methods,
@@ -2211,7 +2211,7 @@ func TestDeleteWorkPrecedence_Documentation(t *testing.T) {
 	})
 }
 
-// Test WithTitleOverride option
+// Test WithTitleOverride option.
 func TestWithTitleOverride(t *testing.T) {
 	opts := DefaultOptions()
 	WithTitleOverride("Custom Task Title")(&opts)
@@ -2221,7 +2221,7 @@ func TestWithTitleOverride(t *testing.T) {
 	}
 }
 
-// Test WithSlugOverride option
+// Test WithSlugOverride option.
 func TestWithSlugOverride(t *testing.T) {
 	opts := DefaultOptions()
 	WithSlugOverride("custom-task-slug")(&opts)

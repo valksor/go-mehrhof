@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-// Options configures the Conductor
+// Options configures the Conductor.
 type Options struct {
 	// Agent configuration
 	AgentName  string            // Which agent to use for all steps (default: auto-detect)
@@ -51,10 +51,10 @@ type Options struct {
 	OnError       func(err error)
 }
 
-// Option is a functional option for configuring Conductor
+// Option is a functional option for configuring Conductor.
 type Option func(*Options)
 
-// DefaultOptions returns default options
+// DefaultOptions returns default options.
 func DefaultOptions() Options {
 	return Options{
 		AgentName:         "", // Auto-detect
@@ -68,14 +68,14 @@ func DefaultOptions() Options {
 	}
 }
 
-// WithAgent sets the agent name for all steps
+// WithAgent sets the agent name for all steps.
 func WithAgent(name string) Option {
 	return func(o *Options) {
 		o.AgentName = name
 	}
 }
 
-// WithStepAgent sets a specific agent for a workflow step
+// WithStepAgent sets a specific agent for a workflow step.
 func WithStepAgent(step, agentName string) Option {
 	return func(o *Options) {
 		if o.StepAgents == nil {
@@ -85,35 +85,35 @@ func WithStepAgent(step, agentName string) Option {
 	}
 }
 
-// WithTimeout sets the execution timeout
+// WithTimeout sets the execution timeout.
 func WithTimeout(d time.Duration) Option {
 	return func(o *Options) {
 		o.Timeout = d
 	}
 }
 
-// WithDryRun enables dry-run mode
+// WithDryRun enables dry-run mode.
 func WithDryRun(enabled bool) Option {
 	return func(o *Options) {
 		o.DryRun = enabled
 	}
 }
 
-// WithVerbose enables verbose output
+// WithVerbose enables verbose output.
 func WithVerbose(enabled bool) Option {
 	return func(o *Options) {
 		o.Verbose = enabled
 	}
 }
 
-// WithCreateBranch enables git branch creation
+// WithCreateBranch enables git branch creation.
 func WithCreateBranch(enabled bool) Option {
 	return func(o *Options) {
 		o.CreateBranch = enabled
 	}
 }
 
-// WithUseWorktree enables git worktree creation
+// WithUseWorktree enables git worktree creation.
 func WithUseWorktree(enabled bool) Option {
 	return func(o *Options) {
 		o.UseWorktree = enabled
@@ -124,14 +124,14 @@ func WithUseWorktree(enabled bool) Option {
 	}
 }
 
-// WithAutoInit enables auto-initialization of workspace
+// WithAutoInit enables auto-initialization of workspace.
 func WithAutoInit(enabled bool) Option {
 	return func(o *Options) {
 		o.AutoInit = enabled
 	}
 }
 
-// WithAutoMode enables full automation mode
+// WithAutoMode enables full automation mode.
 func WithAutoMode(enabled bool) Option {
 	return func(o *Options) {
 		o.AutoMode = enabled
@@ -141,119 +141,119 @@ func WithAutoMode(enabled bool) Option {
 	}
 }
 
-// WithSkipAgentQuestions skips pending questions from agents
+// WithSkipAgentQuestions skips pending questions from agents.
 func WithSkipAgentQuestions(enabled bool) Option {
 	return func(o *Options) {
 		o.SkipAgentQuestions = enabled
 	}
 }
 
-// WithMaxQualityRetries sets max retries for quality loop
+// WithMaxQualityRetries sets max retries for quality loop.
 func WithMaxQualityRetries(n int) Option {
 	return func(o *Options) {
 		o.MaxQualityRetries = n
 	}
 }
 
-// WithIncludeFullContext enables including full exploration context from pending question
+// WithIncludeFullContext enables including full exploration context from pending question.
 func WithIncludeFullContext(enabled bool) Option {
 	return func(o *Options) {
 		o.IncludeFullContext = enabled
 	}
 }
 
-// WithStdout sets the stdout writer
+// WithStdout sets the stdout writer.
 func WithStdout(w io.Writer) Option {
 	return func(o *Options) {
 		o.Stdout = w
 	}
 }
 
-// WithStderr sets the stderr writer
+// WithStderr sets the stderr writer.
 func WithStderr(w io.Writer) Option {
 	return func(o *Options) {
 		o.Stderr = w
 	}
 }
 
-// WithWorkDir sets the working directory
+// WithWorkDir sets the working directory.
 func WithWorkDir(dir string) Option {
 	return func(o *Options) {
 		o.WorkDir = dir
 	}
 }
 
-// WithDefaultProvider sets the default provider for bare references
+// WithDefaultProvider sets the default provider for bare references.
 func WithDefaultProvider(provider string) Option {
 	return func(o *Options) {
 		o.DefaultProvider = provider
 	}
 }
 
-// WithExternalKey sets the external key override for branch/commit naming
+// WithExternalKey sets the external key override for branch/commit naming.
 func WithExternalKey(key string) Option {
 	return func(o *Options) {
 		o.ExternalKey = key
 	}
 }
 
-// WithCommitPrefixTemplate sets the commit prefix template override
+// WithCommitPrefixTemplate sets the commit prefix template override.
 func WithCommitPrefixTemplate(template string) Option {
 	return func(o *Options) {
 		o.CommitPrefixTemplate = template
 	}
 }
 
-// WithBranchPatternTemplate sets the branch pattern template override
+// WithBranchPatternTemplate sets the branch pattern template override.
 func WithBranchPatternTemplate(template string) Option {
 	return func(o *Options) {
 		o.BranchPatternTemplate = template
 	}
 }
 
-// WithTitleOverride sets the task title override
+// WithTitleOverride sets the task title override.
 func WithTitleOverride(title string) Option {
 	return func(o *Options) {
 		o.TitleOverride = title
 	}
 }
 
-// WithSlugOverride sets the branch slug override
+// WithSlugOverride sets the branch slug override.
 func WithSlugOverride(slug string) Option {
 	return func(o *Options) {
 		o.SlugOverride = slug
 	}
 }
 
-// WithStateChangeCallback sets the state change callback
+// WithStateChangeCallback sets the state change callback.
 func WithStateChangeCallback(fn func(from, to string)) Option {
 	return func(o *Options) {
 		o.OnStateChange = fn
 	}
 }
 
-// WithProgressCallback sets the progress callback
+// WithProgressCallback sets the progress callback.
 func WithProgressCallback(fn func(message string, percent int)) Option {
 	return func(o *Options) {
 		o.OnProgress = fn
 	}
 }
 
-// WithErrorCallback sets the error callback
+// WithErrorCallback sets the error callback.
 func WithErrorCallback(fn func(err error)) Option {
 	return func(o *Options) {
 		o.OnError = fn
 	}
 }
 
-// Apply applies options to the Options struct
+// Apply applies options to the Options struct.
 func (o *Options) Apply(opts ...Option) {
 	for _, opt := range opts {
 		opt(o)
 	}
 }
 
-// FinishOptions configures the finish operation
+// FinishOptions configures the finish operation.
 type FinishOptions struct {
 	SquashMerge  bool   // Use squash merge
 	DeleteBranch bool   // Delete branch after merge
@@ -268,7 +268,7 @@ type FinishOptions struct {
 	PRBody     string // Custom PR body
 }
 
-// DefaultFinishOptions returns default finish options
+// DefaultFinishOptions returns default finish options.
 func DefaultFinishOptions() FinishOptions {
 	return FinishOptions{
 		SquashMerge:  true,
@@ -281,14 +281,14 @@ func DefaultFinishOptions() FinishOptions {
 	}
 }
 
-// DeleteOptions configures the delete (abandon) operation
+// DeleteOptions configures the delete (abandon) operation.
 type DeleteOptions struct {
 	Force      bool  // Skip confirmation prompt
 	KeepBranch bool  // Keep the git branch (only delete workspace)
 	DeleteWork *bool // Delete work directory: nil=defer to config, true=delete, false=keep
 }
 
-// DefaultDeleteOptions returns default delete options
+// DefaultDeleteOptions returns default delete options.
 func DefaultDeleteOptions() DeleteOptions {
 	return DeleteOptions{
 		Force:      false,

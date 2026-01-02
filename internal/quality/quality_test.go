@@ -377,7 +377,7 @@ func contains(s, substr string) bool {
 	return false
 }
 
-// mockLinter is a test linter with configurable availability
+// mockLinter is a test linter with configurable availability.
 type mockLinter struct {
 	name      string
 	available bool
@@ -403,7 +403,7 @@ func (m *mockLinter) Run(ctx context.Context, workDir string, files []string) (*
 	return &Result{Linter: m.name, Passed: true}, nil
 }
 
-// TestRegistryAvailable tests the Available() method
+// TestRegistryAvailable tests the Available() method.
 func TestRegistryAvailable(t *testing.T) {
 	tests := []struct {
 		name      string
@@ -480,7 +480,7 @@ func TestRegistryAvailable(t *testing.T) {
 	}
 }
 
-// TestRunAll tests the RunAll() method with mock linters
+// TestRunAll tests the RunAll() method with mock linters.
 func TestRunAll(t *testing.T) {
 	tests := []struct {
 		name            string

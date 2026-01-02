@@ -11,16 +11,16 @@ import (
 )
 
 const (
-	// ProviderName is the name of the Wrike provider
+	// ProviderName is the name of the Wrike provider.
 	ProviderName = "wrike"
 )
 
-// Provider implements the Wrike task provider
+// Provider implements the Wrike task provider.
 type Provider struct {
 	client *Client
 }
 
-// New creates a new Wrike provider instance
+// New creates a new Wrike provider instance.
 func New(_ context.Context, cfg provider.Config) (any, error) {
 	token := cfg.GetString("token")
 	host := cfg.GetString("host")
@@ -46,7 +46,7 @@ func New(_ context.Context, cfg provider.Config) (any, error) {
 	}, nil
 }
 
-// Match checks if the input matches a Wrike reference
+// Match checks if the input matches a Wrike reference.
 func (p *Provider) Match(input string) bool {
 	input = strings.TrimSpace(input)
 	return strings.HasPrefix(input, "wrike:") ||
@@ -56,7 +56,7 @@ func (p *Provider) Match(input string) bool {
 		numericIDPattern.MatchString(input)
 }
 
-// Parse extracts the task ID from a Wrike reference
+// Parse extracts the task ID from a Wrike reference.
 func (p *Provider) Parse(input string) (string, error) {
 	input = strings.TrimSpace(input)
 
@@ -80,7 +80,7 @@ func (p *Provider) Parse(input string) (string, error) {
 	return taskID, nil
 }
 
-// Fetch retrieves a task from Wrike and converts it to a WorkUnit
+// Fetch retrieves a task from Wrike and converts it to a WorkUnit.
 func (p *Provider) Fetch(ctx context.Context, id string) (*provider.WorkUnit, error) {
 	// First try to fetch as a direct task ID
 	task, err := p.client.GetTask(ctx, id)
@@ -150,7 +150,7 @@ func (p *Provider) Fetch(ctx context.Context, id string) (*provider.WorkUnit, er
 	return wu, nil
 }
 
-// Snapshot captures the task content from Wrike
+// Snapshot captures the task content from Wrike.
 func (p *Provider) Snapshot(ctx context.Context, id string) (*provider.Snapshot, error) {
 	task, err := p.client.GetTask(ctx, id)
 	if err != nil {
@@ -195,8 +195,8 @@ func (p *Provider) Snapshot(ctx context.Context, id string) (*provider.Snapshot,
 	}, nil
 }
 
-// ListTasks returns tasks from a folder or space
-// scopeType should be "folder" or "space"
+// ListTasks returns tasks from a folder or space.
+// scopeType should be "folder" or "space".
 func (p *Provider) ListTasks(ctx context.Context, scopeType, scopeID string) ([]*provider.WorkUnit, error) {
 	var tasks []Task
 	var err error
@@ -227,7 +227,7 @@ func (p *Provider) ListTasks(ctx context.Context, scopeType, scopeID string) ([]
 // Helper functions
 // ──────────────────────────────────────────────────────────────────────────────
 
-// mapStatus converts Wrike status to provider status
+// mapStatus converts Wrike status to provider status.
 func mapStatus(status string) provider.Status {
 	switch strings.ToLower(status) {
 	case "active", "new", "in progress", "inprogress", "draft":
@@ -243,7 +243,7 @@ func mapStatus(status string) provider.Status {
 	}
 }
 
-// mapPriority converts Wrike priority to provider priority
+// mapPriority converts Wrike priority to provider priority.
 func mapPriority(priority string) provider.Priority {
 	switch strings.ToLower(priority) {
 	case "critical", "urgent":
@@ -257,7 +257,7 @@ func mapPriority(priority string) provider.Priority {
 	}
 }
 
-// mapComments converts Wrike comments to provider comments
+// mapComments converts Wrike comments to provider comments.
 func mapComments(comments []Comment) []provider.Comment {
 	if comments == nil {
 		return nil
@@ -280,7 +280,7 @@ func mapComments(comments []Comment) []provider.Comment {
 	return result
 }
 
-// buildMetadata creates metadata map from task and subtasks
+// buildMetadata creates metadata map from task and subtasks.
 func buildMetadata(task *Task, subtasks []SubtaskInfo) map[string]any {
 	metadata := make(map[string]any)
 
@@ -307,7 +307,7 @@ func buildMetadata(task *Task, subtasks []SubtaskInfo) map[string]any {
 }
 
 // taskToWorkUnit converts a Task to a WorkUnit without fetching nested data
-// Used by ListTasks for efficiency when listing multiple tasks
+// Used by ListTasks for efficiency when listing multiple tasks.
 func (p *Provider) taskToWorkUnit(task *Task) *provider.WorkUnit {
 	// Extract numeric ID from permalink for ExternalKey
 	numericID := ExtractNumericID(task.Permalink)

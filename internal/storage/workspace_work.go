@@ -14,19 +14,19 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-// WorkPath returns the path for a specific task's work directory
+// WorkPath returns the path for a specific task's work directory.
 func (w *Workspace) WorkPath(taskID string) string {
 	return filepath.Join(w.workRoot, taskID)
 }
 
-// WorkExists checks if a work directory exists
+// WorkExists checks if a work directory exists.
 func (w *Workspace) WorkExists(taskID string) bool {
 	workPath := w.WorkPath(taskID)
 	info, err := os.Stat(workPath)
 	return err == nil && info.IsDir()
 }
 
-// GenerateTaskID generates a unique task ID
+// GenerateTaskID generates a unique task ID.
 func GenerateTaskID() string {
 	bytes := make([]byte, 4)
 	if _, err := rand.Read(bytes); err != nil {
@@ -35,7 +35,7 @@ func GenerateTaskID() string {
 	return hex.EncodeToString(bytes)
 }
 
-// CreateWork creates a new work directory with initial structure
+// CreateWork creates a new work directory with initial structure.
 func (w *Workspace) CreateWork(taskID string, source SourceInfo) (*TaskWork, error) {
 	workPath := w.WorkPath(taskID)
 
@@ -69,7 +69,7 @@ func (w *Workspace) CreateWork(taskID string, source SourceInfo) (*TaskWork, err
 	return work, nil
 }
 
-// LoadWork loads a task's work metadata
+// LoadWork loads a task's work metadata.
 func (w *Workspace) LoadWork(taskID string) (*TaskWork, error) {
 	workFile := filepath.Join(w.WorkPath(taskID), workFileName)
 
@@ -86,7 +86,7 @@ func (w *Workspace) LoadWork(taskID string) (*TaskWork, error) {
 	return &work, nil
 }
 
-// SaveWork saves a task's work metadata using atomic write pattern
+// SaveWork saves a task's work metadata using atomic write pattern.
 func (w *Workspace) SaveWork(work *TaskWork) error {
 	work.Metadata.UpdatedAt = time.Now()
 
@@ -241,13 +241,13 @@ func (w *Workspace) flushTaskUsageLocked(taskID string) error {
 	return nil
 }
 
-// DeleteWork removes a work directory
+// DeleteWork removes a work directory.
 func (w *Workspace) DeleteWork(taskID string) error {
 	workPath := w.WorkPath(taskID)
 	return os.RemoveAll(workPath)
 }
 
-// ListWorks returns all task IDs in the work directory
+// ListWorks returns all task IDs in the work directory.
 func (w *Workspace) ListWorks() ([]string, error) {
 	if _, err := os.Stat(w.workRoot); os.IsNotExist(err) {
 		return []string{}, nil

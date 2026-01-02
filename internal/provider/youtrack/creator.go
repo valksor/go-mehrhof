@@ -7,7 +7,7 @@ import (
 	"github.com/valksor/go-mehrhof/internal/provider"
 )
 
-// CreateWorkUnit creates a new YouTrack issue
+// CreateWorkUnit creates a new YouTrack issue.
 func (p *Provider) CreateWorkUnit(ctx context.Context, opts provider.CreateWorkUnitOptions) (*provider.WorkUnit, error) {
 	// Map priority and type to custom fields
 	customFields := p.buildCustomFields(opts)
@@ -26,7 +26,7 @@ func (p *Provider) CreateWorkUnit(ctx context.Context, opts provider.CreateWorkU
 	return p.issueToWorkUnit(issue, nil, nil), nil
 }
 
-// buildCustomFields builds custom fields array from CreateWorkUnitOptions
+// buildCustomFields builds custom fields array from CreateWorkUnitOptions.
 func (p *Provider) buildCustomFields(opts provider.CreateWorkUnitOptions) []map[string]interface{} {
 	var fields []map[string]interface{}
 
@@ -53,7 +53,7 @@ func (p *Provider) buildCustomFields(opts provider.CreateWorkUnitOptions) []map[
 	return fields
 }
 
-// priorityToYouTrack maps provider Priority to YouTrack priority name
+// priorityToYouTrack maps provider Priority to YouTrack priority name.
 func priorityToYouTrack(p provider.Priority) string {
 	switch p {
 	case provider.PriorityCritical:

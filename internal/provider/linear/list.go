@@ -10,7 +10,7 @@ import (
 	"github.com/valksor/go-mehrhof/internal/provider"
 )
 
-// List retrieves issues from Linear
+// List retrieves issues from Linear.
 func (p *Provider) List(ctx context.Context, opts provider.ListOptions) ([]*provider.WorkUnit, error) {
 	teamKey := p.team
 
@@ -81,7 +81,7 @@ func (p *Provider) List(ctx context.Context, opts provider.ListOptions) ([]*prov
 	return result, nil
 }
 
-// matchesLabels checks if an issue matches the given labels
+// matchesLabels checks if an issue matches the given labels.
 func matchesLabels(issue *Issue, labels []string) bool {
 	if len(labels) == 0 {
 		return true
@@ -100,8 +100,8 @@ func matchesLabels(issue *Issue, labels []string) bool {
 	return true
 }
 
-// issueToWorkUnit converts an Issue to a WorkUnit without fetching nested data
-// Used by List for efficiency when listing multiple issues
+// issueToWorkUnit converts an Issue to a WorkUnit without fetching nested data.
+// Used by List for efficiency when listing multiple issues.
 func issueToWorkUnit(issue *Issue) *provider.WorkUnit {
 	return &provider.WorkUnit{
 		ID:          issue.ID,

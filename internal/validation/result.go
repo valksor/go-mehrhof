@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-// Severity indicates the importance of a validation finding
+// Severity indicates the importance of a validation finding.
 type Severity string
 
 const (
@@ -15,7 +15,7 @@ const (
 	SeverityInfo    Severity = "info"
 )
 
-// Finding represents a single validation issue
+// Finding represents a single validation issue.
 type Finding struct {
 	Severity   Severity `json:"severity"`
 	Code       string   `json:"code"`                 // e.g., "AGENT_ALIAS_CIRCULAR"
@@ -25,7 +25,7 @@ type Finding struct {
 	Suggestion string   `json:"suggestion,omitempty"` // How to fix
 }
 
-// Result holds all validation findings
+// Result holds all validation findings.
 type Result struct {
 	Findings []Finding `json:"findings"`
 	Errors   int       `json:"errors"`
@@ -33,7 +33,7 @@ type Result struct {
 	Valid    bool      `json:"valid"`
 }
 
-// NewResult creates an empty validation result
+// NewResult creates an empty validation result.
 func NewResult() *Result {
 	return &Result{
 		Valid:    true,
@@ -41,27 +41,27 @@ func NewResult() *Result {
 	}
 }
 
-// AddError adds an error finding
+// AddError adds an error finding.
 func (r *Result) AddError(code, message, path, file string) {
 	r.addFinding(SeverityError, code, message, path, file, "")
 }
 
-// AddErrorWithSuggestion adds an error finding with a fix suggestion
+// AddErrorWithSuggestion adds an error finding with a fix suggestion.
 func (r *Result) AddErrorWithSuggestion(code, message, path, file, suggestion string) {
 	r.addFinding(SeverityError, code, message, path, file, suggestion)
 }
 
-// AddWarning adds a warning finding
+// AddWarning adds a warning finding.
 func (r *Result) AddWarning(code, message, path, file string) {
 	r.addFinding(SeverityWarning, code, message, path, file, "")
 }
 
-// AddWarningWithSuggestion adds a warning finding with a fix suggestion
+// AddWarningWithSuggestion adds a warning finding with a fix suggestion.
 func (r *Result) AddWarningWithSuggestion(code, message, path, file, suggestion string) {
 	r.addFinding(SeverityWarning, code, message, path, file, suggestion)
 }
 
-// AddInfo adds an informational finding
+// AddInfo adds an informational finding.
 func (r *Result) AddInfo(code, message, path, file string) {
 	r.addFinding(SeverityInfo, code, message, path, file, "")
 }
@@ -86,7 +86,7 @@ func (r *Result) addFinding(severity Severity, code, message, path, file, sugges
 	}
 }
 
-// Merge combines another result into this one
+// Merge combines another result into this one.
 func (r *Result) Merge(other *Result) {
 	if other == nil {
 		return
@@ -99,7 +99,7 @@ func (r *Result) Merge(other *Result) {
 	}
 }
 
-// Format returns the result in the specified format
+// Format returns the result in the specified format.
 func (r *Result) Format(format string) string {
 	switch format {
 	case "json":

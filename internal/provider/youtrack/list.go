@@ -8,7 +8,7 @@ import (
 	"github.com/valksor/go-mehrhof/internal/provider"
 )
 
-// List retrieves issues from YouTrack
+// List retrieves issues from YouTrack.
 func (p *Provider) List(ctx context.Context, opts provider.ListOptions) ([]*provider.WorkUnit, error) {
 	// Build query from options
 	query := buildQuery(opts)
@@ -26,7 +26,7 @@ func (p *Provider) List(ctx context.Context, opts provider.ListOptions) ([]*prov
 	return result, nil
 }
 
-// buildQuery constructs YouTrack query from ListOptions
+// buildQuery constructs YouTrack query from ListOptions.
 func buildQuery(opts provider.ListOptions) string {
 	var parts []string
 

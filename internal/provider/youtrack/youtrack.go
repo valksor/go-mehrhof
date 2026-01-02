@@ -10,13 +10,13 @@ import (
 	"github.com/valksor/go-mehrhof/internal/provider"
 )
 
-// Provider implements the YouTrack task provider
+// Provider implements the YouTrack task provider.
 type Provider struct {
 	client *Client
 	config *Config
 }
 
-// New creates a new YouTrack provider
+// New creates a new YouTrack provider.
 func New(_ context.Context, cfg provider.Config) (any, error) {
 	token := cfg.GetString("token")
 	host := cfg.GetString("host")
@@ -37,7 +37,7 @@ func New(_ context.Context, cfg provider.Config) (any, error) {
 	}, nil
 }
 
-// Match checks if input matches a YouTrack reference
+// Match checks if input matches a YouTrack reference.
 func (p *Provider) Match(input string) bool {
 	input = strings.TrimSpace(input)
 	return strings.HasPrefix(input, "youtrack:") ||
@@ -46,7 +46,7 @@ func (p *Provider) Match(input string) bool {
 		readableIDPattern.MatchString(input)
 }
 
-// Parse extracts the issue ID from input
+// Parse extracts the issue ID from input.
 func (p *Provider) Parse(input string) (string, error) {
 	ref, err := ParseReference(input)
 	if err != nil {
@@ -55,7 +55,7 @@ func (p *Provider) Parse(input string) (string, error) {
 	return ref.ID, nil
 }
 
-// Fetch retrieves a YouTrack issue and converts it to a WorkUnit
+// Fetch retrieves a YouTrack issue and converts it to a WorkUnit.
 func (p *Provider) Fetch(ctx context.Context, id string) (*provider.WorkUnit, error) {
 	issue, err := p.client.GetIssue(ctx, id)
 	if err != nil {
@@ -71,7 +71,7 @@ func (p *Provider) Fetch(ctx context.Context, id string) (*provider.WorkUnit, er
 	return p.issueToWorkUnit(issue, comments, attachments), nil
 }
 
-// Snapshot captures the issue content from YouTrack
+// Snapshot captures the issue content from YouTrack.
 func (p *Provider) Snapshot(ctx context.Context, id string) (*provider.Snapshot, error) {
 	issue, err := p.client.GetIssue(ctx, id)
 	if err != nil {
@@ -92,7 +92,7 @@ func (p *Provider) Snapshot(ctx context.Context, id string) (*provider.Snapshot,
 	}, nil
 }
 
-// issueToWorkUnit converts YouTrack Issue to provider WorkUnit
+// issueToWorkUnit converts YouTrack Issue to provider WorkUnit.
 func (p *Provider) issueToWorkUnit(issue *Issue, comments []Comment, attachments []Attachment) *provider.WorkUnit {
 	// Extract tag names
 	tagNames := make([]string, len(issue.Tags))
@@ -179,7 +179,7 @@ func (p *Provider) issueToWorkUnit(issue *Issue, comments []Comment, attachments
 	}
 }
 
-// extractAssignees extracts assignees from custom fields
+// extractAssignees extracts assignees from custom fields.
 func (p *Provider) extractAssignees(issue *Issue) []provider.Person {
 	for _, cf := range issue.CustomFields {
 		if cf.Name == "Assignee" && cf.Value != nil {
@@ -189,7 +189,7 @@ func (p *Provider) extractAssignees(issue *Issue) []provider.Person {
 	return []provider.Person{}
 }
 
-// mapPriority extracts priority from custom fields
+// mapPriority extracts priority from custom fields.
 func (p *Provider) mapPriority(issue *Issue) provider.Priority {
 	for _, cf := range issue.CustomFields {
 		if cf.Name == "Priority" {
@@ -199,7 +199,7 @@ func (p *Provider) mapPriority(issue *Issue) provider.Priority {
 	return provider.PriorityNormal
 }
 
-// mapStatus extracts status from custom fields
+// mapStatus extracts status from custom fields.
 func (p *Provider) mapStatus(issue *Issue) provider.Status {
 	// Check if resolved
 	if issue.Resolved > 0 {
@@ -214,7 +214,7 @@ func (p *Provider) mapStatus(issue *Issue) provider.Status {
 	return provider.StatusOpen
 }
 
-// inferTaskType infers task type from custom fields
+// inferTaskType infers task type from custom fields.
 func (p *Provider) inferTaskType(issue *Issue) string {
 	for _, cf := range issue.CustomFields {
 		if cf.Name == "Type" {
@@ -230,7 +230,7 @@ func (p *Provider) inferTaskType(issue *Issue) string {
 // Helper functions for mapping custom field values
 // ──────────────────────────────────────────────────────────────────────────────
 
-// mapPriorityValue converts a custom field value to Priority
+// mapPriorityValue converts a custom field value to Priority.
 func mapPriorityValue(value interface{}) provider.Priority {
 	s, ok := value.(map[string]interface{})
 	if !ok {
@@ -249,7 +249,7 @@ func mapPriorityValue(value interface{}) provider.Priority {
 	}
 }
 
-// mapStatusValue converts a custom field value to Status
+// mapStatusValue converts a custom field value to Status.
 func mapStatusValue(value interface{}) provider.Status {
 	s, ok := value.(map[string]interface{})
 	if !ok {
@@ -272,7 +272,7 @@ func mapStatusValue(value interface{}) provider.Status {
 	}
 }
 
-// mapAssigneeValue converts a custom field value to Person slice
+// mapAssigneeValue converts a custom field value to Person slice.
 func mapAssigneeValue(value interface{}) []provider.Person {
 	var result []provider.Person
 
@@ -301,7 +301,7 @@ func mapAssigneeValue(value interface{}) []provider.Person {
 	return result
 }
 
-// extractNameFromValue extracts the "name" field from a custom field value
+// extractNameFromValue extracts the "name" field from a custom field value.
 func extractNameFromValue(value interface{}) string {
 	switch v := value.(type) {
 	case map[string]interface{}:
@@ -312,7 +312,7 @@ func extractNameFromValue(value interface{}) string {
 	return ""
 }
 
-// getValue extracts a string value from a map by key
+// getValue extracts a string value from a map by key.
 func getValue(m map[string]interface{}, key string) string {
 	if v, ok := m[key]; ok {
 		if s, ok := v.(string); ok {
@@ -322,7 +322,7 @@ func getValue(m map[string]interface{}, key string) string {
 	return ""
 }
 
-// formatIssueMarkdown formats an issue as markdown
+// formatIssueMarkdown formats an issue as markdown.
 func formatIssueMarkdown(issue *Issue, comments []Comment) string {
 	var sb strings.Builder
 

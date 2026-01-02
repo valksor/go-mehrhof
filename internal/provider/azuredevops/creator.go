@@ -101,7 +101,7 @@ func (p *Provider) CreateWorkUnit(ctx context.Context, opts provider.CreateWorkU
 	return p.workItemToWorkUnit(workItem), nil
 }
 
-// mapProviderPriorityToAzure converts provider.Priority to Azure DevOps priority (1-4)
+// mapProviderPriorityToAzure converts provider.Priority to Azure DevOps priority (1-4).
 func mapProviderPriorityToAzure(priority provider.Priority) int {
 	switch priority {
 	case provider.PriorityCritical:

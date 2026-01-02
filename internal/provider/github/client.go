@@ -14,12 +14,12 @@ import (
 	"github.com/valksor/go-mehrhof/internal/provider/token"
 )
 
-// ptr is a helper to create a pointer to a value
+// ptr is a helper to create a pointer to a value.
 func ptr[T any](v T) *T {
 	return &v
 }
 
-// Client wraps the GitHub API client
+// Client wraps the GitHub API client.
 type Client struct {
 	gh    *github.Client
 	cache *cache.Cache
@@ -27,12 +27,12 @@ type Client struct {
 	repo  string
 }
 
-// NewClient creates a new GitHub API client
+// NewClient creates a new GitHub API client.
 func NewClient(token, owner, repo string) *Client {
 	return NewClientWithCache(token, owner, repo, nil)
 }
 
-// NewClientWithCache creates a new GitHub API client with an optional cache
+// NewClientWithCache creates a new GitHub API client with an optional cache.
 func NewClientWithCache(token, owner, repo string, c *cache.Cache) *Client {
 	ts := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: token})
 	tc := oauth2.NewClient(context.Background(), ts)
@@ -44,12 +44,12 @@ func NewClientWithCache(token, owner, repo string, c *cache.Cache) *Client {
 	}
 }
 
-// SetCache sets or updates the cache for this client
+// SetCache sets or updates the cache for this client.
 func (c *Client) SetCache(cache *cache.Cache) {
 	c.cache = cache
 }
 
-// CacheKey generates a namespaced cache key for this client
+// CacheKey generates a namespaced cache key for this client.
 func (c *Client) CacheKey(resourceType, id string) string {
 	return fmt.Sprintf("github:%s/%s:%s:%s", c.owner, c.repo, resourceType, id)
 }
@@ -66,7 +66,7 @@ func ResolveToken(configToken string) (string, error) {
 		WithCLIFallback(getGHCLIToken))
 }
 
-// getGHCLIToken attempts to get the token from the gh CLI
+// getGHCLIToken attempts to get the token from the gh CLI.
 func getGHCLIToken() string {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
@@ -79,7 +79,7 @@ func getGHCLIToken() string {
 	return strings.TrimSpace(string(out))
 }
 
-// GetIssue fetches an issue by number
+// GetIssue fetches an issue by number.
 func (c *Client) GetIssue(ctx context.Context, number int) (*github.Issue, error) {
 	key := c.CacheKey("issue", fmt.Sprintf("%d", number))
 
@@ -106,7 +106,7 @@ func (c *Client) GetIssue(ctx context.Context, number int) (*github.Issue, error
 	return issue, nil
 }
 
-// GetIssueComments fetches all comments on an issue
+// GetIssueComments fetches all comments on an issue.
 func (c *Client) GetIssueComments(ctx context.Context, number int) ([]*github.IssueComment, error) {
 	key := c.CacheKey("comments", fmt.Sprintf("%d", number))
 
@@ -145,7 +145,7 @@ func (c *Client) GetIssueComments(ctx context.Context, number int) ([]*github.Is
 	return allComments, nil
 }
 
-// AddComment adds a comment to an issue
+// AddComment adds a comment to an issue.
 func (c *Client) AddComment(ctx context.Context, number int, body string) (*github.IssueComment, error) {
 	comment, _, err := c.gh.Issues.CreateComment(ctx, c.owner, c.repo, number, &github.IssueComment{
 		Body: ptr(body),
@@ -163,7 +163,7 @@ func (c *Client) AddComment(ctx context.Context, number int, body string) (*gith
 	return comment, nil
 }
 
-// CreatePullRequest creates a new pull request
+// CreatePullRequest creates a new pull request.
 func (c *Client) CreatePullRequest(ctx context.Context, title, body, head, base string, draft bool) (*github.PullRequest, error) {
 	pr, _, err := c.gh.PullRequests.Create(ctx, c.owner, c.repo, &github.NewPullRequest{
 		Title: ptr(title),
@@ -178,7 +178,7 @@ func (c *Client) CreatePullRequest(ctx context.Context, title, body, head, base 
 	return pr, nil
 }
 
-// GetDefaultBranch returns the repository's default branch
+// GetDefaultBranch returns the repository's default branch.
 func (c *Client) GetDefaultBranch(ctx context.Context) (string, error) {
 	key := c.CacheKey("metadata", "default-branch")
 
@@ -206,7 +206,7 @@ func (c *Client) GetDefaultBranch(ctx context.Context) (string, error) {
 	return branch, nil
 }
 
-// DownloadFile downloads a file from the repository
+// DownloadFile downloads a file from the repository.
 func (c *Client) DownloadFile(ctx context.Context, path, ref string) ([]byte, error) {
 	opts := &github.RepositoryContentGetOptions{Ref: ref}
 	content, _, _, err := c.gh.Repositories.GetContents(ctx, c.owner, c.repo, path, opts)
@@ -221,18 +221,18 @@ func (c *Client) DownloadFile(ctx context.Context, path, ref string) ([]byte, er
 	return []byte(decoded), nil
 }
 
-// SetOwnerRepo updates the owner and repo for the client
+// SetOwnerRepo updates the owner and repo for the client.
 func (c *Client) SetOwnerRepo(owner, repo string) {
 	c.owner = owner
 	c.repo = repo
 }
 
-// Owner returns the current owner
+// Owner returns the current owner.
 func (c *Client) Owner() string {
 	return c.owner
 }
 
-// Repo returns the current repo
+// Repo returns the current repo.
 func (c *Client) Repo() string {
 	return c.repo
 }

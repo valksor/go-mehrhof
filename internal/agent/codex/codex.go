@@ -15,13 +15,13 @@ import (
 
 const AgentName = "codex"
 
-// Agent wraps the codex CLI
+// Agent wraps the codex CLI.
 type Agent struct {
 	parser agent.Parser
 	config agent.Config
 }
 
-// New creates a Codex agent with default config
+// New creates a Codex agent with default config.
 func New() *Agent {
 	return &Agent{
 		config: agent.Config{
@@ -35,7 +35,7 @@ func New() *Agent {
 	}
 }
 
-// NewWithConfig creates a Codex agent with custom config
+// NewWithConfig creates a Codex agent with custom config.
 func NewWithConfig(cfg agent.Config) *Agent {
 	if len(cfg.Command) == 0 {
 		cfg.Command = []string{"codex"}
@@ -46,12 +46,12 @@ func NewWithConfig(cfg agent.Config) *Agent {
 	}
 }
 
-// Name returns the agent identifier
+// Name returns the agent identifier.
 func (a *Agent) Name() string {
 	return AgentName
 }
 
-// Available checks if the codex CLI is installed and configured
+// Available checks if the codex CLI is installed and configured.
 func (a *Agent) Available() error {
 	binary := a.config.Command[0]
 	path, err := exec.LookPath(binary)
@@ -71,7 +71,7 @@ func (a *Agent) Available() error {
 	return nil
 }
 
-// Run executes a prompt and returns the aggregated response
+// Run executes a prompt and returns the aggregated response.
 func (a *Agent) Run(ctx context.Context, prompt string) (*agent.Response, error) {
 	events, errCh := a.RunStream(ctx, prompt)
 
@@ -88,7 +88,7 @@ func (a *Agent) Run(ctx context.Context, prompt string) (*agent.Response, error)
 	return a.parser.Parse(collected)
 }
 
-// RunStream executes a prompt and streams events
+// RunStream executes a prompt and streams events.
 func (a *Agent) RunStream(ctx context.Context, prompt string) (<-chan agent.Event, <-chan error) {
 	eventCh := make(chan agent.Event, 100)
 	errCh := make(chan error, 1)
@@ -106,7 +106,7 @@ func (a *Agent) RunStream(ctx context.Context, prompt string) (<-chan agent.Even
 	return eventCh, errCh
 }
 
-// RunWithCallback executes with a callback for each event
+// RunWithCallback executes with a callback for each event.
 func (a *Agent) RunWithCallback(ctx context.Context, prompt string, cb agent.StreamCallback) (*agent.Response, error) {
 	events, errCh := a.RunStream(ctx, prompt)
 
@@ -246,7 +246,7 @@ func (a *Agent) buildArgs(prompt string) []string {
 	return args
 }
 
-// SetParser allows overriding the default parser
+// SetParser allows overriding the default parser.
 func (a *Agent) SetParser(p agent.Parser) {
 	a.parser = p
 }
@@ -306,10 +306,10 @@ func (a *Agent) WithArgs(args ...string) agent.Agent {
 	}
 }
 
-// Register adds the Codex agent to a registry
+// Register adds the Codex agent to a registry.
 func Register(r *agent.Registry) error {
 	return r.Register(New())
 }
 
-// Ensure Agent implements agent.Agent
+// Ensure Agent implements agent.Agent.
 var _ agent.Agent = (*Agent)(nil)

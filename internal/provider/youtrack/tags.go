@@ -5,7 +5,7 @@ import (
 	"fmt"
 )
 
-// AddLabels adds tags (YouTrack calls them tags) to an issue
+// AddLabels adds tags (YouTrack calls them tags) to an issue.
 func (p *Provider) AddLabels(ctx context.Context, workUnitID string, labels []string) error {
 	// Get existing tags to avoid duplicates
 	existingTags, err := p.client.GetTags(ctx, workUnitID)
@@ -34,7 +34,7 @@ func (p *Provider) AddLabels(ctx context.Context, workUnitID string, labels []st
 	return nil
 }
 
-// RemoveLabels removes tags from an issue
+// RemoveLabels removes tags from an issue.
 func (p *Provider) RemoveLabels(ctx context.Context, workUnitID string, labels []string) error {
 	// Get existing tags to find their IDs
 	existingTags, err := p.client.GetTags(ctx, workUnitID)

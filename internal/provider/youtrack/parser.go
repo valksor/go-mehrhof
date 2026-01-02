@@ -8,14 +8,14 @@ import (
 	providererrors "github.com/valksor/go-mehrhof/internal/provider/errors"
 )
 
-// Ref represents a parsed YouTrack issue reference
+// Ref represents a parsed YouTrack issue reference.
 type Ref struct {
 	ID        string // The readable ID (e.g., "ABC-123")
 	Permalink string // The full URL if provided
 	Host      string // Extracted host from URL
 }
 
-// String returns the canonical representation
+// String returns the canonical representation.
 func (r *Ref) String() string {
 	return r.ID
 }
@@ -28,7 +28,7 @@ var (
 
 	// Matches: ABC-123 format (project prefix + dash + number)
 	// Project prefix: alphanumeric characters (case-insensitive), at least 1 char
-	// Number: at least 1 digit
+	// Number: at least 1 digit.
 	readableIDPattern = regexp.MustCompile(`^([A-Za-z0-9]+)-([0-9]+)$`)
 )
 
@@ -68,7 +68,7 @@ func ParseReference(input string) (*Ref, error) {
 		providererrors.ErrInvalidReference, input)
 }
 
-// extractHost extracts the host from a YouTrack URL
+// extractHost extracts the host from a YouTrack URL.
 func extractHost(rawURL string) string {
 	parts := strings.Split(rawURL, "/")
 	if len(parts) >= 3 {
@@ -77,7 +77,7 @@ func extractHost(rawURL string) string {
 	return ""
 }
 
-// IsValidID checks if a string is a valid YouTrack readable ID
+// IsValidID checks if a string is a valid YouTrack readable ID.
 func IsValidID(id string) bool {
 	return readableIDPattern.MatchString(id)
 }

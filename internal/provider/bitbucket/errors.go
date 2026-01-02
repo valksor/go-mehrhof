@@ -7,7 +7,7 @@ import (
 	"strings"
 )
 
-// Error types for the Bitbucket provider
+// Error types for the Bitbucket provider.
 var (
 	ErrNoToken           = errors.New("bitbucket token not found")
 	ErrNoUsername        = errors.New("bitbucket username not configured")
@@ -20,7 +20,7 @@ var (
 	ErrIssuesNotEnabled  = errors.New("issues not enabled for this repository")
 )
 
-// wrapAPIError converts Bitbucket API errors to typed errors
+// wrapAPIError converts Bitbucket API errors to typed errors.
 func wrapAPIError(err error) error {
 	if err == nil {
 		return nil

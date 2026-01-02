@@ -217,7 +217,7 @@ func runList(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-// JSON output structures for list command
+// JSON output structures for list command.
 type jsonListTask struct {
 	TaskID       string `json:"task_id"`
 	State        string `json:"state"`

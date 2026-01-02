@@ -326,7 +326,7 @@ func TestRunWithCallback_NoCLI(t *testing.T) {
 	}
 }
 
-// Test PlainTextParser
+// Test PlainTextParser.
 func TestPlainTextParser_ParseEvent(t *testing.T) {
 	p := NewPlainTextParser()
 
@@ -411,7 +411,7 @@ func TestSummarizeOllamaOutput(t *testing.T) {
 	}
 }
 
-// Test immutability of WithEnv/WithArgs/WithModel
+// Test immutability of WithEnv/WithArgs/WithModel.
 func TestWithEnvImmutability(t *testing.T) {
 	a1 := New()
 	a2 := a1.WithEnv("KEY", "value")

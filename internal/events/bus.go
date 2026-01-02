@@ -7,21 +7,21 @@ import (
 )
 
 const (
-	// maxAsyncPublishes limits concurrent goroutines in PublishAsync
+	// maxAsyncPublishes limits concurrent goroutines in PublishAsync.
 	maxAsyncPublishes = 100
 )
 
-// Handler processes events
+// Handler processes events.
 type Handler func(Event)
 
-// Subscription tracks a handler registration
+// Subscription tracks a handler registration.
 type Subscription struct {
 	ID      string
 	Type    Type
 	Handler Handler
 }
 
-// Bus manages event pub/sub
+// Bus manages event pub/sub.
 type Bus struct {
 	mu          sync.RWMutex
 	handlers    map[Type][]Subscription
@@ -36,7 +36,7 @@ type Bus struct {
 	cancel context.CancelFunc
 }
 
-// NewBus creates a new event bus
+// NewBus creates a new event bus.
 func NewBus() *Bus {
 	ctx, cancel := context.WithCancel(context.Background())
 	return &Bus{
@@ -49,7 +49,7 @@ func NewBus() *Bus {
 }
 
 // Subscribe registers a handler for a specific event type
-// Returns subscription ID for later unsubscription
+// Returns subscription ID for later unsubscription.
 func (b *Bus) Subscribe(eventType Type, handler Handler) string {
 	b.mu.Lock()
 	defer b.mu.Unlock()
@@ -68,7 +68,7 @@ func (b *Bus) Subscribe(eventType Type, handler Handler) string {
 }
 
 // SubscribeAll registers a handler for all events
-// Returns subscription ID for later unsubscription
+// Returns subscription ID for later unsubscription.
 func (b *Bus) SubscribeAll(handler Handler) string {
 	b.mu.Lock()
 	defer b.mu.Unlock()
@@ -85,7 +85,7 @@ func (b *Bus) SubscribeAll(handler Handler) string {
 	return id
 }
 
-// Unsubscribe removes a handler by ID
+// Unsubscribe removes a handler by ID.
 func (b *Bus) Unsubscribe(id string) {
 	b.mu.Lock()
 	defer b.mu.Unlock()
@@ -109,13 +109,13 @@ func (b *Bus) Unsubscribe(id string) {
 	}
 }
 
-// Publish sends a typed event to all registered handlers
+// Publish sends a typed event to all registered handlers.
 func (b *Bus) Publish(e Eventer) {
 	event := e.ToEvent()
 	b.PublishRaw(event)
 }
 
-// PublishRaw sends a raw event to all registered handlers
+// PublishRaw sends a raw event to all registered handlers.
 func (b *Bus) PublishRaw(event Event) {
 	b.mu.RLock()
 	// Pre-allocate capacity to avoid reallocations
@@ -144,13 +144,13 @@ func (b *Bus) PublishRaw(event Event) {
 	}
 }
 
-// PublishAsync sends an event asynchronously
+// PublishAsync sends an event asynchronously.
 func (b *Bus) PublishAsync(e Eventer) {
 	b.PublishRawAsync(e.ToEvent())
 }
 
 // PublishRawAsync sends a raw event asynchronously
-// Uses Go 1.25's WaitGroup.Go() for cleaner goroutine management
+// Uses Go 1.25's WaitGroup.Go() for cleaner goroutine management.
 func (b *Bus) PublishRawAsync(event Event) {
 	b.wg.Go(func() {
 		// Acquire semaphore slot or exit if context cancelled
@@ -164,7 +164,7 @@ func (b *Bus) PublishRawAsync(event Event) {
 	})
 }
 
-// HasSubscribers returns true if there are any subscribers for the given type
+// HasSubscribers returns true if there are any subscribers for the given type.
 func (b *Bus) HasSubscribers(eventType Type) bool {
 	b.mu.RLock()
 	defer b.mu.RUnlock()
@@ -175,7 +175,7 @@ func (b *Bus) HasSubscribers(eventType Type) bool {
 	return len(b.handlers[eventType]) > 0
 }
 
-// Clear removes all subscriptions
+// Clear removes all subscriptions.
 func (b *Bus) Clear() {
 	b.mu.Lock()
 	defer b.mu.Unlock()

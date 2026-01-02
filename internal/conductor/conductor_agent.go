@@ -73,7 +73,7 @@ func (c *Conductor) resolveAgentForTask() (agent.Agent, string, error) {
 	return agentInst, source, nil
 }
 
-// AgentResolution holds the result of agent resolution for a specific step
+// AgentResolution holds the result of agent resolution for a specific step.
 type AgentResolution struct {
 	Agent     agent.Agent
 	Source    string            // Where it was resolved from
@@ -83,7 +83,7 @@ type AgentResolution struct {
 }
 
 // resolveAgentForStep resolves the agent for a specific workflow step.
-// Priority: CLI step-specific > CLI global > Task step > Task default > Workspace step > Workspace default > Auto
+// Priority: CLI step-specific > CLI global > Task step > Task default > Workspace step > Workspace default > Auto.
 func (c *Conductor) resolveAgentForStep(step workflow.Step) (*AgentResolution, error) {
 	var agentName string
 	var source string
@@ -290,7 +290,7 @@ func (c *Conductor) registerAliasAgents(cfg *storage.WorkspaceConfig) error {
 	return nil
 }
 
-// loadPlugins discovers and loads enabled plugins
+// loadPlugins discovers and loads enabled plugins.
 func (c *Conductor) loadPlugins(ctx context.Context, cfg *storage.WorkspaceConfig) error {
 	// Skip if no plugins are enabled
 	if len(cfg.Plugins.Enabled) == 0 {
@@ -393,7 +393,7 @@ func (c *Conductor) loadPlugins(ctx context.Context, cfg *storage.WorkspaceConfi
 	return nil
 }
 
-// GetPluginRegistry returns the plugin registry
+// GetPluginRegistry returns the plugin registry.
 func (c *Conductor) GetPluginRegistry() *plugin.Registry {
 	return c.plugins
 }

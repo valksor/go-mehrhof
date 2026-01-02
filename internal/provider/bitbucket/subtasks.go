@@ -12,7 +12,7 @@ import (
 )
 
 // taskListPattern matches GitHub/GitLab-style task list items
-// Matches: - [ ] Task item or - [x] Completed task
+// Matches: - [ ] Task item or - [x] Completed task.
 var taskListPattern = regexp.MustCompile(`(?m)^[\s]*[-*]\s*\[([ xX])\]\s*(.+)$`)
 
 // FetchSubtasks implements the provider.SubtaskFetcher interface.
@@ -53,7 +53,7 @@ func (p *Provider) FetchSubtasks(ctx context.Context, workUnitID string) ([]*pro
 	return parseTaskListToWorkUnits(issue.Content.Raw, workUnitID), nil
 }
 
-// parseTaskListToWorkUnits extracts task list items from markdown and converts them to WorkUnits
+// parseTaskListToWorkUnits extracts task list items from markdown and converts them to WorkUnits.
 func parseTaskListToWorkUnits(body, parentID string) []*provider.WorkUnit {
 	matches := taskListPattern.FindAllStringSubmatch(body, -1)
 	if len(matches) == 0 {

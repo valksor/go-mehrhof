@@ -176,7 +176,7 @@ func runPlan(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-// runStandalonePlan runs an interactive planning session without a task
+// runStandalonePlan runs an interactive planning session without a task.
 func runStandalonePlan(cmd *cobra.Command) error {
 	// Get current directory as workspace root
 	cwd, err := os.Getwd()

@@ -12,21 +12,21 @@ import (
 	"github.com/valksor/go-mehrhof/internal/vcs"
 )
 
-// Make quality target exit codes
+// Make quality target exit codes.
 const (
 	makeTargetUpToDate = 0 // Target is up to date
 	makeTargetNeedsRun = 1 // Target needs to be run
 	makeTargetNotFound = 2 // Target doesn't exist or error
 )
 
-// QualityOptions configures the quality phase
+// QualityOptions configures the quality phase.
 type QualityOptions struct {
 	Target       string // Make target to run (default: "quality")
 	SkipPrompt   bool   // Skip confirmation prompt if files changed
 	AllowFailure bool   // Continue even if quality check fails
 }
 
-// DefaultQualityOptions returns default quality options
+// DefaultQualityOptions returns default quality options.
 func DefaultQualityOptions() QualityOptions {
 	return QualityOptions{
 		Target:       "quality",
@@ -35,7 +35,7 @@ func DefaultQualityOptions() QualityOptions {
 	}
 }
 
-// QualityResult holds the result of the quality check
+// QualityResult holds the result of the quality check.
 type QualityResult struct {
 	Ran          bool     // Whether quality check ran
 	Passed       bool     // Whether it passed
@@ -44,7 +44,7 @@ type QualityResult struct {
 	UserAborted  bool     // User chose to abort
 }
 
-// HasQualityTarget checks if the Makefile has a quality target
+// HasQualityTarget checks if the Makefile has a quality target.
 func (c *Conductor) HasQualityTarget(ctx context.Context) bool {
 	if c.workspace == nil {
 		return false
@@ -67,7 +67,7 @@ func (c *Conductor) HasQualityTarget(ctx context.Context) bool {
 	return err == nil
 }
 
-// RunQuality runs the quality phase before finish
+// RunQuality runs the quality phase before finish.
 func (c *Conductor) RunQuality(ctx context.Context, opts QualityOptions) (*QualityResult, error) {
 	result := &QualityResult{Ran: false, Passed: true}
 

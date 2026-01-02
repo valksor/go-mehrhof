@@ -8,21 +8,21 @@ import (
 	_slices "slices"
 )
 
-// Registry manages available agents
+// Registry manages available agents.
 type Registry struct {
 	agents   map[string]Agent
 	fallback string
 	mu       sync.RWMutex
 }
 
-// NewRegistry creates an agent registry
+// NewRegistry creates an agent registry.
 func NewRegistry() *Registry {
 	return &Registry{
 		agents: make(map[string]Agent),
 	}
 }
 
-// Register adds an agent to the registry
+// Register adds an agent to the registry.
 func (r *Registry) Register(agent Agent) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -42,7 +42,7 @@ func (r *Registry) Register(agent Agent) error {
 	return nil
 }
 
-// Get returns an agent by name
+// Get returns an agent by name.
 func (r *Registry) Get(name string) (Agent, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
@@ -55,7 +55,7 @@ func (r *Registry) Get(name string) (Agent, error) {
 	return agent, nil
 }
 
-// GetDefault returns the default/fallback agent
+// GetDefault returns the default/fallback agent.
 func (r *Registry) GetDefault() (Agent, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
@@ -67,7 +67,7 @@ func (r *Registry) GetDefault() (Agent, error) {
 	return r.agents[r.fallback], nil
 }
 
-// SetDefault sets the default agent
+// SetDefault sets the default agent.
 func (r *Registry) SetDefault(name string) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -80,7 +80,7 @@ func (r *Registry) SetDefault(name string) error {
 	return nil
 }
 
-// List returns all registered agent names
+// List returns all registered agent names.
 func (r *Registry) List() []string {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
@@ -91,7 +91,7 @@ func (r *Registry) List() []string {
 	return _slices.Clip(names)
 }
 
-// Available returns agents that pass availability check
+// Available returns agents that pass availability check.
 func (r *Registry) Available() []string {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
@@ -105,7 +105,7 @@ func (r *Registry) Available() []string {
 	return available
 }
 
-// Detect returns the first available agent
+// Detect returns the first available agent.
 func (r *Registry) Detect() (Agent, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()

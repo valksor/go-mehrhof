@@ -9,7 +9,7 @@ import (
 	"github.com/valksor/go-mehrhof/internal/storage"
 )
 
-// TestProviderRegistry ensures all expected providers are registered
+// TestProviderRegistry ensures all expected providers are registered.
 func TestProviderRegistry(t *testing.T) {
 	expectedProviders := []string{
 		"github", "gitlab", "notion", "jira", "linear", "wrike", "youtrack",
@@ -38,7 +38,7 @@ func TestProviderRegistry(t *testing.T) {
 	}
 }
 
-// TestNormalizeProviderName tests provider name normalization
+// TestNormalizeProviderName tests provider name normalization.
 func TestNormalizeProviderName(t *testing.T) {
 	tests := []struct {
 		input    string
@@ -69,7 +69,7 @@ func TestNormalizeProviderName(t *testing.T) {
 	}
 }
 
-// TestMaskToken tests token masking
+// TestMaskToken tests token masking.
 func TestMaskToken(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -108,7 +108,7 @@ func TestMaskToken(t *testing.T) {
 	}
 }
 
-// TestWriteTokenToEnv tests writing tokens to .env file
+// TestWriteTokenToEnv tests writing tokens to .env file.
 func TestWriteTokenToEnv(t *testing.T) {
 	t.Run("new file", func(t *testing.T) {
 		tmpDir := t.TempDir()
@@ -199,7 +199,7 @@ func TestWriteTokenToEnv(t *testing.T) {
 	})
 }
 
-// TestGetConfigToken tests extracting tokens from WorkspaceConfig
+// TestGetConfigToken tests extracting tokens from WorkspaceConfig.
 func TestGetConfigToken(t *testing.T) {
 	tests := []struct {
 		name      string
@@ -290,7 +290,7 @@ func TestGetConfigToken(t *testing.T) {
 	}
 }
 
-// TestLoadEnv tests loading .env file contents
+// TestLoadEnv tests loading .env file contents.
 func TestLoadEnv(t *testing.T) {
 	t.Run("non-existent file", func(t *testing.T) {
 		tmpDir := t.TempDir()

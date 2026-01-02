@@ -6,7 +6,7 @@ import (
 	"github.com/google/go-github/v67/github"
 )
 
-// AddLabels adds labels to a GitHub issue
+// AddLabels adds labels to a GitHub issue.
 func (p *Provider) AddLabels(ctx context.Context, workUnitID string, labels []string) error {
 	ref, err := ParseReference(workUnitID)
 	if err != nil {
@@ -32,7 +32,7 @@ func (p *Provider) AddLabels(ctx context.Context, workUnitID string, labels []st
 	return err
 }
 
-// RemoveLabels removes labels from a GitHub issue
+// RemoveLabels removes labels from a GitHub issue.
 func (p *Provider) RemoveLabels(ctx context.Context, workUnitID string, labels []string) error {
 	ref, err := ParseReference(workUnitID)
 	if err != nil {
@@ -66,12 +66,12 @@ func (p *Provider) RemoveLabels(ctx context.Context, workUnitID string, labels [
 	return nil
 }
 
-// AddLabelsToIssue wraps the GitHub API call for adding labels
+// AddLabelsToIssue wraps the GitHub API call for adding labels.
 func (c *Client) AddLabelsToIssue(ctx context.Context, number int, labels []string) ([]*github.Label, *github.Response, error) {
 	return c.gh.Issues.AddLabelsToIssue(ctx, c.owner, c.repo, number, labels)
 }
 
-// RemoveLabelForIssue wraps the GitHub API call for removing a label
+// RemoveLabelForIssue wraps the GitHub API call for removing a label.
 func (c *Client) RemoveLabelForIssue(ctx context.Context, number int, label string) (*github.Response, error) {
 	return c.gh.Issues.RemoveLabelForIssue(ctx, c.owner, c.repo, number, label)
 }

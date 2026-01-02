@@ -8,7 +8,7 @@ import (
 	providererrors "github.com/valksor/go-mehrhof/internal/provider/errors"
 )
 
-// DownloadAttachment downloads an attachment from Jira
+// DownloadAttachment downloads an attachment from Jira.
 func (p *Provider) DownloadAttachment(ctx context.Context, workUnitID, attachmentID string) (io.ReadCloser, error) {
 	ref, err := ParseReference(workUnitID)
 	if err != nil {

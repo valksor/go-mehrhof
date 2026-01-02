@@ -7,7 +7,7 @@ import (
 	"strings"
 )
 
-// Reference represents a parsed Bitbucket issue reference
+// Reference represents a parsed Bitbucket issue reference.
 type Reference struct {
 	Workspace  string // Bitbucket workspace (username or team)
 	RepoSlug   string // Repository slug
@@ -15,7 +15,7 @@ type Reference struct {
 	IsExplicit bool   // True if workspace/repo was explicitly provided
 }
 
-// String returns a canonical string representation
+// String returns a canonical string representation.
 func (r *Reference) String() string {
 	if r.Workspace != "" && r.RepoSlug != "" {
 		return fmt.Sprintf("%s/%s#%d", r.Workspace, r.RepoSlug, r.IssueID)
@@ -23,15 +23,15 @@ func (r *Reference) String() string {
 	return fmt.Sprintf("%d", r.IssueID)
 }
 
-// Patterns for parsing Bitbucket references
+// Patterns for parsing Bitbucket references.
 var (
-	// Matches: workspace/repo#123
+	// Matches: workspace/repo#123.
 	explicitRepoPattern = regexp.MustCompile(`^([a-zA-Z0-9_-]+)/([a-zA-Z0-9_.-]+)#(\d+)$`)
 
-	// Matches: #123 or 123
+	// Matches: #123 or 123.
 	simpleIssuePattern = regexp.MustCompile(`^#?(\d+)$`)
 
-	// Matches: https://bitbucket.org/workspace/repo/issues/123 or bitbucket.org/workspace/repo/issues/123
+	// Matches: https://bitbucket.org/workspace/repo/issues/123 or bitbucket.org/workspace/repo/issues/123.
 	urlPattern = regexp.MustCompile(`(?:https?://)?bitbucket\.org/([a-zA-Z0-9_-]+)/([a-zA-Z0-9_.-]+)/issues/(\d+)(?:/.*)?$`)
 )
 
@@ -101,7 +101,7 @@ func ParseReference(input string) (*Reference, error) {
 	return nil, fmt.Errorf("%w: %s", ErrInvalidReference, input)
 }
 
-// ExtractLinkedIssues extracts issue references from text (e.g., "fixes #123")
+// ExtractLinkedIssues extracts issue references from text (e.g., "fixes #123").
 func ExtractLinkedIssues(text string) []int {
 	pattern := regexp.MustCompile(`(?i)(?:fixes?|closes?|resolves?)\s+#(\d+)`)
 	matches := pattern.FindAllStringSubmatch(text, -1)
@@ -119,7 +119,7 @@ func ExtractLinkedIssues(text string) []int {
 	return issues
 }
 
-// ExtractImageURLs extracts image URLs from markdown content
+// ExtractImageURLs extracts image URLs from markdown content.
 func ExtractImageURLs(text string) []string {
 	// Match markdown image syntax: ![alt](url)
 	pattern := regexp.MustCompile(`!\[[^\]]*\]\(([^)]+)\)`)

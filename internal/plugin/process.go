@@ -17,9 +17,9 @@ import (
 )
 
 const (
-	// defaultPluginBufferSize is the buffer size for plugin stdout/stderr
+	// defaultPluginBufferSize is the buffer size for plugin stdout/stderr.
 	defaultPluginBufferSize = 1024 * 1024 // 1MB
-	// pluginStopTimeout is the maximum time to wait for a plugin to stop gracefully
+	// pluginStopTimeout is the maximum time to wait for a plugin to stop gracefully.
 	pluginStopTimeout = 10 * time.Second
 )
 

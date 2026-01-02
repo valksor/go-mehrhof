@@ -360,7 +360,7 @@ func TestExtractImageURLs(t *testing.T) {
 // Note: inferTypeFromLabels is tested indirectly via integration tests
 // as it takes []*github.Label which requires the external library type.
 
-// Helper function
+// Helper function.
 func contains(s, substr string) bool {
 	return len(s) >= len(substr) && (s == substr || len(s) > 0 && containsHelper(s, substr))
 }

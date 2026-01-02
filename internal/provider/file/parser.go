@@ -8,14 +8,14 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-// StepAgentFrontmatter holds step-specific agent config in frontmatter
+// StepAgentFrontmatter holds step-specific agent config in frontmatter.
 type StepAgentFrontmatter struct {
 	Agent string            `yaml:"agent,omitempty"` // Agent name or alias
 	Env   map[string]string `yaml:"env,omitempty"`   // Step-specific env vars
 	Args  []string          `yaml:"args,omitempty"`  // Step-specific CLI args
 }
 
-// Frontmatter represents YAML frontmatter in markdown
+// Frontmatter represents YAML frontmatter in markdown.
 type Frontmatter struct {
 	Title       string   `yaml:"title"`
 	Description string   `yaml:"description"`
@@ -35,7 +35,7 @@ type Frontmatter struct {
 	AgentSteps map[string]StepAgentFrontmatter `yaml:"agent_steps,omitempty"` // Per-step agent overrides
 }
 
-// ParsedMarkdown contains parsed markdown file content
+// ParsedMarkdown contains parsed markdown file content.
 type ParsedMarkdown struct {
 	Frontmatter *Frontmatter
 	Title       string // From first # heading if no frontmatter title
@@ -43,7 +43,7 @@ type ParsedMarkdown struct {
 	Raw         string // Full file content
 }
 
-// ParseMarkdownFile reads and parses a markdown file
+// ParseMarkdownFile reads and parses a markdown file.
 func ParseMarkdownFile(path, fallbackTitle string) (*ParsedMarkdown, error) {
 	content, err := os.ReadFile(path)
 	if err != nil {
@@ -52,7 +52,7 @@ func ParseMarkdownFile(path, fallbackTitle string) (*ParsedMarkdown, error) {
 	return ParseMarkdown(string(content), fallbackTitle)
 }
 
-// ParseMarkdown parses markdown content
+// ParseMarkdown parses markdown content.
 func ParseMarkdown(content, fallbackTitle string) (*ParsedMarkdown, error) {
 	result := &ParsedMarkdown{Raw: content}
 

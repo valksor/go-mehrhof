@@ -2,7 +2,7 @@ package agent
 
 import "context"
 
-// Agent is the interface for AI agents
+// Agent is the interface for AI agents.
 type Agent interface {
 	// Name returns the agent's identifier
 	Name() string
@@ -28,10 +28,10 @@ type Agent interface {
 	WithArgs(args ...string) Agent
 }
 
-// StreamCallback is called for each streaming event
+// StreamCallback is called for each streaming event.
 type StreamCallback func(event Event) error
 
-// Parser parses agent output into structured responses
+// Parser parses agent output into structured responses.
 type Parser interface {
 	// ParseEvent parses a single line of output
 	ParseEvent(line []byte) (Event, error)
@@ -44,13 +44,13 @@ type Parser interface {
 // Extended agent interfaces for advanced functionality
 // ──────────────────────────────────────────────────────────────────────────────
 
-// MetadataProvider returns agent metadata
+// MetadataProvider returns agent metadata.
 type MetadataProvider interface {
 	// Metadata returns information about the agent
 	Metadata() AgentMetadata
 }
 
-// AgentMetadata describes an agent's capabilities
+// AgentMetadata describes an agent's capabilities.
 type AgentMetadata struct {
 	Name         string      // Display name
 	Version      string      // Agent/CLI version
@@ -59,7 +59,7 @@ type AgentMetadata struct {
 	Capabilities AgentCapabilities
 }
 
-// ModelInfo describes an available model
+// ModelInfo describes an available model.
 type ModelInfo struct {
 	ID         string  // Model identifier (e.g., "claude-3-opus-20240229")
 	Name       string  // Display name (e.g., "Claude 3 Opus")
@@ -69,7 +69,7 @@ type ModelInfo struct {
 	OutputCost float64 // Cost per million output tokens
 }
 
-// AgentCapabilities describes what an agent can do
+// AgentCapabilities describes what an agent can do.
 type AgentCapabilities struct {
 	Streaming      bool     // Supports streaming output
 	ToolUse        bool     // Supports tool use/function calling

@@ -22,20 +22,20 @@ const (
 	initialBackoff = 1 * time.Second
 )
 
-// Config holds client configuration
+// Config holds client configuration.
 type Config struct {
 	Token string
 	Host  string // Optional: override default API base URL
 }
 
-// Client wraps the YouTrack API client
+// Client wraps the YouTrack API client.
 type Client struct {
 	httpClient *http.Client
 	baseURL    string
 	token      string
 }
 
-// NewClient creates a new YouTrack API client
+// NewClient creates a new YouTrack API client.
 func NewClient(token, host string) *Client {
 	baseURL := defaultBaseURL
 	if host != "" {
@@ -70,7 +70,7 @@ func ResolveToken(configToken string) (string, error) {
 		WithEnvVars("YOUTRACK_TOKEN"))
 }
 
-// GetIssue fetches an issue by readable ID (e.g., "ABC-123")
+// GetIssue fetches an issue by readable ID (e.g., "ABC-123").
 func (c *Client) GetIssue(ctx context.Context, issueID string) (*Issue, error) {
 	fields := url.QueryEscape("id,idReadable,summary,description,created,updated,resolved," +
 		"project(id,name,shortName),reporter(id,login,name,email)," +
@@ -86,7 +86,7 @@ func (c *Client) GetIssue(ctx context.Context, issueID string) (*Issue, error) {
 	return &response.Data, nil
 }
 
-// GetIssuesByQuery fetches issues matching a query
+// GetIssuesByQuery fetches issues matching a query.
 func (c *Client) GetIssuesByQuery(ctx context.Context, query string, top, skip int) ([]Issue, error) {
 	path := "/issues"
 	params := url.Values{}
@@ -111,7 +111,7 @@ func (c *Client) GetIssuesByQuery(ctx context.Context, query string, top, skip i
 	return response.Data, nil
 }
 
-// GetComments fetches comments for an issue
+// GetComments fetches comments for an issue.
 func (c *Client) GetComments(ctx context.Context, issueID string) ([]Comment, error) {
 	fields := url.QueryEscape("id,text,author(id,login,name),created,updated,deleted")
 	var response commentsResponse
@@ -123,7 +123,7 @@ func (c *Client) GetComments(ctx context.Context, issueID string) ([]Comment, er
 	return response.Data, nil
 }
 
-// AddComment adds a comment to an issue
+// AddComment adds a comment to an issue.
 func (c *Client) AddComment(ctx context.Context, issueID, text string) (*Comment, error) {
 	requestBody := map[string]string{"text": text}
 	bodyBytes, _ := json.Marshal(requestBody)
@@ -142,7 +142,7 @@ func (c *Client) AddComment(ctx context.Context, issueID, text string) (*Comment
 	return &response.Data[0], nil
 }
 
-// GetTags fetches tags for an issue
+// GetTags fetches tags for an issue.
 func (c *Client) GetTags(ctx context.Context, issueID string) ([]Tag, error) {
 	fields := url.QueryEscape("id,name")
 	var response tagsResponse
@@ -154,7 +154,7 @@ func (c *Client) GetTags(ctx context.Context, issueID string) ([]Tag, error) {
 	return response.Data, nil
 }
 
-// AddTag adds a tag to an issue by tag name (YouTrack creates tag if it doesn't exist)
+// AddTag adds a tag to an issue by tag name (YouTrack creates tag if it doesn't exist).
 func (c *Client) AddTag(ctx context.Context, issueID, tagName string) (*Tag, error) {
 	requestBody := map[string]string{"name": tagName}
 	bodyBytes, _ := json.Marshal(requestBody)
@@ -173,13 +173,13 @@ func (c *Client) AddTag(ctx context.Context, issueID, tagName string) (*Tag, err
 	return &response.Data[0], nil
 }
 
-// RemoveTag removes a tag from an issue by tag ID
+// RemoveTag removes a tag from an issue by tag ID.
 func (c *Client) RemoveTag(ctx context.Context, issueID, tagID string) error {
 	return c.doRequestWithRetry(ctx, http.MethodDelete,
 		"/issues/"+url.PathEscape(issueID)+"/tags/"+url.PathEscape(tagID), nil, nil)
 }
 
-// UpdateIssue updates an issue
+// UpdateIssue updates an issue.
 func (c *Client) UpdateIssue(ctx context.Context, issueID string, updates map[string]interface{}) (*Issue, error) {
 	bodyBytes, _ := json.Marshal(updates)
 	fields := url.QueryEscape("id,idReadable,summary,customFields(name,value)")
@@ -194,7 +194,7 @@ func (c *Client) UpdateIssue(ctx context.Context, issueID string, updates map[st
 	return &response.Data, nil
 }
 
-// CreateIssue creates a new issue
+// CreateIssue creates a new issue.
 func (c *Client) CreateIssue(ctx context.Context, projectID, summary, description string, customFields []map[string]interface{}) (*Issue, error) {
 	requestBody := map[string]interface{}{
 		"project": map[string]string{"id": projectID},
@@ -220,7 +220,7 @@ func (c *Client) CreateIssue(ctx context.Context, projectID, summary, descriptio
 	return &response.Data, nil
 }
 
-// GetAttachments fetches attachments for an issue
+// GetAttachments fetches attachments for an issue.
 func (c *Client) GetAttachments(ctx context.Context, issueID string) ([]Attachment, error) {
 	fields := url.QueryEscape("attachments(id,name,created,size,mimeType,url)")
 	var response issueResponse
@@ -232,7 +232,7 @@ func (c *Client) GetAttachments(ctx context.Context, issueID string) ([]Attachme
 	return response.Data.Attachments, nil
 }
 
-// DownloadAttachment downloads an attachment
+// DownloadAttachment downloads an attachment.
 func (c *Client) DownloadAttachment(ctx context.Context, attachmentID string) (io.ReadCloser, string, error) {
 	reqURL := c.baseURL + "/attachments/" + url.PathEscape(attachmentID) + "/content"
 
@@ -256,7 +256,7 @@ func (c *Client) DownloadAttachment(ctx context.Context, attachmentID string) (i
 	return resp.Body, resp.Header.Get("Content-Disposition"), nil
 }
 
-// doRequest performs an HTTP request
+// doRequest performs an HTTP request.
 func (c *Client) doRequest(ctx context.Context, method, path string, body io.Reader, result any) error {
 	reqURL := c.baseURL + path
 
@@ -295,7 +295,7 @@ func (c *Client) doRequest(ctx context.Context, method, path string, body io.Rea
 	return nil
 }
 
-// doRequestWithRetry performs request with exponential backoff
+// doRequestWithRetry performs request with exponential backoff.
 func (c *Client) doRequestWithRetry(ctx context.Context, method, path string, body io.Reader, result any) error {
 	var lastErr error
 	backoff := initialBackoff
@@ -335,10 +335,10 @@ func (c *Client) doRequestWithRetry(ctx context.Context, method, path string, bo
 	return lastErr
 }
 
-// bytesReader creates an io.Reader from a byte slice
+// bytesReader creates an io.Reader from a byte slice.
 func bytesReader(b []byte) io.Reader {
 	return strings.NewReader(string(b))
 }
 
-// tagsField is the field specification for tags in API requests
+// tagsField is the field specification for tags in API requests.
 const tagsField = "tags(id,name)"

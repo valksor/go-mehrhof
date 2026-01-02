@@ -189,7 +189,7 @@ func TestNewClient(t *testing.T) {
 // HTTP Mock tests for API calls
 // ──────────────────────────────────────────────────────────────────────────────
 
-// setupMockClient creates a test server and client pointing to it
+// setupMockClient creates a test server and client pointing to it.
 func setupMockClient(t *testing.T, handler http.Handler) (*Client, func()) {
 	t.Helper()
 

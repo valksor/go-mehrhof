@@ -21,14 +21,14 @@ const (
 	initialBackoff = 1 * time.Second
 )
 
-// Client wraps the Linear API client
+// Client wraps the Linear API client.
 type Client struct {
 	httpClient *http.Client
 	baseURL    string
 	token      string
 }
 
-// NewClient creates a new Linear API client
+// NewClient creates a new Linear API client.
 func NewClient(token string) *Client {
 	return &Client{
 		httpClient: &http.Client{Timeout: defaultTimeout},
@@ -47,13 +47,13 @@ func ResolveToken(configToken string) (string, error) {
 		WithEnvVars("LINEAR_API_KEY"))
 }
 
-// graphqlRequest represents a GraphQL request
+// graphqlRequest represents a GraphQL request.
 type graphqlRequest struct {
 	Variables map[string]any `json:"variables,omitempty"`
 	Query     string         `json:"query"`
 }
 
-// graphqlResponse represents a GraphQL response
+// graphqlResponse represents a GraphQL response.
 type graphqlResponse struct {
 	Data   json.RawMessage `json:"data"`
 	Errors []graphqlError  `json:"errors,omitempty"`
@@ -64,7 +64,7 @@ type graphqlError struct {
 	Path    []any  `json:"path,omitempty"`
 }
 
-// doGraphQLRequest performs a GraphQL request to the Linear API
+// doGraphQLRequest performs a GraphQL request to the Linear API.
 func (c *Client) doGraphQLRequest(ctx context.Context, query string, variables map[string]any, result any) error {
 	reqBody := graphqlRequest{
 		Query:     query,
@@ -118,7 +118,7 @@ func (c *Client) doGraphQLRequest(ctx context.Context, query string, variables m
 	return nil
 }
 
-// GetIssue fetches an issue by ID
+// GetIssue fetches an issue by ID.
 func (c *Client) GetIssue(ctx context.Context, issueID string) (*Issue, error) {
 	query := `
 		query GetIssue($issueId: String!) {
@@ -175,7 +175,7 @@ func (c *Client) GetIssue(ctx context.Context, issueID string) (*Issue, error) {
 	return response.Issue, nil
 }
 
-// ListIssues fetches issues from a team with optional filters
+// ListIssues fetches issues from a team with optional filters.
 func (c *Client) ListIssues(ctx context.Context, teamKey string, filters ListFilters) ([]*Issue, error) {
 	query := `
 		query ListIssues($teamKey: String!, $first: Int, $after: String, $state: String) {
@@ -266,7 +266,7 @@ func (c *Client) ListIssues(ctx context.Context, teamKey string, filters ListFil
 	return allIssues, nil
 }
 
-// CreateIssue creates a new issue
+// CreateIssue creates a new issue.
 func (c *Client) CreateIssue(ctx context.Context, input CreateIssueInput) (*Issue, error) {
 	query := `
 		mutation CreateIssue($input: IssueCreateInput!) {
@@ -329,7 +329,7 @@ func (c *Client) CreateIssue(ctx context.Context, input CreateIssueInput) (*Issu
 	return response.IssueCreate.Issue, nil
 }
 
-// UpdateIssue updates an existing issue
+// UpdateIssue updates an existing issue.
 func (c *Client) UpdateIssue(ctx context.Context, issueID string, input UpdateIssueInput) (*Issue, error) {
 	query := `
 		mutation UpdateIssue($id: String!, $input: IssueUpdateInput!) {
@@ -393,7 +393,7 @@ func (c *Client) UpdateIssue(ctx context.Context, issueID string, input UpdateIs
 	return response.IssueUpdate.Issue, nil
 }
 
-// AddComment adds a comment to an issue
+// AddComment adds a comment to an issue.
 func (c *Client) AddComment(ctx context.Context, issueID, body string) (*Comment, error) {
 	query := `
 		mutation CreateComment($input: CommentCreateInput!) {
@@ -438,7 +438,7 @@ func (c *Client) AddComment(ctx context.Context, issueID, body string) (*Comment
 	return response.CommentCreate.Comment, nil
 }
 
-// GetComments fetches comments for an issue
+// GetComments fetches comments for an issue.
 func (c *Client) GetComments(ctx context.Context, issueID string) ([]*Comment, error) {
 	query := `
 		query GetComments($issueId: String!) {
@@ -478,7 +478,7 @@ func (c *Client) GetComments(ctx context.Context, issueID string) ([]*Comment, e
 	return response.Issue.Comments.Nodes, nil
 }
 
-// GetChildIssues fetches child issues (sub-issues) for an issue
+// GetChildIssues fetches child issues (sub-issues) for an issue.
 func (c *Client) GetChildIssues(ctx context.Context, issueID string) ([]*Issue, error) {
 	query := `
 		query GetChildIssues($issueId: String!) {
@@ -543,7 +543,7 @@ func (c *Client) GetChildIssues(ctx context.Context, issueID string) ([]*Issue, 
 // Linear API Types
 // ──────────────────────────────────────────────────────────────────────────────
 
-// Issue represents a Linear issue
+// Issue represents a Linear issue.
 type Issue struct {
 	CreatedAt   time.Time `json:"createdAt"`
 	UpdatedAt   time.Time `json:"updatedAt"`
@@ -559,34 +559,34 @@ type Issue struct {
 	Priority    int       `json:"priority"`
 }
 
-// State represents the state of an issue
+// State represents the state of an issue.
 type State struct {
 	ID   string `json:"id"`
 	Name string `json:"name"`
 	Type string `json:"type"`
 }
 
-// Label represents a label
+// Label represents a label.
 type Label struct {
 	ID    string `json:"id"`
 	Name  string `json:"name"`
 	Color string `json:"color"`
 }
 
-// User represents a user
+// User represents a user.
 type User struct {
 	ID    string `json:"id"`
 	Name  string `json:"name"`
 	Email string `json:"email"`
 }
 
-// Team represents a team
+// Team represents a team.
 type Team struct {
 	Key  string `json:"key"`
 	Name string `json:"name"`
 }
 
-// Comment represents a comment
+// Comment represents a comment.
 type Comment struct {
 	CreatedAt time.Time `json:"createdAt"`
 	UpdatedAt time.Time `json:"updatedAt"`
@@ -595,7 +595,7 @@ type Comment struct {
 	Body      string    `json:"body"`
 }
 
-// CreateIssueInput represents the input for creating an issue
+// CreateIssueInput represents the input for creating an issue.
 type CreateIssueInput struct {
 	Priority    *int     `json:"priority,omitempty"`
 	TeamID      string   `json:"teamId,omitempty"`
@@ -606,14 +606,14 @@ type CreateIssueInput struct {
 	LabelIDs    []string `json:"labelIds,omitempty"`
 }
 
-// UpdateIssueInput represents the input for updating an issue
+// UpdateIssueInput represents the input for updating an issue.
 type UpdateIssueInput struct {
 	Priority *int     `json:"priority,omitempty"`
 	StateID  string   `json:"stateId,omitempty"`
 	LabelIDs []string `json:"labelIds,omitempty"`
 }
 
-// ListFilters represents filters for listing issues
+// ListFilters represents filters for listing issues.
 type ListFilters struct {
 	State string
 }
@@ -622,7 +622,7 @@ type ListFilters struct {
 // HTTP Error wrapper
 // ──────────────────────────────────────────────────────────────────────────────
 
-// httpError wraps an HTTP error for proper error handling
+// httpError wraps an HTTP error for proper error handling.
 type httpError struct {
 	message string
 	code    int

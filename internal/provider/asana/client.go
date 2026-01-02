@@ -17,7 +17,7 @@ const (
 	defaultTimeout = 30 * time.Second
 )
 
-// Client wraps the Asana API
+// Client wraps the Asana API.
 type Client struct {
 	httpClient   *http.Client
 	baseURL      string
@@ -25,7 +25,7 @@ type Client struct {
 	workspaceGID string
 }
 
-// NewClient creates a new Asana API client
+// NewClient creates a new Asana API client.
 func NewClient(token, workspaceGID string) *Client {
 	return &Client{
 		httpClient:   &http.Client{Timeout: defaultTimeout},
@@ -53,19 +53,19 @@ func ResolveToken(configToken string) (string, error) {
 	return "", ErrNoToken
 }
 
-// SetWorkspace updates the workspace GID
+// SetWorkspace updates the workspace GID.
 func (c *Client) SetWorkspace(workspaceGID string) {
 	c.workspaceGID = workspaceGID
 }
 
-// WorkspaceGID returns the current workspace GID
+// WorkspaceGID returns the current workspace GID.
 func (c *Client) WorkspaceGID() string {
 	return c.workspaceGID
 }
 
 // --- API Types ---
 
-// Task represents an Asana task
+// Task represents an Asana task.
 type Task struct {
 	GID             string        `json:"gid"`
 	Name            string        `json:"name"`
@@ -96,14 +96,14 @@ type Task struct {
 	ApprovalStatus  string        `json:"approval_status"`
 }
 
-// TaskRef is a minimal task reference
+// TaskRef is a minimal task reference.
 type TaskRef struct {
 	GID          string `json:"gid"`
 	Name         string `json:"name"`
 	ResourceType string `json:"resource_type"`
 }
 
-// User represents an Asana user
+// User represents an Asana user.
 type User struct {
 	GID          string `json:"gid"`
 	Name         string `json:"name"`
@@ -111,34 +111,34 @@ type User struct {
 	ResourceType string `json:"resource_type"`
 }
 
-// Project represents an Asana project
+// Project represents an Asana project.
 type Project struct {
 	GID          string `json:"gid"`
 	Name         string `json:"name"`
 	ResourceType string `json:"resource_type"`
 }
 
-// Workspace represents an Asana workspace
+// Workspace represents an Asana workspace.
 type Workspace struct {
 	GID          string `json:"gid"`
 	Name         string `json:"name"`
 	ResourceType string `json:"resource_type"`
 }
 
-// Membership represents a task's membership in a project/section
+// Membership represents a task's membership in a project/section.
 type Membership struct {
 	Project *Project `json:"project"`
 	Section *Section `json:"section"`
 }
 
-// Section represents a project section
+// Section represents a project section.
 type Section struct {
 	GID          string `json:"gid"`
 	Name         string `json:"name"`
 	ResourceType string `json:"resource_type"`
 }
 
-// Tag represents an Asana tag
+// Tag represents an Asana tag.
 type Tag struct {
 	GID          string `json:"gid"`
 	Name         string `json:"name"`
@@ -146,7 +146,7 @@ type Tag struct {
 	ResourceType string `json:"resource_type"`
 }
 
-// CustomField represents a custom field value
+// CustomField represents a custom field value.
 type CustomField struct {
 	GID             string       `json:"gid"`
 	Name            string       `json:"name"`
@@ -160,7 +160,7 @@ type CustomField struct {
 	ResourceSubtype string       `json:"resource_subtype"`
 }
 
-// EnumOption represents an enum custom field option
+// EnumOption represents an enum custom field option.
 type EnumOption struct {
 	GID          string `json:"gid"`
 	Name         string `json:"name"`
@@ -169,7 +169,7 @@ type EnumOption struct {
 	ResourceType string `json:"resource_type"`
 }
 
-// Story represents a story (comment/activity) on a task
+// Story represents a story (comment/activity) on a task.
 type Story struct {
 	GID             string    `json:"gid"`
 	ResourceType    string    `json:"resource_type"`
@@ -182,21 +182,21 @@ type Story struct {
 	ResourceSubtype string    `json:"resource_subtype"`
 }
 
-// APIResponse wraps API responses
+// APIResponse wraps API responses.
 type APIResponse[T any] struct {
 	Data     T          `json:"data"`
 	NextPage *NextPage  `json:"next_page"`
 	Errors   []APIError `json:"errors"`
 }
 
-// NextPage contains pagination info
+// NextPage contains pagination info.
 type NextPage struct {
 	Offset string `json:"offset"`
 	Path   string `json:"path"`
 	URI    string `json:"uri"`
 }
 
-// APIError represents an API error
+// APIError represents an API error.
 type APIError struct {
 	Message string `json:"message"`
 	Help    string `json:"help"`
@@ -246,7 +246,7 @@ func (c *Client) doRequest(ctx context.Context, method, path string, body any) (
 
 // --- Task API ---
 
-// GetTask fetches a task by GID
+// GetTask fetches a task by GID.
 func (c *Client) GetTask(ctx context.Context, taskGID string) (*Task, error) {
 	// Request common fields
 	optFields := "gid,name,notes,html_notes,completed,completed_at,due_on,due_at,start_on," +
@@ -270,7 +270,7 @@ func (c *Client) GetTask(ctx context.Context, taskGID string) (*Task, error) {
 	return &resp.Data, nil
 }
 
-// ListProjectTasks lists tasks in a project
+// ListProjectTasks lists tasks in a project.
 func (c *Client) ListProjectTasks(ctx context.Context, projectGID string, completedSince *time.Time, limit int) ([]Task, error) {
 	optFields := "gid,name,completed,due_on,assignee,assignee.name,tags,tags.name"
 
@@ -298,7 +298,7 @@ func (c *Client) ListProjectTasks(ctx context.Context, projectGID string, comple
 	return resp.Data, nil
 }
 
-// GetTaskStories fetches stories (comments/activity) for a task
+// GetTaskStories fetches stories (comments/activity) for a task.
 func (c *Client) GetTaskStories(ctx context.Context, taskGID string) ([]Story, error) {
 	optFields := "gid,type,text,html_text,created_at,created_by,created_by.name,resource_subtype"
 
@@ -317,7 +317,7 @@ func (c *Client) GetTaskStories(ctx context.Context, taskGID string) ([]Story, e
 	return resp.Data, nil
 }
 
-// AddTaskComment adds a comment to a task
+// AddTaskComment adds a comment to a task.
 func (c *Client) AddTaskComment(ctx context.Context, taskGID string, text string) (*Story, error) {
 	path := fmt.Sprintf("/tasks/%s/stories", taskGID)
 
@@ -338,7 +338,7 @@ func (c *Client) AddTaskComment(ctx context.Context, taskGID string, text string
 	return &resp.Data, nil
 }
 
-// UpdateTask updates task fields
+// UpdateTask updates task fields.
 func (c *Client) UpdateTask(ctx context.Context, taskGID string, updates map[string]any) (*Task, error) {
 	path := fmt.Sprintf("/tasks/%s", taskGID)
 
@@ -355,12 +355,12 @@ func (c *Client) UpdateTask(ctx context.Context, taskGID string, updates map[str
 	return &resp.Data, nil
 }
 
-// CompleteTask marks a task as complete
+// CompleteTask marks a task as complete.
 func (c *Client) CompleteTask(ctx context.Context, taskGID string) (*Task, error) {
 	return c.UpdateTask(ctx, taskGID, map[string]any{"completed": true})
 }
 
-// AddTaskToSection moves a task to a section
+// AddTaskToSection moves a task to a section.
 func (c *Client) AddTaskToSection(ctx context.Context, sectionGID, taskGID string) error {
 	path := fmt.Sprintf("/sections/%s/addTask", sectionGID)
 
@@ -374,7 +374,7 @@ func (c *Client) AddTaskToSection(ctx context.Context, sectionGID, taskGID strin
 
 // --- Project API ---
 
-// GetProject fetches project details
+// GetProject fetches project details.
 func (c *Client) GetProject(ctx context.Context, projectGID string) (*Project, error) {
 	path := fmt.Sprintf("/projects/%s", projectGID)
 
@@ -391,7 +391,7 @@ func (c *Client) GetProject(ctx context.Context, projectGID string) (*Project, e
 	return &resp.Data, nil
 }
 
-// GetProjectSections fetches sections in a project
+// GetProjectSections fetches sections in a project.
 func (c *Client) GetProjectSections(ctx context.Context, projectGID string) ([]Section, error) {
 	path := fmt.Sprintf("/projects/%s/sections", projectGID)
 
@@ -410,7 +410,7 @@ func (c *Client) GetProjectSections(ctx context.Context, projectGID string) ([]S
 
 // --- Tag API ---
 
-// GetWorkspaceTags fetches all tags in the workspace
+// GetWorkspaceTags fetches all tags in the workspace.
 func (c *Client) GetWorkspaceTags(ctx context.Context) ([]Tag, error) {
 	if c.workspaceGID == "" {
 		return nil, fmt.Errorf("workspace GID required")
@@ -431,7 +431,7 @@ func (c *Client) GetWorkspaceTags(ctx context.Context) ([]Tag, error) {
 	return resp.Data, nil
 }
 
-// CreateTag creates a new tag in the workspace
+// CreateTag creates a new tag in the workspace.
 func (c *Client) CreateTag(ctx context.Context, name string) (*Tag, error) {
 	if c.workspaceGID == "" {
 		return nil, fmt.Errorf("workspace GID required")
@@ -457,7 +457,7 @@ func (c *Client) CreateTag(ctx context.Context, name string) (*Tag, error) {
 	return &resp.Data, nil
 }
 
-// AddTagToTask adds a tag to a task
+// AddTagToTask adds a tag to a task.
 func (c *Client) AddTagToTask(ctx context.Context, taskGID, tagGID string) error {
 	path := fmt.Sprintf("/tasks/%s/addTag", taskGID)
 
@@ -469,7 +469,7 @@ func (c *Client) AddTagToTask(ctx context.Context, taskGID, tagGID string) error
 	return err
 }
 
-// RemoveTagFromTask removes a tag from a task
+// RemoveTagFromTask removes a tag from a task.
 func (c *Client) RemoveTagFromTask(ctx context.Context, taskGID, tagGID string) error {
 	path := fmt.Sprintf("/tasks/%s/removeTag", taskGID)
 
@@ -483,7 +483,7 @@ func (c *Client) RemoveTagFromTask(ctx context.Context, taskGID, tagGID string) 
 
 // --- Subtask API ---
 
-// GetSubtasks fetches subtasks for a task
+// GetSubtasks fetches subtasks for a task.
 func (c *Client) GetSubtasks(ctx context.Context, taskGID string) ([]Task, error) {
 	optFields := "gid,name,notes,completed,completed_at,due_on,created_at,modified_at," +
 		"assignee,assignee.name,assignee.email,tags,tags.name,permalink_url,resource_subtype"

@@ -7,7 +7,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// Build-time variables set via ldflags
+// Build-time variables set via ldflags.
 var (
 	Version   = "dev"
 	Commit    = "none"

@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-// Checkpoint represents a saved state for undo/redo
+// Checkpoint represents a saved state for undo/redo.
 type Checkpoint struct {
 	ID        string    // Commit hash
 	TaskID    string    // Associated task ID
@@ -19,19 +19,19 @@ type Checkpoint struct {
 	Timestamp time.Time // When checkpoint was created
 }
 
-// CheckpointPrefix is the tag prefix for checkpoints
+// CheckpointPrefix is the tag prefix for checkpoints.
 const CheckpointPrefix = "task-checkpoint"
 
-// checkpointTagRe matches checkpoint tags: task-checkpoint/<taskID>/<number>
+// checkpointTagRe matches checkpoint tags: task-checkpoint/<taskID>/<number>.
 var checkpointTagRe = regexp.MustCompile(`^task-checkpoint/([^/]+)/(\d+)$`)
 
-// CreateCheckpoint creates a checkpoint for a task with default prefix [taskID]
+// CreateCheckpoint creates a checkpoint for a task with default prefix [taskID].
 func (g *Git) CreateCheckpoint(taskID, message string) (*Checkpoint, error) {
 	defaultPrefix := fmt.Sprintf("[%s]", taskID)
 	return g.CreateCheckpointWithPrefix(taskID, message, defaultPrefix)
 }
 
-// CreateCheckpointWithPrefix creates a checkpoint for a task with a custom commit prefix
+// CreateCheckpointWithPrefix creates a checkpoint for a task with a custom commit prefix.
 func (g *Git) CreateCheckpointWithPrefix(taskID, message, commitPrefix string) (*Checkpoint, error) {
 	// Get next checkpoint number
 	existing, err := g.ListCheckpoints(taskID)
@@ -84,7 +84,7 @@ func (g *Git) CreateCheckpointWithPrefix(taskID, message, commitPrefix string) (
 	}, nil
 }
 
-// ListCheckpoints returns all checkpoints for a task
+// ListCheckpoints returns all checkpoints for a task.
 func (g *Git) ListCheckpoints(taskID string) ([]*Checkpoint, error) {
 	prefix := fmt.Sprintf("%s/%s/", CheckpointPrefix, taskID)
 	out, err := g.run("tag", "-l", prefix+"*")
@@ -138,7 +138,7 @@ func (g *Git) ListCheckpoints(taskID string) ([]*Checkpoint, error) {
 	return checkpoints, nil
 }
 
-// GetCheckpoint returns a specific checkpoint
+// GetCheckpoint returns a specific checkpoint.
 func (g *Git) GetCheckpoint(taskID string, number int) (*Checkpoint, error) {
 	checkpoints, err := g.ListCheckpoints(taskID)
 	if err != nil {
@@ -154,7 +154,7 @@ func (g *Git) GetCheckpoint(taskID string, number int) (*Checkpoint, error) {
 	return nil, fmt.Errorf("checkpoint %d not found for task %s", number, taskID)
 }
 
-// GetLatestCheckpoint returns the most recent checkpoint
+// GetLatestCheckpoint returns the most recent checkpoint.
 func (g *Git) GetLatestCheckpoint(taskID string) (*Checkpoint, error) {
 	checkpoints, err := g.ListCheckpoints(taskID)
 	if err != nil {
@@ -168,7 +168,7 @@ func (g *Git) GetLatestCheckpoint(taskID string) (*Checkpoint, error) {
 	return checkpoints[len(checkpoints)-1], nil
 }
 
-// RestoreCheckpoint reverts to a checkpoint state
+// RestoreCheckpoint reverts to a checkpoint state.
 func (g *Git) RestoreCheckpoint(taskID string, number int) error {
 	cp, err := g.GetCheckpoint(taskID, number)
 	if err != nil {
@@ -183,7 +183,7 @@ func (g *Git) RestoreCheckpoint(taskID string, number int) error {
 	return nil
 }
 
-// CanUndo checks if undo is possible for a task
+// CanUndo checks if undo is possible for a task.
 func (g *Git) CanUndo(taskID string) (bool, error) {
 	checkpoints, err := g.ListCheckpoints(taskID)
 	if err != nil {
@@ -204,7 +204,7 @@ func (g *Git) CanUndo(taskID string) (bool, error) {
 	return head == latest.ID, nil
 }
 
-// CanRedo checks if redo is possible for a task
+// CanRedo checks if redo is possible for a task.
 func (g *Git) CanRedo(taskID string) (bool, error) {
 	checkpoints, err := g.ListCheckpoints(taskID)
 	if err != nil {
@@ -225,7 +225,7 @@ func (g *Git) CanRedo(taskID string) (bool, error) {
 	return head != latest.ID, nil
 }
 
-// Undo reverts to the previous checkpoint
+// Undo reverts to the previous checkpoint.
 func (g *Git) Undo(taskID string) (*Checkpoint, error) {
 	checkpoints, err := g.ListCheckpoints(taskID)
 	if err != nil {
@@ -263,7 +263,7 @@ func (g *Git) Undo(taskID string) (*Checkpoint, error) {
 	return previous, nil
 }
 
-// Redo moves forward to the next checkpoint
+// Redo moves forward to the next checkpoint.
 func (g *Git) Redo(taskID string) (*Checkpoint, error) {
 	checkpoints, err := g.ListCheckpoints(taskID)
 	if err != nil {
@@ -301,7 +301,7 @@ func (g *Git) Redo(taskID string) (*Checkpoint, error) {
 	return next, nil
 }
 
-// DeleteCheckpoint removes a checkpoint tag
+// DeleteCheckpoint removes a checkpoint tag.
 func (g *Git) DeleteCheckpoint(taskID string, number int) error {
 	tagName := fmt.Sprintf("%s/%s/%d", CheckpointPrefix, taskID, number)
 	_, err := g.run("tag", "-d", tagName)
@@ -311,7 +311,7 @@ func (g *Git) DeleteCheckpoint(taskID string, number int) error {
 	return nil
 }
 
-// DeleteAllCheckpoints removes all checkpoints for a task
+// DeleteAllCheckpoints removes all checkpoints for a task.
 func (g *Git) DeleteAllCheckpoints(taskID string) error {
 	checkpoints, err := g.ListCheckpoints(taskID)
 	if err != nil {
@@ -328,7 +328,7 @@ func (g *Git) DeleteAllCheckpoints(taskID string) error {
 	return nil
 }
 
-// ChangeSummary holds statistics about changes
+// ChangeSummary holds statistics about changes.
 type ChangeSummary struct {
 	Added    []string // New files
 	Modified []string // Changed files
@@ -336,7 +336,7 @@ type ChangeSummary struct {
 	Total    int      // Total changed files
 }
 
-// GetChangeSummary returns a summary of staged and unstaged changes
+// GetChangeSummary returns a summary of staged and unstaged changes.
 func (g *Git) GetChangeSummary() (*ChangeSummary, error) {
 	// Get status output (porcelain format for parsing)
 	out, err := g.run("status", "--porcelain", "-uall")
@@ -385,7 +385,7 @@ func (g *Git) GetChangeSummary() (*ChangeSummary, error) {
 	return summary, nil
 }
 
-// GenerateAutoSummary creates an automatic commit message based on changes
+// GenerateAutoSummary creates an automatic commit message based on changes.
 func (g *Git) GenerateAutoSummary() (string, error) {
 	summary, err := g.GetChangeSummary()
 	if err != nil {
@@ -426,7 +426,7 @@ func (g *Git) GenerateAutoSummary() (string, error) {
 	return strings.Join(parts, ", "), nil
 }
 
-// CreateCheckpointAutoSummary creates a checkpoint with auto-generated message
+// CreateCheckpointAutoSummary creates a checkpoint with auto-generated message.
 func (g *Git) CreateCheckpointAutoSummary(taskID string) (*Checkpoint, error) {
 	msg, err := g.GenerateAutoSummary()
 	if err != nil {
@@ -435,13 +435,13 @@ func (g *Git) CreateCheckpointAutoSummary(taskID string) (*Checkpoint, error) {
 	return g.CreateCheckpoint(taskID, msg)
 }
 
-// CheckpointTracker provides higher-level checkpoint tracking
+// CheckpointTracker provides higher-level checkpoint tracking.
 type CheckpointTracker struct {
 	git    *Git
 	taskID string
 }
 
-// NewCheckpointTracker creates a tracker for a task
+// NewCheckpointTracker creates a tracker for a task.
 func NewCheckpointTracker(git *Git, taskID string) *CheckpointTracker {
 	return &CheckpointTracker{
 		git:    git,
@@ -449,39 +449,39 @@ func NewCheckpointTracker(git *Git, taskID string) *CheckpointTracker {
 	}
 }
 
-// Save creates a new checkpoint
+// Save creates a new checkpoint.
 func (t *CheckpointTracker) Save(message string) (*Checkpoint, error) {
 	return t.git.CreateCheckpoint(t.taskID, message)
 }
 
-// SaveAuto creates a checkpoint with auto-generated message
+// SaveAuto creates a checkpoint with auto-generated message.
 func (t *CheckpointTracker) SaveAuto() (*Checkpoint, error) {
 	return t.git.CreateCheckpointAutoSummary(t.taskID)
 }
 
-// UndoAvailable checks if undo is possible
+// UndoAvailable checks if undo is possible.
 func (t *CheckpointTracker) UndoAvailable() bool {
 	can, _ := t.git.CanUndo(t.taskID)
 	return can
 }
 
-// RedoAvailable checks if redo is possible
+// RedoAvailable checks if redo is possible.
 func (t *CheckpointTracker) RedoAvailable() bool {
 	can, _ := t.git.CanRedo(t.taskID)
 	return can
 }
 
-// Undo reverts to the previous state
+// Undo reverts to the previous state.
 func (t *CheckpointTracker) Undo() (*Checkpoint, error) {
 	return t.git.Undo(t.taskID)
 }
 
-// Redo moves forward to the next state
+// Redo moves forward to the next state.
 func (t *CheckpointTracker) Redo() (*Checkpoint, error) {
 	return t.git.Redo(t.taskID)
 }
 
-// List returns all checkpoints
+// List returns all checkpoints.
 func (t *CheckpointTracker) List() ([]*Checkpoint, error) {
 	return t.git.ListCheckpoints(t.taskID)
 }

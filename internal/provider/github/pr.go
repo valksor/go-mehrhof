@@ -9,7 +9,7 @@ import (
 	"github.com/valksor/go-mehrhof/internal/storage"
 )
 
-// CreatePullRequest creates a new pull request on GitHub
+// CreatePullRequest creates a new pull request on GitHub.
 func (p *Provider) CreatePullRequest(ctx context.Context, opts provider.PullRequestOptions) (*provider.PullRequest, error) {
 	// Use provider's default owner/repo if not specified in metadata
 	owner := p.owner
@@ -58,7 +58,7 @@ func (p *Provider) CreatePullRequest(ctx context.Context, opts provider.PullRequ
 	}, nil
 }
 
-// GeneratePRTitle generates a PR title from task metadata
+// GeneratePRTitle generates a PR title from task metadata.
 func GeneratePRTitle(taskWork *storage.TaskWork) string {
 	if taskWork == nil {
 		return "Implementation"
@@ -78,7 +78,7 @@ func GeneratePRTitle(taskWork *storage.TaskWork) string {
 	return title
 }
 
-// GeneratePRBody generates a PR body with implementation summary
+// GeneratePRBody generates a PR body with implementation summary.
 func GeneratePRBody(taskWork *storage.TaskWork, specs []*storage.Specification, diffStat string) string {
 	var sb strings.Builder
 
@@ -132,7 +132,7 @@ func GeneratePRBody(taskWork *storage.TaskWork, specs []*storage.Specification, 
 	return sb.String()
 }
 
-// GetDefaultBranch returns the repository's default branch
+// GetDefaultBranch returns the repository's default branch.
 func (p *Provider) GetDefaultBranch(ctx context.Context) (string, error) {
 	if p.config != nil && p.config.TargetBranch != "" {
 		return p.config.TargetBranch, nil
@@ -140,7 +140,7 @@ func (p *Provider) GetDefaultBranch(ctx context.Context) (string, error) {
 	return p.client.GetDefaultBranch(ctx)
 }
 
-// PROptions holds options for PR creation (extends provider.PullRequestOptions)
+// PROptions holds options for PR creation (extends provider.PullRequestOptions).
 type PROptions struct {
 	provider.PullRequestOptions
 
@@ -149,7 +149,7 @@ type PROptions struct {
 	IssueNumber         int // Issue to close when PR is merged
 }
 
-// CreatePRFromTask creates a PR from task context
+// CreatePRFromTask creates a PR from task context.
 func (p *Provider) CreatePRFromTask(ctx context.Context, taskWork *storage.TaskWork, specs []*storage.Specification, sourceBranch, diffStat string) (*provider.PullRequest, error) {
 	title := GeneratePRTitle(taskWork)
 	body := GeneratePRBody(taskWork, specs, diffStat)

@@ -9,23 +9,23 @@ import (
 	"github.com/valksor/go-mehrhof/internal/provider"
 )
 
-// ProviderName is the registered name for this provider
+// ProviderName is the registered name for this provider.
 const ProviderName = "trello"
 
-// Provider handles Trello cards as tasks
+// Provider handles Trello cards as tasks.
 type Provider struct {
 	client  *Client
 	boardID string // Default board ID
 }
 
-// Config holds Trello provider configuration
+// Config holds Trello provider configuration.
 type Config struct {
 	APIKey  string
 	Token   string
 	BoardID string
 }
 
-// Info returns provider metadata
+// Info returns provider metadata.
 func Info() provider.ProviderInfo {
 	return provider.ProviderInfo{
 		Name:        ProviderName,
@@ -47,7 +47,7 @@ func Info() provider.ProviderInfo {
 	}
 }
 
-// New creates a Trello provider
+// New creates a Trello provider.
 func New(_ context.Context, cfg provider.Config) (any, error) {
 	apiKey := cfg.GetString("api_key")
 	token := cfg.GetString("token")
@@ -67,12 +67,12 @@ func New(_ context.Context, cfg provider.Config) (any, error) {
 	}, nil
 }
 
-// Match checks if input has the trello: or tr: scheme prefix
+// Match checks if input has the trello: or tr: scheme prefix.
 func (p *Provider) Match(input string) bool {
 	return strings.HasPrefix(input, "trello:") || strings.HasPrefix(input, "tr:")
 }
 
-// Parse extracts the card reference from input
+// Parse extracts the card reference from input.
 func (p *Provider) Parse(input string) (string, error) {
 	ref, err := ParseReference(input)
 	if err != nil {
@@ -81,7 +81,7 @@ func (p *Provider) Parse(input string) (string, error) {
 	return ref.CardID, nil
 }
 
-// Fetch reads a Trello card and creates a WorkUnit
+// Fetch reads a Trello card and creates a WorkUnit.
 func (p *Provider) Fetch(ctx context.Context, id string) (*provider.WorkUnit, error) {
 	ref, err := ParseReference(id)
 	if err != nil {
@@ -130,7 +130,7 @@ func (p *Provider) Fetch(ctx context.Context, id string) (*provider.WorkUnit, er
 	return wu, nil
 }
 
-// List returns cards from a board
+// List returns cards from a board.
 func (p *Provider) List(ctx context.Context, opts provider.ListOptions) ([]*provider.WorkUnit, error) {
 	boardID := p.boardID
 	if boardID == "" {
@@ -198,7 +198,7 @@ func (p *Provider) List(ctx context.Context, opts provider.ListOptions) ([]*prov
 	return result, nil
 }
 
-// FetchComments retrieves comments on a card
+// FetchComments retrieves comments on a card.
 func (p *Provider) FetchComments(ctx context.Context, workUnitID string) ([]provider.Comment, error) {
 	actions, err := p.client.GetCardActions(ctx, workUnitID, "commentCard")
 	if err != nil {
@@ -218,7 +218,7 @@ func (p *Provider) FetchComments(ctx context.Context, workUnitID string) ([]prov
 	return comments, nil
 }
 
-// AddComment adds a comment to a card
+// AddComment adds a comment to a card.
 func (p *Provider) AddComment(ctx context.Context, workUnitID string, body string) (*provider.Comment, error) {
 	action, err := p.client.AddComment(ctx, workUnitID, body)
 	if err != nil {
@@ -233,7 +233,7 @@ func (p *Provider) AddComment(ctx context.Context, workUnitID string, body strin
 	}, nil
 }
 
-// UpdateStatus moves a card to a different list
+// UpdateStatus moves a card to a different list.
 func (p *Provider) UpdateStatus(ctx context.Context, workUnitID string, status provider.Status) error {
 	// Get the board ID from the card
 	card, err := p.client.GetCard(ctx, workUnitID)
@@ -252,7 +252,7 @@ func (p *Provider) UpdateStatus(ctx context.Context, workUnitID string, status p
 	return p.client.MoveCard(ctx, workUnitID, targetList.ID)
 }
 
-// AddLabels adds labels to a card
+// AddLabels adds labels to a card.
 func (p *Provider) AddLabels(ctx context.Context, workUnitID string, labels []string) error {
 	for _, label := range labels {
 		if err := p.client.AddLabel(ctx, workUnitID, label); err != nil {
@@ -262,7 +262,7 @@ func (p *Provider) AddLabels(ctx context.Context, workUnitID string, labels []st
 	return nil
 }
 
-// RemoveLabels removes labels from a card
+// RemoveLabels removes labels from a card.
 func (p *Provider) RemoveLabels(ctx context.Context, workUnitID string, labels []string) error {
 	for _, label := range labels {
 		if err := p.client.RemoveLabel(ctx, workUnitID, label); err != nil {
@@ -272,12 +272,12 @@ func (p *Provider) RemoveLabels(ctx context.Context, workUnitID string, labels [
 	return nil
 }
 
-// DownloadAttachment downloads an attachment from a card
+// DownloadAttachment downloads an attachment from a card.
 func (p *Provider) DownloadAttachment(ctx context.Context, workUnitID, attachmentID string) (any, error) {
 	return p.client.DownloadAttachment(ctx, workUnitID, attachmentID)
 }
 
-// Snapshot captures the card content for storage
+// Snapshot captures the card content for storage.
 func (p *Provider) Snapshot(ctx context.Context, id string) (*provider.Snapshot, error) {
 	card, err := p.client.GetCard(ctx, id)
 	if err != nil {
@@ -295,7 +295,7 @@ func (p *Provider) Snapshot(ctx context.Context, id string) (*provider.Snapshot,
 // Helper functions
 // ──────────────────────────────────────────────────────────────────────────────
 
-// mapTrelloListToStatus converts Trello list name to provider status
+// mapTrelloListToStatus converts Trello list name to provider status.
 func mapTrelloListToStatus(listName string) provider.Status {
 	switch strings.ToLower(listName) {
 	case "to do", "todo", "backlog", "open", "new":
@@ -313,7 +313,7 @@ func mapTrelloListToStatus(listName string) provider.Status {
 	}
 }
 
-// mapProviderStatusToListName converts provider status to Trello list name
+// mapProviderStatusToListName converts provider status to Trello list name.
 func mapProviderStatusToListName(status provider.Status) string {
 	switch status {
 	case provider.StatusOpen:
@@ -331,7 +331,7 @@ func mapProviderStatusToListName(status provider.Status) string {
 	}
 }
 
-// extractLabels extracts label names from a card
+// extractLabels extracts label names from a card.
 func extractLabels(card *Card) []string {
 	labels := make([]string, len(card.Labels))
 	for i, label := range card.Labels {
@@ -345,7 +345,7 @@ func extractLabels(card *Card) []string {
 	return labels
 }
 
-// extractMembers extracts members as assignees
+// extractMembers extracts members as assignees.
 func extractMembers(card *Card) []provider.Person {
 	members := make([]provider.Person, len(card.Members))
 	for i, member := range card.Members {
@@ -357,7 +357,7 @@ func extractMembers(card *Card) []provider.Person {
 	return members
 }
 
-// extractAttachments converts Trello attachments to provider attachments
+// extractAttachments converts Trello attachments to provider attachments.
 func extractAttachments(card *Card) []provider.Attachment {
 	attachments := make([]provider.Attachment, len(card.Attachments))
 	for i, att := range card.Attachments {
@@ -373,7 +373,7 @@ func extractAttachments(card *Card) []provider.Attachment {
 	return attachments
 }
 
-// extractCreatedAt extracts creation time from card ID (first 8 chars are hex timestamp)
+// extractCreatedAt extracts creation time from card ID (first 8 chars are hex timestamp).
 func extractCreatedAt(cardID string) time.Time {
 	if len(cardID) < 8 {
 		return time.Time{}
@@ -387,7 +387,7 @@ func extractCreatedAt(cardID string) time.Time {
 	return time.Unix(timestamp, 0)
 }
 
-// parseHexTimestamp parses the first 8 chars of Trello ID as Unix timestamp
+// parseHexTimestamp parses the first 8 chars of Trello ID as Unix timestamp.
 func parseHexTimestamp(hex string, result *int64) (int, error) {
 	var n int64
 	for _, c := range hex {
@@ -407,7 +407,7 @@ func parseHexTimestamp(hex string, result *int64) (int, error) {
 	return 8, nil
 }
 
-// hasAnyLabel checks if a card has any of the specified labels
+// hasAnyLabel checks if a card has any of the specified labels.
 func hasAnyLabel(card Card, targetLabels []string) bool {
 	cardLabels := make(map[string]bool)
 	for _, label := range card.Labels {
@@ -422,7 +422,7 @@ func hasAnyLabel(card Card, targetLabels []string) bool {
 	return false
 }
 
-// buildMetadata creates metadata map from card
+// buildMetadata creates metadata map from card.
 func buildMetadata(card *Card, list *List, ref *Ref) map[string]any {
 	metadata := make(map[string]any)
 
@@ -443,7 +443,7 @@ func buildMetadata(card *Card, list *List, ref *Ref) map[string]any {
 	return metadata
 }
 
-// buildSnapshotContent creates markdown content from a card
+// buildSnapshotContent creates markdown content from a card.
 func buildSnapshotContent(card *Card) string {
 	var sb strings.Builder
 	sb.WriteString("# ")

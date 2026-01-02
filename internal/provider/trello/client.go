@@ -17,14 +17,14 @@ const (
 	baseURL = "https://api.trello.com/1"
 )
 
-// Client is a Trello API client
+// Client is a Trello API client.
 type Client struct {
 	http   *http.Client
 	apiKey string
 	token  string
 }
 
-// NewClient creates a new Trello API client
+// NewClient creates a new Trello API client.
 func NewClient(apiKey, token string) *Client {
 	return &Client{
 		http:   httpclient.NewHTTPClient(),
@@ -37,7 +37,7 @@ func NewClient(apiKey, token string) *Client {
 // API Types
 // ──────────────────────────────────────────────────────────────────────────────
 
-// Card represents a Trello card
+// Card represents a Trello card.
 type Card struct {
 	ID               string       `json:"id"`
 	Name             string       `json:"name"`
@@ -60,7 +60,7 @@ type Card struct {
 	IDLabels         []string     `json:"idLabels"`
 }
 
-// List represents a Trello list
+// List represents a Trello list.
 type List struct {
 	ID       string `json:"id"`
 	Name     string `json:"name"`
@@ -69,14 +69,14 @@ type List struct {
 	Position int    `json:"pos"`
 }
 
-// Board represents a Trello board
+// Board represents a Trello board.
 type Board struct {
 	ID   string `json:"id"`
 	Name string `json:"name"`
 	URL  string `json:"url"`
 }
 
-// Label represents a Trello label
+// Label represents a Trello label.
 type Label struct {
 	ID      string `json:"id"`
 	IDBoard string `json:"idBoard"`
@@ -84,7 +84,7 @@ type Label struct {
 	Color   string `json:"color"`
 }
 
-// Member represents a Trello member
+// Member represents a Trello member.
 type Member struct {
 	ID       string `json:"id"`
 	Username string `json:"username"`
@@ -92,7 +92,7 @@ type Member struct {
 	Email    string `json:"email,omitempty"`
 }
 
-// Attachment represents a Trello attachment
+// Attachment represents a Trello attachment.
 type Attachment struct {
 	ID       string    `json:"id"`
 	Name     string    `json:"name"`
@@ -102,7 +102,7 @@ type Attachment struct {
 	Date     time.Time `json:"date"`
 }
 
-// Checklist represents a Trello checklist
+// Checklist represents a Trello checklist.
 type Checklist struct {
 	ID         string      `json:"id"`
 	Name       string      `json:"name"`
@@ -110,14 +110,14 @@ type Checklist struct {
 	CheckItems []CheckItem `json:"checkItems"`
 }
 
-// CheckItem represents an item in a checklist
+// CheckItem represents an item in a checklist.
 type CheckItem struct {
 	ID    string `json:"id"`
 	Name  string `json:"name"`
 	State string `json:"state"` // complete, incomplete
 }
 
-// Action represents a Trello action (e.g., comment)
+// Action represents a Trello action (e.g., comment).
 type Action struct {
 	ID            string       `json:"id"`
 	Type          string       `json:"type"`
@@ -126,7 +126,7 @@ type Action struct {
 	MemberCreator ActionMember `json:"memberCreator"`
 }
 
-// ActionData contains action-specific data
+// ActionData contains action-specific data.
 type ActionData struct {
 	Text string `json:"text"`
 	Card struct {
@@ -135,7 +135,7 @@ type ActionData struct {
 	} `json:"card"`
 }
 
-// ActionMember represents the member who created an action
+// ActionMember represents the member who created an action.
 type ActionMember struct {
 	ID       string `json:"id"`
 	FullName string `json:"fullName"`
@@ -146,7 +146,7 @@ type ActionMember struct {
 // API Methods
 // ──────────────────────────────────────────────────────────────────────────────
 
-// GetCard fetches a card by ID
+// GetCard fetches a card by ID.
 func (c *Client) GetCard(ctx context.Context, cardID string) (*Card, error) {
 	endpoint := fmt.Sprintf("/cards/%s", cardID)
 	params := url.Values{
@@ -163,7 +163,7 @@ func (c *Client) GetCard(ctx context.Context, cardID string) (*Card, error) {
 	return &card, nil
 }
 
-// GetList fetches a list by ID
+// GetList fetches a list by ID.
 func (c *Client) GetList(ctx context.Context, listID string) (*List, error) {
 	endpoint := fmt.Sprintf("/lists/%s", listID)
 
@@ -174,7 +174,7 @@ func (c *Client) GetList(ctx context.Context, listID string) (*List, error) {
 	return &list, nil
 }
 
-// GetBoardCards fetches all cards from a board
+// GetBoardCards fetches all cards from a board.
 func (c *Client) GetBoardCards(ctx context.Context, boardID string) ([]Card, error) {
 	endpoint := fmt.Sprintf("/boards/%s/cards", boardID)
 	params := url.Values{
@@ -189,7 +189,7 @@ func (c *Client) GetBoardCards(ctx context.Context, boardID string) ([]Card, err
 	return cards, nil
 }
 
-// GetBoardLists fetches all lists from a board
+// GetBoardLists fetches all lists from a board.
 func (c *Client) GetBoardLists(ctx context.Context, boardID string) ([]List, error) {
 	endpoint := fmt.Sprintf("/boards/%s/lists", boardID)
 
@@ -200,7 +200,7 @@ func (c *Client) GetBoardLists(ctx context.Context, boardID string) ([]List, err
 	return lists, nil
 }
 
-// GetCardActions fetches actions (e.g., comments) for a card
+// GetCardActions fetches actions (e.g., comments) for a card.
 func (c *Client) GetCardActions(ctx context.Context, cardID, filter string) ([]Action, error) {
 	endpoint := fmt.Sprintf("/cards/%s/actions", cardID)
 	params := url.Values{}
@@ -215,7 +215,7 @@ func (c *Client) GetCardActions(ctx context.Context, cardID, filter string) ([]A
 	return actions, nil
 }
 
-// AddComment adds a comment to a card
+// AddComment adds a comment to a card.
 func (c *Client) AddComment(ctx context.Context, cardID, text string) (*Action, error) {
 	endpoint := fmt.Sprintf("/cards/%s/actions/comments", cardID)
 	params := url.Values{
@@ -229,7 +229,7 @@ func (c *Client) AddComment(ctx context.Context, cardID, text string) (*Action, 
 	return &action, nil
 }
 
-// MoveCard moves a card to a different list
+// MoveCard moves a card to a different list.
 func (c *Client) MoveCard(ctx context.Context, cardID, listID string) error {
 	endpoint := fmt.Sprintf("/cards/%s", cardID)
 	params := url.Values{
@@ -239,7 +239,7 @@ func (c *Client) MoveCard(ctx context.Context, cardID, listID string) error {
 	return c.put(ctx, endpoint, params, nil)
 }
 
-// FindListByName finds a list by name on a board
+// FindListByName finds a list by name on a board.
 func (c *Client) FindListByName(ctx context.Context, boardID, name string) (*List, error) {
 	lists, err := c.GetBoardLists(ctx, boardID)
 	if err != nil {
@@ -256,7 +256,7 @@ func (c *Client) FindListByName(ctx context.Context, boardID, name string) (*Lis
 	return nil, fmt.Errorf("list %q not found on board", name)
 }
 
-// AddLabel adds a label to a card
+// AddLabel adds a label to a card.
 func (c *Client) AddLabel(ctx context.Context, cardID, labelID string) error {
 	endpoint := fmt.Sprintf("/cards/%s/idLabels", cardID)
 	params := url.Values{
@@ -266,13 +266,13 @@ func (c *Client) AddLabel(ctx context.Context, cardID, labelID string) error {
 	return c.post(ctx, endpoint, params, nil)
 }
 
-// RemoveLabel removes a label from a card
+// RemoveLabel removes a label from a card.
 func (c *Client) RemoveLabel(ctx context.Context, cardID, labelID string) error {
 	endpoint := fmt.Sprintf("/cards/%s/idLabels/%s", cardID, labelID)
 	return c.delete(ctx, endpoint)
 }
 
-// CreateCard creates a new card in a list
+// CreateCard creates a new card in a list.
 func (c *Client) CreateCard(ctx context.Context, listID, name, desc string) (*Card, error) {
 	endpoint := "/cards"
 	params := url.Values{
@@ -290,7 +290,7 @@ func (c *Client) CreateCard(ctx context.Context, listID, name, desc string) (*Ca
 	return &card, nil
 }
 
-// DownloadAttachment downloads an attachment
+// DownloadAttachment downloads an attachment.
 func (c *Client) DownloadAttachment(ctx context.Context, cardID, attachmentID string) (io.ReadCloser, error) {
 	// First get the attachment details to get the URL
 	endpoint := fmt.Sprintf("/cards/%s/attachments/%s", cardID, attachmentID)

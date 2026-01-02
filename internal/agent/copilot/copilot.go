@@ -14,20 +14,20 @@ import (
 	"github.com/valksor/go-mehrhof/internal/agent"
 )
 
-// AgentName is the canonical name for this agent
+// AgentName is the canonical name for this agent.
 const AgentName = "copilot"
 
-// Mode defines the Copilot CLI operation mode
+// Mode defines the Copilot CLI operation mode.
 type Mode string
 
 const (
-	// ModeSuggest uses "gh copilot suggest" for command suggestions
+	// ModeSuggest uses "gh copilot suggest" for command suggestions.
 	ModeSuggest Mode = "suggest"
-	// ModeExplain uses "gh copilot explain" for explanations
+	// ModeExplain uses "gh copilot explain" for explanations.
 	ModeExplain Mode = "explain"
 )
 
-// TargetType for suggest mode
+// TargetType for suggest mode.
 type TargetType string
 
 const (
@@ -36,7 +36,7 @@ const (
 	TargetGH    TargetType = "gh"
 )
 
-// Agent wraps the GitHub Copilot CLI (gh copilot)
+// Agent wraps the GitHub Copilot CLI (gh copilot).
 type Agent struct {
 	parser agent.Parser
 	config agent.Config
@@ -44,7 +44,7 @@ type Agent struct {
 	target TargetType
 }
 
-// New creates a Copilot agent with default config
+// New creates a Copilot agent with default config.
 func New() *Agent {
 	return &Agent{
 		config: agent.Config{
@@ -60,7 +60,7 @@ func New() *Agent {
 	}
 }
 
-// NewWithConfig creates a Copilot agent with custom config
+// NewWithConfig creates a Copilot agent with custom config.
 func NewWithConfig(cfg agent.Config) *Agent {
 	if len(cfg.Command) == 0 {
 		cfg.Command = []string{"gh", "copilot"}
@@ -73,12 +73,12 @@ func NewWithConfig(cfg agent.Config) *Agent {
 	}
 }
 
-// Name returns the agent identifier
+// Name returns the agent identifier.
 func (a *Agent) Name() string {
 	return AgentName
 }
 
-// Available checks if the gh copilot extension is installed
+// Available checks if the gh copilot extension is installed.
 func (a *Agent) Available() error {
 	// First check if gh is installed
 	ghPath, err := exec.LookPath("gh")
@@ -98,7 +98,7 @@ func (a *Agent) Available() error {
 	return nil
 }
 
-// Run executes a prompt and returns the aggregated response
+// Run executes a prompt and returns the aggregated response.
 func (a *Agent) Run(ctx context.Context, prompt string) (*agent.Response, error) {
 	events, errCh := a.RunStream(ctx, prompt)
 
@@ -115,7 +115,7 @@ func (a *Agent) Run(ctx context.Context, prompt string) (*agent.Response, error)
 	return a.parser.Parse(collected)
 }
 
-// RunStream executes a prompt and streams events
+// RunStream executes a prompt and streams events.
 func (a *Agent) RunStream(ctx context.Context, prompt string) (<-chan agent.Event, <-chan error) {
 	eventCh := make(chan agent.Event, 100)
 	errCh := make(chan error, 1)
@@ -133,7 +133,7 @@ func (a *Agent) RunStream(ctx context.Context, prompt string) (<-chan agent.Even
 	return eventCh, errCh
 }
 
-// RunWithCallback executes with a callback for each event
+// RunWithCallback executes with a callback for each event.
 func (a *Agent) RunWithCallback(ctx context.Context, prompt string, cb agent.StreamCallback) (*agent.Response, error) {
 	events, errCh := a.RunStream(ctx, prompt)
 
@@ -290,22 +290,22 @@ func (a *Agent) buildArgs(prompt string) []string {
 	return args
 }
 
-// SetParser allows overriding the default parser
+// SetParser allows overriding the default parser.
 func (a *Agent) SetParser(p agent.Parser) {
 	a.parser = p
 }
 
-// SetMode sets the operation mode (suggest/explain)
+// SetMode sets the operation mode (suggest/explain).
 func (a *Agent) SetMode(mode Mode) {
 	a.mode = mode
 }
 
-// SetTarget sets the target type for suggest mode
+// SetTarget sets the target type for suggest mode.
 func (a *Agent) SetTarget(target TargetType) {
 	a.target = target
 }
 
-// WithWorkDir sets the working directory
+// WithWorkDir sets the working directory.
 func (a *Agent) WithWorkDir(dir string) *Agent {
 	newConfig := a.config
 	newConfig.WorkDir = dir
@@ -317,7 +317,7 @@ func (a *Agent) WithWorkDir(dir string) *Agent {
 	}
 }
 
-// WithTimeout sets execution timeout
+// WithTimeout sets execution timeout.
 func (a *Agent) WithTimeout(d time.Duration) *Agent {
 	newConfig := a.config
 	newConfig.Timeout = d
@@ -329,7 +329,7 @@ func (a *Agent) WithTimeout(d time.Duration) *Agent {
 	}
 }
 
-// WithMode returns a new Agent with a different mode
+// WithMode returns a new Agent with a different mode.
 func (a *Agent) WithMode(mode Mode) *Agent {
 	return &Agent{
 		config: a.config,
@@ -339,7 +339,7 @@ func (a *Agent) WithMode(mode Mode) *Agent {
 	}
 }
 
-// WithTarget returns a new Agent with a different target
+// WithTarget returns a new Agent with a different target.
 func (a *Agent) WithTarget(target TargetType) *Agent {
 	return &Agent{
 		config: a.config,
@@ -349,7 +349,7 @@ func (a *Agent) WithTarget(target TargetType) *Agent {
 	}
 }
 
-// WithEnv adds an environment variable
+// WithEnv adds an environment variable.
 func (a *Agent) WithEnv(key, value string) agent.Agent {
 	newConfig := a.config
 	newConfig.Environment = make(map[string]string, len(a.config.Environment)+1)
@@ -365,7 +365,7 @@ func (a *Agent) WithEnv(key, value string) agent.Agent {
 	}
 }
 
-// WithArgs adds CLI arguments
+// WithArgs adds CLI arguments.
 func (a *Agent) WithArgs(args ...string) agent.Agent {
 	newConfig := a.config
 	newArgs := make([]string, len(a.config.Args), len(a.config.Args)+len(args))
@@ -379,7 +379,7 @@ func (a *Agent) WithArgs(args ...string) agent.Agent {
 	}
 }
 
-// Metadata returns agent capabilities
+// Metadata returns agent capabilities.
 func (a *Agent) Metadata() agent.AgentMetadata {
 	return agent.AgentMetadata{
 		Name:        "GitHub Copilot CLI",
@@ -395,26 +395,26 @@ func (a *Agent) Metadata() agent.AgentMetadata {
 	}
 }
 
-// Register adds the Copilot agent to a registry
+// Register adds the Copilot agent to a registry.
 func Register(r *agent.Registry) error {
 	return r.Register(New())
 }
 
-// Ensure Agent implements agent.Agent and MetadataProvider
+// Ensure Agent implements agent.Agent and MetadataProvider.
 var (
 	_ agent.Agent            = (*Agent)(nil)
 	_ agent.MetadataProvider = (*Agent)(nil)
 )
 
-// PlainTextParser parses plain text output from gh copilot
+// PlainTextParser parses plain text output from gh copilot.
 type PlainTextParser struct{}
 
-// NewPlainTextParser creates a plain text parser for copilot output
+// NewPlainTextParser creates a plain text parser for copilot output.
 func NewPlainTextParser() *PlainTextParser {
 	return &PlainTextParser{}
 }
 
-// ParseEvent parses a single line of plain text output
+// ParseEvent parses a single line of plain text output.
 func (p *PlainTextParser) ParseEvent(line []byte) (agent.Event, error) {
 	text := string(line)
 
@@ -431,7 +431,7 @@ func (p *PlainTextParser) ParseEvent(line []byte) (agent.Event, error) {
 	}, nil
 }
 
-// Parse aggregates events into a response
+// Parse aggregates events into a response.
 func (p *PlainTextParser) Parse(events []agent.Event) (*agent.Response, error) {
 	response := &agent.Response{
 		Files:    make([]agent.FileChange, 0),
@@ -455,7 +455,7 @@ func (p *PlainTextParser) Parse(events []agent.Event) (*agent.Response, error) {
 	return response, nil
 }
 
-// extractSummary extracts a summary from copilot output
+// extractSummary extracts a summary from copilot output.
 func extractSummary(text string) string {
 	lines := strings.Split(text, "\n")
 	if len(lines) == 0 {

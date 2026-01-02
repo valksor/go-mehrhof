@@ -12,7 +12,7 @@ import (
 )
 
 // DeleteFileSentinel is a special marker that indicates a file should be deleted
-// This provides an alternative to setting operation: delete in YAML blocks
+// This provides an alternative to setting operation: delete in YAML blocks.
 const DeleteFileSentinel = "__DELETE_FILE__"
 
 // ensureDirExists creates the directory for the given file path if it doesn't exist.
@@ -40,7 +40,7 @@ func validatePathInWorkspace(resolved, root string) error {
 	return nil
 }
 
-// applyFiles writes agent file changes to disk
+// applyFiles writes agent file changes to disk.
 func applyFiles(ctx context.Context, c *Conductor, files []agent.FileChange) error {
 	root := c.opts.WorkDir
 	if c.git != nil {

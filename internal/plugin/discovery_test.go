@@ -10,7 +10,7 @@ import (
 // Test helper functions
 // ──────────────────────────────────────────────────────────────────────────────
 
-// createTestPlugin creates a valid plugin directory with manifest
+// createTestPlugin creates a valid plugin directory with manifest.
 func createTestPlugin(t *testing.T, baseDir, name string, pluginType PluginType) string {
 	t.Helper()
 
@@ -28,7 +28,7 @@ func createTestPlugin(t *testing.T, baseDir, name string, pluginType PluginType)
 	return pluginDir
 }
 
-// buildManifest creates a valid manifest YAML for the given type
+// buildManifest creates a valid manifest YAML for the given type.
 func buildManifest(name string, pluginType PluginType) string {
 	base := `version: "1.0"
 name: ` + name + `

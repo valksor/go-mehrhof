@@ -2,7 +2,7 @@ package storage
 
 import "time"
 
-// ActiveTask represents the currently active task (stored in .active_task)
+// ActiveTask represents the currently active task (stored in .active_task).
 type ActiveTask struct {
 	ID           string    `yaml:"id"`
 	Ref          string    `yaml:"ref"`      // e.g., "dir:.mehrhof/my-feature" or "file:task.md"
@@ -14,7 +14,7 @@ type ActiveTask struct {
 	Started      time.Time `yaml:"started"`
 }
 
-// TaskWork represents the work directory structure (.mehrhof/work/<id>/)
+// TaskWork represents the work directory structure (.mehrhof/work/<id>/).
 type TaskWork struct {
 	Version  string       `yaml:"version"`
 	Metadata WorkMetadata `yaml:"metadata"`
@@ -24,7 +24,7 @@ type TaskWork struct {
 	Costs    CostStats    `yaml:"costs,omitempty"`
 }
 
-// WorkMetadata holds task identification
+// WorkMetadata holds task identification.
 type WorkMetadata struct {
 	ID        string    `yaml:"id"`
 	Title     string    `yaml:"title,omitempty"`
@@ -37,8 +37,8 @@ type WorkMetadata struct {
 	Slug        string `yaml:"slug,omitempty"`         // URL-safe title slug
 }
 
-// SourceInfo tracks the original source (read-only reference)
-// Hybrid storage: metadata in YAML, actual file content in source/ directory
+// SourceInfo tracks the original source (read-only reference).
+// Hybrid storage: metadata in YAML, actual file content in source/ directory.
 type SourceInfo struct {
 	Type    string    `yaml:"type"`              // directory, file, github, youtrack
 	Ref     string    `yaml:"ref"`               // original reference
@@ -47,7 +47,7 @@ type SourceInfo struct {
 	Content string    `yaml:"content,omitempty"` // kept for backwards compat, empty for new tasks
 }
 
-// GitInfo holds git-related information
+// GitInfo holds git-related information.
 type GitInfo struct {
 	Branch       string    `yaml:"branch,omitempty"`
 	BaseBranch   string    `yaml:"base_branch,omitempty"`
@@ -59,7 +59,7 @@ type GitInfo struct {
 	BranchPattern string `yaml:"branch_pattern,omitempty"` // Template used to generate branch
 }
 
-// StepAgentInfo holds per-step agent resolution info
+// StepAgentInfo holds per-step agent resolution info.
 type StepAgentInfo struct {
 	Name      string            `yaml:"name,omitempty"`       // Resolved agent name for this step
 	Source    string            `yaml:"source,omitempty"`     // Where specified: "cli-step", "cli", "task-step", "task", "workspace-step", "workspace", "auto"
@@ -67,7 +67,7 @@ type StepAgentInfo struct {
 	Args      []string          `yaml:"args,omitempty"`       // CLI args for this step
 }
 
-// AgentInfo holds the agent configuration used for this task
+// AgentInfo holds the agent configuration used for this task.
 type AgentInfo struct {
 	Name      string                   `yaml:"name,omitempty"`       // Default resolved agent name
 	Source    string                   `yaml:"source,omitempty"`     // Where agent was specified: "cli", "task", "workspace", "auto"
@@ -76,7 +76,7 @@ type AgentInfo struct {
 	Steps     map[string]StepAgentInfo `yaml:"steps,omitempty"`      // Per-step agent resolution
 }
 
-// SpecificationStatus constants
+// SpecificationStatus constants.
 const (
 	SpecificationStatusDraft        = "draft"
 	SpecificationStatusReady        = "ready"
@@ -85,7 +85,7 @@ const (
 )
 
 // Specification represents a specification file (specification-N.md)
-// These are stored as markdown files with optional YAML frontmatter
+// These are stored as markdown files with optional YAML frontmatter.
 type Specification struct {
 	Number      int       `yaml:"-"`
 	Title       string    `yaml:"title,omitempty"`
@@ -98,19 +98,19 @@ type Specification struct {
 	Content     string    `yaml:"-"` // Raw markdown content (without frontmatter)
 }
 
-// Note represents a user note added via the note command
+// Note represents a user note added via the note command.
 type Note struct {
 	Timestamp time.Time `yaml:"timestamp"`
 	Content   string    `yaml:"content"`
 	State     string    `yaml:"state,omitempty"` // state when note was added
 }
 
-// NotesFile represents the notes.md structure
+// NotesFile represents the notes.md structure.
 type NotesFile struct {
 	Notes []Note `yaml:"notes"`
 }
 
-// Session records an interaction session
+// Session records an interaction session.
 type Session struct {
 	Version   string          `yaml:"version"`
 	Kind      string          `yaml:"kind"`
@@ -119,7 +119,7 @@ type Session struct {
 	Exchanges []Exchange      `yaml:"exchanges,omitempty"`
 }
 
-// SessionMetadata holds session identification
+// SessionMetadata holds session identification.
 type SessionMetadata struct {
 	StartedAt time.Time `yaml:"started_at"`
 	EndedAt   time.Time `yaml:"ended_at,omitempty"`
@@ -128,7 +128,7 @@ type SessionMetadata struct {
 	State     string    `yaml:"state,omitempty"` // task state when session started
 }
 
-// UsageInfo tracks token/cost usage
+// UsageInfo tracks token/cost usage.
 type UsageInfo struct {
 	InputTokens  int     `yaml:"input_tokens"`
 	OutputTokens int     `yaml:"output_tokens"`
@@ -136,7 +136,7 @@ type UsageInfo struct {
 	CostUSD      float64 `yaml:"cost_usd,omitempty"`
 }
 
-// CostStats tracks cumulative token/cost usage across all workflow steps
+// CostStats tracks cumulative token/cost usage across all workflow steps.
 type CostStats struct {
 	TotalInputTokens  int                      `yaml:"total_input_tokens"`
 	TotalOutputTokens int                      `yaml:"total_output_tokens"`
@@ -145,7 +145,7 @@ type CostStats struct {
 	ByStep            map[string]StepCostStats `yaml:"by_step,omitempty"`
 }
 
-// StepCostStats tracks usage for a specific workflow step
+// StepCostStats tracks usage for a specific workflow step.
 type StepCostStats struct {
 	InputTokens  int     `yaml:"input_tokens"`
 	OutputTokens int     `yaml:"output_tokens"`
@@ -154,7 +154,7 @@ type StepCostStats struct {
 	Calls        int     `yaml:"calls"` // Number of agent calls in this step
 }
 
-// Exchange represents a single message in a session
+// Exchange represents a single message in a session.
 type Exchange struct {
 	Role         string       `yaml:"role"` // user, agent, system
 	Timestamp    time.Time    `yaml:"timestamp"`
@@ -162,13 +162,13 @@ type Exchange struct {
 	FilesChanged []FileChange `yaml:"files_changed,omitempty"`
 }
 
-// FileChange records a file modification
+// FileChange records a file modification.
 type FileChange struct {
 	Path      string `yaml:"path"`
 	Operation string `yaml:"operation"` // create, update, delete
 }
 
-// Checkpoint records a git checkpoint for undo/redo
+// Checkpoint records a git checkpoint for undo/redo.
 type Checkpoint struct {
 	ID        string    `yaml:"id"`
 	Commit    string    `yaml:"commit"`
@@ -177,7 +177,7 @@ type Checkpoint struct {
 	CreatedAt time.Time `yaml:"created_at"`
 }
 
-// NewActiveTask creates a new active task
+// NewActiveTask creates a new active task.
 func NewActiveTask(id, ref, workDir string) *ActiveTask {
 	return &ActiveTask{
 		ID:      id,
@@ -189,7 +189,7 @@ func NewActiveTask(id, ref, workDir string) *ActiveTask {
 	}
 }
 
-// NewTaskWork creates a new task work structure
+// NewTaskWork creates a new task work structure.
 func NewTaskWork(id string, source SourceInfo) *TaskWork {
 	now := time.Now()
 	return &TaskWork{
@@ -203,7 +203,7 @@ func NewTaskWork(id string, source SourceInfo) *TaskWork {
 	}
 }
 
-// NewSession creates a new session with defaults
+// NewSession creates a new session with defaults.
 func NewSession(sessionType, agent, state string) *Session {
 	now := time.Now()
 	return &Session{

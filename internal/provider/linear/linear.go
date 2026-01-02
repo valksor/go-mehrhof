@@ -9,22 +9,22 @@ import (
 	"github.com/valksor/go-mehrhof/internal/provider"
 )
 
-// ProviderName is the registered name for this provider
+// ProviderName is the registered name for this provider.
 const ProviderName = "linear"
 
-// Provider handles Linear issue tasks
+// Provider handles Linear issue tasks.
 type Provider struct {
 	client *Client
 	team   string // Default team key
 }
 
-// Config holds Linear provider configuration
+// Config holds Linear provider configuration.
 type Config struct {
 	Token string
 	Team  string // Default team key for operations
 }
 
-// Info returns provider metadata
+// Info returns provider metadata.
 func Info() provider.ProviderInfo {
 	return provider.ProviderInfo{
 		Name:        ProviderName,
@@ -45,7 +45,7 @@ func Info() provider.ProviderInfo {
 	}
 }
 
-// New creates a Linear provider
+// New creates a Linear provider.
 func New(_ context.Context, cfg provider.Config) (any, error) {
 	token := cfg.GetString("token")
 	team := cfg.GetString("team")
@@ -65,12 +65,12 @@ func New(_ context.Context, cfg provider.Config) (any, error) {
 	}, nil
 }
 
-// Match checks if input has the linear: or ln: scheme prefix
+// Match checks if input has the linear: or ln: scheme prefix.
 func (p *Provider) Match(input string) bool {
 	return strings.HasPrefix(input, "linear:") || strings.HasPrefix(input, "ln:")
 }
 
-// Parse extracts the issue reference from input
+// Parse extracts the issue reference from input.
 func (p *Provider) Parse(input string) (string, error) {
 	ref, err := ParseReference(input)
 	if err != nil {
@@ -79,7 +79,7 @@ func (p *Provider) Parse(input string) (string, error) {
 	return ref.IssueID, nil
 }
 
-// Fetch reads a Linear issue and creates a WorkUnit
+// Fetch reads a Linear issue and creates a WorkUnit.
 func (p *Provider) Fetch(ctx context.Context, id string) (*provider.WorkUnit, error) {
 	ref, err := ParseReference(id)
 	if err != nil {
@@ -126,19 +126,19 @@ func (p *Provider) Fetch(ctx context.Context, id string) (*provider.WorkUnit, er
 	return wu, nil
 }
 
-// GetConfig returns the provider configuration
+// GetConfig returns the provider configuration.
 func (p *Provider) GetConfig() *Config {
 	return &Config{
 		Team: p.team,
 	}
 }
 
-// GetClient returns the Linear API client
+// GetClient returns the Linear API client.
 func (p *Provider) GetClient() *Client {
 	return p.client
 }
 
-// GetDefaultTeam returns the default team key
+// GetDefaultTeam returns the default team key.
 func (p *Provider) GetDefaultTeam() string {
 	return p.team
 }
@@ -147,7 +147,7 @@ func (p *Provider) GetDefaultTeam() string {
 // Helper functions
 // ──────────────────────────────────────────────────────────────────────────────
 
-// mapLinearStatus converts Linear state to provider status
+// mapLinearStatus converts Linear state to provider status.
 func mapLinearStatus(state *State) provider.Status {
 	if state == nil {
 		return provider.StatusOpen
@@ -178,7 +178,7 @@ func mapLinearStatus(state *State) provider.Status {
 }
 
 // mapLinearPriority converts Linear priority to provider priority
-// Linear priority: 0 = No priority, 1 = Urgent, 2 = High, 3 = Medium, 4 = Low
+// Linear priority: 0 = No priority, 1 = Urgent, 2 = High, 3 = Medium, 4 = Low.
 func mapLinearPriority(priority int) provider.Priority {
 	switch priority {
 	case 1: // Urgent
@@ -194,7 +194,7 @@ func mapLinearPriority(priority int) provider.Priority {
 	}
 }
 
-// mapProviderPriorityToLinear converts provider priority to Linear priority
+// mapProviderPriorityToLinear converts provider priority to Linear priority.
 func mapProviderPriorityToLinear(priority provider.Priority) *int {
 	var p int
 	switch priority {
@@ -210,7 +210,7 @@ func mapProviderPriorityToLinear(priority provider.Priority) *int {
 	return &p
 }
 
-// mapProviderStatusToLinearStateName converts provider status to Linear state name
+// mapProviderStatusToLinearStateName converts provider status to Linear state name.
 func mapProviderStatusToLinearStateName(status provider.Status) string {
 	switch status {
 	case provider.StatusOpen:
@@ -228,7 +228,7 @@ func mapProviderStatusToLinearStateName(status provider.Status) string {
 	}
 }
 
-// extractLabelNames extracts label names from Linear labels
+// extractLabelNames extracts label names from Linear labels.
 func extractLabelNames(labels []*Label) []string {
 	if labels == nil {
 		return []string{}
@@ -240,7 +240,7 @@ func extractLabelNames(labels []*Label) []string {
 	return names
 }
 
-// mapAssignees converts Linear assignee to provider Person
+// mapAssignees converts Linear assignee to provider Person.
 func mapAssignees(assignee *User) []provider.Person {
 	if assignee == nil {
 		return []provider.Person{}
@@ -254,7 +254,7 @@ func mapAssignees(assignee *User) []provider.Person {
 	}
 }
 
-// mapComments converts Linear comments to provider comments
+// mapComments converts Linear comments to provider comments.
 func mapComments(comments []*Comment) []provider.Comment {
 	if comments == nil {
 		return nil
@@ -280,7 +280,7 @@ func mapComments(comments []*Comment) []provider.Comment {
 	return result
 }
 
-// buildMetadata creates metadata map from issue
+// buildMetadata creates metadata map from issue.
 func buildMetadata(issue *Issue) map[string]any {
 	metadata := make(map[string]any)
 

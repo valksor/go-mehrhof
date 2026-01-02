@@ -10,7 +10,7 @@ import (
 // List implements the provider.Lister interface.
 // It lists tasks from the configured folder or space.
 // Note: Wrike requires a scope (folder or space) to list tasks.
-// Configure via config options: "folder_id" or "space_id"
+// Configure via config options: "folder_id" or "space_id".
 func (p *Provider) List(ctx context.Context, opts provider.ListOptions) ([]*provider.WorkUnit, error) {
 	// Get scope from config
 	folderID := p.client.folderID

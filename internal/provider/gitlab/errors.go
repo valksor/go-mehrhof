@@ -7,7 +7,7 @@ import (
 	"strings"
 )
 
-// Error types for the GitLab provider
+// Error types for the GitLab provider.
 var (
 	ErrNoToken              = errors.New("gitlab token not found")
 	ErrProjectNotDetected   = errors.New("could not detect project from git remote")
@@ -20,7 +20,7 @@ var (
 	ErrInvalidReference     = errors.New("invalid gitlab reference")
 )
 
-// wrapAPIError converts GitLab API errors to typed errors
+// wrapAPIError converts GitLab API errors to typed errors.
 func wrapAPIError(err error) error {
 	if err == nil {
 		return nil

@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-// AddLabels adds labels to a Notion page
+// AddLabels adds labels to a Notion page.
 func (p *Provider) AddLabels(ctx context.Context, workUnitID string, labels []string) error {
 	if len(labels) == 0 {
 		return nil
@@ -56,7 +56,7 @@ func (p *Provider) AddLabels(ctx context.Context, workUnitID string, labels []st
 	return err
 }
 
-// RemoveLabels removes labels from a Notion page
+// RemoveLabels removes labels from a Notion page.
 func (p *Provider) RemoveLabels(ctx context.Context, workUnitID string, labels []string) error {
 	if len(labels) == 0 {
 		return nil

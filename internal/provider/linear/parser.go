@@ -8,7 +8,7 @@ import (
 	providererrors "github.com/valksor/go-mehrhof/internal/provider/errors"
 )
 
-// Ref represents a parsed Linear issue reference
+// Ref represents a parsed Linear issue reference.
 type Ref struct {
 	IssueID    string // The issue identifier (e.g., "ENG-123")
 	TeamKey    string // The team key (e.g., "ENG")
@@ -17,7 +17,7 @@ type Ref struct {
 	IsExplicit bool   // true if explicitly formatted
 }
 
-// String returns the canonical string representation
+// String returns the canonical string representation.
 func (r *Ref) String() string {
 	if r.URL != "" {
 		return r.URL
@@ -34,9 +34,9 @@ func (r *Ref) String() string {
 var (
 	// Matches: https://linear.app/team-name/issue/ENG-123-title
 	// Also handles: https://linear.app/issue/ENG-123
-	// Team names can include letters, numbers, hyphens, and underscores
+	// Team names can include letters, numbers, hyphens, and underscores.
 	linearURLPattern = regexp.MustCompile(`^https://linear\.app/(?:[a-zA-Z0-9_-]+/)?issue/([A-Z0-9]+-[0-9]+)(?:-[^\s]*)?$`)
-	// Matches: TEAM-123 format (team key uppercase + dash + number)
+	// Matches: TEAM-123 format (team key uppercase + dash + number).
 	issueIDPattern = regexp.MustCompile(`^([A-Z0-9]+)-([0-9]+)$`)
 )
 
@@ -94,7 +94,7 @@ func ParseReference(input string) (*Ref, error) {
 	return ref, nil
 }
 
-// parseIssueID parses an issue ID in TEAM-123 format
+// parseIssueID parses an issue ID in TEAM-123 format.
 func parseIssueID(issueID string) (*Ref, error) {
 	if matches := issueIDPattern.FindStringSubmatch(issueID); matches != nil {
 		teamKey := matches[1]
@@ -113,7 +113,7 @@ func parseIssueID(issueID string) (*Ref, error) {
 }
 
 // ExtractIssueID extracts the issue ID from a Linear URL
-// Returns empty string if not a valid URL
+// Returns empty string if not a valid URL.
 func ExtractIssueID(url string) string {
 	if matches := linearURLPattern.FindStringSubmatch(url); matches != nil {
 		return matches[1]

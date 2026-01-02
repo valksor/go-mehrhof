@@ -7,7 +7,7 @@ import (
 	"github.com/valksor/go-mehrhof/internal/quality"
 )
 
-// mockLinter is a minimal mock of quality.Linter for testing
+// mockLinter is a minimal mock of quality.Linter for testing.
 type mockLinter struct {
 	name string
 }
@@ -24,7 +24,7 @@ func (m *mockLinter) Run(ctx context.Context, workDir string, files []string) (*
 	return nil, nil
 }
 
-// Test linterNames utility function
+// Test linterNames utility function.
 func TestLinterNames(t *testing.T) {
 	tests := []struct {
 		name    string

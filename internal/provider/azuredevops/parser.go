@@ -7,11 +7,11 @@ import (
 )
 
 var (
-	// workItemIDPattern matches numeric work item IDs
+	// workItemIDPattern matches numeric work item IDs.
 	workItemIDPattern = regexp.MustCompile(`^\d+$`)
 
-	// orgProjectIDPattern matches org/project#ID format
-	// e.g., "myorg/myproject#123"
+	// orgProjectIDPattern matches org/project#ID format.
+	// e.g., "myorg/myproject#123".
 	orgProjectIDPattern = regexp.MustCompile(`^([a-zA-Z0-9_-]+)/([a-zA-Z0-9_-]+)#(\d+)$`)
 
 	// devAzureURLPattern matches dev.azure.com URLs
@@ -22,11 +22,11 @@ var (
 	// e.g., https://org.visualstudio.com/project/_workitems/edit/123
 	visualStudioURLPattern = regexp.MustCompile(`(?:https?://)?([a-zA-Z0-9_-]+)\.visualstudio\.com/([a-zA-Z0-9_-]+)/_workitems/edit/(\d+)`)
 
-	// extractWorkItemIDsPattern finds work item IDs in text
+	// extractWorkItemIDsPattern finds work item IDs in text.
 	extractWorkItemIDsPattern = regexp.MustCompile(`(?:AB#|#)(\d+)`)
 )
 
-// Reference represents a parsed Azure DevOps reference
+// Reference represents a parsed Azure DevOps reference.
 type Reference struct {
 	Organization string // Azure DevOps organization
 	Project      string // Project name
@@ -34,7 +34,7 @@ type Reference struct {
 	IsExplicit   bool   // True if parsed from explicit URL/reference format
 }
 
-// String returns the string representation of the reference
+// String returns the string representation of the reference.
 func (r Reference) String() string {
 	if r.Organization != "" && r.Project != "" {
 		return r.Organization + "/" + r.Project + "#" + strconv.Itoa(r.WorkItemID)
@@ -107,7 +107,7 @@ func ParseReference(input string) (*Reference, error) {
 }
 
 // ExtractWorkItemIDs extracts all work item IDs from text (e.g., commit messages)
-// Supports AB#123 and #123 formats
+// Supports AB#123 and #123 formats.
 func ExtractWorkItemIDs(text string) []int {
 	matches := extractWorkItemIDsPattern.FindAllStringSubmatch(text, -1)
 	if len(matches) == 0 {

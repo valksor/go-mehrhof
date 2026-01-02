@@ -8,7 +8,7 @@ import (
 	"github.com/valksor/go-mehrhof/internal/provider"
 )
 
-// DownloadAttachment downloads an attachment by ID
+// DownloadAttachment downloads an attachment by ID.
 func (p *Provider) DownloadAttachment(ctx context.Context, workUnitID, attachmentID string) (io.ReadCloser, error) {
 	rc, _, err := p.client.DownloadAttachment(ctx, attachmentID)
 	if err != nil {
@@ -17,7 +17,7 @@ func (p *Provider) DownloadAttachment(ctx context.Context, workUnitID, attachmen
 	return rc, nil
 }
 
-// mapAttachments converts Wrike attachments to provider attachments
+// mapAttachments converts Wrike attachments to provider attachments.
 func mapAttachments(wrikeAttachments []Attachment) []provider.Attachment {
 	result := make([]provider.Attachment, 0, len(wrikeAttachments))
 	for _, a := range wrikeAttachments {

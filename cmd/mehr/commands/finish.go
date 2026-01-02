@@ -19,7 +19,7 @@ var (
 	finishSkipQuality   bool
 	finishQualityTarget string
 	finishDeleteWork    bool
-	// PR-related flags
+	// PR-related flags.
 	finishDraftPR bool
 	finishPRTitle string
 	finishPRBody  string

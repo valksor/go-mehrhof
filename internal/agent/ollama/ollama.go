@@ -16,17 +16,17 @@ import (
 
 const AgentName = "ollama"
 
-// DefaultModel is the default model to use when none is specified
+// DefaultModel is the default model to use when none is specified.
 const DefaultModel = "codellama"
 
-// Agent wraps the ollama CLI for local model inference
+// Agent wraps the ollama CLI for local model inference.
 type Agent struct {
 	parser agent.Parser
 	config agent.Config
 	model  string
 }
 
-// New creates an Ollama agent with default config
+// New creates an Ollama agent with default config.
 func New() *Agent {
 	return &Agent{
 		config: agent.Config{
@@ -41,7 +41,7 @@ func New() *Agent {
 	}
 }
 
-// NewWithConfig creates an Ollama agent with custom config
+// NewWithConfig creates an Ollama agent with custom config.
 func NewWithConfig(cfg agent.Config) *Agent {
 	if len(cfg.Command) == 0 {
 		cfg.Command = []string{"ollama"}
@@ -53,19 +53,19 @@ func NewWithConfig(cfg agent.Config) *Agent {
 	}
 }
 
-// NewWithModel creates an Ollama agent with a specific model
+// NewWithModel creates an Ollama agent with a specific model.
 func NewWithModel(model string) *Agent {
 	a := New()
 	a.model = model
 	return a
 }
 
-// Name returns the agent identifier
+// Name returns the agent identifier.
 func (a *Agent) Name() string {
 	return AgentName
 }
 
-// Available checks if the ollama CLI is installed and running
+// Available checks if the ollama CLI is installed and running.
 func (a *Agent) Available() error {
 	binary := a.config.Command[0]
 	path, err := exec.LookPath(binary)
@@ -85,7 +85,7 @@ func (a *Agent) Available() error {
 	return nil
 }
 
-// Run executes a prompt and returns the aggregated response
+// Run executes a prompt and returns the aggregated response.
 func (a *Agent) Run(ctx context.Context, prompt string) (*agent.Response, error) {
 	events, errCh := a.RunStream(ctx, prompt)
 
@@ -102,7 +102,7 @@ func (a *Agent) Run(ctx context.Context, prompt string) (*agent.Response, error)
 	return a.parser.Parse(collected)
 }
 
-// RunStream executes a prompt and streams events
+// RunStream executes a prompt and streams events.
 func (a *Agent) RunStream(ctx context.Context, prompt string) (<-chan agent.Event, <-chan error) {
 	eventCh := make(chan agent.Event, 100)
 	errCh := make(chan error, 1)
@@ -120,7 +120,7 @@ func (a *Agent) RunStream(ctx context.Context, prompt string) (<-chan agent.Even
 	return eventCh, errCh
 }
 
-// RunWithCallback executes with a callback for each event
+// RunWithCallback executes with a callback for each event.
 func (a *Agent) RunWithCallback(ctx context.Context, prompt string, cb agent.StreamCallback) (*agent.Response, error) {
 	events, errCh := a.RunStream(ctx, prompt)
 
@@ -266,17 +266,17 @@ func (a *Agent) buildArgs(prompt string) []string {
 	return args
 }
 
-// SetParser allows overriding the default parser
+// SetParser allows overriding the default parser.
 func (a *Agent) SetParser(p agent.Parser) {
 	a.parser = p
 }
 
-// SetModel sets the model to use
+// SetModel sets the model to use.
 func (a *Agent) SetModel(model string) {
 	a.model = model
 }
 
-// GetModel returns the current model
+// GetModel returns the current model.
 func (a *Agent) GetModel() string {
 	return a.model
 }
@@ -350,23 +350,23 @@ func (a *Agent) WithArgs(args ...string) agent.Agent {
 	}
 }
 
-// Register adds the Ollama agent to a registry
+// Register adds the Ollama agent to a registry.
 func Register(r *agent.Registry) error {
 	return r.Register(New())
 }
 
-// Ensure Agent implements agent.Agent
+// Ensure Agent implements agent.Agent.
 var _ agent.Agent = (*Agent)(nil)
 
-// PlainTextParser parses plain text output from ollama
+// PlainTextParser parses plain text output from ollama.
 type PlainTextParser struct{}
 
-// NewPlainTextParser creates a plain text parser for ollama output
+// NewPlainTextParser creates a plain text parser for ollama output.
 func NewPlainTextParser() *PlainTextParser {
 	return &PlainTextParser{}
 }
 
-// ParseEvent parses a single line of plain text output
+// ParseEvent parses a single line of plain text output.
 func (p *PlainTextParser) ParseEvent(line []byte) (agent.Event, error) {
 	return agent.Event{
 		Type:      agent.EventText,
@@ -377,7 +377,7 @@ func (p *PlainTextParser) ParseEvent(line []byte) (agent.Event, error) {
 	}, nil
 }
 
-// Parse aggregates events into a response
+// Parse aggregates events into a response.
 func (p *PlainTextParser) Parse(events []agent.Event) (*agent.Response, error) {
 	response := &agent.Response{
 		Files:    make([]agent.FileChange, 0),
@@ -401,7 +401,7 @@ func (p *PlainTextParser) Parse(events []agent.Event) (*agent.Response, error) {
 	return response, nil
 }
 
-// summarizeOllamaOutput extracts a summary from ollama's output
+// summarizeOllamaOutput extracts a summary from ollama's output.
 func summarizeOllamaOutput(text string) string {
 	lines := strings.Split(text, "\n")
 	if len(lines) == 0 {

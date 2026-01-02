@@ -7,7 +7,7 @@ import (
 	"strings"
 )
 
-// Ref represents a parsed GitHub issue reference
+// Ref represents a parsed GitHub issue reference.
 type Ref struct {
 	Owner       string
 	Repo        string
@@ -15,7 +15,7 @@ type Ref struct {
 	IsExplicit  bool // true if owner/repo was explicitly provided
 }
 
-// String returns the canonical string representation
+// String returns the canonical string representation.
 func (r *Ref) String() string {
 	if r.Owner != "" && r.Repo != "" {
 		return fmt.Sprintf("%s/%s#%d", r.Owner, r.Repo, r.IssueNumber)
@@ -24,9 +24,9 @@ func (r *Ref) String() string {
 }
 
 var (
-	// Matches: owner/repo#123
+	// Matches: owner/repo#123.
 	explicitRefPattern = regexp.MustCompile(`^([a-zA-Z0-9_-]+)/([a-zA-Z0-9._-]+)#(\d+)$`)
-	// Matches: #123 or just 123
+	// Matches: #123 or just 123.
 	simpleRefPattern = regexp.MustCompile(`^#?(\d+)$`)
 )
 
@@ -114,7 +114,7 @@ func DetectRepository(remoteURL string) (owner, repo string, err error) {
 	return "", "", fmt.Errorf("%w: not a GitHub URL: %s", ErrRepoNotDetected, remoteURL)
 }
 
-// ExtractLinkedIssues finds #123 references in text
+// ExtractLinkedIssues finds #123 references in text.
 func ExtractLinkedIssues(body string) []int {
 	pattern := regexp.MustCompile(`#(\d+)`)
 	matches := pattern.FindAllStringSubmatch(body, -1)
@@ -134,7 +134,7 @@ func ExtractLinkedIssues(body string) []int {
 	return issues
 }
 
-// ExtractImageURLs finds markdown image URLs in text
+// ExtractImageURLs finds markdown image URLs in text.
 func ExtractImageURLs(body string) []string {
 	// Match ![alt](url) patterns
 	pattern := regexp.MustCompile(`!\[[^\]]*\]\(([^)]+)\)`)
@@ -152,7 +152,7 @@ func ExtractImageURLs(body string) []string {
 	return urls
 }
 
-// TaskItem represents a parsed task list item from markdown
+// TaskItem represents a parsed task list item from markdown.
 type TaskItem struct {
 	Text      string // The task text
 	Completed bool   // Whether the checkbox is checked
@@ -162,10 +162,10 @@ type TaskItem struct {
 // taskListPattern matches markdown task list items:
 // - [ ] unchecked task
 // - [x] checked task
-// * [ ] alternative bullet
+// * [ ] alternative bullet.
 var taskListPattern = regexp.MustCompile(`^[\s]*[-*]\s+\[([ xX])\]\s+(.+)$`)
 
-// ParseTaskList extracts task list items from markdown text
+// ParseTaskList extracts task list items from markdown text.
 func ParseTaskList(body string) []TaskItem {
 	if body == "" {
 		return nil

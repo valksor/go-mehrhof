@@ -2,7 +2,7 @@ package agent
 
 import "time"
 
-// EventType identifies the type of streaming event
+// EventType identifies the type of streaming event.
 type EventType string
 
 const (
@@ -15,7 +15,7 @@ const (
 	EventComplete   EventType = "complete"
 )
 
-// Event represents a streaming event from an agent
+// Event represents a streaming event from an agent.
 type Event struct {
 	Type      EventType
 	Timestamp time.Time
@@ -25,7 +25,7 @@ type Event struct {
 	Text      string    // Extracted text content (if EventText)
 }
 
-// Response is the aggregated result from an agent run
+// Response is the aggregated result from an agent run.
 type Response struct {
 	Files    []FileChange
 	Summary  string
@@ -35,33 +35,33 @@ type Response struct {
 	Question *Question // Pending question if agent asked one
 }
 
-// Question represents a question from the agent to the user
+// Question represents a question from the agent to the user.
 type Question struct {
 	Text    string
 	Options []QuestionOption
 }
 
-// QuestionOption represents an answer option
+// QuestionOption represents an answer option.
 type QuestionOption struct {
 	Label       string
 	Description string
 }
 
-// ToolCall represents a standardized tool call for display
+// ToolCall represents a standardized tool call for display.
 type ToolCall struct {
 	Name        string         // Tool name (Read, Write, Bash, etc.)
 	Description string         // Human-readable description
 	Input       map[string]any // Tool input parameters
 }
 
-// FileChange represents a file modification
+// FileChange represents a file modification.
 type FileChange struct {
 	Path      string `yaml:"path"`
 	Operation FileOp `yaml:"operation"`
 	Content   string `yaml:"content,omitempty"`
 }
 
-// FileOp is the type of file operation
+// FileOp is the type of file operation.
 type FileOp string
 
 const (
@@ -70,7 +70,7 @@ const (
 	FileOpDelete FileOp = "delete"
 )
 
-// UsageStats tracks token usage and cost
+// UsageStats tracks token usage and cost.
 type UsageStats struct {
 	InputTokens  int     `yaml:"input_tokens"`
 	OutputTokens int     `yaml:"output_tokens"`
@@ -78,7 +78,7 @@ type UsageStats struct {
 	CostUSD      float64 `yaml:"cost_usd,omitempty"`
 }
 
-// Config holds agent configuration
+// Config holds agent configuration.
 type Config struct {
 	Command     []string
 	Environment map[string]string
@@ -89,7 +89,7 @@ type Config struct {
 	WorkDir     string
 }
 
-// NewConfig creates a default config
+// NewConfig creates a default config.
 func NewConfig() Config {
 	return Config{
 		Timeout:    30 * time.Minute,

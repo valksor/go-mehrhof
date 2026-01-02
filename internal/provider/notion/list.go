@@ -9,7 +9,7 @@ import (
 	"github.com/valksor/go-mehrhof/internal/provider"
 )
 
-// List retrieves pages from Notion database
+// List retrieves pages from Notion database.
 func (p *Provider) List(ctx context.Context, opts provider.ListOptions) ([]*provider.WorkUnit, error) {
 	databaseID := p.databaseID
 
@@ -88,7 +88,7 @@ func (p *Provider) List(ctx context.Context, opts provider.ListOptions) ([]*prov
 	return result, nil
 }
 
-// matchesLabels checks if a page matches the given labels
+// matchesLabels checks if a page matches the given labels.
 func matchesLabels(page Page, labels []string, labelsProperty string) bool {
 	if len(labels) == 0 {
 		return true
@@ -113,7 +113,7 @@ func matchesLabels(page Page, labels []string, labelsProperty string) bool {
 }
 
 // pageToWorkUnit converts a Page to a WorkUnit without fetching nested data
-// Used by List for efficiency when listing multiple pages
+// Used by List for efficiency when listing multiple pages.
 func pageToWorkUnit(page Page, statusProperty, labelsProperty string) *provider.WorkUnit {
 	return &provider.WorkUnit{
 		ID:          page.ID,

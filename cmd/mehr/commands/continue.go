@@ -156,7 +156,7 @@ func runContinue(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-// executeNextStep determines and executes the next logical workflow step
+// executeNextStep determines and executes the next logical workflow step.
 func executeNextStep(ctx context.Context, cond *conductor.Conductor, status *conductor.TaskStatus) error {
 	switch workflow.State(status.State) {
 	case workflow.StateIdle:

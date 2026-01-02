@@ -8,7 +8,7 @@ import (
 	"testing"
 )
 
-// mockHTTPError is a mock error that implements StatusCode()
+// mockHTTPError is a mock error that implements StatusCode().
 type mockHTTPError struct {
 	msg    string
 	status int
@@ -22,7 +22,7 @@ func (e *mockHTTPError) StatusCode() int {
 	return e.status
 }
 
-// mockHTTPStatuser is a mock error that implements HTTPStatusCode()
+// mockHTTPStatuser is a mock error that implements HTTPStatusCode().
 type mockHTTPStatuser struct {
 	msg    string
 	status int

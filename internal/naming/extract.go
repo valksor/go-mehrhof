@@ -34,10 +34,10 @@ var typeAliases = map[string]string{
 	"tests":       "test",
 }
 
-// ticketPattern matches common ticket ID patterns like FEATURE-123, ABC-1, PROJ-9999
+// ticketPattern matches common ticket ID patterns like FEATURE-123, ABC-1, PROJ-9999.
 var ticketPattern = regexp.MustCompile(`^([A-Z]+-\d+)`)
 
-// typeHyphenPattern matches type-prefixed filenames like "feature-auth.md", "fix-login-bug.md"
+// typeHyphenPattern matches type-prefixed filenames like "feature-auth.md", "fix-login-bug.md".
 var typeHyphenPattern = regexp.MustCompile(`^([a-z]+)-(.+)$`)
 
 // TaskTypeFromFilename extracts the task type from a filename.

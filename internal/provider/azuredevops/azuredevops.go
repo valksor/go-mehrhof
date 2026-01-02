@@ -10,16 +10,16 @@ import (
 	"github.com/valksor/go-mehrhof/internal/provider"
 )
 
-// ProviderName is the canonical name for this provider
+// ProviderName is the canonical name for this provider.
 const ProviderName = "azuredevops"
 
-// Provider implements the Azure DevOps work item provider
+// Provider implements the Azure DevOps work item provider.
 type Provider struct {
 	client *Client
 	config *Config
 }
 
-// Config holds Azure DevOps provider configuration
+// Config holds Azure DevOps provider configuration.
 type Config struct {
 	Token         string
 	Organization  string
@@ -32,7 +32,7 @@ type Config struct {
 	CommitPrefix  string
 }
 
-// Info returns provider metadata
+// Info returns provider metadata.
 func Info() provider.ProviderInfo {
 	return provider.ProviderInfo{
 		Name:        ProviderName,
@@ -54,7 +54,7 @@ func Info() provider.ProviderInfo {
 	}
 }
 
-// New creates a new Azure DevOps provider instance
+// New creates a new Azure DevOps provider instance.
 func New(_ context.Context, cfg provider.Config) (any, error) {
 	config := &Config{
 		Token:         cfg.GetString("token"),
@@ -89,7 +89,7 @@ func New(_ context.Context, cfg provider.Config) (any, error) {
 	}, nil
 }
 
-// Match checks if the input looks like an Azure DevOps reference
+// Match checks if the input looks like an Azure DevOps reference.
 func (p *Provider) Match(input string) bool {
 	// Check for azdo: or azure: prefix
 	if strings.HasPrefix(input, "azdo:") || strings.HasPrefix(input, "azure:") {
@@ -106,7 +106,7 @@ func (p *Provider) Match(input string) bool {
 	return err == nil
 }
 
-// Parse parses an Azure DevOps reference and returns a canonical ID
+// Parse parses an Azure DevOps reference and returns a canonical ID.
 func (p *Provider) Parse(input string) (string, error) {
 	ref, err := ParseReference(input)
 	if err != nil {
@@ -115,7 +115,7 @@ func (p *Provider) Parse(input string) (string, error) {
 	return strconv.Itoa(ref.WorkItemID), nil
 }
 
-// Fetch retrieves a work item by its ID
+// Fetch retrieves a work item by its ID.
 func (p *Provider) Fetch(ctx context.Context, id string) (*provider.WorkUnit, error) {
 	ref, err := ParseReference(id)
 	if err != nil {
@@ -136,7 +136,7 @@ func (p *Provider) Fetch(ctx context.Context, id string) (*provider.WorkUnit, er
 	return p.workItemToWorkUnit(workItem), nil
 }
 
-// Snapshot creates a snapshot of the work item's current state
+// Snapshot creates a snapshot of the work item's current state.
 func (p *Provider) Snapshot(ctx context.Context, id string) (*provider.Snapshot, error) {
 	ref, err := ParseReference(id)
 	if err != nil {
@@ -164,7 +164,7 @@ func (p *Provider) Snapshot(ctx context.Context, id string) (*provider.Snapshot,
 	}, nil
 }
 
-// List retrieves work items based on filter criteria
+// List retrieves work items based on filter criteria.
 func (p *Provider) List(ctx context.Context, opts provider.ListOptions) ([]*provider.WorkUnit, error) {
 	// Build WIQL query
 	wiql := buildWIQLQuery(p.config, opts)
@@ -196,7 +196,7 @@ func (p *Provider) List(ctx context.Context, opts provider.ListOptions) ([]*prov
 	return units, nil
 }
 
-// FetchComments retrieves comments for a work item
+// FetchComments retrieves comments for a work item.
 func (p *Provider) FetchComments(ctx context.Context, id string) ([]*provider.Comment, error) {
 	ref, err := ParseReference(id)
 	if err != nil {
@@ -230,7 +230,7 @@ func (p *Provider) FetchComments(ctx context.Context, id string) ([]*provider.Co
 	return result, nil
 }
 
-// AddComment adds a comment to a work item
+// AddComment adds a comment to a work item.
 func (p *Provider) AddComment(ctx context.Context, id string, body string) error {
 	ref, err := ParseReference(id)
 	if err != nil {
@@ -244,7 +244,7 @@ func (p *Provider) AddComment(ctx context.Context, id string, body string) error
 	return nil
 }
 
-// UpdateStatus updates the work item state
+// UpdateStatus updates the work item state.
 func (p *Provider) UpdateStatus(ctx context.Context, id string, status provider.Status) error {
 	ref, err := ParseReference(id)
 	if err != nil {
@@ -264,8 +264,8 @@ func (p *Provider) UpdateStatus(ctx context.Context, id string, status provider.
 	return nil
 }
 
-// CreatePullRequest creates a pull request
-// Work items can be linked automatically via AB#123 syntax in title/body
+// CreatePullRequest creates a pull request.
+// Work items can be linked automatically via AB#123 syntax in title/body.
 func (p *Provider) CreatePullRequest(ctx context.Context, opts provider.PullRequestOptions) (*provider.PullRequest, error) {
 	repoName := p.config.RepoName
 	if repoName == "" {
@@ -307,7 +307,7 @@ func (p *Provider) CreatePullRequest(ctx context.Context, opts provider.PullRequ
 	}, nil
 }
 
-// LinkBranch links a branch to the work item
+// LinkBranch links a branch to the work item.
 func (p *Provider) LinkBranch(ctx context.Context, id string, branch string) error {
 	ref, err := ParseReference(id)
 	if err != nil {
@@ -604,7 +604,7 @@ func buildSnapshotContent(wi *WorkItem) string {
 	return sb.String()
 }
 
-// GetBranchSuggestion returns a suggested branch name for the work item
+// GetBranchSuggestion returns a suggested branch name for the work item.
 func (p *Provider) GetBranchSuggestion(task *provider.WorkUnit) string {
 	if p.config.BranchPattern == "" {
 		// Default pattern

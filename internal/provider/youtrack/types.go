@@ -2,7 +2,7 @@ package youtrack
 
 import "time"
 
-// Issue represents a YouTrack issue from the API
+// Issue represents a YouTrack issue from the API.
 type Issue struct {
 	ID            string        `json:"id"`
 	IDReadable    string        `json:"idReadable"` // e.g., "ABC-123"
@@ -23,14 +23,14 @@ type Issue struct {
 	Parent        *IssueLink    `json:"parent"`
 }
 
-// Project represents a YouTrack project
+// Project represents a YouTrack project.
 type Project struct {
 	ID        string `json:"id"`
 	Name      string `json:"name"`
 	ShortName string `json:"shortName"` // For IDReadable prefix
 }
 
-// User represents a YouTrack user
+// User represents a YouTrack user.
 type User struct {
 	ID       string `json:"id"`
 	Login    string `json:"login"`
@@ -42,7 +42,7 @@ type User struct {
 // The Value field can be:
 // - A map[string]interface{} for single enum/user values
 // - A []interface{} for multi-value fields
-// - A string for text fields
+// - A string for text fields.
 type CustomField struct {
 	ID    string      `json:"id"`
 	Name  string      `json:"name"`
@@ -50,13 +50,13 @@ type CustomField struct {
 	Type  string      `json:"$type"`
 }
 
-// Tag represents a YouTrack tag
+// Tag represents a YouTrack tag.
 type Tag struct {
 	ID   string `json:"id"`
 	Name string `json:"name"`
 }
 
-// Comment represents a YouTrack comment
+// Comment represents a YouTrack comment.
 type Comment struct {
 	ID      string `json:"id"`
 	Text    string `json:"text"`
@@ -66,7 +66,7 @@ type Comment struct {
 	Deleted bool   `json:"deleted"`
 }
 
-// Attachment represents a YouTrack attachment
+// Attachment represents a YouTrack attachment.
 type Attachment struct {
 	ID       string `json:"id"`
 	Name     string `json:"name"`
@@ -76,34 +76,34 @@ type Attachment struct {
 	Size     int64  `json:"size"`
 }
 
-// IssueLink represents a link to another issue
+// IssueLink represents a link to another issue.
 type IssueLink struct {
 	ID         string `json:"id"`
 	IDReadable string `json:"idReadable"`
 	Type       string `json:"type"`
 }
 
-// issueResponse wraps API response for a single issue
+// issueResponse wraps API response for a single issue.
 type issueResponse struct {
 	Data Issue `json:"data"`
 }
 
-// issuesResponse wraps API response for multiple issues
+// issuesResponse wraps API response for multiple issues.
 type issuesResponse struct {
 	Data []Issue `json:"data"`
 }
 
-// commentsResponse wraps API response for comments
+// commentsResponse wraps API response for comments.
 type commentsResponse struct {
 	Data []Comment `json:"data"`
 }
 
-// tagsResponse wraps API response for tags
+// tagsResponse wraps API response for tags.
 type tagsResponse struct {
 	Data []Tag `json:"data"`
 }
 
-// timeFromMillis converts Unix timestamp in milliseconds to time.Time
+// timeFromMillis converts Unix timestamp in milliseconds to time.Time.
 func timeFromMillis(ms int64) time.Time {
 	if ms == 0 {
 		return time.Time{}

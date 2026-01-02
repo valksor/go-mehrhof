@@ -15,16 +15,16 @@ import (
 	"github.com/valksor/go-mehrhof/internal/agent"
 )
 
-// AgentName is the canonical name for this agent
+// AgentName is the canonical name for this agent.
 const AgentName = "openrouter"
 
-// DefaultModel is the default model to use
+// DefaultModel is the default model to use.
 const DefaultModel = "anthropic/claude-3.5-sonnet"
 
-// BaseURL is the OpenRouter API endpoint
+// BaseURL is the OpenRouter API endpoint.
 const BaseURL = "https://openrouter.ai/api/v1/chat/completions"
 
-// Agent wraps the OpenRouter API for multi-model inference
+// Agent wraps the OpenRouter API for multi-model inference.
 type Agent struct {
 	httpClient *http.Client
 	config     agent.Config
@@ -32,7 +32,7 @@ type Agent struct {
 	apiKey     string
 }
 
-// New creates an OpenRouter agent with default config
+// New creates an OpenRouter agent with default config.
 func New() *Agent {
 	return &Agent{
 		httpClient: &http.Client{Timeout: 5 * time.Minute},
@@ -47,7 +47,7 @@ func New() *Agent {
 	}
 }
 
-// NewWithConfig creates an OpenRouter agent with custom config
+// NewWithConfig creates an OpenRouter agent with custom config.
 func NewWithConfig(cfg agent.Config) *Agent {
 	return &Agent{
 		httpClient: &http.Client{Timeout: cfg.Timeout},
@@ -57,14 +57,14 @@ func NewWithConfig(cfg agent.Config) *Agent {
 	}
 }
 
-// NewWithModel creates an OpenRouter agent with a specific model
+// NewWithModel creates an OpenRouter agent with a specific model.
 func NewWithModel(model string) *Agent {
 	a := New()
 	a.model = model
 	return a
 }
 
-// resolveAPIKey finds API key from multiple sources
+// resolveAPIKey finds API key from multiple sources.
 func resolveAPIKey(configKey string) string {
 	if key := os.Getenv("MEHR_OPENROUTER_API_KEY"); key != "" {
 		return key
@@ -75,12 +75,12 @@ func resolveAPIKey(configKey string) string {
 	return configKey
 }
 
-// Name returns the agent identifier
+// Name returns the agent identifier.
 func (a *Agent) Name() string {
 	return AgentName
 }
 
-// Available checks if the OpenRouter API is accessible
+// Available checks if the OpenRouter API is accessible.
 func (a *Agent) Available() error {
 	if a.apiKey == "" {
 		return fmt.Errorf("OpenRouter API key not configured. Set OPENROUTER_API_KEY environment variable")
@@ -88,7 +88,7 @@ func (a *Agent) Available() error {
 	return nil
 }
 
-// Run executes a prompt and returns the aggregated response
+// Run executes a prompt and returns the aggregated response.
 func (a *Agent) Run(ctx context.Context, prompt string) (*agent.Response, error) {
 	events, errCh := a.RunStream(ctx, prompt)
 
@@ -104,7 +104,7 @@ func (a *Agent) Run(ctx context.Context, prompt string) (*agent.Response, error)
 	return parseEvents(collected)
 }
 
-// RunStream executes a prompt and streams events
+// RunStream executes a prompt and streams events.
 func (a *Agent) RunStream(ctx context.Context, prompt string) (<-chan agent.Event, <-chan error) {
 	eventCh := make(chan agent.Event, 100)
 	errCh := make(chan error, 1)
@@ -122,7 +122,7 @@ func (a *Agent) RunStream(ctx context.Context, prompt string) (<-chan agent.Even
 	return eventCh, errCh
 }
 
-// RunWithCallback executes with a callback for each event
+// RunWithCallback executes with a callback for each event.
 func (a *Agent) RunWithCallback(ctx context.Context, prompt string, cb agent.StreamCallback) (*agent.Response, error) {
 	events, errCh := a.RunStream(ctx, prompt)
 
@@ -141,20 +141,20 @@ func (a *Agent) RunWithCallback(ctx context.Context, prompt string, cb agent.Str
 	return parseEvents(collected)
 }
 
-// ChatMessage represents a message in the conversation
+// ChatMessage represents a message in the conversation.
 type ChatMessage struct {
 	Role    string `json:"role"`
 	Content string `json:"content"`
 }
 
-// ChatRequest is the request format for OpenRouter API
+// ChatRequest is the request format for OpenRouter API.
 type ChatRequest struct {
 	Model    string        `json:"model"`
 	Messages []ChatMessage `json:"messages"`
 	Stream   bool          `json:"stream"`
 }
 
-// ChatResponse is the response format for non-streaming
+// ChatResponse is the response format for non-streaming.
 type ChatResponse struct {
 	ID      string `json:"id"`
 	Model   string `json:"model"`
@@ -172,7 +172,7 @@ type ChatResponse struct {
 	} `json:"usage"`
 }
 
-// StreamChunk is the format of streaming chunks
+// StreamChunk is the format of streaming chunks.
 type StreamChunk struct {
 	ID      string `json:"id"`
 	Model   string `json:"model"`
@@ -316,7 +316,7 @@ func (a *Agent) executeStream(ctx context.Context, prompt string, eventCh chan<-
 	return nil
 }
 
-// parseEvents aggregates events into a response
+// parseEvents aggregates events into a response.
 func parseEvents(events []agent.Event) (*agent.Response, error) {
 	response := &agent.Response{
 		Files:    make([]agent.FileChange, 0),
@@ -344,7 +344,7 @@ func parseEvents(events []agent.Event) (*agent.Response, error) {
 	return response, nil
 }
 
-// extractSummary gets a summary from the response
+// extractSummary gets a summary from the response.
 func extractSummary(text string) string {
 	lines := strings.Split(text, "\n")
 	for _, line := range lines {
@@ -359,17 +359,17 @@ func extractSummary(text string) string {
 	return ""
 }
 
-// SetModel sets the model to use
+// SetModel sets the model to use.
 func (a *Agent) SetModel(model string) {
 	a.model = model
 }
 
-// GetModel returns the current model
+// GetModel returns the current model.
 func (a *Agent) GetModel() string {
 	return a.model
 }
 
-// WithWorkDir sets the working directory (not used for API agent)
+// WithWorkDir sets the working directory (not used for API agent).
 func (a *Agent) WithWorkDir(dir string) *Agent {
 	newConfig := a.config
 	newConfig.WorkDir = dir
@@ -381,7 +381,7 @@ func (a *Agent) WithWorkDir(dir string) *Agent {
 	}
 }
 
-// WithTimeout sets execution timeout
+// WithTimeout sets execution timeout.
 func (a *Agent) WithTimeout(d time.Duration) *Agent {
 	newConfig := a.config
 	newConfig.Timeout = d
@@ -393,7 +393,7 @@ func (a *Agent) WithTimeout(d time.Duration) *Agent {
 	}
 }
 
-// WithModel returns a new Agent with a different model
+// WithModel returns a new Agent with a different model.
 func (a *Agent) WithModel(model string) *Agent {
 	return &Agent{
 		httpClient: a.httpClient,
@@ -403,7 +403,7 @@ func (a *Agent) WithModel(model string) *Agent {
 	}
 }
 
-// WithEnv adds an environment variable
+// WithEnv adds an environment variable.
 func (a *Agent) WithEnv(key, value string) agent.Agent {
 	newConfig := a.config
 	newConfig.Environment = make(map[string]string, len(a.config.Environment)+1)
@@ -426,7 +426,7 @@ func (a *Agent) WithEnv(key, value string) agent.Agent {
 	}
 }
 
-// WithArgs adds CLI arguments
+// WithArgs adds CLI arguments.
 func (a *Agent) WithArgs(args ...string) agent.Agent {
 	newConfig := a.config
 	newArgs := make([]string, len(a.config.Args), len(a.config.Args)+len(args))
@@ -440,7 +440,7 @@ func (a *Agent) WithArgs(args ...string) agent.Agent {
 	}
 }
 
-// Metadata returns agent capabilities
+// Metadata returns agent capabilities.
 func (a *Agent) Metadata() agent.AgentMetadata {
 	return agent.AgentMetadata{
 		Name:        "OpenRouter",
@@ -464,12 +464,12 @@ func (a *Agent) Metadata() agent.AgentMetadata {
 	}
 }
 
-// Register adds the OpenRouter agent to a registry
+// Register adds the OpenRouter agent to a registry.
 func Register(r *agent.Registry) error {
 	return r.Register(New())
 }
 
-// Ensure Agent implements agent.Agent and MetadataProvider
+// Ensure Agent implements agent.Agent and MetadataProvider.
 var (
 	_ agent.Agent            = (*Agent)(nil)
 	_ agent.MetadataProvider = (*Agent)(nil)

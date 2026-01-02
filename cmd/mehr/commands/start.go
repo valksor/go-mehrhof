@@ -23,7 +23,7 @@ var (
 	startBranchPattern string // Branch pattern template override
 	startTemplate      string // Template to apply
 
-	// Per-step agent overrides
+	// Per-step agent overrides.
 	startAgentPlanning     string
 	startAgentImplementing string
 	startAgentReviewing    string

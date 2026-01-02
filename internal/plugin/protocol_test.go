@@ -555,7 +555,7 @@ func TestWorkUnitResult_JSONRoundtrip(t *testing.T) {
 // Helper functions
 // ──────────────────────────────────────────────────────────────────────────────
 
-// testJSONRoundtrip tests that a value can be marshaled and unmarshaled
+// testJSONRoundtrip tests that a value can be marshaled and unmarshaled.
 func testJSONRoundtrip[T any](t *testing.T, original T) {
 	t.Helper()
 

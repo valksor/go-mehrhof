@@ -14,29 +14,29 @@ import (
 )
 
 const (
-	// CurrentVersion is the current checkpoint format version
+	// CurrentVersion is the current checkpoint format version.
 	CurrentVersion = "1"
 
-	// SessionDir is the subdirectory for session checkpoints
+	// SessionDir is the subdirectory for session checkpoints.
 	SessionDir = "sessions"
 
-	// CheckpointExt is the file extension for checkpoints
+	// CheckpointExt is the file extension for checkpoints.
 	CheckpointExt = ".yaml"
 )
 
-// Manager handles session checkpoint operations
+// Manager handles session checkpoint operations.
 type Manager struct {
 	baseDir string // Base directory (typically .mehrhof/work/<task>)
 }
 
-// NewManager creates a session manager for the given task directory
+// NewManager creates a session manager for the given task directory.
 func NewManager(taskDir string) *Manager {
 	return &Manager{
 		baseDir: filepath.Join(taskDir, SessionDir),
 	}
 }
 
-// Save saves a session state to disk
+// Save saves a session state to disk.
 func (m *Manager) Save(state *State) error {
 	if err := os.MkdirAll(m.baseDir, 0o755); err != nil {
 		return fmt.Errorf("create sessions directory: %w", err)
@@ -73,7 +73,7 @@ func (m *Manager) Save(state *State) error {
 	return nil
 }
 
-// Load loads a session state by ID
+// Load loads a session state by ID.
 func (m *Manager) Load(id string) (*State, error) {
 	// Find checkpoint file with matching ID
 	files, err := m.listFiles()
@@ -90,7 +90,7 @@ func (m *Manager) Load(id string) (*State, error) {
 	return nil, fmt.Errorf("session not found: %s", id)
 }
 
-// LoadLatest loads the most recent recoverable session
+// LoadLatest loads the most recent recoverable session.
 func (m *Manager) LoadLatest() (*State, error) {
 	sessions, err := m.List()
 	if err != nil {
@@ -111,7 +111,7 @@ func (m *Manager) LoadLatest() (*State, error) {
 	return nil, fmt.Errorf("no recoverable sessions found")
 }
 
-// List returns summaries of all sessions, sorted by checkpoint time (newest first)
+// List returns summaries of all sessions, sorted by checkpoint time (newest first).
 func (m *Manager) List() ([]Summary, error) {
 	files, err := m.listFiles()
 	if err != nil {
@@ -138,7 +138,7 @@ func (m *Manager) List() ([]Summary, error) {
 	return summaries, nil
 }
 
-// ListRecoverable returns only recoverable sessions
+// ListRecoverable returns only recoverable sessions.
 func (m *Manager) ListRecoverable() ([]Summary, error) {
 	all, err := m.List()
 	if err != nil {
@@ -155,7 +155,7 @@ func (m *Manager) ListRecoverable() ([]Summary, error) {
 	return recoverable, nil
 }
 
-// Delete removes a session checkpoint by ID
+// Delete removes a session checkpoint by ID.
 func (m *Manager) Delete(id string) error {
 	files, err := m.listFiles()
 	if err != nil {
@@ -173,7 +173,7 @@ func (m *Manager) Delete(id string) error {
 
 // Clean removes old session checkpoints
 // maxAge: remove sessions older than this duration
-// maxCount: keep at most this many sessions (0 = unlimited)
+// maxCount: keep at most this many sessions (0 = unlimited).
 func (m *Manager) Clean(maxAge time.Duration, maxCount int) (int, error) {
 	sessions, err := m.List()
 	if err != nil {
@@ -211,7 +211,7 @@ func (m *Manager) Clean(maxAge time.Duration, maxCount int) (int, error) {
 	return removed, nil
 }
 
-// MarkInterrupted marks a session as interrupted
+// MarkInterrupted marks a session as interrupted.
 func (m *Manager) MarkInterrupted(id string, errorMsg string) error {
 	state, err := m.Load(id)
 	if err != nil {
@@ -223,7 +223,7 @@ func (m *Manager) MarkInterrupted(id string, errorMsg string) error {
 	return m.Save(state)
 }
 
-// MarkCompleted marks a session as completed
+// MarkCompleted marks a session as completed.
 func (m *Manager) MarkCompleted(id string) error {
 	state, err := m.Load(id)
 	if err != nil {
@@ -269,7 +269,7 @@ func (m *Manager) loadFile(path string) (*State, error) {
 	return &state, nil
 }
 
-// generateID creates a unique session ID
+// generateID creates a unique session ID.
 func generateID() string {
 	bytes := make([]byte, 16)
 	if _, err := rand.Read(bytes); err != nil {
@@ -279,7 +279,7 @@ func generateID() string {
 	return "ses-" + hex.EncodeToString(bytes)
 }
 
-// sanitizeFilename removes or replaces characters that are problematic in filenames
+// sanitizeFilename removes or replaces characters that are problematic in filenames.
 func sanitizeFilename(s string) string {
 	s = strings.ToLower(s)
 	s = strings.Map(func(r rune) rune {

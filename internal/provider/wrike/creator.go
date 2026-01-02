@@ -73,7 +73,7 @@ func (p *Provider) CreateWorkUnit(ctx context.Context, opts provider.CreateWorkU
 	}, nil
 }
 
-// mapProviderPriorityToWrike converts a provider.Priority to a Wrike priority string
+// mapProviderPriorityToWrike converts a provider.Priority to a Wrike priority string.
 func mapProviderPriorityToWrike(priority provider.Priority) string {
 	switch priority {
 	case provider.PriorityCritical:

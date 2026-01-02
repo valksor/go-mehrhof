@@ -470,7 +470,7 @@ func TestRegistryCreateNotFound(t *testing.T) {
 	}
 }
 
-// mockIdentifier implements Identifier interface for testing
+// mockIdentifier implements Identifier interface for testing.
 type mockIdentifier struct {
 	parseErr    error
 	parseResult string
@@ -485,21 +485,21 @@ func (m *mockIdentifier) Parse(input string) (string, error) {
 	return m.parseResult, m.parseErr
 }
 
-// mockReader implements Reader interface for testing InferCapabilities
+// mockReader implements Reader interface for testing InferCapabilities.
 type mockReader struct{}
 
 func (m *mockReader) Fetch(ctx context.Context, id string) (*WorkUnit, error) {
 	return nil, nil
 }
 
-// mockLister implements Lister interface
+// mockLister implements Lister interface.
 type mockLister struct{}
 
 func (m *mockLister) List(ctx context.Context, opts ListOptions) ([]*WorkUnit, error) {
 	return nil, nil
 }
 
-// mockFullProvider implements multiple interfaces
+// mockFullProvider implements multiple interfaces.
 type mockFullProvider struct {
 	mockReader
 	mockLister

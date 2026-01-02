@@ -11,7 +11,7 @@ import (
 	"github.com/valksor/go-mehrhof/internal/provider"
 )
 
-// CreateWorkUnit creates a new GitHub issue
+// CreateWorkUnit creates a new GitHub issue.
 func (p *Provider) CreateWorkUnit(ctx context.Context, opts provider.CreateWorkUnitOptions) (*provider.WorkUnit, error) {
 	owner := p.owner
 	repo := p.repo
@@ -72,12 +72,12 @@ func (p *Provider) CreateWorkUnit(ctx context.Context, opts provider.CreateWorkU
 	return wu, nil
 }
 
-// CreateIssue wraps the GitHub API call for creating an issue
+// CreateIssue wraps the GitHub API call for creating an issue.
 func (c *Client) CreateIssue(ctx context.Context, issue *github.IssueRequest) (*github.Issue, *github.Response, error) {
 	return c.gh.Issues.Create(ctx, c.owner, c.repo, issue)
 }
 
-// mapGitHubAssignees converts assignee usernames to Person structs
+// mapGitHubAssignees converts assignee usernames to Person structs.
 func mapGitHubAssignees(assignees []string) []provider.Person {
 	persons := make([]provider.Person, len(assignees))
 	for i, a := range assignees {
@@ -88,7 +88,7 @@ func mapGitHubAssignees(assignees []string) []provider.Person {
 	return persons
 }
 
-// inferTaskTypeFromLabels determines task type from label names
+// inferTaskTypeFromLabels determines task type from label names.
 func inferTaskTypeFromLabels(labels []string) string {
 	for _, label := range labels {
 		name := lower(label)
@@ -99,7 +99,7 @@ func inferTaskTypeFromLabels(labels []string) string {
 	return "issue"
 }
 
-// lower is a helper for lowercase conversion
+// lower is a helper for lowercase conversion.
 func lower(s string) string {
 	// Simple lowercase implementation
 	var result []rune

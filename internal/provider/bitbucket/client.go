@@ -17,7 +17,7 @@ const (
 	defaultTimeout = 30 * time.Second
 )
 
-// Client wraps the Bitbucket API
+// Client wraps the Bitbucket API.
 type Client struct {
 	httpClient  *http.Client
 	baseURL     string
@@ -27,7 +27,7 @@ type Client struct {
 	repoSlug    string
 }
 
-// NewClient creates a new Bitbucket API client
+// NewClient creates a new Bitbucket API client.
 func NewClient(username, appPassword, workspace, repoSlug string) *Client {
 	return &Client{
 		httpClient:  &http.Client{Timeout: defaultTimeout},
@@ -73,25 +73,25 @@ func ResolveCredentials(configUsername, configAppPassword string) (username, app
 	return username, appPassword, nil
 }
 
-// SetWorkspaceRepo updates the workspace and repo for the client
+// SetWorkspaceRepo updates the workspace and repo for the client.
 func (c *Client) SetWorkspaceRepo(workspace, repoSlug string) {
 	c.workspace = workspace
 	c.repoSlug = repoSlug
 }
 
-// Workspace returns the current workspace
+// Workspace returns the current workspace.
 func (c *Client) Workspace() string {
 	return c.workspace
 }
 
-// RepoSlug returns the current repository slug
+// RepoSlug returns the current repository slug.
 func (c *Client) RepoSlug() string {
 	return c.repoSlug
 }
 
 // --- API Types ---
 
-// Issue represents a Bitbucket issue
+// Issue represents a Bitbucket issue.
 type Issue struct {
 	ID        int        `json:"id"`
 	Title     string     `json:"title"`
@@ -109,14 +109,14 @@ type Issue struct {
 	Version   *Version   `json:"version"`
 }
 
-// Content represents issue content
+// Content represents issue content.
 type Content struct {
 	Raw    string `json:"raw"`
 	Markup string `json:"markup"`
 	HTML   string `json:"html"`
 }
 
-// User represents a Bitbucket user
+// User represents a Bitbucket user.
 type User struct {
 	UUID        string `json:"uuid"`
 	Username    string `json:"username"`
@@ -125,7 +125,7 @@ type User struct {
 	Links       Links  `json:"links"`
 }
 
-// Links contains API links
+// Links contains API links.
 type Links struct {
 	Self     *Link `json:"self"`
 	HTML     *Link `json:"html"`
@@ -133,27 +133,27 @@ type Links struct {
 	Comments *Link `json:"comments"`
 }
 
-// Link represents a single API link
+// Link represents a single API link.
 type Link struct {
 	Href string `json:"href"`
 }
 
-// Component represents a component
+// Component represents a component.
 type Component struct {
 	Name string `json:"name"`
 }
 
-// Milestone represents a milestone
+// Milestone represents a milestone.
 type Milestone struct {
 	Name string `json:"name"`
 }
 
-// Version represents a version
+// Version represents a version.
 type Version struct {
 	Name string `json:"name"`
 }
 
-// Comment represents a comment on an issue
+// Comment represents a comment on an issue.
 type Comment struct {
 	ID        int       `json:"id"`
 	Content   *Content  `json:"content"`
@@ -163,7 +163,7 @@ type Comment struct {
 	Links     Links     `json:"links"`
 }
 
-// PullRequest represents a Bitbucket pull request
+// PullRequest represents a Bitbucket pull request.
 type PullRequest struct {
 	ID          int       `json:"id"`
 	Title       string    `json:"title"`
@@ -177,25 +177,25 @@ type PullRequest struct {
 	Links       Links     `json:"links"`
 }
 
-// PRBranch represents a branch in a PR
+// PRBranch represents a branch in a PR.
 type PRBranch struct {
 	Branch     Branch     `json:"branch"`
 	Repository Repository `json:"repository"`
 }
 
-// Branch represents a git branch
+// Branch represents a git branch.
 type Branch struct {
 	Name string `json:"name"`
 }
 
-// Repository represents a repository reference
+// Repository represents a repository reference.
 type Repository struct {
 	FullName string `json:"full_name"`
 	UUID     string `json:"uuid"`
 	Name     string `json:"name"`
 }
 
-// RepoInfo represents repository information
+// RepoInfo represents repository information.
 type RepoInfo struct {
 	UUID        string  `json:"uuid"`
 	Name        string  `json:"name"`
@@ -207,7 +207,7 @@ type RepoInfo struct {
 	Links       Links   `json:"links"`
 }
 
-// PaginatedResponse wraps paginated API responses
+// PaginatedResponse wraps paginated API responses.
 type PaginatedResponse[T any] struct {
 	Size     int    `json:"size"`
 	Page     int    `json:"page"`
@@ -260,7 +260,7 @@ func (c *Client) doRequest(ctx context.Context, method, path string, body any) (
 
 // --- Issue API ---
 
-// GetIssue fetches an issue by ID
+// GetIssue fetches an issue by ID.
 func (c *Client) GetIssue(ctx context.Context, issueID int) (*Issue, error) {
 	path := fmt.Sprintf("/repositories/%s/%s/issues/%d", c.workspace, c.repoSlug, issueID)
 
@@ -277,7 +277,7 @@ func (c *Client) GetIssue(ctx context.Context, issueID int) (*Issue, error) {
 	return &issue, nil
 }
 
-// ListIssues lists issues with optional filters
+// ListIssues lists issues with optional filters.
 func (c *Client) ListIssues(ctx context.Context, state string, limit int) ([]Issue, error) {
 	path := fmt.Sprintf("/repositories/%s/%s/issues", c.workspace, c.repoSlug)
 
@@ -306,7 +306,7 @@ func (c *Client) ListIssues(ctx context.Context, state string, limit int) ([]Iss
 	return resp.Values, nil
 }
 
-// GetIssueComments fetches comments on an issue
+// GetIssueComments fetches comments on an issue.
 func (c *Client) GetIssueComments(ctx context.Context, issueID int) ([]Comment, error) {
 	path := fmt.Sprintf("/repositories/%s/%s/issues/%d/comments", c.workspace, c.repoSlug, issueID)
 
@@ -323,7 +323,7 @@ func (c *Client) GetIssueComments(ctx context.Context, issueID int) ([]Comment, 
 	return resp.Values, nil
 }
 
-// AddIssueComment adds a comment to an issue
+// AddIssueComment adds a comment to an issue.
 func (c *Client) AddIssueComment(ctx context.Context, issueID int, body string) (*Comment, error) {
 	path := fmt.Sprintf("/repositories/%s/%s/issues/%d/comments", c.workspace, c.repoSlug, issueID)
 
@@ -346,7 +346,7 @@ func (c *Client) AddIssueComment(ctx context.Context, issueID int, body string) 
 	return &comment, nil
 }
 
-// UpdateIssueState updates the state of an issue
+// UpdateIssueState updates the state of an issue.
 func (c *Client) UpdateIssueState(ctx context.Context, issueID int, state string) (*Issue, error) {
 	path := fmt.Sprintf("/repositories/%s/%s/issues/%d", c.workspace, c.repoSlug, issueID)
 
@@ -369,7 +369,7 @@ func (c *Client) UpdateIssueState(ctx context.Context, issueID int, state string
 
 // --- Repository API ---
 
-// GetRepository fetches repository information
+// GetRepository fetches repository information.
 func (c *Client) GetRepository(ctx context.Context) (*RepoInfo, error) {
 	path := fmt.Sprintf("/repositories/%s/%s", c.workspace, c.repoSlug)
 
@@ -386,7 +386,7 @@ func (c *Client) GetRepository(ctx context.Context) (*RepoInfo, error) {
 	return &repo, nil
 }
 
-// GetDefaultBranch returns the repository's default branch
+// GetDefaultBranch returns the repository's default branch.
 func (c *Client) GetDefaultBranch(ctx context.Context) (string, error) {
 	repo, err := c.GetRepository(ctx)
 	if err != nil {
@@ -402,7 +402,7 @@ func (c *Client) GetDefaultBranch(ctx context.Context) (string, error) {
 
 // --- Pull Request API ---
 
-// CreatePullRequest creates a new pull request
+// CreatePullRequest creates a new pull request.
 func (c *Client) CreatePullRequest(ctx context.Context, title, description, sourceBranch, targetBranch string, closeSourceBranch bool) (*PullRequest, error) {
 	path := fmt.Sprintf("/repositories/%s/%s/pullrequests", c.workspace, c.repoSlug)
 
@@ -437,7 +437,7 @@ func (c *Client) CreatePullRequest(ctx context.Context, title, description, sour
 
 // --- Issue Creation API ---
 
-// CreateIssue creates a new issue in the repository
+// CreateIssue creates a new issue in the repository.
 func (c *Client) CreateIssue(ctx context.Context, title, content, priority, kind string) (*Issue, error) {
 	path := fmt.Sprintf("/repositories/%s/%s/issues", c.workspace, c.repoSlug)
 

@@ -21,7 +21,7 @@ type Spinner struct {
 	running  bool
 }
 
-// Default spinner frames (braille pattern for smooth animation)
+// Default spinner frames (braille pattern for smooth animation).
 var defaultFrames = []string{"⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"}
 
 // NewSpinner creates a new spinner with the given message.

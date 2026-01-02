@@ -591,7 +591,7 @@ func TestRefString(t *testing.T) {
 	}
 }
 
-// Benchmark tests
+// Benchmark tests.
 func BenchmarkParseReference(b *testing.B) {
 	input := "notion:a1b2c3d4e5f678901234567890abcdef"
 	for i := 0; i < b.N; i++ {

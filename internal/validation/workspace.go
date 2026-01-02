@@ -10,7 +10,7 @@ import (
 	"github.com/valksor/go-mehrhof/internal/storage"
 )
 
-// Error codes for workspace validation
+// Error codes for workspace validation.
 const (
 	CodeYAMLSyntax          = "YAML_SYNTAX"
 	CodeAgentAliasCircular  = "AGENT_ALIAS_CIRCULAR"
@@ -25,13 +25,13 @@ const (
 	CodeInvalidPath         = "INVALID_PATH"
 )
 
-// Valid git pattern placeholders
+// Valid git pattern placeholders.
 var validGitPlaceholders = []string{"{key}", "{task_id}", "{type}", "{slug}", "{title}"}
 
-// Pattern to match environment variable references like ${VAR_NAME}
+// Pattern to match environment variable references like ${VAR_NAME}.
 var envVarRefPattern = regexp.MustCompile(`\$\{([^}]+)\}`)
 
-// validateWorkspaceConfig validates all aspects of a workspace configuration
+// validateWorkspaceConfig validates all aspects of a workspace configuration.
 func validateWorkspaceConfig(cfg *storage.WorkspaceConfig, configPath string, builtInAgents []string, result *Result) {
 	validateGitSettings(cfg.Git, configPath, result)
 	validateAgentSettings(cfg.Agent, configPath, builtInAgents, cfg.Agents, result)
@@ -45,7 +45,7 @@ func validateWorkspaceConfig(cfg *storage.WorkspaceConfig, configPath string, bu
 	}
 }
 
-// validateGitSettings validates git-related configuration
+// validateGitSettings validates git-related configuration.
 func validateGitSettings(git storage.GitSettings, configPath string, result *Result) {
 	// Validate branch pattern
 	if git.BranchPattern == "" {
@@ -60,7 +60,7 @@ func validateGitSettings(git storage.GitSettings, configPath string, result *Res
 	}
 }
 
-// validateGitPattern checks if a git pattern contains valid placeholders
+// validateGitPattern checks if a git pattern contains valid placeholders.
 func validateGitPattern(pattern, path, configPath string, result *Result) {
 	// Find all placeholders in the pattern
 	placeholderPattern := regexp.MustCompile(`\{[^}]+\}`)
@@ -87,7 +87,7 @@ func validateGitPattern(pattern, path, configPath string, result *Result) {
 	}
 }
 
-// validateAgentSettings validates agent-related configuration
+// validateAgentSettings validates agent-related configuration.
 func validateAgentSettings(agent storage.AgentSettings, configPath string, builtInAgents []string, aliases map[string]storage.AgentAliasConfig, result *Result) {
 	// Validate default agent
 	if agent.Default != "" {
@@ -115,7 +115,7 @@ func validateAgentSettings(agent storage.AgentSettings, configPath string, built
 	}
 }
 
-// validateWorkflowSettings validates workflow-related configuration
+// validateWorkflowSettings validates workflow-related configuration.
 func validateWorkflowSettings(workflow storage.WorkflowSettings, configPath string, result *Result) {
 	// Validate session retention days (reasonable range: 1-365)
 	if workflow.SessionRetentionDays < 0 || workflow.SessionRetentionDays > 365 {
@@ -123,7 +123,7 @@ func validateWorkflowSettings(workflow storage.WorkflowSettings, configPath stri
 	}
 }
 
-// validateStorageSettings validates storage-related configuration
+// validateStorageSettings validates storage-related configuration.
 func validateStorageSettings(storage storage.StorageSettings, configPath string, result *Result) {
 	if storage.WorkDir == "" {
 		return // Empty is fine, will use default
@@ -155,7 +155,7 @@ func validateStorageSettings(storage storage.StorageSettings, configPath string,
 	}
 }
 
-// validateAgentAliases validates agent alias configurations including circular dependency detection
+// validateAgentAliases validates agent alias configurations including circular dependency detection.
 func validateAgentAliases(aliases map[string]storage.AgentAliasConfig, configPath string, builtInAgents []string, result *Result) {
 	if len(aliases) == 0 {
 		return
@@ -236,7 +236,7 @@ func validateAgentAliases(aliases map[string]storage.AgentAliasConfig, configPat
 	}
 }
 
-// validateEnvVarReferences checks if environment variable references can be resolved
+// validateEnvVarReferences checks if environment variable references can be resolved.
 func validateEnvVarReferences(env map[string]string, basePath, configPath string, result *Result) {
 	for key, value := range env {
 		matches := envVarRefPattern.FindAllStringSubmatch(value, -1)
@@ -257,7 +257,7 @@ func validateEnvVarReferences(env map[string]string, basePath, configPath string
 	}
 }
 
-// validatePluginsConfig validates plugin configuration
+// validatePluginsConfig validates plugin configuration.
 func validatePluginsConfig(plugins storage.PluginsConfig, configPath string, result *Result) {
 	// Note: We can't check if plugins actually exist without plugin discovery,
 	// so we only validate the configuration structure here
@@ -280,7 +280,7 @@ func validatePluginsConfig(plugins storage.PluginsConfig, configPath string, res
 	}
 }
 
-// validateGitHubSettings validates GitHub provider configuration
+// validateGitHubSettings validates GitHub provider configuration.
 func validateGitHubSettings(gh *storage.GitHubSettings, configPath string, result *Result) {
 	// Validate branch pattern if specified
 	if gh.BranchPattern != "" {

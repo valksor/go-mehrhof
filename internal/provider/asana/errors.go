@@ -7,7 +7,7 @@ import (
 	providererrors "github.com/valksor/go-mehrhof/internal/provider/errors"
 )
 
-// Sentinel errors for the Asana provider
+// Sentinel errors for the Asana provider.
 var (
 	ErrNoToken           = errors.New("asana token not found")
 	ErrWorkspaceRequired = errors.New("workspace GID is required")
@@ -17,7 +17,7 @@ var (
 	ErrRateLimited       = errors.New("rate limited")
 )
 
-// wrapAPIError wraps API errors with appropriate provider error types
+// wrapAPIError wraps API errors with appropriate provider error types.
 func wrapAPIError(err error) error {
 	if err == nil {
 		return nil

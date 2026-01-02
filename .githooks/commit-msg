@@ -16,6 +16,16 @@ CODE_PATHS="^cmd/|^internal/|^go\.mod$|^go\.sum$|^Makefile$"
 # Get staged files
 STAGED_FILES=$(git diff --cached --name-only)
 
+# If nothing staged (e.g., amend), check HEAD commit files instead
+if [ -z "$STAGED_FILES" ]; then
+    STAGED_FILES=$(git diff-tree --no-commit-id --name-only -r HEAD 2>/dev/null)
+fi
+
+# If still empty, don't touch the message (conservative)
+if [ -z "$STAGED_FILES" ]; then
+    exit 0
+fi
+
 # Check if any staged file matches code paths
 if echo "$STAGED_FILES" | grep -qE "$CODE_PATHS"; then
     # Has code changes - do nothing

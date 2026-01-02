@@ -68,7 +68,7 @@ func init() {
 	agentsCmd.AddCommand(agentsExplainCmd)
 }
 
-// agentInfo holds display information about an agent
+// agentInfo holds display information about an agent.
 type agentInfo struct {
 	name        string
 	agentType   string // "built-in" or "alias"

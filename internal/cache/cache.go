@@ -29,7 +29,7 @@ import (
 	"time"
 )
 
-// Default TTL values for different resource types
+// Default TTL values for different resource types.
 const (
 	DefaultIssueTTL    = 5 * time.Minute
 	DefaultCommentsTTL = 1 * time.Minute
@@ -38,18 +38,18 @@ const (
 	DefaultPluginTTL   = 10 * time.Minute
 )
 
-// entry represents a cached item with expiration
+// entry represents a cached item with expiration.
 type entry struct {
 	data      any
 	expiresAt time.Time
 }
 
-// isExpired returns true if the entry has expired
+// isExpired returns true if the entry has expired.
 func (e *entry) isExpired() bool {
 	return time.Now().After(e.expiresAt)
 }
 
-// Cache is a thread-safe in-memory cache with TTL support
+// Cache is a thread-safe in-memory cache with TTL support.
 type Cache struct {
 	mu    sync.RWMutex
 	store map[string]*entry
@@ -58,7 +58,7 @@ type Cache struct {
 	enabled bool
 }
 
-// New creates a new Cache instance
+// New creates a new Cache instance.
 func New() *Cache {
 	return &Cache{
 		store:   make(map[string]*entry),
@@ -66,21 +66,21 @@ func New() *Cache {
 	}
 }
 
-// Enable enables the cache
+// Enable enables the cache.
 func (c *Cache) Enable() {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	c.enabled = true
 }
 
-// Disable disables the cache (all Get operations will return cache miss)
+// Disable disables the cache (all Get operations will return cache miss).
 func (c *Cache) Disable() {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	c.enabled = false
 }
 
-// Enabled returns true if caching is enabled
+// Enabled returns true if caching is enabled.
 func (c *Cache) Enabled() bool {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
@@ -116,7 +116,7 @@ func (c *Cache) Get(key string) (any, bool) {
 	return e.data, true
 }
 
-// Set stores a value in the cache with the given TTL
+// Set stores a value in the cache with the given TTL.
 func (c *Cache) Set(key string, data any, ttl time.Duration) {
 	if !c.Enabled() {
 		return
@@ -131,28 +131,28 @@ func (c *Cache) Set(key string, data any, ttl time.Duration) {
 	}
 }
 
-// Delete removes a value from the cache
+// Delete removes a value from the cache.
 func (c *Cache) Delete(key string) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	delete(c.store, key)
 }
 
-// Clear removes all entries from the cache
+// Clear removes all entries from the cache.
 func (c *Cache) Clear() {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	c.store = make(map[string]*entry)
 }
 
-// Size returns the number of entries in the cache
+// Size returns the number of entries in the cache.
 func (c *Cache) Size() int {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 	return len(c.store)
 }
 
-// Cleanup removes all expired entries from the cache
+// Cleanup removes all expired entries from the cache.
 func (c *Cache) Cleanup() {
 	c.mu.Lock()
 	defer c.mu.Unlock()

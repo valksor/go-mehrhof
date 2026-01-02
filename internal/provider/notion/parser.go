@@ -8,7 +8,7 @@ import (
 	providererrors "github.com/valksor/go-mehrhof/internal/provider/errors"
 )
 
-// Ref represents a parsed Notion reference
+// Ref represents a parsed Notion reference.
 type Ref struct {
 	PageID     string // The 32-char page ID (UUID without dashes)
 	URL        string // The full URL if provided
@@ -16,7 +16,7 @@ type Ref struct {
 	IsExplicit bool   // true if explicitly formatted
 }
 
-// String returns the canonical string representation
+// String returns the canonical string representation.
 func (r *Ref) String() string {
 	if r.URL != "" {
 		return r.URL
@@ -33,9 +33,9 @@ var (
 	// Handles URLs like: https://www.notion.so/Page-Title-abcdef1234567890abcdef12345678
 	// Also handles: https://www.notion.so/username/Page-Title-abcdef1234567890abcdef12345678
 	notionURLPattern = regexp.MustCompile(`(?i)^https://www\.notion\.so/([a-zA-Z0-9_-]*/)*([a-zA-Z0-9_-]+-)*([a-f0-9]{32})(?:\?[^/]*)?$`)
-	// Matches UUID with dashes: a1b2c3d4-e5f6-7890-1234-567890abcd (8-4-4-4-12 format)
+	// Matches UUID with dashes: a1b2c3d4-e5f6-7890-1234-567890abcd (8-4-4-4-12 format).
 	uuidWithDashes = regexp.MustCompile(`(?i)^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$`)
-	// Matches 32-char hex ID (UUID without dashes)
+	// Matches 32-char hex ID (UUID without dashes).
 	pageIDPattern = regexp.MustCompile(`(?i)^[a-f0-9]{32}$`)
 )
 
@@ -99,7 +99,7 @@ func ParseReference(input string) (*Ref, error) {
 }
 
 // ExtractPageID extracts the page ID from a Notion URL
-// Returns empty string if not a valid URL
+// Returns empty string if not a valid URL.
 func ExtractPageID(url string) string {
 	if matches := notionURLPattern.FindStringSubmatch(url); len(matches) > 3 {
 		return matches[3]
@@ -107,7 +107,7 @@ func ExtractPageID(url string) string {
 	return ""
 }
 
-// NormalizePageID converts a UUID with dashes to a 32-char hex string
+// NormalizePageID converts a UUID with dashes to a 32-char hex string.
 func NormalizePageID(id string) string {
 	// If already 32 chars, return as-is (lowercase for consistency)
 	if pageIDPattern.MatchString(id) {

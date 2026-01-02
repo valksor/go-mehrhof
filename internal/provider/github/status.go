@@ -8,7 +8,7 @@ import (
 	"github.com/valksor/go-mehrhof/internal/provider"
 )
 
-// UpdateStatus changes the state of a GitHub issue
+// UpdateStatus changes the state of a GitHub issue.
 func (p *Provider) UpdateStatus(ctx context.Context, workUnitID string, status provider.Status) error {
 	ref, err := ParseReference(workUnitID)
 	if err != nil {
@@ -39,7 +39,7 @@ func (p *Provider) UpdateStatus(ctx context.Context, workUnitID string, status p
 	return err
 }
 
-// mapStatusToGitHubState converts provider status to GitHub API state
+// mapStatusToGitHubState converts provider status to GitHub API state.
 func mapStatusToGitHubState(status provider.Status) string {
 	switch status {
 	case provider.StatusOpen, provider.StatusInProgress, provider.StatusReview:
@@ -51,7 +51,7 @@ func mapStatusToGitHubState(status provider.Status) string {
 	}
 }
 
-// EditIssue wraps the GitHub API call for editing an issue
+// EditIssue wraps the GitHub API call for editing an issue.
 func (c *Client) EditIssue(ctx context.Context, number int, issue *github.IssueRequest) (*github.Issue, *github.Response, error) {
 	return c.gh.Issues.Edit(ctx, c.owner, c.repo, number, issue)
 }

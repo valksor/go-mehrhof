@@ -10,16 +10,16 @@ import (
 	"github.com/valksor/go-mehrhof/internal/provider"
 )
 
-// ProviderName is the canonical name for this provider
+// ProviderName is the canonical name for this provider.
 const ProviderName = "clickup"
 
-// Provider implements the ClickUp task provider
+// Provider implements the ClickUp task provider.
 type Provider struct {
 	client *Client
 	config *Config
 }
 
-// Config holds ClickUp provider configuration
+// Config holds ClickUp provider configuration.
 type Config struct {
 	Token         string
 	TeamID        string // Team/Workspace ID
@@ -28,7 +28,7 @@ type Config struct {
 	CommitPrefix  string
 }
 
-// Info returns provider metadata
+// Info returns provider metadata.
 func Info() provider.ProviderInfo {
 	return provider.ProviderInfo{
 		Name:        ProviderName,
@@ -48,7 +48,7 @@ func Info() provider.ProviderInfo {
 	}
 }
 
-// New creates a new ClickUp provider instance
+// New creates a new ClickUp provider instance.
 func New(_ context.Context, cfg provider.Config) (any, error) {
 	config := &Config{
 		Token:         cfg.GetString("token"),
@@ -72,7 +72,7 @@ func New(_ context.Context, cfg provider.Config) (any, error) {
 	}, nil
 }
 
-// Match checks if the input looks like a ClickUp reference
+// Match checks if the input looks like a ClickUp reference.
 func (p *Provider) Match(input string) bool {
 	// Check for clickup: or cu: prefix
 	if strings.HasPrefix(input, "clickup:") || strings.HasPrefix(input, "cu:") {
@@ -89,7 +89,7 @@ func (p *Provider) Match(input string) bool {
 	return err == nil
 }
 
-// Parse parses a ClickUp reference and returns a canonical ID
+// Parse parses a ClickUp reference and returns a canonical ID.
 func (p *Provider) Parse(input string) (string, error) {
 	ref, err := ParseReference(input)
 	if err != nil {
@@ -101,7 +101,7 @@ func (p *Provider) Parse(input string) (string, error) {
 	return ref.TaskID, nil
 }
 
-// Fetch retrieves a task by its ID
+// Fetch retrieves a task by its ID.
 func (p *Provider) Fetch(ctx context.Context, id string) (*provider.WorkUnit, error) {
 	// Determine if this is a custom ID or task ID
 	ref, err := ParseReference(id)
@@ -127,7 +127,7 @@ func (p *Provider) Fetch(ctx context.Context, id string) (*provider.WorkUnit, er
 	return p.taskToWorkUnit(task), nil
 }
 
-// Snapshot creates a snapshot of the task's current state
+// Snapshot creates a snapshot of the task's current state.
 func (p *Provider) Snapshot(ctx context.Context, id string) (*provider.Snapshot, error) {
 	ref, err := ParseReference(id)
 	if err != nil {
@@ -159,7 +159,7 @@ func (p *Provider) Snapshot(ctx context.Context, id string) (*provider.Snapshot,
 	}, nil
 }
 
-// List retrieves tasks from a list
+// List retrieves tasks from a list.
 func (p *Provider) List(ctx context.Context, opts provider.ListOptions) ([]*provider.WorkUnit, error) {
 	listID := p.config.DefaultList
 	if listID == "" {
@@ -207,7 +207,7 @@ func (p *Provider) List(ctx context.Context, opts provider.ListOptions) ([]*prov
 	return units, nil
 }
 
-// FetchComments retrieves comments for a task
+// FetchComments retrieves comments for a task.
 func (p *Provider) FetchComments(ctx context.Context, id string) ([]*provider.Comment, error) {
 	ref, err := ParseReference(id)
 	if err != nil {
@@ -246,7 +246,7 @@ func (p *Provider) FetchComments(ctx context.Context, id string) ([]*provider.Co
 	return result, nil
 }
 
-// AddComment adds a comment to a task
+// AddComment adds a comment to a task.
 func (p *Provider) AddComment(ctx context.Context, id string, body string) error {
 	ref, err := ParseReference(id)
 	if err != nil {
@@ -265,7 +265,7 @@ func (p *Provider) AddComment(ctx context.Context, id string, body string) error
 	return nil
 }
 
-// UpdateStatus updates the task status
+// UpdateStatus updates the task status.
 func (p *Provider) UpdateStatus(ctx context.Context, id string, status provider.Status) error {
 	ref, err := ParseReference(id)
 	if err != nil {
@@ -595,7 +595,7 @@ func buildSnapshotContent(task *Task) string {
 	return sb.String()
 }
 
-// GetBranchSuggestion returns a suggested branch name for the task
+// GetBranchSuggestion returns a suggested branch name for the task.
 func (p *Provider) GetBranchSuggestion(task *provider.WorkUnit) string {
 	if p.config.BranchPattern == "" {
 		// Default pattern

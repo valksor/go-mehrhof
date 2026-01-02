@@ -14,15 +14,15 @@ import (
 	"github.com/valksor/go-mehrhof/internal/provider/file"
 )
 
-// ProviderName is the registered name for this provider
+// ProviderName is the registered name for this provider.
 const ProviderName = "directory"
 
-// Provider handles directory-based tasks
+// Provider handles directory-based tasks.
 type Provider struct {
 	basePath string
 }
 
-// Info returns provider metadata
+// Info returns provider metadata.
 func Info() provider.ProviderInfo {
 	return provider.ProviderInfo{
 		Name:        ProviderName,
@@ -36,7 +36,7 @@ func Info() provider.ProviderInfo {
 	}
 }
 
-// New creates a directory provider
+// New creates a directory provider.
 func New(ctx context.Context, cfg provider.Config) (any, error) {
 	basePath := cfg.GetString("base_path")
 	if basePath == "" {
@@ -45,12 +45,12 @@ func New(ctx context.Context, cfg provider.Config) (any, error) {
 	return &Provider{basePath: basePath}, nil
 }
 
-// Match checks if input has the dir: scheme prefix
+// Match checks if input has the dir: scheme prefix.
 func (p *Provider) Match(input string) bool {
 	return strings.HasPrefix(input, "dir:")
 }
 
-// Parse extracts the directory path from input
+// Parse extracts the directory path from input.
 func (p *Provider) Parse(input string) (string, error) {
 	// Remove dir: prefix if present
 	path := strings.TrimPrefix(input, "dir:")
@@ -71,7 +71,7 @@ func (p *Provider) Parse(input string) (string, error) {
 	return resolved, nil
 }
 
-// Fetch reads the directory and creates a WorkUnit
+// Fetch reads the directory and creates a WorkUnit.
 func (p *Provider) Fetch(ctx context.Context, id string) (*provider.WorkUnit, error) {
 	// Look for README or similar
 	readmePath, title, description, frontmatter := p.findReadme(id)
@@ -150,7 +150,7 @@ func (p *Provider) Fetch(ctx context.Context, id string) (*provider.WorkUnit, er
 	return wu, nil
 }
 
-// List returns all files in directory as WorkUnits
+// List returns all files in directory as WorkUnits.
 func (p *Provider) List(ctx context.Context, opts provider.ListOptions) ([]*provider.WorkUnit, error) {
 	var units []*provider.WorkUnit
 
@@ -285,7 +285,7 @@ func (p *Provider) findSubtasks(dir string) []string {
 	return subtasks
 }
 
-// Snapshot captures all files in the directory for storage
+// Snapshot captures all files in the directory for storage.
 func (p *Provider) Snapshot(ctx context.Context, id string) (*provider.Snapshot, error) {
 	snapshot := &provider.Snapshot{
 		Type:  "directory",
@@ -332,7 +332,7 @@ func (p *Provider) Snapshot(ctx context.Context, id string) (*provider.Snapshot,
 	return snapshot, nil
 }
 
-// Register adds directory provider to registry
+// Register adds directory provider to registry.
 func Register(r *provider.Registry) {
 	_ = r.Register(Info(), New)
 }

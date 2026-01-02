@@ -9,7 +9,7 @@ import (
 	"github.com/valksor/go-mehrhof/internal/workflow"
 )
 
-// Plan enters the planning phase to create specifications
+// Plan enters the planning phase to create specifications.
 func (c *Conductor) Plan(ctx context.Context) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -32,7 +32,7 @@ func (c *Conductor) Plan(ctx context.Context) error {
 	return nil
 }
 
-// Implement enters the implementation phase
+// Implement enters the implementation phase.
 func (c *Conductor) Implement(ctx context.Context) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -73,7 +73,7 @@ func (c *Conductor) Implement(ctx context.Context) error {
 	return nil
 }
 
-// Review enters the review phase
+// Review enters the review phase.
 func (c *Conductor) Review(ctx context.Context) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -96,7 +96,7 @@ func (c *Conductor) Review(ctx context.Context) error {
 	return nil
 }
 
-// Undo reverts to the previous checkpoint
+// Undo reverts to the previous checkpoint.
 func (c *Conductor) Undo(ctx context.Context) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -147,7 +147,7 @@ func (c *Conductor) Undo(ctx context.Context) error {
 	return nil
 }
 
-// Redo moves forward to the next checkpoint
+// Redo moves forward to the next checkpoint.
 func (c *Conductor) Redo(ctx context.Context) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -198,7 +198,7 @@ func (c *Conductor) Redo(ctx context.Context) error {
 	return nil
 }
 
-// Finish completes the task
+// Finish completes the task.
 func (c *Conductor) Finish(ctx context.Context, opts FinishOptions) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -262,7 +262,7 @@ func (c *Conductor) Finish(ctx context.Context, opts FinishOptions) error {
 	}
 
 	// Delete work directory based on: CLI flag > config > default (keep)
-	shouldDelete := false
+	var shouldDelete bool
 	if opts.DeleteWork != nil {
 		shouldDelete = *opts.DeleteWork // CLI explicitly set
 	} else {
@@ -282,7 +282,7 @@ func (c *Conductor) Finish(ctx context.Context, opts FinishOptions) error {
 	return nil
 }
 
-// buildWorkUnit creates a workflow.WorkUnit from current state
+// buildWorkUnit creates a workflow.WorkUnit from current state.
 func (c *Conductor) buildWorkUnit() *workflow.WorkUnit {
 	if c.taskWork == nil {
 		return nil
@@ -307,7 +307,7 @@ func (c *Conductor) buildWorkUnit() *workflow.WorkUnit {
 	return wu
 }
 
-// onStateChanged handles state change events
+// onStateChanged handles state change events.
 func (c *Conductor) onStateChanged(e events.Event) {
 	if c.opts.OnStateChange == nil {
 		return
@@ -324,7 +324,7 @@ func (c *Conductor) onStateChanged(e events.Event) {
 	c.opts.OnStateChange(from, to)
 }
 
-// countCheckpoints returns the number of checkpoints for current task
+// countCheckpoints returns the number of checkpoints for current task.
 func (c *Conductor) countCheckpoints() int {
 	if c.activeTask == nil || c.git == nil {
 		return 0
@@ -336,7 +336,7 @@ func (c *Conductor) countCheckpoints() int {
 	return len(checkpoints)
 }
 
-// publishProgress publishes a progress event
+// publishProgress publishes a progress event.
 func (c *Conductor) publishProgress(message string, percent int) {
 	c.eventBus.PublishRaw(events.Event{
 		Type: events.TypeProgress,
@@ -351,7 +351,7 @@ func (c *Conductor) publishProgress(message string, percent int) {
 	}
 }
 
-// finishWithMerge performs a local merge operation
+// finishWithMerge performs a local merge operation.
 func (c *Conductor) finishWithMerge(ctx context.Context, opts FinishOptions) error {
 	// Handle git merge operations if applicable
 	if c.git == nil || !c.activeTask.UseGit || c.activeTask.Branch == "" {
@@ -375,7 +375,7 @@ func (c *Conductor) finishWithMerge(ctx context.Context, opts FinishOptions) err
 	return nil
 }
 
-// providerSupportsPR checks if the current task's provider supports PR creation
+// providerSupportsPR checks if the current task's provider supports PR creation.
 func (c *Conductor) providerSupportsPR(ctx context.Context) bool {
 	if c.activeTask == nil || c.activeTask.Ref == "" {
 		return false
@@ -395,7 +395,7 @@ func (c *Conductor) providerSupportsPR(ctx context.Context) bool {
 	return ok
 }
 
-// askUserFinishAction prompts the user to choose an action when PR is not supported
+// askUserFinishAction prompts the user to choose an action when PR is not supported.
 func (c *Conductor) askUserFinishAction() (string, error) {
 	// For non-interactive use (auto mode), default to "done"
 	if c.opts.AutoMode || c.opts.SkipAgentQuestions {

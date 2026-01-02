@@ -9,7 +9,7 @@ import (
 	"sync"
 )
 
-// ProviderInfo describes a registered provider
+// ProviderInfo describes a registered provider.
 type ProviderInfo struct {
 	Name         string
 	Description  string
@@ -18,7 +18,7 @@ type ProviderInfo struct {
 	Priority     int // Higher priority = checked first for auto-detection
 }
 
-// Factory creates a provider instance
+// Factory creates a provider instance.
 type Factory func(ctx context.Context, cfg Config) (any, error)
 
 type registeredProvider struct {
@@ -26,14 +26,14 @@ type registeredProvider struct {
 	factory Factory
 }
 
-// Registry manages provider registration and lookup
+// Registry manages provider registration and lookup.
 type Registry struct {
 	mu        sync.RWMutex
 	providers map[string]registeredProvider
 	schemes   map[string]string // scheme -> provider name
 }
 
-// NewRegistry creates a new provider registry
+// NewRegistry creates a new provider registry.
 func NewRegistry() *Registry {
 	return &Registry{
 		providers: make(map[string]registeredProvider),
@@ -41,7 +41,7 @@ func NewRegistry() *Registry {
 	}
 }
 
-// Register adds a provider to the registry
+// Register adds a provider to the registry.
 func (r *Registry) Register(info ProviderInfo, factory Factory) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -63,7 +63,7 @@ func (r *Registry) Register(info ProviderInfo, factory Factory) error {
 	return nil
 }
 
-// Get returns provider info and factory by name
+// Get returns provider info and factory by name.
 func (r *Registry) Get(name string) (ProviderInfo, Factory, bool) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
@@ -75,7 +75,7 @@ func (r *Registry) Get(name string) (ProviderInfo, Factory, bool) {
 	return rp.info, rp.factory, true
 }
 
-// GetByScheme returns provider info and factory by scheme
+// GetByScheme returns provider info and factory by scheme.
 func (r *Registry) GetByScheme(scheme string) (ProviderInfo, Factory, bool) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
@@ -87,7 +87,7 @@ func (r *Registry) GetByScheme(scheme string) (ProviderInfo, Factory, bool) {
 	return r.Get(name)
 }
 
-// List returns all registered providers sorted by priority (highest first)
+// List returns all registered providers sorted by priority (highest first).
 func (r *Registry) List() []ProviderInfo {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
@@ -105,7 +105,7 @@ func (r *Registry) List() []ProviderInfo {
 	return infos
 }
 
-// ResolveOptions configures reference resolution
+// ResolveOptions configures reference resolution.
 type ResolveOptions struct {
 	DefaultProvider string // Fallback provider for bare references (without scheme)
 }
@@ -134,7 +134,7 @@ func (r *Registry) Resolve(ctx context.Context, input string, cfg Config, opts R
 // parseScheme extracts scheme prefix from input.
 // Returns ("file", "task.md") for "file:task.md"
 // Returns ("", "task.md") for "task.md" (no scheme)
-// Handles Windows paths like "C:\path" correctly (returns no scheme)
+// Handles Windows paths like "C:\path" correctly (returns no scheme).
 func parseScheme(input string) (scheme, identifier string) {
 	idx := strings.Index(input, ":")
 	if idx == -1 {
@@ -147,7 +147,7 @@ func parseScheme(input string) (scheme, identifier string) {
 	return input[:idx], input[idx+1:]
 }
 
-// resolveWithScheme creates provider instance and parses identifier
+// resolveWithScheme creates provider instance and parses identifier.
 func (r *Registry) resolveWithScheme(ctx context.Context, scheme, identifier string, cfg Config) (any, string, error) {
 	info, factory, ok := r.GetByScheme(scheme)
 	if !ok {
@@ -174,7 +174,7 @@ func (r *Registry) resolveWithScheme(ctx context.Context, scheme, identifier str
 	return instance, id, nil
 }
 
-// noSchemeError creates a helpful error message when no scheme is provided
+// noSchemeError creates a helpful error message when no scheme is provided.
 func (r *Registry) noSchemeError(input string) error {
 	schemes := r.listSchemes()
 	return fmt.Errorf(
@@ -190,7 +190,7 @@ func (r *Registry) noSchemeError(input string) error {
 		input, strings.Join(schemes, ", "))
 }
 
-// listSchemes returns all registered scheme names sorted alphabetically
+// listSchemes returns all registered scheme names sorted alphabetically.
 func (r *Registry) listSchemes() []string {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
@@ -203,7 +203,7 @@ func (r *Registry) listSchemes() []string {
 	return schemes
 }
 
-// Create creates a provider instance by name
+// Create creates a provider instance by name.
 func (r *Registry) Create(ctx context.Context, name string, cfg Config) (any, error) {
 	_, factory, ok := r.Get(name)
 	if !ok {

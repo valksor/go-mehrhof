@@ -289,7 +289,7 @@ func TestRunWithCallback_NoCLI(t *testing.T) {
 	}
 }
 
-// Test PlainTextParser
+// Test PlainTextParser.
 func TestPlainTextParser_ParseEvent(t *testing.T) {
 	p := NewPlainTextParser()
 
@@ -388,7 +388,7 @@ func findSubstring(s, substr string) bool {
 	return false
 }
 
-// Test immutability of WithEnv/WithArgs
+// Test immutability of WithEnv/WithArgs.
 func TestWithEnvImmutability(t *testing.T) {
 	a1 := New()
 	a2 := a1.WithEnv("KEY", "value")

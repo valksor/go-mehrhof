@@ -1,10 +1,10 @@
 package workflow
 
-// State represents a workflow state
+// State represents a workflow state.
 type State string
 
 const (
-	// Core phases
+	// Core phases.
 	StateIdle         State = "idle"         // Task registered but not started
 	StatePlanning     State = "planning"     // Agent creating specs
 	StateImplementing State = "implementing" // Agent implementing specs
@@ -13,49 +13,49 @@ const (
 	StateFailed       State = "failed"       // Error state
 	StateWaiting      State = "waiting"      // Waiting for user answer to agent question
 
-	// Auxiliary states (entered during phases)
+	// Auxiliary states (entered during phases).
 	StateCheckpointing State = "checkpointing" // Creating git checkpoint
 	StateReverting     State = "reverting"     // Undo operation
 	StateRestoring     State = "restoring"     // Redo operation
 )
 
-// Event represents a workflow event that triggers transitions
+// Event represents a workflow event that triggers transitions.
 type Event string
 
 const (
-	// Phase transitions
+	// Phase transitions.
 	EventStart     Event = "start"     // Begin working on task
 	EventPlan      Event = "plan"      // Enter planning phase
 	EventImplement Event = "implement" // Enter implementation phase
 	EventReview    Event = "review"    // Enter review phase
 	EventFinish    Event = "finish"    // Complete task
 
-	// Phase completion
+	// Phase completion.
 	EventPlanDone      Event = "plan_done"      // Planning completed
 	EventImplementDone Event = "implement_done" // Implementation completed
 	EventReviewDone    Event = "review_done"    // Review completed
 
-	// Checkpoint operations
+	// Checkpoint operations.
 	EventCheckpoint     Event = "checkpoint"
 	EventCheckpointDone Event = "checkpoint_done"
 
-	// Undo/Redo
+	// Undo/Redo.
 	EventUndo     Event = "undo"
 	EventUndoDone Event = "undo_done"
 	EventRedo     Event = "redo"
 	EventRedoDone Event = "redo_done"
 
-	// Error handling
+	// Error handling.
 	EventError Event = "error"
 	EventAbort Event = "abort"
 
-	// Waiting for user input (agent asked a question)
+	// Waiting for user input (agent asked a question).
 	EventWait   Event = "wait"   // Agent asked a question
 	EventAnswer Event = "answer" // User answered the question
 	EventReset  Event = "reset"  // Recover from failed state
 )
 
-// PhaseStates are the main workflow phases
+// PhaseStates are the main workflow phases.
 var PhaseStates = []State{
 	StateIdle,
 	StatePlanning,
@@ -64,7 +64,7 @@ var PhaseStates = []State{
 	StateDone,
 }
 
-// StateInfo holds metadata about a state
+// StateInfo holds metadata about a state.
 type StateInfo struct {
 	Name        State
 	Description string
@@ -72,7 +72,7 @@ type StateInfo struct {
 	Phase       bool // Is this a main phase state
 }
 
-// StateRegistry maps states to their metadata
+// StateRegistry maps states to their metadata.
 var StateRegistry = map[State]StateInfo{
 	StateIdle: {
 		Name:        StateIdle,
@@ -136,19 +136,19 @@ var StateRegistry = map[State]StateInfo{
 	},
 }
 
-// IsPhaseState returns true if the state is a main phase
+// IsPhaseState returns true if the state is a main phase.
 func IsPhaseState(s State) bool {
 	info, ok := StateRegistry[s]
 	return ok && info.Phase
 }
 
-// IsTerminal returns true if the state is terminal
+// IsTerminal returns true if the state is terminal.
 func IsTerminal(s State) bool {
 	info, ok := StateRegistry[s]
 	return ok && info.Terminal
 }
 
-// WorkUnit represents the current task being worked on by the state machine
+// WorkUnit represents the current task being worked on by the state machine.
 type WorkUnit struct {
 	ID             string
 	ExternalID     string // Provider-specific ID (original reference)
@@ -159,7 +159,7 @@ type WorkUnit struct {
 	Checkpoints    []string // Git checkpoint IDs
 }
 
-// Source represents where the task came from (read-only)
+// Source represents where the task came from (read-only).
 type Source struct {
 	Reference string
 	Provider  any    // Provider instance

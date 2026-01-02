@@ -7,10 +7,10 @@ import (
 )
 
 // EffectFunc is a side effect executed during a transition
-// Effects are executed by the conductor, not the state machine directly
+// Effects are executed by the conductor, not the state machine directly.
 type EffectFunc func(ctx context.Context, wu *WorkUnit) error
 
-// EffectType identifies effect categories for conductor to handle
+// EffectType identifies effect categories for conductor to handle.
 type EffectType string
 
 const (
@@ -29,30 +29,30 @@ const (
 	EffectCleanup             EffectType = "cleanup"
 )
 
-// EffectRequest represents a request for the conductor to execute an effect
+// EffectRequest represents a request for the conductor to execute an effect.
 type EffectRequest struct {
 	Data map[string]any
 	Type EffectType
 }
 
-// EffectRegistry allows registering effect handlers
+// EffectRegistry allows registering effect handlers.
 type EffectRegistry struct {
 	handlers map[EffectType]EffectFunc
 }
 
-// NewEffectRegistry creates a new effect registry
+// NewEffectRegistry creates a new effect registry.
 func NewEffectRegistry() *EffectRegistry {
 	return &EffectRegistry{
 		handlers: make(map[EffectType]EffectFunc),
 	}
 }
 
-// Register adds an effect handler
+// Register adds an effect handler.
 func (r *EffectRegistry) Register(effectType EffectType, handler EffectFunc) {
 	r.handlers[effectType] = handler
 }
 
-// Execute runs an effect handler
+// Execute runs an effect handler.
 func (r *EffectRegistry) Execute(ctx context.Context, effectType EffectType, wu *WorkUnit) error {
 	handler, ok := r.handlers[effectType]
 	if !ok {
@@ -61,7 +61,7 @@ func (r *EffectRegistry) Execute(ctx context.Context, effectType EffectType, wu 
 	return handler(ctx, wu)
 }
 
-// Has checks if an effect handler is registered
+// Has checks if an effect handler is registered.
 func (r *EffectRegistry) Has(effectType EffectType) bool {
 	_, ok := r.handlers[effectType]
 	return ok

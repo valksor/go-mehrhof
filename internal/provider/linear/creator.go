@@ -75,7 +75,7 @@ func (p *Provider) CreateWorkUnit(ctx context.Context, opts provider.CreateWorkU
 	return wu, nil
 }
 
-// inferTaskTypeFromLabels determines task type from label names
+// inferTaskTypeFromLabels determines task type from label names.
 func inferTaskTypeFromLabels(labels []string) string {
 	for _, label := range labels {
 		switch lower(label) {
@@ -98,7 +98,7 @@ func inferTaskTypeFromLabels(labels []string) string {
 	return "issue"
 }
 
-// lower is a helper for lowercase conversion
+// lower is a helper for lowercase conversion.
 func lower(s string) string {
 	var result []rune
 	for _, r := range s {

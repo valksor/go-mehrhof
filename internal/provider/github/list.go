@@ -11,7 +11,7 @@ import (
 	"github.com/valksor/go-mehrhof/internal/provider"
 )
 
-// List retrieves issues from the repository
+// List retrieves issues from the repository.
 func (p *Provider) List(ctx context.Context, opts provider.ListOptions) ([]*provider.WorkUnit, error) {
 	owner := p.owner
 	repo := p.repo
@@ -115,7 +115,7 @@ func (p *Provider) List(ctx context.Context, opts provider.ListOptions) ([]*prov
 	return result, nil
 }
 
-// ListIssuesByRepository wraps the GitHub API call for listing issues
+// ListIssuesByRepository wraps the GitHub API call for listing issues.
 func (c *Client) ListIssuesByRepository(ctx context.Context, opts *gh.IssueListByRepoOptions) ([]*gh.Issue, *gh.Response, error) {
 	return c.gh.Issues.ListByRepo(ctx, c.owner, c.repo, opts)
 }

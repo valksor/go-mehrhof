@@ -12,17 +12,17 @@ import (
 	"github.com/valksor/go-mehrhof/internal/provider"
 )
 
-// ProviderName is the registered name for this provider
+// ProviderName is the registered name for this provider.
 const ProviderName = "gitlab"
 
-// Provider handles GitLab issue tasks
+// Provider handles GitLab issue tasks.
 type Provider struct {
 	client      *Client
 	projectPath string
 	config      *Config
 }
 
-// Config holds GitLab provider configuration
+// Config holds GitLab provider configuration.
 type Config struct {
 	Token              string
 	Host               string // e.g., "https://gitlab.com" or custom host
@@ -35,7 +35,7 @@ type Config struct {
 	RemoveSourceBranch bool   // Remove source branch when MR is merged
 }
 
-// Info returns provider metadata
+// Info returns provider metadata.
 func Info() provider.ProviderInfo {
 	return provider.ProviderInfo{
 		Name:        ProviderName,
@@ -58,7 +58,7 @@ func Info() provider.ProviderInfo {
 	}
 }
 
-// New creates a GitLab provider
+// New creates a GitLab provider.
 func New(ctx context.Context, cfg provider.Config) (any, error) {
 	// Extract config values
 	token := cfg.GetString("token")
@@ -110,12 +110,12 @@ func New(ctx context.Context, cfg provider.Config) (any, error) {
 	}, nil
 }
 
-// Match checks if input has the gitlab: or gl: scheme prefix
+// Match checks if input has the gitlab: or gl: scheme prefix.
 func (p *Provider) Match(input string) bool {
 	return strings.HasPrefix(input, "gitlab:") || strings.HasPrefix(input, "gl:")
 }
 
-// Parse extracts the issue reference from input
+// Parse extracts the issue reference from input.
 func (p *Provider) Parse(input string) (string, error) {
 	ref, err := ParseReference(input)
 	if err != nil {
@@ -145,7 +145,7 @@ func (p *Provider) Parse(input string) (string, error) {
 	return fmt.Sprintf("%s#%d", projectPath, ref.IssueIID), nil
 }
 
-// Fetch reads a GitLab issue and creates a WorkUnit
+// Fetch reads a GitLab issue and creates a WorkUnit.
 func (p *Provider) Fetch(ctx context.Context, id string) (*provider.WorkUnit, error) {
 	ref, err := ParseReference(id)
 	if err != nil {
@@ -247,7 +247,7 @@ func (p *Provider) Fetch(ctx context.Context, id string) (*provider.WorkUnit, er
 	return wu, nil
 }
 
-// Snapshot captures the issue content for storage
+// Snapshot captures the issue content for storage.
 func (p *Provider) Snapshot(ctx context.Context, id string) (*provider.Snapshot, error) {
 	ref, err := ParseReference(id)
 	if err != nil {
@@ -300,7 +300,7 @@ func (p *Provider) Snapshot(ctx context.Context, id string) (*provider.Snapshot,
 	return snapshot, nil
 }
 
-// List lists issues from the project
+// List lists issues from the project.
 func (p *Provider) List(ctx context.Context, opts provider.ListOptions) ([]*provider.WorkUnit, error) {
 	// Set up project
 	projectPath := p.config.ProjectPath
@@ -365,7 +365,7 @@ func (p *Provider) List(ctx context.Context, opts provider.ListOptions) ([]*prov
 	return result, nil
 }
 
-// FetchComments fetches comments for a work unit
+// FetchComments fetches comments for a work unit.
 func (p *Provider) FetchComments(ctx context.Context, workUnitID string) ([]provider.Comment, error) {
 	ref, err := ParseReference(workUnitID)
 	if err != nil {
@@ -380,7 +380,7 @@ func (p *Provider) FetchComments(ctx context.Context, workUnitID string) ([]prov
 	return mapNotes(notes), nil
 }
 
-// AddComment adds a comment to a work unit
+// AddComment adds a comment to a work unit.
 func (p *Provider) AddComment(ctx context.Context, workUnitID string, body string) (*provider.Comment, error) {
 	ref, err := ParseReference(workUnitID)
 	if err != nil {
@@ -418,7 +418,7 @@ func (p *Provider) AddComment(ctx context.Context, workUnitID string, body strin
 	}, nil
 }
 
-// UpdateStatus updates the status of a work unit
+// UpdateStatus updates the status of a work unit.
 func (p *Provider) UpdateStatus(ctx context.Context, workUnitID string, status provider.Status) error {
 	ref, err := ParseReference(workUnitID)
 	if err != nil {
@@ -440,7 +440,7 @@ func (p *Provider) UpdateStatus(ctx context.Context, workUnitID string, status p
 	return err
 }
 
-// AddLabels adds labels to a work unit
+// AddLabels adds labels to a work unit.
 func (p *Provider) AddLabels(ctx context.Context, workUnitID string, labels []string) error {
 	ref, err := ParseReference(workUnitID)
 	if err != nil {
@@ -449,7 +449,7 @@ func (p *Provider) AddLabels(ctx context.Context, workUnitID string, labels []st
 	return p.client.AddLabels(ctx, ref.IssueIID, labels)
 }
 
-// RemoveLabels removes labels from a work unit
+// RemoveLabels removes labels from a work unit.
 func (p *Provider) RemoveLabels(ctx context.Context, workUnitID string, labels []string) error {
 	ref, err := ParseReference(workUnitID)
 	if err != nil {
@@ -464,7 +464,7 @@ func (p *Provider) RemoveLabels(ctx context.Context, workUnitID string, labels [
 	return nil
 }
 
-// CreateWorkUnit creates a new work unit
+// CreateWorkUnit creates a new work unit.
 func (p *Provider) CreateWorkUnit(ctx context.Context, opts provider.CreateWorkUnitOptions) (*provider.WorkUnit, error) {
 	createOpts := &gitlab.CreateIssueOptions{
 		Title:       ptr(opts.Title),
@@ -486,12 +486,12 @@ func (p *Provider) CreateWorkUnit(ctx context.Context, opts provider.CreateWorkU
 	return p.Fetch(ctx, fmt.Sprintf("%d", issue.IID))
 }
 
-// GetConfig returns the provider configuration
+// GetConfig returns the provider configuration.
 func (p *Provider) GetConfig() *Config {
 	return p.config
 }
 
-// GetClient returns the GitLab API client
+// GetClient returns the GitLab API client.
 func (p *Provider) GetClient() *Client {
 	return p.client
 }
@@ -509,7 +509,7 @@ func mapGitLabState(state string) provider.Status {
 	}
 }
 
-// labelTypeMap maps GitLab labels to task types
+// labelTypeMap maps GitLab labels to task types.
 var labelTypeMap = map[string]string{
 	"bug":           "fix",
 	"bugfix":        "fix",
@@ -534,7 +534,7 @@ func inferTypeFromLabels(labels []string) string {
 	return "issue"
 }
 
-// labelPriorityMap maps GitLab labels to priorities
+// labelPriorityMap maps GitLab labels to priorities.
 var labelPriorityMap = map[string]provider.Priority{
 	"critical":      provider.PriorityCritical,
 	"urgent":        provider.PriorityCritical,

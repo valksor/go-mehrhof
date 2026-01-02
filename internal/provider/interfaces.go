@@ -5,55 +5,55 @@ import (
 	"io"
 )
 
-// Reader fetches work units from a provider
+// Reader fetches work units from a provider.
 type Reader interface {
 	Fetch(ctx context.Context, id string) (*WorkUnit, error)
 }
 
-// Identifier parses and validates references
+// Identifier parses and validates references.
 type Identifier interface {
 	Parse(input string) (string, error)
 	Match(input string) bool
 }
 
-// Lister enumerates work units
+// Lister enumerates work units.
 type Lister interface {
 	List(ctx context.Context, opts ListOptions) ([]*WorkUnit, error)
 }
 
-// AttachmentDownloader downloads attachments
+// AttachmentDownloader downloads attachments.
 type AttachmentDownloader interface {
 	DownloadAttachment(ctx context.Context, workUnitID, attachmentID string) (io.ReadCloser, error)
 }
 
-// CommentFetcher retrieves comments
+// CommentFetcher retrieves comments.
 type CommentFetcher interface {
 	FetchComments(ctx context.Context, workUnitID string) ([]Comment, error)
 }
 
-// Commenter adds comments to work units
+// Commenter adds comments to work units.
 type Commenter interface {
 	AddComment(ctx context.Context, workUnitID string, body string) (*Comment, error)
 }
 
-// StatusUpdater changes work unit status
+// StatusUpdater changes work unit status.
 type StatusUpdater interface {
 	UpdateStatus(ctx context.Context, workUnitID string, status Status) error
 }
 
-// LabelManager manages labels on work units
+// LabelManager manages labels on work units.
 type LabelManager interface {
 	AddLabels(ctx context.Context, workUnitID string, labels []string) error
 	RemoveLabels(ctx context.Context, workUnitID string, labels []string) error
 }
 
-// ReadOnlyProvider is the minimum interface for a provider
+// ReadOnlyProvider is the minimum interface for a provider.
 type ReadOnlyProvider interface {
 	Reader
 	Identifier
 }
 
-// BidirectionalProvider supports read and write operations
+// BidirectionalProvider supports read and write operations.
 type BidirectionalProvider interface {
 	Reader
 	Identifier
@@ -61,7 +61,7 @@ type BidirectionalProvider interface {
 	StatusUpdater
 }
 
-// ListOptions configures list operations
+// ListOptions configures list operations.
 type ListOptions struct {
 	Status   Status
 	Labels   []string
@@ -71,7 +71,7 @@ type ListOptions struct {
 	OrderDir string // asc, desc
 }
 
-// Snapshot contains captured source content (read-only copy)
+// Snapshot contains captured source content (read-only copy).
 type Snapshot struct {
 	Type    string         // directory, file
 	Ref     string         // original reference
@@ -79,13 +79,13 @@ type Snapshot struct {
 	Content string         // for single files
 }
 
-// SnapshotFile represents a single file in a snapshot
+// SnapshotFile represents a single file in a snapshot.
 type SnapshotFile struct {
 	Path    string
 	Content string
 }
 
-// Snapshotter captures source content for storage
+// Snapshotter captures source content for storage.
 type Snapshotter interface {
 	Snapshot(ctx context.Context, id string) (*Snapshot, error)
 }
@@ -94,12 +94,12 @@ type Snapshotter interface {
 // Extended interfaces for bidirectional providers (GitHub, Wrike, etc.)
 // ──────────────────────────────────────────────────────────────────────────────
 
-// PRCreator creates pull requests (for GitHub-like providers)
+// PRCreator creates pull requests (for GitHub-like providers).
 type PRCreator interface {
 	CreatePullRequest(ctx context.Context, opts PullRequestOptions) (*PullRequest, error)
 }
 
-// PullRequestOptions for creating a PR
+// PullRequestOptions for creating a PR.
 type PullRequestOptions struct {
 	Title        string
 	Body         string
@@ -110,7 +110,7 @@ type PullRequestOptions struct {
 	Draft        bool
 }
 
-// PullRequest represents a pull/merge request
+// PullRequest represents a pull/merge request.
 type PullRequest struct {
 	ID     string
 	URL    string
@@ -119,7 +119,7 @@ type PullRequest struct {
 	Number int
 }
 
-// BranchLinker links work units to git branches
+// BranchLinker links work units to git branches.
 type BranchLinker interface {
 	LinkBranch(ctx context.Context, workUnitID, branch string) error
 	UnlinkBranch(ctx context.Context, workUnitID, branch string) error
@@ -131,12 +131,12 @@ type WorkUnitCreator interface {
 	CreateWorkUnit(ctx context.Context, opts CreateWorkUnitOptions) (*WorkUnit, error)
 }
 
-// SubtaskFetcher retrieves subtasks for a work unit
+// SubtaskFetcher retrieves subtasks for a work unit.
 type SubtaskFetcher interface {
 	FetchSubtasks(ctx context.Context, workUnitID string) ([]*WorkUnit, error)
 }
 
-// CreateWorkUnitOptions for creating a work unit
+// CreateWorkUnitOptions for creating a work unit.
 type CreateWorkUnitOptions struct {
 	CustomFields map[string]any
 	Title        string
@@ -148,7 +148,7 @@ type CreateWorkUnitOptions struct {
 }
 
 // FullProvider is a comprehensive interface combining all capabilities
-// This is primarily for documentation; actual providers implement subsets
+// This is primarily for documentation; actual providers implement subsets.
 type FullProvider interface {
 	ReadOnlyProvider
 	Lister

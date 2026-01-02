@@ -38,7 +38,7 @@ type Agent struct {
 	config agent.Config
 }
 
-// New creates a Gemini agent with default config
+// New creates a Gemini agent with default config.
 func New() *Agent {
 	return &Agent{
 		config: agent.Config{
@@ -52,7 +52,7 @@ func New() *Agent {
 	}
 }
 
-// NewWithConfig creates a Gemini agent with custom config
+// NewWithConfig creates a Gemini agent with custom config.
 func NewWithConfig(cfg agent.Config) *Agent {
 	if len(cfg.Command) == 0 {
 		cfg.Command = []string{"gemini"}
@@ -63,12 +63,12 @@ func NewWithConfig(cfg agent.Config) *Agent {
 	}
 }
 
-// Name returns the agent identifier
+// Name returns the agent identifier.
 func (a *Agent) Name() string {
 	return AgentName
 }
 
-// Available checks if the Gemini CLI is installed and configured
+// Available checks if the Gemini CLI is installed and configured.
 func (a *Agent) Available() error {
 	binary := a.config.Command[0]
 	path, err := exec.LookPath(binary)
@@ -88,7 +88,7 @@ func (a *Agent) Available() error {
 	return nil
 }
 
-// Run executes a prompt and returns the aggregated response
+// Run executes a prompt and returns the aggregated response.
 func (a *Agent) Run(ctx context.Context, prompt string) (*agent.Response, error) {
 	events, errCh := a.RunStream(ctx, prompt)
 
@@ -105,7 +105,7 @@ func (a *Agent) Run(ctx context.Context, prompt string) (*agent.Response, error)
 	return a.parser.Parse(collected)
 }
 
-// RunStream executes a prompt and streams events
+// RunStream executes a prompt and streams events.
 func (a *Agent) RunStream(ctx context.Context, prompt string) (<-chan agent.Event, <-chan error) {
 	eventCh := make(chan agent.Event, 100)
 	errCh := make(chan error, 1)
@@ -123,7 +123,7 @@ func (a *Agent) RunStream(ctx context.Context, prompt string) (<-chan agent.Even
 	return eventCh, errCh
 }
 
-// RunWithCallback executes with a callback for each event
+// RunWithCallback executes with a callback for each event.
 func (a *Agent) RunWithCallback(ctx context.Context, prompt string, cb agent.StreamCallback) (*agent.Response, error) {
 	events, errCh := a.RunStream(ctx, prompt)
 
@@ -262,7 +262,7 @@ func (a *Agent) buildArgs(prompt string) []string {
 	return args
 }
 
-// SetParser allows overriding the default parser
+// SetParser allows overriding the default parser.
 func (a *Agent) SetParser(p agent.Parser) {
 	a.parser = p
 }
@@ -317,7 +317,7 @@ func (a *Agent) WithArgs(args ...string) agent.Agent {
 	}
 }
 
-// Metadata returns information about the Gemini agent
+// Metadata returns information about the Gemini agent.
 func (a *Agent) Metadata() agent.AgentMetadata {
 	return agent.AgentMetadata{
 		Name:        "Gemini CLI",
@@ -353,30 +353,30 @@ func (a *Agent) Metadata() agent.AgentMetadata {
 	}
 }
 
-// Register adds the Gemini agent to a registry
+// Register adds the Gemini agent to a registry.
 func Register(r *agent.Registry) error {
 	return r.Register(New())
 }
 
-// Ensure Agent implements agent.Agent
+// Ensure Agent implements agent.Agent.
 var _ agent.Agent = (*Agent)(nil)
 
-// Ensure Agent implements agent.MetadataProvider
+// Ensure Agent implements agent.MetadataProvider.
 var _ agent.MetadataProvider = (*Agent)(nil)
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Gemini-specific parser for stream-json output
 // ─────────────────────────────────────────────────────────────────────────────
 
-// GeminiParser parses Gemini CLI's streaming JSON output
+// GeminiParser parses Gemini CLI's streaming JSON output.
 type GeminiParser struct{}
 
-// NewGeminiParser creates a new parser for Gemini output
+// NewGeminiParser creates a new parser for Gemini output.
 func NewGeminiParser() *GeminiParser {
 	return &GeminiParser{}
 }
 
-// ParseEvent parses a single line of JSON output from Gemini CLI
+// ParseEvent parses a single line of JSON output from Gemini CLI.
 func (p *GeminiParser) ParseEvent(line []byte) (agent.Event, error) {
 	event := agent.Event{
 		Timestamp: time.Now(),
@@ -461,7 +461,7 @@ func (p *GeminiParser) ParseEvent(line []byte) (agent.Event, error) {
 	return event, nil
 }
 
-// parseToolCall extracts tool call information from Gemini output
+// parseToolCall extracts tool call information from Gemini output.
 func (p *GeminiParser) parseToolCall(event *agent.Event, jsonData map[string]any) {
 	// Handle Gemini's function call format
 	if functionCall, ok := jsonData["functionCall"].(map[string]any); ok {
@@ -474,7 +474,7 @@ func (p *GeminiParser) parseToolCall(event *agent.Event, jsonData map[string]any
 	}
 }
 
-// Parse aggregates events into a response
+// Parse aggregates events into a response.
 func (p *GeminiParser) Parse(events []agent.Event) (*agent.Response, error) {
 	response := &agent.Response{
 		Files:    make([]agent.FileChange, 0),
@@ -502,7 +502,7 @@ func (p *GeminiParser) Parse(events []agent.Event) (*agent.Response, error) {
 	return response, nil
 }
 
-// parseUsage extracts usage statistics from Gemini metadata
+// parseUsage extracts usage statistics from Gemini metadata.
 func (p *GeminiParser) parseUsage(data map[string]any) *agent.UsageStats {
 	stats := &agent.UsageStats{}
 
@@ -520,7 +520,7 @@ func (p *GeminiParser) parseUsage(data map[string]any) *agent.UsageStats {
 	return stats
 }
 
-// summarizeOutput extracts a summary from the response
+// summarizeOutput extracts a summary from the response.
 func summarizeOutput(text string) string {
 	lines := strings.Split(text, "\n")
 	if len(lines) == 0 {

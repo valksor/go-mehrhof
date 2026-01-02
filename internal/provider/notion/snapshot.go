@@ -9,7 +9,7 @@ import (
 	"github.com/valksor/go-mehrhof/internal/provider"
 )
 
-// Snapshot captures the page content from Notion
+// Snapshot captures the page content from Notion.
 func (p *Provider) Snapshot(ctx context.Context, id string) (*provider.Snapshot, error) {
 	ref, err := ParseReference(id)
 	if err != nil {

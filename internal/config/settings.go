@@ -9,7 +9,7 @@ import (
 	_slices "slices"
 )
 
-// Settings holds user preferences that persist between sessions
+// Settings holds user preferences that persist between sessions.
 type Settings struct {
 	// Preferred agent (overrides config default)
 	PreferredAgent string `json:"preferred_agent,omitempty"`
@@ -27,13 +27,13 @@ type Settings struct {
 	LastUpdateCheck time.Time `json:"last_update_check,omitempty"`
 }
 
-// SettingsPath returns the path to the settings file
+// SettingsPath returns the path to the settings file.
 func SettingsPath() string {
 	home, _ := os.UserHomeDir()
 	return filepath.Join(home, ".mehrhof", "settings.json")
 }
 
-// LoadSettings reads settings from disk
+// LoadSettings reads settings from disk.
 func LoadSettings() (*Settings, error) {
 	path := SettingsPath()
 
@@ -53,7 +53,7 @@ func LoadSettings() (*Settings, error) {
 	return &settings, nil
 }
 
-// Save writes settings to disk
+// Save writes settings to disk.
 func (s *Settings) Save() error {
 	path := SettingsPath()
 
@@ -70,7 +70,7 @@ func (s *Settings) Save() error {
 	return os.WriteFile(path, data, 0o644)
 }
 
-// AddRecentTask adds a task to recent list (max 10, most recent first)
+// AddRecentTask adds a task to recent list (max 10, most recent first).
 func (s *Settings) AddRecentTask(taskID string) {
 	// Remove all occurrences of taskID, then insert at front
 	s.RecentTasks = _slices.DeleteFunc(s.RecentTasks, func(t string) bool {

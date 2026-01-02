@@ -6,7 +6,7 @@ import (
 	"github.com/valksor/go-mehrhof/internal/provider"
 )
 
-// AddComment adds a comment to a Notion page
+// AddComment adds a comment to a Notion page.
 func (p *Provider) AddComment(ctx context.Context, workUnitID, body string) (string, error) {
 	input := &AddCommentInput{
 		Parent: CommentParent{
@@ -31,7 +31,7 @@ func (p *Provider) AddComment(ctx context.Context, workUnitID, body string) (str
 	return comment.ID, nil
 }
 
-// FetchComments retrieves comments for a Notion page
+// FetchComments retrieves comments for a Notion page.
 func (p *Provider) FetchComments(ctx context.Context, id string) ([]provider.Comment, error) {
 	comments, err := p.client.GetComments(ctx, id)
 	if err != nil {

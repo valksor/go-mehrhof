@@ -9,18 +9,18 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-// ActiveTaskPath returns the path to .active_task file
+// ActiveTaskPath returns the path to .active_task file.
 func (w *Workspace) ActiveTaskPath() string {
 	return filepath.Join(w.root, activeTaskFile)
 }
 
-// HasActiveTask checks if there's an active task
+// HasActiveTask checks if there's an active task.
 func (w *Workspace) HasActiveTask() bool {
 	_, err := os.Stat(w.ActiveTaskPath())
 	return err == nil
 }
 
-// LoadActiveTask loads the active task reference
+// LoadActiveTask loads the active task reference.
 func (w *Workspace) LoadActiveTask() (*ActiveTask, error) {
 	data, err := os.ReadFile(w.ActiveTaskPath())
 	if err != nil {
@@ -35,7 +35,7 @@ func (w *Workspace) LoadActiveTask() (*ActiveTask, error) {
 	return &active, nil
 }
 
-// SaveActiveTask saves the active task reference using atomic write pattern
+// SaveActiveTask saves the active task reference using atomic write pattern.
 func (w *Workspace) SaveActiveTask(active *ActiveTask) error {
 	data, err := yaml.Marshal(active)
 	if err != nil {
@@ -60,7 +60,7 @@ func (w *Workspace) SaveActiveTask(active *ActiveTask) error {
 	return nil
 }
 
-// ClearActiveTask removes the active task file
+// ClearActiveTask removes the active task file.
 func (w *Workspace) ClearActiveTask() error {
 	err := os.Remove(w.ActiveTaskPath())
 	if os.IsNotExist(err) {
@@ -69,7 +69,7 @@ func (w *Workspace) ClearActiveTask() error {
 	return err
 }
 
-// UpdateActiveTaskState updates just the state field
+// UpdateActiveTaskState updates just the state field.
 func (w *Workspace) UpdateActiveTaskState(state string) error {
 	active, err := w.LoadActiveTask()
 	if err != nil {

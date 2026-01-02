@@ -72,7 +72,7 @@ func runCost(cmd *cobra.Command, args []string) error {
 	return showActiveCost(ws)
 }
 
-// JSON output structures
+// JSON output structures.
 type jsonCostOutput struct {
 	TaskID        string                  `json:"task_id"`
 	Title         string                  `json:"title,omitempty"`
@@ -536,7 +536,7 @@ func showCostSummary(ws *storage.Workspace, taskIDs []string, activeID string) e
 	return nil
 }
 
-// formatNumber formats a number with thousands separator
+// formatNumber formats a number with thousands separator.
 func formatNumber(n int) string {
 	if n == 0 {
 		return "0"
@@ -563,7 +563,7 @@ func formatNumber(n int) string {
 }
 
 // formatCost formats a cost in USD with appropriate precision
-// Shows 2 decimals for amounts >= $0.01, 4 decimals for smaller amounts
+// Shows 2 decimals for amounts >= $0.01, 4 decimals for smaller amounts.
 func formatCost(cost float64) string {
 	if cost == 0 {
 		return "$0.00"
@@ -574,7 +574,7 @@ func formatCost(cost float64) string {
 	return fmt.Sprintf("$%.2f", cost)
 }
 
-// formatStepName formats a step name for display
+// formatStepName formats a step name for display.
 func formatStepName(step string) string {
 	// Capitalize first letter
 	if len(step) == 0 {

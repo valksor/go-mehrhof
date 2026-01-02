@@ -53,7 +53,7 @@ func (p *Provider) AddLabels(ctx context.Context, workUnitID string, labels []st
 	return err
 }
 
-// RemoveLabels removes labels from a Linear issue
+// RemoveLabels removes labels from a Linear issue.
 func (p *Provider) RemoveLabels(ctx context.Context, workUnitID string, labels []string) error {
 	ref, err := ParseReference(workUnitID)
 	if err != nil {
@@ -90,7 +90,7 @@ func (p *Provider) RemoveLabels(ctx context.Context, workUnitID string, labels [
 
 // GetLabelIDs resolves label names to label IDs
 // This is a helper function that would be used in production to properly resolve labels
-// For now, it returns the names as-is since we'd need additional API calls to resolve them
+// For now, it returns the names as-is since we'd need additional API calls to resolve them.
 func GetLabelIDs(ctx context.Context, client *Client, teamKey string, labelNames []string) ([]string, error) {
 	// In a production implementation, you would:
 	// 1. Query the team's labels using GraphQL

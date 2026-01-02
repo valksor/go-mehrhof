@@ -12,17 +12,17 @@ import (
 
 // Session methods
 
-// SessionsDir returns the sessions directory path
+// SessionsDir returns the sessions directory path.
 func (w *Workspace) SessionsDir(taskID string) string {
 	return filepath.Join(w.WorkPath(taskID), sessionsDirName)
 }
 
-// SessionPath returns the path for a session file
+// SessionPath returns the path for a session file.
 func (w *Workspace) SessionPath(taskID, filename string) string {
 	return filepath.Join(w.SessionsDir(taskID), filename)
 }
 
-// CreateSession creates a new session
+// CreateSession creates a new session.
 func (w *Workspace) CreateSession(taskID, sessionType, agent, state string) (*Session, string, error) {
 	session := NewSession(sessionType, agent, state)
 
@@ -42,7 +42,7 @@ func (w *Workspace) CreateSession(taskID, sessionType, agent, state string) (*Se
 	return session, filename, nil
 }
 
-// LoadSession loads a session by filename
+// LoadSession loads a session by filename.
 func (w *Workspace) LoadSession(taskID, filename string) (*Session, error) {
 	sessionFile := w.SessionPath(taskID, filename)
 
@@ -59,7 +59,7 @@ func (w *Workspace) LoadSession(taskID, filename string) (*Session, error) {
 	return &session, nil
 }
 
-// SaveSession saves a session
+// SaveSession saves a session.
 func (w *Workspace) SaveSession(taskID, filename string, session *Session) error {
 	sessionFile := w.SessionPath(taskID, filename)
 
@@ -71,7 +71,7 @@ func (w *Workspace) SaveSession(taskID, filename string, session *Session) error
 	return os.WriteFile(sessionFile, data, 0o644)
 }
 
-// ListSessions returns all sessions for a task
+// ListSessions returns all sessions for a task.
 func (w *Workspace) ListSessions(taskID string) ([]*Session, error) {
 	sessDir := w.SessionsDir(taskID)
 	entries, err := os.ReadDir(sessDir)
@@ -97,7 +97,7 @@ func (w *Workspace) ListSessions(taskID string) ([]*Session, error) {
 }
 
 // GetSourceContent returns combined source content for prompts
-// Reads from actual files in source/ directory (hybrid storage)
+// Reads from actual files in source/ directory (hybrid storage).
 func (w *Workspace) GetSourceContent(taskID string) (string, error) {
 	work, err := w.LoadWork(taskID)
 	if err != nil {
@@ -128,7 +128,7 @@ func (w *Workspace) GetSourceContent(taskID string) (string, error) {
 	return strings.Join(parts, "\n\n---\n\n"), nil
 }
 
-// PendingQuestion represents a question from the agent awaiting user response
+// PendingQuestion represents a question from the agent awaiting user response.
 type PendingQuestion struct {
 	Question string           `yaml:"question"`
 	Options  []QuestionOption `yaml:"options,omitempty"`
@@ -140,7 +140,7 @@ type PendingQuestion struct {
 	ExploredFiles  []string `yaml:"explored_files,omitempty"`  // Files referenced during exploration
 }
 
-// QuestionOption represents an answer option
+// QuestionOption represents an answer option.
 type QuestionOption struct {
 	Label       string `yaml:"label"`
 	Description string `yaml:"description,omitempty"`
@@ -148,18 +148,18 @@ type QuestionOption struct {
 
 const pendingQuestionFile = "pending_question.yaml"
 
-// PendingQuestionPath returns the path to pending question file
+// PendingQuestionPath returns the path to pending question file.
 func (w *Workspace) PendingQuestionPath(taskID string) string {
 	return filepath.Join(w.WorkPath(taskID), pendingQuestionFile)
 }
 
-// HasPendingQuestion checks if there's a pending question
+// HasPendingQuestion checks if there's a pending question.
 func (w *Workspace) HasPendingQuestion(taskID string) bool {
 	_, err := os.Stat(w.PendingQuestionPath(taskID))
 	return err == nil
 }
 
-// SavePendingQuestion saves a pending question
+// SavePendingQuestion saves a pending question.
 func (w *Workspace) SavePendingQuestion(taskID string, q *PendingQuestion) error {
 	data, err := yaml.Marshal(q)
 	if err != nil {
@@ -168,7 +168,7 @@ func (w *Workspace) SavePendingQuestion(taskID string, q *PendingQuestion) error
 	return os.WriteFile(w.PendingQuestionPath(taskID), data, 0o644)
 }
 
-// LoadPendingQuestion loads a pending question
+// LoadPendingQuestion loads a pending question.
 func (w *Workspace) LoadPendingQuestion(taskID string) (*PendingQuestion, error) {
 	data, err := os.ReadFile(w.PendingQuestionPath(taskID))
 	if err != nil {
@@ -181,7 +181,7 @@ func (w *Workspace) LoadPendingQuestion(taskID string) (*PendingQuestion, error)
 	return &q, nil
 }
 
-// ClearPendingQuestion removes the pending question file
+// ClearPendingQuestion removes the pending question file.
 func (w *Workspace) ClearPendingQuestion(taskID string) error {
 	err := os.Remove(w.PendingQuestionPath(taskID))
 	if os.IsNotExist(err) {

@@ -5,7 +5,7 @@ import (
 	"strings"
 )
 
-// Branch represents a git branch
+// Branch represents a git branch.
 type Branch struct {
 	Name      string
 	Remote    string // Empty for local branches
@@ -13,7 +13,7 @@ type Branch struct {
 	Commit    string // HEAD commit hash
 }
 
-// CreateBranch creates and optionally checks out a new branch
+// CreateBranch creates and optionally checks out a new branch.
 func (g *Git) CreateBranch(name string, base string) error {
 	args := []string{"checkout", "-b", name}
 	if base != "" {
@@ -26,7 +26,7 @@ func (g *Git) CreateBranch(name string, base string) error {
 	return nil
 }
 
-// CreateBranchNoCheckout creates a branch without checking it out
+// CreateBranchNoCheckout creates a branch without checking it out.
 func (g *Git) CreateBranchNoCheckout(name string, base string) error {
 	args := []string{"branch", name}
 	if base != "" {
@@ -39,7 +39,7 @@ func (g *Git) CreateBranchNoCheckout(name string, base string) error {
 	return nil
 }
 
-// DeleteBranch deletes a branch
+// DeleteBranch deletes a branch.
 func (g *Git) DeleteBranch(name string, force bool) error {
 	flag := "-d"
 	if force {
@@ -52,19 +52,19 @@ func (g *Git) DeleteBranch(name string, force bool) error {
 	return nil
 }
 
-// BranchExists checks if a branch exists
+// BranchExists checks if a branch exists.
 func (g *Git) BranchExists(name string) bool {
 	_, err := g.run("rev-parse", "--verify", "refs/heads/"+name)
 	return err == nil
 }
 
-// RemoteBranchExists checks if a remote branch exists
+// RemoteBranchExists checks if a remote branch exists.
 func (g *Git) RemoteBranchExists(remote, name string) bool {
 	_, err := g.run("rev-parse", "--verify", fmt.Sprintf("refs/remotes/%s/%s", remote, name))
 	return err == nil
 }
 
-// ListBranches returns all local branches
+// ListBranches returns all local branches.
 func (g *Git) ListBranches() ([]Branch, error) {
 	out, err := g.run("branch", "-v", "--no-abbrev")
 	if err != nil {
@@ -96,7 +96,7 @@ func (g *Git) ListBranches() ([]Branch, error) {
 	return branches, nil
 }
 
-// GetBaseBranch finds the base branch (usually main or master)
+// GetBaseBranch finds the base branch (usually main or master).
 func (g *Git) GetBaseBranch() (string, error) {
 	// Try common base branch names
 	candidates := []string{"main", "master", "develop"}
@@ -126,7 +126,7 @@ func (g *Git) GetBaseBranch() (string, error) {
 	return "", fmt.Errorf("no base branch found")
 }
 
-// GetTrackingBranch returns the remote tracking branch for a local branch
+// GetTrackingBranch returns the remote tracking branch for a local branch.
 func (g *Git) GetTrackingBranch(name string) (string, error) {
 	out, err := g.run("rev-parse", "--abbrev-ref", name+"@{upstream}")
 	if err != nil {
@@ -135,13 +135,13 @@ func (g *Git) GetTrackingBranch(name string) (string, error) {
 	return strings.TrimSpace(out), nil
 }
 
-// SetTrackingBranch sets the remote tracking branch
+// SetTrackingBranch sets the remote tracking branch.
 func (g *Git) SetTrackingBranch(local, remote, branch string) error {
 	_, err := g.run("branch", "-u", fmt.Sprintf("%s/%s", remote, branch), local)
 	return err
 }
 
-// RenameBranch renames a branch
+// RenameBranch renames a branch.
 func (g *Git) RenameBranch(oldName, newName string) error {
 	_, err := g.run("branch", "-m", oldName, newName)
 	if err != nil {
@@ -150,7 +150,7 @@ func (g *Git) RenameBranch(oldName, newName string) error {
 	return nil
 }
 
-// MergeBranch merges a branch into the current branch
+// MergeBranch merges a branch into the current branch.
 func (g *Git) MergeBranch(name string, noFF bool) error {
 	args := []string{"merge", name}
 	if noFF {
@@ -160,31 +160,31 @@ func (g *Git) MergeBranch(name string, noFF bool) error {
 	return err
 }
 
-// MergeSquash performs a squash merge
+// MergeSquash performs a squash merge.
 func (g *Git) MergeSquash(name string) error {
 	_, err := g.run("merge", "--squash", name)
 	return err
 }
 
-// RebaseBranch rebases current branch onto another
+// RebaseBranch rebases current branch onto another.
 func (g *Git) RebaseBranch(onto string) error {
 	_, err := g.run("rebase", onto)
 	return err
 }
 
-// AbortRebase aborts an in-progress rebase
+// AbortRebase aborts an in-progress rebase.
 func (g *Git) AbortRebase() error {
 	_, err := g.run("rebase", "--abort")
 	return err
 }
 
-// ContinueRebase continues a rebase after resolving conflicts
+// ContinueRebase continues a rebase after resolving conflicts.
 func (g *Git) ContinueRebase() error {
 	_, err := g.run("rebase", "--continue")
 	return err
 }
 
-// GetBranchCommitCount returns the number of commits in branch ahead of base
+// GetBranchCommitCount returns the number of commits in branch ahead of base.
 func (g *Git) GetBranchCommitCount(branch, base string) (int, error) {
 	out, err := g.run("rev-list", "--count", fmt.Sprintf("%s..%s", base, branch))
 	if err != nil {
@@ -196,7 +196,7 @@ func (g *Git) GetBranchCommitCount(branch, base string) (int, error) {
 	return count, err
 }
 
-// GetMergeBase returns the common ancestor of two branches
+// GetMergeBase returns the common ancestor of two branches.
 func (g *Git) GetMergeBase(a, b string) (string, error) {
 	out, err := g.run("merge-base", a, b)
 	if err != nil {
@@ -205,7 +205,7 @@ func (g *Git) GetMergeBase(a, b string) (string, error) {
 	return strings.TrimSpace(out), nil
 }
 
-// IsMerged checks if a branch has been merged into another
+// IsMerged checks if a branch has been merged into another.
 func (g *Git) IsMerged(branch, into string) (bool, error) {
 	mergeBase, err := g.GetMergeBase(branch, into)
 	if err != nil {
@@ -220,7 +220,7 @@ func (g *Git) IsMerged(branch, into string) (bool, error) {
 	return mergeBase == branchHead, nil
 }
 
-// GetAheadBehind returns commits ahead and behind remote
+// GetAheadBehind returns commits ahead and behind remote.
 func (g *Git) GetAheadBehind(local, remote string) (ahead, behind int, err error) {
 	out, err := g.run("rev-list", "--left-right", "--count", fmt.Sprintf("%s...%s", local, remote))
 	if err != nil {
@@ -231,7 +231,7 @@ func (g *Git) GetAheadBehind(local, remote string) (ahead, behind int, err error
 	return ahead, behind, err
 }
 
-// PushBranch pushes a branch to remote, optionally setting upstream
+// PushBranch pushes a branch to remote, optionally setting upstream.
 func (g *Git) PushBranch(branch, remote string, setUpstream bool) error {
 	args := []string{"push", remote, branch}
 	if setUpstream {
@@ -241,7 +241,7 @@ func (g *Git) PushBranch(branch, remote string, setUpstream bool) error {
 	return err
 }
 
-// ForcePushBranch force pushes a branch (use with caution)
+// ForcePushBranch force pushes a branch (use with caution).
 func (g *Git) ForcePushBranch(branch, remote string) error {
 	_, err := g.run("push", "--force-with-lease", remote, branch)
 	return err

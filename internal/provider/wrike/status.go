@@ -21,7 +21,7 @@ func (p *Provider) UpdateStatus(ctx context.Context, workUnitID string, status p
 	return nil
 }
 
-// mapProviderStatusToWrike converts a provider.Status to a Wrike status string
+// mapProviderStatusToWrike converts a provider.Status to a Wrike status string.
 func mapProviderStatusToWrike(status provider.Status) string {
 	switch status {
 	case provider.StatusOpen:

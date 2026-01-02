@@ -14,7 +14,7 @@ import (
 	"github.com/valksor/go-mehrhof/internal/display"
 )
 
-// maxReviewFileNumber is the maximum number to try when generating review filenames
+// maxReviewFileNumber is the maximum number to try when generating review filenames.
 const maxReviewFileNumber = 100
 
 var (
@@ -135,7 +135,7 @@ func runReview(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-// containsIssues checks if the review output indicates issues
+// containsIssues checks if the review output indicates issues.
 func containsIssues(output string) bool {
 	lowerOutput := strings.ToLower(output)
 	issueIndicators := []string{
@@ -159,7 +159,7 @@ func containsIssues(output string) bool {
 	return false
 }
 
-// getNextReviewFilename returns the next available review-N.txt filename
+// getNextReviewFilename returns the next available review-N.txt filename.
 func getNextReviewFilename(workDir string) string {
 	for i := 1; i <= maxReviewFileNumber; i++ {
 		filename := fmt.Sprintf("review-%d.txt", i)

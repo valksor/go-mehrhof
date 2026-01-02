@@ -1,6 +1,6 @@
 package workflow
 
-// Transition defines a state transition
+// Transition defines a state transition.
 type Transition struct {
 	From    State
 	Event   Event
@@ -9,7 +9,7 @@ type Transition struct {
 	Effects []EffectFunc
 }
 
-// TransitionKey uniquely identifies a transition
+// TransitionKey uniquely identifies a transition.
 type TransitionKey struct {
 	From  State
 	Event Event
@@ -112,24 +112,24 @@ var TransitionTable = map[TransitionKey][]Transition{
 	},
 }
 
-// GlobalTransitions apply from any state
+// GlobalTransitions apply from any state.
 var GlobalTransitions = map[Event]State{
 	EventAbort: StateFailed,
 }
 
-// GetTransitions returns possible transitions for a state/event pair
+// GetTransitions returns possible transitions for a state/event pair.
 func GetTransitions(from State, event Event) []Transition {
 	key := TransitionKey{From: from, Event: event}
 	return TransitionTable[key]
 }
 
-// GetGlobalTransition returns the target state for global events
+// GetGlobalTransition returns the target state for global events.
 func GetGlobalTransition(event Event) (State, bool) {
 	to, ok := GlobalTransitions[event]
 	return to, ok
 }
 
-// CanTransition checks if a transition is possible without guards
+// CanTransition checks if a transition is possible without guards.
 func CanTransition(from State, event Event) bool {
 	_, ok := GlobalTransitions[event]
 	if ok {

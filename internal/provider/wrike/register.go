@@ -4,7 +4,7 @@ import (
 	"github.com/valksor/go-mehrhof/internal/provider"
 )
 
-// Info returns the provider information
+// Info returns the provider information.
 func Info() provider.ProviderInfo {
 	return provider.ProviderInfo{
 		Name:        "wrike",
@@ -25,7 +25,7 @@ func Info() provider.ProviderInfo {
 	}
 }
 
-// Register adds the Wrike provider to the registry
+// Register adds the Wrike provider to the registry.
 func Register(r *provider.Registry) {
 	_ = r.Register(Info(), New)
 }

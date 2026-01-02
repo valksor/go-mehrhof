@@ -9,7 +9,7 @@ import (
 	providererrors "github.com/valksor/go-mehrhof/internal/provider/errors"
 )
 
-// GitHub-specific error types
+// GitHub-specific error types.
 var (
 	ErrRepoNotDetected   = errors.New("could not detect repository from git remote")
 	ErrRepoNotConfigured = errors.New("repository not configured")

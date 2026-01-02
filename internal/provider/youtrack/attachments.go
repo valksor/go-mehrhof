@@ -6,7 +6,7 @@ import (
 	"io"
 )
 
-// DownloadAttachment downloads an attachment
+// DownloadAttachment downloads an attachment.
 func (p *Provider) DownloadAttachment(ctx context.Context, workUnitID, attachmentID string) (io.ReadCloser, error) {
 	rc, _, err := p.client.DownloadAttachment(ctx, attachmentID)
 	if err != nil {

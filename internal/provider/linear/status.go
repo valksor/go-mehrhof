@@ -41,7 +41,7 @@ func (p *Provider) UpdateStatus(ctx context.Context, workUnitID string, status p
 
 // GetStateIDByName looks up a Linear state ID by name for a given team
 // This is a helper function that would be used in production to properly resolve state names
-// For now, it returns the name as-is since we'd need additional API calls to resolve it
+// For now, it returns the name as-is since we'd need additional API calls to resolve it.
 func (p *Provider) GetStateIDByName(ctx context.Context, teamKey, stateName string) (string, error) {
 	// In a production implementation, you would:
 	// 1. Query the team's workflow states using GraphQL

@@ -8,7 +8,7 @@ import (
 	providererrors "github.com/valksor/go-mehrhof/internal/provider/errors"
 )
 
-// Ref represents a parsed Jira issue reference
+// Ref represents a parsed Jira issue reference.
 type Ref struct {
 	IssueKey   string // The issue key (e.g., "JIRA-123")
 	ProjectKey string // The project key (e.g., "JIRA")
@@ -18,7 +18,7 @@ type Ref struct {
 	IsExplicit bool   // true if explicitly formatted
 }
 
-// String returns the canonical string representation
+// String returns the canonical string representation.
 func (r *Ref) String() string {
 	if r.URL != "" {
 		return r.URL
@@ -38,7 +38,7 @@ var (
 	// Also handles Jira Server: https://jira.example.com/browse/PROJ-123
 	jiraURLPattern = regexp.MustCompile(`^https?://[^/]+/browse/([A-Z0-9]+-[0-9]+)`)
 	// Matches: PROJ-123 format (project key uppercase + dash + number)
-	// Project key is typically 2-10 uppercase letters/numbers
+	// Project key is typically 2-10 uppercase letters/numbers.
 	issueKeyPattern = regexp.MustCompile(`^([A-Z0-9]{2,10})-([0-9]+)$`)
 )
 
@@ -98,7 +98,7 @@ func ParseReference(input string) (*Ref, error) {
 	return ref, nil
 }
 
-// parseIssueKey parses an issue key in PROJ-123 format
+// parseIssueKey parses an issue key in PROJ-123 format.
 func parseIssueKey(issueKey string) (*Ref, error) {
 	if matches := issueKeyPattern.FindStringSubmatch(issueKey); matches != nil {
 		projectKey := matches[1]
@@ -116,8 +116,8 @@ func parseIssueKey(issueKey string) (*Ref, error) {
 	return nil, fmt.Errorf("%w: invalid issue key format: %s (expected PROJ-123)", providererrors.ErrInvalidReference, issueKey)
 }
 
-// ExtractIssueKey extracts the issue key from a Jira URL
-// Returns empty string if not a valid URL
+// ExtractIssueKey extracts the issue key from a Jira URL.
+// Returns empty string if not a valid URL.
 func ExtractIssueKey(url string) string {
 	if matches := jiraURLPattern.FindStringSubmatch(url); matches != nil {
 		return matches[1]

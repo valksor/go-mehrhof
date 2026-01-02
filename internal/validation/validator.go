@@ -9,19 +9,19 @@ import (
 	"github.com/valksor/go-mehrhof/internal/storage"
 )
 
-// Options configures validation behavior
+// Options configures validation behavior.
 type Options struct {
 	Strict bool // Treat warnings as errors
 }
 
-// Validator validates configuration files
+// Validator validates configuration files.
 type Validator struct {
 	workspacePath string
 	builtInAgents []string
 	opts          Options
 }
 
-// New creates a new configuration validator
+// New creates a new configuration validator.
 func New(workspacePath string, opts Options) *Validator {
 	return &Validator{
 		workspacePath: workspacePath,
@@ -30,12 +30,12 @@ func New(workspacePath string, opts Options) *Validator {
 	}
 }
 
-// SetBuiltInAgents sets the list of known built-in agent names
+// SetBuiltInAgents sets the list of known built-in agent names.
 func (v *Validator) SetBuiltInAgents(names []string) {
 	v.builtInAgents = names
 }
 
-// Validate runs workspace validation and returns the result
+// Validate runs workspace validation and returns the result.
 func (v *Validator) Validate(ctx context.Context) (*Result, error) {
 	result := NewResult()
 
@@ -54,7 +54,7 @@ func (v *Validator) Validate(ctx context.Context) (*Result, error) {
 	return result, nil
 }
 
-// validateWorkspace validates the workspace configuration
+// validateWorkspace validates the workspace configuration.
 func (v *Validator) validateWorkspace() (*Result, error) {
 	result := NewResult()
 
@@ -85,7 +85,7 @@ func (v *Validator) validateWorkspace() (*Result, error) {
 	return result, nil
 }
 
-// WorkspaceConfigPath returns the expected workspace config file path
+// WorkspaceConfigPath returns the expected workspace config file path.
 func (v *Validator) WorkspaceConfigPath() string {
 	return filepath.Join(v.workspacePath, ".mehrhof", "config.yaml")
 }

@@ -9,10 +9,10 @@ import (
 	"github.com/valksor/go-mehrhof/internal/provider"
 )
 
-// ProviderName is the registered name for this provider
+// ProviderName is the registered name for this provider.
 const ProviderName = "notion"
 
-// Provider handles Notion pages as tasks
+// Provider handles Notion pages as tasks.
 type Provider struct {
 	client              *Client
 	databaseID          string
@@ -21,7 +21,7 @@ type Provider struct {
 	labelsProperty      string
 }
 
-// Config holds Notion provider configuration
+// Config holds Notion provider configuration.
 type Config struct {
 	Token               string
 	DatabaseID          string
@@ -30,7 +30,7 @@ type Config struct {
 	LabelsProperty      string
 }
 
-// Info returns provider metadata
+// Info returns provider metadata.
 func Info() provider.ProviderInfo {
 	return provider.ProviderInfo{
 		Name:        ProviderName,
@@ -50,7 +50,7 @@ func Info() provider.ProviderInfo {
 	}
 }
 
-// New creates a Notion provider
+// New creates a Notion provider.
 func New(_ context.Context, cfg provider.Config) (any, error) {
 	token := cfg.GetString("token")
 	databaseID := cfg.GetString("database_id")
@@ -87,12 +87,12 @@ func New(_ context.Context, cfg provider.Config) (any, error) {
 	}, nil
 }
 
-// Match checks if input has the notion: or nt: scheme prefix
+// Match checks if input has the notion: or nt: scheme prefix.
 func (p *Provider) Match(input string) bool {
 	return strings.HasPrefix(input, "notion:") || strings.HasPrefix(input, "nt:")
 }
 
-// Parse extracts the page reference from input
+// Parse extracts the page reference from input.
 func (p *Provider) Parse(input string) (string, error) {
 	ref, err := ParseReference(input)
 	if err != nil {
@@ -101,7 +101,7 @@ func (p *Provider) Parse(input string) (string, error) {
 	return ref.PageID, nil
 }
 
-// Fetch reads a Notion page and creates a WorkUnit
+// Fetch reads a Notion page and creates a WorkUnit.
 func (p *Provider) Fetch(ctx context.Context, id string) (*provider.WorkUnit, error) {
 	ref, err := ParseReference(id)
 	if err != nil {
@@ -148,22 +148,22 @@ func (p *Provider) Fetch(ctx context.Context, id string) (*provider.WorkUnit, er
 	return wu, nil
 }
 
-// GetClient returns the Notion API client
+// GetClient returns the Notion API client.
 func (p *Provider) GetClient() *Client {
 	return p.client
 }
 
-// GetDatabaseID returns the default database ID
+// GetDatabaseID returns the default database ID.
 func (p *Provider) GetDatabaseID() string {
 	return p.databaseID
 }
 
-// GetStatusProperty returns the configured status property name
+// GetStatusProperty returns the configured status property name.
 func (p *Provider) GetStatusProperty() string {
 	return p.statusProperty
 }
 
-// GetLabelsProperty returns the configured labels property name
+// GetLabelsProperty returns the configured labels property name.
 func (p *Provider) GetLabelsProperty() string {
 	return p.labelsProperty
 }
@@ -172,7 +172,7 @@ func (p *Provider) GetLabelsProperty() string {
 // Helper functions
 // ──────────────────────────────────────────────────────────────────────────────
 
-// extractTitle extracts the title from a page
+// extractTitle extracts the title from a page.
 func extractTitle(page Page) string {
 	// Look for the title property (usually the first property or named "Name" or "Title")
 	for key, prop := range page.Properties {
@@ -187,8 +187,8 @@ func extractTitle(page Page) string {
 	return "Untitled"
 }
 
-// extractDescription extracts the description from a page
-// First tries the configured description property, then falls back to page content
+// extractDescription extracts the description from a page.
+// First tries the configured description property, then falls back to page content.
 func extractDescription(page Page, blocks []Block, descriptionProperty string) string {
 	// Try the configured description property first
 	if prop, ok := GetProperty(page, descriptionProperty); ok {
@@ -205,7 +205,7 @@ func extractDescription(page Page, blocks []Block, descriptionProperty string) s
 	return ""
 }
 
-// extractStatus extracts the status from a page
+// extractStatus extracts the status from a page.
 func extractStatus(page Page, statusProperty string) provider.Status {
 	if prop, ok := GetProperty(page, statusProperty); ok {
 		if prop.Status != nil {
@@ -218,7 +218,7 @@ func extractStatus(page Page, statusProperty string) provider.Status {
 	return provider.StatusOpen
 }
 
-// mapNotionStatus converts Notion status to provider status
+// mapNotionStatus converts Notion status to provider status.
 func mapNotionStatus(status string) provider.Status {
 	switch strings.ToLower(status) {
 	case "not started", "backlog", "todo", "to do":
@@ -236,7 +236,7 @@ func mapNotionStatus(status string) provider.Status {
 	}
 }
 
-// mapProviderStatusToNotion converts provider status to Notion status name
+// mapProviderStatusToNotion converts provider status to Notion status name.
 func mapProviderStatusToNotion(status provider.Status) string {
 	switch status {
 	case provider.StatusOpen:
@@ -254,7 +254,7 @@ func mapProviderStatusToNotion(status provider.Status) string {
 	}
 }
 
-// extractLabelsFromPage extracts labels from a page's multi-select property
+// extractLabelsFromPage extracts labels from a page's multi-select property.
 func extractLabelsFromPage(page Page, labelsProperty string) []string {
 	if prop, ok := GetProperty(page, labelsProperty); ok {
 		return ExtractLabels(prop)
@@ -262,7 +262,7 @@ func extractLabelsFromPage(page Page, labelsProperty string) []string {
 	return []string{}
 }
 
-// extractAssignees extracts assignees from a page
+// extractAssignees extracts assignees from a page.
 func extractAssignees(page Page) []provider.Person {
 	// Look for a people property (commonly named "Assignee" or "Owner")
 	for key, prop := range page.Properties {
@@ -281,7 +281,7 @@ func extractAssignees(page Page) []provider.Person {
 	return []provider.Person{}
 }
 
-// getEmail extracts email from a user
+// getEmail extracts email from a user.
 func getEmail(user User) string {
 	if user.Person != nil {
 		return user.Person.Email
@@ -289,7 +289,7 @@ func getEmail(user User) string {
 	return ""
 }
 
-// buildMetadata creates metadata map from page
+// buildMetadata creates metadata map from page.
 func buildMetadata(page Page, ref *Ref) map[string]any {
 	metadata := make(map[string]any)
 

@@ -41,7 +41,7 @@ import (
 	"github.com/valksor/go-mehrhof/internal/workflow"
 )
 
-// Conductor orchestrates the task automation workflow
+// Conductor orchestrates the task automation workflow.
 type Conductor struct {
 	mu sync.RWMutex
 
@@ -75,7 +75,7 @@ type Conductor struct {
 	currentSessionFile string
 }
 
-// New creates a new Conductor with the given options
+// New creates a new Conductor with the given options.
 func New(opts ...Option) (*Conductor, error) {
 	options := DefaultOptions()
 	options.Apply(opts...)
@@ -104,27 +104,27 @@ func New(opts ...Option) (*Conductor, error) {
 	return c, nil
 }
 
-// GetProviderRegistry returns the provider registry
+// GetProviderRegistry returns the provider registry.
 func (c *Conductor) GetProviderRegistry() *provider.Registry {
 	return c.providers
 }
 
-// GetAgentRegistry returns the agent registry
+// GetAgentRegistry returns the agent registry.
 func (c *Conductor) GetAgentRegistry() *agent.Registry {
 	return c.agents
 }
 
-// GetEventBus returns the event bus
+// GetEventBus returns the event bus.
 func (c *Conductor) GetEventBus() *events.Bus {
 	return c.eventBus
 }
 
-// GetWorkspace returns the workspace
+// GetWorkspace returns the workspace.
 func (c *Conductor) GetWorkspace() *storage.Workspace {
 	return c.workspace
 }
 
-// GetGit returns the git instance
+// GetGit returns the git instance.
 func (c *Conductor) GetGit() *vcs.Git {
 	return c.git
 }
@@ -157,36 +157,36 @@ func (c *Conductor) GetTaskWork() *storage.TaskWork {
 	return &copy
 }
 
-// GetActiveAgent returns the active agent
+// GetActiveAgent returns the active agent.
 func (c *Conductor) GetActiveAgent() agent.Agent {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 	return c.activeAgent
 }
 
-// GetMachine returns the state machine
+// GetMachine returns the state machine.
 func (c *Conductor) GetMachine() *workflow.Machine {
 	return c.machine
 }
 
-// GetStdout returns the configured stdout writer
+// GetStdout returns the configured stdout writer.
 func (c *Conductor) GetStdout() io.Writer {
 	return c.opts.Stdout
 }
 
-// GetStderr returns the configured stderr writer
+// GetStderr returns the configured stderr writer.
 func (c *Conductor) GetStderr() io.Writer {
 	return c.opts.Stderr
 }
 
-// logVerbose logs a message if verbose mode is enabled
+// logVerbose logs a message if verbose mode is enabled.
 func (c *Conductor) logVerbose(format string, args ...any) {
 	if c.opts.Verbose && c.opts.Stdout != nil {
 		_, _ = fmt.Fprintf(c.opts.Stdout, format+"\n", args...)
 	}
 }
 
-// logError logs an error using the callback if configured
+// logError logs an error using the callback if configured.
 func (c *Conductor) logError(err error) {
 	if c.opts.OnError != nil {
 		c.opts.OnError(err)

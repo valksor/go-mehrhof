@@ -9,13 +9,13 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-// YAMLBlockParser parses YAML blocks from agent output
+// YAMLBlockParser parses YAML blocks from agent output.
 type YAMLBlockParser struct {
 	fileBlockRe    *regexp.Regexp
 	summaryBlockRe *regexp.Regexp
 }
 
-// NewYAMLBlockParser creates a new parser
+// NewYAMLBlockParser creates a new parser.
 func NewYAMLBlockParser() *YAMLBlockParser {
 	return &YAMLBlockParser{
 		fileBlockRe:    regexp.MustCompile("(?s)```yaml:file\\s*\\n(.+?)\\n```"),
@@ -23,7 +23,7 @@ func NewYAMLBlockParser() *YAMLBlockParser {
 	}
 }
 
-// ParseEvent parses a single line of JSON output from claude CLI
+// ParseEvent parses a single line of JSON output from claude CLI.
 func (p *YAMLBlockParser) ParseEvent(line []byte) (Event, error) {
 	event := Event{
 		Timestamp: time.Now(),
@@ -87,7 +87,7 @@ func (p *YAMLBlockParser) ParseEvent(line []byte) (Event, error) {
 	return event, nil
 }
 
-// parseAssistantMessage extracts text and tool calls from assistant messages
+// parseAssistantMessage extracts text and tool calls from assistant messages.
 func (p *YAMLBlockParser) parseAssistantMessage(event *Event, jsonData map[string]any) {
 	event.Type = EventText
 
@@ -137,7 +137,7 @@ func (p *YAMLBlockParser) parseAssistantMessage(event *Event, jsonData map[strin
 	}
 }
 
-// extractToolCall extracts a standardized ToolCall from a Claude tool_use block
+// extractToolCall extracts a standardized ToolCall from a Claude tool_use block.
 func (p *YAMLBlockParser) extractToolCall(block map[string]any) *ToolCall {
 	name, _ := block["name"].(string)
 	if name == "" {
@@ -156,7 +156,7 @@ func (p *YAMLBlockParser) extractToolCall(block map[string]any) *ToolCall {
 	return tc
 }
 
-// extractQuestion extracts a Question from AskUserQuestion tool input
+// extractQuestion extracts a Question from AskUserQuestion tool input.
 func (p *YAMLBlockParser) extractQuestion(input map[string]any) *Question {
 	if input == nil {
 		return nil
@@ -197,7 +197,7 @@ func (p *YAMLBlockParser) extractQuestion(input map[string]any) *Question {
 	return q
 }
 
-// describeToolCall generates a human-readable description for a tool call
+// describeToolCall generates a human-readable description for a tool call.
 func (p *YAMLBlockParser) describeToolCall(name string, input map[string]any) string {
 	switch name {
 	case "Read":
@@ -256,7 +256,7 @@ func (p *YAMLBlockParser) describeToolCall(name string, input map[string]any) st
 	return ""
 }
 
-// Parse aggregates events into a response
+// Parse aggregates events into a response.
 func (p *YAMLBlockParser) Parse(events []Event) (*Response, error) {
 	response := &Response{
 		Files:    make([]FileChange, 0),
@@ -380,15 +380,15 @@ func (p *YAMLBlockParser) parseUsage(data map[string]any) *UsageStats {
 	return stats
 }
 
-// JSONLineParser parses JSON lines output
+// JSONLineParser parses JSON lines output.
 type JSONLineParser struct{}
 
-// NewJSONLineParser creates a JSON line parser
+// NewJSONLineParser creates a JSON line parser.
 func NewJSONLineParser() *JSONLineParser {
 	return &JSONLineParser{}
 }
 
-// ParseEvent parses a JSON line
+// ParseEvent parses a JSON line.
 func (p *JSONLineParser) ParseEvent(line []byte) (Event, error) {
 	event := Event{
 		Timestamp: time.Now(),
@@ -415,7 +415,7 @@ func (p *JSONLineParser) ParseEvent(line []byte) (Event, error) {
 	return event, nil
 }
 
-// Parse aggregates JSON events
+// Parse aggregates JSON events.
 func (p *JSONLineParser) Parse(events []Event) (*Response, error) {
 	// Delegate to YAML parser for now - same logic
 	yamlParser := NewYAMLBlockParser()

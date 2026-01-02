@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-// mockAgent is a test implementation of Agent interface
+// mockAgent is a test implementation of Agent interface.
 type mockAgent struct {
 	available error
 	runErr    error

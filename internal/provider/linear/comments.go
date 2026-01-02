@@ -6,7 +6,7 @@ import (
 	"github.com/valksor/go-mehrhof/internal/provider"
 )
 
-// AddComment adds a comment to a Linear issue
+// AddComment adds a comment to a Linear issue.
 func (p *Provider) AddComment(ctx context.Context, workUnitID string, body string) (*provider.Comment, error) {
 	ref, err := ParseReference(workUnitID)
 	if err != nil {
@@ -43,7 +43,7 @@ func (p *Provider) AddComment(ctx context.Context, workUnitID string, body strin
 	}, nil
 }
 
-// FetchComments retrieves comments for a Linear issue
+// FetchComments retrieves comments for a Linear issue.
 func (p *Provider) FetchComments(ctx context.Context, workUnitID string) ([]provider.Comment, error) {
 	ref, err := ParseReference(workUnitID)
 	if err != nil {

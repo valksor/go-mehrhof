@@ -2,7 +2,7 @@ package trello
 
 import "github.com/valksor/go-mehrhof/internal/provider"
 
-// Register adds the Trello provider to the registry
+// Register adds the Trello provider to the registry.
 func Register(r *provider.Registry) {
 	_ = r.Register(Info(), New)
 }

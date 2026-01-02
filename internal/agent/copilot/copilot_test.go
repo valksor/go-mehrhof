@@ -630,7 +630,7 @@ func TestWithArgs_Chaining(t *testing.T) {
 	}
 }
 
-// mockParser is a simple mock for testing SetParser
+// mockParser is a simple mock for testing SetParser.
 type mockParser struct{}
 
 func (m *mockParser) ParseEvent(line []byte) (agent.Event, error) {

@@ -8,7 +8,7 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-// WorkspaceConfig holds workspace-specific configuration that users can customize
+// WorkspaceConfig holds workspace-specific configuration that users can customize.
 type WorkspaceConfig struct {
 	Git       GitSettings                 `yaml:"git"`
 	Agent     AgentSettings               `yaml:"agent"`
@@ -28,7 +28,7 @@ type WorkspaceConfig struct {
 	Storage   StorageSettings             `yaml:"storage,omitempty"`
 }
 
-// PluginsConfig holds plugin-related configuration
+// PluginsConfig holds plugin-related configuration.
 type PluginsConfig struct {
 	// Enabled lists the plugin names that should be loaded
 	// Only plugins in this list will be activated
@@ -39,7 +39,7 @@ type PluginsConfig struct {
 	Config map[string]map[string]any `yaml:"config,omitempty"`
 }
 
-// GitHubSettings holds GitHub provider configuration
+// GitHubSettings holds GitHub provider configuration.
 type GitHubSettings struct {
 	Token         string                  `yaml:"token,omitempty"`          // GitHub token (env vars take priority)
 	Owner         string                  `yaml:"owner,omitempty"`          // Repository owner (auto-detected from git remote)
@@ -51,7 +51,7 @@ type GitHubSettings struct {
 	Comments      *GitHubCommentsSettings `yaml:"comments,omitempty"`
 }
 
-// GitHubCommentsSettings controls automated GitHub issue commenting
+// GitHubCommentsSettings controls automated GitHub issue commenting.
 type GitHubCommentsSettings struct {
 	Enabled         bool `yaml:"enabled"`           // Master switch (default: false)
 	OnBranchCreated bool `yaml:"on_branch_created"` // Post when branch is created
@@ -60,14 +60,14 @@ type GitHubCommentsSettings struct {
 	OnPRCreated     bool `yaml:"on_pr_created"`     // Post PR link
 }
 
-// WrikeSettings holds Wrike provider configuration
+// WrikeSettings holds Wrike provider configuration.
 type WrikeSettings struct {
 	Token  string `yaml:"token,omitempty"`  // Wrike API token (env vars take priority)
 	Host   string `yaml:"host,omitempty"`   // API base URL override (default: https://www.wrike.com/api/v4)
 	Folder string `yaml:"folder,omitempty"` // Default folder ID for task lookup
 }
 
-// GitLabSettings holds GitLab provider configuration
+// GitLabSettings holds GitLab provider configuration.
 type GitLabSettings struct {
 	Token         string `yaml:"token,omitempty"`          // GitLab token (env vars take priority)
 	Host          string `yaml:"host,omitempty"`           // GitLab host (default: https://gitlab.com)
@@ -76,7 +76,7 @@ type GitLabSettings struct {
 	CommitPrefix  string `yaml:"commit_prefix,omitempty"`  // Default: "[#{key}]"
 }
 
-// NotionSettings holds Notion provider configuration
+// NotionSettings holds Notion provider configuration.
 type NotionSettings struct {
 	Token               string `yaml:"token,omitempty"`                // Notion token (env vars take priority)
 	DatabaseID          string `yaml:"database_id,omitempty"`          // Default database ID
@@ -85,7 +85,7 @@ type NotionSettings struct {
 	LabelsProperty      string `yaml:"labels_property,omitempty"`      // Property name for labels (default: Tags)
 }
 
-// JiraSettings holds Jira provider configuration
+// JiraSettings holds Jira provider configuration.
 type JiraSettings struct {
 	Token   string `yaml:"token,omitempty"`    // Jira API token (env vars take priority)
 	Email   string `yaml:"email,omitempty"`    // Email for Cloud auth
@@ -93,20 +93,20 @@ type JiraSettings struct {
 	Project string `yaml:"project,omitempty"`  // Default project key
 }
 
-// LinearSettings holds Linear provider configuration
+// LinearSettings holds Linear provider configuration.
 type LinearSettings struct {
 	Token string `yaml:"token,omitempty"` // Linear API key (env vars take priority)
 	Team  string `yaml:"team,omitempty"`  // Default team key
 }
 
-// YouTrackSettings holds YouTrack provider configuration
+// YouTrackSettings holds YouTrack provider configuration.
 type YouTrackSettings struct {
 	Token string `yaml:"token,omitempty"` // YouTrack token (env vars take priority)
 	Host  string `yaml:"host,omitempty"`  // YouTrack host
 }
 
 // AgentAliasConfig defines a user-defined agent alias that wraps an existing agent
-// with custom environment variables and CLI arguments
+// with custom environment variables and CLI arguments.
 type AgentAliasConfig struct {
 	Extends     string            `yaml:"extends"`               // Base agent name to wrap
 	Description string            `yaml:"description,omitempty"` // Human-readable description
@@ -114,7 +114,7 @@ type AgentAliasConfig struct {
 	Args        []string          `yaml:"args,omitempty"`        // CLI arguments to pass
 }
 
-// GitSettings holds git-related configuration
+// GitSettings holds git-related configuration.
 type GitSettings struct {
 	CommitPrefix  string `yaml:"commit_prefix"`
 	BranchPattern string `yaml:"branch_pattern"`
@@ -122,14 +122,14 @@ type GitSettings struct {
 	SignCommits   bool   `yaml:"sign_commits"`
 }
 
-// StepAgentConfig holds agent configuration for a specific workflow step
+// StepAgentConfig holds agent configuration for a specific workflow step.
 type StepAgentConfig struct {
 	Name string            `yaml:"name,omitempty"` // Agent name or alias
 	Env  map[string]string `yaml:"env,omitempty"`  // Step-specific env vars
 	Args []string          `yaml:"args,omitempty"` // Step-specific CLI args
 }
 
-// AgentSettings holds agent-related configuration
+// AgentSettings holds agent-related configuration.
 type AgentSettings struct {
 	Default    string                     `yaml:"default"`
 	Timeout    int                        `yaml:"timeout"`
@@ -137,7 +137,7 @@ type AgentSettings struct {
 	Steps      map[string]StepAgentConfig `yaml:"steps,omitempty"` // Per-step agent configuration
 }
 
-// WorkflowSettings holds workflow-related configuration
+// WorkflowSettings holds workflow-related configuration.
 type WorkflowSettings struct {
 	AutoInit             bool `yaml:"auto_init"`
 	SessionRetentionDays int  `yaml:"session_retention_days"`
@@ -145,23 +145,23 @@ type WorkflowSettings struct {
 	DeleteWorkOnAbandon  bool `yaml:"delete_work_on_abandon"` // Delete work dirs on abandon (default: true)
 }
 
-// UpdateSettings holds update-related configuration
+// UpdateSettings holds update-related configuration.
 type UpdateSettings struct {
 	Enabled       bool `yaml:"enabled"`        // Enable automatic update checks
 	CheckInterval int  `yaml:"check_interval"` // Hours between checks (default: 24)
 }
 
-// StorageSettings holds storage-related configuration
+// StorageSettings holds storage-related configuration.
 type StorageSettings struct {
 	WorkDir string `yaml:"work_dir,omitempty"` // Path to work directory (relative to project root)
 }
 
-// ProvidersSettings holds provider-related configuration
+// ProvidersSettings holds provider-related configuration.
 type ProvidersSettings struct {
 	Default string `yaml:"default,omitempty"` // Default provider for bare references (e.g., "file", "directory", "github")
 }
 
-// NewDefaultWorkspaceConfig creates a WorkspaceConfig with default values
+// NewDefaultWorkspaceConfig creates a WorkspaceConfig with default values.
 func NewDefaultWorkspaceConfig() *WorkspaceConfig {
 	return &WorkspaceConfig{
 		Git: GitSettings{
@@ -196,7 +196,7 @@ func NewDefaultWorkspaceConfig() *WorkspaceConfig {
 }
 
 // GetEnvForAgent returns env vars for a specific agent, stripping the prefix.
-// E.g., for agent "claude": CLAUDE_FOO=bar → FOO=bar
+// E.g., for agent "claude": CLAUDE_FOO=bar → FOO=bar.
 func (cfg *WorkspaceConfig) GetEnvForAgent(agentName string) map[string]string {
 	prefix := strings.ToUpper(agentName) + "_"
 	result := make(map[string]string)
@@ -209,7 +209,7 @@ func (cfg *WorkspaceConfig) GetEnvForAgent(agentName string) map[string]string {
 	return result
 }
 
-// SaveConfig saves the workspace configuration to .mehrhof/config.yaml
+// SaveConfig saves the workspace configuration to .mehrhof/config.yaml.
 func (w *Workspace) SaveConfig(cfg *WorkspaceConfig) error {
 	// Ensure .mehrhof directory exists
 	if err := os.MkdirAll(w.taskRoot, 0o755); err != nil {
@@ -326,7 +326,7 @@ func (w *Workspace) SaveConfig(cfg *WorkspaceConfig) error {
 	return nil
 }
 
-// LoadConfig loads the workspace configuration from .mehrhof/config.yaml
+// LoadConfig loads the workspace configuration from .mehrhof/config.yaml.
 func (w *Workspace) LoadConfig() (*WorkspaceConfig, error) {
 	data, err := os.ReadFile(w.ConfigPath())
 	if err != nil {

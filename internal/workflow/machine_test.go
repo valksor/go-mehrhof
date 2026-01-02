@@ -383,7 +383,7 @@ func TestConcurrentDispatch(t *testing.T) {
 	}
 }
 
-// Table-driven tests for transitions
+// Table-driven tests for transitions.
 func TestTransitions(t *testing.T) {
 	tests := []struct {
 		setup     func(*Machine)

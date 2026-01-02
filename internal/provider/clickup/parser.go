@@ -6,10 +6,10 @@ import (
 )
 
 var (
-	// taskIDPattern matches ClickUp task IDs (alphanumeric, 7-9 chars like "abc1234")
+	// taskIDPattern matches ClickUp task IDs (alphanumeric, 7-9 chars like "abc1234").
 	taskIDPattern = regexp.MustCompile(`^[a-zA-Z0-9]{7,9}$`)
 
-	// customTaskIDPattern matches custom task IDs like "PROJ-123"
+	// customTaskIDPattern matches custom task IDs like "PROJ-123".
 	customTaskIDPattern = regexp.MustCompile(`^[A-Z]+-\d+$`)
 
 	// appURLPattern matches ClickUp app URLs
@@ -20,11 +20,11 @@ var (
 	// Format: https://sharing.clickup.com/TEAM_ID/t/h/TASK_ID/HASH
 	shareURLPattern = regexp.MustCompile(`(?:https?://)?sharing\.clickup\.com/\d+/t/h/([a-zA-Z0-9]+)/`)
 
-	// extractTaskIDsPattern finds task IDs in text
+	// extractTaskIDsPattern finds task IDs in text.
 	extractTaskIDsPattern = regexp.MustCompile(`app\.clickup\.com/t/(?:\d+/)?([a-zA-Z0-9]+)`)
 )
 
-// Reference represents a parsed ClickUp reference
+// Reference represents a parsed ClickUp reference.
 type Reference struct {
 	TaskID     string // ClickUp task ID (e.g., "abc1234")
 	CustomID   string // Custom task ID if using custom task IDs (e.g., "PROJ-123")
@@ -32,7 +32,7 @@ type Reference struct {
 	IsExplicit bool   // True if parsed from explicit URL/reference format
 }
 
-// String returns the string representation of the reference
+// String returns the string representation of the reference.
 func (r Reference) String() string {
 	if r.CustomID != "" {
 		return r.CustomID
@@ -95,7 +95,7 @@ func ParseReference(input string) (*Reference, error) {
 	return nil, ErrInvalidReference
 }
 
-// ExtractTaskIDs extracts all task IDs from text (e.g., commit messages, descriptions)
+// ExtractTaskIDs extracts all task IDs from text (e.g., commit messages, descriptions).
 func ExtractTaskIDs(text string) []string {
 	matches := extractTaskIDsPattern.FindAllStringSubmatch(text, -1)
 	if len(matches) == 0 {

@@ -52,7 +52,7 @@ func (p *Provider) CreateWorkUnit(ctx context.Context, opts provider.CreateWorkU
 	return p.taskToWorkUnit(task), nil
 }
 
-// mapProviderPriorityToClickUp converts provider.Priority to ClickUp priority number
+// mapProviderPriorityToClickUp converts provider.Priority to ClickUp priority number.
 func mapProviderPriorityToClickUp(priority provider.Priority) int {
 	switch priority {
 	case provider.PriorityCritical:

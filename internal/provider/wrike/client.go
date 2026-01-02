@@ -18,13 +18,13 @@ const (
 	defaultBaseURL = "https://www.wrike.com/api/v4"
 )
 
-// Config holds client configuration
+// Config holds client configuration.
 type Config struct {
 	Token string
 	Host  string // Optional: override default API base URL
 }
 
-// Client wraps the Wrike API client
+// Client wraps the Wrike API client.
 type Client struct {
 	httpClient *http.Client
 	baseURL    string
@@ -33,7 +33,7 @@ type Client struct {
 	spaceID    string // Default space for list operations
 }
 
-// NewClient creates a new Wrike API client
+// NewClient creates a new Wrike API client.
 func NewClient(token, host string) *Client {
 	baseURL := defaultBaseURL
 	if host != "" {
@@ -47,7 +47,7 @@ func NewClient(token, host string) *Client {
 	}
 }
 
-// NewClientWithConfig creates a new Wrike API client with full configuration
+// NewClientWithConfig creates a new Wrike API client with full configuration.
 func NewClientWithConfig(cfg ClientConfig) *Client {
 	baseURL := defaultBaseURL
 	if cfg.Host != "" {
@@ -63,7 +63,7 @@ func NewClientWithConfig(cfg ClientConfig) *Client {
 	}
 }
 
-// ClientConfig holds extended client configuration
+// ClientConfig holds extended client configuration.
 type ClientConfig struct {
 	Token    string
 	Host     string
@@ -81,7 +81,7 @@ func ResolveToken(configToken string) (string, error) {
 		WithEnvVars("WRIKE_TOKEN"))
 }
 
-// doRequest performs an HTTP request to the Wrike API
+// doRequest performs an HTTP request to the Wrike API.
 func (c *Client) doRequest(ctx context.Context, method, path string, body io.Reader, result any) error {
 	reqURL := c.baseURL + path
 
@@ -128,7 +128,7 @@ func (c *Client) doRequestWithRetry(ctx context.Context, method, path string, bo
 	})
 }
 
-// GetTask fetches a task by ID
+// GetTask fetches a task by ID.
 func (c *Client) GetTask(ctx context.Context, taskID string) (*Task, error) {
 	var response taskResponse
 	if err := c.doRequestWithRetry(ctx, http.MethodGet, "/tasks/"+url.PathEscape(taskID), nil, &response); err != nil {
@@ -143,7 +143,7 @@ func (c *Client) GetTask(ctx context.Context, taskID string) (*Task, error) {
 }
 
 // GetTaskByPermalink fetches a task by permalink URL
-// Extracts the numeric ID from the permalink and uses the standard task endpoint
+// Extracts the numeric ID from the permalink and uses the standard task endpoint.
 func (c *Client) GetTaskByPermalink(ctx context.Context, permalink string) (*Task, error) {
 	numericID := ExtractNumericID(permalink)
 	if numericID == "" {
@@ -156,7 +156,7 @@ func (c *Client) GetTaskByPermalink(ctx context.Context, permalink string) (*Tas
 	return c.GetTask(ctx, numericID)
 }
 
-// GetTasks fetches multiple tasks by IDs
+// GetTasks fetches multiple tasks by IDs.
 func (c *Client) GetTasks(ctx context.Context, taskIDs []string) ([]Task, error) {
 	var response taskResponse
 	if err := c.doRequestWithRetry(ctx, http.MethodGet, "/tasks/"+url.PathEscape(strings.Join(taskIDs, ",")), nil, &response); err != nil {
@@ -166,7 +166,7 @@ func (c *Client) GetTasks(ctx context.Context, taskIDs []string) ([]Task, error)
 	return response.Data, nil
 }
 
-// GetTasksInFolder fetches all tasks in a folder
+// GetTasksInFolder fetches all tasks in a folder.
 func (c *Client) GetTasksInFolder(ctx context.Context, folderID string) ([]Task, error) {
 	var response taskResponse
 	if err := c.doRequestWithRetry(ctx, http.MethodGet, "/folders/"+url.PathEscape(folderID)+"/tasks", nil, &response); err != nil {
@@ -175,7 +175,7 @@ func (c *Client) GetTasksInFolder(ctx context.Context, folderID string) ([]Task,
 	return response.Data, nil
 }
 
-// GetTasksInSpace fetches all tasks in a space
+// GetTasksInSpace fetches all tasks in a space.
 func (c *Client) GetTasksInSpace(ctx context.Context, spaceID string) ([]Task, error) {
 	var response taskResponse
 	if err := c.doRequestWithRetry(ctx, http.MethodGet, "/spaces/"+url.PathEscape(spaceID)+"/tasks", nil, &response); err != nil {
@@ -184,7 +184,7 @@ func (c *Client) GetTasksInSpace(ctx context.Context, spaceID string) ([]Task, e
 	return response.Data, nil
 }
 
-// GetComments fetches comments for a task with pagination support
+// GetComments fetches comments for a task with pagination support.
 func (c *Client) GetComments(ctx context.Context, taskID string) ([]Comment, error) {
 	var allComments []Comment
 	path := "/tasks/" + url.PathEscape(taskID) + "/comments"
@@ -210,7 +210,7 @@ func (c *Client) GetComments(ctx context.Context, taskID string) ([]Comment, err
 	return allComments, nil
 }
 
-// GetAttachments fetches attachments for a task
+// GetAttachments fetches attachments for a task.
 func (c *Client) GetAttachments(ctx context.Context, taskID string) ([]Attachment, error) {
 	var response attachmentsResponse
 	if err := c.doRequestWithRetry(ctx, http.MethodGet, "/tasks/"+url.PathEscape(taskID)+"/attachments", nil, &response); err != nil {
@@ -220,7 +220,7 @@ func (c *Client) GetAttachments(ctx context.Context, taskID string) ([]Attachmen
 	return response.Data, nil
 }
 
-// DownloadAttachment downloads an attachment by ID
+// DownloadAttachment downloads an attachment by ID.
 func (c *Client) DownloadAttachment(ctx context.Context, attachmentID string) (io.ReadCloser, string, error) {
 	reqURL := c.baseURL + "/attachments/" + url.PathEscape(attachmentID) + "/download"
 
@@ -244,7 +244,7 @@ func (c *Client) DownloadAttachment(ctx context.Context, attachmentID string) (i
 	return resp.Body, resp.Header.Get("Content-Disposition"), nil
 }
 
-// PostComment adds a comment to a task
+// PostComment adds a comment to a task.
 func (c *Client) PostComment(ctx context.Context, taskID, text string) (*Comment, error) {
 	requestBody := map[string]string{
 		"text": text,
@@ -267,7 +267,7 @@ func (c *Client) PostComment(ctx context.Context, taskID, text string) (*Comment
 	return &response.Data[0], nil
 }
 
-// UpdateTaskStatus updates the status of a task
+// UpdateTaskStatus updates the status of a task.
 func (c *Client) UpdateTaskStatus(ctx context.Context, taskID, status string) error {
 	requestBody := map[string]string{
 		"status": status,
@@ -286,7 +286,7 @@ func (c *Client) UpdateTaskStatus(ctx context.Context, taskID, status string) er
 	return nil
 }
 
-// CreateTaskOptions holds options for creating a new task
+// CreateTaskOptions holds options for creating a new task.
 type CreateTaskOptions struct {
 	Title       string
 	Description string
@@ -294,7 +294,7 @@ type CreateTaskOptions struct {
 	Status      string
 }
 
-// CreateTask creates a new task in a folder
+// CreateTask creates a new task in a folder.
 func (c *Client) CreateTask(ctx context.Context, folderID string, opts CreateTaskOptions) (*Task, error) {
 	requestBody := map[string]any{
 		"title": opts.Title,
@@ -331,7 +331,7 @@ func (c *Client) CreateTask(ctx context.Context, folderID string, opts CreateTas
 // Wrike API Types
 // ──────────────────────────────────────────────────────────────────────────────
 
-// Task represents a Wrike task
+// Task represents a Wrike task.
 type Task struct {
 	CreatedDate time.Time `json:"createdDate"`
 	UpdatedDate time.Time `json:"updatedDate"`
@@ -344,7 +344,7 @@ type Task struct {
 	SubTaskIDs  []string  `json:"subTaskIds"`
 }
 
-// Comment represents a Wrike comment
+// Comment represents a Wrike comment.
 type Comment struct {
 	CreatedDate time.Time `json:"createdDate"`
 	UpdatedDate time.Time `json:"updatedDate"`
@@ -354,7 +354,7 @@ type Comment struct {
 	AuthorName  string    `json:"authorName,omitempty"`
 }
 
-// Attachment represents a Wrike attachment
+// Attachment represents a Wrike attachment.
 type Attachment struct {
 	CreatedDate time.Time `json:"createdDate"`
 	ID          string    `json:"id"`
@@ -362,7 +362,7 @@ type Attachment struct {
 	Size        int64     `json:"size,omitempty"`
 }
 
-// Response wrappers for Wrike API
+// Response wrappers for Wrike API.
 type taskResponse struct {
 	Data []Task `json:"data"`
 }

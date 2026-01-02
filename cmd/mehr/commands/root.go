@@ -18,7 +18,7 @@ import (
 var (
 	settings *config.Settings
 
-	// Global flags
+	// Global flags.
 	verbose bool
 	noColor bool
 	quiet   bool
@@ -82,7 +82,7 @@ For full auto: mehr auto task.md`,
 	},
 }
 
-// Execute runs the root command with signal handling
+// Execute runs the root command with signal handling.
 func Execute() error {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -122,7 +122,7 @@ func init() {
 	help.SetupContextualHelp(rootCmd)
 }
 
-// GetSettings returns the loaded settings
+// GetSettings returns the loaded settings.
 func GetSettings() *config.Settings {
 	return settings
 }

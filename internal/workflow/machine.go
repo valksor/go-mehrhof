@@ -9,10 +9,10 @@ import (
 	"github.com/valksor/go-mehrhof/internal/events"
 )
 
-// StateListener is called when state changes
+// StateListener is called when state changes.
 type StateListener func(from, to State, event Event, wu *WorkUnit)
 
-// Machine manages workflow state transitions
+// Machine manages workflow state transitions.
 type Machine struct {
 	mu sync.RWMutex
 
@@ -36,7 +36,7 @@ type Machine struct {
 	phaseOrder        []State
 }
 
-// HistoryEntry records a state transition
+// HistoryEntry records a state transition.
 type HistoryEntry struct {
 	From  State
 	To    State
@@ -62,35 +62,35 @@ func NewMachine(eventBus *events.Bus) *Machine {
 	}
 }
 
-// State returns the current state
+// State returns the current state.
 func (m *Machine) State() State {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 	return m.state
 }
 
-// WorkUnit returns the current work unit
+// WorkUnit returns the current work unit.
 func (m *Machine) WorkUnit() *WorkUnit {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 	return m.workUnit
 }
 
-// SetWorkUnit sets the work unit
+// SetWorkUnit sets the work unit.
 func (m *Machine) SetWorkUnit(wu *WorkUnit) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	m.workUnit = wu
 }
 
-// AddListener registers a state change listener
+// AddListener registers a state change listener.
 func (m *Machine) AddListener(listener StateListener) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	m.listeners = append(m.listeners, listener)
 }
 
-// Dispatch attempts to transition based on an event
+// Dispatch attempts to transition based on an event.
 func (m *Machine) Dispatch(ctx context.Context, event Event) error {
 	// First pass: check if transition is possible and evaluate guards
 	// We do this without holding the lock to avoid blocking if guards do I/O
@@ -154,7 +154,7 @@ func (m *Machine) Dispatch(ctx context.Context, event Event) error {
 	return m.transitionTo(ctx, from, validTransition.To, event)
 }
 
-// CanDispatch checks if a transition is possible
+// CanDispatch checks if a transition is possible.
 func (m *Machine) CanDispatch(ctx context.Context, event Event) (bool, string) {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
@@ -183,7 +183,7 @@ func (m *Machine) CanDispatch(ctx context.Context, event Event) (bool, string) {
 	return false, fmt.Sprintf("guards failed for transition from %s on event %s", from, event)
 }
 
-// transitionTo performs the actual state change (must hold lock)
+// transitionTo performs the actual state change (must hold lock).
 func (m *Machine) transitionTo(ctx context.Context, from, to State, event Event) error {
 	// Record history
 	m.history = append(m.history, HistoryEntry{
@@ -242,7 +242,7 @@ func (m *Machine) transitionTo(ctx context.Context, from, to State, event Event)
 	return nil
 }
 
-// getTaskID returns the current task ID (must hold lock or be called from locked context)
+// getTaskID returns the current task ID (must hold lock or be called from locked context).
 func (m *Machine) getTaskID() string {
 	if m.workUnit != nil {
 		return m.workUnit.ID
@@ -250,7 +250,7 @@ func (m *Machine) getTaskID() string {
 	return ""
 }
 
-// History returns the transition history
+// History returns the transition history.
 func (m *Machine) History() []HistoryEntry {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
@@ -260,7 +260,7 @@ func (m *Machine) History() []HistoryEntry {
 	return history
 }
 
-// Reset resets the machine to idle state
+// Reset resets the machine to idle state.
 func (m *Machine) Reset() {
 	m.mu.Lock()
 	defer m.mu.Unlock()
@@ -272,7 +272,7 @@ func (m *Machine) Reset() {
 	m.redoStack = nil
 }
 
-// PushUndo adds a checkpoint to the undo stack
+// PushUndo adds a checkpoint to the undo stack.
 func (m *Machine) PushUndo(checkpoint string) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
@@ -282,7 +282,7 @@ func (m *Machine) PushUndo(checkpoint string) {
 	m.redoStack = nil
 }
 
-// PopUndo removes and returns the last checkpoint from undo stack
+// PopUndo removes and returns the last checkpoint from undo stack.
 func (m *Machine) PopUndo() (string, bool) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
@@ -297,7 +297,7 @@ func (m *Machine) PopUndo() (string, bool) {
 	return checkpoint, true
 }
 
-// PopRedo removes and returns the last checkpoint from redo stack
+// PopRedo removes and returns the last checkpoint from redo stack.
 func (m *Machine) PopRedo() (string, bool) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
@@ -312,21 +312,21 @@ func (m *Machine) PopRedo() (string, bool) {
 	return checkpoint, true
 }
 
-// CanUndo returns true if undo is possible
+// CanUndo returns true if undo is possible.
 func (m *Machine) CanUndo() bool {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 	return len(m.undoStack) > 0
 }
 
-// CanRedo returns true if redo is possible
+// CanRedo returns true if redo is possible.
 func (m *Machine) CanRedo() bool {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 	return len(m.redoStack) > 0
 }
 
-// IsTerminal returns true if current state is terminal
+// IsTerminal returns true if current state is terminal.
 func (m *Machine) IsTerminal() bool {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
@@ -338,7 +338,7 @@ func (m *Machine) IsTerminal() bool {
 	return info.Terminal
 }
 
-// GetStateInfo returns state metadata for the given state
+// GetStateInfo returns state metadata for the given state.
 func (m *Machine) GetStateInfo(s State) (StateInfo, bool) {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
@@ -346,7 +346,7 @@ func (m *Machine) GetStateInfo(s State) (StateInfo, bool) {
 	return info, ok
 }
 
-// PhaseOrder returns the current phase order
+// PhaseOrder returns the current phase order.
 func (m *Machine) PhaseOrder() []State {
 	m.mu.RLock()
 	defer m.mu.RUnlock()

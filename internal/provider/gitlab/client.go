@@ -9,12 +9,12 @@ import (
 	gitlab "gitlab.com/gitlab-org/api/client-go"
 )
 
-// ptr is a helper to create a pointer to a value
+// ptr is a helper to create a pointer to a value.
 func ptr[T any](v T) *T {
 	return &v
 }
 
-// Client wraps the GitLab API client
+// Client wraps the GitLab API client.
 type Client struct {
 	gl          *gitlab.Client
 	projectID   int64  // Numeric project ID (cached)
@@ -22,7 +22,7 @@ type Client struct {
 	host        string // GitLab host (e.g., "gitlab.com" or custom)
 }
 
-// NewClient creates a new GitLab API client
+// NewClient creates a new GitLab API client.
 func NewClient(token, host, projectPath string, projectID int64) *Client {
 	var options []gitlab.ClientOptionFunc
 
@@ -69,7 +69,7 @@ func ResolveToken(configToken string) (string, error) {
 	return "", ErrNoToken
 }
 
-// getProjectID retrieves the numeric project ID from the project path
+// getProjectID retrieves the numeric project ID from the project path.
 func (c *Client) getProjectID(ctx context.Context) (int64, error) {
 	if c.projectID > 0 {
 		return c.projectID, nil
@@ -89,7 +89,7 @@ func (c *Client) getProjectID(ctx context.Context) (int64, error) {
 	return c.projectID, nil
 }
 
-// GetIssue fetches an issue by IID (internal issue number)
+// GetIssue fetches an issue by IID (internal issue number).
 func (c *Client) GetIssue(ctx context.Context, iid int64) (*gitlab.Issue, error) {
 	pid, err := c.getProjectID(ctx)
 	if err != nil {
@@ -103,7 +103,7 @@ func (c *Client) GetIssue(ctx context.Context, iid int64) (*gitlab.Issue, error)
 	return issue, nil
 }
 
-// GetIssueNotes fetches all notes (comments) on an issue
+// GetIssueNotes fetches all notes (comments) on an issue.
 func (c *Client) GetIssueNotes(ctx context.Context, iid int64) ([]*gitlab.Note, error) {
 	pid, err := c.getProjectID(ctx)
 	if err != nil {
@@ -129,7 +129,7 @@ func (c *Client) GetIssueNotes(ctx context.Context, iid int64) ([]*gitlab.Note, 
 	return allNotes, nil
 }
 
-// AddNote adds a note (comment) to an issue
+// AddNote adds a note (comment) to an issue.
 func (c *Client) AddNote(ctx context.Context, iid int64, body string) (*gitlab.Note, error) {
 	pid, err := c.getProjectID(ctx)
 	if err != nil {
@@ -145,7 +145,7 @@ func (c *Client) AddNote(ctx context.Context, iid int64, body string) (*gitlab.N
 	return note, nil
 }
 
-// UpdateIssue updates an issue
+// UpdateIssue updates an issue.
 func (c *Client) UpdateIssue(ctx context.Context, iid int64, opts *gitlab.UpdateIssueOptions) (*gitlab.Issue, error) {
 	pid, err := c.getProjectID(ctx)
 	if err != nil {
@@ -159,7 +159,7 @@ func (c *Client) UpdateIssue(ctx context.Context, iid int64, opts *gitlab.Update
 	return issue, nil
 }
 
-// ListIssues lists issues with filters
+// ListIssues lists issues with filters.
 func (c *Client) ListIssues(ctx context.Context, opts *gitlab.ListProjectIssuesOptions) ([]*gitlab.Issue, error) {
 	pid, err := c.getProjectID(ctx)
 	if err != nil {
@@ -186,7 +186,7 @@ func (c *Client) ListIssues(ctx context.Context, opts *gitlab.ListProjectIssuesO
 	return allIssues, nil
 }
 
-// CreateIssue creates a new issue
+// CreateIssue creates a new issue.
 func (c *Client) CreateIssue(ctx context.Context, opts *gitlab.CreateIssueOptions) (*gitlab.Issue, error) {
 	pid, err := c.getProjectID(ctx)
 	if err != nil {
@@ -200,7 +200,7 @@ func (c *Client) CreateIssue(ctx context.Context, opts *gitlab.CreateIssueOption
 	return issue, nil
 }
 
-// SetLabels sets labels on an issue (by updating the issue)
+// SetLabels sets labels on an issue (by updating the issue).
 func (c *Client) SetLabels(ctx context.Context, iid int64, labels []string) error {
 	pid, err := c.getProjectID(ctx)
 	if err != nil {
@@ -215,7 +215,7 @@ func (c *Client) SetLabels(ctx context.Context, iid int64, labels []string) erro
 	return err
 }
 
-// AddLabels adds labels to an issue
+// AddLabels adds labels to an issue.
 func (c *Client) AddLabels(ctx context.Context, iid int64, labels []string) error {
 	pid, err := c.getProjectID(ctx)
 	if err != nil {
@@ -248,7 +248,7 @@ func (c *Client) AddLabels(ctx context.Context, iid int64, labels []string) erro
 	return err
 }
 
-// RemoveLabel removes a label from an issue
+// RemoveLabel removes a label from an issue.
 func (c *Client) RemoveLabel(ctx context.Context, iid int64, label string) error {
 	pid, err := c.getProjectID(ctx)
 	if err != nil {
@@ -277,28 +277,28 @@ func (c *Client) RemoveLabel(ctx context.Context, iid int64, label string) error
 	return err
 }
 
-// SetProjectPath updates the project path for the client
+// SetProjectPath updates the project path for the client.
 func (c *Client) SetProjectPath(projectPath string) {
 	c.projectPath = projectPath
 	c.projectID = 0 // Reset cached ID
 }
 
-// SetProjectID sets the numeric project ID directly
+// SetProjectID sets the numeric project ID directly.
 func (c *Client) SetProjectID(projectID int64) {
 	c.projectID = projectID
 }
 
-// ProjectPath returns the current project path
+// ProjectPath returns the current project path.
 func (c *Client) ProjectPath() string {
 	return c.projectPath
 }
 
-// ProjectID returns the cached project ID (0 if not cached)
+// ProjectID returns the cached project ID (0 if not cached).
 func (c *Client) ProjectID() int64 {
 	return c.projectID
 }
 
-// Host returns the GitLab host
+// Host returns the GitLab host.
 func (c *Client) Host() string {
 	if c.host != "" {
 		return c.host
@@ -306,7 +306,7 @@ func (c *Client) Host() string {
 	return "gitlab.com"
 }
 
-// CreateMergeRequest creates a new merge request
+// CreateMergeRequest creates a new merge request.
 func (c *Client) CreateMergeRequest(ctx context.Context, title, description, sourceBranch, targetBranch string, removeSourceBranch bool) (*gitlab.MergeRequest, error) {
 	pid, err := c.getProjectID(ctx)
 	if err != nil {
@@ -327,7 +327,7 @@ func (c *Client) CreateMergeRequest(ctx context.Context, title, description, sou
 	return mr, nil
 }
 
-// GetDefaultBranch returns the project's default branch
+// GetDefaultBranch returns the project's default branch.
 func (c *Client) GetDefaultBranch(ctx context.Context) (string, error) {
 	pid, err := c.getProjectID(ctx)
 	if err != nil {

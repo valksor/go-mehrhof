@@ -9,7 +9,7 @@ import (
 	"github.com/valksor/go-mehrhof/internal/provider"
 )
 
-// Snapshot captures the issue content from Linear
+// Snapshot captures the issue content from Linear.
 func (p *Provider) Snapshot(ctx context.Context, id string) (*provider.Snapshot, error) {
 	ref, err := ParseReference(id)
 	if err != nil {
@@ -93,7 +93,7 @@ func (p *Provider) Snapshot(ctx context.Context, id string) (*provider.Snapshot,
 	}, nil
 }
 
-// priorityLabel converts Linear priority number to label
+// priorityLabel converts Linear priority number to label.
 func priorityLabel(priority int) string {
 	switch priority {
 	case 1:

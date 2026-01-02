@@ -1,20 +1,20 @@
 package workflow
 
-// Step represents a workflow step that can have its own agent configuration
+// Step represents a workflow step that can have its own agent configuration.
 type Step string
 
 const (
-	// StepPlanning is the planning phase where specifications are created
+	// StepPlanning is the planning phase where specifications are created.
 	StepPlanning Step = "planning"
-	// StepImplementing is the implementation phase where code is written
+	// StepImplementing is the implementation phase where code is written.
 	StepImplementing Step = "implementing"
-	// StepReviewing is the review phase where code is reviewed
+	// StepReviewing is the review phase where code is reviewed.
 	StepReviewing Step = "reviewing"
-	// StepCheckpointing is the checkpointing phase for git operations
+	// StepCheckpointing is the checkpointing phase for git operations.
 	StepCheckpointing Step = "checkpointing"
 )
 
-// AllSteps returns all valid step names
+// AllSteps returns all valid step names.
 func AllSteps() []Step {
 	return []Step{
 		StepPlanning,
@@ -24,7 +24,7 @@ func AllSteps() []Step {
 	}
 }
 
-// IsValidStep checks if a string is a valid step name
+// IsValidStep checks if a string is a valid step name.
 func IsValidStep(s string) bool {
 	for _, step := range AllSteps() {
 		if string(step) == s {
@@ -34,7 +34,7 @@ func IsValidStep(s string) bool {
 	return false
 }
 
-// String returns the string representation of the step
+// String returns the string representation of the step.
 func (s Step) String() string {
 	return string(s)
 }

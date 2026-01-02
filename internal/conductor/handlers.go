@@ -17,7 +17,7 @@ import (
 // Using errors.New() instead of fmt.Errorf() ensures errors.Is() works reliably.
 var ErrPendingQuestion = errors.New("agent has a pending question")
 
-// RunPlanning executes the planning phase (creates SPEC files)
+// RunPlanning executes the planning phase (creates SPEC files).
 func (c *Conductor) RunPlanning(ctx context.Context) error {
 	c.publishProgress("Starting planning phase...", 0)
 
@@ -195,7 +195,7 @@ func (c *Conductor) RunPlanning(ctx context.Context) error {
 	return nil
 }
 
-// RunImplementation executes the implementation phase
+// RunImplementation executes the implementation phase.
 func (c *Conductor) RunImplementation(ctx context.Context) error {
 	c.publishProgress("Starting implementation phase...", 0)
 
@@ -314,7 +314,7 @@ func (c *Conductor) RunImplementation(ctx context.Context) error {
 	return nil
 }
 
-// RunReview executes the review phase
+// RunReview executes the review phase.
 func (c *Conductor) RunReview(ctx context.Context) error {
 	c.publishProgress("Starting review phase...", 0)
 

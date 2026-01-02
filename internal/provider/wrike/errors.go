@@ -7,7 +7,7 @@ import (
 	providererrors "github.com/valksor/go-mehrhof/internal/provider/errors"
 )
 
-// Wrike-specific error types
+// Wrike-specific error types.
 var (
 	ErrTaskNotFound     = errors.New("task not found")
 	ErrInvalidReference = errors.New("invalid wrike reference")

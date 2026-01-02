@@ -6,7 +6,7 @@ import (
 	"testing"
 )
 
-// testUnsetenv is a helper to unset env vars in tests, handling errors appropriately
+// testUnsetenv is a helper to unset env vars in tests, handling errors appropriately.
 func testUnsetenv(t *testing.T, key string) {
 	t.Helper()
 	if err := os.Unsetenv(key); err != nil {
@@ -14,7 +14,7 @@ func testUnsetenv(t *testing.T, key string) {
 	}
 }
 
-// testSetenv is a helper to set env vars in tests
+// testSetenv is a helper to set env vars in tests.
 func testSetenv(t *testing.T, key, value string) {
 	t.Helper()
 	if err := os.Setenv(key, value); err != nil {

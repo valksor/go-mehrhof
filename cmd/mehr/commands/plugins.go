@@ -253,7 +253,7 @@ func installFromGit(url, targetDir string) error {
 	fmt.Printf("Installing plugin '%s' from %s...\n", name, url)
 
 	// Clone repository
-	gitCmd := exec.Command("git", "clone", "--depth", "1", url, pluginDir)
+	gitCmd := exec.CommandContext(context.Background(), "git", "clone", "--depth", "1", url, pluginDir)
 	gitCmd.Stdout = os.Stdout
 	gitCmd.Stderr = os.Stderr
 
@@ -523,7 +523,7 @@ func runPluginsInfo(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-// getPluginDiscovery creates a plugin discovery instance
+// getPluginDiscovery creates a plugin discovery instance.
 func getPluginDiscovery() (*plugin.Discovery, error) {
 	globalDir, err := plugin.DefaultGlobalDir()
 	if err != nil {
@@ -541,7 +541,7 @@ func getPluginDiscovery() (*plugin.Discovery, error) {
 	return plugin.NewDiscovery(globalDir, projectDir), nil
 }
 
-// copyDir recursively copies a directory
+// copyDir recursively copies a directory.
 func copyDir(src, dst string) error {
 	return filepath.Walk(src, func(path string, info os.FileInfo, err error) error {
 		if err != nil {

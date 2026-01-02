@@ -8,7 +8,7 @@ import (
 	"github.com/valksor/go-mehrhof/internal/workflow"
 )
 
-// StateDisplay maps internal workflow state values to user-friendly names
+// StateDisplay maps internal workflow state values to user-friendly names.
 var StateDisplay = map[workflow.State]string{
 	workflow.StateIdle:          "Ready",
 	workflow.StatePlanning:      "Planning",
@@ -22,7 +22,7 @@ var StateDisplay = map[workflow.State]string{
 	workflow.StateRestoring:     "Restoring",
 }
 
-// StateDescription provides additional context for each state
+// StateDescription provides additional context for each state.
 var StateDescription = map[workflow.State]string{
 	workflow.StateIdle:          "Ready to start",
 	workflow.StatePlanning:      "AI is creating specifications",
@@ -36,8 +36,8 @@ var StateDescription = map[workflow.State]string{
 	workflow.StateRestoring:     "Restoring from checkpoint",
 }
 
-// StateAccessiblePrefix provides short text prefixes for accessibility
-// These help color-blind users distinguish states without relying on color alone
+// StateAccessiblePrefix provides short text prefixes for accessibility.
+// These help color-blind users distinguish states without relying on color alone.
 var StateAccessiblePrefix = map[workflow.State]string{
 	workflow.StateIdle:          "[R]", // Ready
 	workflow.StatePlanning:      "[P]", // Planning
@@ -51,7 +51,7 @@ var StateAccessiblePrefix = map[workflow.State]string{
 	workflow.StateRestoring:     "[S]", // reStoring
 }
 
-// SpecificationStatusDisplay maps internal specification status values to user-friendly names
+// SpecificationStatusDisplay maps internal specification status values to user-friendly names.
 var SpecificationStatusDisplay = map[string]string{
 	storage.SpecificationStatusDraft:        "Draft",
 	storage.SpecificationStatusReady:        "Ready",
@@ -59,7 +59,7 @@ var SpecificationStatusDisplay = map[string]string{
 	storage.SpecificationStatusDone:         "Completed",
 }
 
-// SpecificationStatusIcon returns the visual icon for a specification status
+// SpecificationStatusIcon returns the visual icon for a specification status.
 var SpecificationStatusIcon = map[string]string{
 	storage.SpecificationStatusDraft:        "○", // empty circle
 	storage.SpecificationStatusReady:        "◐", // half-filled

@@ -123,7 +123,7 @@ func TestResolveToken(t *testing.T) {
 // HTTP Mock tests for API calls
 // ──────────────────────────────────────────────────────────────────────────────
 
-// setupMockServer creates a test server with a custom handler
+// setupMockServer creates a test server with a custom handler.
 func setupMockServer(t *testing.T, handler http.HandlerFunc) (*Client, func()) {
 	t.Helper()
 

@@ -28,7 +28,7 @@ type Discovery struct {
 
 // NewDiscovery creates a new plugin discovery instance.
 // globalDir is typically ~/.mehrhof/plugins/
-// projectDir is typically .mehrhof/plugins/ (relative to workspace root)
+// projectDir is typically .mehrhof/plugins/ (relative to workspace root).
 func NewDiscovery(globalDir, projectDir string) *Discovery {
 	return &Discovery{
 		globalDir:  globalDir,

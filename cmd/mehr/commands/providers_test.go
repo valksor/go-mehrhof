@@ -85,7 +85,7 @@ func TestProvidersCommand_HasParent(t *testing.T) {
 	}
 }
 
-// Helper function to check if a command exists in the command tree
+// Helper function to check if a command exists in the command tree.
 func hasCommand(cmd *cobra.Command, name string) bool {
 	for _, subCmd := range cmd.Commands() {
 		if subCmd.Name() == name {

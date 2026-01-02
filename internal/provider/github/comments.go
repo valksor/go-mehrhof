@@ -11,7 +11,7 @@ import (
 	"github.com/valksor/go-mehrhof/internal/storage"
 )
 
-// FetchComments retrieves all comments from a GitHub issue
+// FetchComments retrieves all comments from a GitHub issue.
 func (p *Provider) FetchComments(ctx context.Context, workUnitID string) ([]provider.Comment, error) {
 	ref, err := ParseReference(workUnitID)
 	if err != nil {
@@ -50,7 +50,7 @@ func (p *Provider) FetchComments(ctx context.Context, workUnitID string) ([]prov
 	return result, nil
 }
 
-// AddComment adds a comment to a GitHub issue
+// AddComment adds a comment to a GitHub issue.
 func (p *Provider) AddComment(ctx context.Context, workUnitID string, body string) (*provider.Comment, error) {
 	ref, err := ParseReference(workUnitID)
 	if err != nil {
@@ -84,23 +84,23 @@ func (p *Provider) AddComment(ctx context.Context, workUnitID string, body strin
 	}, nil
 }
 
-// CommentGenerator generates comment content for various events
+// CommentGenerator generates comment content for various events.
 type CommentGenerator struct {
 	provider *Provider
 }
 
-// NewCommentGenerator creates a new comment generator
+// NewCommentGenerator creates a new comment generator.
 func NewCommentGenerator(p *Provider) *CommentGenerator {
 	return &CommentGenerator{provider: p}
 }
 
-// GenerateBranchCreatedComment generates comment for branch creation
+// GenerateBranchCreatedComment generates comment for branch creation.
 func (g *CommentGenerator) GenerateBranchCreatedComment(branchName string) string {
 	return fmt.Sprintf("Started working on this issue.\nBranch: `%s`", branchName)
 }
 
 // GeneratePlanComment generates comment summarizing the implementation plan
-// This extracts key information from specification files
+// This extracts key information from specification files.
 func (g *CommentGenerator) GeneratePlanComment(specs []*storage.Specification) string {
 	if len(specs) == 0 {
 		return "Planning complete."
@@ -133,7 +133,7 @@ func (g *CommentGenerator) GeneratePlanComment(specs []*storage.Specification) s
 	return sb.String()
 }
 
-// GenerateImplementComment generates comment summarizing implementation changes
+// GenerateImplementComment generates comment summarizing implementation changes.
 func (g *CommentGenerator) GenerateImplementComment(diffStat string, summary string) string {
 	var sb strings.Builder
 	sb.WriteString("## Implementation Complete\n\n")
@@ -155,14 +155,14 @@ func (g *CommentGenerator) GenerateImplementComment(diffStat string, summary str
 	return sb.String()
 }
 
-// GeneratePRCreatedComment generates comment for PR creation
+// GeneratePRCreatedComment generates comment for PR creation.
 func (g *CommentGenerator) GeneratePRCreatedComment(prNumber int, prURL string) string {
 	return fmt.Sprintf("Pull request created: #%d\n%s", prNumber, prURL)
 }
 
 // --- Helper functions for extracting info from specifications ---
 
-// extractPlannedFiles finds file paths mentioned in specification content
+// extractPlannedFiles finds file paths mentioned in specification content.
 func extractPlannedFiles(content string) []string {
 	var files []string
 	seen := make(map[string]bool)
@@ -191,7 +191,7 @@ func extractPlannedFiles(content string) []string {
 	return files
 }
 
-// isLikelyFilePath checks if a string looks like a file path
+// isLikelyFilePath checks if a string looks like a file path.
 func isLikelyFilePath(s string) bool {
 	// Must have an extension
 	if !strings.Contains(s, ".") {
@@ -215,7 +215,7 @@ func isLikelyFilePath(s string) bool {
 	return false
 }
 
-// extractApproachSummary extracts approach/strategy summary from specification
+// extractApproachSummary extracts approach/strategy summary from specification.
 func extractApproachSummary(content string) string {
 	// Look for common approach headings
 	headingPatterns := []string{
@@ -236,7 +236,7 @@ func extractApproachSummary(content string) string {
 	return ""
 }
 
-// ParseDiffStat parses git diff --stat output and formats it nicely
+// ParseDiffStat parses git diff --stat output and formats it nicely.
 func ParseDiffStat(diffOutput string) string {
 	lines := strings.Split(strings.TrimSpace(diffOutput), "\n")
 	if len(lines) == 0 {
@@ -257,7 +257,7 @@ func ParseDiffStat(diffOutput string) string {
 	return sb.String()
 }
 
-// GenerateChangeSummary creates a brief summary of changes from session exchanges
+// GenerateChangeSummary creates a brief summary of changes from session exchanges.
 func GenerateChangeSummary(exchanges []storage.Exchange) string {
 	var changedFiles []string
 	fileOps := make(map[string]string)
@@ -284,7 +284,7 @@ func GenerateChangeSummary(exchanges []storage.Exchange) string {
 	return sb.String()
 }
 
-// CommentEvent represents a comment event for the comment service
+// CommentEvent represents a comment event for the comment service.
 type CommentEvent string
 
 const (
@@ -294,7 +294,7 @@ const (
 	CommentEventPRCreated     CommentEvent = "pr_created"
 )
 
-// ShouldComment checks if a comment should be posted for the given event
+// ShouldComment checks if a comment should be posted for the given event.
 func (p *Provider) ShouldComment(event CommentEvent) bool {
 	if p.config == nil || p.config.Comments == nil || !p.config.Comments.Enabled {
 		return false
@@ -314,7 +314,7 @@ func (p *Provider) ShouldComment(event CommentEvent) bool {
 	}
 }
 
-// PostCommentIfEnabled posts a comment if enabled for the given event
+// PostCommentIfEnabled posts a comment if enabled for the given event.
 func (p *Provider) PostCommentIfEnabled(ctx context.Context, workUnitID string, event CommentEvent, body string) error {
 	if !p.ShouldComment(event) {
 		return nil
@@ -324,7 +324,7 @@ func (p *Provider) PostCommentIfEnabled(ctx context.Context, workUnitID string, 
 	return err
 }
 
-// CommentTimestamp returns formatted timestamp for comment
+// CommentTimestamp returns formatted timestamp for comment.
 func CommentTimestamp() string {
 	return time.Now().Format("2006-01-02 15:04:05 UTC")
 }

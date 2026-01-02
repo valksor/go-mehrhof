@@ -17,14 +17,14 @@ const (
 	defaultTimeout = 30 * time.Second
 )
 
-// Client wraps the ClickUp API
+// Client wraps the ClickUp API.
 type Client struct {
 	httpClient *http.Client
 	baseURL    string
 	token      string
 }
 
-// NewClient creates a new ClickUp API client
+// NewClient creates a new ClickUp API client.
 func NewClient(token string) *Client {
 	return &Client{
 		httpClient: &http.Client{Timeout: defaultTimeout},
@@ -53,7 +53,7 @@ func ResolveToken(configToken string) (string, error) {
 
 // --- API Types ---
 
-// Task represents a ClickUp task
+// Task represents a ClickUp task.
 type Task struct {
 	ID              string        `json:"id"`
 	CustomID        string        `json:"custom_id"`
@@ -87,7 +87,7 @@ type Task struct {
 	TimeEstimate    *int64        `json:"time_estimate"`
 }
 
-// Status represents a task status
+// Status represents a task status.
 type Status struct {
 	ID         string `json:"id"`
 	Status     string `json:"status"`
@@ -96,7 +96,7 @@ type Status struct {
 	Orderindex int    `json:"orderindex"`
 }
 
-// Priority represents a task priority
+// Priority represents a task priority.
 type Priority struct {
 	ID         string `json:"id"`
 	Priority   string `json:"priority"`
@@ -104,7 +104,7 @@ type Priority struct {
 	Orderindex string `json:"orderindex"`
 }
 
-// User represents a ClickUp user
+// User represents a ClickUp user.
 type User struct {
 	ID             int    `json:"id"`
 	Username       string `json:"username"`
@@ -114,7 +114,7 @@ type User struct {
 	Initials       string `json:"initials"`
 }
 
-// Folder represents a ClickUp folder
+// Folder represents a ClickUp folder.
 type Folder struct {
 	ID     string `json:"id"`
 	Name   string `json:"name"`
@@ -122,19 +122,19 @@ type Folder struct {
 	Access bool   `json:"access"`
 }
 
-// Space represents a ClickUp space
+// Space represents a ClickUp space.
 type Space struct {
 	ID string `json:"id"`
 }
 
-// List represents a ClickUp list
+// List represents a ClickUp list.
 type List struct {
 	ID     string `json:"id"`
 	Name   string `json:"name"`
 	Access bool   `json:"access"`
 }
 
-// Project represents a ClickUp project (legacy, same as List)
+// Project represents a ClickUp project (legacy, same as List).
 type Project struct {
 	ID     string `json:"id"`
 	Name   string `json:"name"`
@@ -142,7 +142,7 @@ type Project struct {
 	Access bool   `json:"access"`
 }
 
-// Tag represents a ClickUp tag
+// Tag represents a ClickUp tag.
 type Tag struct {
 	Name    string `json:"name"`
 	TagFg   string `json:"tag_fg"`
@@ -150,7 +150,7 @@ type Tag struct {
 	Creator int    `json:"creator"`
 }
 
-// Checklist represents a ClickUp checklist
+// Checklist represents a ClickUp checklist.
 type Checklist struct {
 	ID         string          `json:"id"`
 	Name       string          `json:"name"`
@@ -158,7 +158,7 @@ type Checklist struct {
 	Items      []ChecklistItem `json:"items"`
 }
 
-// ChecklistItem represents an item in a checklist
+// ChecklistItem represents an item in a checklist.
 type ChecklistItem struct {
 	ID         string `json:"id"`
 	Name       string `json:"name"`
@@ -166,7 +166,7 @@ type ChecklistItem struct {
 	Resolved   bool   `json:"resolved"`
 }
 
-// CustomField represents a custom field value
+// CustomField represents a custom field value.
 type CustomField struct {
 	ID             string `json:"id"`
 	Name           string `json:"name"`
@@ -178,7 +178,7 @@ type CustomField struct {
 	Required       bool   `json:"required"`
 }
 
-// Attachment represents a task attachment
+// Attachment represents a task attachment.
 type Attachment struct {
 	ID              string `json:"id"`
 	Version         string `json:"version"`
@@ -191,7 +191,7 @@ type Attachment struct {
 	URL             string `json:"url"`
 }
 
-// LinkedTask represents a linked task
+// LinkedTask represents a linked task.
 type LinkedTask struct {
 	TaskID      string `json:"task_id"`
 	LinkID      string `json:"link_id"`
@@ -199,7 +199,7 @@ type LinkedTask struct {
 	Userid      string `json:"userid"`
 }
 
-// Comment represents a task comment
+// Comment represents a task comment.
 type Comment struct {
 	ID          string        `json:"id"`
 	Comment     []CommentPart `json:"comment"`
@@ -214,19 +214,19 @@ type CommentPart struct {
 	Text string `json:"text"`
 }
 
-// Reaction represents a comment reaction
+// Reaction represents a comment reaction.
 type Reaction struct {
 	Reaction string `json:"reaction"`
 	Date     string `json:"date"`
 	User     User   `json:"user"`
 }
 
-// TasksResponse represents the response from listing tasks
+// TasksResponse represents the response from listing tasks.
 type TasksResponse struct {
 	Tasks []Task `json:"tasks"`
 }
 
-// CommentsResponse represents the response from listing comments
+// CommentsResponse represents the response from listing comments.
 type CommentsResponse struct {
 	Comments []Comment `json:"comments"`
 }
@@ -273,7 +273,7 @@ func (c *Client) doRequest(ctx context.Context, method, path string, body any) (
 
 // --- Task API ---
 
-// GetTask fetches a task by ID
+// GetTask fetches a task by ID.
 func (c *Client) GetTask(ctx context.Context, taskID string) (*Task, error) {
 	path := fmt.Sprintf("/task/%s?include_subtasks=true&custom_task_ids=true", taskID)
 
@@ -290,7 +290,7 @@ func (c *Client) GetTask(ctx context.Context, taskID string) (*Task, error) {
 	return &task, nil
 }
 
-// GetTaskByCustomID fetches a task by custom ID
+// GetTaskByCustomID fetches a task by custom ID.
 func (c *Client) GetTaskByCustomID(ctx context.Context, teamID, customID string) (*Task, error) {
 	path := fmt.Sprintf("/task/%s?custom_task_ids=true&team_id=%s", customID, teamID)
 
@@ -307,7 +307,7 @@ func (c *Client) GetTaskByCustomID(ctx context.Context, teamID, customID string)
 	return &task, nil
 }
 
-// ListTasks lists tasks in a list
+// ListTasks lists tasks in a list.
 func (c *Client) ListTasks(ctx context.Context, listID string, archived bool, limit int) ([]Task, error) {
 	params := url.Values{}
 	params.Set("archived", fmt.Sprintf("%t", archived))
@@ -331,7 +331,7 @@ func (c *Client) ListTasks(ctx context.Context, listID string, archived bool, li
 	return resp.Tasks, nil
 }
 
-// GetTaskComments fetches comments for a task
+// GetTaskComments fetches comments for a task.
 func (c *Client) GetTaskComments(ctx context.Context, taskID string) ([]Comment, error) {
 	path := fmt.Sprintf("/task/%s/comment", taskID)
 
@@ -348,7 +348,7 @@ func (c *Client) GetTaskComments(ctx context.Context, taskID string) ([]Comment,
 	return resp.Comments, nil
 }
 
-// AddTaskComment adds a comment to a task
+// AddTaskComment adds a comment to a task.
 func (c *Client) AddTaskComment(ctx context.Context, taskID string, text string) (*Comment, error) {
 	path := fmt.Sprintf("/task/%s/comment", taskID)
 
@@ -369,7 +369,7 @@ func (c *Client) AddTaskComment(ctx context.Context, taskID string, text string)
 	return &comment, nil
 }
 
-// UpdateTask updates task fields
+// UpdateTask updates task fields.
 func (c *Client) UpdateTask(ctx context.Context, taskID string, updates map[string]any) (*Task, error) {
 	path := fmt.Sprintf("/task/%s", taskID)
 
@@ -386,12 +386,12 @@ func (c *Client) UpdateTask(ctx context.Context, taskID string, updates map[stri
 	return &task, nil
 }
 
-// UpdateTaskStatus updates the task status
+// UpdateTaskStatus updates the task status.
 func (c *Client) UpdateTaskStatus(ctx context.Context, taskID string, status string) (*Task, error) {
 	return c.UpdateTask(ctx, taskID, map[string]any{"status": status})
 }
 
-// GetListStatuses fetches available statuses for a list
+// GetListStatuses fetches available statuses for a list.
 func (c *Client) GetListStatuses(ctx context.Context, listID string) ([]Status, error) {
 	path := fmt.Sprintf("/list/%s", listID)
 
@@ -410,7 +410,7 @@ func (c *Client) GetListStatuses(ctx context.Context, listID string) ([]Status, 
 	return resp.Statuses, nil
 }
 
-// CreateTask creates a new task in a list
+// CreateTask creates a new task in a list.
 func (c *Client) CreateTask(ctx context.Context, listID string, taskData map[string]any) (*Task, error) {
 	path := fmt.Sprintf("/list/%s/task", listID)
 
@@ -427,7 +427,7 @@ func (c *Client) CreateTask(ctx context.Context, listID string, taskData map[str
 	return &task, nil
 }
 
-// GetSubtasks fetches subtasks for a given task
+// GetSubtasks fetches subtasks for a given task.
 func (c *Client) GetSubtasks(ctx context.Context, taskID string) ([]Task, error) {
 	// Get the task with subtasks included
 	path := fmt.Sprintf("/task/%s?include_subtasks=true", taskID)

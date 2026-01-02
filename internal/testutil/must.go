@@ -11,7 +11,7 @@ import (
 )
 
 // T panics if err is non-nil, returning v. Useful for test setup.
-// Usage: f := must.T(os.ReadFile("file.txt"))
+// Usage: f := must.T(os.ReadFile("file.txt")).
 func T[T any](v T, err error) T {
 	if err != nil {
 		panic(err)
@@ -43,7 +43,7 @@ func NoError(t *testing.T, err error, msgAndArgs ...interface{}) {
 }
 
 // PanicHandler catches panics and reports them as test failures.
-// Usage: defer testutil.PanicHandler(t)
+// Usage: defer testutil.PanicHandler(t).
 func PanicHandler(t *testing.T) {
 	t.Helper()
 	if r := recover(); r != nil {

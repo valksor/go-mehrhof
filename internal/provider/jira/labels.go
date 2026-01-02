@@ -4,7 +4,7 @@ import (
 	"context"
 )
 
-// AddLabels adds labels to a Jira issue
+// AddLabels adds labels to a Jira issue.
 func (p *Provider) AddLabels(ctx context.Context, workUnitID string, labels []string) error {
 	ref, err := ParseReference(workUnitID)
 	if err != nil {
@@ -43,7 +43,7 @@ func (p *Provider) AddLabels(ctx context.Context, workUnitID string, labels []st
 	return p.client.UpdateIssue(ctx, ref.IssueKey, updateInput)
 }
 
-// RemoveLabels removes labels from a Jira issue
+// RemoveLabels removes labels from a Jira issue.
 func (p *Provider) RemoveLabels(ctx context.Context, workUnitID string, labels []string) error {
 	ref, err := ParseReference(workUnitID)
 	if err != nil {

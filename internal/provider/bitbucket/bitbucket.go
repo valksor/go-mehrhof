@@ -10,16 +10,16 @@ import (
 	"github.com/valksor/go-mehrhof/internal/provider"
 )
 
-// ProviderName is the registered name for this provider
+// ProviderName is the registered name for this provider.
 const ProviderName = "bitbucket"
 
-// Provider handles Bitbucket issue tasks
+// Provider handles Bitbucket issue tasks.
 type Provider struct {
 	client *Client
 	config *Config
 }
 
-// Config holds Bitbucket provider configuration
+// Config holds Bitbucket provider configuration.
 type Config struct {
 	Username          string
 	AppPassword       string
@@ -31,7 +31,7 @@ type Config struct {
 	CloseSourceBranch bool   // Close source branch when PR is merged
 }
 
-// Info returns provider metadata
+// Info returns provider metadata.
 func Info() provider.ProviderInfo {
 	return provider.ProviderInfo{
 		Name:        ProviderName,
@@ -52,7 +52,7 @@ func Info() provider.ProviderInfo {
 	}
 }
 
-// New creates a Bitbucket provider
+// New creates a Bitbucket provider.
 func New(ctx context.Context, cfg provider.Config) (any, error) {
 	// Extract config values
 	configUsername := cfg.GetString("username")
@@ -97,12 +97,12 @@ func New(ctx context.Context, cfg provider.Config) (any, error) {
 	}, nil
 }
 
-// Match checks if input has the bitbucket: or bb: scheme prefix
+// Match checks if input has the bitbucket: or bb: scheme prefix.
 func (p *Provider) Match(input string) bool {
 	return strings.HasPrefix(input, "bitbucket:") || strings.HasPrefix(input, "bb:")
 }
 
-// Parse extracts the issue reference from input
+// Parse extracts the issue reference from input.
 func (p *Provider) Parse(input string) (string, error) {
 	ref, err := ParseReference(input)
 	if err != nil {
@@ -125,7 +125,7 @@ func (p *Provider) Parse(input string) (string, error) {
 	return fmt.Sprintf("%s/%s#%d", workspace, repoSlug, ref.IssueID), nil
 }
 
-// Fetch reads a Bitbucket issue and creates a WorkUnit
+// Fetch reads a Bitbucket issue and creates a WorkUnit.
 func (p *Provider) Fetch(ctx context.Context, id string) (*provider.WorkUnit, error) {
 	ref, err := ParseReference(id)
 	if err != nil {
@@ -234,7 +234,7 @@ func (p *Provider) Fetch(ctx context.Context, id string) (*provider.WorkUnit, er
 	return wu, nil
 }
 
-// Snapshot captures the issue content for storage
+// Snapshot captures the issue content for storage.
 func (p *Provider) Snapshot(ctx context.Context, id string) (*provider.Snapshot, error) {
 	ref, err := ParseReference(id)
 	if err != nil {
@@ -285,7 +285,7 @@ func (p *Provider) Snapshot(ctx context.Context, id string) (*provider.Snapshot,
 	return snapshot, nil
 }
 
-// List lists issues from the repository
+// List lists issues from the repository.
 func (p *Provider) List(ctx context.Context, opts provider.ListOptions) ([]*provider.WorkUnit, error) {
 	workspace := p.config.Workspace
 	repoSlug := p.config.RepoSlug
@@ -339,7 +339,7 @@ func (p *Provider) List(ctx context.Context, opts provider.ListOptions) ([]*prov
 	return result, nil
 }
 
-// FetchComments fetches comments for a work unit
+// FetchComments fetches comments for a work unit.
 func (p *Provider) FetchComments(ctx context.Context, workUnitID string) ([]provider.Comment, error) {
 	ref, err := ParseReference(workUnitID)
 	if err != nil {
@@ -365,7 +365,7 @@ func (p *Provider) FetchComments(ctx context.Context, workUnitID string) ([]prov
 	return mapComments(comments), nil
 }
 
-// AddComment adds a comment to a work unit
+// AddComment adds a comment to a work unit.
 func (p *Provider) AddComment(ctx context.Context, workUnitID string, body string) (*provider.Comment, error) {
 	ref, err := ParseReference(workUnitID)
 	if err != nil {
@@ -413,7 +413,7 @@ func (p *Provider) AddComment(ctx context.Context, workUnitID string, body strin
 	}, nil
 }
 
-// UpdateStatus updates the status of a work unit
+// UpdateStatus updates the status of a work unit.
 func (p *Provider) UpdateStatus(ctx context.Context, workUnitID string, status provider.Status) error {
 	ref, err := ParseReference(workUnitID)
 	if err != nil {
@@ -448,12 +448,12 @@ func (p *Provider) UpdateStatus(ctx context.Context, workUnitID string, status p
 	return err
 }
 
-// GetConfig returns the provider configuration
+// GetConfig returns the provider configuration.
 func (p *Provider) GetConfig() *Config {
 	return p.config
 }
 
-// GetClient returns the Bitbucket API client
+// GetClient returns the Bitbucket API client.
 func (p *Provider) GetClient() *Client {
 	return p.client
 }

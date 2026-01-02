@@ -11,9 +11,9 @@ import (
 )
 
 var (
-	// Match non-alphanumeric characters (except hyphens)
+	// Match non-alphanumeric characters (except hyphens).
 	nonAlphanumeric = regexp.MustCompile(`[^a-z0-9-]+`)
-	// Match multiple consecutive hyphens
+	// Match multiple consecutive hyphens.
 	multipleHyphens = regexp.MustCompile(`-{2,}`)
 )
 

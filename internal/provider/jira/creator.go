@@ -9,7 +9,7 @@ import (
 	"github.com/valksor/go-mehrhof/internal/provider"
 )
 
-// CreateWorkUnit creates a new Jira issue
+// CreateWorkUnit creates a new Jira issue.
 func (p *Provider) CreateWorkUnit(ctx context.Context, opts provider.CreateWorkUnitOptions) (*provider.WorkUnit, error) {
 	// Determine project key
 	projectKey := p.defaultProject

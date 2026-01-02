@@ -11,7 +11,7 @@ import (
 	"github.com/valksor/go-mehrhof/internal/storage"
 )
 
-// providerLoginConfig holds configuration for a provider's login command
+// providerLoginConfig holds configuration for a provider's login command.
 type providerLoginConfig struct {
 	Name        string // Display name (e.g., "GitHub")
 	EnvVar      string // Environment variable name (e.g., "GITHUB_TOKEN")
@@ -20,7 +20,7 @@ type providerLoginConfig struct {
 	TokenPrefix string // Optional token prefix for validation (e.g., "ghp_")
 }
 
-// providerLoginConfigs maps provider names to their login configuration
+// providerLoginConfigs maps provider names to their login configuration.
 var providerLoginConfigs = map[string]providerLoginConfig{
 	"github": {
 		Name:        "GitHub",
@@ -73,7 +73,7 @@ var providerLoginConfigs = map[string]providerLoginConfig{
 	},
 }
 
-// getProviderLoginConfig returns the login config for a provider, or nil if not found
+// getProviderLoginConfig returns the login config for a provider, or nil if not found.
 func getProviderLoginConfig(name string) *providerLoginConfig {
 	// Normalize aliases
 	normalized := normalizeProviderName(name)
@@ -83,7 +83,7 @@ func getProviderLoginConfig(name string) *providerLoginConfig {
 	return nil
 }
 
-// normalizeProviderName converts provider aliases to canonical names
+// normalizeProviderName converts provider aliases to canonical names.
 func normalizeProviderName(name string) string {
 	switch strings.ToLower(name) {
 	case "gh", "git":
@@ -99,14 +99,14 @@ func normalizeProviderName(name string) string {
 	}
 }
 
-// tokenSource represents where a token value was found
+// tokenSource represents where a token value was found.
 type tokenSource struct {
 	Source string // Description of where token was found
 	Value  string // The token value (possibly masked)
 }
 
-// detectExistingToken checks if a token is already configured
-// Returns (source, value) or ("", "") if not found
+// detectExistingToken checks if a token is already configured.
+// Returns (source, value) or ("", "") if not found.
 func detectExistingToken(cfg providerLoginConfig, ws *storage.Workspace) (*tokenSource, error) {
 	// 1. Check system environment variable
 	if val := os.Getenv(cfg.EnvVar); val != "" {
@@ -133,7 +133,7 @@ func detectExistingToken(cfg providerLoginConfig, ws *storage.Workspace) (*token
 	return nil, nil
 }
 
-// getConfigToken retrieves a token from WorkspaceConfig using field path (e.g., "GitHub.Token")
+// getConfigToken retrieves a token from WorkspaceConfig using field path (e.g., "GitHub.Token").
 func getConfigToken(cfg *storage.WorkspaceConfig, fieldPath string) string {
 	parts := strings.Split(fieldPath, ".")
 	if len(parts) != 2 {
@@ -173,7 +173,7 @@ func getConfigToken(cfg *storage.WorkspaceConfig, fieldPath string) string {
 	return ""
 }
 
-// maskToken returns a masked version of a token for display
+// maskToken returns a masked version of a token for display.
 func maskToken(token string) string {
 	if len(token) <= 8 {
 		return "*******"
@@ -181,7 +181,7 @@ func maskToken(token string) string {
 	return token[:4] + "..." + token[len(token)-4:]
 }
 
-// confirmOverride asks the user if they want to replace an existing token
+// confirmOverride asks the user if they want to replace an existing token.
 func confirmOverride(cmd *cobra.Command, providerName, source, maskedValue string) (bool, error) {
 	out := cmd.OutOrStdout()
 	_, _ = fmt.Fprintf(out, "Token already configured via %s: %s\n", source, maskedValue)
@@ -197,7 +197,7 @@ func confirmOverride(cmd *cobra.Command, providerName, source, maskedValue strin
 	return response == "y" || response == "yes", nil
 }
 
-// promptForToken interactively prompts the user for a token
+// promptForToken interactively prompts the user for a token.
 func promptForToken(cmd *cobra.Command, cfg providerLoginConfig) (string, error) {
 	out := cmd.OutOrStdout()
 	in := bufio.NewReader(cmd.InOrStdin())
@@ -226,7 +226,7 @@ func promptForToken(cmd *cobra.Command, cfg providerLoginConfig) (string, error)
 	return token, nil
 }
 
-// writeTokenToEnv writes a token to the .env file, creating or updating it
+// writeTokenToEnv writes a token to the .env file, creating or updating it.
 func writeTokenToEnv(envPath, key, value string) error {
 	// Ensure directory exists
 	if err := os.MkdirAll(filepath.Dir(envPath), 0o755); err != nil {
@@ -278,7 +278,7 @@ func writeTokenToEnv(envPath, key, value string) error {
 	return nil
 }
 
-// runProviderLogin executes the login flow for a provider
+// runProviderLogin executes the login flow for a provider.
 func runProviderLogin(providerName string) func(*cobra.Command, []string) error {
 	return func(cmd *cobra.Command, args []string) error {
 		cfg := getProviderLoginConfig(providerName)
@@ -335,7 +335,7 @@ func runProviderLogin(providerName string) func(*cobra.Command, []string) error 
 	}
 }
 
-// Create provider commands
+// Create provider commands.
 func createProviderCommands() []*cobra.Command {
 	var commands []*cobra.Command
 

@@ -6,7 +6,7 @@ import (
 	"github.com/valksor/go-mehrhof/internal/agent"
 )
 
-// Status represents the session state
+// Status represents the session state.
 type Status string
 
 const (
@@ -17,7 +17,7 @@ const (
 	StatusRecoverable Status = "recoverable"
 )
 
-// State represents a checkpointed session state
+// State represents a checkpointed session state.
 type State struct {
 	// Version for format compatibility
 	Version string `yaml:"version"`
@@ -52,7 +52,7 @@ type State struct {
 	Error string `yaml:"error,omitempty"`
 }
 
-// Message represents a conversation message
+// Message represents a conversation message.
 type Message struct {
 	Role      string    `yaml:"role"` // user, assistant, system
 	Content   string    `yaml:"content"`
@@ -65,14 +65,14 @@ type Message struct {
 	ToolCalls []ToolCallRecord `yaml:"tool_calls,omitempty"`
 }
 
-// FileModification records a file change
+// FileModification records a file change.
 type FileModification struct {
 	Path      string `yaml:"path"`
 	Operation string `yaml:"operation"` // create, update, delete
 	Checksum  string `yaml:"checksum,omitempty"`
 }
 
-// ToolCallRecord records a tool invocation
+// ToolCallRecord records a tool invocation.
 type ToolCallRecord struct {
 	Name   string         `yaml:"name"`
 	Input  map[string]any `yaml:"input,omitempty"`
@@ -80,7 +80,7 @@ type ToolCallRecord struct {
 	Error  string         `yaml:"error,omitempty"`
 }
 
-// SessionContext holds context information for the session
+// SessionContext holds context information for the session.
 type SessionContext struct {
 	// Task-related files
 	Specifications []string `yaml:"specifications,omitempty"`
@@ -100,7 +100,7 @@ type SessionContext struct {
 	Metadata map[string]any `yaml:"metadata,omitempty"`
 }
 
-// Summary returns a brief description of the session
+// Summary returns a brief description of the session.
 type Summary struct {
 	ID             string    `yaml:"id"`
 	TaskID         string    `yaml:"task_id"`
@@ -113,7 +113,7 @@ type Summary struct {
 	Error          string    `yaml:"error,omitempty"`
 }
 
-// ToSummary converts State to Summary
+// ToSummary converts State to Summary.
 func (s *State) ToSummary() Summary {
 	return Summary{
 		ID:             s.ID,
@@ -128,7 +128,7 @@ func (s *State) ToSummary() Summary {
 	}
 }
 
-// IsRecoverable checks if the session can be recovered
+// IsRecoverable checks if the session can be recovered.
 func (s *State) IsRecoverable() bool {
 	switch s.Status {
 	case StatusInterrupted, StatusRecoverable:
@@ -140,12 +140,12 @@ func (s *State) IsRecoverable() bool {
 	return false
 }
 
-// Age returns how long since the checkpoint was made
+// Age returns how long since the checkpoint was made.
 func (s *State) Age() time.Duration {
 	return time.Since(s.CheckpointedAt)
 }
 
-// GetLastUserMessage returns the last user message
+// GetLastUserMessage returns the last user message.
 func (s *State) GetLastUserMessage() *Message {
 	for i := len(s.Messages) - 1; i >= 0; i-- {
 		if s.Messages[i].Role == "user" {
@@ -155,7 +155,7 @@ func (s *State) GetLastUserMessage() *Message {
 	return nil
 }
 
-// GetLastAssistantMessage returns the last assistant message
+// GetLastAssistantMessage returns the last assistant message.
 func (s *State) GetLastAssistantMessage() *Message {
 	for i := len(s.Messages) - 1; i >= 0; i-- {
 		if s.Messages[i].Role == "assistant" {

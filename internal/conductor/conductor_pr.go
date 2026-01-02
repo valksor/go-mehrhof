@@ -10,7 +10,7 @@ import (
 	"github.com/valksor/go-mehrhof/internal/storage"
 )
 
-// finishWithPR creates a pull request instead of merging locally
+// finishWithPR creates a pull request instead of merging locally.
 func (c *Conductor) finishWithPR(ctx context.Context, opts FinishOptions) (*provider.PullRequest, error) {
 	if c.git == nil {
 		return nil, fmt.Errorf("git not available for PR creation")
@@ -104,7 +104,7 @@ func (c *Conductor) finishWithPR(ctx context.Context, opts FinishOptions) (*prov
 	return pr, nil
 }
 
-// resolveTaskProvider resolves the provider from the task's original reference
+// resolveTaskProvider resolves the provider from the task's original reference.
 func (c *Conductor) resolveTaskProvider(ctx context.Context) (any, error) {
 	if c.activeTask == nil || c.activeTask.Ref == "" {
 		return nil, fmt.Errorf("no task reference available")
@@ -122,7 +122,7 @@ func (c *Conductor) resolveTaskProvider(ctx context.Context) (any, error) {
 	return p, nil
 }
 
-// loadSpecificationsForPR loads all specifications for PR body generation
+// loadSpecificationsForPR loads all specifications for PR body generation.
 func (c *Conductor) loadSpecificationsForPR() ([]*storage.Specification, error) {
 	if c.workspace == nil || c.activeTask == nil {
 		return nil, nil
@@ -149,7 +149,7 @@ func (c *Conductor) loadSpecificationsForPR() ([]*storage.Specification, error) 
 	return specs, nil
 }
 
-// getDiffStats returns git diff stats for the current branch vs base
+// getDiffStats returns git diff stats for the current branch vs base.
 func (c *Conductor) getDiffStats() string {
 	if c.git == nil || c.taskWork == nil {
 		return ""
@@ -173,7 +173,7 @@ func (c *Conductor) getDiffStats() string {
 	return stat
 }
 
-// generatePRTitle generates a PR title from task metadata
+// generatePRTitle generates a PR title from task metadata.
 func (c *Conductor) generatePRTitle() string {
 	if c.taskWork == nil {
 		return "Implementation"
@@ -193,7 +193,7 @@ func (c *Conductor) generatePRTitle() string {
 	return title
 }
 
-// generatePRBody generates a PR body with implementation summary
+// generatePRBody generates a PR body with implementation summary.
 func (c *Conductor) generatePRBody(specs []*storage.Specification, diffStat string) string {
 	var parts []string
 

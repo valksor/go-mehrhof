@@ -417,7 +417,7 @@ func showAllTasks(ws *storage.Workspace, git *vcs.Git) error {
 	return nil
 }
 
-// printSpecLegend prints the specification status icon legend
+// printSpecLegend prints the specification status icon legend.
 func printSpecLegend() {
 	fmt.Println()
 	fmt.Println(display.Muted("Specification icons:"))
@@ -427,7 +427,7 @@ func printSpecLegend() {
 	fmt.Println(display.Muted("  ● = Completed"))
 }
 
-// JSON output structures for status command
+// JSON output structures for status command.
 type jsonStatusTask struct {
 	TaskID         string              `json:"task_id"`
 	Title          string              `json:"title,omitempty"`
@@ -482,7 +482,7 @@ type jsonStatusAllOutput struct {
 	Tasks []jsonStatusTask `json:"tasks"`
 }
 
-// buildJSONStatusTask constructs a jsonStatusTask from workspace data
+// buildJSONStatusTask constructs a jsonStatusTask from workspace data.
 func buildJSONStatusTask(ws *storage.Workspace, git *vcs.Git, active *storage.ActiveTask, work *storage.TaskWork, worktreePath string, isWorktree bool) jsonStatusTask {
 	task := jsonStatusTask{
 		TaskID:       active.ID,

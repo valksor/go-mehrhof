@@ -7,7 +7,7 @@ import (
 	"github.com/valksor/go-mehrhof/internal/provider"
 )
 
-// FetchComments retrieves comments for a work unit
+// FetchComments retrieves comments for a work unit.
 func (p *Provider) FetchComments(ctx context.Context, workUnitID string) ([]provider.Comment, error) {
 	comments, err := p.client.GetComments(ctx, workUnitID)
 	if err != nil {
@@ -32,7 +32,7 @@ func (p *Provider) FetchComments(ctx context.Context, workUnitID string) ([]prov
 	return result, nil
 }
 
-// AddComment adds a comment to a work unit
+// AddComment adds a comment to a work unit.
 func (p *Provider) AddComment(ctx context.Context, workUnitID, body string) (*provider.Comment, error) {
 	comment, err := p.client.PostComment(ctx, workUnitID, body)
 	if err != nil {

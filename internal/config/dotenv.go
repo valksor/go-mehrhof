@@ -8,9 +8,9 @@ import (
 )
 
 const (
-	// MehrhofDir is the name of the mehrhof configuration directory
+	// MehrhofDir is the name of the mehrhof configuration directory.
 	MehrhofDir = ".mehrhof"
-	// EnvFileName is the name of the environment variables file
+	// EnvFileName is the name of the environment variables file.
 	EnvFileName = ".env"
 )
 
@@ -31,7 +31,7 @@ func LoadDotEnv(baseDir string) error {
 	return godotenv.Load(envPath)
 }
 
-// LoadDotEnvFromCwd loads .env from current working directory's .mehrhof/.env
+// LoadDotEnvFromCwd loads .env from current working directory's .mehrhof/.env.
 func LoadDotEnvFromCwd() error {
 	cwd, err := os.Getwd()
 	if err != nil {

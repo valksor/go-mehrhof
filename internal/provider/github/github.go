@@ -13,10 +13,10 @@ import (
 	"github.com/valksor/go-mehrhof/internal/provider"
 )
 
-// ProviderName is the registered name for this provider
+// ProviderName is the registered name for this provider.
 const ProviderName = "github"
 
-// Provider handles GitHub issue tasks
+// Provider handles GitHub issue tasks.
 type Provider struct {
 	client *Client
 	owner  string
@@ -25,7 +25,7 @@ type Provider struct {
 	cache  *cache.Cache
 }
 
-// Config holds GitHub provider configuration
+// Config holds GitHub provider configuration.
 type Config struct {
 	Token         string
 	Owner         string
@@ -37,7 +37,7 @@ type Config struct {
 	Comments      *CommentsConfig
 }
 
-// CommentsConfig controls automated commenting
+// CommentsConfig controls automated commenting.
 type CommentsConfig struct {
 	Enabled         bool
 	OnBranchCreated bool
@@ -46,7 +46,7 @@ type CommentsConfig struct {
 	OnPRCreated     bool
 }
 
-// Info returns provider metadata
+// Info returns provider metadata.
 func Info() provider.ProviderInfo {
 	return provider.ProviderInfo{
 		Name:        ProviderName,
@@ -69,7 +69,7 @@ func Info() provider.ProviderInfo {
 	}
 }
 
-// New creates a GitHub provider
+// New creates a GitHub provider.
 func New(ctx context.Context, cfg provider.Config) (any, error) {
 	// Extract config values
 	token := cfg.GetString("token")
@@ -130,12 +130,12 @@ func New(ctx context.Context, cfg provider.Config) (any, error) {
 	}, nil
 }
 
-// Match checks if input has the github: or gh: scheme prefix
+// Match checks if input has the github: or gh: scheme prefix.
 func (p *Provider) Match(input string) bool {
 	return strings.HasPrefix(input, "github:") || strings.HasPrefix(input, "gh:")
 }
 
-// Parse extracts the issue reference from input
+// Parse extracts the issue reference from input.
 func (p *Provider) Parse(input string) (string, error) {
 	ref, err := ParseReference(input)
 	if err != nil {
@@ -158,7 +158,7 @@ func (p *Provider) Parse(input string) (string, error) {
 	return fmt.Sprintf("%s/%s#%d", owner, repo, ref.IssueNumber), nil
 }
 
-// Fetch reads a GitHub issue and creates a WorkUnit
+// Fetch reads a GitHub issue and creates a WorkUnit.
 func (p *Provider) Fetch(ctx context.Context, id string) (*provider.WorkUnit, error) {
 	ref, err := ParseReference(id)
 	if err != nil {
@@ -250,7 +250,7 @@ func (p *Provider) Fetch(ctx context.Context, id string) (*provider.WorkUnit, er
 	return wu, nil
 }
 
-// Snapshot captures the issue content for storage
+// Snapshot captures the issue content for storage.
 func (p *Provider) Snapshot(ctx context.Context, id string) (*provider.Snapshot, error) {
 	ref, err := ParseReference(id)
 	if err != nil {
@@ -316,23 +316,23 @@ func (p *Provider) Snapshot(ctx context.Context, id string) (*provider.Snapshot,
 	return snapshot, nil
 }
 
-// GetConfig returns the provider configuration
+// GetConfig returns the provider configuration.
 func (p *Provider) GetConfig() *Config {
 	return p.config
 }
 
-// GetClient returns the GitHub API client
+// GetClient returns the GitHub API client.
 func (p *Provider) GetClient() *Client {
 	return p.client
 }
 
-// SetCache sets or replaces the cache for this provider and its client
+// SetCache sets or replaces the cache for this provider and its client.
 func (p *Provider) SetCache(c *cache.Cache) {
 	p.cache = c
 	p.client.SetCache(c)
 }
 
-// GetCache returns the cache for this provider
+// GetCache returns the cache for this provider.
 func (p *Provider) GetCache() *cache.Cache {
 	return p.cache
 }
@@ -350,7 +350,7 @@ func mapGitHubState(state string) provider.Status {
 	}
 }
 
-// labelTypeMap maps GitHub labels to task types
+// labelTypeMap maps GitHub labels to task types.
 var labelTypeMap = map[string]string{
 	"bug":           "fix",
 	"bugfix":        "fix",
@@ -375,7 +375,7 @@ func inferTypeFromLabels(labels []*gh.Label) string {
 	return "issue"
 }
 
-// labelPriorityMap maps GitHub labels to priorities
+// labelPriorityMap maps GitHub labels to priorities.
 var labelPriorityMap = map[string]provider.Priority{
 	"critical":      provider.PriorityCritical,
 	"urgent":        provider.PriorityCritical,

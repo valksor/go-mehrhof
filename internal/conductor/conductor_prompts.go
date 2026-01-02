@@ -7,7 +7,7 @@ import (
 	"github.com/valksor/go-mehrhof/internal/agent"
 )
 
-// buildPlanningPrompt creates the prompt for specification generation
+// buildPlanningPrompt creates the prompt for specification generation.
 func buildPlanningPrompt(title, sourceContent, notes, existingSpecs string) string {
 	prompt := fmt.Sprintf(`You are a software architect. Analyze this task and create a detailed implementation specification.
 
@@ -55,7 +55,7 @@ Output your specification in a structured format with clear sections.`
 	return prompt
 }
 
-// buildImplementationPrompt creates the prompt for implementation
+// buildImplementationPrompt creates the prompt for implementation.
 func buildImplementationPrompt(title, sourceContent, specsContent, notes string) string {
 	prompt := fmt.Sprintf(`You are a software engineer. Implement the following task according to the specifications.
 
@@ -90,7 +90,7 @@ Output each file change in a yaml:file block.`
 	return prompt
 }
 
-// buildReviewPrompt creates the prompt for code review
+// buildReviewPrompt creates the prompt for code review.
 func buildReviewPrompt(title, sourceContent, specsContent string) string {
 	return buildReviewPromptWithLint(title, sourceContent, specsContent, "")
 }
@@ -143,7 +143,7 @@ Provide:
 	return prompt
 }
 
-// formatSpecificationContent formats a specification file from agent response
+// formatSpecificationContent formats a specification file from agent response.
 func formatSpecificationContent(num int, response *agent.Response) string {
 	content := fmt.Sprintf("# Specification %d\n\n", num)
 

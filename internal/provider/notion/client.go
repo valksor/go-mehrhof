@@ -19,7 +19,7 @@ const (
 	defaultTimeout = 30 * time.Second
 )
 
-// Client wraps the Notion API client
+// Client wraps the Notion API client.
 type Client struct {
 	httpClient *http.Client
 	baseURL    string
@@ -27,7 +27,7 @@ type Client struct {
 	version    string
 }
 
-// NewClient creates a new Notion API client
+// NewClient creates a new Notion API client.
 func NewClient(token string) *Client {
 	return &Client{
 		httpClient: &http.Client{Timeout: defaultTimeout},
@@ -47,7 +47,7 @@ func ResolveToken(configToken string) (string, error) {
 		WithEnvVars("NOTION_TOKEN"))
 }
 
-// doRequest performs an HTTP request to the Notion API
+// doRequest performs an HTTP request to the Notion API.
 func (c *Client) doRequest(ctx context.Context, method, path string, body, result any) error {
 	var bodyReader io.Reader
 	if body != nil {
@@ -92,7 +92,7 @@ func (c *Client) doRequest(ctx context.Context, method, path string, body, resul
 	return nil
 }
 
-// GetPage fetches a page by ID
+// GetPage fetches a page by ID.
 func (c *Client) GetPage(ctx context.Context, pageID string) (*Page, error) {
 	// Normalize page ID (ensure it's 32-char hex)
 	normalizedID := NormalizePageID(pageID)
@@ -107,7 +107,7 @@ func (c *Client) GetPage(ctx context.Context, pageID string) (*Page, error) {
 	return &page, nil
 }
 
-// GetPageContent fetches the block content of a page
+// GetPageContent fetches the block content of a page.
 func (c *Client) GetPageContent(ctx context.Context, pageID string) ([]Block, error) {
 	normalizedID := NormalizePageID(pageID)
 
@@ -142,7 +142,7 @@ func (c *Client) GetPageContent(ctx context.Context, pageID string) ([]Block, er
 	return allBlocks, nil
 }
 
-// QueryDatabase queries a database with optional filters
+// QueryDatabase queries a database with optional filters.
 func (c *Client) QueryDatabase(ctx context.Context, databaseID string, req *DatabaseQueryRequest) (*DatabaseQueryResponse, error) {
 	// Normalize database ID
 	normalizedID := NormalizePageID(databaseID)
@@ -166,7 +166,7 @@ func (c *Client) QueryDatabase(ctx context.Context, databaseID string, req *Data
 	return &response, nil
 }
 
-// QueryDatabaseAll queries a database and returns all pages (handles pagination)
+// QueryDatabaseAll queries a database and returns all pages (handles pagination).
 func (c *Client) QueryDatabaseAll(ctx context.Context, databaseID string, req *DatabaseQueryRequest) ([]Page, error) {
 	var allPages []Page
 	startCursor := ""
@@ -197,7 +197,7 @@ func (c *Client) QueryDatabaseAll(ctx context.Context, databaseID string, req *D
 	return allPages, nil
 }
 
-// UpdatePage updates page properties
+// UpdatePage updates page properties.
 func (c *Client) UpdatePage(ctx context.Context, pageID string, input *UpdatePageInput) (*Page, error) {
 	normalizedID := NormalizePageID(pageID)
 
@@ -211,7 +211,7 @@ func (c *Client) UpdatePage(ctx context.Context, pageID string, input *UpdatePag
 	return &page, nil
 }
 
-// CreatePage creates a new page in a database
+// CreatePage creates a new page in a database.
 func (c *Client) CreatePage(ctx context.Context, input *CreatePageInput) (*Page, error) {
 	var page Page
 	path := "/v1/pages"
@@ -223,7 +223,7 @@ func (c *Client) CreatePage(ctx context.Context, input *CreatePageInput) (*Page,
 	return &page, nil
 }
 
-// GetComments fetches comments for a page
+// GetComments fetches comments for a page.
 func (c *Client) GetComments(ctx context.Context, pageID string) ([]Comment, error) {
 	normalizedID := NormalizePageID(pageID)
 
@@ -252,7 +252,7 @@ func (c *Client) GetComments(ctx context.Context, pageID string) ([]Comment, err
 	return allComments, nil
 }
 
-// AddComment adds a comment to a page
+// AddComment adds a comment to a page.
 func (c *Client) AddComment(ctx context.Context, input *AddCommentInput) (*Comment, error) {
 	var comment Comment
 	path := "/v1/comments"
@@ -264,7 +264,7 @@ func (c *Client) AddComment(ctx context.Context, input *AddCommentInput) (*Comme
 	return &comment, nil
 }
 
-// GetDatabase fetches database metadata
+// GetDatabase fetches database metadata.
 func (c *Client) GetDatabase(ctx context.Context, databaseID string) (*Database, error) {
 	normalizedID := NormalizePageID(databaseID)
 
@@ -282,7 +282,7 @@ func (c *Client) GetDatabase(ctx context.Context, databaseID string) (*Database,
 // HTTP Error wrapper
 // ──────────────────────────────────────────────────────────────────────────────
 
-// httpError wraps an HTTP error for proper error handling
+// httpError wraps an HTTP error for proper error handling.
 type httpError struct {
 	message string
 	code    int
@@ -296,7 +296,7 @@ func (e *httpError) HTTPStatusCode() int {
 	return e.code
 }
 
-// Helper function to create a title property
+// Helper function to create a title property.
 func MakeTitleProperty(text string) Property {
 	return Property{
 		Type: "title",
@@ -315,7 +315,7 @@ func MakeTitleProperty(text string) Property {
 	}
 }
 
-// Helper function to create a rich text property
+// Helper function to create a rich text property.
 func MakeRichTextProperty(text string) Property {
 	return Property{
 		Type: "rich_text",
@@ -334,7 +334,7 @@ func MakeRichTextProperty(text string) Property {
 	}
 }
 
-// Helper function to create a status property
+// Helper function to create a status property.
 func MakeStatusProperty(status string) Property {
 	if status == "" {
 		return Property{
@@ -352,7 +352,7 @@ func MakeStatusProperty(status string) Property {
 	}
 }
 
-// Helper function to create a multi-select property
+// Helper function to create a multi-select property.
 func MakeMultiSelectProperty(labels []string) Property {
 	options := make([]SelectProp, len(labels))
 	for i, label := range labels {
@@ -368,7 +368,7 @@ func MakeMultiSelectProperty(labels []string) Property {
 	}
 }
 
-// Helper function to extract plain text from a property
+// Helper function to extract plain text from a property.
 func ExtractPlainText(prop Property) string {
 	switch {
 	case prop.Title != nil && len(prop.Title.Title) > 0:
@@ -384,7 +384,7 @@ func ExtractPlainText(prop Property) string {
 	}
 }
 
-// Helper function to extract all labels from a multi-select property
+// Helper function to extract all labels from a multi-select property.
 func ExtractLabels(prop Property) []string {
 	if prop.MultiSelect == nil {
 		return []string{}
@@ -396,7 +396,7 @@ func ExtractLabels(prop Property) []string {
 	return labels
 }
 
-// Convert blocks to markdown
+// Convert blocks to markdown.
 func BlocksToMarkdown(blocks []Block) string {
 	var md strings.Builder
 
@@ -496,7 +496,7 @@ func BlocksToMarkdown(blocks []Block) string {
 	return md.String()
 }
 
-// Helper to get property by name (case-insensitive)
+// Helper to get property by name (case-insensitive).
 func GetProperty(page Page, name string) (Property, bool) {
 	for key, prop := range page.Properties {
 		if strings.EqualFold(key, name) {
@@ -506,7 +506,7 @@ func GetProperty(page Page, name string) (Property, bool) {
 	return Property{}, false
 }
 
-// Helper to get property ID by name (case-insensitive)
+// Helper to get property ID by name (case-insensitive).
 func GetPropertyID(page Page, name string) (string, bool) {
 	for key, prop := range page.Properties {
 		if strings.EqualFold(key, name) {

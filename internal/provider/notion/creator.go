@@ -7,7 +7,7 @@ import (
 	"github.com/valksor/go-mehrhof/internal/provider"
 )
 
-// CreateWorkUnitInput holds input for creating a new page
+// CreateWorkUnitInput holds input for creating a new page.
 type CreateWorkUnitInput struct {
 	Title       string
 	Description string
@@ -16,7 +16,7 @@ type CreateWorkUnitInput struct {
 	Labels      []string
 }
 
-// CreateWorkUnit creates a new Notion page
+// CreateWorkUnit creates a new Notion page.
 func (p *Provider) CreateWorkUnit(ctx context.Context, input CreateWorkUnitInput) (*provider.WorkUnit, error) {
 	databaseID := p.databaseID
 	if databaseID == "" {

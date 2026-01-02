@@ -17,7 +17,7 @@ const (
 	apiVersion     = "7.1"
 )
 
-// Client wraps the Azure DevOps API
+// Client wraps the Azure DevOps API.
 type Client struct {
 	httpClient   *http.Client
 	organization string
@@ -25,7 +25,7 @@ type Client struct {
 	token        string
 }
 
-// NewClient creates a new Azure DevOps API client
+// NewClient creates a new Azure DevOps API client.
 func NewClient(organization, project, token string) *Client {
 	return &Client{
 		httpClient:   &http.Client{Timeout: defaultTimeout},
@@ -57,19 +57,19 @@ func ResolveToken(configToken string) (string, error) {
 	return "", ErrNoToken
 }
 
-// SetOrganization updates the organization
+// SetOrganization updates the organization.
 func (c *Client) SetOrganization(org string) {
 	c.organization = org
 }
 
-// SetProject updates the project
+// SetProject updates the project.
 func (c *Client) SetProject(project string) {
 	c.project = project
 }
 
 // --- API Types ---
 
-// WorkItem represents an Azure DevOps work item
+// WorkItem represents an Azure DevOps work item.
 type WorkItem struct {
 	ID        int                `json:"id"`
 	Rev       int                `json:"rev"`
@@ -78,7 +78,7 @@ type WorkItem struct {
 	Relations []WorkItemRelation `json:"relations,omitempty"`
 }
 
-// WorkItemFields contains work item field values
+// WorkItemFields contains work item field values.
 type WorkItemFields struct {
 	Title              string    `json:"System.Title"`
 	Description        string    `json:"System.Description"`
@@ -100,7 +100,7 @@ type WorkItemFields struct {
 	AcceptanceCriteria string    `json:"Microsoft.VSTS.Common.AcceptanceCriteria"`
 }
 
-// Identity represents an Azure DevOps user identity
+// Identity represents an Azure DevOps user identity.
 type Identity struct {
 	DisplayName string `json:"displayName"`
 	URL         string `json:"url"`
@@ -109,14 +109,14 @@ type Identity struct {
 	ImageURL    string `json:"imageUrl"`
 }
 
-// WorkItemRelation represents a work item relation
+// WorkItemRelation represents a work item relation.
 type WorkItemRelation struct {
 	Rel        string                 `json:"rel"`
 	URL        string                 `json:"url"`
 	Attributes map[string]interface{} `json:"attributes"`
 }
 
-// Comment represents a work item comment
+// Comment represents a work item comment.
 type Comment struct {
 	ID           int       `json:"id"`
 	WorkItemID   int       `json:"workItemId"`
@@ -128,14 +128,14 @@ type Comment struct {
 	Version      int       `json:"version"`
 }
 
-// CommentsResponse represents the response from listing comments
+// CommentsResponse represents the response from listing comments.
 type CommentsResponse struct {
 	TotalCount int       `json:"totalCount"`
 	Count      int       `json:"count"`
 	Comments   []Comment `json:"comments"`
 }
 
-// WorkItemQueryResult represents a WIQL query result
+// WorkItemQueryResult represents a WIQL query result.
 type WorkItemQueryResult struct {
 	QueryType         string              `json:"queryType"`
 	QueryResultType   string              `json:"queryResultType"`
@@ -144,19 +144,19 @@ type WorkItemQueryResult struct {
 	WorkItemRelations []WorkItemRelation  `json:"workItemRelations,omitempty"`
 }
 
-// WorkItemReference is a minimal work item reference
+// WorkItemReference is a minimal work item reference.
 type WorkItemReference struct {
 	ID  int    `json:"id"`
 	URL string `json:"url"`
 }
 
-// WorkItemBatch represents a batch of work items
+// WorkItemBatch represents a batch of work items.
 type WorkItemBatch struct {
 	Count int        `json:"count"`
 	Value []WorkItem `json:"value"`
 }
 
-// AzurePullRequest represents an Azure DevOps pull request
+// AzurePullRequest represents an Azure DevOps pull request.
 type AzurePullRequest struct {
 	PullRequestID int         `json:"pullRequestId"`
 	Repository    *Repository `json:"repository"`
@@ -170,7 +170,7 @@ type AzurePullRequest struct {
 	URL           string      `json:"url"`
 }
 
-// Repository represents an Azure DevOps repository
+// Repository represents an Azure DevOps repository.
 type Repository struct {
 	ID      string   `json:"id"`
 	Name    string   `json:"name"`
@@ -178,7 +178,7 @@ type Repository struct {
 	Project *Project `json:"project"`
 }
 
-// Project represents an Azure DevOps project
+// Project represents an Azure DevOps project.
 type Project struct {
 	ID          string `json:"id"`
 	Name        string `json:"name"`
@@ -234,7 +234,7 @@ func (c *Client) doRequest(ctx context.Context, method, url string, body any) ([
 
 // --- Work Item API ---
 
-// GetWorkItem fetches a work item by ID
+// GetWorkItem fetches a work item by ID.
 func (c *Client) GetWorkItem(ctx context.Context, id int) (*WorkItem, error) {
 	url := c.buildURL(fmt.Sprintf("/wit/workitems/%d", id)) + "&$expand=relations"
 
@@ -251,7 +251,7 @@ func (c *Client) GetWorkItem(ctx context.Context, id int) (*WorkItem, error) {
 	return &workItem, nil
 }
 
-// QueryWorkItems executes a WIQL query and returns work item IDs
+// QueryWorkItems executes a WIQL query and returns work item IDs.
 func (c *Client) QueryWorkItems(ctx context.Context, wiql string) ([]int, error) {
 	url := c.buildURL("/wit/wiql")
 
@@ -277,7 +277,7 @@ func (c *Client) QueryWorkItems(ctx context.Context, wiql string) ([]int, error)
 	return ids, nil
 }
 
-// GetWorkItems fetches multiple work items by IDs
+// GetWorkItems fetches multiple work items by IDs.
 func (c *Client) GetWorkItems(ctx context.Context, ids []int) ([]WorkItem, error) {
 	if len(ids) == 0 {
 		return nil, nil
@@ -306,7 +306,7 @@ func (c *Client) GetWorkItems(ctx context.Context, ids []int) ([]WorkItem, error
 	return batch.Value, nil
 }
 
-// GetWorkItemComments fetches comments for a work item
+// GetWorkItemComments fetches comments for a work item.
 func (c *Client) GetWorkItemComments(ctx context.Context, id int) ([]Comment, error) {
 	url := c.buildURL(fmt.Sprintf("/wit/workitems/%d/comments", id))
 
@@ -323,7 +323,7 @@ func (c *Client) GetWorkItemComments(ctx context.Context, id int) ([]Comment, er
 	return resp.Comments, nil
 }
 
-// AddWorkItemComment adds a comment to a work item
+// AddWorkItemComment adds a comment to a work item.
 func (c *Client) AddWorkItemComment(ctx context.Context, id int, text string) (*Comment, error) {
 	url := c.buildURL(fmt.Sprintf("/wit/workitems/%d/comments", id))
 
@@ -344,7 +344,7 @@ func (c *Client) AddWorkItemComment(ctx context.Context, id int, text string) (*
 	return &comment, nil
 }
 
-// UpdateWorkItem updates work item fields using JSON Patch
+// UpdateWorkItem updates work item fields using JSON Patch.
 func (c *Client) UpdateWorkItem(ctx context.Context, id int, updates []PatchOperation) (*WorkItem, error) {
 	url := c.buildURL(fmt.Sprintf("/wit/workitems/%d", id))
 
@@ -386,7 +386,7 @@ func (c *Client) UpdateWorkItem(ctx context.Context, id int, updates []PatchOper
 	return &workItem, nil
 }
 
-// PatchOperation represents a JSON Patch operation
+// PatchOperation represents a JSON Patch operation.
 type PatchOperation struct {
 	Op    string `json:"op"`
 	Path  string `json:"path"`
@@ -394,7 +394,7 @@ type PatchOperation struct {
 	From  string `json:"from,omitempty"`
 }
 
-// UpdateWorkItemState updates the state of a work item
+// UpdateWorkItemState updates the state of a work item.
 func (c *Client) UpdateWorkItemState(ctx context.Context, id int, state string) (*WorkItem, error) {
 	updates := []PatchOperation{
 		{
@@ -408,7 +408,7 @@ func (c *Client) UpdateWorkItemState(ctx context.Context, id int, state string) 
 
 // --- Pull Request API ---
 
-// CreatePullRequest creates a new pull request
+// CreatePullRequest creates a new pull request.
 func (c *Client) CreatePullRequest(ctx context.Context, repoID, sourceBranch, targetBranch, title, description string, workItemIDs []int) (*AzurePullRequest, error) {
 	url := fmt.Sprintf("https://dev.azure.com/%s/%s/_apis/git/repositories/%s/pullrequests?api-version=%s",
 		c.organization, c.project, repoID, apiVersion)
@@ -445,7 +445,7 @@ func (c *Client) CreatePullRequest(ctx context.Context, repoID, sourceBranch, ta
 	return &pr, nil
 }
 
-// GetRepositories lists repositories in the project
+// GetRepositories lists repositories in the project.
 func (c *Client) GetRepositories(ctx context.Context) ([]Repository, error) {
 	url := c.buildURL("/git/repositories")
 
@@ -465,7 +465,7 @@ func (c *Client) GetRepositories(ctx context.Context) ([]Repository, error) {
 	return resp.Value, nil
 }
 
-// CreateWorkItem creates a new work item of the specified type
+// CreateWorkItem creates a new work item of the specified type.
 func (c *Client) CreateWorkItem(ctx context.Context, workItemType string, updates []PatchOperation) (*WorkItem, error) {
 	url := fmt.Sprintf("https://dev.azure.com/%s/%s/_apis/wit/workitems/$%s?api-version=%s",
 		c.organization, c.project, workItemType, apiVersion)
@@ -509,7 +509,7 @@ func (c *Client) CreateWorkItem(ctx context.Context, workItemType string, update
 }
 
 // QueryWorkItemLinks executes a WIQL link query and returns target work item IDs
-// This is used for tree/hierarchy queries (e.g., fetching child work items)
+// This is used for tree/hierarchy queries (e.g., fetching child work items).
 func (c *Client) QueryWorkItemLinks(ctx context.Context, wiql string) ([]int, error) {
 	url := c.buildURL("/wit/wiql")
 
@@ -539,7 +539,7 @@ func (c *Client) QueryWorkItemLinks(ctx context.Context, wiql string) ([]int, er
 	return ids, nil
 }
 
-// WorkItemLinkQueryResult represents a WIQL link query result
+// WorkItemLinkQueryResult represents a WIQL link query result.
 type WorkItemLinkQueryResult struct {
 	QueryType         string                 `json:"queryType"`
 	QueryResultType   string                 `json:"queryResultType"`
@@ -547,14 +547,14 @@ type WorkItemLinkQueryResult struct {
 	WorkItemRelations []WorkItemLinkRelation `json:"workItemRelations,omitempty"`
 }
 
-// WorkItemLinkRelation represents a link relation in query results
+// WorkItemLinkRelation represents a link relation in query results.
 type WorkItemLinkRelation struct {
 	Source *WorkItemReference `json:"source"`
 	Target *WorkItemReference `json:"target"`
 	Rel    string             `json:"rel"`
 }
 
-// Helper function
+// Helper function.
 func joinStrings(strs []string, sep string) string {
 	if len(strs) == 0 {
 		return ""

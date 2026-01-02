@@ -8,12 +8,12 @@ import (
 
 const locksDirName = "locks"
 
-// LocksDir returns the path to the locks directory
+// LocksDir returns the path to the locks directory.
 func (w *Workspace) LocksDir() string {
 	return filepath.Join(w.taskRoot, locksDirName)
 }
 
-// TaskLockPath returns the path to the lock file for a task
+// TaskLockPath returns the path to the lock file for a task.
 func (w *Workspace) TaskLockPath(taskID string) string {
 	return filepath.Join(w.LocksDir(), taskID+".lock")
 }

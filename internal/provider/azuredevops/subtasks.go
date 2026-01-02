@@ -65,7 +65,7 @@ func (p *Provider) FetchSubtasks(ctx context.Context, workUnitID string) ([]*pro
 	return result, nil
 }
 
-// fetchSubtasksFromRelations fetches child work items from the relations array
+// fetchSubtasksFromRelations fetches child work items from the relations array.
 func (p *Provider) fetchSubtasksFromRelations(ctx context.Context, workItemID int) ([]*provider.WorkUnit, error) {
 	// Get work item with relations
 	workItem, err := p.client.GetWorkItem(ctx, workItemID)

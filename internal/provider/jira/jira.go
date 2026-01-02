@@ -9,17 +9,17 @@ import (
 	"github.com/valksor/go-mehrhof/internal/provider"
 )
 
-// ProviderName is the registered name for this provider
+// ProviderName is the registered name for this provider.
 const ProviderName = "jira"
 
-// Provider handles Jira issues
+// Provider handles Jira issues.
 type Provider struct {
 	client         *Client
 	defaultProject string // Default project key
 	baseURL        string // Base URL for API requests
 }
 
-// Config holds Jira provider configuration
+// Config holds Jira provider configuration.
 type Config struct {
 	Token   string // API token
 	Email   string // Email for Cloud auth
@@ -27,7 +27,7 @@ type Config struct {
 	Project string // Default project key
 }
 
-// Info returns provider metadata
+// Info returns provider metadata.
 func Info() provider.ProviderInfo {
 	return provider.ProviderInfo{
 		Name:        ProviderName,
@@ -49,7 +49,7 @@ func Info() provider.ProviderInfo {
 	}
 }
 
-// New creates a Jira provider
+// New creates a Jira provider.
 func New(_ context.Context, cfg provider.Config) (any, error) {
 	token := cfg.GetString("token")
 	email := cfg.GetString("email")
@@ -72,12 +72,12 @@ func New(_ context.Context, cfg provider.Config) (any, error) {
 	}, nil
 }
 
-// Match checks if input has the jira: or j: scheme prefix
+// Match checks if input has the jira: or j: scheme prefix.
 func (p *Provider) Match(input string) bool {
 	return strings.HasPrefix(input, "jira:") || strings.HasPrefix(input, "j:")
 }
 
-// Parse extracts the issue key from input
+// Parse extracts the issue key from input.
 func (p *Provider) Parse(input string) (string, error) {
 	ref, err := ParseReference(input)
 	if err != nil {
@@ -93,7 +93,7 @@ func (p *Provider) Parse(input string) (string, error) {
 	return ref.IssueKey, nil
 }
 
-// Fetch reads a Jira issue and creates a WorkUnit
+// Fetch reads a Jira issue and creates a WorkUnit.
 func (p *Provider) Fetch(ctx context.Context, id string) (*provider.WorkUnit, error) {
 	ref, err := ParseReference(id)
 	if err != nil {
@@ -152,17 +152,17 @@ func (p *Provider) Fetch(ctx context.Context, id string) (*provider.WorkUnit, er
 	return wu, nil
 }
 
-// GetClient returns the Jira API client
+// GetClient returns the Jira API client.
 func (p *Provider) GetClient() *Client {
 	return p.client
 }
 
-// GetDefaultProject returns the default project key
+// GetDefaultProject returns the default project key.
 func (p *Provider) GetDefaultProject() string {
 	return p.defaultProject
 }
 
-// GetBaseURL returns the base URL
+// GetBaseURL returns the base URL.
 func (p *Provider) GetBaseURL() string {
 	return p.baseURL
 }
@@ -171,7 +171,7 @@ func (p *Provider) GetBaseURL() string {
 // Helper functions
 // ──────────────────────────────────────────────────────────────────────────────
 
-// mapJiraStatus converts Jira status to provider status
+// mapJiraStatus converts Jira status to provider status.
 func mapJiraStatus(status string) provider.Status {
 	switch strings.ToLower(status) {
 	case "to do", "backlog", "open", "new":
@@ -190,7 +190,7 @@ func mapJiraStatus(status string) provider.Status {
 }
 
 // mapProviderStatusToJiraTransition converts provider status to common Jira transition names
-// Returns a list of possible transition names to try
+// Returns a list of possible transition names to try.
 func mapProviderStatusToJiraTransitions(status provider.Status) []string {
 	switch status {
 	case provider.StatusOpen:
@@ -208,7 +208,7 @@ func mapProviderStatusToJiraTransitions(status provider.Status) []string {
 	}
 }
 
-// mapJiraPriority converts Jira priority to provider priority
+// mapJiraPriority converts Jira priority to provider priority.
 func mapJiraPriority(p *Priority) provider.Priority {
 	if p == nil {
 		return provider.PriorityNormal
@@ -228,7 +228,7 @@ func mapJiraPriority(p *Priority) provider.Priority {
 	}
 }
 
-// mapProviderPriorityToJira converts provider priority to Jira priority name
+// mapProviderPriorityToJira converts provider priority to Jira priority name.
 func mapProviderPriorityToJira(priority provider.Priority) string {
 	switch priority {
 	case provider.PriorityCritical:
@@ -242,7 +242,7 @@ func mapProviderPriorityToJira(priority provider.Priority) string {
 	}
 }
 
-// mapAssignees converts Jira assignee to provider Person
+// mapAssignees converts Jira assignee to provider Person.
 func mapAssignees(assignee *User) []provider.Person {
 	if assignee == nil {
 		return []provider.Person{}
@@ -256,7 +256,7 @@ func mapAssignees(assignee *User) []provider.Person {
 	}
 }
 
-// mapComments converts Jira comments to provider comments
+// mapComments converts Jira comments to provider comments.
 func mapComments(comments []*Comment) []provider.Comment {
 	if comments == nil {
 		return nil
@@ -282,7 +282,7 @@ func mapComments(comments []*Comment) []provider.Comment {
 	return result
 }
 
-// mapAttachments converts Jira attachments to provider attachments
+// mapAttachments converts Jira attachments to provider attachments.
 func mapAttachments(attachments []*Attachment) []provider.Attachment {
 	if attachments == nil {
 		return nil
@@ -302,7 +302,7 @@ func mapAttachments(attachments []*Attachment) []provider.Attachment {
 	return result
 }
 
-// inferTaskTypeFromLabels determines task type from label names
+// inferTaskTypeFromLabels determines task type from label names.
 func inferTaskTypeFromLabels(labels []string) string {
 	for _, label := range labels {
 		switch strings.ToLower(label) {
@@ -325,7 +325,7 @@ func inferTaskTypeFromLabels(labels []string) string {
 	return "issue"
 }
 
-// buildMetadata creates metadata map from issue
+// buildMetadata creates metadata map from issue.
 func buildMetadata(issue *Issue) map[string]any {
 	metadata := make(map[string]any)
 

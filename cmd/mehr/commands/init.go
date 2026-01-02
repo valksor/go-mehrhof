@@ -123,7 +123,7 @@ func createEnvTemplate(path string) error {
 	return os.WriteFile(path, []byte(template), 0o600) // 0600 for secrets
 }
 
-// interactiveSetup guides the user through initial configuration
+// interactiveSetup guides the user through initial configuration.
 func interactiveSetup(cmd *cobra.Command, ws *storage.Workspace, envPath string) error {
 	out := cmd.OutOrStdout()
 	in := bufio.NewReader(cmd.InOrStdin())

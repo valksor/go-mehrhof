@@ -21,12 +21,12 @@ const (
 	configFileName  = "config.yaml"
 	envFileName     = ".env"
 
-	// Usage buffer configuration
+	// Usage buffer configuration.
 	defaultUsageFlushInterval  = 5 * time.Second // Auto-flush interval
 	defaultUsageFlushThreshold = 10              // Flush after N updates
 )
 
-// usageBuffer tracks accumulated usage for a task/step combination
+// usageBuffer tracks accumulated usage for a task/step combination.
 type usageBuffer struct {
 	inputTokens  int
 	outputTokens int
@@ -35,7 +35,7 @@ type usageBuffer struct {
 	callCount    int
 }
 
-// Workspace manages task storage within a repository
+// Workspace manages task storage within a repository.
 type Workspace struct {
 	root     string // Repository root
 	taskRoot string // .mehrhof directory
@@ -74,33 +74,33 @@ func OpenWorkspace(repoRoot string, cfg *WorkspaceConfig) (*Workspace, error) {
 	}, nil
 }
 
-// Root returns the repository root path
+// Root returns the repository root path.
 func (w *Workspace) Root() string {
 	return w.root
 }
 
-// TaskRoot returns the .mehrhof directory path
+// TaskRoot returns the .mehrhof directory path.
 func (w *Workspace) TaskRoot() string {
 	return w.taskRoot
 }
 
-// WorkRoot returns the .mehrhof/work directory path
+// WorkRoot returns the .mehrhof/work directory path.
 func (w *Workspace) WorkRoot() string {
 	return w.workRoot
 }
 
-// ConfigPath returns the path to the config file
+// ConfigPath returns the path to the config file.
 func (w *Workspace) ConfigPath() string {
 	return filepath.Join(w.taskRoot, configFileName)
 }
 
-// HasConfig returns true if the config file exists
+// HasConfig returns true if the config file exists.
 func (w *Workspace) HasConfig() bool {
 	_, err := os.Stat(w.ConfigPath())
 	return err == nil
 }
 
-// EnvPath returns the path to the .env file
+// EnvPath returns the path to the .env file.
 func (w *Workspace) EnvPath() string {
 	return filepath.Join(w.taskRoot, envFileName)
 }

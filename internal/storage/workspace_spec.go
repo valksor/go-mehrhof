@@ -13,24 +13,24 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-// SpecificationsDir returns the specifications directory path
+// SpecificationsDir returns the specifications directory path.
 func (w *Workspace) SpecificationsDir(taskID string) string {
 	return filepath.Join(w.WorkPath(taskID), specsDirName)
 }
 
-// SpecificationPath returns the path for a specification file
+// SpecificationPath returns the path for a specification file.
 func (w *Workspace) SpecificationPath(taskID string, number int) string {
 	filename := fmt.Sprintf("specification-%d.md", number)
 	return filepath.Join(w.SpecificationsDir(taskID), filename)
 }
 
-// SaveSpecification saves a specification file (markdown)
+// SaveSpecification saves a specification file (markdown).
 func (w *Workspace) SaveSpecification(taskID string, number int, content string) error {
 	specPath := w.SpecificationPath(taskID, number)
 	return os.WriteFile(specPath, []byte(content), 0o644)
 }
 
-// LoadSpecification loads a specification file content
+// LoadSpecification loads a specification file content.
 func (w *Workspace) LoadSpecification(taskID string, number int) (string, error) {
 	specPath := w.SpecificationPath(taskID, number)
 	data, err := os.ReadFile(specPath)
@@ -40,7 +40,7 @@ func (w *Workspace) LoadSpecification(taskID string, number int) (string, error)
 	return string(data), nil
 }
 
-// ListSpecifications returns all specification numbers for a task
+// ListSpecifications returns all specification numbers for a task.
 func (w *Workspace) ListSpecifications(taskID string) ([]int, error) {
 	specsDir := w.SpecificationsDir(taskID)
 
@@ -70,7 +70,7 @@ func (w *Workspace) ListSpecifications(taskID string) ([]int, error) {
 	return numbers, nil
 }
 
-// NextSpecificationNumber returns the next available specification number
+// NextSpecificationNumber returns the next available specification number.
 func (w *Workspace) NextSpecificationNumber(taskID string) (int, error) {
 	specifications, err := w.ListSpecifications(taskID)
 	if err != nil {
@@ -84,7 +84,7 @@ func (w *Workspace) NextSpecificationNumber(taskID string) (int, error) {
 	return specifications[len(specifications)-1] + 1, nil
 }
 
-// GatherSpecificationsContent reads all specifications and returns combined content
+// GatherSpecificationsContent reads all specifications and returns combined content.
 func (w *Workspace) GatherSpecificationsContent(taskID string) (string, error) {
 	specifications, err := w.ListSpecifications(taskID)
 	if err != nil {
@@ -103,7 +103,7 @@ func (w *Workspace) GatherSpecificationsContent(taskID string) (string, error) {
 	return strings.Join(parts, "\n\n---\n\n"), nil
 }
 
-// GetLatestSpecificationContent returns only the most recent specification content
+// GetLatestSpecificationContent returns only the most recent specification content.
 func (w *Workspace) GetLatestSpecificationContent(taskID string) (string, int, error) {
 	specifications, err := w.ListSpecifications(taskID)
 	if err != nil {
@@ -124,7 +124,7 @@ func (w *Workspace) GetLatestSpecificationContent(taskID string) (string, int, e
 	return content, latestNum, nil
 }
 
-// ParseSpecification parses a specification file with optional YAML frontmatter
+// ParseSpecification parses a specification file with optional YAML frontmatter.
 func (w *Workspace) ParseSpecification(taskID string, number int) (*Specification, error) {
 	content, err := w.LoadSpecification(taskID, number)
 	if err != nil {
@@ -168,7 +168,7 @@ func (w *Workspace) ParseSpecification(taskID string, number int) (*Specificatio
 	return spec, nil
 }
 
-// SaveSpecificationWithMeta saves a specification with YAML frontmatter
+// SaveSpecificationWithMeta saves a specification with YAML frontmatter.
 func (w *Workspace) SaveSpecificationWithMeta(taskID string, spec *Specification) error {
 	// Ensure timestamps
 	now := time.Now()
@@ -193,7 +193,7 @@ func (w *Workspace) SaveSpecificationWithMeta(taskID string, spec *Specification
 	return w.SaveSpecification(taskID, spec.Number, content.String())
 }
 
-// UpdateSpecificationStatus updates the status of a specification file
+// UpdateSpecificationStatus updates the status of a specification file.
 func (w *Workspace) UpdateSpecificationStatus(taskID string, number int, status string) error {
 	spec, err := w.ParseSpecification(taskID, number)
 	if err != nil {
@@ -211,7 +211,7 @@ func (w *Workspace) UpdateSpecificationStatus(taskID string, number int, status 
 	return w.SaveSpecificationWithMeta(taskID, spec)
 }
 
-// ListSpecificationsWithStatus returns all specifications with their parsed status
+// ListSpecificationsWithStatus returns all specifications with their parsed status.
 func (w *Workspace) ListSpecificationsWithStatus(taskID string) ([]*Specification, error) {
 	numbers, err := w.ListSpecifications(taskID)
 	if err != nil {
@@ -232,7 +232,7 @@ func (w *Workspace) ListSpecificationsWithStatus(taskID string) ([]*Specificatio
 	return specifications, nil
 }
 
-// GetSpecificationsSummary returns a summary of specification statuses
+// GetSpecificationsSummary returns a summary of specification statuses.
 func (w *Workspace) GetSpecificationsSummary(taskID string) (map[string]int, error) {
 	specifications, err := w.ListSpecificationsWithStatus(taskID)
 	if err != nil {

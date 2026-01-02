@@ -7,7 +7,7 @@ import (
 	"github.com/valksor/go-mehrhof/internal/provider"
 )
 
-// UpdateStatus changes the status of an issue via the State custom field
+// UpdateStatus changes the status of an issue via the State custom field.
 func (p *Provider) UpdateStatus(ctx context.Context, workUnitID string, status provider.Status) error {
 	// Map provider status to YouTrack state name
 	stateName := statusToYouTrackState(status)
@@ -33,8 +33,8 @@ func (p *Provider) UpdateStatus(ctx context.Context, workUnitID string, status p
 	return nil
 }
 
-// statusToYouTrackState maps provider status to YouTrack state name
-// This is a default mapping - users may need customization based on their workflow
+// statusToYouTrackState maps provider status to YouTrack state name.
+// This is a default mapping - users may need customization based on their workflow.
 func statusToYouTrackState(status provider.Status) string {
 	switch status {
 	case provider.StatusOpen:

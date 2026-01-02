@@ -14,7 +14,7 @@ import (
 	"github.com/valksor/go-mehrhof/internal/workflow"
 )
 
-// initGitRepo initializes a git repository for testing
+// initGitRepo initializes a git repository for testing.
 func initGitRepo(t *testing.T, dir string) {
 	t.Helper()
 	ctx := context.Background()
@@ -837,8 +837,8 @@ func TestDelete_WithWorkspace(t *testing.T) {
 	}
 }
 
-// TestFinish_NoGit tests that Finish works even when UseGit=true but git is nil
-// (the git merge section is skipped based on the c.git != nil check)
+// TestFinish_NoGit tests that Finish works even when UseGit=true but git is nil.
+// (the git merge section is skipped based on the c.git != nil check).
 func TestFinish_NoGit(t *testing.T) {
 	tmpDir := t.TempDir()
 	ctx := context.Background()
@@ -1014,7 +1014,7 @@ func TestCreateCheckpoint_WithChanges(t *testing.T) {
 	}
 }
 
-// TestStart_WithFileReference tests starting a task with a file:// reference
+// TestStart_WithFileReference tests starting a task with a file:// reference.
 func TestStart_WithFileReference(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping integration test in short mode")
@@ -1083,7 +1083,7 @@ This is a test task description.
 	}
 }
 
-// TestStatus_Integration tests getting status when there's an active task
+// TestStatus_Integration tests getting status when there's an active task.
 func TestStatus_Integration(t *testing.T) {
 	tmpDir := t.TempDir()
 
@@ -1154,7 +1154,7 @@ func TestStatus_Integration(t *testing.T) {
 	}
 }
 
-// mockAgent is a minimal mock agent for integration testing
+// mockAgent is a minimal mock agent for integration testing.
 type mockAgent struct {
 	name string
 }

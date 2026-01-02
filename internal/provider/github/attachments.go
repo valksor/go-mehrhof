@@ -9,8 +9,8 @@ import (
 	"strings"
 )
 
-// DownloadAttachment downloads an attachment by ID
-// For GitHub, attachments are typically image URLs embedded in the issue body
+// DownloadAttachment downloads an attachment by ID.
+// For GitHub, attachments are typically image URLs embedded in the issue body.
 func (p *Provider) DownloadAttachment(ctx context.Context, workUnitID, attachmentID string) (io.ReadCloser, error) {
 	// Parse the work unit to get issue details
 	ref, err := ParseReference(workUnitID)
@@ -55,7 +55,7 @@ func (p *Provider) DownloadAttachment(ctx context.Context, workUnitID, attachmen
 	return downloadURL(ctx, targetURL)
 }
 
-// downloadURL fetches content from a URL
+// downloadURL fetches content from a URL.
 func downloadURL(ctx context.Context, url string) (io.ReadCloser, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
@@ -75,7 +75,7 @@ func downloadURL(ctx context.Context, url string) (io.ReadCloser, error) {
 	return resp.Body, nil
 }
 
-// FetchLinkedIssueContent fetches the content of linked issues and returns them as markdown
+// FetchLinkedIssueContent fetches the content of linked issues and returns them as markdown.
 func (p *Provider) FetchLinkedIssueContent(ctx context.Context, issueNumber int) (map[int]string, error) {
 	// Fetch main issue
 	issue, err := p.client.GetIssue(ctx, issueNumber)
@@ -107,13 +107,13 @@ func (p *Provider) FetchLinkedIssueContent(ctx context.Context, issueNumber int)
 	return result, nil
 }
 
-// FetchRepoFile fetches a file from the repository (useful for linked markdown files)
+// FetchRepoFile fetches a file from the repository (useful for linked markdown files).
 func (p *Provider) FetchRepoFile(ctx context.Context, path, ref string) ([]byte, error) {
 	return p.client.DownloadFile(ctx, path, ref)
 }
 
-// ExtractRepoFileLinks finds repository file links in markdown text
-// Matches patterns like: [text](./docs/spec.md) or [text](/path/to/file.md)
+// ExtractRepoFileLinks finds repository file links in markdown text.
+// Matches patterns like: [text](./docs/spec.md) or [text](/path/to/file.md).
 func ExtractRepoFileLinks(body string) []string {
 	// Match markdown links to .md, .txt, .yaml, .yml files
 	// Pattern: [any text](path ending with supported extension)

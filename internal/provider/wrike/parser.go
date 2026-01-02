@@ -6,13 +6,13 @@ import (
 	"strings"
 )
 
-// Ref represents a parsed Wrike task reference
+// Ref represents a parsed Wrike task reference.
 type Ref struct {
 	TaskID    string // The task ID (numeric or API ID)
 	Permalink string // The full permalink if provided
 }
 
-// String returns the canonical string representation
+// String returns the canonical string representation.
 func (r *Ref) String() string {
 	if r.Permalink != "" {
 		return r.Permalink
@@ -22,11 +22,11 @@ func (r *Ref) String() string {
 
 var (
 	// Matches: https://www.wrike.com/open.htm?id=1234567890
-	// Also handles additional query params
+	// Also handles additional query params.
 	permalinkPattern = regexp.MustCompile(`^https://www\.wrike\.com/open\.htm\?id=(\d+)`)
-	// Matches Wrike API IDs (IEAAJXXXXXXXX format) - requires at least 5 chars
+	// Matches Wrike API IDs (IEAAJXXXXXXXX format) - requires at least 5 chars.
 	apiIDPattern = regexp.MustCompile(`^IE[A-Z0-9]{3,}$`)
-	// Matches numeric IDs (10 digits)
+	// Matches numeric IDs (10 digits).
 	numericIDPattern = regexp.MustCompile(`^\d{10,}$`)
 )
 
@@ -73,8 +73,8 @@ func ParseReference(input string) (*Ref, error) {
 	return nil, fmt.Errorf("%w: unrecognized format: %s (expected wrike:ID, wk:ID, numeric ID, API ID, or permalink)", ErrInvalidReference, input)
 }
 
-// ExtractNumericID extracts the numeric ID from a permalink
-// Returns empty string if not a permalink
+// ExtractNumericID extracts the numeric ID from a permalink.
+// Returns empty string if not a permalink.
 func ExtractNumericID(permalink string) string {
 	if matches := permalinkPattern.FindStringSubmatch(permalink); matches != nil {
 		return matches[1]

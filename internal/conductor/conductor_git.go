@@ -7,7 +7,7 @@ import (
 	"github.com/valksor/go-mehrhof/internal/provider"
 )
 
-// gitInfo holds git branch/worktree information created during task start
+// gitInfo holds git branch/worktree information created during task start.
 type gitInfo struct {
 	branchName    string
 	baseBranch    string
@@ -16,7 +16,7 @@ type gitInfo struct {
 	branchPattern string // Template used to generate branch
 }
 
-// namingInfo holds resolved naming for a task
+// namingInfo holds resolved naming for a task.
 type namingInfo struct {
 	externalKey   string // User-facing key (e.g., "FEATURE-123")
 	taskType      string // Task type (e.g., "feature", "fix")
@@ -26,7 +26,7 @@ type namingInfo struct {
 	branchPattern string // Template used for branch
 }
 
-// resolveNaming resolves external key, branch name, and commit prefix from workUnit and options
+// resolveNaming resolves external key, branch name, and commit prefix from workUnit and options.
 func (c *Conductor) resolveNaming(workUnit *provider.WorkUnit, taskID string) *namingInfo {
 	// Load workspace config for templates
 	cfg, _ := c.workspace.LoadConfig()
@@ -98,7 +98,7 @@ func (c *Conductor) resolveNaming(workUnit *provider.WorkUnit, taskID string) *n
 	}
 }
 
-// createBranchOrWorktree creates a git branch or worktree for the task
+// createBranchOrWorktree creates a git branch or worktree for the task.
 func (c *Conductor) createBranchOrWorktree(taskID string, ni *namingInfo) (*gitInfo, error) {
 	if c.git == nil || !c.opts.CreateBranch {
 		return &gitInfo{}, nil
@@ -144,7 +144,7 @@ func (c *Conductor) createBranchOrWorktree(taskID string, ni *namingInfo) (*gitI
 	}, nil
 }
 
-// resolveTargetBranch determines the target branch for merging
+// resolveTargetBranch determines the target branch for merging.
 func (c *Conductor) resolveTargetBranch(requested string) string {
 	if requested != "" {
 		return requested
@@ -160,7 +160,7 @@ func (c *Conductor) resolveTargetBranch(requested string) string {
 	return baseBranch
 }
 
-// performMerge handles the merge operation (squash or regular)
+// performMerge handles the merge operation (squash or regular).
 func (c *Conductor) performMerge(opts FinishOptions) error {
 	targetBranch := c.resolveTargetBranch(opts.TargetBranch)
 	currentBranch := c.activeTask.Branch

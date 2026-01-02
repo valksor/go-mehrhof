@@ -10,7 +10,7 @@ import (
 )
 
 // CreatePullRequest creates a new merge request on GitLab
-// This implements the provider.PRCreator interface
+// This implements the provider.PRCreator interface.
 func (p *Provider) CreatePullRequest(ctx context.Context, opts provider.PullRequestOptions) (*provider.PullRequest, error) {
 	// Ensure project is configured
 	projectPath := p.config.ProjectPath
@@ -54,7 +54,7 @@ func (p *Provider) CreatePullRequest(ctx context.Context, opts provider.PullRequ
 	}, nil
 }
 
-// GetDefaultBranch returns the project's default branch
+// GetDefaultBranch returns the project's default branch.
 func (p *Provider) GetDefaultBranch(ctx context.Context) (string, error) {
 	if p.config.TargetBranch != "" {
 		return p.config.TargetBranch, nil
@@ -62,7 +62,7 @@ func (p *Provider) GetDefaultBranch(ctx context.Context) (string, error) {
 	return p.client.GetDefaultBranch(ctx)
 }
 
-// GenerateMRTitle generates a merge request title from task metadata
+// GenerateMRTitle generates a merge request title from task metadata.
 func GenerateMRTitle(taskWork *storage.TaskWork) string {
 	if taskWork == nil {
 		return "Implementation"
@@ -82,7 +82,7 @@ func GenerateMRTitle(taskWork *storage.TaskWork) string {
 	return title
 }
 
-// GenerateMRBody generates a merge request body with implementation summary
+// GenerateMRBody generates a merge request body with implementation summary.
 func GenerateMRBody(taskWork *storage.TaskWork, specs []*storage.Specification, diffStat string) string {
 	var sb strings.Builder
 
@@ -136,7 +136,7 @@ func GenerateMRBody(taskWork *storage.TaskWork, specs []*storage.Specification, 
 	return sb.String()
 }
 
-// CreateMRFromTask creates a merge request from task context
+// CreateMRFromTask creates a merge request from task context.
 func (p *Provider) CreateMRFromTask(ctx context.Context, taskWork *storage.TaskWork, specs []*storage.Specification, sourceBranch, diffStat string) (*provider.PullRequest, error) {
 	title := GenerateMRTitle(taskWork)
 	body := GenerateMRBody(taskWork, specs, diffStat)

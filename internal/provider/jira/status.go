@@ -8,7 +8,7 @@ import (
 )
 
 // UpdateStatus changes the status of a Jira issue via workflow transitions
-// Jira requires using workflow transitions rather than directly setting status
+// Jira requires using workflow transitions rather than directly setting status.
 func (p *Provider) UpdateStatus(ctx context.Context, workUnitID string, status provider.Status) error {
 	ref, err := ParseReference(workUnitID)
 	if err != nil {
@@ -52,8 +52,8 @@ func (p *Provider) UpdateStatus(ctx context.Context, workUnitID string, status p
 	return p.client.DoTransition(ctx, ref.IssueKey, transitionID)
 }
 
-// GetAvailableStatuses returns a list of possible status names for a provider status
-// This is useful for debugging or showing available options
+// GetAvailableStatuses returns a list of possible status names for a provider status.
+// This is useful for debugging or showing available options.
 func GetAvailableStatuses(status provider.Status) []string {
 	return mapProviderStatusToJiraTransitions(status)
 }

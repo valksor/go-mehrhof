@@ -9,16 +9,16 @@ import (
 	"github.com/valksor/go-mehrhof/internal/provider"
 )
 
-// ProviderName is the canonical name for this provider
+// ProviderName is the canonical name for this provider.
 const ProviderName = "asana"
 
-// Provider implements the Asana task provider
+// Provider implements the Asana task provider.
 type Provider struct {
 	client *Client
 	config *Config
 }
 
-// Config holds Asana provider configuration
+// Config holds Asana provider configuration.
 type Config struct {
 	Token          string
 	WorkspaceGID   string
@@ -27,7 +27,7 @@ type Config struct {
 	CommitPrefix   string
 }
 
-// Info returns provider metadata
+// Info returns provider metadata.
 func Info() provider.ProviderInfo {
 	return provider.ProviderInfo{
 		Name:        ProviderName,
@@ -46,7 +46,7 @@ func Info() provider.ProviderInfo {
 	}
 }
 
-// New creates a new Asana provider instance
+// New creates a new Asana provider instance.
 func New(_ context.Context, cfg provider.Config) (any, error) {
 	config := &Config{
 		Token:          cfg.GetString("token"),
@@ -70,7 +70,7 @@ func New(_ context.Context, cfg provider.Config) (any, error) {
 	}, nil
 }
 
-// Match checks if the input looks like an Asana reference
+// Match checks if the input looks like an Asana reference.
 func (p *Provider) Match(input string) bool {
 	// Check for asana: or as: prefix
 	if strings.HasPrefix(input, "asana:") || strings.HasPrefix(input, "as:") {
@@ -87,7 +87,7 @@ func (p *Provider) Match(input string) bool {
 	return err == nil
 }
 
-// Parse parses an Asana reference and returns a canonical ID
+// Parse parses an Asana reference and returns a canonical ID.
 func (p *Provider) Parse(input string) (string, error) {
 	ref, err := ParseReference(input)
 	if err != nil {
@@ -96,7 +96,7 @@ func (p *Provider) Parse(input string) (string, error) {
 	return ref.TaskGID, nil
 }
 
-// Fetch retrieves a task by its GID
+// Fetch retrieves a task by its GID.
 func (p *Provider) Fetch(ctx context.Context, id string) (*provider.WorkUnit, error) {
 	task, err := p.client.GetTask(ctx, id)
 	if err != nil {
@@ -106,7 +106,7 @@ func (p *Provider) Fetch(ctx context.Context, id string) (*provider.WorkUnit, er
 	return p.taskToWorkUnit(task), nil
 }
 
-// Snapshot creates a snapshot of the task's current state
+// Snapshot creates a snapshot of the task's current state.
 func (p *Provider) Snapshot(ctx context.Context, id string) (*provider.Snapshot, error) {
 	task, err := p.client.GetTask(ctx, id)
 	if err != nil {
@@ -123,7 +123,7 @@ func (p *Provider) Snapshot(ctx context.Context, id string) (*provider.Snapshot,
 	}, nil
 }
 
-// List retrieves tasks from a project
+// List retrieves tasks from a project.
 func (p *Provider) List(ctx context.Context, opts provider.ListOptions) ([]*provider.WorkUnit, error) {
 	projectGID := p.config.DefaultProject
 	if projectGID == "" {
@@ -166,7 +166,7 @@ func (p *Provider) List(ctx context.Context, opts provider.ListOptions) ([]*prov
 	return units, nil
 }
 
-// FetchComments retrieves comments (stories) for a task
+// FetchComments retrieves comments (stories) for a task.
 func (p *Provider) FetchComments(ctx context.Context, id string) ([]*provider.Comment, error) {
 	stories, err := p.client.GetTaskStories(ctx, id)
 	if err != nil {
@@ -199,7 +199,7 @@ func (p *Provider) FetchComments(ctx context.Context, id string) ([]*provider.Co
 	return comments, nil
 }
 
-// AddComment adds a comment to a task
+// AddComment adds a comment to a task.
 func (p *Provider) AddComment(ctx context.Context, id string, body string) error {
 	_, err := p.client.AddTaskComment(ctx, id, body)
 	if err != nil {
@@ -208,7 +208,7 @@ func (p *Provider) AddComment(ctx context.Context, id string, body string) error
 	return nil
 }
 
-// UpdateStatus updates the task status (completes the task or moves to section)
+// UpdateStatus updates the task status (completes the task or moves to section).
 func (p *Provider) UpdateStatus(ctx context.Context, id string, status provider.Status) error {
 	switch status {
 	case provider.StatusClosed, provider.StatusDone:
@@ -410,7 +410,7 @@ func buildSnapshotContent(task *Task) string {
 	return sb.String()
 }
 
-// GetBranchSuggestion returns a suggested branch name for the task
+// GetBranchSuggestion returns a suggested branch name for the task.
 func (p *Provider) GetBranchSuggestion(task *provider.WorkUnit) string {
 	if p.config.BranchPattern == "" {
 		// Default pattern

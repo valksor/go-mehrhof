@@ -2,7 +2,7 @@ package provider
 
 import "time"
 
-// WorkUnit represents a task from any provider
+// WorkUnit represents a task from any provider.
 type WorkUnit struct {
 	ID          string
 	ExternalID  string // Provider-specific ID
@@ -30,21 +30,21 @@ type WorkUnit struct {
 	AgentConfig *AgentConfig // Per-task agent configuration (optional)
 }
 
-// SourceInfo tracks where the work unit came from
+// SourceInfo tracks where the work unit came from.
 type SourceInfo struct {
 	Type      string    // Provider type
 	Reference string    // Original reference
 	SyncedAt  time.Time // Last sync time
 }
 
-// StepAgentConfig holds agent configuration for a specific workflow step
+// StepAgentConfig holds agent configuration for a specific workflow step.
 type StepAgentConfig struct {
 	Name string            // Agent name or alias
 	Env  map[string]string // Step-specific env vars
 	Args []string          // Step-specific CLI args
 }
 
-// AgentConfig holds per-task agent configuration from the task source
+// AgentConfig holds per-task agent configuration from the task source.
 type AgentConfig struct {
 	Name  string                     // Agent name or alias (e.g., "glm", "claude")
 	Env   map[string]string          // Inline environment variables
@@ -52,7 +52,7 @@ type AgentConfig struct {
 	Steps map[string]StepAgentConfig // Per-step agent overrides
 }
 
-// Status represents work unit status
+// Status represents work unit status.
 type Status string
 
 const (
@@ -63,7 +63,7 @@ const (
 	StatusClosed     Status = "closed"
 )
 
-// Priority represents work unit priority
+// Priority represents work unit priority.
 type Priority int
 
 const (
@@ -73,7 +73,7 @@ const (
 	PriorityCritical
 )
 
-// String returns priority as string
+// String returns priority as string.
 func (p Priority) String() string {
 	switch p {
 	case PriorityLow:
@@ -89,14 +89,14 @@ func (p Priority) String() string {
 	}
 }
 
-// Person represents a user/assignee
+// Person represents a user/assignee.
 type Person struct {
 	ID    string
 	Name  string
 	Email string
 }
 
-// Comment represents a comment on a work unit
+// Comment represents a comment on a work unit.
 type Comment struct {
 	CreatedAt time.Time
 	UpdatedAt time.Time
@@ -105,7 +105,7 @@ type Comment struct {
 	Body      string
 }
 
-// Attachment represents a file attachment
+// Attachment represents a file attachment.
 type Attachment struct {
 	CreatedAt   time.Time
 	ID          string
@@ -115,7 +115,7 @@ type Attachment struct {
 	Size        int64
 }
 
-// Capability identifies provider capabilities
+// Capability identifies provider capabilities.
 type Capability string
 
 const (
@@ -133,15 +133,15 @@ const (
 	CapFetchSubtasks      Capability = "fetch_subtasks"
 )
 
-// CapabilitySet is a set of capabilities
+// CapabilitySet is a set of capabilities.
 type CapabilitySet map[Capability]bool
 
-// Has checks if capability is present
+// Has checks if capability is present.
 func (cs CapabilitySet) Has(cap Capability) bool {
 	return cs[cap]
 }
 
-// InferCapabilities uses type assertions to determine capabilities
+// InferCapabilities uses type assertions to determine capabilities.
 func InferCapabilities(p any) CapabilitySet {
 	caps := make(CapabilitySet)
 
@@ -185,28 +185,28 @@ func InferCapabilities(p any) CapabilitySet {
 	return caps
 }
 
-// Config holds provider configuration
+// Config holds provider configuration.
 type Config struct {
 	options map[string]any
 }
 
-// NewConfig creates a new config
+// NewConfig creates a new config.
 func NewConfig() Config {
 	return Config{options: make(map[string]any)}
 }
 
-// Set sets an option
+// Set sets an option.
 func (c Config) Set(key string, value any) Config {
 	c.options[key] = value
 	return c
 }
 
-// Get gets an option
+// Get gets an option.
 func (c Config) Get(key string) any {
 	return c.options[key]
 }
 
-// GetString gets a string option
+// GetString gets a string option.
 func (c Config) GetString(key string) string {
 	if v, ok := c.options[key].(string); ok {
 		return v
@@ -214,7 +214,7 @@ func (c Config) GetString(key string) string {
 	return ""
 }
 
-// GetBool gets a bool option
+// GetBool gets a bool option.
 func (c Config) GetBool(key string) bool {
 	if v, ok := c.options[key].(bool); ok {
 		return v

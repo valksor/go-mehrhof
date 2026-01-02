@@ -84,7 +84,7 @@ func (p *Provider) CreateWorkUnit(ctx context.Context, opts provider.CreateWorkU
 	}, nil
 }
 
-// mapProviderPriorityToBitbucket converts provider.Priority to Bitbucket priority string
+// mapProviderPriorityToBitbucket converts provider.Priority to Bitbucket priority string.
 func mapProviderPriorityToBitbucket(priority provider.Priority) string {
 	switch priority {
 	case provider.PriorityCritical:

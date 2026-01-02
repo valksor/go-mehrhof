@@ -12,15 +12,15 @@ import (
 	"github.com/valksor/go-mehrhof/internal/provider"
 )
 
-// ProviderName is the registered name for this provider
+// ProviderName is the registered name for this provider.
 const ProviderName = "file"
 
-// Provider handles markdown file tasks
+// Provider handles markdown file tasks.
 type Provider struct {
 	basePath string
 }
 
-// Info returns provider metadata
+// Info returns provider metadata.
 func Info() provider.ProviderInfo {
 	return provider.ProviderInfo{
 		Name:        ProviderName,
@@ -33,7 +33,7 @@ func Info() provider.ProviderInfo {
 	}
 }
 
-// New creates a file provider
+// New creates a file provider.
 func New(ctx context.Context, cfg provider.Config) (any, error) {
 	basePath := cfg.GetString("base_path")
 	if basePath == "" {
@@ -42,12 +42,12 @@ func New(ctx context.Context, cfg provider.Config) (any, error) {
 	return &Provider{basePath: basePath}, nil
 }
 
-// Match checks if input has the file: scheme prefix
+// Match checks if input has the file: scheme prefix.
 func (p *Provider) Match(input string) bool {
 	return strings.HasPrefix(input, "file:")
 }
 
-// Parse extracts the file path from input
+// Parse extracts the file path from input.
 func (p *Provider) Parse(input string) (string, error) {
 	// Remove file: prefix if present
 	path := strings.TrimPrefix(input, "file:")
@@ -67,7 +67,7 @@ func (p *Provider) Parse(input string) (string, error) {
 	return resolved, nil
 }
 
-// Fetch reads the file and creates a WorkUnit
+// Fetch reads the file and creates a WorkUnit.
 func (p *Provider) Fetch(ctx context.Context, id string) (*provider.WorkUnit, error) {
 	// Extract filename without extension for fallback title
 	filename := strings.TrimSuffix(filepath.Base(id), filepath.Ext(id))
@@ -179,7 +179,7 @@ func parsePriority(s string) provider.Priority {
 	}
 }
 
-// Snapshot captures the file content for storage
+// Snapshot captures the file content for storage.
 func (p *Provider) Snapshot(ctx context.Context, id string) (*provider.Snapshot, error) {
 	content, err := os.ReadFile(id)
 	if err != nil {
@@ -193,7 +193,7 @@ func (p *Provider) Snapshot(ctx context.Context, id string) (*provider.Snapshot,
 	}, nil
 }
 
-// Register adds file provider to registry
+// Register adds file provider to registry.
 func Register(r *provider.Registry) {
 	_ = r.Register(Info(), New)
 }

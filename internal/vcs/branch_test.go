@@ -8,7 +8,7 @@ import (
 	"testing"
 )
 
-// initTestRepo initializes a git repository for testing
+// initTestRepo initializes a git repository for testing.
 func initTestRepo(t *testing.T) string {
 	t.Helper()
 	dir := t.TempDir()

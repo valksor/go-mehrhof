@@ -52,7 +52,7 @@ const (
 	ErrCodeInvalidParams  = -32602
 	ErrCodeInternalError  = -32603
 
-	// Custom error codes (application-specific, -32000 to -32099)
+	// Custom error codes (application-specific, -32000 to -32099).
 	ErrCodePluginError     = -32000
 	ErrCodeNotImplemented  = -32001
 	ErrCodeCapabilityError = -32002

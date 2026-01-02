@@ -20,7 +20,7 @@ func init() {
 	}))
 }
 
-// Level represents logging levels
+// Level represents logging levels.
 type Level = slog.Level
 
 const (
@@ -30,7 +30,7 @@ const (
 	LevelError = slog.LevelError
 )
 
-// Options configures the logger
+// Options configures the logger.
 type Options struct {
 	Output  io.Writer
 	Level   Level
@@ -38,7 +38,7 @@ type Options struct {
 	Verbose bool
 }
 
-// Configure sets up the global logger
+// Configure sets up the global logger.
 func Configure(opts Options) {
 	mu.Lock()
 	defer mu.Unlock()
@@ -67,79 +67,79 @@ func Configure(opts Options) {
 	logger = slog.New(handler)
 }
 
-// SetLevel changes the logging level
+// SetLevel changes the logging level.
 func SetLevel(level Level) {
 	Configure(Options{Level: level})
 }
 
-// EnableDebug enables debug logging
+// EnableDebug enables debug logging.
 func EnableDebug() {
 	SetLevel(LevelDebug)
 }
 
-// Logger returns the global logger
+// Logger returns the global logger.
 func Logger() *slog.Logger {
 	mu.RLock()
 	defer mu.RUnlock()
 	return logger
 }
 
-// With returns a logger with additional attributes
+// With returns a logger with additional attributes.
 func With(args ...any) *slog.Logger {
 	return Logger().With(args...)
 }
 
-// Debug logs at debug level
+// Debug logs at debug level.
 func Debug(msg string, args ...any) {
 	Logger().Debug(msg, args...)
 }
 
-// Info logs at info level
+// Info logs at info level.
 func Info(msg string, args ...any) {
 	Logger().Info(msg, args...)
 }
 
-// Warn logs at warn level
+// Warn logs at warn level.
 func Warn(msg string, args ...any) {
 	Logger().Warn(msg, args...)
 }
 
-// Error logs at error level
+// Error logs at error level.
 func Error(msg string, args ...any) {
 	Logger().Error(msg, args...)
 }
 
-// DebugContext logs at debug level with context
+// DebugContext logs at debug level with context.
 func DebugContext(ctx context.Context, msg string, args ...any) {
 	Logger().DebugContext(ctx, msg, args...)
 }
 
-// InfoContext logs at info level with context
+// InfoContext logs at info level with context.
 func InfoContext(ctx context.Context, msg string, args ...any) {
 	Logger().InfoContext(ctx, msg, args...)
 }
 
-// WarnContext logs at warn level with context
+// WarnContext logs at warn level with context.
 func WarnContext(ctx context.Context, msg string, args ...any) {
 	Logger().WarnContext(ctx, msg, args...)
 }
 
-// ErrorContext logs at error level with context
+// ErrorContext logs at error level with context.
 func ErrorContext(ctx context.Context, msg string, args ...any) {
 	Logger().ErrorContext(ctx, msg, args...)
 }
 
-// Err is a helper for logging errors
+// Err is a helper for logging errors.
 func Err(err error) slog.Attr {
 	return slog.Any("error", err)
 }
 
-// TaskID is a helper for logging task IDs
+// TaskID is a helper for logging task IDs.
 func TaskID(id string) slog.Attr {
 	return slog.String("task_id", id)
 }
 
-// State is a helper for logging state transitions
+// State is a helper for logging state transitions.
 func State(from, to string) []slog.Attr {
 	return []slog.Attr{
 		slog.String("from", from),

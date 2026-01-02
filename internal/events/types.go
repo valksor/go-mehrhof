@@ -2,7 +2,7 @@ package events
 
 import "time"
 
-// Type identifies event categories
+// Type identifies event categories.
 type Type string
 
 const (
@@ -14,26 +14,26 @@ const (
 	TypeCheckpoint     Type = "checkpoint"
 	TypeBlueprintReady Type = "blueprint_ready"
 
-	// GitHub-related events
+	// GitHub-related events.
 	TypeBranchCreated Type = "branch_created"
 	TypePlanCompleted Type = "plan_completed"
 	TypeImplementDone Type = "implement_done"
 	TypePRCreated     Type = "pr_created"
 )
 
-// Event is the base event structure
+// Event is the base event structure.
 type Event struct {
 	Timestamp time.Time
 	Data      map[string]any
 	Type      Type
 }
 
-// Eventer interface for typed events
+// Eventer interface for typed events.
 type Eventer interface {
 	ToEvent() Event
 }
 
-// StateChangedEvent when workflow state changes
+// StateChangedEvent when workflow state changes.
 type StateChangedEvent struct {
 	From      string
 	To        string
@@ -58,7 +58,7 @@ func (e StateChangedEvent) ToEvent() Event {
 	}
 }
 
-// ProgressEvent for progress updates
+// ProgressEvent for progress updates.
 type ProgressEvent struct {
 	Timestamp time.Time
 	TaskID    string
@@ -85,7 +85,7 @@ func (e ProgressEvent) ToEvent() Event {
 	}
 }
 
-// ErrorEvent for errors
+// ErrorEvent for errors.
 type ErrorEvent struct {
 	Timestamp time.Time
 	Error     error
@@ -112,7 +112,7 @@ func (e ErrorEvent) ToEvent() Event {
 	}
 }
 
-// FileChangedEvent when files are modified
+// FileChangedEvent when files are modified.
 type FileChangedEvent struct {
 	TaskID    string
 	Path      string
@@ -135,7 +135,7 @@ func (e FileChangedEvent) ToEvent() Event {
 	}
 }
 
-// CheckpointEvent when a checkpoint is created
+// CheckpointEvent when a checkpoint is created.
 type CheckpointEvent struct {
 	Timestamp time.Time
 	TaskID    string
@@ -158,7 +158,7 @@ func (e CheckpointEvent) ToEvent() Event {
 	}
 }
 
-// AgentMessageEvent for agent output
+// AgentMessageEvent for agent output.
 type AgentMessageEvent struct {
 	TaskID    string
 	Content   string
@@ -181,7 +181,7 @@ func (e AgentMessageEvent) ToEvent() Event {
 	}
 }
 
-// BlueprintReadyEvent when a blueprint is ready
+// BlueprintReadyEvent when a blueprint is ready.
 type BlueprintReadyEvent struct {
 	Timestamp   time.Time
 	TaskID      string
@@ -202,7 +202,7 @@ func (e BlueprintReadyEvent) ToEvent() Event {
 	}
 }
 
-// BranchCreatedEvent when a task branch is created
+// BranchCreatedEvent when a task branch is created.
 type BranchCreatedEvent struct {
 	Timestamp time.Time
 	TaskID    string
@@ -223,7 +223,7 @@ func (e BranchCreatedEvent) ToEvent() Event {
 	}
 }
 
-// PlanCompletedEvent when planning phase completes
+// PlanCompletedEvent when planning phase completes.
 type PlanCompletedEvent struct {
 	Timestamp       time.Time
 	TaskID          string
@@ -244,7 +244,7 @@ func (e PlanCompletedEvent) ToEvent() Event {
 	}
 }
 
-// ImplementDoneEvent when implementation phase completes
+// ImplementDoneEvent when implementation phase completes.
 type ImplementDoneEvent struct {
 	Timestamp time.Time
 	TaskID    string
@@ -265,7 +265,7 @@ func (e ImplementDoneEvent) ToEvent() Event {
 	}
 }
 
-// PRCreatedEvent when a pull request is created
+// PRCreatedEvent when a pull request is created.
 type PRCreatedEvent struct {
 	Timestamp time.Time
 	TaskID    string

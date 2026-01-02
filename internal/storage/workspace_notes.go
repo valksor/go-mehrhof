@@ -8,12 +8,12 @@ import (
 	"time"
 )
 
-// NotesPath returns the path to notes.md
+// NotesPath returns the path to notes.md.
 func (w *Workspace) NotesPath(taskID string) string {
 	return filepath.Join(w.WorkPath(taskID), notesFileName)
 }
 
-// AppendNote adds a note to notes.md
+// AppendNote adds a note to notes.md.
 func (w *Workspace) AppendNote(taskID, content, state string) error {
 	notesPath := w.NotesPath(taskID)
 
@@ -36,7 +36,7 @@ func (w *Workspace) AppendNote(taskID, content, state string) error {
 	return os.WriteFile(notesPath, []byte(b.String()), 0o644)
 }
 
-// ReadNotes reads the notes file content
+// ReadNotes reads the notes file content.
 func (w *Workspace) ReadNotes(taskID string) (string, error) {
 	data, err := os.ReadFile(w.NotesPath(taskID))
 	if err != nil {

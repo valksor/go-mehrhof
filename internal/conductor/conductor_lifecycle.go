@@ -15,7 +15,7 @@ import (
 	"github.com/valksor/go-mehrhof/internal/vcs"
 )
 
-// Initialize sets up the conductor for a repository
+// Initialize sets up the conductor for a repository.
 func (c *Conductor) Initialize(ctx context.Context) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -164,7 +164,7 @@ func (c *Conductor) Initialize(ctx context.Context) error {
 	return nil
 }
 
-// Start registers a new task from a reference (does not run planning)
+// Start registers a new task from a reference (does not run planning).
 func (c *Conductor) Start(ctx context.Context, reference string) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -218,7 +218,7 @@ func (c *Conductor) Start(ctx context.Context, reference string) error {
 	return nil
 }
 
-// ensureCleanWorkspace checks if workspace is clean when branch creation is requested
+// ensureCleanWorkspace checks if workspace is clean when branch creation is requested.
 func (c *Conductor) ensureCleanWorkspace() error {
 	if c.git == nil || !c.opts.CreateBranch {
 		return nil
@@ -234,7 +234,7 @@ func (c *Conductor) ensureCleanWorkspace() error {
 	return nil
 }
 
-// fetchWorkUnit resolves the provider and fetches the work unit
+// fetchWorkUnit resolves the provider and fetches the work unit.
 func (c *Conductor) fetchWorkUnit(ctx context.Context, reference string) (any, *provider.WorkUnit, error) {
 	resolveOpts := provider.ResolveOptions{
 		DefaultProvider: c.opts.DefaultProvider,
@@ -257,7 +257,7 @@ func (c *Conductor) fetchWorkUnit(ctx context.Context, reference string) (any, *
 	return p, workUnit, nil
 }
 
-// snapshotSource creates a snapshot of the source content
+// snapshotSource creates a snapshot of the source content.
 func (c *Conductor) snapshotSource(ctx context.Context, p any, reference string, workUnit *provider.WorkUnit) *provider.Snapshot {
 	if snapshotter, ok := p.(provider.Snapshotter); ok {
 		snapshot, err := snapshotter.Snapshot(ctx, workUnit.ID)
@@ -273,7 +273,7 @@ func (c *Conductor) snapshotSource(ctx context.Context, p any, reference string,
 	}
 }
 
-// buildSourceInfo creates storage.SourceInfo from provider snapshot (metadata only)
+// buildSourceInfo creates storage.SourceInfo from provider snapshot (metadata only).
 func (c *Conductor) buildSourceInfo(snapshot *provider.Snapshot, taskID string) storage.SourceInfo {
 	info := storage.SourceInfo{
 		Type:   snapshot.Type,
@@ -304,7 +304,7 @@ func (c *Conductor) buildSourceInfo(snapshot *provider.Snapshot, taskID string) 
 	return info
 }
 
-// writeSourceFiles writes snapshot content to the work directory's source/ subdirectory
+// writeSourceFiles writes snapshot content to the work directory's source/ subdirectory.
 func (c *Conductor) writeSourceFiles(taskID string, snapshot *provider.Snapshot) error {
 	if snapshot == nil {
 		return nil
@@ -350,7 +350,7 @@ func (c *Conductor) writeSourceFiles(taskID string, snapshot *provider.Snapshot)
 	return nil
 }
 
-// registerTask creates the work directory and active task reference
+// registerTask creates the work directory and active task reference.
 func (c *Conductor) registerTask(taskID, reference string, workUnit *provider.WorkUnit, snapshot *provider.Snapshot, gi *gitInfo, ni *namingInfo) error {
 	// Resolve agent for this task (uses priority: CLI > task > workspace > auto)
 	agentInst, agentSource, err := c.resolveAgentForTask()
@@ -431,7 +431,7 @@ func (c *Conductor) registerTask(taskID, reference string, workUnit *provider.Wo
 	return nil
 }
 
-// Resume loads an existing active task
+// Resume loads an existing active task.
 func (c *Conductor) Resume(ctx context.Context) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -457,7 +457,7 @@ func (c *Conductor) Resume(ctx context.Context) error {
 	return nil
 }
 
-// Delete abandons the current task without merging
+// Delete abandons the current task without merging.
 func (c *Conductor) Delete(ctx context.Context, opts DeleteOptions) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -485,7 +485,7 @@ func (c *Conductor) Delete(ctx context.Context, opts DeleteOptions) error {
 			}
 		} else if currentBranch == taskBranch {
 			// If we're on the task branch (not worktree), switch to base branch first
-			baseBranch := ""
+			var baseBranch string
 			if c.taskWork != nil && c.taskWork.Git.BaseBranch != "" {
 				baseBranch = c.taskWork.Git.BaseBranch
 			} else {
@@ -536,7 +536,7 @@ func (c *Conductor) Delete(ctx context.Context, opts DeleteOptions) error {
 	return nil
 }
 
-// Status returns the current task status
+// Status returns the current task status.
 func (c *Conductor) Status() (*TaskStatus, error) {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
@@ -573,7 +573,7 @@ func (c *Conductor) Status() (*TaskStatus, error) {
 	return status, nil
 }
 
-// TaskStatus represents the current task state
+// TaskStatus represents the current task state.
 type TaskStatus struct {
 	TaskID         string
 	Title          string

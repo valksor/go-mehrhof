@@ -22,13 +22,13 @@ const (
 	maxRetries     = 3
 	initialBackoff = 1 * time.Second
 
-	// Jira API versions
+	// Jira API versions.
 	cloudAPIVersion   = "3"
 	serverAPIVersion  = "2"
 	defaultAPIVersion = "3" // Default to v3 (Cloud)
 )
 
-// Client wraps the Jira API client
+// Client wraps the Jira API client.
 type Client struct {
 	httpClient *http.Client
 	baseURL    string
@@ -37,7 +37,7 @@ type Client struct {
 	apiVersion string
 }
 
-// NewClient creates a new Jira API client
+// NewClient creates a new Jira API client.
 func NewClient(token, email, baseURL string) *Client {
 	apiVersion := defaultAPIVersion
 
@@ -60,7 +60,7 @@ func NewClient(token, email, baseURL string) *Client {
 	}
 }
 
-// SetBaseURL updates the base URL
+// SetBaseURL updates the base URL.
 func (c *Client) SetBaseURL(baseURL string) {
 	c.baseURL = baseURL
 	if strings.Contains(baseURL, "atlassian.net") {
@@ -80,7 +80,7 @@ func ResolveToken(configToken string) (string, error) {
 		WithEnvVars("JIRA_TOKEN"))
 }
 
-// buildAPIURL constructs the full API URL for a given endpoint
+// buildAPIURL constructs the full API URL for a given endpoint.
 func (c *Client) buildAPIURL(endpoint string) (string, error) {
 	if c.baseURL == "" {
 		return "", fmt.Errorf("base URL not set")
@@ -97,7 +97,7 @@ func (c *Client) buildAPIURL(endpoint string) (string, error) {
 	return baseURL + endpoint, nil
 }
 
-// getAuthHeader returns the authorization header value
+// getAuthHeader returns the authorization header value.
 func (c *Client) getAuthHeader() string {
 	if c.email != "" {
 		// Jira Cloud uses email + token as Basic Auth
@@ -113,7 +113,7 @@ func (c *Client) getAuthHeader() string {
 	return "Basic " + auth
 }
 
-// doRequest performs an HTTP request to the Jira API
+// doRequest performs an HTTP request to the Jira API.
 func (c *Client) doRequest(ctx context.Context, method, endpoint string, body any, result any) error {
 	apiURL, err := c.buildAPIURL(endpoint)
 	if err != nil {
@@ -162,7 +162,7 @@ func (c *Client) doRequest(ctx context.Context, method, endpoint string, body an
 	return nil
 }
 
-// GetIssue fetches an issue by key
+// GetIssue fetches an issue by key.
 func (c *Client) GetIssue(ctx context.Context, issueKey string) (*Issue, error) {
 	endpoint := fmt.Sprintf("/issue/%s", issueKey)
 
@@ -174,7 +174,7 @@ func (c *Client) GetIssue(ctx context.Context, issueKey string) (*Issue, error) 
 	return &response, nil
 }
 
-// ListIssues fetches issues with JQL filtering
+// ListIssues fetches issues with JQL filtering.
 func (c *Client) ListIssues(ctx context.Context, jql string, startAt, maxResults int) ([]*Issue, int, error) {
 	endpoint := fmt.Sprintf("/search?jql=%s&startAt=%d&maxResults=%d",
 		url.QueryEscape(jql), startAt, maxResults)
@@ -187,7 +187,7 @@ func (c *Client) ListIssues(ctx context.Context, jql string, startAt, maxResults
 	return response.Issues, response.Total, nil
 }
 
-// CreateIssue creates a new issue
+// CreateIssue creates a new issue.
 func (c *Client) CreateIssue(ctx context.Context, input CreateIssueInput) (*Issue, error) {
 	var response CreateIssueResponse
 	if err := c.doRequest(ctx, http.MethodPost, "/issue", input, &response); err != nil {
@@ -198,13 +198,13 @@ func (c *Client) CreateIssue(ctx context.Context, input CreateIssueInput) (*Issu
 	return c.GetIssue(ctx, response.Key)
 }
 
-// UpdateIssue updates an existing issue
+// UpdateIssue updates an existing issue.
 func (c *Client) UpdateIssue(ctx context.Context, issueKey string, input UpdateIssueInput) error {
 	endpoint := fmt.Sprintf("/issue/%s", issueKey)
 	return c.doRequest(ctx, http.MethodPut, endpoint, input, nil)
 }
 
-// GetTransitions fetches available transitions for an issue
+// GetTransitions fetches available transitions for an issue.
 func (c *Client) GetTransitions(ctx context.Context, issueKey string) ([]*Transition, error) {
 	endpoint := fmt.Sprintf("/issue/%s/transitions", issueKey)
 
@@ -216,7 +216,7 @@ func (c *Client) GetTransitions(ctx context.Context, issueKey string) ([]*Transi
 	return response.Transitions, nil
 }
 
-// DoTransition performs a workflow transition
+// DoTransition performs a workflow transition.
 func (c *Client) DoTransition(ctx context.Context, issueKey, transitionID string) error {
 	endpoint := fmt.Sprintf("/issue/%s/transitions", issueKey)
 	input := map[string]any{
@@ -225,7 +225,7 @@ func (c *Client) DoTransition(ctx context.Context, issueKey, transitionID string
 	return c.doRequest(ctx, http.MethodPost, endpoint, input, nil)
 }
 
-// AddComment adds a comment to an issue
+// AddComment adds a comment to an issue.
 func (c *Client) AddComment(ctx context.Context, issueKey, body string) (*Comment, error) {
 	endpoint := fmt.Sprintf("/issue/%s/comment", issueKey)
 	input := map[string]string{"body": body}
@@ -238,7 +238,7 @@ func (c *Client) AddComment(ctx context.Context, issueKey, body string) (*Commen
 	return &response, nil
 }
 
-// GetComments fetches comments for an issue
+// GetComments fetches comments for an issue.
 func (c *Client) GetComments(ctx context.Context, issueKey string) ([]*Comment, error) {
 	endpoint := fmt.Sprintf("/issue/%s/comment", issueKey)
 
@@ -250,7 +250,7 @@ func (c *Client) GetComments(ctx context.Context, issueKey string) ([]*Comment, 
 	return response.Comments, nil
 }
 
-// GetAttachments lists attachments for an issue
+// GetAttachments lists attachments for an issue.
 func (c *Client) GetAttachments(ctx context.Context, issueKey string) ([]*Attachment, error) {
 	// Attachments are included in the issue data
 	issue, err := c.GetIssue(ctx, issueKey)
@@ -261,7 +261,7 @@ func (c *Client) GetAttachments(ctx context.Context, issueKey string) ([]*Attach
 	return issue.Fields.Attachments, nil
 }
 
-// DownloadAttachment downloads an attachment file
+// DownloadAttachment downloads an attachment file.
 func (c *Client) DownloadAttachment(ctx context.Context, attachmentURL string) (io.ReadCloser, string, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, attachmentURL, nil)
 	if err != nil {
@@ -283,7 +283,7 @@ func (c *Client) DownloadAttachment(ctx context.Context, attachmentURL string) (
 	return resp.Body, resp.Header.Get("Content-Type"), nil
 }
 
-// GetSubtasks fetches subtasks for an issue
+// GetSubtasks fetches subtasks for an issue.
 func (c *Client) GetSubtasks(ctx context.Context, issueKey string) ([]*Issue, error) {
 	// Get the issue to extract subtasks from the fields
 	issue, err := c.GetIssue(ctx, issueKey)
@@ -298,7 +298,7 @@ func (c *Client) GetSubtasks(ctx context.Context, issueKey string) ([]*Issue, er
 // Jira API Types
 // ──────────────────────────────────────────────────────────────────────────────
 
-// Issue represents a Jira issue
+// Issue represents a Jira issue.
 type Issue struct {
 	ID     string `json:"id"`
 	Key    string `json:"key"`
@@ -306,7 +306,7 @@ type Issue struct {
 	Fields Fields `json:"fields"`
 }
 
-// Fields contains issue fields
+// Fields contains issue fields.
 type Fields struct {
 	Summary     string        `json:"summary"`
 	Description string        `json:"description"`
@@ -325,28 +325,28 @@ type Fields struct {
 	Parent      *Issue        `json:"parent"`
 }
 
-// Status represents issue status
+// Status represents issue status.
 type Status struct {
 	Self string `json:"self"`
 	Name string `json:"name"`
 	Key  string `json:"key"`
 }
 
-// Priority represents issue priority
+// Priority represents issue priority.
 type Priority struct {
 	Self string `json:"self"`
 	Name string `json:"name"`
 	Key  string `json:"key"`
 }
 
-// User represents a Jira user
+// User represents a Jira user.
 type User struct {
 	AccountID    string `json:"accountId"`
 	DisplayName  string `json:"displayName"`
 	EmailAddress string `json:"emailAddress"`
 }
 
-// Project represents a Jira project
+// Project represents a Jira project.
 type Project struct {
 	Self string `json:"self"`
 	ID   string `json:"id"`
@@ -354,7 +354,7 @@ type Project struct {
 	Name string `json:"name"`
 }
 
-// IssueType represents the type of issue
+// IssueType represents the type of issue.
 type IssueType struct {
 	Self        string `json:"self"`
 	ID          string `json:"id"`
@@ -362,14 +362,14 @@ type IssueType struct {
 	Name        string `json:"name"`
 }
 
-// Sprint represents an agile sprint
+// Sprint represents an agile sprint.
 type Sprint struct {
 	Name  string `json:"name"`
 	State string `json:"state"`
 	ID    int64  `json:"id"`
 }
 
-// Comment represents a Jira comment
+// Comment represents a Jira comment.
 type Comment struct {
 	Created time.Time `json:"created"`
 	Updated time.Time `json:"updated"`
@@ -379,7 +379,7 @@ type Comment struct {
 	Body    string    `json:"body"`
 }
 
-// Attachment represents a file attachment
+// Attachment represents a file attachment.
 type Attachment struct {
 	Created  time.Time `json:"created"`
 	ID       string    `json:"id"`
@@ -390,13 +390,13 @@ type Attachment struct {
 	Size     int64     `json:"size"`
 }
 
-// Transition represents a workflow transition
+// Transition represents a workflow transition.
 type Transition struct {
 	ID   string `json:"id"`
 	Name string `json:"name"`
 }
 
-// CreateIssueInput represents the input for creating an issue
+// CreateIssueInput represents the input for creating an issue.
 type CreateIssueInput struct {
 	Fields struct {
 		Project     *Project   `json:"project"`
@@ -409,7 +409,7 @@ type CreateIssueInput struct {
 	} `json:"fields"`
 }
 
-// UpdateIssueInput represents the input for updating an issue
+// UpdateIssueInput represents the input for updating an issue.
 type UpdateIssueInput struct {
 	Fields struct {
 		Priority *Priority `json:"priority,omitempty"`
@@ -418,7 +418,7 @@ type UpdateIssueInput struct {
 	} `json:"fields,omitempty"`
 }
 
-// SearchResponse represents Jira search results
+// SearchResponse represents Jira search results.
 type SearchResponse struct {
 	Issues     []*Issue `json:"issues"`
 	StartAt    int      `json:"startAt"`
@@ -426,19 +426,19 @@ type SearchResponse struct {
 	Total      int      `json:"total"`
 }
 
-// CreateIssueResponse represents the response from creating an issue
+// CreateIssueResponse represents the response from creating an issue.
 type CreateIssueResponse struct {
 	ID   string `json:"id"`
 	Key  string `json:"key"`
 	Self string `json:"self"`
 }
 
-// TransitionsResponse represents the response from getting transitions
+// TransitionsResponse represents the response from getting transitions.
 type TransitionsResponse struct {
 	Transitions []*Transition `json:"transitions"`
 }
 
-// CommentsResponse represents the response from getting comments
+// CommentsResponse represents the response from getting comments.
 type CommentsResponse struct {
 	Comments   []*Comment `json:"comments"`
 	StartAt    int        `json:"startAt"`
@@ -450,7 +450,7 @@ type CommentsResponse struct {
 // HTTP Error wrapper
 // ──────────────────────────────────────────────────────────────────────────────
 
-// httpError wraps an HTTP error for proper error handling
+// httpError wraps an HTTP error for proper error handling.
 type httpError struct {
 	message string
 	code    int

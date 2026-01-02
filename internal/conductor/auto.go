@@ -6,7 +6,7 @@ import (
 	"fmt"
 )
 
-// AutoOptions configures the full automation run
+// AutoOptions configures the full automation run.
 type AutoOptions struct {
 	// Quality settings
 	QualityTarget string // Make target (default: "quality")
@@ -19,7 +19,7 @@ type AutoOptions struct {
 	Push         bool   // Push after merge
 }
 
-// DefaultAutoOptions returns sensible defaults for auto mode
+// DefaultAutoOptions returns sensible defaults for auto mode.
 func DefaultAutoOptions() AutoOptions {
 	return AutoOptions{
 		QualityTarget: "quality",
@@ -31,7 +31,7 @@ func DefaultAutoOptions() AutoOptions {
 	}
 }
 
-// AutoResult holds the result of a full auto run
+// AutoResult holds the result of a full auto run.
 type AutoResult struct {
 	PlanningDone    bool   // Planning phase completed
 	ImplementDone   bool   // Implementation phase completed
@@ -42,7 +42,7 @@ type AutoResult struct {
 	FailedAt        string // Phase where failure occurred
 }
 
-// RunAuto executes the full automation cycle: start -> plan -> implement -> quality -> finish
+// RunAuto executes the full automation cycle: start -> plan -> implement -> quality -> finish.
 func (c *Conductor) RunAuto(ctx context.Context, reference string, opts AutoOptions) (*AutoResult, error) {
 	result := &AutoResult{}
 
@@ -162,7 +162,7 @@ func (c *Conductor) RunAuto(ctx context.Context, reference string, opts AutoOpti
 	return result, nil
 }
 
-// reImplementWithFeedback runs implementation phase with quality failure context
+// reImplementWithFeedback runs implementation phase with quality failure context.
 func (c *Conductor) reImplementWithFeedback(ctx context.Context, qualityOutput string) error {
 	// Append quality feedback to notes so agent sees what failed
 	if qualityOutput != "" {

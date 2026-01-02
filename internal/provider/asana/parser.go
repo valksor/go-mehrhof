@@ -6,14 +6,14 @@ import (
 	"strings"
 )
 
-// Reference represents a parsed Asana task reference
+// Reference represents a parsed Asana task reference.
 type Reference struct {
 	TaskGID    string // Asana task GID (numeric string)
 	ProjectGID string // Optional project GID for context
 	IsExplicit bool   // True if project was explicitly provided
 }
 
-// String returns a canonical string representation
+// String returns a canonical string representation.
 func (r *Reference) String() string {
 	if r.ProjectGID != "" {
 		return fmt.Sprintf("%s/%s", r.ProjectGID, r.TaskGID)
@@ -21,17 +21,17 @@ func (r *Reference) String() string {
 	return r.TaskGID
 }
 
-// Patterns for parsing Asana references
+// Patterns for parsing Asana references.
 var (
 	// Matches: numeric GID (task only)
-	// Asana GIDs are numeric strings, typically 16-19 digits
+	// Asana GIDs are numeric strings, typically 16-19 digits.
 	taskGIDPattern = regexp.MustCompile(`^(\d{10,25})$`)
 
-	// Matches: project_gid/task_gid format
+	// Matches: project_gid/task_gid format.
 	projectTaskPattern = regexp.MustCompile(`^(\d{10,25})/(\d{10,25})$`)
 
 	// Matches Asana app URL: https://app.asana.com/0/project_gid/task_gid
-	// or https://app.asana.com/0/0/task_gid (no project)
+	// or https://app.asana.com/0/0/task_gid (no project).
 	appURLPattern = regexp.MustCompile(`(?:https?://)?app\.asana\.com/0/(\d+)/(\d+)(?:/f)?$`)
 )
 
@@ -92,7 +92,7 @@ func ParseReference(input string) (*Reference, error) {
 	return nil, fmt.Errorf("%w: %s", ErrInvalidReference, input)
 }
 
-// ExtractTaskGIDs extracts task GIDs from text (e.g., mentions in descriptions)
+// ExtractTaskGIDs extracts task GIDs from text (e.g., mentions in descriptions).
 func ExtractTaskGIDs(text string) []string {
 	// Look for Asana task URLs
 	pattern := regexp.MustCompile(`app\.asana\.com/0/\d+/(\d+)`)

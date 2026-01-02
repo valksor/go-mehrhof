@@ -12,17 +12,17 @@ import (
 
 // Planned directory methods (standalone planning without a task)
 
-// PlannedRoot returns the .mehrhof/planned directory path
+// PlannedRoot returns the .mehrhof/planned directory path.
 func (w *Workspace) PlannedRoot() string {
 	return filepath.Join(w.taskRoot, plannedDirName)
 }
 
-// PlannedPath returns the path for a specific plan
+// PlannedPath returns the path for a specific plan.
 func (w *Workspace) PlannedPath(planID string) string {
 	return filepath.Join(w.PlannedRoot(), planID)
 }
 
-// Plan represents a standalone planning session
+// Plan represents a standalone planning session.
 type Plan struct {
 	Version string      `yaml:"version"`
 	ID      string      `yaml:"id"`
@@ -33,7 +33,7 @@ type Plan struct {
 	History []PlanEntry `yaml:"history,omitempty"`
 }
 
-// PlanEntry represents an entry in the planning conversation
+// PlanEntry represents an entry in the planning conversation.
 type PlanEntry struct {
 	Timestamp time.Time `yaml:"timestamp"`
 	Role      string    `yaml:"role"`
@@ -45,7 +45,7 @@ const (
 	planHistoryFileName = "plan-history.md"
 )
 
-// CreatePlan creates a new standalone plan
+// CreatePlan creates a new standalone plan.
 func (w *Workspace) CreatePlan(planID, seed string) (*Plan, error) {
 	planPath := w.PlannedPath(planID)
 
@@ -83,7 +83,7 @@ func (w *Workspace) CreatePlan(planID, seed string) (*Plan, error) {
 	return plan, nil
 }
 
-// SavePlan saves a plan's metadata
+// SavePlan saves a plan's metadata.
 func (w *Workspace) SavePlan(plan *Plan) error {
 	plan.Updated = time.Now()
 	planFile := filepath.Join(w.PlannedPath(plan.ID), planFileName)
@@ -96,7 +96,7 @@ func (w *Workspace) SavePlan(plan *Plan) error {
 	return os.WriteFile(planFile, data, 0o644)
 }
 
-// LoadPlan loads a plan by ID
+// LoadPlan loads a plan by ID.
 func (w *Workspace) LoadPlan(planID string) (*Plan, error) {
 	planFile := filepath.Join(w.PlannedPath(planID), planFileName)
 
@@ -113,7 +113,7 @@ func (w *Workspace) LoadPlan(planID string) (*Plan, error) {
 	return &plan, nil
 }
 
-// AppendPlanHistory appends an entry to the plan history (both YAML and markdown)
+// AppendPlanHistory appends an entry to the plan history (both YAML and markdown).
 func (w *Workspace) AppendPlanHistory(planID, role, content string) error {
 	plan, err := w.LoadPlan(planID)
 	if err != nil {
@@ -149,7 +149,7 @@ func (w *Workspace) AppendPlanHistory(planID, role, content string) error {
 	return err
 }
 
-// ListPlans returns all plan IDs
+// ListPlans returns all plan IDs.
 func (w *Workspace) ListPlans() ([]string, error) {
 	plannedRoot := w.PlannedRoot()
 	if _, err := os.Stat(plannedRoot); os.IsNotExist(err) {
@@ -174,12 +174,12 @@ func (w *Workspace) ListPlans() ([]string, error) {
 	return planIDs, nil
 }
 
-// DeletePlan removes a plan directory
+// DeletePlan removes a plan directory.
 func (w *Workspace) DeletePlan(planID string) error {
 	return os.RemoveAll(w.PlannedPath(planID))
 }
 
-// GeneratePlanID generates a unique plan ID based on timestamp
+// GeneratePlanID generates a unique plan ID based on timestamp.
 func GeneratePlanID() string {
 	return time.Now().Format("2006-01-02-150405")
 }

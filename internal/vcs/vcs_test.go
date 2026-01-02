@@ -198,7 +198,7 @@ func TestNewCheckpointTracker(t *testing.T) {
 	}
 }
 
-// Integration tests that require a real git repo
+// Integration tests that require a real git repo.
 func TestGitIntegration(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping integration test in short mode")
@@ -462,13 +462,13 @@ func TestGitIntegration(t *testing.T) {
 	})
 }
 
-// Helper to initialize git repo
+// Helper to initialize git repo.
 func runGitInit(dir string) error {
 	_, err := runGitCommandContext(context.Background(), dir, "init")
 	return err
 }
 
-// TestGitStatusConstants verifies our status parsing constants match git porcelain format
+// TestGitStatusConstants verifies our status parsing constants match git porcelain format.
 func TestGitStatusConstants(t *testing.T) {
 	// Git porcelain v1 format: "XY PATH" where X=index, Y=worktree
 	testEntry := "M  modified-file.go"
@@ -491,7 +491,7 @@ func TestGitStatusConstants(t *testing.T) {
 	}
 }
 
-// TestCommitOptions tests the CommitOptions struct and functionality
+// TestCommitOptions tests the CommitOptions struct and functionality.
 func TestCommitOptions(t *testing.T) {
 	// Test default CommitOptions
 	opts := CommitOptions{}
@@ -506,7 +506,7 @@ func TestCommitOptions(t *testing.T) {
 	}
 }
 
-// TestCommitWithOptions tests the Commit function with options (integration test)
+// TestCommitWithOptions tests the Commit function with options (integration test).
 func TestCommitWithOptions(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping integration test in short mode")

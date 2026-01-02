@@ -33,7 +33,7 @@ var (
 // The defaults are tuned for provider API usage patterns:
 // - 100 max idle connections total
 // - 10 idle connections per host (sufficient for most API providers)
-// - 90 second idle timeout (balances connection reuse vs resource cleanup)
+// - 90 second idle timeout (balances connection reuse vs resource cleanup).
 func defaultTransport() *http.Transport {
 	return &http.Transport{
 		MaxIdleConns:          100,
