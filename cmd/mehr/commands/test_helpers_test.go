@@ -1,6 +1,3 @@
-//go:build !testbinary
-// +build !testbinary
-
 package commands
 
 import (
