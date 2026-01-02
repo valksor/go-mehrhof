@@ -1,0 +1,50 @@
+version: "2"
+
+run:
+    timeout: 5m
+
+formatters:
+    enable:
+        - gofumpt
+
+linters:
+    enable:
+        - gocritic         # Advanced checks
+        - gosec            # Security issues
+        - errcheck         # Unchecked errors
+        - staticcheck      # Go vet++
+        - unconvert        # Unnecessary conversions
+        - misspell         # Typos in comments/strings
+        - nolintlint       # Enforce nolint comments
+        - bodyclose        # HTTP body close
+        - govet            # Built-in vet
+
+    settings:
+        gofumpt:
+            extra-rules: true
+        gocritic:
+            disabled-checks:
+                - ifElseChain
+                - elseif
+                - appendAssign
+                - assignOp
+                - unlambda
+        gosec:
+            excludes:
+                - G104
+                - G204
+                - G301
+                - G302
+                - G304
+                - G306
+
+issues:
+    exclude-rules:
+        -   path: _test\.go
+            linters:
+                - gosec
+                - errcheck
+        -   path: testutils/*.go
+            linters:
+                - gosec
+                - errcheck

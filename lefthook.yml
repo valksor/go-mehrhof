@@ -1,0 +1,21 @@
+# Lefthook configuration for pre-commit hooks
+# Install: go install github.com/evilmartians/lefthook@latest && lefthook install
+#
+# Note: This coexists with .githooks/commit-msg which handles [skip ci] tagging
+
+pre-commit:
+  parallel: true
+  commands:
+    fmt:
+      glob: "*.go"
+      run: gofumpt -l -w {staged_files}
+      stage_fixed: true
+
+    tidy:
+      run: |
+        go mod tidy
+        git diff --quiet go.mod go.sum || git add go.mod go.sum
+
+    lint:
+      glob: "*.go"
+      run: golangci-lint run --new-from-rev=HEAD~1 --fix

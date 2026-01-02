@@ -1,0 +1,76 @@
+name: CI
+
+on:
+    pull_request:
+    push:
+        branches: [ master ]
+
+concurrency:
+    group: ci-${{ github.ref }}
+    cancel-in-progress: true
+
+jobs:
+    test:
+        strategy:
+            matrix:
+                include:
+                    -   goos: linux
+                        goarch: amd64
+                        runner: ubuntu-slim
+                    -   goos: linux
+                        goarch: arm64
+                        runner: ubuntu-24.04-arm
+                    -   goos: darwin
+                        goarch: amd64
+                        runner: macos-15-intel
+                    -   goos: darwin
+                        goarch: arm64
+                        runner: macos-26
+
+        runs-on: ${{ matrix.runner }}
+
+        env:
+            GO_VERSION: '1.25'
+            GOLANGCI_LINT_VERSION: v2.7.2
+
+        steps:
+            -   name: Checkout
+                uses: actions/checkout@v6
+
+            -   name: Set up Go
+                uses: actions/setup-go@v6
+                with:
+                    go-version: ${{ env.GO_VERSION }}
+                    cache: true
+
+            -   name: Install golangci-lint
+                run: curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin ${{ env.GOLANGCI_LINT_VERSION }}
+
+            -   name: Install govulncheck
+                run: go install golang.org/x/vuln/cmd/govulncheck@latest
+
+            -   name: Verify dependencies
+                run: |
+                    go mod tidy
+                    git diff --exit-code go.mod go.sum
+
+            -   name: Lint
+                run: make lint
+
+            -   name: Test
+                run: make test
+
+            # Coverage upload on push to master, only from darwin-arm64
+            -   name: Install goveralls
+                if: github.event_name == 'push' && matrix.goos == 'darwin' && matrix.goarch == 'arm64'
+                run: go install github.com/mattn/goveralls@latest
+
+            -   name: Generate coverage
+                if: github.event_name == 'push' && matrix.goos == 'darwin' && matrix.goarch == 'arm64'
+                run: make coverage
+
+            -   name: Send coverage to Coveralls
+                if: github.event_name == 'push' && matrix.goos == 'darwin' && matrix.goarch == 'arm64'
+                env:
+                    COVERALLS_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+                run: goveralls -coverprofile=covprofile -service=github
