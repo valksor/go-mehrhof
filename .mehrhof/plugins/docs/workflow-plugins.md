@@ -432,17 +432,13 @@ if __name__ == "__main__":
 ## Testing Your Workflow
 
 ```bash
-# 1. Test initialization
 python3 ./my-workflow.py
 {"jsonrpc":"2.0","id":1,"method":"workflow.init","params":{}}
 
-# 2. Test guard evaluation
 {"jsonrpc":"2.0","id":2,"method":"workflow.evaluateGuard","params":{"guard":"requiresApproval","context":{"labels":["security"]}}}
 
-# 3. Test effect execution
 {"jsonrpc":"2.0","id":3,"method":"workflow.executeEffect","params":{"effect":"notifySlack","context":{"task_id":"123","title":"Test","phase":"implementing"}}}
 
-# 4. Validate with mehr
 mehr plugins validate my-workflow
 ```
 

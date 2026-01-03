@@ -151,7 +151,6 @@ mehr plan --agent-planning claude-opus
 mehr implement --agent-implementing sonnet-fast
 mehr review --agent-reviewing claude-opus
 
-# --agent overrides ALL steps
 mehr start --agent claude file:task.md
 ```
 
@@ -195,9 +194,9 @@ agent_env:
 Once a task starts, the agent is persisted in `work.yaml`:
 
 ```bash
-mehr start file:task.md  # Agent resolved: glm
-mehr plan                # Continues with glm
-mehr implement           # Continues with glm
+mehr start file:task.md
+mehr plan
+mehr implement
 ```
 
 ---
@@ -256,7 +255,7 @@ Each session includes timestamps, message history, token usage, and cost trackin
 ### Claude Not Working
 
 ```bash
-claude --version  # Check installed
+claude --version
 claude "Hello"    # Test works
 ```
 

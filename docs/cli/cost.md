@@ -5,10 +5,10 @@ Show token usage and costs for the active task.
 ## Usage
 
 ```bash
-mehr cost                    # Show cost for active task
-mehr cost --breakdown        # Break down by workflow step
-mehr cost --all              # Show costs for all tasks
-mehr cost --summary          # Show aggregate summary across all tasks
+mehr cost
+mehr cost --breakdown
+mehr cost --all
+mehr cost --summary
 ```
 
 ## Description

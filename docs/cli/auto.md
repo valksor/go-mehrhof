@@ -46,42 +46,32 @@ This is ideal for well-defined tasks where you trust the AI to handle the entire
 ### Basic Usage
 
 ```bash
-# Full automation from a markdown file
 mehr auto task.md
 
-# Full automation from a directory
 mehr auto ./tasks/feature/
 ```
 
 ### Quality Control
 
 ```bash
-# Allow more quality retries (default: 3)
 mehr auto --max-retries 5 task.md
 
-# Skip quality checks entirely
 mehr auto --no-quality task.md
 
-# Use custom make target for quality
 mehr auto --quality-target lint task.md
 ```
 
 ### Git Options
 
 ```bash
-# Don't push after merge
 mehr auto --no-push task.md
 
-# Keep the task branch after merge
 mehr auto --no-delete task.md
 
-# Merge to specific branch
 mehr auto --target develop task.md
 
-# Use regular merge instead of squash
 mehr auto --no-squash task.md
 
-# Use git worktree
 mehr auto --worktree task.md
 ```
 

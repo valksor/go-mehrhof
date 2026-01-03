@@ -11,14 +11,11 @@ AI-powered task automation for software development. Mehrhof orchestrates AI age
 ## Get Started in 5 Minutes
 
 ```bash
-# Install
 curl -L https://github.com/valksor/go-mehrhof/releases/latest/download/mehr-darwin-arm64 -o mehr
 chmod +x mehr && sudo mv mehr /usr/local/bin/
 
-# Initialize in your project
 cd your-project && mehr init
 
-# Create and run a task
 echo "Create a /health endpoint returning JSON status" > task.md
 mehr start task.md && mehr plan && mehr implement && mehr finish
 ```

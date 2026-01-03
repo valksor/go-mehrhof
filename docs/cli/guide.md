@@ -45,9 +45,9 @@ State: planning
 Specifications: 2
 
 Suggested next actions:
-  mehr implement              # Implement the specifications
-  mehr plan                  # Create more specifications
-  mehr note                  # Add notes
+  mehr implement
+  mehr plan
+  mehr note
 ```
 
 ### Pending Agent Question
@@ -70,7 +70,7 @@ Specifications: 1
 
 Suggested action:
   mehr answer "your response" # Respond to the question
-  mehr note                  # Enter interactive mode
+  mehr note
 ```
 
 ### Task Done
@@ -86,7 +86,7 @@ Specifications: 3
 
 Suggested next actions:
   Task is complete!
-  mehr start <reference>    # Start a new task
+  mehr start <reference>
 ```
 
 ## State-Based Suggestions

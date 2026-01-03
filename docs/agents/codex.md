@@ -11,7 +11,6 @@ Codex is an alternative AI agent. Mehrhof calls the `codex` CLI command.
 - Your Codex settings (API keys, model preferences) already set up
 
 ```bash
-# Verify Codex works
 codex --version
 ```
 

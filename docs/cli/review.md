@@ -132,7 +132,6 @@ mehr review
 
 ```bash
 mehr review
-# Fix any issues...
 mehr finish
 ```
 
@@ -144,10 +143,9 @@ After review, address issues and re-implement:
 
 ```bash
 mehr review
-# Issues found...
 mehr note "Fix the error handling in handler.go"
 mehr implement
-mehr review  # Verify fixes
+mehr review
 ```
 
 ### Ignore Issues
@@ -156,8 +154,7 @@ If issues are false positives or acceptable:
 
 ```bash
 mehr review
-# Issues found but acceptable...
-mehr finish  # Proceed anyway
+mehr finish
 ```
 
 ## Review History
@@ -178,10 +175,7 @@ Multiple reviews are saved with incremental names:
 Ensure CodeRabbit CLI is installed and configured:
 
 ```bash
-# Install CodeRabbit CLI
-# (Follow CodeRabbit documentation)
 
-# Verify installation
 coderabbit --version
 ```
 
@@ -192,7 +186,6 @@ coderabbit --version
 Install the required review tool:
 
 ```bash
-# For CodeRabbit
 npm install -g @coderabbit/cli
 ```
 

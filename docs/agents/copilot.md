@@ -12,7 +12,6 @@ GitHub Copilot agent wraps the `gh copilot` CLI extension for shell command sugg
 - Active GitHub Copilot subscription
 
 ```bash
-# Verify Copilot works
 gh copilot --version
 ```
 

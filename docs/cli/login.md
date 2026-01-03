@@ -17,13 +17,10 @@ The `mehr <provider> login` commands provide an interactive way to configure aut
 ## Usage
 
 ```bash
-# Configure GitHub token
 mehr github login
 
-# Configure Notion token
 mehr notion login
 
-# Configure Jira token
 mehr jira login
 ```
 
@@ -71,8 +68,6 @@ Tokens are stored in `.mehrhof/.env` (which is gitignored) with file permissions
 Example `.env` file:
 
 ```bash
-# Mehrhof environment variables
-# This file is gitignored - store secrets here safely.
 
 GITHUB_TOKEN=ghp_xxxxxxxxxxxxxxxxxxxx
 NOTION_TOKEN=secret_xxxxxxxxxxxxxxxxxxxxxx
@@ -90,7 +85,6 @@ Some providers have short aliases:
 | `yt` | youtrack |
 
 ```bash
-# These are equivalent
 mehr github login
 mehr gh login
 ```

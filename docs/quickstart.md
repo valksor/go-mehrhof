@@ -8,7 +8,6 @@ Get started with Valksor Mehrhof in 5 minutes.
 - **Claude CLI** - Mehrhof delegates AI operations to Claude ([setup guide](https://github.com/anthropics/claude-cli))
 
 ```bash
-# Verify Claude is working
 claude --version
 ```
 
@@ -26,12 +25,10 @@ claude --version
 > **Windows Users:** Use [WSL2](https://learn.microsoft.com/en-us/windows/wsl/) with the Linux binary (`mehr-linux-amd64` or `mehr-linux-arm64`).
 
 ```bash
-# Download (example: macOS Apple Silicon)
 curl -L https://github.com/valksor/go-mehrhof/releases/latest/download/mehr-darwin-arm64 -o mehr
 chmod +x mehr
 sudo mv mehr /usr/local/bin/
 
-# Verify
 mehr version
 ```
 
@@ -98,20 +95,16 @@ Switched to branch task/a1b2c3d4--add-health-check-endpoint
 ### 4. Generate & Implement
 
 ```bash
-# AI creates implementation specifications
 mehr plan
 
-# AI implements the specifications
 mehr implement
 ```
 
 ### 5. Review & Finish
 
 ```bash
-# Check what changed
 git diff
 
-# Complete and merge to main
 mehr finish
 ```
 
@@ -133,8 +126,8 @@ mehr finish
 ## Updating
 
 ```bash
-mehr update           # Update to latest
-mehr update --check   # Check for updates only
+mehr update
+mehr update --check
 ```
 
 ## Next Steps

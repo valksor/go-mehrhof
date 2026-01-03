@@ -12,11 +12,9 @@ Integrates with Linear for modern project management and issue tracking.
 ## Usage
 
 ```bash
-# By issue identifier
 mehr start linear:ENG-123
 mehr plan ln:ENG-123
 
-# By issue URL
 mehr start linear:https://linear.app/team/issue/ENG-123-title
 ```
 

@@ -110,10 +110,8 @@ Output:
 When working on multiple features simultaneously:
 
 ```bash
-# See what's running
 mehr list
 
-# Check specific task
 cd ../project-worktrees/a1b2c3d4
 mehr status
 ```

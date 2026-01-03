@@ -12,11 +12,9 @@ Integrates with Notion for flexible task management using pages and databases.
 ## Usage
 
 ```bash
-# By page ID (32-char UUID, with or without dashes)
 mehr start notion:a1b2c3d4e5f678901234567890abcdef1
 mehr plan nt:a1b2c3d4-e5f6-7890-1234-567890abcdef1
 
-# By Notion URL
 mehr start notion:https://www.notion.so/Page-Title-a1b2c3d4e5f678901234567890abcdef1
 ```
 

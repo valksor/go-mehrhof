@@ -296,13 +296,10 @@ Commit or stash changes before finishing.
 If finish is interrupted, recover with:
 
 ```bash
-# Check current state
 git status
 
-# If on target branch with conflicts
 git merge --abort
 
-# Return to task branch
 git checkout task/a1b2c3d4
 ```
 

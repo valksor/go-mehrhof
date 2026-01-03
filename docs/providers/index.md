@@ -59,13 +59,10 @@ You can extend Mehrhof with custom providers through the plugin system. See [Plu
 ### Installing a Provider Plugin
 
 ```bash
-# From GitHub
 mehr plugins install https://github.com/user/mehrhof-jira
 
-# From local path
 mehr plugins install ./plugins/my-provider
 
-# List installed providers
 mehr plugins list
 ```
 
@@ -112,6 +109,6 @@ providers:
 Now you can use bare references:
 
 ```bash
-mehr start task.md           # Uses file: provider
-mehr start 123               # Uses github: if configured
+mehr start task.md
+mehr start 123
 ```

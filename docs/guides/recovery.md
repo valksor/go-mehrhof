@@ -35,13 +35,10 @@ After review, the generated code:
 Simply undo and provide better guidance:
 
 ```bash
-# Revert the implementation
 mehr undo
 
-# Add context about what went wrong
 mehr note "Use the repository pattern like in internal/users/. The current approach has tight coupling."
 
-# Try again
 mehr implement
 ```
 
@@ -68,17 +65,16 @@ Sometimes you want to compare different implementations:
 ```bash
 mehr start task.md
 mehr plan
-mehr implement         # Approach A
+mehr implement
 ```
 
 Not sure if it's the best approach?
 
 ```bash
-# Save this state and try another
 mehr undo
 
 mehr note "Try a functional approach instead of OOP"
-mehr implement         # Approach B
+mehr implement
 ```
 
 ### Comparing
@@ -86,17 +82,14 @@ mehr implement         # Approach B
 Now compare both:
 
 ```bash
-# Currently at Approach B
-git diff HEAD~1        # See current changes
+git diff HEAD~1
 
-# Go back to Approach A
 mehr undo
-mehr redo              # Back to A
-git diff HEAD~1        # Compare
+mehr redo
+git diff HEAD~1
 
-# Decide: keep B
-mehr undo              # Back to before A
-mehr redo              # Skip to B
+mehr undo
+mehr redo
 ```
 
 ### Warning
@@ -104,9 +97,9 @@ mehr redo              # Skip to B
 Making new changes after undo clears the redo stack:
 
 ```bash
-mehr undo              # At checkpoint 2
-mehr implement         # NEW checkpoint 3
-mehr redo              # Error: nothing to redo (old checkpoint 3 is gone)
+mehr undo
+mehr implement
+mehr redo
 ```
 
 ## Scenario 3: Multiple Undo Steps
@@ -116,19 +109,19 @@ mehr redo              # Error: nothing to redo (old checkpoint 3 is gone)
 Sometimes you need to go back multiple steps:
 
 ```bash
-mehr plan              # Checkpoint 1
-mehr implement         # Checkpoint 2
+mehr plan
+mehr implement
 mehr note "add tests"
-mehr implement         # Checkpoint 3
+mehr implement
 mehr note "fix bug"
-mehr implement         # Checkpoint 4 (current)
+mehr implement
 ```
 
 To get back to checkpoint 2:
 
 ```bash
-mehr undo              # Checkpoint 3
-mehr undo              # Checkpoint 2
+mehr undo
+mehr undo
 ```
 
 Check status:
@@ -150,14 +143,14 @@ Checkpoints:
 You undid something you actually wanted:
 
 ```bash
-mehr implement         # Good code!
-mehr undo              # Oops, didn't mean to
+mehr implement
+mehr undo
 ```
 
 ### The Solution
 
 ```bash
-mehr redo              # Restored!
+mehr redo
 ```
 
 ### If You Made Changes
@@ -165,27 +158,20 @@ mehr redo              # Restored!
 If you accidentally made changes after undo:
 
 ```bash
-mehr implement         # Good code
-mehr undo              # Mistake
+mehr implement
+mehr undo
 mehr note "something"   # This clears redo!
-mehr redo              # Error: nothing to redo
+mehr redo
 ```
 
 Use git reflog to recover:
 
 ```bash
-# Find the lost commit
 git reflog
 
-# Output:
-# abc1234 HEAD@{0}: reset: moving to checkpoint-2
-# def5678 HEAD@{1}: commit: [task] implement
-# ...
 
-# Recover specific files
 git checkout def5678 -- path/to/file.go
 
-# Or see what was in that commit
 git show def5678
 ```
 
@@ -197,7 +183,6 @@ The implementation changed 10 files, but only 2 are wrong:
 
 ```bash
 mehr implement
-# 8 files good, 2 files bad
 ```
 
 ### Option A: Fix Manually
@@ -205,10 +190,8 @@ mehr implement
 If changes are small, just edit the files:
 
 ```bash
-# Edit the problematic files manually
 vim internal/api/handler.go
 
-# Git handles the rest
 git add .
 git commit -m "manual: fix handler logic"
 ```
@@ -218,18 +201,13 @@ git commit -m "manual: fix handler logic"
 Keep most changes, restore specific files:
 
 ```bash
-# First, note the current commit
-git rev-parse HEAD  # abc1234
+git rev-parse HEAD
 
-# Undo
 mehr undo
 
-# Selectively restore good files from the undone commit
 git checkout abc1234 -- internal/api/good1.go
 git checkout abc1234 -- internal/api/good2.go
-# ... etc
 
-# Now re-implement just the problematic parts
 mehr note "Only fix the handler in handler.go"
 mehr implement
 ```
@@ -242,8 +220,7 @@ Always review after implementation:
 
 ```bash
 mehr implement
-git diff              # Review changes
-# Then decide: keep, undo, or iterate
+git diff
 ```
 
 ### 2. Use Status Frequently
@@ -260,14 +237,10 @@ Undo is safe and fast. Use it liberally:
 
 ```bash
 mehr implement
-# Hmm, not sure...
 mehr undo
-# Try different guidance
 mehr note "..."
 mehr implement
-# Still not right
 mehr undo
-# ...
 ```
 
 ### 4. Document Your Context
@@ -288,7 +261,6 @@ If you're many undos deep with contradictory notes:
 
 ```bash
 mehr abandon --yes
-# Rewrite task with lessons learned
 mehr start improved-task.md
 ```
 

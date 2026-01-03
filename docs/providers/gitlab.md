@@ -12,16 +12,13 @@ Interacts with GitLab issues for fully integrated task management. Works with bo
 ## Usage
 
 ```bash
-# By issue number (requires configured project)
 mehr start gitlab:123
 mehr plan gl:123
 
-# Explicit project path
 mehr start gitlab:group/project#456
 mehr plan gl:group/project#456
 
-# By project ID
-mehr start gitlab:12345#456  # project-id#issue-iid
+mehr start gitlab:12345#456
 ```
 
 ## Configuration

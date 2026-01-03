@@ -18,10 +18,8 @@ Create custom plugins to extend Mehrhof with new task sources, AI backends, or w
 ### 1. Create Plugin Directory
 
 ```bash
-# Project-local plugin
 mkdir -p .mehrhof/plugins/my-plugin
 
-# OR global plugin (available to all projects)
 mkdir -p ~/.mehrhof/plugins/my-plugin
 ```
 
@@ -104,9 +102,9 @@ plugins:
 ### 5. Test
 
 ```bash
-mehr plugins list              # Should show your plugin
-mehr plugins validate my-plugin  # Validate configuration
-mehr start my:test-task        # Use it!
+mehr plugins list
+mehr plugins validate my-plugin
+mehr start my:test-task
 ```
 
 ## Documentation
@@ -154,10 +152,8 @@ Plugins can be written in any language. Common choices:
 ### Manual Testing
 
 ```bash
-# Run plugin directly
 python3 .mehrhof/plugins/my-plugin/plugin.py
 
-# Send test requests (type and press Enter)
 {"jsonrpc":"2.0","id":1,"method":"provider.init","params":{}}
 {"jsonrpc":"2.0","id":2,"method":"provider.match","params":{"input":"my:test"}}
 ```

@@ -11,10 +11,8 @@ Ollama provides local AI inference for privacy and cost savings. Mehrhof wraps t
 - At least one model downloaded (`ollama pull codellama`)
 
 ```bash
-# Verify Ollama works
 ollama --version
 
-# Pull a coding model
 ollama pull codellama
 ```
 

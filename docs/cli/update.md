@@ -150,7 +150,7 @@ GitHub token resolution (for higher rate limits):
 Update checks are disabled for dev builds (when version is "dev"). To test the update mechanism during development, build with a version tag:
 
 ```bash
-make build  # Uses actual git tag
+make build
 ```
 
 ## See Also

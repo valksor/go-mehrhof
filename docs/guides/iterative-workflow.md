@@ -22,7 +22,6 @@ You're building a user authentication system. Let's iterate to get it right.
 
 ```bash
 cat > auth.md << 'EOF'
-# User Authentication
 
 Implement user authentication for the API.
 
@@ -65,7 +64,7 @@ mehr note "Use stateless JWT tokens, not sessions. Store nothing server-side."
 
 ```bash
 mehr undo
-mehr plan    # Regenerate specifications with new context
+mehr plan
 ```
 
 Check the updated spec:
@@ -126,20 +125,16 @@ mehr implement
 ### Be Specific
 
 ```bash
-# Vague (less effective)
 mehr note "Make it more secure"
 
-# Specific (more effective)
 mehr note "Add rate limiting: max 5 login attempts per minute per IP"
 ```
 
 ### Explain Why
 
 ```bash
-# Just what
 mehr note "Use Redis for token storage"
 
-# What and why (better)
 mehr note "Use Redis for token storage because we need to invalidate tokens across multiple server instances"
 ```
 
@@ -209,9 +204,8 @@ Always check specifications before `mehr implement`:
 ```bash
 mehr plan
 cat .mehrhof/work/*/specifications/*.md
-# Looks wrong?
 mehr note "Actually, change X to Y"
-mehr plan  # Regenerate
+mehr plan
 ```
 
 ### 4. Use Undo Freely
@@ -220,13 +214,10 @@ Undo is cheap. Don't hesitate:
 
 ```bash
 mehr implement
-# Not right
 mehr undo
 mehr note "..."
 mehr implement
-# Still not right
 mehr undo
-# ...
 ```
 
 ### 5. Keep Notes Focused
@@ -234,10 +225,8 @@ mehr undo
 Notes accumulate. Keep them relevant:
 
 ```bash
-# Good: Specific, actionable
 mehr note "Validate email format using regexp"
 
-# Avoid: Vague, contradictory over time
 mehr note "Maybe use sessions"
 mehr note "Actually use JWT"
 mehr note "Or maybe sessions are fine"
@@ -249,7 +238,6 @@ Sometimes it's better to start over:
 
 ```bash
 mehr abandon --yes
-# Rewrite task.md with better requirements
 mehr start task.md
 ```
 

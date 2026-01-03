@@ -123,7 +123,7 @@ After abandoning, start a new task:
 
 ```bash
 mehr abandon --yes
-mehr start task.md  # Fresh start
+mehr start task.md
 ```
 
 ## Recovering Abandoned Work
@@ -137,10 +137,8 @@ git checkout task/a1b2c3d4
 ### If Branch Was Deleted
 
 ```bash
-# Find deleted branch in reflog
 git reflog
 
-# Recover branch
 git checkout -b task/a1b2c3d4 <commit-hash>
 ```
 

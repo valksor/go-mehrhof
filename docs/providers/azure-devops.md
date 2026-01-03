@@ -12,14 +12,11 @@ Integrates with Azure DevOps for work item tracking and pull request management.
 ## Usage
 
 ```bash
-# By work item ID (requires configured org/project)
 mehr start azdo:123
 mehr plan azure:123
 
-# Explicit organization and project
 mehr start azdo:org/project#456
 
-# By URL
 mehr start azdo:https://dev.azure.com/org/project/_workitems/edit/123
 ```
 

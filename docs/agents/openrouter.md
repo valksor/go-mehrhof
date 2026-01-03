@@ -10,7 +10,6 @@ OpenRouter provides unified access to 100+ AI models through a single API. Usefu
 - OpenRouter API key (get one at https://openrouter.ai/keys)
 
 ```bash
-# Set API key
 export OPENROUTER_API_KEY="sk-or-..."
 ```
 

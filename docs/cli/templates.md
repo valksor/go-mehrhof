@@ -5,9 +5,9 @@ Manage and apply task templates for common development patterns.
 ## Usage
 
 ```bash
-mehr templates                    # List available templates
-mehr templates show <name>        # Show template details
-mehr templates apply <name> <file> # Apply template to a task file
+mehr templates
+mehr templates show <name>
+mehr templates apply <name> <file>
 ```
 
 ## Description
@@ -81,10 +81,8 @@ Example usage:
 ### Apply Template
 
 ```bash
-# Apply to existing file
 mehr templates apply bug-fix task.md
 
-# Output
 Applied template 'bug-fix' to task.md
 
 Frontmatter added:
@@ -195,10 +193,8 @@ workflow:
 You can create custom templates in `.mehrhof/templates/`:
 
 ```bash
-# Create custom template directory
 mkdir -p .mehrhof/templates
 
-# Create a custom template
 cat > .mehrhof/templates/security.yaml <<'EOF'
 name: security
 description: Template for security fixes

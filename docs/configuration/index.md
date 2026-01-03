@@ -165,11 +165,9 @@ Store secrets locally without committing to git.
 **Location:** `.mehrhof/.env` (gitignored)
 
 ```bash
-# API keys
 ANTHROPIC_API_KEY=sk-ant-...
 GLM_API_KEY=your-glm-key
 
-# Provider tokens
 GITHUB_TOKEN=ghp_...
 JIRA_TOKEN=your-jira-token
 ```

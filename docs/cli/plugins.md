@@ -82,13 +82,10 @@ mehr plugins install <source> [--global]
 **Examples:**
 
 ```bash
-# Install from git
 mehr plugins install https://github.com/user/mehrhof-jira
 
-# Install from local path
 mehr plugins install ./my-plugin
 
-# Install globally
 mehr plugins install https://github.com/user/mehrhof-jira --global
 ```
 
@@ -157,10 +154,8 @@ If no name is provided, all discovered plugins are validated.
 **Example:**
 
 ```bash
-# Validate specific plugin
 mehr plugins validate jira
 
-# Validate all plugins
 mehr plugins validate
 ```
 

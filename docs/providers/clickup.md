@@ -12,11 +12,9 @@ Integrates with ClickUp for comprehensive task management.
 ## Usage
 
 ```bash
-# By task ID
 mehr start clickup:abc123xyz
 mehr plan cu:abc123xyz
 
-# By custom task ID (if enabled)
 mehr start cu:TASK-123
 ```
 

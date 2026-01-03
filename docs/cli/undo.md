@@ -23,10 +23,8 @@ By default, `mehr undo` shows a confirmation prompt before proceeding. Use `--ye
 ## Examples
 
 ```bash
-# Undo with confirmation
 mehr undo
 
-# Undo without confirmation
 mehr undo --yes
 mehr undo -y
 ```
@@ -90,23 +88,20 @@ The task is at its initial state.
 ### Iterating on Implementation
 
 ```bash
-mehr implement        # First attempt
-# Review... not quite right
+mehr implement
 mehr undo
 mehr note "Use a simpler approach"
-mehr implement        # Second attempt
-# Better!
+mehr implement
 mehr finish
 ```
 
 ### Exploring Options
 
 ```bash
-mehr implement        # Approach A
-mehr undo             # Back to try something else
+mehr implement
+mehr undo
 mehr note "Try functional style"
-mehr implement        # Approach B
-# Decide on B
+mehr implement
 mehr finish
 ```
 
@@ -114,8 +109,7 @@ mehr finish
 
 ```bash
 mehr implement
-# Accidentally ran something destructive
-mehr undo            # Safe again
+mehr undo
 ```
 
 ## Advanced Recovery
@@ -123,16 +117,11 @@ mehr undo            # Safe again
 If you need to recover beyond the checkpoint system:
 
 ```bash
-# View git history
 git reflog
 
-# Find the desired state
-# abc1234 HEAD@{5}: commit: [task] implement
 
-# Restore specific files
 git checkout abc1234 -- path/to/file.go
 
-# Or reset (use carefully)
 git reset --hard abc1234
 ```
 

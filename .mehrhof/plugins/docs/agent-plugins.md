@@ -369,17 +369,13 @@ mehr implement --agent accurate-local
 ## Testing Your Agent
 
 ```bash
-# 1. Check availability
 python3 ./my-agent.py
 {"jsonrpc":"2.0","id":1,"method":"agent.available","params":{}}
 
-# 2. Test a simple prompt
 {"jsonrpc":"2.0","id":2,"method":"agent.run","params":{"prompt":"Hello, world!"}}
 
-# 3. Validate with mehr
 mehr plugins validate my-agent
 
-# 4. Use in planning
 mehr plan --agent my-agent
 ```
 

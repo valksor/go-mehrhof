@@ -11,7 +11,6 @@ Aider is a Git-aware AI pair programming assistant. Mehrhof wraps the `aider` CL
 - API key configured (supports OpenAI, Anthropic, and other providers)
 
 ```bash
-# Verify Aider works
 aider --version
 ```
 

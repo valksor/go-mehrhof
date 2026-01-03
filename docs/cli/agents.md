@@ -186,7 +186,6 @@ If an alias shows `AVAILABLE: no`, check that:
 2. Any required environment variables are set
 
 ```bash
-# Check if Claude CLI is available
 claude --version
 ```
 

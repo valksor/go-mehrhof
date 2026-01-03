@@ -185,29 +185,17 @@ Notes are saved to `.mehrhof/work/<id>/notes.md` and included in future AI promp
 ## Task Lifecycle Example
 
 ```bash
-# 1. Start a task
 mehr start feature.md
-# Creates: task/abc12345 branch, .mehrhof/work/abc12345/
 
-# 2. Plan the implementation
 mehr plan
-# Creates: .mehrhof/work/abc12345/specifications/specification-1.md
 
-# 3. Add clarification
 mehr note "The API should be REST, not GraphQL"
-# Updates: .mehrhof/work/abc12345/notes.md
 
-# 4. Implement
 mehr implement
-# Generates code, creates checkpoint
 
-# 5. Undo if needed
 mehr undo
-# Reverts to previous checkpoint
 
-# 6. Finish
 mehr finish
-# Merges to main, deletes branch
 ```
 
 ## Abandoning Tasks

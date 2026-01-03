@@ -92,7 +92,6 @@ Verify you're on the new branch:
 
 ```bash
 git branch --show-current
-# task/a1b2c3d4
 ```
 
 ## Step 4: Generate Specifications
@@ -225,13 +224,10 @@ curl http://localhost:8080/health
 Not happy with the result?
 
 ```bash
-# Undo the implementation
 mehr undo
 
-# Add more context
 mehr note "The handler should use our standard response helper"
 
-# Try again
 mehr implement
 ```
 

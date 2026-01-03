@@ -6,7 +6,7 @@ Add notes to the current task.
 
 ```bash
 mehr note [message]
-mehr answer [message]  # Alias for answering agent questions
+mehr answer [message]
 ```
 
 ## Description
@@ -59,9 +59,8 @@ When the agent asks a question during planning, use the `answer` alias (which is
 
 ```bash
 mehr plan
-# Agent asks: "Should we use PostgreSQL or MySQL?"
 mehr answer "Use PostgreSQL - we already have it in production"
-mehr plan  # Continues with your answer
+mehr plan
 ```
 
 ### Multiple Notes Before Planning
@@ -154,15 +153,12 @@ mehr answer "Use dependency injection instead of global state"
 Typical workflow for adding context before planning:
 
 ```bash
-# Start a task
 mehr start file:task.md
 
-# Add multiple notes
 mehr note "Focus on performance"
 mehr note "Add comprehensive error handling"
 mehr note "Include unit tests for all new code"
 
-# Run planning (agent sees all notes)
 mehr plan
 ```
 

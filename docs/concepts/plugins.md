@@ -32,10 +32,8 @@ plugins:
 ### 3. Use the Plugin
 
 ```bash
-# Provider plugin
 mehr start jira:PROJ-123
 
-# Agent plugin
 mehr plan --agent my-local-llm
 ```
 
@@ -53,13 +51,10 @@ Project-local plugins take precedence when both exist with the same name.
 ## Managing Plugins
 
 ```bash
-# List all discovered plugins
 mehr plugins list
 
-# Validate a specific plugin
 mehr plugins validate jira
 
-# Show plugin details
 mehr plugins info jira
 ```
 
@@ -101,9 +96,9 @@ export JIRA_TOKEN="your-api-token"
 Provider plugins add custom task sources accessed via URL schemes:
 
 ```bash
-mehr start jira:PROJ-123      # Jira provider
-mehr start yt:TASK-456        # YouTrack provider
-mehr start linear:ABC-789     # Linear provider
+mehr start jira:PROJ-123
+mehr start yt:TASK-456
+mehr start linear:ABC-789
 ```
 
 ### Capabilities
@@ -122,8 +117,8 @@ mehr start linear:ABC-789     # Linear provider
 Agent plugins provide custom AI backends:
 
 ```bash
-mehr plan --agent ollama       # Use local LLM
-mehr implement --agent codex   # Use OpenAI Codex
+mehr plan --agent ollama
+mehr implement --agent codex
 ```
 
 ### Agent Aliases
@@ -193,10 +188,8 @@ effects:
 ### Plugin Not Found
 
 ```bash
-# Check if plugin is discovered
 mehr plugins list
 
-# Verify plugin directory exists
 ls -la ~/.mehrhof/plugins/
 ls -la .mehrhof/plugins/
 ```
@@ -204,10 +197,8 @@ ls -la .mehrhof/plugins/
 ### Plugin Not Loading
 
 ```bash
-# Validate plugin configuration
 mehr plugins validate my-plugin
 
-# Run with verbose output
 mehr --verbose start my:task
 ```
 

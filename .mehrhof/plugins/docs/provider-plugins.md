@@ -390,18 +390,14 @@ if __name__ == "__main__":
 ## Testing Your Provider
 
 ```bash
-# 1. Start plugin manually
 python3 ./my-provider.py
 
-# 2. Send test requests
 {"jsonrpc":"2.0","id":1,"method":"provider.init","params":{}}
 {"jsonrpc":"2.0","id":2,"method":"provider.match","params":{"input":"my:TEST-1"}}
 {"jsonrpc":"2.0","id":3,"method":"provider.fetch","params":{"id":"TEST-1"}}
 
-# 3. Validate with mehr
 mehr plugins validate my-provider
 
-# 4. Test end-to-end
 mehr start my:TEST-1
 ```
 

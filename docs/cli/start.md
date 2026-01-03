@@ -24,23 +24,23 @@ This command does **not** run planning. Use `mehr plan` for that.
 Specify a provider scheme prefix to use different task sources:
 
 ```bash
-mehr start file:task.md          # From a markdown file
-mehr start dir:./tasks/          # From a directory
-mehr start github:5              # From GitHub issue #5
-mehr start github:owner/repo#123 # From explicit repo/issue
+mehr start file:task.md
+mehr start dir:./tasks/
+mehr start github:5
+mehr start github:owner/repo#123
 ```
 
 **Default Provider:** The `file:` provider is the default, so you can omit the scheme for markdown files:
 
 ```bash
-mehr start task.md   # Equivalent to: mehr start file:task.md
+mehr start task.md
 ```
 
 To change the default provider, configure it in `.mehrhof/config.yaml`:
 
 ```yaml
 providers:
-  default: dir # Bare references will use directory provider
+  default: dir
 ```
 
 ## Arguments
@@ -88,8 +88,8 @@ providers:
 The `file:` provider is the default, so you can omit it:
 
 ```bash
-mehr start task.md        # Uses default file: provider
-mehr start file:task.md   # Explicit scheme (also works)
+mehr start task.md
+mehr start file:task.md
 ```
 
 Output:
@@ -131,15 +131,11 @@ Task registered: a1b2c3d4
 ### Override Title and Slug via CLI
 
 ```bash
-# Override the title
 mehr start --title "Fix critical login bug" file:task.md
 
-# Override the slug for branch naming
 mehr start --slug "login-fix" file:task.md
 
-# Use filename as title with custom slug
 mehr start file:test.md --slug "test"
-# Branch: task/test--test (filename 'test' becomes title)
 ```
 
 **Note:** When no title is found in the file (no frontmatter `title:` and no `#` heading), the filename (without extension) is used as the title.
@@ -155,9 +151,9 @@ All files in the directory become part of the task context.
 ### Start from GitHub Issue
 
 ```bash
-mehr start github:42                    # Issue #42 from detected repo
-mehr start github:owner/repo#123        # Explicit repository
-mehr start gh:42                        # Short alias
+mehr start github:42
+mehr start github:owner/repo#123
+mehr start gh:42
 ```
 
 Repository is auto-detected from `git remote origin`. Requires `GITHUB_TOKEN` or `MEHR_GITHUB_TOKEN`.
@@ -188,8 +184,8 @@ Work happens on the current branch. Useful for quick experiments.
 ### Start with Worktree (Parallel Tasks)
 
 ```bash
-mehr start --worktree task.md    # Uses default file: provider
-mehr start --worktree dir:tasks/ # Explicit scheme for directories
+mehr start --worktree task.md
+mehr start --worktree dir:tasks/
 ```
 
 Creates a separate working directory for complete isolation:
@@ -208,17 +204,14 @@ Worktree: ../project-worktrees/a1b2c3d4
 **Parallel workflow:**
 
 ```bash
-# Terminal 1
 mehr start --worktree feature-a.md
 cd ../project-worktrees/a1b2c3d4
 mehr plan && mehr implement
 
-# Terminal 2 (from main repo)
 mehr start --worktree feature-b.md
 cd ../project-worktrees/e5f6g7h8
 mehr plan && mehr implement
 
-# See all tasks
 mehr list
 ```
 
@@ -235,10 +228,8 @@ mehr start --agent claude task.md
 Use different agents for different workflow phases:
 
 ```bash
-# Use Opus for planning, claude for implementation
 mehr start --agent-planning claude-opus --agent-implementing claude task.md
 
-# Override just the planning agent
 mehr start --agent-planning glm task.md
 ```
 

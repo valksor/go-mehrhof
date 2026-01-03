@@ -12,14 +12,11 @@ Integrates with JetBrains YouTrack for comprehensive issue tracking.
 ## Usage
 
 ```bash
-# By issue ID
 mehr start youtrack:ABC-123
 mehr plan yt:ABC-123
 
-# By bare ID (auto-detected if format matches)
 mehr start ABC-123
 
-# By URL
 mehr start yt:https://company.myjetbrains.com/youtrack/issue/ABC-123
 mehr start yt:https://youtrack.cloud/issue/ABC-123
 ```

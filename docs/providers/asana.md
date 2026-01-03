@@ -12,7 +12,6 @@ Integrates with Asana for task and project management.
 ## Usage
 
 ```bash
-# By task GID (16-17 digit number)
 mehr start asana:1234567890123456
 mehr plan as:1234567890123456
 ```

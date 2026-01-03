@@ -125,10 +125,10 @@ Mehrhof parses this and applies changes safely.
 Implementation can be run multiple times:
 
 ```bash
-mehr implement           # First attempt
-mehr undo               # Didn't like it
+mehr implement
+mehr undo
 mehr note "Use interfaces instead of concrete types"
-mehr implement          # Try again with guidance
+mehr implement
 ```
 
 ## Error Handling

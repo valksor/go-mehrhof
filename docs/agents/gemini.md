@@ -11,13 +11,10 @@ Gemini provides access to Google's Gemini AI models via the official Gemini CLI.
 - Google AI API key
 
 ```bash
-# Install Gemini CLI
 npm install -g @anthropic-ai/gemini-cli
 
-# Set API key
 export GEMINI_API_KEY="your-api-key"
 
-# Verify Gemini works
 gemini --version
 ```
 

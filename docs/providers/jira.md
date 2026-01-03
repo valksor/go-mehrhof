@@ -12,11 +12,9 @@ Integrates with Jira for comprehensive issue tracking. Supports both Jira Cloud 
 ## Usage
 
 ```bash
-# By issue key
 mehr start jira:JIRA-123
 mehr plan j:PROJ-456
 
-# By URL
 mehr start jira:https://domain.atlassian.net/browse/JIRA-123
 mehr start j:https://jira.example.com/browse/PROJ-456
 ```

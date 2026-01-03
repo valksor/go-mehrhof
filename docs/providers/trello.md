@@ -12,15 +12,12 @@ Integrates with Trello boards and cards for visual project management.
 ## Usage
 
 ```bash
-# By card ID (24-character alphanumeric)
 mehr start trello:507f1f77bcf86cd799439011
 mehr plan tr:507f1f77bcf86cd799439011
 
-# By short link (8-character)
 mehr start trello:abc12XYZ
 mehr start tr:abc12XYZ
 
-# By card URL
 mehr start trello:https://trello.com/c/abc12XYZ/card-name
 mehr start tr:https://trello.com/c/abc12XYZ/card-name
 ```
@@ -84,7 +81,6 @@ Status is determined by the card's list name (case-insensitive):
 To change a card's status, the provider moves it to a list with a matching name:
 
 ```bash
-# This will move the card to a list named "In Progress" (or similar)
 mehr status set in_progress
 ```
 

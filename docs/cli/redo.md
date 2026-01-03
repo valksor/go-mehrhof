@@ -23,10 +23,8 @@ By default, `mehr redo` shows a confirmation prompt before proceeding. Use `--ye
 ## Examples
 
 ```bash
-# Redo with confirmation
 mehr redo
 
-# Redo without confirmation
 mehr redo --yes
 mehr redo -y
 ```
@@ -108,22 +106,20 @@ Either no undo was performed, or new changes cleared the redo stack.
 ### Comparing Approaches
 
 ```bash
-mehr implement        # Approach A
-mehr undo             # Back to try something else
+mehr implement
+mehr undo
 mehr note "Try functional style"
-mehr implement        # Approach B
-# Compare approaches
-mehr undo             # Back to A
-mehr redo             # Forward to B
-# Decide on B
+mehr implement
+mehr undo
+mehr redo
 mehr finish
 ```
 
 ### Accidental Undo
 
 ```bash
-mehr undo            # Oops, didn't mean to undo
-mehr redo            # Right back where I was
+mehr undo
+mehr redo
 ```
 
 ## Redo Stack Clearing
@@ -131,10 +127,10 @@ mehr redo            # Right back where I was
 The redo stack is cleared when you make new changes:
 
 ```bash
-mehr implement        # Checkpoint 3
-mehr undo             # Back to checkpoint 2, redo has [3]
-mehr implement        # New checkpoint 4, redo cleared!
-mehr redo             # Error: nothing to redo
+mehr implement
+mehr undo
+mehr implement
+mehr redo
 ```
 
 ## See Also

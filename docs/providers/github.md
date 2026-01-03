@@ -12,11 +12,9 @@ Interacts with GitHub issues for fully integrated task management.
 ## Usage
 
 ```bash
-# By issue number (auto-detects repo)
 mehr start github:123
 mehr plan gh:123
 
-# Explicit repository
 mehr start github:owner/repo#456
 mehr plan gh:owner/repo#456
 ```

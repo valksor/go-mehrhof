@@ -29,13 +29,10 @@ mehr config init [flags]
 **Examples:**
 
 ```bash
-# Create config with auto-detected project type
 mehr config init
 
-# Create config with specific project type
 mehr config init --project go
 
-# Force overwrite existing config (requires interactive confirmation)
 mehr config init --force
 ```
 
@@ -74,13 +71,10 @@ plugins:
 **What to do next:**
 
 ```bash
-# Validate the new config
 mehr config validate
 
-# Edit the config
 vim .mehrhof/config.yaml
 
-# Start your first task
 mehr start task.md
 ```
 

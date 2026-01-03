@@ -35,7 +35,7 @@ wrike     Wrike      Wrike tasks
 youtrack  YouTrack   JetBrains YouTrack issues
 
 Usage:
-  mehr start <scheme>:<reference>  # Use provider with scheme
+  mehr start <scheme>:<reference>
 
 Examples:
   mehr start file:task.md

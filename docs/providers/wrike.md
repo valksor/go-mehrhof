@@ -12,14 +12,11 @@ Integrates with Wrike for enterprise project management.
 ## Usage
 
 ```bash
-# By task ID
 mehr start wrike:IEAGI2D4I4AL7YNL
 mehr plan wk:IEAGI2D4I4AL7YNL
 
-# By permalink
 mehr start wrike:https://app.wrike.com/open.htm?id=123456
 
-# By numeric ID (10+ digits)
 mehr start wk:1234567890
 ```
 

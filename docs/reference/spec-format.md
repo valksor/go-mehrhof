@@ -217,7 +217,7 @@ Specifications can depend on others:
 ---
 title: API Endpoints
 dependencies:
-  - specification-1 # Requires core functionality
+  - specification-1
 ---
 ```
 

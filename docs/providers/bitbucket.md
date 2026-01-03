@@ -12,14 +12,11 @@ Integrates with Bitbucket Cloud for issue tracking and pull request management.
 ## Usage
 
 ```bash
-# By issue ID (requires configured workspace/repo)
 mehr start bitbucket:123
 mehr plan bb:123
 
-# Explicit workspace and repository
 mehr start bb:workspace/repo#456
 
-# By URL
 mehr start bb:https://bitbucket.org/workspace/repo/issues/123
 ```
 

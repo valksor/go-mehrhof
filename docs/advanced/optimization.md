@@ -144,13 +144,10 @@ Git worktrees enable multiple tasks to run simultaneously without conflicts.
 ### Setting Up Worktrees
 
 ```bash
-# Create a worktree for a parallel task
 mehr start --worktree file:feature-a.md
 
-# The worktree is created at ../project-worktrees/<task-id>/
 cd ../project-worktrees/<task-id>
 
-# Work on this task independently
 mehr plan && mehr implement
 ```
 
@@ -170,11 +167,9 @@ mehr plan && mehr implement
 ### Removing Worktrees
 
 ```bash
-# After finishing a task
 cd ../project-worktrees/<task-id>
 mehr finish
 
-# Remove the worktree
 git worktree remove ../project-worktrees/<task-id>
 ```
 
@@ -241,18 +236,14 @@ mehr cost --summary       # Aggregate statistics
 ### Clean Up Old Sessions
 
 ```bash
-# Remove sessions older than retention period
-# This happens automatically, but you can trigger manually:
 rm -rf .mehrhof/work/*/sessions/*
 ```
 
 ### Clean Up Old Tasks
 
 ```bash
-# List all tasks
 mehr list
 
-# Abandon and remove completed tasks
 mehr abandon <task-id>
 rm -rf .mehrhof/work/<task-id>
 ```

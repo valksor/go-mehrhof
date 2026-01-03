@@ -68,8 +68,8 @@ go build -ldflags "-X main.Version=v1.0.0 -X main.Commit=$(git rev-parse HEAD) -
 The Makefile handles this automatically:
 
 ```bash
-make build    # Embeds version info
-make install  # Installs with version info
+make build
+make install
 ```
 
 ## See Also

@@ -23,13 +23,10 @@ Solutions for common issues with Mehrhof.
 **Cause:** Binary not in PATH.
 
 ```bash
-# Check if installed
 ls $(go env GOPATH)/bin/mehr
 
-# Add to PATH
 export PATH="$PATH:$(go env GOPATH)/bin"
 
-# Make permanent (add to ~/.bashrc or ~/.zshrc)
 echo 'export PATH="$PATH:$(go env GOPATH)/bin"' >> ~/.bashrc
 ```
 
@@ -38,13 +35,10 @@ echo 'export PATH="$PATH:$(go env GOPATH)/bin"' >> ~/.bashrc
 **Cause:** Go not installed.
 
 ```bash
-# macOS
 brew install go
 
-# Linux
 sudo apt install golang-go
 
-# Verify
 go version
 ```
 
@@ -53,13 +47,10 @@ go version
 **Cause:** Missing dependencies or old Go version.
 
 ```bash
-# Check Go version (need 1.25+)
 go version
 
-# Update dependencies
 go mod tidy
 
-# Rebuild
 make build
 ```
 
@@ -72,11 +63,9 @@ make build
 **Cause:** Claude CLI not installed or not in PATH.
 
 ```bash
-# Check if Claude is available
 which claude
 claude --version
 
-# If not found, install Claude CLI first
 ```
 
 ### Claude Authentication Issues
@@ -86,10 +75,8 @@ claude --version
 Mehrhof calls Claude CLI, so authentication is handled by Claude:
 
 ```bash
-# Test Claude directly
 claude "Hello"
 
-# If that fails, configure Claude CLI first
 ```
 
 ### "Rate limited"
@@ -97,8 +84,6 @@ claude "Hello"
 **Cause:** Too many API requests.
 
 ```bash
-# Wait and retry (automatic based on config)
-# Or increase timeout in .mehrhof/config.yaml:
 ```
 
 ```yaml
@@ -119,7 +104,6 @@ mehr --verbose plan
 **Cause:** Large session logs.
 
 ```bash
-# Clean old sessions
 find .mehrhof/work/*/sessions/ -mtime +7 -delete
 ```
 
@@ -139,10 +123,8 @@ workflow:
 **Cause:** No task started or not on task branch.
 
 ```bash
-# Start a new task
 mehr start file:task.md
 
-# Or switch to existing task branch
 git branch -a | grep task/
 git checkout task/abc12345
 ```
@@ -152,10 +134,8 @@ git checkout task/abc12345
 **Cause:** Task with same source already registered.
 
 ```bash
-# Delete existing task
 mehr abandon --yes
 
-# Start fresh
 mehr start file:task.md
 ```
 
@@ -164,10 +144,8 @@ mehr start file:task.md
 **Cause:** Work directory missing.
 
 ```bash
-# Check if work directory exists
 ls .mehrhof/work/
 
-# If missing, start fresh
 mehr start file:task.md
 ```
 
@@ -176,10 +154,8 @@ mehr start file:task.md
 **Cause:** Agent couldn't understand requirements.
 
 ```bash
-# Add more detail to task file
 vim task.md
 
-# Be specific about requirements, include examples
 mehr plan
 ```
 
@@ -188,10 +164,8 @@ mehr plan
 **Cause:** Requirements too vague.
 
 ```bash
-# Add clarification
 mehr note "Include error handling for all edge cases"
 
-# Regenerate
 mehr plan
 ```
 
@@ -200,10 +174,8 @@ mehr plan
 **Cause:** Planning phase not run.
 
 ```bash
-# Run planning first
 mehr plan
 
-# Then implement
 mehr implement
 ```
 
@@ -229,13 +201,10 @@ mehr plan
 **Cause:** Agent misunderstood requirements.
 
 ```bash
-# Undo
 mehr undo
 
-# Provide more context
 mehr note "Use the existing error handling pattern in internal/errors/"
 
-# Try again
 mehr implement
 ```
 
@@ -244,10 +213,8 @@ mehr implement
 **Cause:** At initial state.
 
 ```bash
-# Check checkpoint status
 mehr status
 
-# Start fresh if needed
 mehr abandon
 mehr start file:task.md
 ```
@@ -257,10 +224,8 @@ mehr start file:task.md
 **Cause:** Redo stack empty.
 
 ```bash
-# Check git reflog
 git reflog
 
-# Restore specific files
 git checkout abc1234 -- path/to/file
 ```
 
@@ -273,10 +238,8 @@ git checkout abc1234 -- path/to/file
 **Cause:** Running in non-git directory.
 
 ```bash
-# Initialize git
 git init
 
-# Or navigate to git repo
 cd /path/to/repo
 ```
 
@@ -285,14 +248,11 @@ cd /path/to/repo
 **Cause:** Uncommitted changes exist.
 
 ```bash
-# Commit changes
 git add .
 git commit -m "WIP"
 
-# Or stash
 git stash
 
-# Then run mehr command
 mehr finish
 ```
 
@@ -301,16 +261,12 @@ mehr finish
 **Cause:** Conflicts during `mehr finish`.
 
 ```bash
-# Check conflicting files
 git status
 
-# Resolve conflicts manually
 vim conflicting-file.go
 
-# Mark resolved
 git add conflicting-file.go
 
-# Complete merge
 git commit
 ```
 
@@ -319,10 +275,8 @@ git commit
 **Cause:** Branch is protected or checked out elsewhere.
 
 ```bash
-# Switch to another branch first
 git checkout main
 
-# Force delete if needed
 git branch -D task/abc12345
 ```
 
@@ -359,20 +313,16 @@ mehr config validate
 **"Settings not applied"**
 
 ```bash
-# CLI flags override config settings
-mehr --verbose plan  # verbose always enabled
+mehr --verbose plan
 
-# Check config file
 cat .mehrhof/config.yaml
 ```
 
 **"Invalid configuration"**
 
 ```bash
-# Validate YAML syntax
 mehr config validate
 
-# Or manually check
 cat .mehrhof/config.yaml | python -c "import yaml,sys; yaml.safe_load(sys.stdin)"
 ```
 
