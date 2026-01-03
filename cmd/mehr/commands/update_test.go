@@ -4,7 +4,11 @@
 package commands
 
 import (
+	"context"
+	"strings"
 	"testing"
+
+	"github.com/valksor/go-mehrhof/internal/update"
 )
 
 func TestUpdateCommand_Properties(t *testing.T) {
@@ -142,5 +146,43 @@ func TestUpdateCommand_YesFlagShorthand(t *testing.T) {
 	}
 	if flag.Shorthand != "y" {
 		t.Errorf("yes flag shorthand = %q, want 'y'", flag.Shorthand)
+	}
+}
+
+// TestGetChecksumsURL tests the getChecksumsURL function.
+func TestGetChecksumsURL(t *testing.T) {
+	tests := []struct {
+		name    string
+		version string
+	}{
+		{
+			name:    "standard version",
+			version: "v1.0.0",
+		},
+		{
+			name:    "version without v prefix",
+			version: "1.0.0",
+		},
+		{
+			name:    "pre-release version",
+			version: "v1.0.0-beta",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctx := context.Background()
+			status := &update.UpdateStatus{
+				LatestVersion: tt.version,
+			}
+
+			result := getChecksumsURL(ctx, nil, status)
+			if !strings.Contains(result, "checksums.txt") {
+				t.Errorf("getChecksumsURL() = %q, want to contain 'checksums.txt'", result)
+			}
+			if !strings.Contains(result, tt.version) {
+				t.Errorf("getChecksumsURL() = %q, want to contain version %q", result, tt.version)
+			}
+		})
 	}
 }

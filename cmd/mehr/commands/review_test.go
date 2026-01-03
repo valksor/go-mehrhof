@@ -4,6 +4,9 @@
 package commands
 
 import (
+	"os"
+	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -209,4 +212,93 @@ func TestContainsIssues(t *testing.T) {
 			}
 		})
 	}
+}
+
+// TestGetNextReviewFilename tests the getNextReviewFilename function.
+func TestGetNextReviewFilename(t *testing.T) {
+	tests := []struct {
+		name           string
+		existingFiles  []string
+		expectedSuffix string
+	}{
+		{
+			name:           "no existing reviews",
+			existingFiles:  []string{},
+			expectedSuffix: "review-1.txt",
+		},
+		{
+			name: "one existing review",
+			existingFiles: []string{
+				"review-1.txt",
+			},
+			expectedSuffix: "review-2.txt",
+		},
+		{
+			name: "multiple existing reviews",
+			existingFiles: []string{
+				"review-1.txt",
+				"review-2.txt",
+				"review-3.txt",
+			},
+			expectedSuffix: "review-4.txt",
+		},
+		{
+			name: "gaps in numbering",
+			existingFiles: []string{
+				"review-1.txt",
+				"review-5.txt",
+			},
+			expectedSuffix: "review-2.txt",
+		},
+		{
+			name: "non-review files present",
+			existingFiles: []string{
+				"other.txt",
+				"readme.md",
+			},
+			expectedSuffix: "review-1.txt",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tmpDir := t.TempDir()
+			reviewsDir := filepath.Join(tmpDir, "reviews")
+			if err := os.MkdirAll(reviewsDir, 0o755); err != nil {
+				t.Fatalf("mkdir: %v", err)
+			}
+
+			// Create existing files
+			for _, fname := range tt.existingFiles {
+				if strings.HasPrefix(fname, "review-") {
+					path := filepath.Join(reviewsDir, fname)
+					if err := os.WriteFile(path, []byte("test"), 0o644); err != nil {
+						t.Fatalf("write file: %v", err)
+					}
+				}
+			}
+
+			// Test with full path (workDir should be reviews dir)
+			result := getNextReviewFilename(reviewsDir)
+
+			// Check that the result ends with the expected suffix
+			expectedFile := tt.expectedSuffix
+			if !strings.Contains(result, expectedFile) {
+				t.Errorf("getNextReviewFilename() = %q, want to contain %q", result, expectedFile)
+			}
+		})
+	}
+
+	// Test that it handles non-existent directory gracefully
+	t.Run("non-existent directory", func(t *testing.T) {
+		tmpDir := t.TempDir()
+		nonExistentDir := filepath.Join(tmpDir, "nonexistent")
+
+		result := getNextReviewFilename(nonExistentDir)
+
+		// Should still return a valid filename
+		if !strings.Contains(result, "review-1.txt") {
+			t.Errorf("getNextReviewFilename() with non-existent dir = %q, want review-1.txt", result)
+		}
+	})
 }
