@@ -33,12 +33,14 @@ These flags work with any command:
 
 | Command                       | Description                                        |
 | ----------------------------- | -------------------------------------------------- |
+| [workflow](cli/workflow.md)   | Display the workflow state machine diagram         |
 | [plan](cli/plan.md)           | Create implementation specifications               |
 | [implement](cli/implement.md) | Implement the specifications                       |
 | [review](cli/review.md)       | Run code review                                    |
 | [note](cli/note.md)           | Add notes to the task                              |
 | [finish](cli/finish.md)       | Complete task and merge                            |
 | [auto](cli/auto.md)           | Full automation: start → plan → implement → finish |
+| [guide](cli/guide.md)         | Get context-aware next actions                     |
 
 ### History
 
