@@ -2,7 +2,7 @@
 
 [![valksor](https://badgen.net/static/org/valksor/green)](https://github.com/valksor)
 [![BSD-3-Clause](https://img.shields.io/badge/BSD--3--Clause-green?style=flat)](https://github.com/valksor/go-mehrhof/blob/master/LICENSE)
-[![Coverage Status](https://coveralls.io/repos/github/valksor/go-mehrhof/badge.svg?branch=refs/tags/nightly)](https://coveralls.io/github/valksor/go-mehrhof?branch=refs/tags/nightly)
+[![Coverage Status](https://coveralls.io/repos/github/valksor/go-mehrhof/badge.svg?branch=master)](https://coveralls.io/github/valksor/go-mehrhof?branch=master)
 
 ---
 
