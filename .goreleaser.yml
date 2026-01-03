@@ -54,7 +54,7 @@ signs:
 sboms:
     -   artifacts: binary
         documents:
-            - "${artifact}.sbom.spdx.json"
+            - "{{ .ProjectName }}-{{ .Os }}-{{ .Arch }}.sbom.spdx.json"
 
 changelog:
     sort: asc
