@@ -28,8 +28,21 @@ func ResetContext() {
 func FilterAvailable(commands []*cobra.Command, ctx *HelpContext) []*cobra.Command {
 	var available []*cobra.Command
 	for _, cmd := range commands {
-		if cmd.IsAvailableCommand() && IsAvailable(cmd.Name(), ctx) {
-			available = append(available, cmd)
+		if cmd == nil {
+			continue
+		}
+		if !cmd.IsAvailableCommand() {
+			continue
+		}
+		// Check context availability
+		if ctx == nil {
+			if IsAvailable(cmd.Name(), &HelpContext{}) {
+				available = append(available, cmd)
+			}
+		} else {
+			if IsAvailable(cmd.Name(), ctx) {
+				available = append(available, cmd)
+			}
 		}
 	}
 
@@ -40,8 +53,21 @@ func FilterAvailable(commands []*cobra.Command, ctx *HelpContext) []*cobra.Comma
 func FilterUnavailable(commands []*cobra.Command, ctx *HelpContext) []*cobra.Command {
 	var unavailable []*cobra.Command
 	for _, cmd := range commands {
-		if cmd.IsAvailableCommand() && !IsAvailable(cmd.Name(), ctx) {
-			unavailable = append(unavailable, cmd)
+		if cmd == nil {
+			continue
+		}
+		if !cmd.IsAvailableCommand() {
+			continue
+		}
+		// Check context availability - keep only unavailable
+		if ctx == nil {
+			if !IsAvailable(cmd.Name(), &HelpContext{}) {
+				unavailable = append(unavailable, cmd)
+			}
+		} else {
+			if !IsAvailable(cmd.Name(), ctx) {
+				unavailable = append(unavailable, cmd)
+			}
 		}
 	}
 
