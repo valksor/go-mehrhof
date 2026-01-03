@@ -41,8 +41,8 @@ mehr init → mehr start → mehr plan → mehr implement → mehr finish
 
 1. **init** - Set up workspace (one-time)
 2. **start** - Begin task, create git branch
-3. **plan** - AI generates implementation specs
-4. **implement** - AI executes the specs
+3. **plan** - AI generates implementation specifications
+4. **implement** - AI executes the specifications
 5. **finish** - Merge changes, clean up
 
 ## Documentation

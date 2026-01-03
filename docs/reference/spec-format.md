@@ -132,7 +132,7 @@ Create `internal/api/health_test.go` with:
 | `created_at` | datetime | - | Creation timestamp |
 | `updated_at` | datetime | - | Last modification |
 | `completed_at` | datetime | null | Completion timestamp |
-| `dependencies` | array | [] | IDs of dependent specs |
+| `dependencies` | array | [] | IDs of dependent specifications |
 | `tags` | array | [] | Categorization tags |
 
 ### Status Values
@@ -223,7 +223,7 @@ dependencies:
 
 ### Priority
 
-Higher priority specs are implemented first:
+Higher priority specifications are implemented first:
 
 ```yaml
 ---
@@ -272,7 +272,7 @@ Specification files are validated on read:
 - Required fields present
 - Valid status value
 
-Invalid specs produce warnings but don't block operations.
+Invalid specifications produce warnings but don't block operations.
 
 ## Examples
 
@@ -354,7 +354,7 @@ Create a new user.
 
 ## See Also
 
-- [Storage Structure](reference/storage.md) - Where specs are stored
-- [plan command](../cli/plan.md) - Creating specs
-- [implement command](../cli/implement.md) - Using specs
+- [Storage Structure](reference/storage.md) - Where specifications are stored
+- [plan command](../cli/plan.md) - Creating specifications
+- [implement command](../cli/implement.md) - Using specifications
 ```

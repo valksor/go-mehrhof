@@ -93,7 +93,7 @@ Output:
 ```
 Task: a1b2c3d4
 State: idle
-Specs: 2
+Specifications: 2
 Checkpoints:
   Undo: 3 available
   Redo: 1 available

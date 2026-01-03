@@ -183,7 +183,7 @@ vim task.md
 mehr plan
 ```
 
-### "Specs are incomplete"
+### "Specifications are incomplete"
 
 **Cause:** Requirements too vague.
 
@@ -195,7 +195,7 @@ mehr note "Include error handling for all edge cases"
 mehr plan
 ```
 
-### "No SPEC files found"
+### "No specification files found"
 
 **Cause:** Planning phase not run.
 
@@ -217,7 +217,7 @@ agent:
   timeout: 900  # 15 minutes
 ```
 
-Or break into smaller specs:
+Or break into smaller specifications:
 
 ```bash
 mehr note "Focus on just the API handler first"

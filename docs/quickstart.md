@@ -98,10 +98,10 @@ Switched to branch task/a1b2c3d4--add-health-check-endpoint
 ### 4. Generate & Implement
 
 ```bash
-# AI creates implementation specs
+# AI creates implementation specifications
 mehr plan
 
-# AI implements the specs
+# AI implements the specifications
 mehr implement
 ```
 
@@ -121,8 +121,8 @@ mehr finish
 |---------|-------------|
 | `mehr start <file>` | Start a task from markdown file |
 | `mehr auto <file>` | Full automation (plan + implement + finish) |
-| `mehr plan` | Generate AI implementation specs |
-| `mehr implement` | Execute the specs |
+| `mehr plan` | Generate AI implementation specifications |
+| `mehr implement` | Execute the specifications |
 | `mehr status` | Show current task status |
 | `mehr continue` | Resume work with suggested actions |
 | `mehr undo` / `mehr redo` | Navigate checkpoints |

@@ -6,7 +6,7 @@ Learn how to use checkpoints to safely experiment and recover from errors.
 
 Mehrhof creates checkpoints at key moments:
 
-- After `mehr plan` (specs created)
+- After `mehr plan` (specifications created)
 - After `mehr implement` (code generated)
 - After `mehr note` (if files changed)
 

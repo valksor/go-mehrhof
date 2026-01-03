@@ -103,7 +103,7 @@ Run the planning phase:
 mehr plan
 ```
 
-The AI analyzes your requirements and creates detailed specs:
+The AI analyzes your requirements and creates detailed specifications:
 
 ```
 Planning task a1b2c3d4...
@@ -260,7 +260,7 @@ Task completed!
 2. **`mehr start`** creates a branch and workspace
 3. **`mehr plan`** generates detailed specifications
 4. **`mehr note`** adds context and refinements
-5. **`mehr implement`** generates code from specs
+5. **`mehr implement`** generates code from specifications
 6. **`mehr undo`** reverts if needed
 7. **`mehr finish`** merges and cleans up
 

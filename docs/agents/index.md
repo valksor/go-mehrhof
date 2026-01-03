@@ -105,7 +105,7 @@ Different workflow steps can use different agents - use a capable agent for plan
 
 | Step | Command | Description |
 |------|---------|-------------|
-| `planning` | `mehr plan` | Requirement analysis, specs |
+| `planning` | `mehr plan` | Requirement analysis, specifications |
 | `implementing` | `mehr implement` | Code generation |
 | `reviewing` | `mehr review` | Code review |
 | `checkpointing` | (internal) | Checkpoint summaries |

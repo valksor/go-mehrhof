@@ -36,7 +36,7 @@ mehr start auth.md
 mehr plan
 ```
 
-### Review Specs
+### Review Specifications
 
 ```bash
 cat .mehrhof/work/*/specifications/specification-1.md
@@ -65,7 +65,7 @@ mehr note "Use stateless JWT tokens, not sessions. Store nothing server-side."
 
 ```bash
 mehr undo
-mehr plan    # Regenerate specs with new context
+mehr plan    # Regenerate specifications with new context
 ```
 
 Check the updated spec:
@@ -160,7 +160,7 @@ mehr note "What's the best way to handle password reset tokens?"
 ```
 mehr start task.md
 mehr plan
-├── Review specs
+├── Review specifications
 ├── mehr note "refinement..."
 └── mehr plan (if major changes)
 
@@ -204,7 +204,7 @@ mehr note "Log all auth attempts for audit"
 
 ### 3. Review Before Implementing
 
-Always check specs before `mehr implement`:
+Always check specifications before `mehr implement`:
 
 ```bash
 mehr plan

@@ -104,9 +104,9 @@ Branch:  task/a1b2c3d4
 Work:    .mehrhof/work/a1b2c3d4/
 ```
 
-## Specifications (SPECs)
+## Specifications
 
-SPECs are detailed implementation plans created during planning:
+Specifications are detailed implementation plans created during planning:
 
 ```
 .mehrhof/work/<id>/specifications/
@@ -115,7 +115,7 @@ SPECs are detailed implementation plans created during planning:
 └── specification-3.md    # Third specification
 ```
 
-Each SPEC file contains:
+Each specification file contains:
 
 - Implementation details
 - File changes required

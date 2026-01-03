@@ -8,7 +8,7 @@ Mehrhof uses a state machine to manage the task lifecycle. Understanding the wor
 stateDiagram-v2
     [*] --> idle: mehr start
     idle --> planning: mehr plan
-    planning --> idle: specs created
+    planning --> idle: specifications created
     idle --> implementing: mehr implement
     implementing --> idle: code generated
     idle --> reviewing: mehr review
@@ -149,8 +149,8 @@ Events trigger state transitions:
 
 ```
 1. mehr start task.md     → idle (task registered)
-2. mehr plan              → planning → idle (specs created)
-3. [Review specs, add notes with mehr note]
+2. mehr plan              → planning → idle (specifications created)
+3. [Review specifications, add notes with mehr note]
 4. mehr implement         → implementing → idle (code generated)
 5. [Review changes, maybe undo/redo]
 6. mehr review            → reviewing → idle (review done)
