@@ -54,7 +54,7 @@ signs:
 sboms:
     -   artifacts: binary
         documents:
-            - "sbom.spdx.json"
+            - "${artifact}.sbom.spdx.json"
 
 changelog:
     sort: asc

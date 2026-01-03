@@ -89,5 +89,8 @@ jobs:
                         dist/mehr-darwin-amd64.sha256 \
                         dist/mehr-darwin-arm64.sha256 \
                         dist/checksums.txt \
-                        dist/sbom.spdx.json \
+                        dist/mehr-linux-amd64.sbom.spdx.json \
+                        dist/mehr-linux-arm64.sbom.spdx.json \
+                        dist/mehr-darwin-amd64.sbom.spdx.json \
+                        dist/mehr-darwin-arm64.sbom.spdx.json \
                         --clobber
