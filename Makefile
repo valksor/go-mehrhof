@@ -42,14 +42,6 @@ fmt: ## Format code with go fmt, goimports, and gofumpt
 	goimports -w .
 	gofumpt -l -w .
 
-build-cross: ## Build cross-platform binary (use GOOS, GOARCH, OUTPUT, VERSION)
-	@mkdir -p $(BUILD_DIR)
-	$(eval CROSS_COMMIT := $(shell git rev-parse --short HEAD 2>/dev/null || echo "none"))
-	$(eval CROSS_BUILD_TIME := $(shell date -u '+%Y-%m-%dT%H:%M:%SZ'))
-	CGO_ENABLED=0 GOOS=$(GOOS) GOARCH=$(GOARCH) \
-	go build -ldflags="-s -w -v -X github.com/valksor/go-mehrhof/cmd/mehr/commands.Version=$(VERSION) -X github.com/valksor/go-mehrhof/cmd/mehr/commands.Commit=$(CROSS_COMMIT) -X github.com/valksor/go-mehrhof/cmd/mehr/commands.BuildTime=$(CROSS_BUILD_TIME)" \
-	-o $(OUTPUT) $(CMD_DIR)
-
 install: build ## Install binary locally to GOPATH/bin
 	cp $(BUILD_DIR)/$(BINARY_NAME) $(GOPATH)/bin/$(BINARY_NAME)
 	@echo "Installed to $(GOPATH)/bin/$(BINARY_NAME)"
