@@ -6,8 +6,8 @@ type State string
 const (
 	// Core phases.
 	StateIdle         State = "idle"         // Task registered but not started
-	StatePlanning     State = "planning"     // Agent creating specs
-	StateImplementing State = "implementing" // Agent implementing specs
+	StatePlanning     State = "planning"     // Agent creating specifications
+	StateImplementing State = "implementing" // Agent implementing specifications
 	StateReviewing    State = "reviewing"    // Code review phase
 	StateDone         State = "done"         // Task completed
 	StateFailed       State = "failed"       // Error state
