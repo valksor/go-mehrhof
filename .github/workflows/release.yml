@@ -38,7 +38,14 @@ jobs:
                 uses: goreleaser/goreleaser-action@v6
                 with:
                     version: latest
-                    args: release --clean
+                    args: release --clean ${{ github.event.release.prerelease && '--snapshot' || '' }}
                 env:
                     GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
-                    GORELEASER_CURRENT_TAG: ${{ github.event.release.tag_name }}
+                    GORELEASER_CURRENT_TAG: ${{ !github.event.release.prerelease && github.event.release.tag_name || '' }}
+
+            -   name: Upload artifacts to release
+                if: github.event.release.prerelease
+                env:
+                    GH_TOKEN: ${{ secrets.GH_TOKEN }}
+                    RELEASE_TAG: ${{ github.event.release.tag_name }}
+                run: gh release upload "$RELEASE_TAG" dist/mehr-* dist/checksums.txt --clobber
