@@ -18,7 +18,7 @@ var continueAuto bool // Auto-execute the next logical step
 var continueCmd = &cobra.Command{
 	Use:     "continue",
 	Aliases: []string{"cont", "c"},
-	Short:   "Resume workflow, optionally auto-execute (aliases: cont, c)",
+	Short:   "Resume work on task",
 	Long: `Resume your task with optional auto-pilot mode.
 
 Perfect for returning after a break - see where you left off and optionally
@@ -33,8 +33,8 @@ CHOOSING THE RIGHT COMMAND:
   continue  - "Resume and optionally auto-execute" (--auto runs next step)  <-- you are here
 
 AUTO-EXECUTION LOGIC:
-  idle (no specs)  → runs 'mehr plan'
-  idle (has specs) → runs 'mehr implement'
+  idle (no specifications)  → runs 'mehr plan'
+  idle (has specifications) → runs 'mehr implement'
   planning         → runs 'mehr implement'
   implementing     → suggests 'mehr finish' (won't auto-run)
   done             → nothing to do
@@ -93,17 +93,23 @@ func runContinue(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("get status: %w", err)
 	}
 
-	// Display status
-	fmt.Printf("Task: %s\n", status.TaskID)
-	if status.Title != "" {
-		fmt.Printf("Title: %s\n", status.Title)
+	// Display status using consistent formatting
+	info := display.TaskInfo{
+		TaskID: status.TaskID,
+		Title:  status.Title,
+		State:  status.State,
+		Branch: status.Branch,
 	}
-	fmt.Printf("State: %s\n", status.State)
-	if status.Branch != "" {
-		fmt.Printf("Branch: %s\n", status.Branch)
+	opts := display.TaskInfoOptions{
+		ShowTitle:  true,
+		ShowState:  true,
+		ShowBranch: true,
+		Compact:    false, // Show state description
 	}
-	fmt.Printf("Specifications: %d\n", status.Specifications)
-	fmt.Printf("Checkpoints: %d\n", status.Checkpoints)
+	fmt.Print(display.FormatTaskInfo("Task", info, opts))
+	// Additional counts specific to continue command
+	fmt.Printf("  %-14s%d\n", "Specifications:", status.Specifications)
+	fmt.Printf("  %-14s%d\n", "Checkpoints:", status.Checkpoints)
 	fmt.Println()
 
 	// Auto-execute next step if --auto flag is set
@@ -112,7 +118,7 @@ func runContinue(cmd *cobra.Command, args []string) error {
 	}
 
 	// Otherwise, show suggested next actions
-	fmt.Println(display.Muted("Suggested actions:"))
+	fmt.Println(display.Muted("Next steps:"))
 	switch workflow.State(status.State) {
 	case workflow.StateIdle:
 		if status.Specifications == 0 {

@@ -64,7 +64,7 @@ func TestContinueCommand_Flags(t *testing.T) {
 }
 
 func TestContinueCommand_ShortDescription(t *testing.T) {
-	expected := "Resume workflow, optionally auto-execute (aliases: cont, c)"
+	expected := "Resume work on task"
 	if continueCmd.Short != expected {
 		t.Errorf("Short = %q, want %q", continueCmd.Short, expected)
 	}
@@ -75,6 +75,7 @@ func TestContinueCommand_LongDescriptionContains(t *testing.T) {
 		"auto-pilot",
 		"CHOOSING THE RIGHT COMMAND",
 		"AUTO-EXECUTION LOGIC",
+		"specifications",
 	}
 
 	for _, substr := range contains {

@@ -12,7 +12,7 @@ import (
 
 var guideCmd = &cobra.Command{
 	Use:   "guide",
-	Short: "Quick next-action suggestion (1-second answer)",
+	Short: "What should I do next?",
 	Long: `Quick, minimal output: "What command should I run next?"
 
 This is the fastest way to get back on track. It shows only your current
@@ -66,7 +66,7 @@ func runGuide(cmd *cobra.Command, args []string) error {
 		if active == nil {
 			fmt.Println("No task associated with this worktree.")
 			fmt.Println()
-			fmt.Println(display.Muted("Suggested actions:"))
+			fmt.Println(display.Muted("Next steps:"))
 			fmt.Println("  mehr start <reference>   # Start a new task")
 
 			return nil
@@ -77,7 +77,7 @@ func runGuide(cmd *cobra.Command, args []string) error {
 		if !ws.HasActiveTask() {
 			fmt.Println("No active task.")
 			fmt.Println()
-			fmt.Println(display.Muted("Suggested actions:"))
+			fmt.Println(display.Muted("Next steps:"))
 			fmt.Println("  mehr start <reference>   # Start a new task")
 			fmt.Println("  mehr status --all        # View all tasks in workspace")
 
@@ -95,16 +95,24 @@ func runGuide(cmd *cobra.Command, args []string) error {
 	if work == nil {
 		fmt.Println("No task found.")
 		fmt.Println()
-		fmt.Println(display.Muted("Suggested actions:"))
+		fmt.Println(display.Muted("Next steps:"))
 		fmt.Println("  mehr start <reference>   # Start a new task")
 
 		return nil
 	}
 
-	// Show task context and suggestions
-	fmt.Printf("Task: %s\n", work.Metadata.ID)
-	fmt.Printf("Title: %s\n", work.Metadata.Title)
-	fmt.Printf("State: %s\n", active.State)
+	// Show task context using consistent formatting
+	info := display.TaskInfo{
+		TaskID: work.Metadata.ID,
+		Title:  work.Metadata.Title,
+		State:  active.State,
+	}
+	opts := display.TaskInfoOptions{
+		ShowTitle: true,
+		ShowState: true,
+		Compact:   false, // Show state description
+	}
+	fmt.Print(display.FormatTaskInfo("Task", info, opts))
 	fmt.Println()
 
 	// Get specifications for context
@@ -124,7 +132,7 @@ func runGuide(cmd *cobra.Command, args []string) error {
 			}
 		}
 		fmt.Println()
-		fmt.Println(display.Muted("Suggested actions:"))
+		fmt.Println(display.Muted("Next steps:"))
 		fmt.Println("  mehr answer \"your answer\"  # Respond to the question")
 		fmt.Println("  mehr note                   # Enter interactive mode")
 
@@ -133,7 +141,7 @@ func runGuide(cmd *cobra.Command, args []string) error {
 
 	// Show state-specific suggestions
 	fmt.Println()
-	fmt.Println(display.Muted("Suggested actions:"))
+	fmt.Println(display.Muted("Next steps:"))
 
 	switch workflow.State(active.State) {
 	case workflow.StateIdle:

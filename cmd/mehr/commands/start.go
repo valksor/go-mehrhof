@@ -9,6 +9,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/valksor/go-mehrhof/internal/conductor"
+	"github.com/valksor/go-mehrhof/internal/display"
 	"github.com/valksor/go-mehrhof/internal/storage"
 	"github.com/valksor/go-mehrhof/internal/template"
 )
@@ -217,25 +218,33 @@ func runStart(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	fmt.Printf("Task started: %s\n", status.TaskID)
-	fmt.Printf("  Title: %s\n", status.Title)
-	if status.ExternalKey != "" {
-		fmt.Printf("  Key: %s\n", status.ExternalKey)
+	// Display task info
+	info := display.TaskInfo{
+		TaskID:      status.TaskID,
+		Title:       status.Title,
+		ExternalKey: status.ExternalKey,
+		State:       status.State,
+		Source:      status.Ref,
+		Branch:      status.Branch,
+		Worktree:    status.WorktreePath,
 	}
-	fmt.Printf("  Source: %s\n", status.Ref)
-	fmt.Printf("  State: %s\n", status.State)
-	if status.Branch != "" {
-		fmt.Printf("  Branch: %s\n", status.Branch)
+	displayOpts := display.DefaultTaskInfoOptions()
+	displayOpts.ShowStarted = false // Not relevant for just-started task
+	displayOpts.Compact = true      // Don't need state description on start
+	fmt.Print(display.FormatTaskInfo("Task started", info, displayOpts))
+
+	// Show next steps
+	steps := []display.NextStep{
+		{Command: "mehr plan", Description: "Create implementation specifications"},
+		{Command: "mehr note", Description: "Add notes to the task"},
 	}
 	if status.WorktreePath != "" {
-		fmt.Printf("  Worktree: %s\n", status.WorktreePath)
+		// Prepend worktree cd command
+		steps = append([]display.NextStep{
+			{Command: "cd " + status.WorktreePath, Description: "Switch to the worktree"},
+		}, steps...)
 	}
-	fmt.Printf("\nNext steps:\n")
-	if status.WorktreePath != "" {
-		fmt.Printf("  cd %s           - Switch to the worktree\n", status.WorktreePath)
-	}
-	fmt.Printf("  mehr plan      - Create implementation specifications\n")
-	fmt.Printf("  mehr note      - Add notes to the task\n")
+	fmt.Print(display.FormatNextSteps(steps))
 
 	return nil
 }

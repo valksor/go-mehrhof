@@ -28,8 +28,13 @@ var planCmd = &cobra.Command{
 	Short:   "Create implementation specifications for the active task",
 	Long: `Run the planning phase to analyze the task and create specification files.
 
+WHAT ARE SPECIFICATIONS?
+  Specifications are implementation plans the AI creates from your task.
+  Think of specifications as the AI's "blueprint" before writing code. Each
+  specification file (specification-1.md, etc.) contains what needs to be built and how.
+
 The agent will read the source content and any notes, then generate
-structured specifications (specification-N.md files) in the work directory.
+structured specifications in the work directory.
 
 You can run this multiple times to create additional specifications.
 

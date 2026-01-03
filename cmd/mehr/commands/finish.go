@@ -32,6 +32,10 @@ var finishCmd = &cobra.Command{
 	Short:   "Complete the task (creates PR by default for supported providers)",
 	Long: `Complete the current task by creating a pull request or merging locally.
 
+ENDING A TASK:
+  mehr finish    Complete task and create PR (for GitHub/GitLab) or merge locally
+  mehr abandon   Discard all work and delete task branch (when task is no longer needed)
+
 PROVIDER BEHAVIOR:
   github:     Creates a pull request automatically
   gitlab:     Creates a merge request automatically

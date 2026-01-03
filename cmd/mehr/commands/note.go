@@ -88,13 +88,25 @@ func runNote(cmd *cobra.Command, args []string) error {
 	if len(args) > 0 {
 		message := strings.Join(args, " ")
 
+		// Check if answering a question BEFORE saving (saveNote clears the question)
+		hadPendingQuestion := ws.HasPendingQuestion(taskID)
+
+		// Show the question being answered (so user knows what they're responding to)
+		if hadPendingQuestion {
+			q, _ := ws.LoadPendingQuestion(taskID)
+			fmt.Printf("Answering: %s\n", q.Question)
+		}
+
 		if err := saveNote(message); err != nil {
 			return fmt.Errorf("save note: %w", err)
 		}
 
-		fmt.Println("Note saved.")
-		if ws.HasPendingQuestion(taskID) {
-			fmt.Println("\nRun 'mehr plan' to continue planning with your answer.")
+		// Context-aware success message
+		if hadPendingQuestion {
+			fmt.Println("Answer submitted.")
+			fmt.Println("\nRun 'mehr plan' to continue with your answer.")
+		} else {
+			fmt.Println("Note saved.")
 		}
 
 		return nil

@@ -72,7 +72,7 @@ func TestStatusCommand_Flags(t *testing.T) {
 }
 
 func TestStatusCommand_ShortDescription(t *testing.T) {
-	expected := "Full task inspection: specs, checkpoints, sessions"
+	expected := "Show full task details"
 	if statusCmd.Short != expected {
 		t.Errorf("Short = %q, want %q", statusCmd.Short, expected)
 	}

@@ -24,7 +24,7 @@ var (
 var statusCmd = &cobra.Command{
 	Use:     "status",
 	Aliases: []string{"st"},
-	Short:   "Full task inspection: specs, checkpoints, sessions",
+	Short:   "Show full task details",
 	Long: `Comprehensive view of your task - everything in one place.
 
 Use this when you need the complete picture:
@@ -174,7 +174,7 @@ func showWorktreeTask(ctx context.Context, ws *storage.Workspace, git *vcs.Git) 
 	}
 
 	// Show next actions
-	fmt.Printf("\nAvailable commands:\n")
+	fmt.Printf("\nNext steps:\n")
 	if len(specifications) == 0 {
 		fmt.Printf("  mehr plan      - Create implementation specifications\n")
 	} else {
@@ -303,7 +303,7 @@ func showActiveTask(ctx context.Context, ws *storage.Workspace, git *vcs.Git) er
 	}
 
 	// Show next actions based on state
-	fmt.Printf("\nAvailable commands:\n")
+	fmt.Printf("\nNext steps:\n")
 	if len(specifications) == 0 {
 		fmt.Printf("  mehr plan      - Create implementation specifications\n")
 	} else {

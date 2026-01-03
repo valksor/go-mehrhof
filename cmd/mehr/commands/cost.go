@@ -238,6 +238,7 @@ func showTaskCost(ws *storage.Workspace, taskID, label string) error {
 	fmt.Println()
 	fmt.Printf("  Total tokens:  %s\n", formatNumber(totalTokens))
 	fmt.Printf("  Total cost:    %s\n", display.Bold(formatCost(costs.TotalCostUSD)))
+	fmt.Println(display.Muted("  (Based on Claude API pricing)"))
 
 	// Show by-step breakdown if requested or if there are multiple steps
 	if costByStep || len(costs.ByStep) > 1 {

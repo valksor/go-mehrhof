@@ -11,8 +11,8 @@ func TestGuideCommand_Structure(t *testing.T) {
 	if guideCmd.Use != "guide" {
 		t.Errorf("expected Use to be 'guide', got %q", guideCmd.Use)
 	}
-	if guideCmd.Short != "Quick next-action suggestion (1-second answer)" {
-		t.Errorf("expected Short to be 'Quick next-action suggestion (1-second answer)', got %q", guideCmd.Short)
+	if guideCmd.Short != "What should I do next?" {
+		t.Errorf("expected Short to be 'What should I do next?', got %q", guideCmd.Short)
 	}
 	// Verify Long description is set
 	if guideCmd.Long == "" {
