@@ -5,7 +5,7 @@ Get started with Valksor Mehrhof in 5 minutes.
 ## Prerequisites
 
 - **Git** - for version control integration
-- **Claude CLI** - Mehrhof delegates AI operations to Claude ([setup guide](https://github.com/anthropics/claude-cli))
+- **Claude CLI** - Mehrhof delegates AI operations to Claude ([setup guide](https://claude.com/product/claude-code))
 
 ```bash
 claude --version
