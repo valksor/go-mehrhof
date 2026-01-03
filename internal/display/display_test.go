@@ -215,7 +215,7 @@ func TestFormatStateColored(t *testing.T) {
 		state workflow.State
 		want  string
 	}{
-		{"idle", workflow.StateIdle, "[R] Ready"},
+		{"idle", workflow.StateIdle, "[*] Ready"},
 		{"planning", workflow.StatePlanning, "[P] Planning"},
 		{"done", workflow.StateDone, "[D] Completed"},
 		{"failed", workflow.StateFailed, "[F] Failed"},
