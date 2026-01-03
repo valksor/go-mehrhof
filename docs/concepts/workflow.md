@@ -4,18 +4,7 @@ Mehrhof uses a state machine to manage the task lifecycle. Understanding the wor
 
 ## Task Lifecycle
 
-```mermaid
-stateDiagram-v2
-    [*] --> idle: mehr start
-    idle --> planning: mehr plan
-    planning --> idle: specifications created
-    idle --> implementing: mehr implement
-    implementing --> idle: code generated
-    idle --> reviewing: mehr review
-    reviewing --> idle: review complete
-    idle --> done: mehr finish
-    done --> [*]
-```
+![Workflow State Diagram](../_media/img/workflow-state-diagram.png)
 
 ## States
 

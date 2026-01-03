@@ -217,6 +217,38 @@ When reporting bugs or requesting features:
 - **GitHub Discussions**: For questions and general discussion
 - **Documentation**: See the `docs/` directory for detailed guides
 
+## Documentation
+
+### Adding Diagrams
+
+For diagrams in documentation, use **Mermaid** syntax but export to static images to avoid loading a 3MB JavaScript library.
+
+**Generate a PNG from Mermaid:**
+
+```bash
+cat <<'EOF' | npx -p @mermaid-js/mermaid-cli mmdc -i - -o docs/_media/img/diagram.png -b transparent
+stateDiagram-v2
+    [*] --> StateA
+    StateA --> StateB
+EOF
+```
+
+**Reference in markdown:**
+
+```markdown
+![Diagram Title](../_media/img/diagram.png)
+```
+
+**Why PNG instead of SVG?**
+- Mermaid's SVG output uses `<foreignObject>` for text labels
+- Browsers block `foreignObject` in SVGs loaded via `<img>` tags (security policy)
+- PNG rasterization bypasses this limitation and renders consistently
+
+**Alternative: Use Mermaid Live Editor**
+- Visit [mermaid.live](https://mermaid.live)
+- Write your diagram
+- Export as PNG/SVG manually
+
 ## License
 
 By contributing to Mehrhof, you agree that your contributions will be licensed under the [BSD 3-Clause License](LICENSE).
