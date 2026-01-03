@@ -31,7 +31,7 @@ func (c *Conductor) RunPlanning(ctx context.Context) error {
 	}
 
 	// Get agent for planning step
-	planningAgent, err := c.GetAgentForStep(workflow.StepPlanning)
+	planningAgent, err := c.GetAgentForStep(ctx, workflow.StepPlanning)
 	if err != nil {
 		return fmt.Errorf("get planning agent: %w", err)
 	}
@@ -213,7 +213,7 @@ func (c *Conductor) RunImplementation(ctx context.Context) error {
 	}
 
 	// Get agent for implementing step
-	implementingAgent, err := c.GetAgentForStep(workflow.StepImplementing)
+	implementingAgent, err := c.GetAgentForStep(ctx, workflow.StepImplementing)
 	if err != nil {
 		return fmt.Errorf("get implementing agent: %w", err)
 	}
@@ -335,7 +335,7 @@ func (c *Conductor) RunReview(ctx context.Context) error {
 	}
 
 	// Get agent for reviewing step
-	reviewAgent, err := c.GetAgentForStep(workflow.StepReviewing)
+	reviewAgent, err := c.GetAgentForStep(ctx, workflow.StepReviewing)
 	if err != nil {
 		return fmt.Errorf("get review agent: %w", err)
 	}

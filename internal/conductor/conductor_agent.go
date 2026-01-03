@@ -6,6 +6,7 @@ import (
 	"log/slog"
 
 	"github.com/valksor/go-mehrhof/internal/agent"
+	"github.com/valksor/go-mehrhof/internal/coordination"
 	"github.com/valksor/go-mehrhof/internal/plugin"
 	"github.com/valksor/go-mehrhof/internal/provider"
 	"github.com/valksor/go-mehrhof/internal/storage"
@@ -14,17 +15,10 @@ import (
 
 // applyAgentEnv applies environment variables to an agent instance.
 // It resolves any ${VAR} references in the env map and applies each key-value pair.
-// This is a helper to avoid code duplication across agent resolution logic.
+//
+// Deprecated: Use coordination.ApplyEnvs instead.
 func applyAgentEnv(agentInst agent.Agent, env map[string]string) agent.Agent {
-	if len(env) == 0 {
-		return agentInst
-	}
-	resolvedEnv := agent.ResolveEnvReferences(env)
-	for k, v := range resolvedEnv {
-		agentInst = agentInst.WithEnv(k, v)
-	}
-
-	return agentInst
+	return coordination.ApplyEnvs(agentInst, env)
 }
 
 // resolveAgentForTask resolves the agent based on priority:
@@ -76,6 +70,8 @@ func (c *Conductor) resolveAgentForTask() (agent.Agent, string, error) {
 }
 
 // AgentResolution holds the result of agent resolution for a specific step.
+//
+// Deprecated: Use coordination.Resolution instead.
 type AgentResolution struct {
 	Agent     agent.Agent
 	Source    string            // Where it was resolved from
@@ -86,95 +82,35 @@ type AgentResolution struct {
 
 // resolveAgentForStep resolves the agent for a specific workflow step.
 // Priority: CLI step-specific > CLI global > Task step > Task default > Workspace step > Workspace default > Auto.
-func (c *Conductor) resolveAgentForStep(step workflow.Step) (*AgentResolution, error) {
-	var agentName string
-	var source string
-	var inlineEnv map[string]string
-	var args []string
+func (c *Conductor) resolveAgentForStep(ctx context.Context, step workflow.Step) (*AgentResolution, error) {
+	// Use the coordination package for cleaner resolution
+	resolver := coordination.NewResolver(c.agents, c.workspace)
 
-	stepStr := step.String()
-
-	// Priority 1: CLI step-specific flag
-	if name, ok := c.opts.StepAgents[stepStr]; ok && name != "" {
-		agentName = name
-		source = "cli-step"
-	} else if c.opts.AgentName != "" {
-		// Priority 2: CLI global flag
-		agentName = c.opts.AgentName
-		source = "cli"
-	} else if c.taskAgentConfig != nil {
-		// Priority 3: Task frontmatter step-specific
-		if stepCfg, ok := c.taskAgentConfig.Steps[stepStr]; ok && stepCfg.Name != "" {
-			agentName = stepCfg.Name
-			source = "task-step"
-			inlineEnv = stepCfg.Env
-			args = stepCfg.Args
-		} else if c.taskAgentConfig.Name != "" {
-			// Priority 4: Task frontmatter default
-			agentName = c.taskAgentConfig.Name
-			source = "task"
-			inlineEnv = c.taskAgentConfig.Env
-			args = c.taskAgentConfig.Args
-		}
+	req := coordination.ResolveRequest{
+		CLIAgent:       c.opts.AgentName,
+		CLISStepAgents: c.opts.StepAgents,
+		TaskConfig:     c.taskAgentConfig,
+		Step:           step,
 	}
 
-	// Priority 5 & 6: Workspace config
-	if agentName == "" {
-		if cfg, err := c.workspace.LoadConfig(); err == nil {
-			if stepCfg, ok := cfg.Agent.Steps[stepStr]; ok && stepCfg.Name != "" {
-				// Priority 5: Workspace step-specific
-				agentName = stepCfg.Name
-				source = "workspace-step"
-				inlineEnv = stepCfg.Env
-				args = stepCfg.Args
-			} else if cfg.Agent.Default != "" {
-				// Priority 6: Workspace default
-				agentName = cfg.Agent.Default
-				source = "workspace"
-			}
-		}
-	}
-
-	// Priority 7: Auto-detect
-	if agentName == "" {
-		agentInst, err := c.agents.Detect()
-		if err != nil {
-			return nil, fmt.Errorf("detect agent for step %s: %w", step, err)
-		}
-
-		return &AgentResolution{
-			Agent:    agentInst,
-			Source:   "auto",
-			StepName: stepStr,
-		}, nil
-	}
-
-	// Get the agent by name
-	agentInst, err := c.agents.Get(agentName)
+	resolution, err := resolver.ResolveForStep(ctx, req)
 	if err != nil {
-		return nil, fmt.Errorf("get agent %s for step %s: %w", agentName, step, err)
+		return nil, err
 	}
 
-	// Apply inline env vars
-	agentInst = applyAgentEnv(agentInst, inlineEnv)
-
-	// Apply args
-	if len(args) > 0 {
-		agentInst = agentInst.WithArgs(args...)
-	}
-
+	// Convert to legacy AgentResolution format
 	return &AgentResolution{
-		Agent:     agentInst,
-		Source:    source,
-		StepName:  stepStr,
-		InlineEnv: inlineEnv,
-		Args:      args,
+		Agent:     resolution.Agent,
+		Source:    resolution.Source,
+		StepName:  resolution.StepName,
+		InlineEnv: resolution.InlineEnv,
+		Args:      resolution.Args,
 	}, nil
 }
 
 // GetAgentForStep returns the resolved agent for a step, using cached resolution if available.
 // It also persists the resolution in taskWork for task resumption.
-func (c *Conductor) GetAgentForStep(step workflow.Step) (agent.Agent, error) {
+func (c *Conductor) GetAgentForStep(ctx context.Context, step workflow.Step) (agent.Agent, error) {
 	stepStr := step.String()
 
 	// Check if we have a cached resolution for this step in taskWork
@@ -197,7 +133,7 @@ func (c *Conductor) GetAgentForStep(step workflow.Step) (agent.Agent, error) {
 	}
 
 	// Resolve fresh
-	resolution, err := c.resolveAgentForStep(step)
+	resolution, err := c.resolveAgentForStep(ctx, step)
 	if err != nil {
 		return nil, err
 	}

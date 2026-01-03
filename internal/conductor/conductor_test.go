@@ -1500,7 +1500,7 @@ func TestResolveAgentForStep(t *testing.T) {
 			}
 
 			// Call resolveAgentForStep
-			gotResolution, gotErr := c.resolveAgentForStep(tt.step)
+			gotResolution, gotErr := c.resolveAgentForStep(context.Background(), tt.step)
 
 			if tt.wantError {
 				if gotErr == nil {
@@ -1746,7 +1746,7 @@ func TestGetAgentForStep(t *testing.T) {
 			}
 
 			// Call GetAgentForStep
-			gotAgent, gotErr := c.GetAgentForStep(workflow.StepPlanning)
+			gotAgent, gotErr := c.GetAgentForStep(context.Background(), workflow.StepPlanning)
 
 			if gotErr != nil {
 				t.Fatalf("GetAgentForStep() unexpected error: %v", gotErr)
