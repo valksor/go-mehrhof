@@ -4,6 +4,86 @@ Manage and validate Mehrhof configuration files.
 
 ## Commands
 
+### mehr config init
+
+Create a new `.mehrhof/config.yaml` file with sensible defaults.
+
+```bash
+mehr config init [flags]
+```
+
+**Flags:**
+
+| Flag        | Short | Description                                                    |
+| ----------- | ----- | -------------------------------------------------------------- |
+| `--force`   | `-f`  | Overwrite existing config without prompting (requires confirmation) |
+| `--project` |       | Project type for intelligent defaults: `go`, `node`, `python`, `php` |
+
+**Behavior:**
+
+- Detects project type automatically from common files (`go.mod`, `package.json`, `pyproject.toml`, `composer.json`)
+- Creates `.mehrhof/config.yaml` with project-appropriate defaults
+- Safe by default: warns if config exists and exits (unless `--force` is used)
+- Generates helpful comments showing all available options
+
+**Examples:**
+
+```bash
+# Create config with auto-detected project type
+mehr config init
+
+# Create config with specific project type
+mehr config init --project go
+
+# Force overwrite existing config (requires interactive confirmation)
+mehr config init --force
+```
+
+**Generated Config Structure:**
+
+```yaml
+git:
+  auto_commit: true
+  commit_prefix: "[{key}]"
+  branch_pattern: "{type}/{key}--{slug}"
+  sign_commits: false
+
+agent:
+  default: claude
+  timeout: 300
+  max_retries: 3
+
+workflow:
+  auto_init: true
+  session_retention_days: 30
+
+# User-defined agent aliases
+agents:
+  # Example: Custom agent with environment variables
+  # glm:
+  #   extends: claude
+  #   description: "Claude with custom API"
+  #   env:
+  #     ANTHROPIC_API_KEY: "${CUSTOM_API_KEY}"
+
+# Plugins
+plugins:
+  enabled: []
+```
+
+**What to do next:**
+
+```bash
+# Validate the new config
+mehr config validate
+
+# Edit the config
+vim .mehrhof/config.yaml
+
+# Start your first task
+mehr start task.md
+```
+
 ### mehr config validate
 
 Validate workspace (`.mehrhof/config.yaml`) and app (`.env`) configuration files.
