@@ -1,11 +1,16 @@
 {
     "devDependencies": {
         "@cloudflare/kv-asset-handler": "^0.4.1",
+        "docsify": "^4.13.1",
+        "docsify-copy-code": "^3.0.2",
+        "docsify-pagination": "^2.10.1",
         "prettier": "^3.7.4",
+        "prismjs": "^1.30.0",
         "wrangler": "^4.54.0"
     },
     "scripts": {
         "bump": "npx npm-check-updates -u && bun i",
+        "docs:bundle": "mkdir -p docs/_media/js && cat node_modules/docsify/lib/docsify.min.js node_modules/docsify/lib/plugins/search.min.js node_modules/docsify-copy-code/dist/docsify-copy-code.min.js node_modules/docsify-pagination/dist/docsify-pagination.min.js node_modules/prismjs/components/prism-core.min.js node_modules/prismjs/components/prism-bash.min.js node_modules/prismjs/components/prism-yaml.min.js node_modules/prismjs/components/prism-json.min.js node_modules/prismjs/components/prism-go.min.js node_modules/prismjs/components/prism-markdown.min.js > docs/_media/js/bundle.min.js && HASH=$(shasum -a 256 docs/_media/js/bundle.min.js | cut -c1-8) && sed -i '' \"s|bundle.min.js[^\\\"]*|bundle.min.js?v=$HASH|\" docs/index.html",
         "docs:dev": "wrangler dev",
         "docs:deploy": "wrangler deploy"
     }
