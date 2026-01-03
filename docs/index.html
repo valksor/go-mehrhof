@@ -19,10 +19,23 @@
                 --theme-color: #960018;
                 --color-bg: #f0eee9;
                 --color-text: #2b2c30;
+                scrollbar-color: color-mix(in oklch, var(--theme-color) 100%, transparent) var(--color-bg);
+            }
+
+            .anchor span {
+                color: var(--color-text);
             }
 
             .sidebar-nav > ul > li > a {
                 font-weight: 600;
+            }
+
+            .markdown-section pre {
+                border: 1px solid var(--color-text);
+            }
+
+            .markdown-section pre, .markdown-section code {
+                background-color: var(--color-bg);
             }
 
             .markdown-section code {

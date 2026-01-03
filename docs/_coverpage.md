@@ -7,7 +7,9 @@
 - Undo/redo support for safe experimentation
 - Multiple task sources: files, directories, and more
 
+[valksor.com](https://valksor.com)
 [CLI Reference](cli/index.md)
-[Get Started](quickstart.md)
+[Quickstart](quickstart.md)
+[Mehrhof](README.md)
 
 ![color](#f0eee9)

@@ -83,3 +83,7 @@
 
 - **Troubleshooting**
   - [Common Issues](troubleshooting/index.md)
+
+- **Created By**
+- [Valksor](https://valksor.com)
+- &copy; 2026 Valksor. All Rights Reserved.
