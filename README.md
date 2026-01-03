@@ -151,8 +151,9 @@ mehr finish
 | `mehr plan` | Generate AI implementation specifications |
 | `mehr implement` | Execute the specifications |
 | `mehr review` | Run automated code review |
-| `mehr status` | Full task inspection: specs, checkpoints, sessions |
-| `mehr continue` | Resume workflow, optionally auto-execute (aliases: `cont`, `c`) |
+| `mehr status` | Show full task details |
+| `mehr guide` | What should I do next? (quick suggestion) |
+| `mehr continue` | Resume work on task (aliases: `cont`, `c`) |
 | `mehr finish` | Complete task and merge changes |
 | `mehr list` | List all tasks in workspace |
 | `mehr undo` / `mehr redo` | Navigate checkpoints |
