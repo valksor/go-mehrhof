@@ -173,7 +173,7 @@ AUTO failed at: quality
 
 - Complex tasks requiring clarification
 - Tasks with ambiguous requirements
-- When you want to review specs before implementation
+- When you want to review specifications before implementation
 
 ## Comparison with Manual Workflow
 
@@ -182,7 +182,7 @@ AUTO failed at: quality
 | User interaction | None       | At each step |
 | Agent questions  | Skipped    | Answered     |
 | Quality failures | Auto-retry | Manual fix   |
-| Review specs     | No         | Yes          |
+| Review specifications     | No         | Yes          |
 | Control          | Less       | Full         |
 
 ## See Also

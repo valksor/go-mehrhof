@@ -1,6 +1,6 @@
 # mehr status
 
-Full task inspection: specs, checkpoints, sessions.
+Show full task details.
 
 ## Synopsis
 
@@ -105,17 +105,17 @@ Tasks in workspace:
   * a1b2c3d4 (idle)
     Source: task.md
     Branch: task/a1b2c3d4
-    Specs: 2
+    Specifications: 2
 
     b5c6d7e8 (implementing)
     Source: ./features/auth/
     Branch: task/b5c6d7e8
-    Specs: 3
+    Specifications: 3
 
     c9d0e1f2 (done)
     Source: bugfix.md
     Branch: (deleted)
-    Specs: 1
+    Specifications: 1
 
 * = active task
 ```
@@ -266,7 +266,7 @@ Output:
 ```
 Task: a1b2c3d4
 State: idle
-Specs: 2 ready
+Specifications: 2 ready
 
 Specifications are ready for implementation.
 
@@ -319,9 +319,9 @@ More contextual than `mehr status` with action suggestions.
 
 | Command         | When to Use                                                    |
 | --------------- | -------------------------------------------------------------- |
-| `mehr guide`    | "What's my next command?" (fastest, minimal output)            |
-| `mehr status`   | "Show me everything" (full inspection, all details)            |
-| `mehr continue` | "Resume and optionally auto-execute" (`--auto` runs next step) |
+| `mehr guide`    | "What should I do next?" (fastest, minimal output)             |
+| `mehr status`   | "Show full task details" (full inspection, all details)        |
+| `mehr continue` | "Resume work on task" (`--auto` runs next step)                |
 
 ## See Also
 

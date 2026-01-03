@@ -1,6 +1,6 @@
 # mehr continue
 
-Resume workflow, optionally auto-execute with `--auto`.
+Resume work on task.
 
 ## Synopsis
 
@@ -15,7 +15,7 @@ mehr continue [flags]
 The `continue` command helps you resume work on a task after a break. It:
 
 1. Displays the current task status
-2. Shows task metadata (title, branch, specs, checkpoints)
+2. Shows task metadata (title, branch, specifications, checkpoints)
 3. Suggests the most appropriate next action based on the current state
 4. Shows available undo/redo options
 5. With `--auto`, executes the next logical step automatically
@@ -124,7 +124,7 @@ The suggested actions depend on the current task state:
 
 | State          | Primary Suggestions                                |
 | -------------- | -------------------------------------------------- |
-| `idle`         | `plan` (if no specs), `implement` (if specs exist) |
+| `idle`         | `plan` (if no specifications), `implement` (if specifications exist) |
 | `planning`     | `implement`, `note`                                |
 | `implementing` | `implement`, `note`, `undo`, `finish`              |
 | `reviewing`    | `finish`, `implement`                              |
@@ -134,11 +134,11 @@ The suggested actions depend on the current task state:
 
 | Command         | When to Use                                                    |
 | --------------- | -------------------------------------------------------------- |
-| `mehr guide`    | "What's my next command?" (fastest, minimal output)            |
-| `mehr status`   | "Show me everything" (full inspection, all details)            |
-| `mehr continue` | "Resume and optionally auto-execute" (`--auto` runs next step) |
+| `mehr guide`    | "What should I do next?" (fastest, minimal output)             |
+| `mehr status`   | "Show full task details" (full inspection, all details)        |
+| `mehr continue` | "Resume work on task" (`--auto` runs next step)                |
 
-Use `guide` for quick suggestions. Use `status` for full inspection. Use `continue` when resuming work with optional auto-execution.
+Use `guide` for quick suggestions. Use `status` for full details. Use `continue` when resuming work with optional auto-execution.
 
 ## See Also
 

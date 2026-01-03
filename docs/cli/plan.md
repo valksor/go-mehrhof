@@ -99,12 +99,12 @@ Use a specific agent for this planning session. See [AI Agents](../agents/index.
 1. **Context Gathering**
    - Reads source from `.mehrhof/work/<id>/`
    - Includes notes from `notes.md`
-   - Reviews any existing specs
+   - Reviews any existing specifications
 
 2. **Agent Execution**
    - Prompts agent with context
    - Agent analyzes requirements
-   - Agent generates structured specs
+   - Agent generates structured specifications
 
 3. **Output**
    - specification files written to `specifications/` directory
@@ -123,7 +123,7 @@ Use a specific agent for this planning session. See [AI Agents](../agents/index.
 
 ## SPEC File Format
 
-Generated specs follow this format:
+Generated specifications follow this format:
 
 ```markdown
 ---
@@ -149,7 +149,7 @@ Brief description of what this spec covers.
 - `path/to/other.go` - Description
 ```
 
-## Multiple Specs
+## Multiple Specifications
 
 The agent may create multiple specification files for complex tasks:
 
@@ -164,9 +164,9 @@ specifications/
 
 You can run `mehr plan` multiple times:
 
-- Additional specs are appended
+- Additional specifications are appended
 - Use `mehr note` to add requirements first
-- Delete unwanted specs manually
+- Delete unwanted specifications manually
 
 ## After Planning
 

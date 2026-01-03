@@ -82,16 +82,16 @@ Use a specific agent for code generation. See [AI Agents](../agents/index.md#per
 ## What Happens
 
 1. **Validation**
-   - Checks for existing SPEC files
-   - Fails if no specs found
+   - Checks for existing specification files
+   - Fails if no specifications found
 
 2. **Context Preparation**
-   - Reads all SPEC files
+   - Reads all specification files
    - Includes notes from `notes.md`
    - Gathers relevant existing code
 
 3. **Agent Execution**
-   - Prompts agent with specs and context
+   - Prompts agent with specifications and context
    - Agent generates code
    - Output parsed for file changes
 

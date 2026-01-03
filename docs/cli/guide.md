@@ -1,6 +1,6 @@
 # mehr guide
 
-Quick next-action suggestion (1-second answer).
+What should I do next?
 
 ## Synopsis
 
@@ -95,7 +95,7 @@ The `guide` command provides different suggestions based on the current workflow
 
 | State          | Suggestions                                                      |
 | -------------- | ---------------------------------------------------------------- |
-| `idle`         | `plan`, `note` (no specs) or `implement`, `finish` (specs exist) |
+| `idle`         | `plan`, `note` (no specifications) or `implement`, `finish` (specifications exist) |
 | `planning`     | `status`, `note`                                                |
 | `implementing` | `status`, `note`, `undo`, `finish`                              |
 | `reviewing`    | `status`, `finish`, `implement`                                 |
@@ -121,9 +121,9 @@ State: implementing
 
 | Command         | When to Use                                                    |
 | --------------- | -------------------------------------------------------------- |
-| `mehr guide`    | "What's my next command?" (fastest, minimal output)            |
-| `mehr status`   | "Show me everything" (full inspection, all details)            |
-| `mehr continue` | "Resume and optionally auto-execute" (`--auto` runs next step) |
+| `mehr guide`    | "What should I do next?" (fastest, minimal output)             |
+| `mehr status`   | "Show full task details" (full inspection, all details)        |
+| `mehr continue` | "Resume work on task" (`--auto` runs next step)                |
 
 ## See Also
 

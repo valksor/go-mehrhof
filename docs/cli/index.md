@@ -109,7 +109,7 @@ Other Commands:
 ```bash
 # Typical workflow
 mehr start file:task.md   # Register task
-mehr plan                 # Create specs
+mehr plan                 # Create specifications
 mehr implement            # Generate code
 mehr finish               # Merge changes
 ```
@@ -153,7 +153,7 @@ mehr start file:feature.md && mehr plan && mehr implement && mehr finish
 ```bash
 mehr start file:feature.md
 mehr plan
-# Review specs...
+# Review specifications...
 mehr note "Add error handling for edge cases"
 mehr implement
 # Test changes...
