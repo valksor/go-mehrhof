@@ -66,6 +66,10 @@ jobs:
                     cp dist/mehr_darwin_amd64_v1/mehr.pem dist/mehr-darwin-amd64.pem
                     cp dist/mehr_darwin_arm64_v8.0/mehr.sig dist/mehr-darwin-arm64.sig
                     cp dist/mehr_darwin_arm64_v8.0/mehr.pem dist/mehr-darwin-arm64.pem
+                    # Generate individual .sha256 files from checksums.txt
+                    while read -r hash name; do
+                        echo "$hash  $name" > "dist/${name}.sha256"
+                    done < dist/checksums.txt
                     # Upload all artifacts
                     gh release upload "$RELEASE_TAG" \
                         dist/mehr-linux-amd64 \
@@ -80,6 +84,10 @@ jobs:
                         dist/mehr-darwin-amd64.pem \
                         dist/mehr-darwin-arm64.sig \
                         dist/mehr-darwin-arm64.pem \
+                        dist/mehr-linux-amd64.sha256 \
+                        dist/mehr-linux-arm64.sha256 \
+                        dist/mehr-darwin-amd64.sha256 \
+                        dist/mehr-darwin-arm64.sha256 \
                         dist/checksums.txt \
                         dist/sbom.spdx.json \
                         --clobber
