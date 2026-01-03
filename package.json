@@ -1,0 +1,12 @@
+{
+    "devDependencies": {
+        "@cloudflare/kv-asset-handler": "^0.4.1",
+        "prettier": "^3.7.4",
+        "wrangler": "^4.54.0"
+    },
+    "scripts": {
+        "bump": "npx npm-check-updates -u && bun i",
+        "docs:dev": "wrangler dev",
+        "docs:deploy": "wrangler deploy"
+    }
+}

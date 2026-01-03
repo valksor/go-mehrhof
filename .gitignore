@@ -7,9 +7,9 @@
 .mcp.json
 .mehrhof/.env
 .mehrhof/work/
+.wrangler/
 CLAUDE.md
 build/
 bun.lock
 covprofile
 node_modules/
-package.json

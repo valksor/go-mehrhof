@@ -1,4 +1,4 @@
-# Mehrhof
+# Valksor Mehrhof
 
 > AI-powered task automation for developers
 

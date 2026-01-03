@@ -1,98 +1,104 @@
 <!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8"/>
-    <title>Documentation | Valksor Mehrhof</title>
-    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"/>
-    <meta name="description" content="AI-powered task automation CLI documentation"/>
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1.0, minimum-scale=1.0"
-    />
-    <link rel="stylesheet" href="./_media/css/github.min.css">
-    <link rel="icon" type="image/x-icon" href="./favicon.ico">
-    <style>
-        :root {
-            --theme-color: #960018;
-            --color-bg: #f0eee9;
-            --color-text: #2b2c30;
-        }
+    <head>
+        <meta charset="UTF-8" />
+        <title>Documentation | Valksor Mehrhof</title>
+        <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+        <meta
+            name="description"
+            content="AI-powered task automation CLI documentation"
+        />
+        <meta
+            name="viewport"
+            content="width=device-width, initial-scale=1.0, minimum-scale=1.0"
+        />
+        <link rel="stylesheet" href="./_media/css/github.min.css" />
+        <link rel="icon" type="image/x-icon" href="./favicon.ico" />
+        <style>
+            :root {
+                --theme-color: #960018;
+                --color-bg: #f0eee9;
+                --color-text: #2b2c30;
+            }
 
-        .sidebar-nav > ul > li > a {
-            font-weight: 600;
-        }
+            .sidebar-nav > ul > li > a {
+                font-weight: 600;
+            }
 
-        .markdown-section code {
-            border-radius: 3px;
-            padding: 2px 6px;
-        }
+            .markdown-section code {
+                border-radius: 3px;
+                padding: 2px 6px;
+            }
 
-        .markdown-section pre > code {
-            padding: 1em;
-        }
+            .markdown-section pre > code {
+                padding: 1em;
+            }
 
-        .tip {
-            padding: 1em;
-            border-left: 4px solid var(--theme-color);
-            background: rgba(63, 81, 181, 0.05);
-            margin: 1em 0;
-        }
+            .tip {
+                padding: 1em;
+                border-left: 4px solid var(--theme-color);
+                background: rgba(63, 81, 181, 0.05);
+                margin: 1em 0;
+            }
 
-        .warning {
-            padding: 1em;
-            border-left: 4px solid #ff9800;
-            background: rgba(255, 152, 0, 0.05);
-            margin: 1em 0;
-        }
-    </style>
-</head>
-<body>
-<div id="app">Loading...</div>
-<script>
-    window.$docsify = {
-        name: "Mehrhof",
-        nameLink: window.location.hostname === 'valksor.github.io' ? '/go-mehrhof/' : '/',
-        repo: "https://github.com/valksor/go-mehrhof",
-        loadSidebar: true,
-        autoHeader: true,
-        subMaxLevel: 3,
-        auto2top: true,
-        coverpage: true,
-        onlyCover: false,
-        search: {
-            placeholder: "Search documentation",
-            noData: "No results found",
-            depth: 3,
-        },
-        copyCode: {
-            buttonText: "Copy",
-            successText: "Copied",
-        },
-        tabs: {
-            persist: true,
-            sync: true,
-        },
-        pagination: {
-            previousText: "Previous",
-            nextText: "Next",
-            crossChapter: true,
-        },
-        formatUpdated: '{DD}.{MM}.{YYYY} {HH}:{mm}',
-        mergeNavbar: true,
-        themeColor: '#960018',
-    };
-</script>
-<!-- Docsify core -->
-<script src="https://cdn.jsdelivr.net/npm/docsify@latest/lib/docsify.min.js"></script>
-<!-- Plugins -->
-<script src="https://cdn.jsdelivr.net/npm/docsify@latest/lib/plugins/search.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/docsify-copy-code@latest/dist/docsify-copy-code.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/docsify-pagination@latest/dist/docsify-pagination.min.js"></script>
-<!-- Syntax highlighting -->
-<script src="https://cdn.jsdelivr.net/npm/prismjs@latest/components/prism-bash.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/prismjs@latest/components/prism-yaml.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/prismjs@latest/components/prism-json.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/prismjs@latest/components/prism-go.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/prismjs@latest/components/prism-markdown.min.js"></script>
-</body>
+            .warning {
+                padding: 1em;
+                border-left: 4px solid #ff9800;
+                background: rgba(255, 152, 0, 0.05);
+                margin: 1em 0;
+            }
+        </style>
+    </head>
+    <body>
+        <div id="app">Loading...</div>
+        <script>
+            window.$docsify = {
+                name: "Valksor Mehrhof",
+                nameLink: "/docs/",
+                repo: "https://github.com/valksor/go-mehrhof",
+                loadSidebar: true,
+                alias: {
+                    "/.*/_sidebar.md": "/_sidebar.md",
+                },
+                autoHeader: true,
+                subMaxLevel: 3,
+                auto2top: true,
+                coverpage: true,
+                onlyCover: false,
+                search: {
+                    placeholder: "Search documentation",
+                    noData: "No results found",
+                    depth: 3,
+                },
+                copyCode: {
+                    buttonText: "Copy",
+                    successText: "Copied",
+                },
+                tabs: {
+                    persist: true,
+                    sync: true,
+                },
+                pagination: {
+                    previousText: "Previous",
+                    nextText: "Next",
+                    crossChapter: true,
+                },
+                formatUpdated: "{DD}.{MM}.{YYYY} {HH}:{mm}",
+                mergeNavbar: true,
+                themeColor: "#960018",
+            };
+        </script>
+        <!-- Docsify core -->
+        <script src="https://cdn.jsdelivr.net/npm/docsify@latest/lib/docsify.min.js"></script>
+        <!-- Plugins -->
+        <script src="https://cdn.jsdelivr.net/npm/docsify@latest/lib/plugins/search.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/docsify-copy-code@latest/dist/docsify-copy-code.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/docsify-pagination@latest/dist/docsify-pagination.min.js"></script>
+        <!-- Syntax highlighting -->
+        <script src="https://cdn.jsdelivr.net/npm/prismjs@latest/components/prism-bash.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/prismjs@latest/components/prism-yaml.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/prismjs@latest/components/prism-json.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/prismjs@latest/components/prism-go.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/prismjs@latest/components/prism-markdown.min.js"></script>
+    </body>
 </html>

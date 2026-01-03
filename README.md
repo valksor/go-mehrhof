@@ -39,7 +39,7 @@ Mehrhof is a command-line tool that orchestrates AI agents to perform **planning
 
 - **Go 1.25+** (for building from source)
 - **Git** (for version control operations)
-- **Claude CLI** - Mehrhof wraps Claude CLI for AI operations (see [quickstart](https://valksor.github.io/go-mehrhof/#/quickstart))
+- **Claude CLI** - Mehrhof wraps Claude CLI for AI operations (see [quickstart](https://mehrhof.valksor.com/docs/#/quickstart))
 
 ### Installation
 
@@ -161,7 +161,7 @@ mehr finish
 | `mehr undo` / `mehr redo` | Navigate checkpoints |
 | `mehr note <msg>` | Add notes for AI context |
 
-**See [CLI Reference](https://valksor.github.io/go-mehrhof/#/cli/index) for all commands and flags.**
+**See [CLI Reference](https://mehrhof.valksor.com/docs/#/cli/index) for all commands and flags.**
 
 ## Task Providers
 
@@ -169,20 +169,20 @@ Mehrhof supports 15+ task sources. Use provider schemes to load tasks:
 
 | Provider | Scheme | Example | Docs |
 |----------|--------|---------|------|
-| File | `file:` | `file:task.md` | [file](https://valksor.github.io/go-mehrhof/#/providers/file) |
-| Directory | `dir:` | `dir:./tasks/` | [directory](https://valksor.github.io/go-mehrhof/#/providers/directory) |
-| GitHub | `github:` | `github:123` | [github](https://valksor.github.io/go-mehrhof/#/providers/github) |
-| GitLab | `gitlab:` | `gitlab:123` | [gitlab](https://valksor.github.io/go-mehrhof/#/providers/gitlab) |
-| Bitbucket | `bitbucket:` | `bitbucket:123` | [bitbucket](https://valksor.github.io/go-mehrhof/#/providers/bitbucket) |
-| Jira | `jira:` | `jira:PROJ-123` | [jira](https://valksor.github.io/go-mehrhof/#/providers/jira) |
-| Linear | `linear:` | `linear:ENG-123` | [linear](https://valksor.github.io/go-mehrhof/#/providers/linear) |
-| Asana | `asana:` | `asana:1234...` | [asana](https://valksor.github.io/go-mehrhof/#/providers/asana) |
-| ClickUp | `clickup:` | `clickup:abc123` | [clickup](https://valksor.github.io/go-mehrhof/#/providers/clickup) |
-| Azure DevOps | `azdo:` | `azdo:123` | [azure-devops](https://valksor.github.io/go-mehrhof/#/providers/azure-devops) |
-| Notion | `notion:` | `notion:<uuid>` | [notion](https://valksor.github.io/go-mehrhof/#/providers/notion) |
-| Trello | `trello:` | `trello:<id>` | [trello](https://valksor.github.io/go-mehrhof/#/providers/trello) |
-| Wrike | `wrike:` | `wrike:<id>` | [wrike](https://valksor.github.io/go-mehrhof/#/providers/wrike) |
-| YouTrack | `youtrack:` | `youtrack:ABC-123` | [youtrack](https://valksor.github.io/go-mehrhof/#/providers/youtrack) |
+| File | `file:` | `file:task.md` | [file](https://mehrhof.valksor.com/docs/#/providers/file) |
+| Directory | `dir:` | `dir:./tasks/` | [directory](https://mehrhof.valksor.com/docs/#/providers/directory) |
+| GitHub | `github:` | `github:123` | [github](https://mehrhof.valksor.com/docs/#/providers/github) |
+| GitLab | `gitlab:` | `gitlab:123` | [gitlab](https://mehrhof.valksor.com/docs/#/providers/gitlab) |
+| Bitbucket | `bitbucket:` | `bitbucket:123` | [bitbucket](https://mehrhof.valksor.com/docs/#/providers/bitbucket) |
+| Jira | `jira:` | `jira:PROJ-123` | [jira](https://mehrhof.valksor.com/docs/#/providers/jira) |
+| Linear | `linear:` | `linear:ENG-123` | [linear](https://mehrhof.valksor.com/docs/#/providers/linear) |
+| Asana | `asana:` | `asana:1234...` | [asana](https://mehrhof.valksor.com/docs/#/providers/asana) |
+| ClickUp | `clickup:` | `clickup:abc123` | [clickup](https://mehrhof.valksor.com/docs/#/providers/clickup) |
+| Azure DevOps | `azdo:` | `azdo:123` | [azure-devops](https://mehrhof.valksor.com/docs/#/providers/azure-devops) |
+| Notion | `notion:` | `notion:<uuid>` | [notion](https://mehrhof.valksor.com/docs/#/providers/notion) |
+| Trello | `trello:` | `trello:<id>` | [trello](https://mehrhof.valksor.com/docs/#/providers/trello) |
+| Wrike | `wrike:` | `wrike:<id>` | [wrike](https://mehrhof.valksor.com/docs/#/providers/wrike) |
+| YouTrack | `youtrack:` | `youtrack:ABC-123` | [youtrack](https://mehrhof.valksor.com/docs/#/providers/youtrack) |
 
 **Default provider**: Configure in `.mehrhof/config.yaml` to use bare references:
 ```yaml
@@ -222,7 +222,7 @@ Mehrhof supports multiple AI backends:
 | OpenRouter | Multiple models via OpenRouter API |
 | Codex | OpenAI Codex models |
 
-**See [AI Agents documentation](https://valksor.github.io/go-mehrhof/#/agents/index) for configuration and custom aliases.**
+**See [AI Agents documentation](https://mehrhof.valksor.com/docs/#/agents/index) for configuration and custom aliases.**
 
 ## Configuration
 
@@ -251,19 +251,19 @@ update:
   check_interval: 24  # hours
 ```
 
-**See [Configuration Guide](https://valksor.github.io/go-mehrhof/#/configuration/index) for all options including agent aliases, per-step agents, and provider settings.**
+**See [Configuration Guide](https://mehrhof.valksor.com/docs/#/configuration/index) for all options including agent aliases, per-step agents, and provider settings.**
 
 ## Documentation
 
-- 📖 [Full Documentation](https://valksor.github.io/go-mehrhof)
-- [Quickstart](https://valksor.github.io/go-mehrhof/#/quickstart) - Install and first task in 5 minutes
-- [Guides](https://valksor.github.io/go-mehrhof/#/guides/first-task) - Step-by-step tutorials
-- [Providers](https://valksor.github.io/go-mehrhof/#/providers/index) - Task source integrations
-- [AI Agents](https://valksor.github.io/go-mehrhof/#/agents/index) - Agent configuration and aliases
-- [CLI Reference](https://valksor.github.io/go-mehrhof/#/cli/index) - All commands and flags
-- [Configuration](https://valksor.github.io/go-mehrhof/#/configuration/index) - Customize behavior
-- [Concepts](https://valksor.github.io/go-mehrhof/#/concepts/workflow) - Workflow, storage, architecture
-- [Troubleshooting](https://valksor.github.io/go-mehrhof/#/troubleshooting/index) - Common issues
+- 📖 [Full Documentation](https://mehrhof.valksor.com/docs)
+- [Quickstart](https://mehrhof.valksor.com/docs/#/quickstart) - Install and first task in 5 minutes
+- [Guides](https://mehrhof.valksor.com/docs/#/guides/first-task) - Step-by-step tutorials
+- [Providers](https://mehrhof.valksor.com/docs/#/providers/index) - Task source integrations
+- [AI Agents](https://mehrhof.valksor.com/docs/#/agents/index) - Agent configuration and aliases
+- [CLI Reference](https://mehrhof.valksor.com/docs/#/cli/index) - All commands and flags
+- [Configuration](https://mehrhof.valksor.com/docs/#/configuration/index) - Customize behavior
+- [Concepts](https://mehrhof.valksor.com/docs/#/concepts/workflow) - Workflow, storage, architecture
+- [Troubleshooting](https://mehrhof.valksor.com/docs/#/troubleshooting/index) - Common issues
 
 ## Development
 
