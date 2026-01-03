@@ -204,7 +204,7 @@ func runStart(cmd *cobra.Command, args []string) error {
 
 	// Check for existing task
 	if cond.GetActiveTask() != nil {
-		return fmt.Errorf("task already active: %s\nUse 'mehr status' to check or 'mehr finish' to complete it", cond.GetActiveTask().ID)
+		return fmt.Errorf("task already active: %s\n\nOptions:\n  mehr status   - View task details\n  mehr finish   - Complete the task\n  mehr abandon  - Cancel and start fresh", cond.GetActiveTask().ID)
 	}
 
 	// Start (register) task

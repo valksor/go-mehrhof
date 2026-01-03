@@ -72,7 +72,7 @@ func runImplement(cmd *cobra.Command, args []string) error {
 	if cond.GetActiveTask() == nil {
 		fmt.Print(display.NoActiveTaskError())
 
-		return errors.New("no active task") // Return error to exit with code 1
+		return errors.New("no active task")
 	}
 
 	// Set up event handlers
