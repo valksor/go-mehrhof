@@ -39,16 +39,16 @@ var StateDescription = map[workflow.State]string{
 // StateAccessiblePrefix provides short text prefixes for accessibility.
 // These help color-blind users distinguish states without relying on color alone.
 var StateAccessiblePrefix = map[workflow.State]string{
-	workflow.StateIdle:          "[R]", // Ready
+	workflow.StateIdle:          "[*]", // Ready (neutral asterisk)
 	workflow.StatePlanning:      "[P]", // Planning
 	workflow.StateImplementing:  "[I]", // Implementing
-	workflow.StateReviewing:     "[V]", // reViewing
+	workflow.StateReviewing:     "[R]", // Reviewing (R is more intuitive than V)
 	workflow.StateDone:          "[D]", // Done
 	workflow.StateFailed:        "[F]", // Failed
 	workflow.StateWaiting:       "[W]", // Waiting
 	workflow.StateCheckpointing: "[C]", // Checkpointing
-	workflow.StateReverting:     "[U]", // Undoing
-	workflow.StateRestoring:     "[S]", // reStoring
+	workflow.StateReverting:     "[←]", // Reverting (arrow = going back)
+	workflow.StateRestoring:     "[→]", // Restoring (arrow = going forward)
 }
 
 // SpecificationStatusDisplay maps internal specification status values to user-friendly names.
