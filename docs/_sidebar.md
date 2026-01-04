@@ -1,5 +1,5 @@
 - **Get Started**
-  - [Home](/)
+  - [Home](README.md)
   - [Quickstart](quickstart.md)
 
 - **Guides**
@@ -83,6 +83,11 @@
 
 - **Troubleshooting**
   - [Common Issues](troubleshooting/index.md)
+
+- **Legal**
+  - [License](legal/license.md)
+  - [Contributing](legal/contributing.md)
+  - [Trademark](legal/trademark.md)
 
 - **Created By**
 - [Valksor](https://valksor.com)
