@@ -129,12 +129,16 @@ export default function App() {
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
           onClick={() => setShowHelp(false)}
-          role="dialog"
-          aria-label="Keyboard shortcuts"
+          onKeyDown={(e) => { if (e.key === 'Escape') setShowHelp(false) }}
+          role="button"
+          tabIndex={0}
+          aria-label="Close keyboard shortcuts dialog"
         >
           <div
             className="bg-base-200 rounded-lg shadow-xl p-6 max-w-md w-full mx-4"
             onClick={(e) => e.stopPropagation()}
+            onKeyDown={(e) => e.stopPropagation()}
+            role="presentation"
           >
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-semibold">Keyboard Shortcuts</h2>

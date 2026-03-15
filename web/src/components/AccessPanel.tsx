@@ -95,8 +95,9 @@ export function AccessPanel({ isOpen, onClose }: AccessPanelProps) {
         {/* Create token form */}
         <div className="flex flex-wrap items-end gap-2 p-3 bg-base-200 rounded-lg">
           <div className="flex-1 min-w-[120px]">
-            <label className="label label-text text-xs">Label</label>
+            <label htmlFor="token-label" className="label label-text text-xs">Label</label>
             <input
+              id="token-label"
               type="text"
               value={newLabel}
               onChange={e => setNewLabel(e.target.value)}
@@ -105,8 +106,9 @@ export function AccessPanel({ isOpen, onClose }: AccessPanelProps) {
             />
           </div>
           <div>
-            <label className="label label-text text-xs">Role</label>
+            <label htmlFor="token-role" className="label label-text text-xs">Role</label>
             <select
+              id="token-role"
               value={newRole}
               onChange={e => setNewRole(e.target.value)}
               className="select select-bordered select-sm"
