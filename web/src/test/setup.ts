@@ -35,7 +35,7 @@ afterEach(() => {
   vi.clearAllMocks()
 })
 
-// JSDOM cannot compute CSS tabbability — FocusTrap throws when it can't find
+// happy-dom cannot compute CSS tabbability — FocusTrap throws when it can't find
 // focusable elements. Render children passthrough in tests.
 vi.mock('focus-trap-react', () => ({
   FocusTrap: ({ children }: { children: unknown }) => children,
