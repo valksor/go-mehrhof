@@ -325,26 +325,31 @@ function SpecContent({ data }: { data?: Record<string, unknown> }) {
     if (!connected) return
 
     let cancelled = false
-    setLoading(true)
-    setError(null)
-    setSpecs([])
 
-    const loader = mode === 'plan' ? loadPlan : loadSpec
-    loader().then(result => {
-      if (!cancelled) {
-        setSpecs(result)
-        if (result.length === 1) {
-          setExpandedPath(result[0].path)
+    async function fetchSpecs() {
+      setLoading(true)
+      setError(null)
+      setSpecs([])
+
+      const loader = mode === 'plan' ? loadPlan : loadSpec
+      try {
+        const result = await loader()
+        if (!cancelled) {
+          setSpecs(result)
+          if (result.length === 1) {
+            setExpandedPath(result[0].path)
+          }
         }
+      } catch (err) {
+        if (!cancelled) {
+          setError(err instanceof Error ? err.message : 'Failed to load')
+        }
+      } finally {
+        if (!cancelled) setLoading(false)
       }
-    }).catch(err => {
-      if (!cancelled) {
-        setError(err instanceof Error ? err.message : 'Failed to load')
-      }
-    }).finally(() => {
-      if (!cancelled) setLoading(false)
-    })
+    }
 
+    fetchSpecs()
     return () => { cancelled = true }
   }, [connected, mode, loadSpec, loadPlan])
 

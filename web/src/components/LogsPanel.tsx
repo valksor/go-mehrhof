@@ -38,20 +38,22 @@ export function LogsPanel({ isOpen, onClose }: LogsPanelProps) {
     if (!isOpen || tab !== 'history' || !client || !worktreeId) return
 
     let cancelled = false
-    setHistoryLoading(true)
 
-    client.call<{ messages: HistoryMessage[]; task_id: string }>('chat.history', {
-      worktree_id: worktreeId
-    }).then(result => {
-      if (!cancelled) {
-        setHistory(result.messages || [])
+    async function fetchHistory() {
+      setHistoryLoading(true)
+      try {
+        const result = await client.call<{ messages: HistoryMessage[]; task_id: string }>('chat.history', {
+          worktree_id: worktreeId
+        })
+        if (!cancelled) setHistory(result.messages || [])
+      } catch {
+        if (!cancelled) setHistory([])
+      } finally {
+        if (!cancelled) setHistoryLoading(false)
       }
-    }).catch(() => {
-      if (!cancelled) setHistory([])
-    }).finally(() => {
-      if (!cancelled) setHistoryLoading(false)
-    })
+    }
 
+    fetchHistory()
     return () => { cancelled = true }
   }, [isOpen, tab, client, worktreeId])
 
