@@ -9,13 +9,15 @@ func TestArchiveTask(t *testing.T) {
 	store := NewStore(t.TempDir(), true)
 
 	task := ArchivedTask{
-		ID:          "task-1",
-		Title:       "Fix login bug",
-		Branch:      "fix/login",
-		Source:      "github:owner/repo#1",
-		FinalState:  "finished",
-		StartedAt:   time.Now().Add(-1 * time.Hour),
-		CompletedAt: time.Now(),
+		ID:           "task-1",
+		Title:        "Fix login bug",
+		Branch:       "fix/login",
+		Source:       "github:owner/repo#1",
+		FinalState:   "finished",
+		StartedAt:    time.Now().Add(-1 * time.Hour),
+		CompletedAt:  time.Now(),
+		Duration:     "1h0m",
+		FilesTouched: []string{"pkg/auth/login.go", "pkg/auth/login_test.go"},
 	}
 
 	if err := store.ArchiveTask(task); err != nil {
@@ -44,22 +46,28 @@ func TestArchiveMultiple(t *testing.T) {
 	now := time.Now()
 
 	_ = store.ArchiveTask(ArchivedTask{
-		ID:          "task-1",
-		Title:       "First",
-		FinalState:  "finished",
-		CompletedAt: now.Add(-2 * time.Hour),
+		ID:           "task-1",
+		Title:        "First",
+		FinalState:   "finished",
+		CompletedAt:  now.Add(-2 * time.Hour),
+		Duration:     "30m",
+		FilesTouched: []string{"cmd/main.go"},
 	})
 	_ = store.ArchiveTask(ArchivedTask{
-		ID:          "task-2",
-		Title:       "Second",
-		FinalState:  "finished",
-		CompletedAt: now.Add(-1 * time.Hour),
+		ID:           "task-2",
+		Title:        "Second",
+		FinalState:   "finished",
+		CompletedAt:  now.Add(-1 * time.Hour),
+		Duration:     "45m",
+		FilesTouched: []string{"pkg/api/handler.go", "pkg/api/handler_test.go"},
 	})
 	_ = store.ArchiveTask(ArchivedTask{
-		ID:          "task-3",
-		Title:       "Third",
-		FinalState:  "abandoned",
-		CompletedAt: now,
+		ID:           "task-3",
+		Title:        "Third",
+		FinalState:   "abandoned",
+		CompletedAt:  now,
+		Duration:     "15m",
+		FilesTouched: []string{"pkg/web/server.go"},
 	})
 
 	tasks, err := store.ListArchivedTasks()

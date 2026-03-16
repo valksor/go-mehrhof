@@ -19,17 +19,20 @@ type SearchOptions struct {
 	Until time.Time `json:"until,omitempty"` // Only tasks completed before this time
 	State string    `json:"state,omitempty"` // Filter by final_state (e.g., "finished", "abandoned")
 	Limit int       `json:"limit,omitempty"` // Max results (0 = unlimited)
+	File  string    `json:"file,omitempty"`  // Filter by file touched (substring match)
 }
 
 // ArchivedTask is a lightweight record of a completed task.
 type ArchivedTask struct {
-	ID          string    `yaml:"id" json:"id"`
-	Title       string    `yaml:"title" json:"title"`
-	Branch      string    `yaml:"branch,omitempty" json:"branch,omitempty"`
-	Source      string    `yaml:"source,omitempty" json:"source,omitempty"`
-	FinalState  string    `yaml:"final_state" json:"final_state"` // "finished", "abandoned", etc.
-	StartedAt   time.Time `yaml:"started_at" json:"started_at"`
-	CompletedAt time.Time `yaml:"completed_at" json:"completed_at"`
+	ID           string    `yaml:"id" json:"id"`
+	Title        string    `yaml:"title" json:"title"`
+	Branch       string    `yaml:"branch,omitempty" json:"branch,omitempty"`
+	Source       string    `yaml:"source,omitempty" json:"source,omitempty"`
+	FinalState   string    `yaml:"final_state" json:"final_state"` // "finished", "abandoned", etc.
+	StartedAt    time.Time `yaml:"started_at" json:"started_at"`
+	CompletedAt  time.Time `yaml:"completed_at" json:"completed_at"`
+	Duration     string    `yaml:"duration,omitempty" json:"duration,omitempty"`           // Human-readable duration (e.g., "2h15m")
+	FilesTouched []string  `yaml:"files_touched,omitempty" json:"files_touched,omitempty"` // Files modified during task
 }
 
 // ArchiveFile returns the path to the archive index file.
@@ -103,6 +106,19 @@ func (s *Store) SearchArchivedTasks(opts SearchOptions) ([]ArchivedTask, error) 
 		}
 		if opts.State != "" && t.FinalState != opts.State {
 			continue
+		}
+		if opts.File != "" {
+			found := false
+			for _, f := range t.FilesTouched {
+				if strings.Contains(f, opts.File) {
+					found = true
+
+					break
+				}
+			}
+			if !found {
+				continue
+			}
 		}
 		filtered = append(filtered, t)
 		if opts.Limit > 0 && len(filtered) >= opts.Limit {
