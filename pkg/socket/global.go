@@ -19,6 +19,7 @@ import (
 	"github.com/valksor/kvelmo/pkg/conductor"
 	"github.com/valksor/kvelmo/pkg/meta"
 	"github.com/valksor/kvelmo/pkg/metrics"
+	"github.com/valksor/kvelmo/pkg/notify"
 	"github.com/valksor/kvelmo/pkg/settings"
 	"github.com/valksor/kvelmo/pkg/worker"
 )
@@ -306,6 +307,9 @@ func (g *GlobalSocket) registerHandlers() {
 
 	// Export
 	g.server.Handle("export", g.handleExport)
+
+	// Compliance reports
+	g.server.Handle("report.generate", g.handleReportGenerate)
 
 	// Catalog
 	g.server.Handle("catalog.list", g.handleCatalogList)
@@ -2220,10 +2224,12 @@ func (g *GlobalSocket) GetOrCreateWorktreeSocket(projectPath string) (interface{
 	// Listen for state changes and broadcast to all global socket clients
 	if wt.conductor != nil {
 		wt.conductor.OnEvent(func(event conductor.ConductorEvent) {
-			if event.Type != "state_changed" {
-				return
+			switch event.Type {
+			case "state_changed":
+				g.broadcastTaskStateChanged(projectPath, string(event.State))
+			case "approval_required":
+				g.sendApprovalNotification(projectPath, event.Message)
 			}
-			g.broadcastTaskStateChanged(projectPath, string(event.State))
 		})
 	}
 
@@ -2246,6 +2252,20 @@ func (g *GlobalSocket) GetOrCreateWorktreeSocket(projectPath string) (interface{
 	g.wtSocketsMu.Unlock()
 
 	return wt, nil
+}
+
+// sendApprovalNotification sends a webhook notification when approval is required.
+func (g *GlobalSocket) sendApprovalNotification(projectPath, message string) {
+	n := GetNotifier()
+	if n == nil {
+		return
+	}
+	n.Send(notify.Payload{
+		Event:       "approval_required",
+		Timestamp:   time.Now(),
+		Message:     message,
+		ProjectPath: projectPath,
+	})
 }
 
 // broadcastTaskStateChanged sends a task_state_changed notification to all global socket clients.

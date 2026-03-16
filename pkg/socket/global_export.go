@@ -12,7 +12,7 @@ import (
 )
 
 // handleExport returns task and metrics data for external analysis.
-func (g *GlobalSocket) handleExport(_ context.Context, req *Request) (*Response, error) {
+func (g *GlobalSocket) handleExport(ctx context.Context, req *Request) (*Response, error) {
 	var params struct {
 		Format  string `json:"format"`
 		Since   string `json:"since"`
@@ -31,15 +31,22 @@ func (g *GlobalSocket) handleExport(_ context.Context, req *Request) (*Response,
 	// Include metrics snapshot
 	result["metrics"] = metrics.Global().Snapshot()
 
-	// Include active tasks from all worktrees
+	// Include active tasks from all worktrees, enriched with checkpoint data
 	g.mu.RLock()
 	tasks := make([]map[string]any, 0, len(g.worktrees))
 	for _, wt := range g.worktrees {
-		tasks = append(tasks, map[string]any{
+		task := map[string]any{
 			"id":    wt.ID,
 			"path":  wt.Path,
 			"state": wt.State,
-		})
+		}
+		// Query worktree socket for checkpoint data (best-effort)
+		if wt.SocketPath != "" {
+			if checkpoints := queryWorktreeCheckpoints(ctx, wt.SocketPath); len(checkpoints) > 0 {
+				task["checkpoints"] = checkpoints
+			}
+		}
+		tasks = append(tasks, task)
 	}
 	g.mu.RUnlock()
 
@@ -81,4 +88,34 @@ func parseSinceDuration(s string) (time.Duration, error) {
 	}
 
 	return 0, fmt.Errorf("invalid duration: %s", s)
+}
+
+// queryWorktreeCheckpoints queries a worktree socket for its checkpoint SHAs.
+// Returns nil on any error (best-effort enrichment).
+func queryWorktreeCheckpoints(ctx context.Context, socketPath string) []string {
+	if !SocketExists(socketPath) {
+		return nil
+	}
+	client, err := NewClient(socketPath, WithTimeout(5*time.Second))
+	if err != nil {
+		return nil
+	}
+	defer func() { _ = client.Close() }()
+
+	queryCtx, cancel := context.WithTimeout(ctx, 3*time.Second)
+	defer cancel()
+
+	resp, err := client.Call(queryCtx, "checkpoints", nil)
+	if err != nil {
+		return nil
+	}
+
+	var result struct {
+		Checkpoints []string `json:"checkpoints"`
+	}
+	if err := json.Unmarshal(resp.Result, &result); err != nil {
+		return nil
+	}
+
+	return result.Checkpoints
 }
