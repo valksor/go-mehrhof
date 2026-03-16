@@ -74,6 +74,7 @@ func init() {
 	rootCmd.AddCommand(commands.StartCmd)
 	rootCmd.AddCommand(commands.StatusCmd)
 	rootCmd.AddCommand(commands.WatchCmd)
+	rootCmd.AddCommand(commands.TuiCmd)
 	rootCmd.AddCommand(commands.StopCmd)
 	rootCmd.AddCommand(commands.ShutdownCmd)
 	rootCmd.AddCommand(commands.ProjectsCmd)
@@ -242,7 +243,7 @@ func main() {
 
 					return
 				} else if len(suggestions) > 0 {
-					fmt.Fprint(os.Stderr, cli.FormatAmbiguousError(args[0], suggestions))
+					fmt.Fprint(os.Stderr, cli.FormatAmbiguousError(args[0], suggestions)) //nolint:gosec // G705 false positive: writing to stderr, not an HTTP response
 					os.Exit(cli.ExitUsage)
 				}
 			}

@@ -26,6 +26,7 @@ type Settings struct {
 	Notify       NotifySettings         `yaml:"notify,omitempty" json:"notify,omitempty"`
 	Watchdog     WatchdogSettings       `yaml:"watchdog,omitempty" json:"watchdog,omitempty"`
 	UI           UISettings             `yaml:"ui,omitempty" json:"ui,omitempty"`
+	TUI          TUISettings            `yaml:"tui,omitempty" json:"tui,omitempty"`
 	Environment  string                 `yaml:"environment,omitempty" json:"environment,omitempty" schema:"label=Environment;desc=Deployment environment (dev, staging, prod);options=dev|staging|prod;default=dev"`
 	CustomAgents map[string]CustomAgent `yaml:"custom_agents,omitempty" json:"custom_agents,omitempty"`
 }
@@ -33,6 +34,11 @@ type Settings struct {
 // UISettings configures UI state that persists across sessions.
 type UISettings struct {
 	OnboardingDismissed bool `yaml:"onboarding_dismissed,omitempty" json:"onboarding_dismissed,omitempty"`
+}
+
+// TUISettings configures the terminal user interface.
+type TUISettings struct {
+	Layout string `yaml:"layout,omitempty" json:"layout,omitempty" schema:"label=TUI Layout;desc=Default layout for kvelmo tui (stacked or dashboard);options=stacked|dashboard;default=stacked"`
 }
 
 // AgentSettings configures AI agent behavior.
