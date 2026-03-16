@@ -13,7 +13,10 @@ export const SHORTCUTS: Shortcut[] = [
   // Navigation
   { keys: '?', description: 'Toggle shortcuts help', section: 'Navigation' },
   { keys: 'Ctrl+/', description: 'Toggle shortcuts help', section: 'Navigation' },
+  { keys: '/', description: 'Focus chat input', section: 'Navigation' },
+  { keys: 'Escape', description: 'Close help / deselect project', section: 'Navigation' },
   { keys: 'g p', description: 'Go to projects (GlobalView)', section: 'Navigation' },
+  { keys: 'g a', description: 'Abort/stop current operation', section: 'Navigation' },
 
   // Tab switching
   { keys: '1-5', description: 'Switch to tab by index', section: 'Tabs' },
@@ -34,17 +37,30 @@ function isInputFocused(): boolean {
 
 export function useKeyboardShortcuts() {
   const [showHelp, setShowHelp] = useState(false)
+  const showHelpRef = useRef(false)
   const chordKeyRef = useRef<string | null>(null)
   const chordTimeRef = useRef<number>(0)
+
+  // Keep ref in sync with state so the keydown handler always sees current value
+  useEffect(() => {
+    showHelpRef.current = showHelp
+  }, [showHelp])
 
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
       const ctrlOrMeta = e.ctrlKey || e.metaKey
       const inInput = isInputFocused()
 
-      // Escape — close help overlay (works everywhere)
+      // Escape — close help overlay (works everywhere), or deselect project
       if (e.key === 'Escape') {
-        setShowHelp(false)
+        if (showHelpRef.current) {
+          setShowHelp(false)
+          return
+        }
+        if (!inInput) {
+          const { selectProject } = useGlobalStore.getState()
+          selectProject(null)
+        }
         return
       }
 
@@ -88,6 +104,14 @@ export function useKeyboardShortcuts() {
         return
       }
 
+      // / — focus chat input
+      if (e.key === '/' && !ctrlOrMeta && !e.shiftKey && !e.altKey) {
+        e.preventDefault()
+        const chatInput = document.querySelector<HTMLElement>('[data-chat-input]')
+        if (chatInput) chatInput.focus()
+        return
+      }
+
       // Chord: g p — go to projects
       const now = Date.now()
       if (e.key === 'g' && !ctrlOrMeta && !e.shiftKey && !e.altKey) {
@@ -108,6 +132,22 @@ export function useKeyboardShortcuts() {
         chordKeyRef.current = null
         const { selectProject } = useGlobalStore.getState()
         selectProject(null)
+        return
+      }
+
+      // Chord: g a — abort/stop current operation
+      if (
+        e.key === 'a' &&
+        !ctrlOrMeta &&
+        !e.shiftKey &&
+        !e.altKey &&
+        chordKeyRef.current === 'g' &&
+        now - chordTimeRef.current < 500
+      ) {
+        e.preventDefault()
+        chordKeyRef.current = null
+        const { abort } = useProjectStore.getState()
+        abort()
         return
       }
 

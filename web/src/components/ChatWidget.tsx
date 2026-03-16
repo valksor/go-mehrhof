@@ -359,6 +359,7 @@ export function ChatWidget({ embedded = false, onModalCommand }: ChatWidgetProps
             <div className="flex-1 relative">
               <textarea
                 ref={inputRef}
+                data-chat-input
                 value={input}
                 onChange={handleInputChange}
                 onKeyDown={handleKeyDown}

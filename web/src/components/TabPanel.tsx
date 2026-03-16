@@ -448,10 +448,11 @@ function AgentContent({ data }: { data?: Record<string, unknown> }) {
 }
 
 function ChatContent() {
+  const setModalCommand = useLayoutStore(s => s.setModalCommand)
   return (
     <div className="h-full">
       <Suspense fallback={LazyFallback}>
-        <ChatWidget embedded />
+        <ChatWidget embedded onModalCommand={setModalCommand} />
       </Suspense>
     </div>
   )

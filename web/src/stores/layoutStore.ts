@@ -82,6 +82,10 @@ interface LayoutState {
   setPanelSize: (panelId: keyof PanelSizes, size: number) => void
   toggleBottomPanel: () => void
 
+  // Modal command (triggered by chat slash commands)
+  modalCommand: 'submit' | 'finish' | 'abandon' | 'delete' | null
+  setModalCommand: (modal: 'submit' | 'finish' | 'abandon' | 'delete' | null) => void
+
   // Reset
   resetLayout: () => void
 }
@@ -122,6 +126,10 @@ export const useLayoutStore = create<LayoutState>()(
       activeTabId: 'chat-default',
       panelSizes: DEFAULT_PANEL_SIZES,
       bottomPanelVisible: true,
+      modalCommand: null,
+
+      // Modal command
+      setModalCommand: (modal) => set({ modalCommand: modal }),
 
       // Widget actions
       toggleWidgetCollapsed: (widgetId) => {

@@ -1,6 +1,7 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { useShallow } from 'zustand/react/shallow'
 import { useProjectStore } from '../stores/projectStore'
+import { useLayoutStore } from '../stores/layoutStore'
 import { ConfirmModal } from './ui/ConfirmModal'
 
 interface WorkflowStep {
@@ -57,12 +58,24 @@ export function WorkflowBar() {
     error: s.error,
   })))
 
+  const modalCommand = useLayoutStore(s => s.modalCommand)
+  const setModalCommand = useLayoutStore(s => s.setModalCommand)
+
   const [showSubmitModal, setShowSubmitModal] = useState(false)
   const [submitDeleteBranch, setSubmitDeleteBranch] = useState(false)
   const [showFinishModal, setShowFinishModal] = useState(false)
   const [finishDeleteRemote, setFinishDeleteRemote] = useState(false)
   const [showAbandonModal, setShowAbandonModal] = useState(false)
   const [abandonKeepBranch, setAbandonKeepBranch] = useState(false)
+
+  // React to modal commands from chat slash commands
+  useEffect(() => {
+    if (!modalCommand) return
+    if (modalCommand === 'submit') setShowSubmitModal(true)
+    else if (modalCommand === 'finish') setShowFinishModal(true)
+    else if (modalCommand === 'abandon') setShowAbandonModal(true)
+    setModalCommand(null)
+  }, [modalCommand, setModalCommand])
 
   const steps: WorkflowStep[] = [
     { id: 'load', label: 'Load', states: ['loaded'] },
