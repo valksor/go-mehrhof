@@ -52,7 +52,7 @@ install: build
 	echo "Installed to $$INSTALL_DIR/$(BINARY_NAME)"
 
 ## Run all tests
-test:
+test: quality
 	go test ./pkg/... ./cmd/...
 
 ## Run tests with verbose output
