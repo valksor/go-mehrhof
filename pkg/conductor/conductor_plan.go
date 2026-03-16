@@ -34,6 +34,15 @@ func (c *Conductor) Plan(ctx context.Context, force bool) (string, error) {
 		return "", err
 	}
 
+	// Run pre-transition hooks (release lock during shell execution)
+	c.mu.Unlock()
+	if err := c.RunTransitionHooks(ctx, EventPlan); err != nil {
+		c.emitEnrichedError(err, "plan")
+
+		return "", err
+	}
+	c.mu.Lock()
+
 	// Handle force: allow re-running from planned state
 	if force && c.machine.State() == StatePlanned {
 		c.machine.ForceState(StateLoaded)

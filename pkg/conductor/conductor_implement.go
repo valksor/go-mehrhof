@@ -34,6 +34,15 @@ func (c *Conductor) Implement(ctx context.Context, force bool) (string, error) {
 		return "", err
 	}
 
+	// Run pre-transition hooks (release lock during shell execution)
+	c.mu.Unlock()
+	if err := c.RunTransitionHooks(ctx, EventImplement); err != nil {
+		c.emitEnrichedError(err, "implement")
+
+		return "", err
+	}
+	c.mu.Lock()
+
 	// Handle force: allow re-running from implemented state
 	if force && c.machine.State() == StateImplemented {
 		c.machine.ForceState(StatePlanned)
@@ -108,6 +117,15 @@ func (c *Conductor) Optimize(ctx context.Context) (string, error) {
 		return "", err
 	}
 
+	// Run pre-transition hooks (release lock during shell execution)
+	c.mu.Unlock()
+	if err := c.RunTransitionHooks(ctx, EventOptimize); err != nil {
+		c.emitEnrichedError(err, "optimize")
+
+		return "", err
+	}
+	c.mu.Lock()
+
 	// Dispatch optimize event to transition state
 	if err := c.machine.Dispatch(ctx, EventOptimize); err != nil {
 		wrapped := fmt.Errorf("cannot optimize: %w", err)
@@ -169,6 +187,15 @@ func (c *Conductor) Simplify(ctx context.Context) (string, error) {
 
 		return "", err
 	}
+
+	// Run pre-transition hooks (release lock during shell execution)
+	c.mu.Unlock()
+	if err := c.RunTransitionHooks(ctx, EventSimplify); err != nil {
+		c.emitEnrichedError(err, "simplify")
+
+		return "", err
+	}
+	c.mu.Lock()
 
 	// Dispatch simplify event to transition state
 	if err := c.machine.Dispatch(ctx, EventSimplify); err != nil {

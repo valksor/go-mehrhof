@@ -33,6 +33,15 @@ func (c *Conductor) Review(ctx context.Context, fix bool) error {
 		return err
 	}
 
+	// Run pre-transition hooks (release lock during shell execution)
+	c.mu.Unlock()
+	if err := c.RunTransitionHooks(ctx, EventReview); err != nil {
+		c.emitEnrichedError(err, "review")
+
+		return err
+	}
+	c.mu.Lock()
+
 	if err := c.machine.Dispatch(ctx, EventReview); err != nil {
 		wrapped := fmt.Errorf("cannot review: %w", err)
 		c.mu.Unlock()
