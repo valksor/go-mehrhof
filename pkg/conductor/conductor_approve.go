@@ -2,9 +2,23 @@ package conductor
 
 import (
 	"errors"
+	"os"
+	"os/user"
 	"slices"
 	"time"
 )
+
+// approverIdentity returns a best-effort user identity string for audit purposes.
+func approverIdentity() string {
+	if u, err := user.Current(); err == nil && u.Username != "" {
+		return u.Username
+	}
+	if h, err := os.Hostname(); err == nil {
+		return h
+	}
+
+	return "unknown"
+}
 
 // Approve marks a transition event as approved by a human.
 // Used when policy requires explicit approval for specific transitions.
@@ -17,9 +31,12 @@ func (c *Conductor) Approve(event string) error {
 	}
 
 	if c.workUnit.Approvals == nil {
-		c.workUnit.Approvals = make(map[string]time.Time)
+		c.workUnit.Approvals = make(map[string]ApprovalRecord)
 	}
-	c.workUnit.Approvals[event] = time.Now()
+	c.workUnit.Approvals[event] = ApprovalRecord{
+		ApprovedBy: approverIdentity(),
+		ApprovedAt: time.Now(),
+	}
 	c.workUnit.UpdatedAt = time.Now()
 	c.persistState()
 

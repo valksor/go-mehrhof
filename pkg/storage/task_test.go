@@ -211,3 +211,60 @@ func TestTaskState_WithHierarchy(t *testing.T) {
 		t.Errorf("Siblings = %v, want [{sibling-1}]", got.Hierarchy.Siblings)
 	}
 }
+
+func TestTaskState_WithApprovalRecords(t *testing.T) {
+	store := newTestStore(t)
+
+	now := time.Now().Round(time.Second)
+	ts := &TaskState{
+		ID:    "task-approved",
+		Title: "Approved task",
+		Approvals: map[string]TaskApprovalRecord{
+			"submit": {
+				ApprovedBy: "testuser",
+				ApprovedAt: now,
+			},
+			"plan": {
+				ApprovedBy: "admin",
+				ApprovedAt: now.Add(-time.Hour),
+			},
+		},
+		ChecklistChecked: []string{"security", "tests"},
+	}
+
+	if err := store.SaveTaskState(ts); err != nil {
+		t.Fatalf("SaveTaskState() error = %v", err)
+	}
+
+	got, err := store.LoadTaskState("task-approved")
+	if err != nil {
+		t.Fatalf("LoadTaskState() error = %v", err)
+	}
+
+	if len(got.Approvals) != 2 {
+		t.Fatalf("Approvals count = %d, want 2", len(got.Approvals))
+	}
+
+	submit, ok := got.Approvals["submit"]
+	if !ok {
+		t.Fatal("submit approval not found")
+	}
+	if submit.ApprovedBy != "testuser" {
+		t.Errorf("submit.ApprovedBy = %q, want testuser", submit.ApprovedBy)
+	}
+	if !submit.ApprovedAt.Equal(now) {
+		t.Errorf("submit.ApprovedAt = %v, want %v", submit.ApprovedAt, now)
+	}
+
+	plan, ok := got.Approvals["plan"]
+	if !ok {
+		t.Fatal("plan approval not found")
+	}
+	if plan.ApprovedBy != "admin" {
+		t.Errorf("plan.ApprovedBy = %q, want admin", plan.ApprovedBy)
+	}
+
+	if len(got.ChecklistChecked) != 2 {
+		t.Errorf("ChecklistChecked = %v, want [security, tests]", got.ChecklistChecked)
+	}
+}

@@ -22,12 +22,15 @@ func TestApprove_SetsTimestamp(t *testing.T) {
 	if c.workUnit.Approvals == nil {
 		t.Fatal("expected Approvals map to be initialized")
 	}
-	ts, ok := c.workUnit.Approvals["submit"]
+	record, ok := c.workUnit.Approvals["submit"]
 	if !ok {
 		t.Fatal("expected submit approval to be set")
 	}
-	if ts.Before(before) {
-		t.Errorf("approval timestamp %v is before test start %v", ts, before)
+	if record.ApprovedAt.Before(before) {
+		t.Errorf("approval timestamp %v is before test start %v", record.ApprovedAt, before)
+	}
+	if record.ApprovedBy == "" {
+		t.Error("expected ApprovedBy to be set")
 	}
 }
 

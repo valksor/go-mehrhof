@@ -50,12 +50,30 @@ func (c *Conductor) Submit(ctx context.Context, deleteBranch bool) error {
 
 	// Check approval requirement
 	if settings.Workflow.Policy.ApprovalRequired[string(EventSubmit)] {
-		if c.workUnit.Approvals == nil || c.workUnit.Approvals[string(EventSubmit)].IsZero() {
+		record, ok := c.workUnit.Approvals[string(EventSubmit)]
+		if !ok || record.ApprovedAt.IsZero() {
+			c.emit(ConductorEvent{
+				Type:    "approval_required",
+				State:   c.machine.State(),
+				Message: fmt.Sprintf("Approval required for: %s", EventSubmit),
+			})
 			c.mu.Unlock()
 
 			return errors.New("cannot submit: explicit approval required. Run: kvelmo approve submit")
 		}
 	}
+
+	// Run pre-transition hooks (release lock during shell execution)
+	c.mu.Unlock()
+	if err := c.RunTransitionHooks(ctx, EventSubmit); err != nil {
+		c.emitEnrichedError(err, "submit")
+
+		return err
+	}
+	c.mu.Lock()
+
+	// Validate PR template required sections (checked early to fail fast)
+	prRequiredSections := settings.Git.PRRequiredSections
 
 	// Check quality gate - use cached result from Review() if available,
 	// otherwise run synchronously (when Review was skipped)
@@ -189,6 +207,13 @@ func (c *Conductor) Submit(ctx context.Context, deleteBranch bool) error {
 					} else {
 						prBody = buildPRDescriptionWithDecisions(workUnitDescription, specCount, checkpointCount, "", nil)
 					}
+					// Validate required PR template sections are filled
+					if len(prRequiredSections) > 0 {
+						if missing := validatePRSections(prBody, prRequiredSections); len(missing) > 0 {
+							return fmt.Errorf("PR template has unfilled required sections: %s", strings.Join(missing, ", "))
+						}
+					}
+
 					prOpts := provider.PROptions{
 						Title:   c.interpolatePRTitle(title),
 						Body:    prBody,
@@ -486,4 +511,50 @@ func buildPRDescriptionWithDecisions(description string, specCount, checkpointCo
 	aiSection := changeset.FormatMarkdown(decisions, diffStat)
 
 	return base + "\n" + aiSection
+}
+
+// validatePRSections checks that all required sections in the PR body contain
+// meaningful content (not just placeholder text or empty lines).
+// Returns the list of section keywords that are missing content.
+func validatePRSections(body string, requiredSections []string) []string {
+	lines := strings.Split(body, "\n")
+	var missing []string
+
+	for _, section := range requiredSections {
+		sectionLower := strings.ToLower(section)
+		found := false
+		hasContent := false
+
+		for i, line := range lines {
+			trimmed := strings.TrimSpace(strings.ToLower(line))
+			// Check if this line is a header containing the section keyword
+			if !strings.HasPrefix(trimmed, "#") || !strings.Contains(trimmed, sectionLower) {
+				continue
+			}
+			found = true
+			// Check lines after header for real content
+			for j := i + 1; j < len(lines); j++ {
+				nextLine := strings.TrimSpace(lines[j])
+				// Stop at next header
+				if strings.HasPrefix(nextLine, "#") {
+					break
+				}
+				// Skip empty lines and HTML comments (placeholders)
+				if nextLine == "" || strings.HasPrefix(nextLine, "<!--") {
+					continue
+				}
+				hasContent = true
+
+				break
+			}
+
+			break
+		}
+
+		if !found || !hasContent {
+			missing = append(missing, section)
+		}
+	}
+
+	return missing
 }

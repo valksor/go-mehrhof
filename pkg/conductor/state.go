@@ -112,6 +112,12 @@ type HierarchyContext struct {
 	Siblings []TaskSummary `json:"siblings,omitempty"`
 }
 
+// ApprovalRecord tracks who approved a transition and when.
+type ApprovalRecord struct {
+	ApprovedBy string    `json:"approved_by,omitempty"` // User identity (from UserID or hostname)
+	ApprovedAt time.Time `json:"approved_at"`
+}
+
 // WorkUnit represents the current task being worked on.
 type WorkUnit struct {
 	ID             string            `json:"id"`
@@ -134,15 +140,15 @@ type WorkUnit struct {
 	Hierarchy *HierarchyContext `json:"hierarchy,omitempty"`
 	// QualityGate caches the result of async quality gate (run during Review).
 	// nil = not yet run, true = passed, false = failed
-	QualityGatePassed *bool                `json:"quality_gate_passed,omitempty"`
-	QualityGateError  string               `json:"quality_gate_error,omitempty"`
-	Approvals         map[string]time.Time `json:"approvals,omitempty"`         // Event -> approval timestamp
-	ChecklistChecked  []string             `json:"checklist_checked,omitempty"` // Checked review items
-	Tags              []string             `json:"tags,omitempty"`
-	Priority          int                  `json:"priority,omitempty"`
-	DependsOn         []string             `json:"depends_on,omitempty"`
-	CreatedAt         time.Time            `json:"created_at"`
-	UpdatedAt         time.Time            `json:"updated_at"`
+	QualityGatePassed *bool                     `json:"quality_gate_passed,omitempty"`
+	QualityGateError  string                    `json:"quality_gate_error,omitempty"`
+	Approvals         map[string]ApprovalRecord `json:"approvals,omitempty"`         // Event -> approval record
+	ChecklistChecked  []string                  `json:"checklist_checked,omitempty"` // Checked review items
+	Tags              []string                  `json:"tags,omitempty"`
+	Priority          int                       `json:"priority,omitempty"`
+	DependsOn         []string                  `json:"depends_on,omitempty"`
+	CreatedAt         time.Time                 `json:"created_at"`
+	UpdatedAt         time.Time                 `json:"updated_at"`
 }
 
 // Source represents where the task came from.

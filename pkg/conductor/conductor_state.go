@@ -147,13 +147,22 @@ func workUnitToTaskState(state State, wu *WorkUnit, history []HistoryEntry) *sto
 		RedoStack:        wu.RedoStack,
 		Jobs:             wu.Jobs,
 		Metadata:         wu.Metadata,
-		Approvals:        wu.Approvals,
 		ChecklistChecked: wu.ChecklistChecked,
 		Tags:             wu.Tags,
 		Priority:         wu.Priority,
 		DependsOn:        wu.DependsOn,
 		CreatedAt:        wu.CreatedAt,
 		UpdatedAt:        wu.UpdatedAt,
+	}
+	// Convert approval records
+	if len(wu.Approvals) > 0 {
+		ts.Approvals = make(map[string]storage.TaskApprovalRecord, len(wu.Approvals))
+		for k, v := range wu.Approvals {
+			ts.Approvals[k] = storage.TaskApprovalRecord{
+				ApprovedBy: v.ApprovedBy,
+				ApprovedAt: v.ApprovedAt,
+			}
+		}
 	}
 	if wu.Source != nil {
 		ts.Source = &storage.TaskSource{
@@ -212,13 +221,22 @@ func taskStateToWorkUnit(ts *storage.TaskState) (State, *WorkUnit, []HistoryEntr
 		RedoStack:        ts.RedoStack,
 		Jobs:             ts.Jobs,
 		Metadata:         ts.Metadata,
-		Approvals:        ts.Approvals,
 		ChecklistChecked: ts.ChecklistChecked,
 		Tags:             ts.Tags,
 		Priority:         ts.Priority,
 		DependsOn:        ts.DependsOn,
 		CreatedAt:        ts.CreatedAt,
 		UpdatedAt:        ts.UpdatedAt,
+	}
+	// Convert approval records
+	if len(ts.Approvals) > 0 {
+		wu.Approvals = make(map[string]ApprovalRecord, len(ts.Approvals))
+		for k, v := range ts.Approvals {
+			wu.Approvals[k] = ApprovalRecord{
+				ApprovedBy: v.ApprovedBy,
+				ApprovedAt: v.ApprovedAt,
+			}
+		}
 	}
 	if wu.Metadata == nil {
 		wu.Metadata = make(map[string]string)
