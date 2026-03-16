@@ -39,3 +39,4 @@ web/src/types/socket.ts
 ~/.valksor/
 pkg/web/static/dist/
 web/src-tauri/lcov.info
+.superpowers/
