@@ -12,12 +12,16 @@ import (
 	"github.com/valksor/kvelmo/pkg/socket"
 )
 
-var batchStateFilter string
+var (
+	batchStateFilter string
+	batchTagFilter   string
+	batchMatchFilter string
+)
 
 var BatchCmd = &cobra.Command{
 	Use:   "batch <action>",
 	Short: "Run an action across all active projects",
-	Long: `Execute an action on all active projects matching the optional state filter.
+	Long: `Execute an action on all active projects matching the optional filters.
 
 Actions:
   submit    Submit all matching tasks (creates PRs)
@@ -25,16 +29,25 @@ Actions:
   reset     Reset all matching tasks
   stop      Stop all matching tasks
 
+Filters:
+  --state   Filter by task state (e.g. reviewing, failed)
+  --tag     Filter by task tag
+  --match   Filter by project path substring
+
 Examples:
   kvelmo batch submit --state reviewing   Submit all reviewed tasks
   kvelmo batch stop                       Stop all active tasks
-  kvelmo batch abort --state failed       Abort all failed tasks`,
+  kvelmo batch abort --state failed       Abort all failed tasks
+  kvelmo batch stop --tag backend         Stop all tasks tagged 'backend'
+  kvelmo batch submit --match myproject   Submit tasks in paths containing 'myproject'`,
 	Args: cobra.ExactArgs(1),
 	RunE: runBatch,
 }
 
 func init() {
 	BatchCmd.Flags().StringVar(&batchStateFilter, "state", "", "Only act on tasks in this state")
+	BatchCmd.Flags().StringVar(&batchTagFilter, "tag", "", "Only act on tasks with this tag")
+	BatchCmd.Flags().StringVar(&batchMatchFilter, "match", "", "Only act on projects whose path contains this substring")
 }
 
 func runBatch(_ *cobra.Command, args []string) error {
@@ -54,8 +67,18 @@ func runBatch(_ *cobra.Command, args []string) error {
 	params := map[string]any{
 		"action": action,
 	}
+	filter := map[string]string{}
 	if batchStateFilter != "" {
-		params["filter"] = map[string]string{"state": batchStateFilter}
+		filter["state"] = batchStateFilter
+	}
+	if batchTagFilter != "" {
+		filter["tag"] = batchTagFilter
+	}
+	if batchMatchFilter != "" {
+		filter["match"] = batchMatchFilter
+	}
+	if len(filter) > 0 {
+		params["filter"] = filter
 	}
 
 	spinner := cli.NewSpinner(fmt.Sprintf("Running batch %s...", action))

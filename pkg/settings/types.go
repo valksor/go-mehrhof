@@ -16,7 +16,7 @@ import "gopkg.in/yaml.v3"
 // Settings represents the complete configuration for kvelmo.
 // Project settings override global settings when both are present.
 type Settings struct {
-	Preset       string                 `yaml:"preset,omitempty" json:"preset,omitempty" schema:"label=Preset;desc=Configuration preset to apply defaults (e.g. compliance);options=|compliance;advanced"`
+	Preset       string                 `yaml:"preset,omitempty" json:"preset,omitempty" schema:"label=Preset;desc=Configuration preset to apply defaults (e.g. compliance);options=|compliance|fast|solo;advanced"`
 	Agent        AgentSettings          `yaml:"agent,omitempty" json:"agent,omitempty"`
 	Providers    ProviderSettings       `yaml:"providers,omitempty" json:"providers,omitempty"`
 	Git          GitSettings            `yaml:"git,omitempty" json:"git,omitempty"`
@@ -234,6 +234,7 @@ type HooksSettings map[string][]TransitionHook
 // These are intentionally project-scoped and not meaningful at global level.
 type WorkflowSettings struct {
 	UseWorktreeIsolation *bool                `yaml:"use_worktree_isolation,omitempty" json:"use_worktree_isolation,omitempty" schema:"label=Use Worktree Isolation;desc=Create an isolated git worktree for each task, enabling parallel work without conflicts;default=true"`
+	AutoAdvance          bool                 `yaml:"auto_advance,omitempty" json:"auto_advance,omitempty" schema:"label=Auto Advance;desc=Automatically progress through plan, implement, and review phases;default=false"`
 	ExternalReview       ExternalReviewConfig `yaml:"external_review,omitempty" json:"external_review,omitempty" schema:"label=External Review;desc=External CLI review tool integration"`
 	Policy               PolicySettings       `yaml:"policy,omitempty" json:"policy,omitempty"`
 	Retry                RetrySettings        `yaml:"retry,omitempty" json:"retry,omitempty"`
@@ -264,6 +265,11 @@ func (w *WorkflowSettings) UnmarshalYAML(value *yaml.Node) error {
 	// Decode known fields manually.
 	if node, ok := raw["use_worktree_isolation"]; ok {
 		if err := node.Decode(&p.UseWorktreeIsolation); err != nil {
+			return err
+		}
+	}
+	if node, ok := raw["auto_advance"]; ok {
+		if err := node.Decode(&p.AutoAdvance); err != nil {
 			return err
 		}
 	}
@@ -313,6 +319,7 @@ type NotifySettings struct {
 	OnFailure bool              `yaml:"on_failure,omitempty" json:"on_failure,omitempty" schema:"label=Always Notify Failures;desc=Send failure notifications regardless of event filter;default=true"`
 	Terminal  bool              `yaml:"terminal" json:"terminal" schema:"label=Terminal Bell;desc=Ring terminal bell when long-running operations complete or fail;default=true"`
 	Desktop   bool              `yaml:"desktop,omitempty" json:"desktop,omitempty" schema:"label=Desktop Notifications;desc=Show native desktop notifications (macOS only);default=false"`
+	Events    []string          `yaml:"events,omitempty" json:"events,omitempty" schema:"label=Notification Events;desc=Event types for desktop and terminal notifications (empty = all). Values: planned, implemented, failed, submitted, finished;type=tags"`
 }
 
 // WebhookEndpoint configures a single webhook destination.

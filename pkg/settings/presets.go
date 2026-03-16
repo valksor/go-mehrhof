@@ -1,7 +1,7 @@
 package settings
 
 // PresetNames lists all available preset names.
-var PresetNames = []string{"compliance"}
+var PresetNames = []string{"compliance", "fast", "solo"}
 
 // ApplyPreset returns a Settings struct with preset defaults applied.
 // Only non-zero values from the preset are set; the caller should merge them
@@ -10,6 +10,10 @@ func ApplyPreset(name string) *Settings {
 	switch name {
 	case "compliance":
 		return compliancePreset()
+	case "fast":
+		return fastPreset()
+	case "solo":
+		return soloPreset()
 	default:
 		return nil
 	}
@@ -33,6 +37,25 @@ func compliancePreset() *Settings {
 				ApprovalRequired:    map[string]bool{"submit": true},
 				ReviewChecklist:     []string{"security review", "tests passing", "docs updated"},
 			},
+		},
+	}
+}
+
+func fastPreset() *Settings {
+	return &Settings{
+		Workers: WorkerSettings{
+			Max: 5,
+		},
+		Workflow: WorkflowSettings{
+			AutoAdvance: true,
+		},
+	}
+}
+
+func soloPreset() *Settings {
+	return &Settings{
+		Workers: WorkerSettings{
+			Max: 1,
 		},
 	}
 }
