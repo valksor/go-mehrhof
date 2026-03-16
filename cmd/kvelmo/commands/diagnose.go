@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"time"
@@ -12,7 +13,10 @@ import (
 	"github.com/valksor/kvelmo/pkg/socket"
 )
 
-var diagnoseJSON bool
+var (
+	diagnoseJSON   bool
+	diagnoseHealth bool
+)
 
 var DiagnoseCmd = &cobra.Command{
 	Use:     "diagnose",
@@ -32,6 +36,7 @@ Run this command to troubleshoot setup issues.`,
 
 func init() {
 	DiagnoseCmd.Flags().BoolVar(&diagnoseJSON, "json", false, "Output raw JSON response")
+	DiagnoseCmd.Flags().BoolVar(&diagnoseHealth, "health", false, "Show worktree socket health status")
 }
 
 type diagnoseCheck struct {
@@ -54,6 +59,10 @@ type diagnoseResult struct {
 }
 
 func runDiagnose(cmd *cobra.Command, args []string) error {
+	if diagnoseHealth {
+		return runDiagnoseHealth()
+	}
+
 	var issues []string
 
 	// Run preflight checks for git and agent CLIs
@@ -197,6 +206,72 @@ func runDiagnose(cmd *cobra.Command, args []string) error {
 	} else {
 		fmt.Println("  ✓ All checks passed!")
 		fmt.Println()
+	}
+
+	return nil
+}
+
+func runDiagnoseHealth() error {
+	globalPath := socket.GlobalSocketPath()
+	if !socket.SocketExists(globalPath) {
+		return fmt.Errorf("global socket not running\nRun '%s serve' first", meta.Name)
+	}
+
+	client, err := socket.NewClient(globalPath, socket.WithTimeout(10*time.Second))
+	if err != nil {
+		return fmt.Errorf("connect to global socket: %w", err)
+	}
+	defer func() { _ = client.Close() }()
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	resp, err := client.Call(ctx, "system.health", nil)
+	if err != nil {
+		return fmt.Errorf("system.health: %w", err)
+	}
+
+	if diagnoseJSON {
+		out, jsonErr := json.MarshalIndent(resp.Result, "", "  ")
+		if jsonErr != nil {
+			fmt.Println(string(resp.Result))
+		} else {
+			fmt.Println(string(out))
+		}
+
+		return nil
+	}
+
+	var result struct {
+		Worktrees []struct {
+			ID       string `json:"id"`
+			Path     string `json:"path"`
+			State    string `json:"state"`
+			Healthy  *bool  `json:"healthy"`
+			LastPing string `json:"last_ping"`
+		} `json:"worktrees"`
+	}
+	if err := json.Unmarshal(resp.Result, &result); err != nil {
+		return fmt.Errorf("parse result: %w", err)
+	}
+
+	if len(result.Worktrees) == 0 {
+		fmt.Println("No worktrees registered.")
+
+		return nil
+	}
+
+	fmt.Printf("Worktree health (%d registered):\n", len(result.Worktrees))
+	for _, wt := range result.Worktrees {
+		status := "unknown"
+		if wt.Healthy != nil {
+			if *wt.Healthy {
+				status = "healthy"
+			} else {
+				status = "unhealthy"
+			}
+		}
+		fmt.Printf("  %-40s  %-12s  %s\n", wt.Path, wt.State, status)
 	}
 
 	return nil

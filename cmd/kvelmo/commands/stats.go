@@ -15,8 +15,9 @@ import (
 )
 
 var (
-	statsJSON bool
-	statsAll  bool
+	statsJSON    bool
+	statsAll     bool
+	statsHistory bool
 )
 
 var StatsCmd = &cobra.Command{
@@ -29,6 +30,7 @@ var StatsCmd = &cobra.Command{
 func init() {
 	StatsCmd.Flags().BoolVar(&statsJSON, "json", false, "Output as JSON")
 	StatsCmd.Flags().BoolVar(&statsAll, "all", false, "Show stats across all registered projects")
+	StatsCmd.Flags().BoolVar(&statsHistory, "history", false, "Show metrics time-series history")
 }
 
 type statsOutput struct {
@@ -47,11 +49,87 @@ type recentTask struct {
 }
 
 func runStats(cmd *cobra.Command, args []string) error {
+	if statsHistory {
+		return runStatsHistory()
+	}
 	if statsAll {
 		return runStatsAll()
 	}
 
 	return runStatsProject()
+}
+
+func runStatsHistory() error {
+	globalPath := socket.GlobalSocketPath()
+	if !socket.SocketExists(globalPath) {
+		return fmt.Errorf("global socket not running\nRun '%s serve' first", meta.Name)
+	}
+
+	client, err := socket.NewClient(globalPath, socket.WithTimeout(5*time.Second))
+	if err != nil {
+		return fmt.Errorf("connect to global socket: %w", err)
+	}
+	defer func() { _ = client.Close() }()
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	resp, err := client.Call(ctx, "metrics.history", map[string]any{})
+	if err != nil {
+		return fmt.Errorf("metrics.history: %w", err)
+	}
+
+	var result struct {
+		Enabled bool              `json:"enabled"`
+		Entries []json.RawMessage `json:"entries"`
+	}
+	if err := json.Unmarshal(resp.Result, &result); err != nil {
+		return fmt.Errorf("parse result: %w", err)
+	}
+
+	if !result.Enabled {
+		fmt.Println("Metrics history is not enabled.")
+		fmt.Printf("Enable it: %s config set storage.metrics_history.enabled true\n", meta.Name)
+
+		return nil
+	}
+
+	if len(result.Entries) == 0 {
+		fmt.Println("No metrics history entries yet.")
+
+		return nil
+	}
+
+	if statsJSON {
+		out, jsonErr := json.MarshalIndent(result.Entries, "", "  ")
+		if jsonErr != nil {
+			return fmt.Errorf("marshal: %w", jsonErr)
+		}
+		fmt.Println(string(out))
+
+		return nil
+	}
+
+	fmt.Printf("Metrics history: %d entries\n", len(result.Entries))
+	// Show last 5 entries as summary
+	start := len(result.Entries) - 5
+	if start < 0 {
+		start = 0
+	}
+	for _, entry := range result.Entries[start:] {
+		var snap struct {
+			Timestamp string `json:"timestamp"`
+			RPCCount  int64  `json:"rpc_requests"`
+			Jobs      int64  `json:"jobs_completed"`
+			Errors    int64  `json:"rpc_errors"`
+		}
+		if err := json.Unmarshal(entry, &snap); err != nil {
+			continue
+		}
+		fmt.Printf("  %s  rpcs=%d  jobs=%d  errors=%d\n", snap.Timestamp, snap.RPCCount, snap.Jobs, snap.Errors)
+	}
+
+	return nil
 }
 
 func runStatsProject() error {
