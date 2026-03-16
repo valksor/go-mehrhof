@@ -259,3 +259,81 @@ func TestEntryNewFields(t *testing.T) {
 		t.Errorf("AgentModel = %q, want %q", decoded.AgentModel, "claude")
 	}
 }
+
+func TestEntryFilesAffected_Serialization(t *testing.T) {
+	entry := Entry{
+		Timestamp:     time.Now(),
+		Method:        "submit",
+		FilesAffected: []string{"pkg/auth/handler.go", "pkg/auth/handler_test.go"},
+	}
+	data, err := json.Marshal(entry)
+	if err != nil {
+		t.Fatalf("marshal: %v", err)
+	}
+
+	var decoded Entry
+	if err := json.Unmarshal(data, &decoded); err != nil {
+		t.Fatalf("unmarshal: %v", err)
+	}
+
+	if len(decoded.FilesAffected) != 2 {
+		t.Fatalf("FilesAffected length = %d, want 2", len(decoded.FilesAffected))
+	}
+	if decoded.FilesAffected[0] != "pkg/auth/handler.go" {
+		t.Errorf("FilesAffected[0] = %q, want pkg/auth/handler.go", decoded.FilesAffected[0])
+	}
+}
+
+func TestEntryFilesAffected_OmittedWhenEmpty(t *testing.T) {
+	entry := Entry{
+		Timestamp: time.Now(),
+		Method:    "ping",
+	}
+	data, err := json.Marshal(entry)
+	if err != nil {
+		t.Fatalf("marshal: %v", err)
+	}
+
+	// FilesAffected should be omitted from JSON when nil
+	var raw map[string]any
+	if err := json.Unmarshal(data, &raw); err != nil {
+		t.Fatalf("unmarshal: %v", err)
+	}
+	if _, exists := raw["files_affected"]; exists {
+		t.Error("files_affected should be omitted when empty")
+	}
+}
+
+func TestEntryFilesAffected_RoundTrip(t *testing.T) {
+	l := newTestLog(t)
+	now := time.Now()
+
+	ctx, cancel := context.WithCancel(context.Background())
+	done := make(chan struct{})
+	go func() {
+		l.Start(ctx)
+		close(done)
+	}()
+
+	l.Record(Entry{
+		Timestamp:     now,
+		Method:        "implement",
+		DurationMs:    500,
+		FilesAffected: []string{"main.go", "util.go"},
+	})
+
+	cancel()
+	<-done
+	l.Close()
+
+	entries, err := l.Query(QueryOptions{})
+	if err != nil {
+		t.Fatalf("Query: %v", err)
+	}
+	if len(entries) != 1 {
+		t.Fatalf("expected 1 entry, got %d", len(entries))
+	}
+	if len(entries[0].FilesAffected) != 2 {
+		t.Errorf("FilesAffected length = %d, want 2", len(entries[0].FilesAffected))
+	}
+}
