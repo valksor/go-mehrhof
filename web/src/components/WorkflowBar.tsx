@@ -58,9 +58,6 @@ export function WorkflowBar() {
     error: s.error,
   })))
 
-  const modalCommand = useLayoutStore(s => s.modalCommand)
-  const setModalCommand = useLayoutStore(s => s.setModalCommand)
-
   const [showSubmitModal, setShowSubmitModal] = useState(false)
   const [submitDeleteBranch, setSubmitDeleteBranch] = useState(false)
   const [showFinishModal, setShowFinishModal] = useState(false)
@@ -70,12 +67,14 @@ export function WorkflowBar() {
 
   // React to modal commands from chat slash commands
   useEffect(() => {
-    if (!modalCommand) return
-    if (modalCommand === 'submit') setShowSubmitModal(true)
-    else if (modalCommand === 'finish') setShowFinishModal(true)
-    else if (modalCommand === 'abandon') setShowAbandonModal(true)
-    setModalCommand(null)
-  }, [modalCommand, setModalCommand])
+    return useLayoutStore.subscribe((state) => {
+      if (!state.modalCommand) return
+      if (state.modalCommand === 'submit') setShowSubmitModal(true)
+      else if (state.modalCommand === 'finish') setShowFinishModal(true)
+      else if (state.modalCommand === 'abandon') setShowAbandonModal(true)
+      state.setModalCommand(null)
+    })
+  }, [])
 
   const steps: WorkflowStep[] = [
     { id: 'load', label: 'Load', states: ['loaded'] },
