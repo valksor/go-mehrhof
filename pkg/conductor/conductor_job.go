@@ -34,7 +34,7 @@ func (c *Conductor) watchJob(ctx context.Context, jobID string, completionEvent 
 		if repo, err := git.Open(workDir); err == nil {
 			if err := repo.StageAll(ctx); err == nil {
 				if hasChanges, _ := repo.HasUncommittedChanges(ctx); hasChanges {
-					if sha, commitErr := repo.Commit(ctx, fmt.Sprintf("kvelmo: pre-%s checkpoint", completionEvent)); commitErr == nil {
+					if sha, commitErr := repo.Commit(ctx, c.formatCheckpointMessage(fmt.Sprintf("pre-%s checkpoint", completionEvent))); commitErr == nil {
 						c.workUnit.Checkpoints = append(c.workUnit.Checkpoints, sha)
 						slog.Info("pre-job checkpoint created", "sha", sha, "event", completionEvent)
 					}
@@ -65,6 +65,7 @@ func (c *Conductor) watchJob(ctx context.Context, jobID string, completionEvent 
 				if completionEvent == EventPlanDone {
 					c.detectSpecificationFiles()
 					c.copySpecsToRepo()
+					c.copyPlanToRepo()
 				}
 
 				// Create checkpoint after job completion
@@ -77,7 +78,7 @@ func (c *Conductor) watchJob(ctx context.Context, jobID string, completionEvent 
 					if stageErr := repo.StageAll(ctx); stageErr != nil {
 						slog.Warn("checkpoint: stage failed", "error", stageErr, "workDir", workDir)
 					} else if hasChanges, _ := repo.HasUncommittedChanges(ctx); hasChanges {
-						sha, commitErr := repo.Commit(ctx, fmt.Sprintf("kvelmo: %s complete", completionEvent))
+						sha, commitErr := repo.Commit(ctx, c.formatCheckpointMessage(fmt.Sprintf("%s complete", completionEvent)))
 						if commitErr == nil {
 							c.workUnit.Checkpoints = append(c.workUnit.Checkpoints, sha)
 							slog.Info("checkpoint created", "sha", sha, "event", completionEvent)
@@ -157,7 +158,7 @@ func (c *Conductor) watchJob(ctx context.Context, jobID string, completionEvent 
 				if repo, err := git.Open(workDir); err == nil {
 					if stageErr := repo.StageAll(ctx); stageErr == nil {
 						if hasChanges, _ := repo.HasUncommittedChanges(ctx); hasChanges {
-							if sha, commitErr := repo.Commit(ctx, fmt.Sprintf("kvelmo: partial work before %s failure", completionEvent)); commitErr == nil {
+							if sha, commitErr := repo.Commit(ctx, c.formatCheckpointMessage(fmt.Sprintf("partial work before %s failure", completionEvent))); commitErr == nil {
 								c.workUnit.Checkpoints = append(c.workUnit.Checkpoints, sha)
 								slog.Info("partial work checkpoint saved", "sha", sha, "event", completionEvent)
 							}
@@ -259,6 +260,24 @@ func validateBranchName(name, pattern string) error {
 	}
 
 	return nil
+}
+
+// formatCheckpointMessage formats a checkpoint commit message using the configured prefix.
+// If CheckpointPrefix is set, it wraps the message with that prefix; otherwise uses "kvelmo:" default.
+func (c *Conductor) formatCheckpointMessage(message string) string {
+	s := c.getEffectiveSettings()
+	prefix := s.Git.CheckpointPrefix
+	if prefix == "" {
+		return "kvelmo: " + message
+	}
+	// Interpolate {key} variable
+	if c.workUnit != nil && c.workUnit.ExternalID != "" {
+		prefix = strings.ReplaceAll(prefix, "{key}", c.workUnit.ExternalID)
+	} else {
+		prefix = strings.ReplaceAll(prefix, "{key}", "kvelmo")
+	}
+
+	return prefix + " " + message
 }
 
 func (c *Conductor) interpolatedCommitPrefix() string {
@@ -500,5 +519,59 @@ func (c *Conductor) copySpecsToRepo() {
 		} else {
 			slog.Info("spec copied to repo", "path", fullPath)
 		}
+	}
+}
+
+// copyPlanToRepo copies the latest plan to an in-repo path if configured.
+// Must be called with c.mu held.
+func (c *Conductor) copyPlanToRepo() {
+	if c.workUnit == nil || c.store == nil {
+		return
+	}
+
+	s := c.getEffectiveSettings()
+	outputPath := s.Storage.PlanOutputPath
+	if outputPath == "" {
+		return
+	}
+
+	planStore := storage.NewPlanStore(c.store)
+	plan, err := planStore.GetLatestPlan(c.workUnit.ID)
+	if err != nil || plan == nil {
+		return
+	}
+
+	// Load plan history markdown
+	history, err := planStore.LoadPlanHistory(c.workUnit.ID, plan.ID)
+	if err != nil {
+		c.logVerbosef("Warning: could not read plan history for repo copy: %v", err)
+
+		return
+	}
+
+	// Interpolate variables
+	key := ""
+	if c.workUnit.ExternalID != "" {
+		key = c.workUnit.ExternalID
+	}
+	slug := slugify(c.workUnit.Title)
+
+	resolved := outputPath
+	resolved = strings.ReplaceAll(resolved, "{key}", key)
+	resolved = strings.ReplaceAll(resolved, "{slug}", slug)
+
+	workDir := c.getWorkDir()
+	fullPath := filepath.Join(workDir, resolved)
+
+	if err := os.MkdirAll(filepath.Dir(fullPath), 0o755); err != nil {
+		c.logVerbosef("Warning: could not create plan output dir: %v", err)
+
+		return
+	}
+
+	if err := os.WriteFile(fullPath, []byte(history), 0o644); err != nil {
+		c.logVerbosef("Warning: could not write plan to repo: %v", err)
+	} else {
+		slog.Info("plan copied to repo", "path", fullPath)
 	}
 }

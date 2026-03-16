@@ -16,6 +16,7 @@ import "gopkg.in/yaml.v3"
 // Settings represents the complete configuration for kvelmo.
 // Project settings override global settings when both are present.
 type Settings struct {
+	Preset       string                 `yaml:"preset,omitempty" json:"preset,omitempty" schema:"label=Preset;desc=Configuration preset to apply defaults (e.g. compliance);options=|compliance;advanced"`
 	Agent        AgentSettings          `yaml:"agent,omitempty" json:"agent,omitempty"`
 	Providers    ProviderSettings       `yaml:"providers,omitempty" json:"providers,omitempty"`
 	Git          GitSettings            `yaml:"git,omitempty" json:"git,omitempty"`
@@ -124,16 +125,18 @@ type JiraConfig struct {
 // GitSettings configures git behavior for the workflow.
 // Pointer bools allow project-level false to override global-level true.
 type GitSettings struct {
-	BaseBranch              string `yaml:"base_branch,omitempty" json:"base_branch,omitempty" schema:"label=Base Branch;desc=Default branch for PRs (auto-detected from git remote if empty);placeholder=auto-detect"`
-	BranchPattern           string `yaml:"branch_pattern,omitempty" json:"branch_pattern,omitempty" schema:"label=Branch Pattern;desc=Pattern for branch names. Variables: {key}, {type}, {slug};default=feature/{key}--{slug}"`
-	CommitPrefix            string `yaml:"commit_prefix,omitempty" json:"commit_prefix,omitempty" schema:"label=Commit Prefix;desc=Pattern for commit messages. Variables: {key};default=[{key}]"`
-	CommitPattern           string `yaml:"commit_pattern,omitempty" json:"commit_pattern,omitempty" schema:"label=Commit Pattern;desc=Regex to validate commit messages. Leave empty to skip validation;placeholder=^(feat|fix|chore)\\(.*\\):.*;advanced"`
-	PRTitlePattern          string `yaml:"pr_title_pattern,omitempty" json:"pr_title_pattern,omitempty" schema:"label=PR Title Pattern;desc=Template for PR titles. Variables: {title}, {key}, {type}, {slug};default=[{key}] {title}"`
-	BranchValidationPattern string `yaml:"branch_validation_pattern,omitempty" json:"branch_validation_pattern,omitempty" schema:"label=Branch Validation;desc=Regex to validate generated branch names. Leave empty to skip validation;advanced"`
-	CreateBranch            *bool  `yaml:"create_branch,omitempty" json:"create_branch,omitempty" schema:"label=Create Branch;desc=Automatically create a branch when starting a task. If the branch already exists, switches to it;default=true"`
-	AutoCommit              *bool  `yaml:"auto_commit,omitempty" json:"auto_commit,omitempty" schema:"label=Auto Commit;desc=Automatically commit after implementation;default=true"`
-	SignCommits             *bool  `yaml:"sign_commits,omitempty" json:"sign_commits,omitempty" schema:"label=Sign Commits;desc=GPG sign commits;showWhen=git.auto_commit:true"`
-	AllowPRComment          *bool  `yaml:"allow_pr_comment,omitempty" json:"allow_pr_comment,omitempty" schema:"label=Allow PR Comments;desc=Post status comments on pull requests after submit"`
+	BaseBranch              string   `yaml:"base_branch,omitempty" json:"base_branch,omitempty" schema:"label=Base Branch;desc=Default branch for PRs (auto-detected from git remote if empty);placeholder=auto-detect"`
+	BranchPattern           string   `yaml:"branch_pattern,omitempty" json:"branch_pattern,omitempty" schema:"label=Branch Pattern;desc=Pattern for branch names. Variables: {key}, {type}, {slug};default=feature/{key}--{slug}"`
+	CommitPrefix            string   `yaml:"commit_prefix,omitempty" json:"commit_prefix,omitempty" schema:"label=Commit Prefix;desc=Pattern for commit messages. Variables: {key};default=[{key}]"`
+	CommitPattern           string   `yaml:"commit_pattern,omitempty" json:"commit_pattern,omitempty" schema:"label=Commit Pattern;desc=Regex to validate commit messages. Leave empty to skip validation;placeholder=^(feat|fix|chore)\\(.*\\):.*;advanced"`
+	CheckpointPrefix        string   `yaml:"checkpoint_prefix,omitempty" json:"checkpoint_prefix,omitempty" schema:"label=Checkpoint Prefix;desc=Prefix for kvelmo internal checkpoint commits. Variables: {key}. Leave empty for default 'kvelmo:' format;advanced"`
+	PRTitlePattern          string   `yaml:"pr_title_pattern,omitempty" json:"pr_title_pattern,omitempty" schema:"label=PR Title Pattern;desc=Template for PR titles. Variables: {title}, {key}, {type}, {slug};default=[{key}] {title}"`
+	PRRequiredSections      []string `yaml:"pr_required_sections,omitempty" json:"pr_required_sections,omitempty" schema:"label=PR Required Sections;desc=PR template section keywords that must be filled before submission (e.g. summary, test plan);type=tags;advanced"`
+	BranchValidationPattern string   `yaml:"branch_validation_pattern,omitempty" json:"branch_validation_pattern,omitempty" schema:"label=Branch Validation;desc=Regex to validate generated branch names. Leave empty to skip validation;advanced"`
+	CreateBranch            *bool    `yaml:"create_branch,omitempty" json:"create_branch,omitempty" schema:"label=Create Branch;desc=Automatically create a branch when starting a task. If the branch already exists, switches to it;default=true"`
+	AutoCommit              *bool    `yaml:"auto_commit,omitempty" json:"auto_commit,omitempty" schema:"label=Auto Commit;desc=Automatically commit after implementation;default=true"`
+	SignCommits             *bool    `yaml:"sign_commits,omitempty" json:"sign_commits,omitempty" schema:"label=Sign Commits;desc=GPG sign commits;showWhen=git.auto_commit:true"`
+	AllowPRComment          *bool    `yaml:"allow_pr_comment,omitempty" json:"allow_pr_comment,omitempty" schema:"label=Allow PR Comments;desc=Post status comments on pull requests after submit"`
 }
 
 // WorkerSettings configures the worker pool.
@@ -145,6 +148,7 @@ type WorkerSettings struct {
 type StorageSettings struct {
 	SaveInProject  *bool                  `yaml:"save_in_project,omitempty" json:"save_in_project,omitempty" schema:"label=Save in Project;desc=Store specs/plans/chat in .valksor/ instead of home (~/.valksor/kvelmo/);default=false"`
 	SpecOutputPath string                 `yaml:"spec_output_path,omitempty" json:"spec_output_path,omitempty" schema:"label=Spec Output Path;desc=Write specs to this repo path. Variables: {key}, {slug}. Example: docs/specs/{key}.md;advanced"`
+	PlanOutputPath string                 `yaml:"plan_output_path,omitempty" json:"plan_output_path,omitempty" schema:"label=Plan Output Path;desc=Write plans to this repo path. Variables: {key}, {slug}. Example: docs/plans/{key}.md;advanced"`
 	ChangelogPath  string                 `yaml:"changelog_path,omitempty" json:"changelog_path,omitempty" schema:"label=Changelog Path;desc=Path to CHANGELOG.md for auto-generated entries. Empty to disable;default=;placeholder=CHANGELOG.md;advanced"`
 	Recording      RecordingSettings      `yaml:"recording,omitempty" json:"recording,omitempty"`
 	ActivityLog    ActivityLogSettings    `yaml:"activity_log,omitempty" json:"activity_log,omitempty"`
@@ -214,6 +218,18 @@ type CISettings struct {
 	PollIntervalSec int  `yaml:"poll_interval_sec,omitempty" json:"poll_interval_sec,omitempty" schema:"label=Poll Interval (sec);desc=Seconds between CI status polls;default=30;min=10;max=300;advanced"`
 }
 
+// TransitionHook is a shell command that runs before a workflow transition.
+// If Required is true, the hook must succeed (exit 0) for the transition to proceed.
+type TransitionHook struct {
+	Command     string `yaml:"command" json:"command" schema:"label=Command;desc=Shell command to execute;required"`
+	Description string `yaml:"description,omitempty" json:"description,omitempty" schema:"label=Description;desc=Human-readable description of what this hook does"`
+	Required    bool   `yaml:"required,omitempty" json:"required,omitempty" schema:"label=Required;desc=Block the transition if hook fails;default=false"`
+}
+
+// HooksSettings maps transition event names to shell commands that run before the transition.
+// Keys are prefixed with "pre_" + event name (e.g., "pre_submit", "pre_implement").
+type HooksSettings map[string][]TransitionHook
+
 // WorkflowSettings contains per-project workflow options.
 // These are intentionally project-scoped and not meaningful at global level.
 type WorkflowSettings struct {
@@ -222,6 +238,7 @@ type WorkflowSettings struct {
 	Policy               PolicySettings       `yaml:"policy,omitempty" json:"policy,omitempty"`
 	Retry                RetrySettings        `yaml:"retry,omitempty" json:"retry,omitempty"`
 	CI                   CISettings           `yaml:"ci,omitempty" json:"ci,omitempty"`
+	Hooks                HooksSettings        `yaml:"hooks,omitempty" json:"hooks,omitempty"`
 }
 
 // UnmarshalYAML provides backward compatibility for the old "coderabbit" YAML key.
@@ -267,6 +284,11 @@ func (w *WorkflowSettings) UnmarshalYAML(value *yaml.Node) error {
 	}
 	if node, ok := raw["ci"]; ok {
 		if err := node.Decode(&p.CI); err != nil {
+			return err
+		}
+	}
+	if node, ok := raw["hooks"]; ok {
+		if err := node.Decode(&p.Hooks); err != nil {
 			return err
 		}
 	}
