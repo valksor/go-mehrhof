@@ -254,6 +254,9 @@ func (w *WorktreeSocket) registerHandlers() {
 
 	// CI status
 	w.server.Handle("ci.status", w.handleCIStatus)
+
+	// Workflow hooks
+	w.server.Handle("hooks.list", w.handleHooksList)
 }
 
 // injectSeqAndBuffer assigns a sequence number to a JSON event, stores it in the
