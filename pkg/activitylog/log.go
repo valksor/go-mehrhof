@@ -27,6 +27,7 @@ type Entry struct {
 	UserID        string    `json:"user_id,omitempty"`
 	TaskID        string    `json:"task_id,omitempty"`
 	AgentModel    string    `json:"agent_model,omitempty"`
+	FilesAffected []string  `json:"files_affected,omitempty"`
 }
 
 // Log manages append-only JSONL activity log files with non-blocking writes,

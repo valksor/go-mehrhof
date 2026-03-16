@@ -105,6 +105,39 @@ func SaveProject(projectRoot string, s *Settings) error {
 	return Save(ProjectPath(projectRoot), s)
 }
 
+// FindNearestProjectConfig walks up from startDir looking for .valksor/kvelmo.yaml files.
+// Returns all config paths found, ordered from deepest (most specific) to shallowest (least specific).
+// Stops at stopDir (typically the git repo root). Returns nil if no configs found.
+func FindNearestProjectConfig(startDir, stopDir string) []string {
+	var paths []string
+	dir := startDir
+	stopDir = filepath.Clean(stopDir)
+
+	for {
+		candidate := ProjectPath(dir)
+		if _, err := os.Stat(candidate); err == nil {
+			paths = append(paths, candidate)
+		}
+
+		if filepath.Clean(dir) == stopDir {
+			break
+		}
+
+		parent := filepath.Dir(dir)
+		if parent == dir {
+			break // reached filesystem root
+		}
+		dir = parent
+	}
+
+	// Reverse so shallowest is first (gets overridden by deeper configs)
+	for i, j := 0, len(paths)-1; i < j; i, j = i+1, j-1 {
+		paths[i], paths[j] = paths[j], paths[i]
+	}
+
+	return paths
+}
+
 // LoadEffective loads and merges global and project settings.
 // Project settings override global settings.
 // Also loads and injects environment variables from .env files.
@@ -188,8 +221,14 @@ func Merge(dst, src *Settings) {
 	if src.Git.CommitPattern != "" {
 		dst.Git.CommitPattern = src.Git.CommitPattern
 	}
+	if src.Git.CheckpointPrefix != "" {
+		dst.Git.CheckpointPrefix = src.Git.CheckpointPrefix
+	}
 	if src.Git.PRTitlePattern != "" {
 		dst.Git.PRTitlePattern = src.Git.PRTitlePattern
+	}
+	if len(src.Git.PRRequiredSections) > 0 {
+		dst.Git.PRRequiredSections = src.Git.PRRequiredSections
 	}
 	if src.Git.BranchValidationPattern != "" {
 		dst.Git.BranchValidationPattern = src.Git.BranchValidationPattern
@@ -219,6 +258,9 @@ func Merge(dst, src *Settings) {
 	}
 	if src.Storage.SpecOutputPath != "" {
 		dst.Storage.SpecOutputPath = src.Storage.SpecOutputPath
+	}
+	if src.Storage.PlanOutputPath != "" {
+		dst.Storage.PlanOutputPath = src.Storage.PlanOutputPath
 	}
 	if src.Storage.ChangelogPath != "" {
 		dst.Storage.ChangelogPath = src.Storage.ChangelogPath
@@ -261,6 +303,21 @@ func Merge(dst, src *Settings) {
 	}
 	if len(src.Workflow.Policy.DocRequirements) > 0 {
 		dst.Workflow.Policy.DocRequirements = src.Workflow.Policy.DocRequirements
+	}
+
+	// Workflow hooks
+	if len(src.Workflow.Hooks) > 0 {
+		if dst.Workflow.Hooks == nil {
+			dst.Workflow.Hooks = make(HooksSettings)
+		}
+		for k, v := range src.Workflow.Hooks {
+			dst.Workflow.Hooks[k] = v
+		}
+	}
+
+	// Preset
+	if src.Preset != "" {
+		dst.Preset = src.Preset
 	}
 
 	// UI settings
@@ -683,6 +740,14 @@ func SetValue(s *Settings, path string, value any) error {
 		}
 
 		return errors.New("git.commit_pattern must be a string")
+	case "git.checkpoint_prefix":
+		if v, ok := value.(string); ok {
+			s.Git.CheckpointPrefix = v
+
+			return nil
+		}
+
+		return errors.New("git.checkpoint_prefix must be a string")
 	case "git.pr_title_pattern":
 		if v, ok := value.(string); ok {
 			s.Git.PRTitlePattern = v
@@ -764,6 +829,14 @@ func SetValue(s *Settings, path string, value any) error {
 		}
 
 		return errors.New("storage.spec_output_path must be a string")
+	case "storage.plan_output_path":
+		if v, ok := value.(string); ok {
+			s.Storage.PlanOutputPath = v
+
+			return nil
+		}
+
+		return errors.New("storage.plan_output_path must be a string")
 	case "storage.changelog_path":
 		if v, ok := value.(string); ok {
 			s.Storage.ChangelogPath = v
@@ -982,6 +1055,8 @@ func GetValue(s *Settings, path string) (any, error) {
 		return s.Git.CommitPrefix, nil
 	case "git.commit_pattern":
 		return s.Git.CommitPattern, nil
+	case "git.checkpoint_prefix":
+		return s.Git.CheckpointPrefix, nil
 	case "git.pr_title_pattern":
 		return s.Git.PRTitlePattern, nil
 	case "git.branch_validation_pattern":
@@ -1004,6 +1079,8 @@ func GetValue(s *Settings, path string) (any, error) {
 		return BoolValue(s.Storage.SaveInProject, false), nil
 	case "storage.spec_output_path":
 		return s.Storage.SpecOutputPath, nil
+	case "storage.plan_output_path":
+		return s.Storage.PlanOutputPath, nil
 	case "storage.changelog_path":
 		return s.Storage.ChangelogPath, nil
 
@@ -1086,6 +1163,7 @@ var envOverrides = []struct {
 	{"GIT_BRANCH_PATTERN", "git.branch_pattern"},
 	{"GIT_COMMIT_PREFIX", "git.commit_prefix"},
 	{"GIT_COMMIT_PATTERN", "git.commit_pattern"},
+	{"GIT_CHECKPOINT_PREFIX", "git.checkpoint_prefix"},
 	{"GIT_PR_TITLE_PATTERN", "git.pr_title_pattern"},
 	{"GIT_BRANCH_VALIDATION_PATTERN", "git.branch_validation_pattern"},
 	{"GIT_CREATE_BRANCH", "git.create_branch"},
@@ -1099,6 +1177,7 @@ var envOverrides = []struct {
 	// Storage
 	{"STORAGE_SAVE_IN_PROJECT", "storage.save_in_project"},
 	{"STORAGE_SPEC_OUTPUT_PATH", "storage.spec_output_path"},
+	{"STORAGE_PLAN_OUTPUT_PATH", "storage.plan_output_path"},
 	{"STORAGE_CHANGELOG_PATH", "storage.changelog_path"},
 
 	// Workflow
@@ -1122,8 +1201,8 @@ func applyEnvOverrides(s *Settings) {
 		case "agent.default", "providers.default", "providers.github.owner",
 			"providers.gitlab.base_url", "providers.linear.team",
 			"git.base_branch", "git.branch_pattern", "git.commit_prefix",
-			"git.commit_pattern", "git.pr_title_pattern", "git.branch_validation_pattern",
-			"storage.spec_output_path", "storage.changelog_path":
+			"git.commit_pattern", "git.checkpoint_prefix", "git.pr_title_pattern", "git.branch_validation_pattern",
+			"storage.spec_output_path", "storage.plan_output_path", "storage.changelog_path":
 			_ = SetValue(s, ov.path, val)
 
 		// Boolean fields

@@ -489,6 +489,201 @@ func TestApplyEnvOverrides(t *testing.T) {
 	}
 }
 
+// ─── FindNearestProjectConfig ───────────────────────────────────────────────
+
+func TestFindNearestProjectConfig_NoConfigs(t *testing.T) {
+	root := t.TempDir()
+	sub := filepath.Join(root, "a", "b", "c")
+	if err := os.MkdirAll(sub, 0o755); err != nil {
+		t.Fatal(err)
+	}
+
+	paths := FindNearestProjectConfig(sub, root)
+	if len(paths) != 0 {
+		t.Errorf("expected no configs, got %v", paths)
+	}
+}
+
+func TestFindNearestProjectConfig_SingleAtRoot(t *testing.T) {
+	root := t.TempDir()
+	configDir := filepath.Join(root, ".valksor")
+	if err := os.MkdirAll(configDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	configPath := filepath.Join(configDir, "kvelmo.yaml")
+	if err := os.WriteFile(configPath, []byte("agent:\n  default: claude\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	sub := filepath.Join(root, "packages", "web")
+	if err := os.MkdirAll(sub, 0o755); err != nil {
+		t.Fatal(err)
+	}
+
+	result := FindNearestProjectConfig(sub, root)
+	if len(result) != 1 {
+		t.Fatalf("expected 1 config, got %d: %v", len(result), result)
+	}
+	if result[0] != configPath {
+		t.Errorf("expected %s, got %s", configPath, result[0])
+	}
+}
+
+func TestFindNearestProjectConfig_MonorepoMultiple(t *testing.T) {
+	root := t.TempDir()
+
+	// Root config
+	rootCfgDir := filepath.Join(root, ".valksor")
+	if err := os.MkdirAll(rootCfgDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	rootCfg := filepath.Join(rootCfgDir, "kvelmo.yaml")
+	if err := os.WriteFile(rootCfg, []byte("{}"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	// Nested config
+	backendDir := filepath.Join(root, "packages", "backend")
+	backendCfgDir := filepath.Join(backendDir, ".valksor")
+	if err := os.MkdirAll(backendCfgDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	backendCfg := filepath.Join(backendCfgDir, "kvelmo.yaml")
+	if err := os.WriteFile(backendCfg, []byte("{}"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	sub := filepath.Join(backendDir, "src", "handlers")
+	if err := os.MkdirAll(sub, 0o755); err != nil {
+		t.Fatal(err)
+	}
+
+	result := FindNearestProjectConfig(sub, root)
+	if len(result) != 2 {
+		t.Fatalf("expected 2 configs, got %d: %v", len(result), result)
+	}
+	// Shallowest first
+	if result[0] != rootCfg {
+		t.Errorf("expected root config first, got %s", result[0])
+	}
+	if result[1] != backendCfg {
+		t.Errorf("expected backend config second, got %s", result[1])
+	}
+}
+
+func TestFindNearestProjectConfig_StopsAtStopDir(t *testing.T) {
+	root := t.TempDir()
+
+	// Config ABOVE stop dir
+	aboveDir := filepath.Join(root, ".valksor")
+	if err := os.MkdirAll(aboveDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(aboveDir, "kvelmo.yaml"), []byte("{}"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	stopDir := filepath.Join(root, "myproject")
+	sub := filepath.Join(stopDir, "src")
+	if err := os.MkdirAll(sub, 0o755); err != nil {
+		t.Fatal(err)
+	}
+
+	result := FindNearestProjectConfig(sub, stopDir)
+	if len(result) != 0 {
+		t.Errorf("expected no configs (above stop dir), got %v", result)
+	}
+}
+
+// ─── Merge new fields ───────────────────────────────────────────────────────
+
+func TestMerge_NewGitFields(t *testing.T) {
+	dst := DefaultSettings()
+	src := &Settings{
+		Git: GitSettings{
+			CheckpointPrefix:   "chore({key}):",
+			PRRequiredSections: []string{"summary", "test plan"},
+		},
+	}
+	Merge(dst, src)
+
+	if dst.Git.CheckpointPrefix != "chore({key}):" {
+		t.Errorf("CheckpointPrefix not merged: %q", dst.Git.CheckpointPrefix)
+	}
+	if len(dst.Git.PRRequiredSections) != 2 {
+		t.Errorf("PRRequiredSections not merged: %v", dst.Git.PRRequiredSections)
+	}
+}
+
+func TestMerge_PlanOutputPath(t *testing.T) {
+	dst := DefaultSettings()
+	src := &Settings{
+		Storage: StorageSettings{PlanOutputPath: "docs/plans/{key}.md"},
+	}
+	Merge(dst, src)
+
+	if dst.Storage.PlanOutputPath != "docs/plans/{key}.md" {
+		t.Errorf("PlanOutputPath not merged: %q", dst.Storage.PlanOutputPath)
+	}
+}
+
+func TestMerge_Hooks(t *testing.T) {
+	dst := DefaultSettings()
+	src := &Settings{
+		Workflow: WorkflowSettings{
+			Hooks: HooksSettings{
+				"pre_submit": {{Command: "./check.sh", Required: true}},
+			},
+		},
+	}
+	Merge(dst, src)
+
+	if len(dst.Workflow.Hooks) != 1 {
+		t.Errorf("Hooks not merged: %v", dst.Workflow.Hooks)
+	}
+	if len(dst.Workflow.Hooks["pre_submit"]) != 1 {
+		t.Errorf("pre_submit hooks not merged: %v", dst.Workflow.Hooks["pre_submit"])
+	}
+}
+
+func TestMerge_Preset(t *testing.T) {
+	dst := DefaultSettings()
+	src := &Settings{Preset: "compliance"}
+	Merge(dst, src)
+
+	if dst.Preset != "compliance" {
+		t.Errorf("Preset not merged: %q", dst.Preset)
+	}
+}
+
+func TestSetGetValue_CheckpointPrefix(t *testing.T) {
+	s := DefaultSettings()
+	if err := SetValue(s, "git.checkpoint_prefix", "chore:"); err != nil {
+		t.Fatalf("SetValue error: %v", err)
+	}
+	got, err := GetValue(s, "git.checkpoint_prefix")
+	if err != nil {
+		t.Fatalf("GetValue error: %v", err)
+	}
+	if got != "chore:" {
+		t.Errorf("got %v, want chore:", got)
+	}
+}
+
+func TestSetGetValue_PlanOutputPath(t *testing.T) {
+	s := DefaultSettings()
+	if err := SetValue(s, "storage.plan_output_path", "docs/{key}.md"); err != nil {
+		t.Fatalf("SetValue error: %v", err)
+	}
+	got, err := GetValue(s, "storage.plan_output_path")
+	if err != nil {
+		t.Fatalf("GetValue error: %v", err)
+	}
+	if got != "docs/{key}.md" {
+		t.Errorf("got %v, want docs/{key}.md", got)
+	}
+}
+
 func TestApplyEnvOverrides_InvalidValues(t *testing.T) {
 	// Invalid boolean should not change the setting
 	t.Setenv("KVELMO_GIT_AUTO_COMMIT", "notabool")
