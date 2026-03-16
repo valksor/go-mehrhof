@@ -22,7 +22,7 @@ func TestHandleStatic_Index(t *testing.T) {
 	}
 	defer func() { _ = srv.Shutdown(context.Background()) }()
 
-	req := httptest.NewRequest(http.MethodGet, "/", nil) //nolint:noctx // httptest.NewRequest is appropriate for tests
+	req := httptest.NewRequest(http.MethodGet, "/", nil)
 	w := httptest.NewRecorder()
 
 	srv.httpServer.Handler.ServeHTTP(w, req)
@@ -47,7 +47,7 @@ func TestHandleStatic_SPAFallback_Dashboard(t *testing.T) {
 	}
 	defer func() { _ = srv.Shutdown(context.Background()) }()
 
-	req := httptest.NewRequest(http.MethodGet, "/dashboard", nil) //nolint:noctx // httptest.NewRequest is appropriate for tests
+	req := httptest.NewRequest(http.MethodGet, "/dashboard", nil)
 	w := httptest.NewRecorder()
 
 	srv.httpServer.Handler.ServeHTTP(w, req)
@@ -72,7 +72,7 @@ func TestHandleStatic_SPAFallback_DeepRoute(t *testing.T) {
 	}
 	defer func() { _ = srv.Shutdown(context.Background()) }()
 
-	req := httptest.NewRequest(http.MethodGet, "/project/123/tasks", nil) //nolint:noctx // httptest.NewRequest is appropriate for tests
+	req := httptest.NewRequest(http.MethodGet, "/project/123/tasks", nil)
 	w := httptest.NewRecorder()
 
 	srv.httpServer.Handler.ServeHTTP(w, req)
@@ -100,7 +100,7 @@ func TestHandleStatic_ExistingFile(t *testing.T) {
 	}
 	defer func() { _ = srv.Shutdown(context.Background()) }()
 
-	req := httptest.NewRequest(http.MethodGet, "/app.js", nil) //nolint:noctx // httptest.NewRequest is appropriate for tests
+	req := httptest.NewRequest(http.MethodGet, "/app.js", nil)
 	w := httptest.NewRecorder()
 
 	srv.httpServer.Handler.ServeHTTP(w, req)
@@ -128,7 +128,7 @@ func TestHandleStatic_ExistingFile_CSS(t *testing.T) {
 	}
 	defer func() { _ = srv.Shutdown(context.Background()) }()
 
-	req := httptest.NewRequest(http.MethodGet, "/theme.css", nil) //nolint:noctx // httptest.NewRequest is appropriate for tests
+	req := httptest.NewRequest(http.MethodGet, "/theme.css", nil)
 	w := httptest.NewRecorder()
 
 	srv.httpServer.Handler.ServeHTTP(w, req)
@@ -152,7 +152,7 @@ func TestHandleStatic_NoStaticDir_NoEmbedded(t *testing.T) {
 	// Clear the embedded FS to test the 404 path
 	srv.embeddedFS = nil
 
-	req := httptest.NewRequest(http.MethodGet, "/", nil) //nolint:noctx // httptest.NewRequest is appropriate for tests
+	req := httptest.NewRequest(http.MethodGet, "/", nil)
 	w := httptest.NewRecorder()
 
 	srv.handleStatic(w, req)
@@ -193,7 +193,7 @@ func TestServerMultipleOptions(t *testing.T) {
 	}
 
 	// Verify the custom origin is accepted
-	req := httptest.NewRequest(http.MethodGet, "/ws/global", nil) //nolint:noctx // httptest.NewRequest is appropriate for tests
+	req := httptest.NewRequest(http.MethodGet, "/ws/global", nil)
 	req.Header.Set("Origin", "https://custom.example.com")
 	if !srv.checkOrigin(req) {
 		t.Error("custom origin should be accepted")
@@ -213,7 +213,7 @@ func TestSecurityHeaders_AllPresent(t *testing.T) {
 	defer func() { _ = srv.Shutdown(context.Background()) }()
 
 	// Request a static file and verify security headers
-	req := httptest.NewRequest(http.MethodGet, "/index.html", nil) //nolint:noctx // httptest.NewRequest is appropriate for tests
+	req := httptest.NewRequest(http.MethodGet, "/index.html", nil)
 	w := httptest.NewRecorder()
 
 	srv.httpServer.Handler.ServeHTTP(w, req)
@@ -240,7 +240,7 @@ func TestHandleWorktreeWS_EmptyIDPath(t *testing.T) {
 	}
 	defer func() { _ = srv.Shutdown(context.Background()) }()
 
-	req := httptest.NewRequest(http.MethodGet, "/ws/worktree/", nil) //nolint:noctx // httptest.NewRequest is appropriate for tests
+	req := httptest.NewRequest(http.MethodGet, "/ws/worktree/", nil)
 	w := httptest.NewRecorder()
 
 	srv.handleWorktreeWS(w, req)
@@ -260,7 +260,7 @@ func TestHandleWorktreeWS_PathWithoutPrefix(t *testing.T) {
 	}
 	defer func() { _ = srv.Shutdown(context.Background()) }()
 
-	req := httptest.NewRequest(http.MethodGet, "/ws/other/path", nil) //nolint:noctx // httptest.NewRequest is appropriate for tests
+	req := httptest.NewRequest(http.MethodGet, "/ws/other/path", nil)
 	w := httptest.NewRecorder()
 
 	srv.handleWorktreeWS(w, req)
@@ -307,7 +307,7 @@ func TestHandleStatic_NestedAssets(t *testing.T) {
 	}
 	defer func() { _ = srv.Shutdown(context.Background()) }()
 
-	req := httptest.NewRequest(http.MethodGet, "/assets/images/logo.svg", nil) //nolint:noctx // httptest.NewRequest is appropriate for tests
+	req := httptest.NewRequest(http.MethodGet, "/assets/images/logo.svg", nil)
 	w := httptest.NewRecorder()
 
 	srv.httpServer.Handler.ServeHTTP(w, req)
