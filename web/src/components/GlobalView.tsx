@@ -19,6 +19,7 @@ const ActivityPanel = lazy(() => import('./ActivityPanel').then(m => ({ default:
 const SecurityPanel = lazy(() => import('./SecurityPanel').then(m => ({ default: m.SecurityPanel })))
 const CatalogPanel = lazy(() => import('./CatalogPanel').then(m => ({ default: m.CatalogPanel })))
 const AccessPanel = lazy(() => import('./AccessPanel').then(m => ({ default: m.AccessPanel })))
+const ReportPanel = lazy(() => import('./ReportPanel').then(m => ({ default: m.ReportPanel })))
 
 export function GlobalView() {
   const {
@@ -59,6 +60,7 @@ export function GlobalView() {
   const [showSecurity, setShowSecurity] = useState(false)
   const [showCatalog, setShowCatalog] = useState(false)
   const [showAccess, setShowAccess] = useState(false)
+  const [showReport, setShowReport] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const docsData = useDocsURL()
 
@@ -225,6 +227,18 @@ export function GlobalView() {
           >
             <svg aria-hidden="true" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+            </svg>
+          </button>
+
+          {/* Report button */}
+          <button
+            onClick={() => setShowReport(true)}
+            disabled={!connected}
+            className="btn btn-ghost btn-sm btn-square"
+            aria-label="Compliance Report"
+          >
+            <svg aria-hidden="true" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
             </svg>
           </button>
 
@@ -517,6 +531,12 @@ export function GlobalView() {
           <AccessPanel
             isOpen={showAccess}
             onClose={() => setShowAccess(false)}
+          />
+        )}
+        {showReport && (
+          <ReportPanel
+            isOpen={showReport}
+            onClose={() => setShowReport(false)}
           />
         )}
       </Suspense>

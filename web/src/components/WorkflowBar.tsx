@@ -35,8 +35,8 @@ const HINTS: Record<string, string> = {
 export function WorkflowBar() {
   const {
     state, plan, implement, review, submit, finish,
-    undo, redo, abandon,
-    loading, checkpoints, redoStack, approveRemote, mergeRemote, refresh,
+    undo, redo, abandon, approveTransition,
+    loading, checkpoints, redoStack, approveRemote, mergeRemote, refresh, error,
   } = useProjectStore(useShallow(s => ({
     state: s.state,
     plan: s.plan,
@@ -47,12 +47,14 @@ export function WorkflowBar() {
     undo: s.undo,
     redo: s.redo,
     abandon: s.abandon,
+    approveTransition: s.approveTransition,
     loading: s.loading,
     checkpoints: s.checkpoints,
     redoStack: s.redoStack,
     approveRemote: s.approveRemote,
     mergeRemote: s.mergeRemote,
     refresh: s.refresh,
+    error: s.error,
   })))
 
   const [showSubmitModal, setShowSubmitModal] = useState(false)
@@ -178,6 +180,26 @@ export function WorkflowBar() {
             )
           })}
         </div>
+
+        {/* Approval gate button — shown when a transition requires explicit approval */}
+        {error && error.includes('approval required') && (
+          <button
+            onClick={() => {
+              // Extract event name from error message (e.g., "Run: kvelmo approve submit")
+              const match = error.match(/kvelmo approve (\w+)/)
+              const event = match ? match[1] : 'submit'
+              approveTransition(event)
+            }}
+            disabled={loading}
+            className="btn btn-xs btn-warning ml-2 gap-1"
+            aria-label="Approve transition"
+          >
+            <svg aria-hidden="true" className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+            </svg>
+            Approve
+          </button>
+        )}
 
         {/* Hint text */}
         <span className="text-xs text-base-content/50 ml-2 truncate hidden sm:inline">

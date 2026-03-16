@@ -40,6 +40,7 @@ export function LogsPanel({ isOpen, onClose }: LogsPanelProps) {
     let cancelled = false
 
     async function fetchHistory() {
+      if (!client) return
       setHistoryLoading(true)
       try {
         const result = await client.call<{ messages: HistoryMessage[]; task_id: string }>('chat.history', {

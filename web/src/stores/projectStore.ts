@@ -198,6 +198,7 @@ interface ProjectState {
   update: () => Promise<UpdateResult>
   finish: (options?: FinishOptions) => Promise<FinishResult | null>
   refresh: () => Promise<RefreshResult | null>
+  approveTransition: (event: string) => Promise<void>
   approveRemote: (comment?: string) => Promise<void>
   mergeRemote: (method?: string) => Promise<void>
 
@@ -747,6 +748,22 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
       await get().refreshStatus()
     } catch (err) {
       set({ loading: false, error: err instanceof Error ? err.message : 'Delete failed' })
+    }
+  },
+
+  approveTransition: async (event: string) => {
+    const client = get().client
+    if (!client) return
+
+    set({ loading: true, error: null })
+    get().appendOutput(`Approving transition: ${event}...`)
+
+    try {
+      await client.call('approve', { event })
+      set({ loading: false })
+      get().appendOutput(`Transition approved: ${event}`)
+    } catch (err) {
+      set({ loading: false, error: err instanceof Error ? err.message : 'Approval failed' })
     }
   },
 
