@@ -252,9 +252,31 @@ var configInitCmd = &cobra.Command{
 		defer func() { _ = client.Close() }()
 		defer cancel()
 
+		values := map[string]any{}
+
+		// Apply preset defaults if requested.
+		if configInitPreset != "" {
+			preset := settings.ApplyPreset(configInitPreset)
+			if preset == nil {
+				return fmt.Errorf("unknown preset %q (available: %v)", configInitPreset, settings.PresetNames)
+			}
+
+			// Convert preset to map[string]any via JSON round-trip.
+			data, err := json.Marshal(preset)
+			if err != nil {
+				return fmt.Errorf("marshal preset: %w", err)
+			}
+			if err := json.Unmarshal(data, &values); err != nil {
+				return fmt.Errorf("unmarshal preset: %w", err)
+			}
+
+			// Record which preset was used.
+			values["preset"] = configInitPreset
+		}
+
 		params := map[string]any{
 			"scope":  "global",
-			"values": map[string]any{},
+			"values": values,
 		}
 		if _, err := client.Call(ctx, "settings.set", params); err != nil {
 			return fmt.Errorf("settings.set: %w", err)
@@ -262,6 +284,9 @@ var configInitCmd = &cobra.Command{
 
 		home, _ := os.UserHomeDir()
 		fmt.Printf("Configuration initialized at %s\n", filepath.Join(home, meta.GlobalDir, meta.ConfigFile))
+		if configInitPreset != "" {
+			fmt.Printf("Applied preset: %s\n", configInitPreset)
+		}
 
 		return nil
 	},
@@ -270,6 +295,7 @@ var configInitCmd = &cobra.Command{
 var (
 	configEditGlobal  bool
 	configEditProject bool
+	configInitPreset  string
 )
 
 var configEditCmd = &cobra.Command{
@@ -362,6 +388,8 @@ func nestedGet(m map[string]any, path string) (any, error) {
 func init() {
 	configEditCmd.Flags().BoolVar(&configEditGlobal, "global", false, "Edit global config")
 	configEditCmd.Flags().BoolVar(&configEditProject, "project", false, "Edit project config")
+
+	configInitCmd.Flags().StringVar(&configInitPreset, "preset", "", "Apply a configuration preset (e.g. compliance)")
 
 	ConfigCmd.AddCommand(configShowCmd)
 	ConfigCmd.AddCommand(configPathCmd)

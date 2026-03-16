@@ -161,6 +161,9 @@ func init() {
 	// Data export
 	rootCmd.AddCommand(commands.ExportCmd)
 
+	// Compliance reports
+	rootCmd.AddCommand(commands.ReportCmd)
+
 	// Template catalog
 	rootCmd.AddCommand(commands.CatalogCmd)
 
@@ -172,6 +175,15 @@ func init() {
 
 	// CI pipeline status
 	rootCmd.AddCommand(commands.CICmd)
+
+	// Workflow transition hooks
+	rootCmd.AddCommand(commands.HooksCmd)
+
+	// Agent management
+	rootCmd.AddCommand(commands.AgentCmd)
+
+	// Provider connection testing (subcommand of config)
+	commands.ConfigCmd.AddCommand(commands.ProviderTestCmd)
 
 	// Interactive tutorial
 	rootCmd.AddCommand(commands.TutorialCmd)
