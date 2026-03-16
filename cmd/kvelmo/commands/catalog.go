@@ -5,9 +5,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"os"
 	"time"
 
 	"github.com/spf13/cobra"
+
 	"github.com/valksor/kvelmo/pkg/meta"
 	"github.com/valksor/kvelmo/pkg/socket"
 )
@@ -112,12 +114,54 @@ func runCatalogUse(_ *cobra.Command, args []string) error {
 		return fmt.Errorf("catalog.get: %s", resp.Error.Message)
 	}
 
-	out, jsonErr := json.MarshalIndent(resp.Result, "", "  ")
-	if jsonErr != nil {
-		fmt.Println(string(resp.Result))
-	} else {
-		fmt.Println(string(out))
+	// Extract template source
+	var tmpl struct {
+		Source      string `json:"source"`
+		Name        string `json:"name"`
+		Description string `json:"description"`
 	}
+	if err := json.Unmarshal(resp.Result, &tmpl); err != nil {
+		return fmt.Errorf("parse template: %w", err)
+	}
+
+	if tmpl.Source == "" {
+		// No source in template, just show the template info
+		fmt.Printf("Template: %s\n", tmpl.Name)
+		if tmpl.Description != "" {
+			fmt.Printf("Description: %s\n", tmpl.Description)
+		}
+		fmt.Println("This template has no source to start from.")
+
+		return nil
+	}
+
+	// Start task from template source via worktree socket
+	cwd, err := os.Getwd()
+	if err != nil {
+		return fmt.Errorf("get cwd: %w", err)
+	}
+
+	wtPath := socket.WorktreeSocketPath(cwd)
+	if !socket.SocketExists(wtPath) {
+		return fmt.Errorf("no worktree socket running\nRun '%s start' first, then use catalog use", meta.Name)
+	}
+
+	wtClient, err := socket.NewClient(wtPath, socket.WithTimeout(10*time.Second))
+	if err != nil {
+		return fmt.Errorf("connect to worktree: %w", err)
+	}
+	defer func() { _ = wtClient.Close() }()
+
+	wtCtx, wtCancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer wtCancel()
+
+	_, err = wtClient.Call(wtCtx, "start", map[string]any{"source": tmpl.Source})
+	if err != nil {
+		return fmt.Errorf("start from template: %w", err)
+	}
+
+	fmt.Printf("Task started from template '%s'\n", tmpl.Name)
+	fmt.Printf("Source: %s\n", tmpl.Source)
 
 	return nil
 }

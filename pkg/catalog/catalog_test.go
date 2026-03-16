@@ -15,8 +15,8 @@ func TestCatalog_ListEmpty(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	if len(templates) != 0 {
-		t.Fatalf("expected 0 templates, got %d", len(templates))
+	if len(templates) != len(builtinTemplates) {
+		t.Fatalf("expected %d built-in templates, got %d", len(builtinTemplates), len(templates))
 	}
 }
 
@@ -92,7 +92,10 @@ func TestCatalog_ListMultiple(t *testing.T) {
 		t.Fatalf("list: %v", err)
 	}
 
-	if len(result) != 3 {
-		t.Fatalf("expected 3 templates, got %d", len(result))
+	// 3 built-in templates (bug-fix, feature, refactor) + 3 user templates.
+	// "feature" and "refactor" override built-ins, "bugfix" is new.
+	// Total: 3 built-in + 1 new = 4.
+	if len(result) != 4 {
+		t.Fatalf("expected 4 templates (3 built-in + 1 new), got %d", len(result))
 	}
 }

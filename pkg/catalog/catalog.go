@@ -16,6 +16,22 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+// builtinTemplates are always available alongside user-added templates.
+var builtinTemplates = []Template{
+	{
+		Name:        "bug-fix",
+		Description: "Fix a bug reported in an issue",
+	},
+	{
+		Name:        "feature",
+		Description: "Implement a new feature",
+	},
+	{
+		Name:        "refactor",
+		Description: "Refactor existing code for better maintainability",
+	},
+}
+
 // Catalog manages templates from a local directory.
 type Catalog struct {
 	dir string
@@ -43,7 +59,15 @@ func (c *Catalog) List() ([]Template, error) {
 		return nil, fmt.Errorf("read catalog dir: %w", err)
 	}
 
-	var templates []Template
+	// Start with built-in templates.
+	templates := make([]Template, 0, len(builtinTemplates)+len(entries))
+	templates = append(templates, builtinTemplates...)
+
+	// Track built-in names so user templates can override them.
+	seen := make(map[string]int, len(builtinTemplates))
+	for i, t := range builtinTemplates {
+		seen[t.Name] = i
+	}
 
 	for _, entry := range entries {
 		if entry.IsDir() || !strings.HasSuffix(entry.Name(), ".yaml") {
@@ -57,23 +81,37 @@ func (c *Catalog) List() ([]Template, error) {
 			continue
 		}
 
-		templates = append(templates, *tmpl)
+		if idx, ok := seen[tmpl.Name]; ok {
+			// User template overrides built-in with same name.
+			templates[idx] = *tmpl
+		} else {
+			templates = append(templates, *tmpl)
+			seen[tmpl.Name] = len(templates) - 1
+		}
 	}
 
 	return templates, nil
 }
 
 // Get reads a specific template by name. The name should not include
-// the .yaml extension.
+// the .yaml extension. Built-in templates are returned if no user
+// template with the same name exists.
 func (c *Catalog) Get(name string) (*Template, error) {
 	path := filepath.Join(c.dir, name+".yaml")
 
 	tmpl, err := c.loadTemplate(path)
-	if err != nil {
-		return nil, fmt.Errorf("get template %q: %w", name, err)
+	if err == nil {
+		return tmpl, nil
 	}
 
-	return tmpl, nil
+	// Fall back to built-in templates.
+	for i := range builtinTemplates {
+		if builtinTemplates[i].Name == name {
+			return &builtinTemplates[i], nil
+		}
+	}
+
+	return nil, fmt.Errorf("get template %q: %w", name, err)
 }
 
 // Import copies a .yaml file into the catalog directory.
