@@ -2,6 +2,7 @@ package commands
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"os"
 	"time"
@@ -26,6 +27,7 @@ func init() {
 	SubmitCmd.Flags().StringSlice("reviewers", nil, "Assign reviewers")
 	SubmitCmd.Flags().StringSlice("labels", nil, "Add labels")
 	SubmitCmd.Flags().Bool("delete-branch", false, "Delete local branch after successful submission")
+	SubmitCmd.Flags().Bool("skip-review", false, "Skip review gate and submit directly")
 }
 
 func runSubmit(cmd *cobra.Command, args []string) error {
@@ -48,6 +50,7 @@ func runSubmit(cmd *cobra.Command, args []string) error {
 	reviewers, _ := cmd.Flags().GetStringSlice("reviewers")
 	labels, _ := cmd.Flags().GetStringSlice("labels")
 	deleteBranch, _ := cmd.Flags().GetBool("delete-branch")
+	skipReview, _ := cmd.Flags().GetBool("skip-review")
 
 	params := map[string]any{
 		"title":         title,
@@ -56,18 +59,33 @@ func runSubmit(cmd *cobra.Command, args []string) error {
 		"reviewers":     reviewers,
 		"labels":        labels,
 		"delete_branch": deleteBranch,
+		"skip_review":   skipReview,
 	}
 
 	// Use 2 minute timeout for submit since it involves git push + PR creation
 	ctx, cancel := context.WithTimeout(context.Background(), 120*time.Second)
 	defer cancel()
 
-	result, err := client.Call(ctx, "submit", params)
+	resp, err := client.Call(ctx, "submit", params)
 	if err != nil {
 		return fmt.Errorf("submit: %w", err)
 	}
 
-	fmt.Printf("Submitted: %v\n", result)
+	var result map[string]any
+	if err := json.Unmarshal(resp.Result, &result); err == nil {
+		if url, ok := result["url"].(string); ok && url != "" {
+			prTitle, _ := result["title"].(string)
+			fmt.Printf("PR created: %s\n", url)
+			if prTitle != "" {
+				fmt.Printf("Title: %s\n", prTitle)
+			}
+
+			return nil
+		}
+	}
+
+	// Fallback: print raw response
+	fmt.Printf("Submitted: %s\n", string(resp.Result))
 
 	return nil
 }

@@ -18,6 +18,7 @@ var (
 	statusVerbose bool
 	statusJSON    bool
 	statusAll     bool
+	statusFull    bool
 )
 
 var StatusCmd = &cobra.Command{
@@ -33,6 +34,7 @@ func init() {
 	StatusCmd.Flags().BoolVarP(&statusVerbose, "verbose", "v", false, "Show socket paths")
 	StatusCmd.Flags().BoolVar(&statusJSON, "json", false, "Output raw JSON response")
 	StatusCmd.Flags().BoolVarP(&statusAll, "all", "a", false, "Show status of all active projects")
+	StatusCmd.Flags().BoolVar(&statusFull, "full", false, "Show extended status including checkpoints")
 }
 
 func runStatus(cmd *cobra.Command, args []string) error {
@@ -116,6 +118,18 @@ func runStatus(cmd *cobra.Command, args []string) error {
 	if result.PendingPromptID != "" {
 		fmt.Printf("\n! Quality gate waiting for your input.\n")
 		fmt.Printf("  Run: kvelmo quality respond --prompt-id %s [--yes|--no]\n", result.PendingPromptID)
+	}
+
+	if statusFull {
+		cpResp, cpErr := client.Call(ctx, "checkpoints", nil)
+		if cpErr == nil {
+			var cpResult struct {
+				Checkpoints []json.RawMessage `json:"checkpoints"`
+			}
+			if json.Unmarshal(cpResp.Result, &cpResult) == nil {
+				fmt.Printf("Checkpoints: %d\n", len(cpResult.Checkpoints))
+			}
+		}
 	}
 
 	return nil

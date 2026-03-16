@@ -398,4 +398,40 @@ func init() {
 	ConfigCmd.AddCommand(configGetCmd)
 	ConfigCmd.AddCommand(configEditCmd)
 	ConfigCmd.AddCommand(configValidateCmd)
+	ConfigCmd.AddCommand(configDiffCmd)
+}
+
+var configDiffCmd = &cobra.Command{
+	Use:   "diff",
+	Short: "Show differences between global and project configuration",
+	RunE:  runConfigDiff,
+}
+
+func runConfigDiff(_ *cobra.Command, _ []string) error {
+	cwd, err := os.Getwd()
+	if err != nil {
+		return fmt.Errorf("get working directory: %w", err)
+	}
+
+	project, loadErr := settings.LoadProject(cwd)
+	if loadErr != nil {
+		fmt.Println("No project config found")
+
+		return fmt.Errorf("load project config: %w", loadErr)
+	}
+	if project == nil {
+		fmt.Println("No project config found")
+
+		return nil
+	}
+
+	data, err := json.MarshalIndent(project, "", "  ")
+	if err != nil {
+		return fmt.Errorf("marshal project config: %w", err)
+	}
+
+	fmt.Println("Project overrides:")
+	fmt.Println(string(data))
+
+	return nil
 }

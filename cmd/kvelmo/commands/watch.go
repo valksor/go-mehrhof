@@ -16,7 +16,10 @@ import (
 	"github.com/valksor/kvelmo/pkg/socket"
 )
 
-var watchJSON bool
+var (
+	watchJSON     bool
+	watchProgress bool
+)
 
 // WatchCmd streams live output from a running task to the terminal.
 var WatchCmd = &cobra.Command{
@@ -37,6 +40,7 @@ Press Ctrl+C to stop watching without affecting the running task.`, meta.Name),
 
 func init() {
 	WatchCmd.Flags().BoolVar(&watchJSON, "json", false, "Output raw JSON events (NDJSON)")
+	WatchCmd.Flags().BoolVar(&watchProgress, "progress", false, "Show progress summary instead of full output")
 }
 
 func runWatch(cmd *cobra.Command, args []string) error {
@@ -102,6 +106,8 @@ func runWatch(cmd *cobra.Command, args []string) error {
 	}()
 
 	// Read NDJSON event stream.
+	var outputLines int
+
 	for scanner.Scan() {
 		line := scanner.Bytes()
 		if len(line) == 0 {
@@ -116,6 +122,32 @@ func runWatch(cmd *cobra.Command, args []string) error {
 
 		var event conductor.ConductorEvent
 		if err := json.Unmarshal(line, &event); err != nil {
+			continue
+		}
+
+		if watchProgress {
+			switch event.Type {
+			case "job_output":
+				outputLines++
+				if outputLines%50 == 0 {
+					fmt.Printf("\r  ▸ %d lines of output...", outputLines)
+				}
+			case "state_changed":
+				fmt.Printf("\n● %s\n", event.Message)
+			case "progress":
+				if event.Message != "" {
+					fmt.Printf("\r  ▸ %s", event.Message)
+				}
+			case "job_failed":
+				fmt.Fprintf(os.Stderr, "\n\033[31m[Failed] %s\033[0m\n", event.Error)
+
+				return fmt.Errorf("job failed: %s", event.Error)
+			case "error":
+				fmt.Fprintf(os.Stderr, "\n\033[31m[Error] %s\033[0m\n", event.Error)
+			case "heartbeat":
+				// Keepalive, ignore.
+			}
+
 			continue
 		}
 

@@ -30,6 +30,7 @@ func init() {
 	ReviewCmd.Flags().Bool("reject", false, "Reject and return to planning state")
 	ReviewCmd.Flags().StringP("message", "m", "", "Review message/notes")
 	ReviewCmd.Flags().Bool("fix", false, "Auto-fix issues after entering review state")
+	ReviewCmd.Flags().Bool("force", false, "Re-run review even if already reviewed")
 
 	ReviewCmd.AddCommand(reviewListCmd)
 	ReviewCmd.AddCommand(reviewViewCmd)
@@ -53,12 +54,14 @@ func runReview(cmd *cobra.Command, args []string) error {
 	reject, _ := cmd.Flags().GetBool("reject")
 	message, _ := cmd.Flags().GetString("message")
 	fix, _ := cmd.Flags().GetBool("fix")
+	force, _ := cmd.Flags().GetBool("force")
 
 	params := map[string]any{
 		"approve": approve,
 		"reject":  reject,
 		"message": message,
 		"fix":     fix,
+		"force":   force,
 	}
 
 	ctx := context.Background()

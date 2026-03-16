@@ -191,6 +191,9 @@ func init() {
 	// Batch operations across projects
 	rootCmd.AddCommand(commands.BatchCmd)
 
+	// Quick-fix workflow
+	rootCmd.AddCommand(commands.QuickCmd)
+
 	// Hidden utilities
 	rootCmd.AddCommand(genManPagesCmd)
 
