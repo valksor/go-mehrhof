@@ -50,6 +50,7 @@
     - [diff](/cli/diff.md)
     - [logs](/cli/logs.md)
     - [watch](/cli/watch.md)
+    - [tui](/cli/tui.md)
   - Task Organization
     - [tag](/cli/tag.md)
     - [queue](/cli/queue.md)

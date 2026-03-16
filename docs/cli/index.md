@@ -55,6 +55,7 @@ Commands for viewing status and information:
 |------------------------------------|--------------------------------|
 | [status](/cli/status.md)           | Show current task state        |
 | [watch](/cli/watch.md)             | Stream live task output        |
+| [tui](/cli/tui.md)                 | Interactive terminal UI        |
 | [logs](/cli/logs.md)               | Show agent activity log        |
 | [diff](/cli/diff.md)               | Show what the agent changed    |
 | [show](/cli/show.md)               | Display task artifacts (specs) |

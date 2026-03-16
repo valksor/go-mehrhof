@@ -45,6 +45,21 @@ kvelmo config set default_agent claude
 - [Settings Reference](/configuration/settings.md) — All settings
 - [Environment Variables](/configuration/environment.md) — Environment overrides
 
+## TUI Configuration
+
+Settings for the terminal UI (`kvelmo tui`):
+
+```yaml
+tui:
+  layout: stacked  # stacked (default) or dashboard
+```
+
+| Setting      | Description                             | Default   |
+|--------------|-----------------------------------------|-----------|
+| `tui.layout` | Default layout for the terminal UI      | `stacked` |
+
+The `stacked` layout shows status, output, and chat vertically. The `dashboard` layout adds a workers pane alongside the output. See [kvelmo tui](/cli/tui.md) for details.
+
 ## Example Configuration
 
 ```json
@@ -55,6 +70,9 @@ kvelmo config set default_agent claude
   "git": {
     "auto_commit": true,
     "branch_pattern": "feature/{slug}"
+  },
+  "tui": {
+    "layout": "stacked"
   },
   "providers": {
     "github": {

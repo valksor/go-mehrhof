@@ -1,17 +1,18 @@
-# Web UI vs CLI
+# Web UI vs CLI vs TUI
 
-kvelmo offers two interfaces. Choose the one that fits your workflow.
+kvelmo offers three interfaces. Choose the one that fits your workflow.
 
 ## Quick Comparison
 
-| Aspect           | Web UI              | CLI        |
-|------------------|---------------------|------------|
-| Best for         | Non-technical users | Developers |
-| Learning curve   | Lower               | Higher     |
-| Visual feedback  | Yes                 | Limited    |
-| Scripting        | No                  | Yes        |
-| Keyboard-first   | No                  | Yes        |
-| Real-time output | Yes                 | Yes        |
+| Aspect           | Web UI              | CLI        | TUI (`kvelmo tui`)      |
+|------------------|---------------------|------------|-------------------------|
+| Best for         | Non-technical users | Developers | SSH / headless servers  |
+| Learning curve   | Lower               | Higher     | Medium                  |
+| Visual feedback  | Yes                 | Limited    | Yes (terminal)          |
+| Scripting        | No                  | Yes        | No                      |
+| Keyboard-first   | No                  | Yes        | Yes                     |
+| Real-time output | Yes                 | Yes        | Yes                     |
+| Browser required | Yes                 | No         | No                      |
 
 ## When to Use Web UI
 
@@ -46,6 +47,23 @@ kvelmo offers two interfaces. Choose the one that fits your workflow.
 - Scriptable and automatable
 - Works over SSH
 - Composable with other tools
+
+## When to Use the TUI
+
+**Choose the TUI (`kvelmo tui`) when:**
+
+- You are working over SSH or in a headless environment where opening a browser is inconvenient
+- You want the dashboard experience (live output, chat, worker status) without leaving the terminal
+- You need keyboard-driven workflow transitions
+
+**TUI strengths:**
+
+- No browser required — works anywhere a terminal does
+- Full-screen layout with live agent output streaming
+- Interactive chat and one-key workflow triggers
+- Supports multiple worktree tabs with `Tab`/`Shift+Tab`
+
+See [kvelmo tui](/cli/tui.md) for full reference.
 
 ## Mixing Both
 
@@ -111,17 +129,20 @@ kvelmo submit
 
 ## Feature Availability
 
-| Feature      | Web UI | CLI             |
-|--------------|--------|-----------------|
-| Start task   | Yes    | Yes             |
-| Plan         | Yes    | Yes             |
-| Implement    | Yes    | Yes             |
-| Review       | Yes    | Yes             |
-| Submit       | Yes    | Yes             |
-| Undo/Redo    | Yes    | Yes             |
-| File browser | Yes    | `ls` / `cat`    |
-| Diff viewer  | Yes    | `git diff`      |
-| Settings     | Yes    | `kvelmo config` |
+| Feature      | Web UI | CLI             | TUI             |
+|--------------|--------|-----------------|-----------------|
+| Start task   | Yes    | Yes             | No              |
+| Plan         | Yes    | Yes             | Yes (key: `p`)  |
+| Implement    | Yes    | Yes             | Yes (key: `i`)  |
+| Review       | Yes    | Yes             | No              |
+| Submit       | Yes    | Yes             | No              |
+| Undo/Redo    | Yes    | Yes             | No              |
+| File browser | Yes    | `ls` / `cat`    | No              |
+| Diff viewer  | Yes    | `git diff`      | No              |
+| Settings     | Yes    | `kvelmo config` | No              |
+| Live output  | Yes    | `kvelmo watch`  | Yes             |
+| Agent chat   | Yes    | `kvelmo chat`   | Yes             |
+| Worker view  | Yes    | `kvelmo workers`| Dashboard layout|
 
 ## Recommendations
 
