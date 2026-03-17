@@ -22,6 +22,11 @@ export const SHORTCUTS: Shortcut[] = [
   { keys: '1-5', description: 'Switch to tab by index', section: 'Tabs' },
 
   // Workflow actions
+  { keys: 'g l', description: 'Plan (start planning)', section: 'Workflow' },
+  { keys: 'g i', description: 'Implement', section: 'Workflow' },
+  { keys: 'g r', description: 'Review', section: 'Workflow' },
+  { keys: 'g s', description: 'Submit', section: 'Workflow' },
+  { keys: 'g x', description: 'Stop current operation', section: 'Workflow' },
   { keys: 'Ctrl+z', description: 'Undo', section: 'Workflow' },
   { keys: 'Ctrl+Shift+z', description: 'Redo', section: 'Workflow' },
 ]
@@ -148,6 +153,86 @@ export function useKeyboardShortcuts() {
         chordKeyRef.current = null
         const { abort } = useProjectStore.getState()
         abort()
+        return
+      }
+
+      // Chord: g l — plan
+      if (
+        e.key === 'l' &&
+        !ctrlOrMeta &&
+        !e.shiftKey &&
+        !e.altKey &&
+        chordKeyRef.current === 'g' &&
+        now - chordTimeRef.current < 500
+      ) {
+        e.preventDefault()
+        chordKeyRef.current = null
+        const { plan } = useProjectStore.getState()
+        plan(false)
+        return
+      }
+
+      // Chord: g i — implement
+      if (
+        e.key === 'i' &&
+        !ctrlOrMeta &&
+        !e.shiftKey &&
+        !e.altKey &&
+        chordKeyRef.current === 'g' &&
+        now - chordTimeRef.current < 500
+      ) {
+        e.preventDefault()
+        chordKeyRef.current = null
+        const { implement } = useProjectStore.getState()
+        implement(false)
+        return
+      }
+
+      // Chord: g r — review
+      if (
+        e.key === 'r' &&
+        !ctrlOrMeta &&
+        !e.shiftKey &&
+        !e.altKey &&
+        chordKeyRef.current === 'g' &&
+        now - chordTimeRef.current < 500
+      ) {
+        e.preventDefault()
+        chordKeyRef.current = null
+        const { review } = useProjectStore.getState()
+        review({ approve: true })
+        return
+      }
+
+      // Chord: g s — submit (opens modal)
+      if (
+        e.key === 's' &&
+        !ctrlOrMeta &&
+        !e.shiftKey &&
+        !e.altKey &&
+        chordKeyRef.current === 'g' &&
+        now - chordTimeRef.current < 500
+      ) {
+        e.preventDefault()
+        chordKeyRef.current = null
+        const { setModalCommand } = useLayoutStore.getState()
+        setModalCommand('submit')
+        return
+      }
+
+      // Chord: g x — stop
+      if (
+        e.key === 'x' &&
+        !ctrlOrMeta &&
+        !e.shiftKey &&
+        !e.altKey &&
+        chordKeyRef.current === 'g' &&
+        now - chordTimeRef.current < 500
+      ) {
+        e.preventDefault()
+        chordKeyRef.current = null
+        const { stop } = useProjectStore.getState()
+        stop()
         return
       }
 

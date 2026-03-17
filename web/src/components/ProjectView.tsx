@@ -123,8 +123,8 @@ export function ProjectView() {
           </div>
         </div>
 
-        <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto justify-between sm:justify-end">
-          <div className="flex items-center gap-1 sm:gap-2">
+        <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto justify-between sm:justify-end flex-wrap">
+          <div className="flex items-center gap-1 sm:gap-2 flex-wrap">
             {/* Documentation link */}
             {docsData?.url && (
               <a
@@ -153,7 +153,7 @@ export function ProjectView() {
             </button>
             <button
               onClick={() => setShowCIStatus(true)}
-              className="btn btn-ghost btn-xs sm:btn-sm btn-circle"
+              className="btn btn-ghost btn-xs sm:btn-sm btn-circle hidden sm:inline-flex"
               aria-label="CI Status"
             >
               <svg aria-hidden="true" className="w-4 h-4 sm:w-5 sm:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -162,7 +162,7 @@ export function ProjectView() {
             </button>
             <button
               onClick={() => setShowPolicy(true)}
-              className="btn btn-ghost btn-xs sm:btn-sm btn-circle"
+              className="btn btn-ghost btn-xs sm:btn-sm btn-circle hidden sm:inline-flex"
               aria-label="Policy Checks"
             >
               <svg aria-hidden="true" className="w-4 h-4 sm:w-5 sm:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -171,7 +171,7 @@ export function ProjectView() {
             </button>
             <button
               onClick={() => setShowHooks(true)}
-              className="btn btn-ghost btn-xs sm:btn-sm btn-circle"
+              className="btn btn-ghost btn-xs sm:btn-sm btn-circle hidden sm:inline-flex"
               aria-label="Workflow Hooks"
             >
               <svg aria-hidden="true" className="w-4 h-4 sm:w-5 sm:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">

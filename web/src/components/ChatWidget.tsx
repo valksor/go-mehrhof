@@ -551,7 +551,7 @@ const MessageBubble = memo(function MessageBubble({ message, onAction }: Message
   if (isSystem) {
     return (
       <div className="flex justify-center">
-        <div className="text-xs text-base-content/50 bg-base-200 px-3 py-1 rounded-full max-w-md text-center">
+        <div className="text-xs text-base-content/50 bg-base-200 px-3 py-1 rounded-full max-w-[90%] sm:max-w-md text-center">
           {message.content}
           {/* Actions on system messages (quality gates, workflow actions) */}
           {message.actions && message.actions.length > 0 && (
@@ -613,7 +613,7 @@ const MessageBubble = memo(function MessageBubble({ message, onAction }: Message
 
     return (
       <div className="flex justify-center">
-        <div className={`text-xs px-3 py-1.5 rounded-lg border ${bgColor} max-w-md`}>
+        <div className={`text-xs px-3 py-1.5 rounded-lg border ${bgColor} max-w-[90%] sm:max-w-md`}>
           <div className="flex items-center gap-2">
             <span className={iconColor}>
               {dangerLevel === 'safe' ? '🔒' : '⚠️'}
@@ -642,7 +642,7 @@ const MessageBubble = memo(function MessageBubble({ message, onAction }: Message
       </div>
 
       {/* Content */}
-      <div className={`flex flex-col gap-1 max-w-[80%] ${isUser ? 'items-end' : 'items-start'}`}>
+      <div className={`flex flex-col gap-1 max-w-[95%] sm:max-w-[80%] ${isUser ? 'items-end' : 'items-start'}`}>
         <div className={`rounded-lg px-3 py-2 ${
           isUser
             ? 'bg-primary text-primary-content'

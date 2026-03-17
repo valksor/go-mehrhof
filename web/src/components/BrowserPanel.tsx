@@ -1,7 +1,115 @@
 import { useState, useEffect } from 'react'
-import { useBrowserStore } from '../stores/browserStore'
+import { useBrowserStore, type ConsoleMessage, type NetworkRequest } from '../stores/browserStore'
 
-type ActionCategory = 'navigate' | 'interact' | 'form' | 'capture'
+type ActionCategory = 'navigate' | 'interact' | 'form' | 'capture' | 'console' | 'network'
+
+function ConsolePanel() {
+  const { console: getConsole } = useBrowserStore()
+  const [messages, setMessages] = useState<ConsoleMessage[]>([])
+  const [loading, setLoading] = useState(false)
+
+  const refresh = async () => {
+    setLoading(true)
+    try {
+      const result = await getConsole()
+      setMessages(result.messages || [])
+    } catch {
+      // ignore
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => { refresh() }, [])
+
+  const typeColor: Record<string, string> = {
+    error: 'text-error',
+    warning: 'text-warning',
+    log: 'text-base-content',
+    info: 'text-info',
+  }
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-2">
+        <h3 className="text-sm font-semibold">Console Messages</h3>
+        <button onClick={refresh} disabled={loading} className="btn btn-ghost btn-xs">
+          {loading ? <span className="loading loading-spinner loading-xs" /> : 'Refresh'}
+        </button>
+      </div>
+      {messages.length === 0 ? (
+        <div className="text-xs text-base-content/50">No console messages captured.</div>
+      ) : (
+        <div className="space-y-1 max-h-64 overflow-y-auto">
+          {messages.map((msg, i) => (
+            <div key={i} className={`text-xs font-mono ${typeColor[msg.type] || 'text-base-content/70'}`}>
+              <span className="opacity-60">[{msg.type}]</span> {msg.text}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+function NetworkPanel() {
+  const { network: getNetwork } = useBrowserStore()
+  const [requests, setRequests] = useState<NetworkRequest[]>([])
+  const [loading, setLoading] = useState(false)
+
+  const refresh = async () => {
+    setLoading(true)
+    try {
+      const result = await getNetwork()
+      setRequests(result.requests || [])
+    } catch {
+      // ignore
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => { refresh() }, [])
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-2">
+        <h3 className="text-sm font-semibold">Network Requests</h3>
+        <button onClick={refresh} disabled={loading} className="btn btn-ghost btn-xs">
+          {loading ? <span className="loading loading-spinner loading-xs" /> : 'Refresh'}
+        </button>
+      </div>
+      {requests.length === 0 ? (
+        <div className="text-xs text-base-content/50">No network requests captured.</div>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="table table-xs">
+            <thead>
+              <tr>
+                <th>Method</th>
+                <th>URL</th>
+                <th>Status</th>
+                <th>Type</th>
+              </tr>
+            </thead>
+            <tbody>
+              {requests.map((req, i) => (
+                <tr key={i}>
+                  <td className="font-mono text-xs">{req.method}</td>
+                  <td className="font-mono text-xs max-w-xs truncate">{req.url}</td>
+                  <td className={`text-xs ${req.status && req.status >= 400 ? 'text-error' : ''}`}>
+                    {req.status || '—'}
+                  </td>
+                  <td className="text-xs opacity-60">{req.resource_type || ''}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  )
+}
 
 export function BrowserPanel() {
   const {
@@ -171,6 +279,18 @@ export function BrowserPanel() {
           onClick={() => setActiveCategory('capture')}
         >
           Capture
+        </button>
+        <button
+          className={`tab tab-sm ${activeCategory === 'console' ? 'tab-active' : ''}`}
+          onClick={() => setActiveCategory('console')}
+        >
+          Console
+        </button>
+        <button
+          className={`tab tab-sm ${activeCategory === 'network' ? 'tab-active' : ''}`}
+          onClick={() => setActiveCategory('network')}
+        >
+          Network
         </button>
       </div>
 
@@ -584,6 +704,14 @@ export function BrowserPanel() {
               </div>
             </div>
           </div>
+        )}
+
+        {activeCategory === 'console' && (
+          <ConsolePanel />
+        )}
+
+        {activeCategory === 'network' && (
+          <NetworkPanel />
         )}
       </div>
 

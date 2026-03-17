@@ -18,6 +18,17 @@ function isActive() {
 
 export const COMMANDS: ChatCommand[] = [
   {
+    name: '/quick',
+    description: 'Quick fix: load, implement, and submit in one step',
+    isAvailable: () => getState().state === 'none',
+    execute: async (args) => {
+      const source = args.trim()
+      if (!source) return 'Usage: /quick <source> (e.g. github:owner/repo#123 or file:task.md)'
+      await getState().quickStart(source)
+      return 'Quick fix started — will auto-advance through implement and submit.'
+    },
+  },
+  {
     name: '/plan',
     description: 'Run planning phase',
     isAvailable: () => getState().state === 'loaded',
@@ -105,6 +116,18 @@ export const COMMANDS: ChatCommand[] = [
     execute: async () => {
       await getState().redo()
       return 'Redone to next checkpoint.'
+    },
+  },
+  {
+    name: '/stop',
+    description: 'Stop current operation (preserves state)',
+    isAvailable: () => {
+      const s = getState().state
+      return ['planning', 'implementing', 'simplifying', 'optimizing', 'reviewing'].includes(s)
+    },
+    execute: async () => {
+      await getState().stop()
+      return 'Operation stopped.'
     },
   },
   {

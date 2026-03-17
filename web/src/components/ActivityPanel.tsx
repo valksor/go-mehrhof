@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback, useEffect, useRef } from 'react'
 import { useGlobalStore } from '../stores/globalStore'
 import { AccessibleModal } from './ui/AccessibleModal'
 
@@ -48,6 +48,8 @@ export function ActivityPanel({ isOpen, onClose }: ActivityPanelProps) {
   const [timeRange, setTimeRange] = useState<TimeRange>('1h')
   const [errorsOnly, setErrorsOnly] = useState(false)
   const [methodFilter, setMethodFilter] = useState('')
+  const [exporting, setExporting] = useState(false)
+  const downloadRef = useRef<HTMLAnchorElement>(null)
 
   const loadActivity = useCallback(async () => {
     if (!client || !connected) return
@@ -106,6 +108,30 @@ export function ActivityPanel({ isOpen, onClose }: ActivityPanelProps) {
       setLoading(false)
     }
   }, [client, connected, timeRange, errorsOnly, methodFilter, viewMode])
+
+  const handleExport = useCallback(async () => {
+    if (!client || !connected) return
+    setExporting(true)
+    try {
+      const result = await client.call<Record<string, unknown>>('export', {
+        format: 'json',
+        since: timeRange,
+        include: 'tasks,activity',
+      })
+      const json = JSON.stringify(result, null, 2)
+      const blob = new Blob([json], { type: 'application/json' })
+      const url = URL.createObjectURL(blob)
+      const a = downloadRef.current ?? document.createElement('a')
+      a.href = url
+      a.download = `kvelmo-export-${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.json`
+      a.click()
+      URL.revokeObjectURL(url)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Export failed')
+    } finally {
+      setExporting(false)
+    }
+  }, [client, connected, timeRange])
 
   // Auto-load when panel opens or filters change
   useEffect(() => {
@@ -202,6 +228,23 @@ export function ActivityPanel({ isOpen, onClose }: ActivityPanelProps) {
             )}
             Refresh
           </button>
+
+          <button
+            onClick={handleExport}
+            disabled={exporting || !connected}
+            className="btn btn-ghost btn-sm"
+            aria-label="Export activity data"
+          >
+            {exporting ? (
+              <span className="loading loading-spinner loading-xs"></span>
+            ) : (
+              <svg aria-hidden="true" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+            )}
+            Export
+          </button>
+          <a ref={downloadRef} className="hidden" aria-hidden="true" />
         </div>
 
         {/* Error */}

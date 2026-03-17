@@ -27,36 +27,39 @@ interface TaskWidgetProps {
 }
 
 export function TaskWidget({ embedded = false }: TaskWidgetProps) {
-  const { task, state, start, queueTask, loading, error, connected, connecting, undo, reset } = useProjectStore()
+  const { task, state, start, quickStart, queueTask, loading, error, connected, connecting, undo, reset } = useProjectStore()
   const [inputMode, setInputMode] = useState<'quick' | 'file' | 'url'>('quick')
   const [taskDescription, setTaskDescription] = useState('')
   const [urlInput, setUrlInput] = useState('')
   const [selectedFile, setSelectedFile] = useState('')
   const [showFilePicker, setShowFilePicker] = useState(false)
+  const [quickMode, setQuickMode] = useState(false)
   const detectedProvider = useMemo(() => detectProvider(urlInput), [urlInput])
 
   // When a task is active, queue instead of start
   const hasActiveTask = task && state !== 'none'
 
+  const loadOrQueue = (source: string, title?: string) => {
+    if (hasActiveTask) {
+      queueTask(source, title)
+    } else if (quickMode) {
+      quickStart(source)
+    } else {
+      start(source)
+    }
+  }
+
   const handleQuickLoad = () => {
     if (taskDescription.trim()) {
       const source = `empty:${taskDescription.trim()}`
-      if (hasActiveTask) {
-        queueTask(source, taskDescription.trim())
-      } else {
-        start(source)
-      }
+      loadOrQueue(source, taskDescription.trim())
       setTaskDescription('')
     }
   }
 
   const handleUrlLoad = () => {
     if (urlInput.trim()) {
-      if (hasActiveTask) {
-        queueTask(urlInput.trim())
-      } else {
-        start(urlInput.trim())
-      }
+      loadOrQueue(urlInput.trim())
       setUrlInput('')
     }
   }
@@ -64,11 +67,7 @@ export function TaskWidget({ embedded = false }: TaskWidgetProps) {
   const handleFileLoad = () => {
     if (selectedFile) {
       const source = `file:${selectedFile}`
-      if (hasActiveTask) {
-        queueTask(source, selectedFile.split('/').pop() || selectedFile)
-      } else {
-        start(source)
-      }
+      loadOrQueue(source, selectedFile.split('/').pop() || selectedFile)
       setSelectedFile('')
     }
   }
@@ -136,7 +135,7 @@ export function TaskWidget({ embedded = false }: TaskWidgetProps) {
               disabled={loading || !taskDescription.trim() || !connected}
               className="btn btn-primary btn-sm"
             >
-              {loading ? <span className="loading loading-spinner loading-xs" /> : hasActiveTask ? 'Queue Task' : 'Load Task'}
+              {loading ? <span className="loading loading-spinner loading-xs" /> : hasActiveTask ? 'Queue Task' : quickMode ? 'Quick Fix' : 'Load Task'}
             </button>
           </div>
         </div>
@@ -169,7 +168,7 @@ export function TaskWidget({ embedded = false }: TaskWidgetProps) {
                 disabled={loading || !connected}
                 className="btn btn-primary btn-sm"
               >
-                {loading ? <span className="loading loading-spinner loading-xs" /> : hasActiveTask ? 'Queue Task' : 'Load Task'}
+                {loading ? <span className="loading loading-spinner loading-xs" /> : hasActiveTask ? 'Queue Task' : quickMode ? 'Quick Fix' : 'Load Task'}
               </button>
             </div>
           )}
@@ -206,10 +205,25 @@ export function TaskWidget({ embedded = false }: TaskWidgetProps) {
               disabled={loading || !urlInput.trim() || !connected}
               className="btn btn-primary btn-sm"
             >
-              {loading ? <span className="loading loading-spinner loading-xs" /> : hasActiveTask ? 'Queue Task' : 'Load Task'}
+              {loading ? <span className="loading loading-spinner loading-xs" /> : hasActiveTask ? 'Queue Task' : quickMode ? 'Quick Fix' : 'Load Task'}
             </button>
           </div>
         </div>
+      )}
+
+      {/* Quick Fix toggle */}
+      {!hasActiveTask && (
+        <label className="flex items-center gap-2 cursor-pointer mt-3">
+          <input
+            type="checkbox"
+            className="toggle toggle-sm toggle-primary"
+            checked={quickMode}
+            onChange={e => setQuickMode(e.target.checked)}
+            disabled={loading}
+          />
+          <span className="text-sm text-base-content/70">Quick Fix</span>
+          <span className="text-xs text-base-content/40">(skip planning, auto-submit)</span>
+        </label>
       )}
 
       {/* Connection status */}
