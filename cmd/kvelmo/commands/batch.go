@@ -16,6 +16,7 @@ var (
 	batchStateFilter string
 	batchTagFilter   string
 	batchMatchFilter string
+	batchJSON        bool
 )
 
 var BatchCmd = &cobra.Command{
@@ -24,10 +25,15 @@ var BatchCmd = &cobra.Command{
 	Long: `Execute an action on all active projects matching the optional filters.
 
 Actions:
+  plan      Plan all matching tasks
+  implement Implement all matching tasks
+  review    Review all matching tasks
   submit    Submit all matching tasks (creates PRs)
   abort     Abort all matching tasks
   reset     Reset all matching tasks
   stop      Stop all matching tasks
+  pause     Pause all matching tasks
+  resume    Resume all matching paused tasks
 
 Filters:
   --state   Filter by task state (e.g. reviewing, failed)
@@ -41,6 +47,23 @@ Examples:
   kvelmo batch stop --tag backend         Stop all tasks tagged 'backend'
   kvelmo batch submit --match myproject   Submit tasks in paths containing 'myproject'`,
 	Args: cobra.ExactArgs(1),
+	ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		if len(args) != 0 {
+			return nil, cobra.ShellCompDirectiveNoFileComp
+		}
+
+		return []string{
+			"plan\tPlan all matching tasks",
+			"implement\tImplement all matching tasks",
+			"review\tReview all matching tasks",
+			"submit\tSubmit all matching tasks (creates PRs)",
+			"abort\tAbort all matching tasks",
+			"reset\tReset all matching tasks",
+			"stop\tStop all matching tasks",
+			"pause\tPause all matching tasks",
+			"resume\tResume all matching paused tasks",
+		}, cobra.ShellCompDirectiveNoFileComp
+	},
 	RunE: runBatch,
 }
 
@@ -48,6 +71,7 @@ func init() {
 	BatchCmd.Flags().StringVar(&batchStateFilter, "state", "", "Only act on tasks in this state")
 	BatchCmd.Flags().StringVar(&batchTagFilter, "tag", "", "Only act on tasks with this tag")
 	BatchCmd.Flags().StringVar(&batchMatchFilter, "match", "", "Only act on projects whose path contains this substring")
+	BatchCmd.Flags().BoolVar(&batchJSON, "json", false, "Output raw JSON response")
 }
 
 func runBatch(_ *cobra.Command, args []string) error {
@@ -92,6 +116,25 @@ func runBatch(_ *cobra.Command, args []string) error {
 		spinner.Fail("Batch operation failed")
 
 		return fmt.Errorf("batch call: %w", err)
+	}
+
+	if batchJSON {
+		spinner.Stop()
+		var pretty any
+		if jsonErr := json.Unmarshal(resp.Result, &pretty); jsonErr != nil {
+			fmt.Println(string(resp.Result))
+
+			return nil
+		}
+		out, jsonErr := json.MarshalIndent(pretty, "", "  ")
+		if jsonErr != nil {
+			fmt.Println(string(resp.Result))
+
+			return nil
+		}
+		fmt.Println(string(out))
+
+		return nil
 	}
 
 	var result struct {

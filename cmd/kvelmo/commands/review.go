@@ -8,9 +8,13 @@ import (
 	"time"
 
 	"github.com/spf13/cobra"
+	"github.com/valksor/kvelmo/pkg/cli"
+	"github.com/valksor/kvelmo/pkg/meta"
 	"github.com/valksor/kvelmo/pkg/socket"
 	"github.com/valksor/kvelmo/pkg/storage"
 )
+
+var reviewWait bool
 
 var ReviewCmd = &cobra.Command{
 	Use:     "review",
@@ -31,6 +35,7 @@ func init() {
 	ReviewCmd.Flags().StringP("message", "m", "", "Review message/notes")
 	ReviewCmd.Flags().Bool("fix", false, "Auto-fix issues after entering review state")
 	ReviewCmd.Flags().Bool("force", false, "Re-run review even if already reviewed")
+	ReviewCmd.Flags().BoolVarP(&reviewWait, "wait", "w", false, "Wait for job to complete, streaming output")
 
 	ReviewCmd.AddCommand(reviewListCmd)
 	ReviewCmd.AddCommand(reviewViewCmd)
@@ -44,8 +49,13 @@ func runReview(cmd *cobra.Command, args []string) error {
 
 	socketPath := socket.WorktreeSocketPath(cwd)
 
+	spinner := cli.NewSpinner("Submitting review job...")
+	spinner.Start()
+
 	client, err := socket.NewClient(socketPath, socket.WithTimeout(30*time.Second))
 	if err != nil {
+		spinner.Fail("Connection failed")
+
 		return fmt.Errorf("connect to socket: %w", err)
 	}
 	defer func() { _ = client.Close() }()
@@ -67,17 +77,32 @@ func runReview(cmd *cobra.Command, args []string) error {
 	ctx := context.Background()
 	resp, err := client.Call(ctx, "review", params)
 	if err != nil {
+		spinner.Fail("Review submission failed")
+
 		return fmt.Errorf("review: %w", err)
 	}
 
-	var result map[string]any
+	var result struct {
+		JobID  string `json:"job_id"`
+		Status string `json:"status"`
+	}
 	if err := json.Unmarshal(resp.Result, &result); err != nil {
+		spinner.Fail("Invalid response")
+
 		return fmt.Errorf("parse result: %w", err)
 	}
 
-	fmt.Printf("Review: %s\n", result["status"])
+	spinner.Success("Review: " + result.Status)
 	if fix {
 		fmt.Println("Fix mode enabled: agent is reviewing and fixing issues")
+	}
+
+	if reviewWait && result.JobID != "" {
+		return waitForJob(socketPath, result.JobID)
+	}
+
+	if !reviewWait {
+		fmt.Println("Use '" + meta.Name + " status' to check progress")
 	}
 
 	return nil

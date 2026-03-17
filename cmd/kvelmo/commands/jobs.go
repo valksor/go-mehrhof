@@ -31,9 +31,17 @@ var jobsGetCmd = &cobra.Command{
 	RunE:  runJobsGet,
 }
 
+var (
+	jobsListJSON bool
+	jobsGetJSON  bool
+)
+
 func init() {
 	JobsCmd.AddCommand(jobsListCmd)
 	JobsCmd.AddCommand(jobsGetCmd)
+
+	jobsListCmd.Flags().BoolVar(&jobsListJSON, "json", false, "Output as JSON")
+	jobsGetCmd.Flags().BoolVar(&jobsGetJSON, "json", false, "Output as JSON")
 
 	jobsGetCmd.ValidArgsFunction = completeJobIDs
 }
@@ -106,6 +114,24 @@ func runJobsList(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("jobs.list call: %w", err)
 	}
 
+	if jobsListJSON {
+		var pretty any
+		if jsonErr := json.Unmarshal(resp.Result, &pretty); jsonErr != nil {
+			fmt.Println(string(resp.Result))
+
+			return nil
+		}
+		out, jsonErr := json.MarshalIndent(pretty, "", "  ")
+		if jsonErr != nil {
+			fmt.Println(string(resp.Result))
+
+			return nil
+		}
+		fmt.Println(string(out))
+
+		return nil
+	}
+
 	var result struct {
 		Jobs []JobInfo `json:"jobs"`
 	}
@@ -162,6 +188,24 @@ func runJobsGet(cmd *cobra.Command, args []string) error {
 	resp, err := client.Call(ctx, "jobs.get", map[string]any{"id": id})
 	if err != nil {
 		return fmt.Errorf("jobs.get call: %w", err)
+	}
+
+	if jobsGetJSON {
+		var pretty any
+		if jsonErr := json.Unmarshal(resp.Result, &pretty); jsonErr != nil {
+			fmt.Println(string(resp.Result))
+
+			return nil
+		}
+		out, jsonErr := json.MarshalIndent(pretty, "", "  ")
+		if jsonErr != nil {
+			fmt.Println(string(resp.Result))
+
+			return nil
+		}
+		fmt.Println(string(out))
+
+		return nil
 	}
 
 	var job JobInfo

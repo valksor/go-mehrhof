@@ -25,6 +25,7 @@ var (
 	startVerbose    bool
 	startFrom       string
 	startAuto       bool
+	startJSON       bool
 )
 
 var StartCmd = &cobra.Command{
@@ -52,6 +53,7 @@ func init() {
 	StartCmd.Flags().BoolVarP(&startVerbose, "verbose", "v", false, "Show socket paths")
 	StartCmd.Flags().StringVar(&startFrom, "from", "", "Task source (file:path, github:owner/repo#123, or URL)")
 	StartCmd.Flags().BoolVar(&startAuto, "auto", false, "Auto-advance through plan → implement → review")
+	StartCmd.Flags().BoolVar(&startJSON, "json", false, "Output result as JSON")
 
 	// Keep --daemon as hidden alias for backwards compat (now it's the default)
 	StartCmd.Flags().Bool("daemon", true, "Run in background (deprecated: now default)")
@@ -116,6 +118,11 @@ func runInBackground(cwd, wtPath string) error {
 		return nil
 	}
 
+	// Don't spawn subprocesses from test binaries (same fork-bomb guard as autostart.go).
+	if isTestBinary() {
+		return errors.New("cannot start background process in test environment")
+	}
+
 	// Need to start sockets - spawn a background process
 	exe, err := os.Executable()
 	if err != nil {
@@ -168,7 +175,24 @@ func runInBackground(cwd, wtPath string) error {
 			}
 			time.Sleep(100 * time.Millisecond)
 		}
-		fmt.Printf("Task loading from %s\n", startFrom)
+		if !startJSON {
+			fmt.Printf("Task loading from %s\n", startFrom)
+		}
+	}
+
+	if startJSON {
+		result := map[string]string{
+			"status":  "ready",
+			"socket":  wtPath,
+			"workdir": cwd,
+		}
+		data, err := json.Marshal(result)
+		if err != nil {
+			return fmt.Errorf("marshal json: %w", err)
+		}
+		fmt.Println(string(data))
+
+		return nil
 	}
 
 	fmt.Println("Ready")

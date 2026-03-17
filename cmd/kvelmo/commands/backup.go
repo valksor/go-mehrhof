@@ -1,16 +1,18 @@
 package commands
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
-	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/spf13/cobra"
 
 	"github.com/valksor/kvelmo/pkg/backup"
 	"github.com/valksor/kvelmo/pkg/cli"
-	"github.com/valksor/kvelmo/pkg/paths"
+	"github.com/valksor/kvelmo/pkg/meta"
+	"github.com/valksor/kvelmo/pkg/socket"
 )
 
 var backupJSON bool
@@ -23,28 +25,62 @@ var BackupCmd = &cobra.Command{
 Includes configuration, task data, recordings, and memory.
 Excludes transient files (sockets, locks).
 
+Subcommands:
+  list    List existing backup archives
+
 Examples:
   kvelmo backup                        # Default: kvelmo-backup-<timestamp>.tar.gz
-  kvelmo backup /tmp/my-backup.tar.gz  # Custom output path`,
+  kvelmo backup /tmp/my-backup.tar.gz  # Custom output path
+  kvelmo backup list                   # List existing backups
+  kvelmo backup list --json            # List as JSON`,
 	Args: cobra.MaximumNArgs(1),
 	RunE: runBackup,
 }
 
+var backupListCmd = &cobra.Command{
+	Use:   "list",
+	Short: "List existing backup archives",
+	Long:  "Query the global socket for existing backup archives, showing timestamp, path, and size.",
+	RunE:  runBackupList,
+}
+
+var backupListJSON bool
+
 func init() {
 	BackupCmd.Flags().BoolVar(&backupJSON, "json", false, "Output as JSON")
+
+	backupListCmd.Flags().BoolVar(&backupListJSON, "json", false, "Output as JSON")
+	BackupCmd.AddCommand(backupListCmd)
 }
 
 func runBackup(_ *cobra.Command, args []string) error {
-	baseDir := paths.Paths().BaseDir()
-
-	outputPath := ""
-	if len(args) > 0 {
-		outputPath = args[0]
+	globalPath := socket.GlobalSocketPath()
+	if !socket.SocketExists(globalPath) {
+		return fmt.Errorf("global socket not running\nRun '%s serve' first", meta.Name)
 	}
 
-	result, err := backup.Create(baseDir, outputPath)
+	client, err := socket.NewClient(globalPath, socket.WithTimeout(30*time.Second))
 	if err != nil {
-		return err
+		return fmt.Errorf("connect to global socket: %w", err)
+	}
+	defer func() { _ = client.Close() }()
+
+	params := map[string]any{}
+	if len(args) > 0 {
+		params["output_path"] = args[0]
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	resp, err := client.Call(ctx, "backup.create", params)
+	if err != nil {
+		return fmt.Errorf("backup.create: %w", err)
+	}
+
+	var result backup.Result
+	if err := json.Unmarshal(resp.Result, &result); err != nil {
+		return fmt.Errorf("parse result: %w", err)
 	}
 
 	if backupJSON {
@@ -65,18 +101,58 @@ func runBackup(_ *cobra.Command, args []string) error {
 	return nil
 }
 
-// isTransientFile returns true for files that should be excluded from backup/restore.
-func isTransientFile(name string) bool {
-	return backup.IsTransientFile(name)
-}
+func runBackupList(_ *cobra.Command, _ []string) error {
+	globalPath := socket.GlobalSocketPath()
 
-// hasDotDot checks if a path contains ".." components (path traversal).
-func hasDotDot(path string) bool {
-	for _, part := range strings.Split(filepath.ToSlash(path), "/") {
-		if part == ".." {
-			return true
-		}
+	if !socket.SocketExists(globalPath) {
+		return fmt.Errorf("global socket not running\nRun '%s serve' first", meta.Name)
 	}
 
-	return false
+	client, err := socket.NewClient(globalPath, socket.WithTimeout(5*time.Second))
+	if err != nil {
+		return fmt.Errorf("connect to global socket: %w", err)
+	}
+	defer func() { _ = client.Close() }()
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	resp, err := client.Call(ctx, "backup.list", nil)
+	if err != nil {
+		return fmt.Errorf("backup.list: %w", err)
+	}
+
+	var result struct {
+		Backups []backup.BackupInfo `json:"backups"`
+	}
+	if err := json.Unmarshal(resp.Result, &result); err != nil {
+		return fmt.Errorf("parse result: %w", err)
+	}
+
+	if backupListJSON {
+		data, err := json.MarshalIndent(result, "", "  ")
+		if err != nil {
+			return fmt.Errorf("marshal json: %w", err)
+		}
+		fmt.Println(string(data))
+
+		return nil
+	}
+
+	if len(result.Backups) == 0 {
+		fmt.Println("No backups found")
+
+		return nil
+	}
+
+	fmt.Printf("%-24s  %-10s  %s\n", "Created", "Size", "Path")
+	fmt.Printf("%-24s  %-10s  %s\n",
+		strings.Repeat("-", 24), strings.Repeat("-", 10), strings.Repeat("-", 40))
+	for _, b := range result.Backups {
+		fmt.Printf("%-24s  %-10s  %s\n", b.CreatedAt, backup.FormatBytes(b.Size), b.Path)
+	}
+
+	fmt.Printf("\n%d backup(s)\n", len(result.Backups))
+
+	return nil
 }

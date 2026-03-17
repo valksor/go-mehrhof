@@ -31,7 +31,14 @@ var tagRemoveCmd = &cobra.Command{
 	Use:   "remove <tag>",
 	Short: "Remove a tag from the current task",
 	Args:  cobra.ExactArgs(1),
-	RunE:  runTagRemove,
+	ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		if len(args) != 0 {
+			return nil, cobra.ShellCompDirectiveNoFileComp
+		}
+
+		return completeExistingTags()
+	},
+	RunE: runTagRemove,
 }
 
 var tagListCmd = &cobra.Command{
@@ -40,10 +47,14 @@ var tagListCmd = &cobra.Command{
 	RunE:  runTagList,
 }
 
+var tagListJSON bool
+
 func init() {
 	TagCmd.AddCommand(tagAddCmd)
 	TagCmd.AddCommand(tagRemoveCmd)
 	TagCmd.AddCommand(tagListCmd)
+
+	tagListCmd.Flags().BoolVar(&tagListJSON, "json", false, "Output raw JSON response")
 }
 
 func runTagAdd(_ *cobra.Command, args []string) error {
@@ -118,6 +129,24 @@ func runTagList(_ *cobra.Command, _ []string) error {
 		return fmt.Errorf("task.tag: %s", resp.Error.Message)
 	}
 
+	if tagListJSON {
+		var pretty any
+		if jsonErr := json.Unmarshal(resp.Result, &pretty); jsonErr != nil {
+			fmt.Println(string(resp.Result))
+
+			return nil
+		}
+		out, jsonErr := json.MarshalIndent(pretty, "", "  ")
+		if jsonErr != nil {
+			fmt.Println(string(resp.Result))
+
+			return nil
+		}
+		fmt.Println(string(out))
+
+		return nil
+	}
+
 	var result struct {
 		Tags []string `json:"tags"`
 	}
@@ -134,6 +163,35 @@ func runTagList(_ *cobra.Command, _ []string) error {
 	}
 
 	return nil
+}
+
+// completeExistingTags queries the worktree socket for current task tags to provide
+// shell completion suggestions. Falls back gracefully if the socket is unavailable.
+func completeExistingTags() ([]string, cobra.ShellCompDirective) {
+	client, cleanup, err := connectWorktree()
+	if err != nil {
+		return nil, cobra.ShellCompDirectiveNoFileComp
+	}
+	defer cleanup()
+
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+
+	resp, err := client.Call(ctx, "task.tag", map[string]any{
+		"action": "list",
+	})
+	if err != nil || resp.Error != nil {
+		return nil, cobra.ShellCompDirectiveNoFileComp
+	}
+
+	var result struct {
+		Tags []string `json:"tags"`
+	}
+	if err := json.Unmarshal(resp.Result, &result); err != nil {
+		return nil, cobra.ShellCompDirectiveNoFileComp
+	}
+
+	return result.Tags, cobra.ShellCompDirectiveNoFileComp
 }
 
 func connectWorktree() (*socket.Client, func(), error) {

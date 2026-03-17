@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -11,6 +12,8 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/valksor/kvelmo/pkg/agent/recorder"
+	"github.com/valksor/kvelmo/pkg/meta"
+	"github.com/valksor/kvelmo/pkg/socket"
 )
 
 var recordingsDir string
@@ -87,48 +90,42 @@ func init() {
 }
 
 func runRecordingsList(_ *cobra.Command, _ []string) error {
-	infos, err := recorder.ListRecordings(recordingsDir)
+	globalPath := socket.GlobalSocketPath()
+	if !socket.SocketExists(globalPath) {
+		return fmt.Errorf("global socket not running\nRun '%s serve' first", meta.Name)
+	}
+
+	client, err := socket.NewClient(globalPath, socket.WithTimeout(5*time.Second))
 	if err != nil {
-		return fmt.Errorf("list recordings: %w", err)
+		return fmt.Errorf("connect to global socket: %w", err)
 	}
+	defer func() { _ = client.Close() }()
 
-	// Filter by job if specified
+	params := map[string]any{}
 	if recordingsJobFilter != "" {
-		var filtered []recorder.RecordingInfo
-		for _, info := range infos {
-			if info.JobID == recordingsJobFilter {
-				filtered = append(filtered, info)
-			}
-		}
-		infos = filtered
+		params["job"] = recordingsJobFilter
 	}
-
-	// Filter by time if specified
 	if recordingsSinceFilter != "" {
-		since, err := parseDuration(recordingsSinceFilter)
-		if err != nil {
-			return fmt.Errorf("invalid --since duration: %w", err)
-		}
-		cutoff := time.Now().Add(-since)
-		var filtered []recorder.RecordingInfo
-		for _, info := range infos {
-			// Parse the StartedAt string back to time (RFC3339 format)
-			t, err := time.Parse(time.RFC3339, info.StartedAt)
-			if err != nil {
-				fmt.Fprintf(os.Stderr, "warning: skipping recording %s: invalid timestamp %q: %v\n",
-					filepath.Base(info.Path), info.StartedAt, err)
-
-				continue
-			}
-			if t.After(cutoff) {
-				filtered = append(filtered, info)
-			}
-		}
-		infos = filtered
+		params["since"] = recordingsSinceFilter
 	}
 
-	// Check for empty results after filtering
-	if len(infos) == 0 {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	resp, err := client.Call(ctx, "recordings.list", params)
+	if err != nil {
+		return fmt.Errorf("recordings.list: %w", err)
+	}
+
+	var result struct {
+		Recordings []recorder.RecordingInfo `json:"recordings"`
+	}
+	if err := json.Unmarshal(resp.Result, &result); err != nil {
+		return fmt.Errorf("parse result: %w", err)
+	}
+
+	// Check for empty results
+	if len(result.Recordings) == 0 {
 		fmt.Println("No recordings found")
 
 		return nil
@@ -138,13 +135,13 @@ func runRecordingsList(_ *cobra.Command, _ []string) error {
 		enc := json.NewEncoder(os.Stdout)
 		enc.SetIndent("", "  ")
 
-		return enc.Encode(infos)
+		return enc.Encode(result.Recordings)
 	}
 
 	// Table output
 	fmt.Printf("%-12s %-8s %-8s %-20s %s\n", "JOB", "AGENT", "LINES", "STARTED", "FILE")
 	fmt.Println(strings.Repeat("-", 80))
-	for _, info := range infos {
+	for _, info := range result.Recordings {
 		// Truncate job ID for display
 		jobDisplay := info.JobID
 		if len(jobDisplay) > 12 {
@@ -159,46 +156,56 @@ func runRecordingsList(_ *cobra.Command, _ []string) error {
 		)
 	}
 
-	fmt.Printf("\nTotal: %d recording(s)\n", len(infos))
+	fmt.Printf("\nTotal: %d recording(s)\n", len(result.Recordings))
 
 	return nil
 }
 
 func runRecordingsView(_ *cobra.Command, args []string) error {
-	path := args[0]
-
-	// If not absolute, assume it's in the recordings dir
-	if !filepath.IsAbs(path) {
-		path = filepath.Join(recordingsDir, path)
+	globalPath := socket.GlobalSocketPath()
+	if !socket.SocketExists(globalPath) {
+		return fmt.Errorf("global socket not running\nRun '%s serve' first", meta.Name)
 	}
 
-	reader, err := recorder.OpenReader(path)
+	client, err := socket.NewClient(globalPath, socket.WithTimeout(10*time.Second))
 	if err != nil {
-		return fmt.Errorf("open recording: %w", err)
+		return fmt.Errorf("connect to global socket: %w", err)
 	}
-	defer func() { _ = reader.Close() }()
+	defer func() { _ = client.Close() }()
+
+	file := args[0]
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	resp, err := client.Call(ctx, "recordings.view", map[string]any{
+		"file": file,
+	})
+	if err != nil {
+		return fmt.Errorf("recordings.view: %w", err)
+	}
+
+	var result struct {
+		Header  *recorder.Header  `json:"header"`
+		Records []recorder.Record `json:"records"`
+	}
+	if err := json.Unmarshal(resp.Result, &result); err != nil {
+		return fmt.Errorf("parse result: %w", err)
+	}
 
 	// Print header
-	if h := reader.Header(); h != nil {
-		fmt.Printf("Recording: %s\n", filepath.Base(path))
+	if h := result.Header; h != nil {
+		fmt.Printf("Recording: %s\n", filepath.Base(file))
 		fmt.Printf("Job: %s | Agent: %s | Model: %s\n", h.JobID, h.Agent, h.Model)
 		fmt.Printf("Started: %s\n", h.StartedAt.Format(time.RFC3339))
 		fmt.Println(strings.Repeat("-", 60))
 	}
 
 	// Print records
-	for {
-		rec, err := reader.Next()
-		if err != nil {
-			return fmt.Errorf("read record: %w", err)
-		}
-		if rec == nil {
-			break
-		}
-
-		direction := "→"
+	for _, rec := range result.Records {
+		direction := "\u2192"
 		if rec.Direction == recorder.Inbound {
-			direction = "←"
+			direction = "\u2190"
 		}
 
 		fmt.Printf("[%s] %s %s: ", rec.Timestamp.Format("15:04:05.000"), direction, rec.Type)

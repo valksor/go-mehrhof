@@ -3,9 +3,7 @@ package commands
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
-	"os"
 	"time"
 
 	"github.com/spf13/cobra"
@@ -14,7 +12,11 @@ import (
 	"github.com/valksor/kvelmo/pkg/socket"
 )
 
-var planForce bool
+var (
+	planForce bool
+	planWait  bool
+	planJSON  bool
+)
 
 var PlanCmd = &cobra.Command{
 	Use:     "plan",
@@ -26,18 +28,14 @@ var PlanCmd = &cobra.Command{
 
 func init() {
 	PlanCmd.Flags().BoolVar(&planForce, "force", false, "Re-run planning even if already planned")
+	PlanCmd.Flags().BoolVarP(&planWait, "wait", "w", false, "Wait for job to complete, streaming output")
+	PlanCmd.Flags().BoolVar(&planJSON, "json", false, "Output result as JSON")
 }
 
 func runPlan(cmd *cobra.Command, args []string) error {
-	cwd, err := os.Getwd()
+	wtPath, err := ensureWorktreeSocket()
 	if err != nil {
-		return fmt.Errorf("get working directory: %w", err)
-	}
-
-	wtPath := socket.WorktreeSocketPath(cwd)
-
-	if !socket.SocketExists(wtPath) {
-		return errors.New("no worktree socket running\nRun '" + meta.Name + " start' first")
+		return err
 	}
 
 	spinner := cli.NewSpinner("Submitting plan job...")
@@ -73,7 +71,19 @@ func runPlan(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("parse result: %w", err)
 	}
 
+	if planJSON {
+		spinner.Stop()
+		fmt.Println(string(resp.Result))
+
+		return nil
+	}
+
 	spinner.Success("Planning job submitted: " + result.JobID)
+
+	if planWait {
+		return waitForJob(wtPath, result.JobID)
+	}
+
 	fmt.Println("Use '" + meta.Name + " status' to check progress")
 
 	return nil

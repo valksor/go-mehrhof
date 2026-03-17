@@ -28,6 +28,7 @@ func init() {
 	SubmitCmd.Flags().StringSlice("labels", nil, "Add labels")
 	SubmitCmd.Flags().Bool("delete-branch", false, "Delete local branch after successful submission")
 	SubmitCmd.Flags().Bool("skip-review", false, "Skip review gate and submit directly")
+	SubmitCmd.Flags().Bool("json", false, "Output result as JSON")
 }
 
 func runSubmit(cmd *cobra.Command, args []string) error {
@@ -69,6 +70,13 @@ func runSubmit(cmd *cobra.Command, args []string) error {
 	resp, err := client.Call(ctx, "submit", params)
 	if err != nil {
 		return fmt.Errorf("submit: %w", err)
+	}
+
+	jsonOutput, _ := cmd.Flags().GetBool("json")
+	if jsonOutput {
+		fmt.Println(string(resp.Result))
+
+		return nil
 	}
 
 	var result map[string]any

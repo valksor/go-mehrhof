@@ -3,9 +3,7 @@ package commands
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
-	"os"
 	"time"
 
 	"github.com/spf13/cobra"
@@ -17,6 +15,7 @@ import (
 var (
 	implementForce bool
 	implementWait  bool
+	implementJSON  bool
 )
 
 var ImplementCmd = &cobra.Command{
@@ -30,18 +29,13 @@ var ImplementCmd = &cobra.Command{
 func init() {
 	ImplementCmd.Flags().BoolVar(&implementForce, "force", false, "Re-run implementation even if already implemented")
 	ImplementCmd.Flags().BoolVarP(&implementWait, "wait", "w", false, "Wait for job to complete, streaming output")
+	ImplementCmd.Flags().BoolVar(&implementJSON, "json", false, "Output result as JSON")
 }
 
 func runImplement(cmd *cobra.Command, args []string) error {
-	cwd, err := os.Getwd()
+	wtPath, err := ensureWorktreeSocket()
 	if err != nil {
-		return fmt.Errorf("get working directory: %w", err)
-	}
-
-	wtPath := socket.WorktreeSocketPath(cwd)
-
-	if !socket.SocketExists(wtPath) {
-		return errors.New("no worktree socket running\nRun '" + meta.Name + " start' first")
+		return err
 	}
 
 	spinner := cli.NewSpinner("Submitting implementation job...")
@@ -75,6 +69,13 @@ func runImplement(cmd *cobra.Command, args []string) error {
 		spinner.Fail("Invalid response")
 
 		return fmt.Errorf("parse result: %w", err)
+	}
+
+	if implementJSON {
+		spinner.Stop()
+		fmt.Println(string(resp.Result))
+
+		return nil
 	}
 
 	spinner.Success("Implementation job submitted: " + result.JobID)
