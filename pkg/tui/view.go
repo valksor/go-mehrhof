@@ -150,7 +150,7 @@ func (m *Model) renderWorkers() string {
 
 // renderChatInput renders the chat divider and text input.
 func (m *Model) renderChatInput() string {
-	divider := strings.Repeat("─", m.width)
+	divider := strings.Repeat("─", max(0, m.width))
 
 	return dividerStyle.Render(divider) + "\n" +
 		"> " + m.chatInput.View() + "\n"
@@ -204,11 +204,12 @@ func (m *Model) renderHelp() string {
 	return b.String()
 }
 
-// padRight pads or truncates s to exactly n characters.
+// padRight pads or truncates s to exactly n runes.
 func padRight(s string, n int) string {
-	if len(s) >= n {
-		return s[:n]
+	runes := []rune(s)
+	if len(runes) >= n {
+		return string(runes[:n])
 	}
 
-	return s + strings.Repeat(" ", n-len(s))
+	return s + strings.Repeat(" ", n-len(runes))
 }
