@@ -210,7 +210,9 @@ func (s *Server) initiateShutdown() {
 		for conn := range s.conns {
 			resp := NewErrorResponse("", ErrCodeShuttingDown, "server shutting down")
 			data, _ := EncodeResponse(resp)
-			_, _ = conn.Write(data)
+			if _, err := conn.Write(data); err != nil {
+				slog.Debug("failed to send shutdown notice", "error", err)
+			}
 		}
 		s.connsMu.Unlock()
 	})
@@ -284,7 +286,11 @@ func (s *Server) handleConn(ctx context.Context, conn net.Conn) {
 		// Check rate limit
 		if !s.rateLimiter.allow(conn) {
 			resp := NewErrorResponse("", ErrCodeRateLimited, "rate limit exceeded")
-			_ = s.writeResponse(conn, resp)
+			if err := s.writeResponse(conn, resp); err != nil {
+				slog.Debug("failed to write rate limit response", "error", err)
+
+				return
+			}
 
 			continue
 		}
@@ -292,13 +298,21 @@ func (s *Server) handleConn(ctx context.Context, conn net.Conn) {
 		req, err := DecodeRequest(line)
 		if err != nil {
 			resp := NewErrorResponse("", ErrCodeParse, err.Error())
-			_ = s.writeResponse(conn, resp)
+			if err := s.writeResponse(conn, resp); err != nil {
+				slog.Debug("failed to write parse error response", "error", err)
+
+				return
+			}
 
 			continue
 		}
 
 		resp := s.dispatch(ctx, req, conn)
-		_ = s.writeResponse(conn, resp)
+		if err := s.writeResponse(conn, resp); err != nil {
+			slog.Debug("failed to write response", "method", req.Method, "id", req.ID, "error", err)
+
+			return
+		}
 	}
 }
 
@@ -396,7 +410,9 @@ func (s *Server) Broadcast(data []byte) {
 	s.connsMu.Lock()
 	defer s.connsMu.Unlock()
 	for conn := range s.conns {
-		_, _ = conn.Write(data)
+		if _, err := conn.Write(data); err != nil {
+			slog.Debug("broadcast write failed", "error", err)
+		}
 	}
 }
 

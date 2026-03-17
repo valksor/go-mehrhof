@@ -70,24 +70,6 @@ func TestGlobalHandleListJobs_WithPool(t *testing.T) {
 	}
 }
 
-func TestGlobalHandleSubmitJob_WithPool_ValidParams(t *testing.T) {
-	ctx := context.Background()
-	g := newTestGlobalSocketWithPool2(t)
-
-	params := mustMarshal(t, JobSubmitParams{
-		Type:   "plan",
-		Prompt: "test prompt",
-	})
-	resp, err := g.handleSubmitJob(ctx, &Request{ID: "1", Params: params})
-	if err != nil {
-		t.Fatal(err)
-	}
-	// May succeed or fail gracefully, but should not panic
-	if resp == nil {
-		t.Fatal("expected non-nil response")
-	}
-}
-
 func TestGlobalHandleAddWorker_WithPool(t *testing.T) {
 	ctx := context.Background()
 	g := newTestGlobalSocketWithPool2(t)

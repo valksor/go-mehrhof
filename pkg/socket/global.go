@@ -88,18 +88,6 @@ type RemoveWorkerParams struct {
 	ID string `json:"id"`
 }
 
-// JobSubmitParams is the request for jobs.submit.
-type JobSubmitParams struct {
-	Type       string `json:"type"`
-	WorktreeID string `json:"worktree_id"`
-	Prompt     string `json:"prompt"`
-
-	// Execution context for multi-project support
-	WorkDir     string            `json:"work_dir,omitempty"`
-	Environment map[string]string `json:"environment,omitempty"`
-	Metadata    map[string]any    `json:"metadata,omitempty"`
-}
-
 // GlobalSocket manages the global kvelmo socket.
 // Per flow_v2.md: "Global socket handles project registry, worker pool, job queue".
 //
@@ -227,7 +215,6 @@ func (g *GlobalSocket) registerHandlers() {
 	g.server.Handle("activity.query", g.handleActivityQuery)
 
 	// Job management
-	g.server.Handle("jobs.submit", g.handleSubmitJob)
 	g.server.Handle("jobs.list", g.handleListJobs)
 	g.server.Handle("jobs.get", g.handleGetJob)
 
@@ -323,9 +310,6 @@ func (g *GlobalSocket) registerHandlers() {
 	g.server.Handle("access.token.list", g.handleAccessTokenList)
 	g.server.Handle("access.token.create", g.handleAccessTokenCreate)
 	g.server.Handle("access.token.revoke", g.handleAccessTokenRevoke)
-
-	// Worktree management (for secondary instances)
-	g.server.Handle("worktrees.create", g.handleWorktreesCreate)
 }
 
 // --- Ping ---
@@ -860,38 +844,6 @@ func (g *GlobalSocket) handleMetrics(ctx context.Context, req *Request) (*Respon
 }
 
 // --- Job Handlers ---
-
-func (g *GlobalSocket) handleSubmitJob(ctx context.Context, req *Request) (*Response, error) {
-	if g.pool == nil {
-		return NewErrorResponse(req.ID, -32603, "no worker pool configured"), nil
-	}
-
-	var params JobSubmitParams
-	if err := json.Unmarshal(req.Params, &params); err != nil {
-		return NewErrorResponse(req.ID, ErrCodeInvalidParams, err.Error()), nil
-	}
-
-	// Build job options from params
-	var opts *worker.JobOptions
-	if params.WorkDir != "" || params.Environment != nil || params.Metadata != nil {
-		opts = &worker.JobOptions{
-			WorkDir:     params.WorkDir,
-			Environment: params.Environment,
-			Metadata:    params.Metadata,
-		}
-	}
-
-	jobType := worker.JobType(params.Type)
-	job, err := g.pool.SubmitWithOptions(jobType, params.WorktreeID, params.Prompt, opts)
-	if err != nil {
-		return NewErrorResponse(req.ID, -32603, err.Error()), nil
-	}
-
-	return NewResultResponse(req.ID, map[string]string{
-		"job_id": job.ID,
-		"status": string(job.Status),
-	})
-}
 
 func (g *GlobalSocket) handleListJobs(ctx context.Context, req *Request) (*Response, error) {
 	if g.pool == nil {
@@ -2125,40 +2077,6 @@ func (g *GlobalSocket) Stop() error {
 	}
 
 	return g.server.Stop()
-}
-
-// --- Worktree Management (for secondary instances) ---
-
-// WorktreeCreateParams is the request for worktrees.create.
-type WorktreeCreateParams struct {
-	Path string `json:"path"`
-}
-
-// WorktreeCreateResult is the response for worktrees.create.
-type WorktreeCreateResult struct {
-	SocketPath string `json:"socket_path"`
-}
-
-// handleWorktreesCreate creates a worktree socket on-demand.
-// This allows secondary instances to request socket creation from the primary.
-func (g *GlobalSocket) handleWorktreesCreate(_ context.Context, req *Request) (*Response, error) {
-	var params WorktreeCreateParams
-	if err := json.Unmarshal(req.Params, &params); err != nil {
-		return NewErrorResponse(req.ID, ErrCodeInvalidParams, err.Error()), nil
-	}
-
-	if params.Path == "" {
-		return NewErrorResponse(req.ID, ErrCodeInvalidParams, "path is required"), nil
-	}
-
-	//nolint:contextcheck // GetOrCreateWorktreeSocket doesn't accept context; refactoring would change WorktreeCreator interface
-	if _, err := g.GetOrCreateWorktreeSocket(params.Path); err != nil {
-		return NewErrorResponse(req.ID, -32603, err.Error()), nil
-	}
-
-	return NewResultResponse(req.ID, WorktreeCreateResult{
-		SocketPath: WorktreeSocketPath(params.Path),
-	})
 }
 
 // GetOrCreateWorktreeSocket returns an existing worktree socket or creates one on-demand.

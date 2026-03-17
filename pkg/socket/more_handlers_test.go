@@ -634,31 +634,3 @@ func TestGlobalHandleSettingsSet_InvalidScope(t *testing.T) {
 		t.Fatal("expected error response for invalid scope")
 	}
 }
-
-func TestGlobalHandleSubmitJob_InvalidParams(t *testing.T) {
-	ctx := context.Background()
-	g := newTestGlobalSocket(t)
-
-	// Empty JSON object - missing required "type" field. With nil pool, pool check
-	// comes first and returns an error.
-	resp, err := g.handleSubmitJob(ctx, &Request{ID: "1", Params: json.RawMessage(`{}`)})
-	if err != nil {
-		t.Fatalf("handleSubmitJob() error = %v", err)
-	}
-	if resp.Error == nil {
-		t.Fatal("expected error response for invalid/missing params")
-	}
-}
-
-func TestGlobalHandleSubmitJob_MalformedJSON(t *testing.T) {
-	ctx := context.Background()
-	g := newTestGlobalSocket(t)
-
-	resp, err := g.handleSubmitJob(ctx, &Request{ID: "1", Params: json.RawMessage(`{invalid}`)})
-	if err != nil {
-		t.Fatalf("handleSubmitJob() error = %v", err)
-	}
-	if resp.Error == nil {
-		t.Fatal("expected error response for malformed JSON")
-	}
-}

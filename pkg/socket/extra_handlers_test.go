@@ -406,26 +406,6 @@ func TestGlobalHandleRemoveWorker_NilPool(t *testing.T) {
 	}
 }
 
-func TestGlobalHandleSubmitJob_NilPool(t *testing.T) {
-	ctx := context.Background()
-	g := newTestGlobalSocket(t)
-
-	params, err := json.Marshal(map[string]string{"worktree_id": "wt-1", "type": "plan"})
-	if err != nil {
-		t.Fatalf("json.Marshal() error = %v", err)
-	}
-	if err != nil {
-		t.Fatalf("json.Marshal() error = %v", err)
-	}
-	resp, err := g.handleSubmitJob(ctx, &Request{ID: "1", Params: params})
-	if err != nil {
-		t.Fatalf("handleSubmitJob() error = %v", err)
-	}
-	if resp.Error == nil {
-		t.Error("handleSubmitJob() with nil pool should return error response")
-	}
-}
-
 func TestGlobalHandleListJobs_NilPool(t *testing.T) {
 	ctx := context.Background()
 	g := newTestGlobalSocket(t)

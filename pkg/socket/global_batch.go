@@ -10,7 +10,7 @@ import (
 
 // BatchParams is the request for tasks.batch.
 type BatchParams struct {
-	Action string            `json:"action"`           // "submit", "abort", "reset", "pause", "stop"
+	Action string            `json:"action"`           // "plan", "implement", "review", "submit", "abort", "reset", "stop"
 	Filter map[string]string `json:"filter,omitempty"` // Optional: {"state": "reviewing"} to filter targets
 }
 
@@ -36,14 +36,19 @@ func (g *GlobalSocket) handleBatch(ctx context.Context, req *Request) (*Response
 
 	// Validate action
 	validActions := map[string]string{
-		"submit": "submit",
-		"abort":  "abort",
-		"reset":  "reset",
-		"stop":   "stop",
+		"plan":      "plan",
+		"implement": "implement",
+		"review":    "review",
+		"submit":    "submit",
+		"abort":     "abort",
+		"reset":     "reset",
+		"stop":      "stop",
+		"pause":     "pause",
+		"resume":    "resume",
 	}
 	rpcMethod, ok := validActions[params.Action]
 	if !ok {
-		return NewErrorResponse(req.ID, ErrCodeInvalidParams, fmt.Sprintf("invalid action %q (valid: submit, abort, reset, stop)", params.Action)), nil
+		return NewErrorResponse(req.ID, ErrCodeInvalidParams, fmt.Sprintf("invalid action %q (valid: plan, implement, review, submit, abort, reset, stop, pause, resume)", params.Action)), nil
 	}
 
 	// Get all registered worktrees
