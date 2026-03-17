@@ -75,9 +75,26 @@ interface BrowserState {
   // Evaluation
   eval: (js: string) => Promise<{ result: string; error?: string }>
 
+  // Console & Network
+  console: () => Promise<{ messages: ConsoleMessage[] }>
+  network: () => Promise<{ requests: NetworkRequest[] }>
+
   // Clear state
   clearError: () => void
   clearResult: () => void
+}
+
+export interface ConsoleMessage {
+  type: string
+  text: string
+  timestamp?: string
+}
+
+export interface NetworkRequest {
+  method: string
+  url: string
+  status?: number
+  resource_type?: string
 }
 
 export const useBrowserStore = create<BrowserState>((set, get) => ({
@@ -459,6 +476,20 @@ export const useBrowserStore = create<BrowserState>((set, get) => ({
       set({ loading: false, error })
       throw err
     }
+  },
+
+  console: async () => {
+    const client = useGlobalStore.getState().client
+    if (!client) return { messages: [] }
+
+    return client.call<{ messages: ConsoleMessage[] }>('browser.console', {})
+  },
+
+  network: async () => {
+    const client = useGlobalStore.getState().client
+    if (!client) return { requests: [] }
+
+    return client.call<{ requests: NetworkRequest[] }>('browser.network', {})
   },
 
   clearError: () => set({ error: null }),

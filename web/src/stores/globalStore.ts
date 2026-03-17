@@ -54,6 +54,18 @@ export interface MemoryResult {
   created_at: string
 }
 
+export interface TimedSnapshot {
+  timestamp: string
+  jobs_submitted: number
+  jobs_completed: number
+  jobs_failed: number
+  jobs_in_progress: number
+  rpc_requests: number
+  rpc_errors: number
+  agent_connects: number
+  events_dropped: number
+}
+
 export interface Metrics {
   jobs_submitted: number
   jobs_completed: number
@@ -85,6 +97,7 @@ interface GlobalState {
   workers: Worker[]
   workerStats: WorkerStats | null
   metrics: Metrics | null
+  metricsHistory: TimedSnapshot[]
   memoryStats: MemoryStats | null
   selectedProjectId: string | null
   selectedProject: Project | null
@@ -114,6 +127,7 @@ interface GlobalState {
   loadWorkers: () => Promise<void>
   loadWorkerStats: () => Promise<void>
   loadMetrics: () => Promise<void>
+  loadMetricsHistory: () => Promise<void>
   addWorker: (agent: string) => Promise<void>
   removeWorker: (id: string) => Promise<void>
 
@@ -152,6 +166,7 @@ export const useGlobalStore = create<GlobalState>()(
       workers: [],
       workerStats: null,
       metrics: null,
+      metricsHistory: [],
       memoryStats: null,
       jobs: [],
       agentStatus: null,
@@ -395,6 +410,19 @@ export const useGlobalStore = create<GlobalState>()(
           set({ metrics: result })
         } catch {
           // Metrics are optional, don't show errors
+        }
+      },
+
+      loadMetricsHistory: async () => {
+        const client = get().client
+        if (!client) return
+        try {
+          const result = await client.call<{ entries: TimedSnapshot[]; enabled: boolean }>('metrics.history', {})
+          if (result.enabled) {
+            set({ metricsHistory: result.entries })
+          }
+        } catch {
+          // History is optional
         }
       },
 

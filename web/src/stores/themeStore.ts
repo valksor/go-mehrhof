@@ -15,6 +15,8 @@ interface ThemeState {
   toggle: () => void
 }
 
+let systemThemeListenerAdded = false
+
 const applyTheme = (theme: Theme) => {
   document.documentElement.setAttribute('data-theme', THEME_MAP[theme])
 }
@@ -46,6 +48,16 @@ export const useThemeStore = create<ThemeState>()(
       onRehydrateStorage: () => (state) => {
         if (state) {
           applyTheme(state.theme)
+        }
+
+        // Listen for system preference changes and auto-switch (guard against duplicate listeners)
+        if (typeof window !== 'undefined' && window.matchMedia && !systemThemeListenerAdded) {
+          systemThemeListenerAdded = true
+          const mq = window.matchMedia('(prefers-color-scheme: dark)')
+          mq.addEventListener('change', (e) => {
+            const newTheme: Theme = e.matches ? 'dark' : 'light'
+            useThemeStore.getState().setTheme(newTheme)
+          })
         }
       },
     }

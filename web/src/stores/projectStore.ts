@@ -185,14 +185,17 @@ interface ProjectState {
 
   // Task actions
   start: (source: string) => Promise<void>
+  quickStart: (source: string) => Promise<void>
   plan: (force?: boolean) => Promise<void>
   implement: (force?: boolean) => Promise<void>
   simplify: () => Promise<void>
   optimize: () => Promise<void>
   review: (options?: ReviewOptions) => Promise<void>
   submit: (options?: SubmitOptions) => Promise<void>
+  stop: () => Promise<void>
   abort: () => Promise<void>
   reset: () => Promise<void>
+  retry: () => Promise<void>
   abandon: (keepBranch?: boolean) => Promise<void>
   deleteTask: () => Promise<void>
   update: () => Promise<UpdateResult>
@@ -506,6 +509,27 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
     }
   },
 
+  quickStart: async (source: string) => {
+    const client = get().client
+    if (!client) return
+
+    set({ loading: true, error: null })
+    get().appendOutput(`Quick fix: loading task from ${source} (skip plan, auto-advance)...`)
+
+    try {
+      const result = await client.call<{ status: string; state: TaskState }>('start', {
+        source,
+        auto: true,
+        skip_plan: true,
+      })
+      set({ state: result.state, loading: false })
+      get().appendOutput('Quick fix started — will auto-advance through implement and submit.')
+      await get().refreshStatus()
+    } catch (err) {
+      set({ loading: false, error: err instanceof Error ? err.message : 'Quick start failed' })
+    }
+  },
+
   plan: async (force: boolean = false) => {
     const client = get().client
     if (!client) return
@@ -614,6 +638,22 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
     }
   },
 
+  stop: async () => {
+    const client = get().client
+    if (!client) return
+
+    set({ loading: true, error: null })
+
+    try {
+      const result = await client.call<{ status: string; state: TaskState }>('stop', {})
+      set({ state: result.state, loading: false })
+      get().appendOutput('Operation stopped')
+      await get().refreshStatus()
+    } catch (err) {
+      set({ loading: false, error: err instanceof Error ? err.message : 'Stop failed' })
+    }
+  },
+
   abort: async () => {
     const client = get().client
     if (!client) return
@@ -642,6 +682,53 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
       await get().refreshStatus()
     } catch (err) {
       set({ loading: false, error: err instanceof Error ? err.message : 'Reset failed' })
+    }
+  },
+
+  retry: async () => {
+    const client = get().client
+    if (!client) return
+
+    set({ loading: true, error: null })
+    get().appendOutput('Retrying failed phase...')
+
+    try {
+      // Step 1: Get status to confirm failed state and determine phase
+      const status = await client.call<{
+        state: TaskState
+        last_error?: string
+      }>('status', {})
+
+      if (status.state !== 'failed') {
+        set({ loading: false, error: `Retry requires failed state, currently '${status.state}'` })
+        return
+      }
+
+      // Infer which phase failed from the last error message
+      const lastError = (status.last_error || '').toLowerCase()
+      let phase = 'plan'
+      if (lastError.includes('implement')) phase = 'implement'
+      else if (lastError.includes('simplify')) phase = 'simplify'
+      else if (lastError.includes('optimize')) phase = 'optimize'
+      else if (lastError.includes('plan')) phase = 'plan'
+
+      get().appendOutput(`Failed phase detected: ${phase}`)
+
+      // Step 2: Reset the task
+      const resetResult = await client.call<{ status: string; state: TaskState }>('reset', {})
+      set({ state: resetResult.state })
+      get().appendOutput(`Task reset (state: ${resetResult.state})`)
+
+      // Step 3: Re-run the failed phase
+      get().appendOutput(`Submitting ${phase} phase...`)
+      const phaseResult = await client.call<{ status: string; state: TaskState; job_id?: string }>(phase, {})
+      set({ state: phaseResult.state, loading: false })
+      get().appendOutput(`${phase.charAt(0).toUpperCase() + phase.slice(1)} job submitted: ${phaseResult.job_id || ''}`)
+      await get().refreshStatus()
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : 'Retry failed'
+      set({ loading: false, error: errorMsg })
+      get().appendOutput(`Retry failed: ${errorMsg}. Task may be in reset state - check status.`)
     }
   },
 
