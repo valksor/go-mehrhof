@@ -36,12 +36,20 @@ func NewSpinner(message string) *Spinner {
 }
 
 // Start begins the spinner animation in a background goroutine.
-// Does nothing if not connected to a terminal (non-TTY).
+// Does nothing if not connected to a terminal (non-TTY) or if --quiet mode is active.
 func (s *Spinner) Start() {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
 	if s.running {
+		return
+	}
+
+	// Suppress spinner entirely in quiet mode
+	if Quiet {
+		s.running = true
+		s.done = make(chan struct{})
+
 		return
 	}
 

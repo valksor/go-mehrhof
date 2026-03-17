@@ -76,6 +76,7 @@ func init() {
 	rootCmd.AddCommand(commands.WatchCmd)
 	rootCmd.AddCommand(commands.TuiCmd)
 	rootCmd.AddCommand(commands.StopCmd)
+	rootCmd.AddCommand(commands.RetryCmd)
 	rootCmd.AddCommand(commands.ShutdownCmd)
 	rootCmd.AddCommand(commands.ProjectsCmd)
 	rootCmd.AddCommand(commands.WorkersCmd)
@@ -194,6 +195,9 @@ func init() {
 
 	// Quick-fix workflow
 	rootCmd.AddCommand(commands.QuickCmd)
+
+	// Raw JSON-RPC access
+	rootCmd.AddCommand(commands.RPCCmd)
 
 	// Hidden utilities
 	rootCmd.AddCommand(genManPagesCmd)
