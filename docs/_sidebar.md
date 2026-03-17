@@ -33,6 +33,7 @@
     - [undo](/cli/undo.md)
     - [redo](/cli/redo.md)
     - [reset](/cli/reset.md)
+    - [retry](/cli/retry.md)
     - [abort](/cli/abort.md)
     - [abandon](/cli/abandon.md)
   - Governance
@@ -49,6 +50,7 @@
     - [stats](/cli/stats.md)
     - [diff](/cli/diff.md)
     - [logs](/cli/logs.md)
+    - [wait](/cli/wait.md)
     - [watch](/cli/watch.md)
     - [tui](/cli/tui.md)
   - Task Organization
@@ -57,6 +59,7 @@
     - [batch](/cli/batch.md)
     - [catalog](/cli/catalog.md)
   - Management
+    - [autostart](/cli/autostart.md)
     - [serve](/cli/serve.md)
     - [config](/cli/config.md)
     - [projects](/cli/projects.md)
@@ -81,6 +84,7 @@
     - [completion](/cli/completion.md)
     - [remote](/cli/remote.md)
     - [recordings](/cli/recordings.md)
+    - [rpc](/cli/rpc.md)
     - [pipe](/cli/pipe.md)
   - Infrastructure
     - [access](/cli/access.md)

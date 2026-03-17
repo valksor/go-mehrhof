@@ -50,6 +50,10 @@ make ci                 # quality + test + build
 # Frontend
 make web-dev            # Vite dev server with hot reload (port 5173)
 make web-build          # Production build → web/dist/
+
+# Desktop (Tauri)
+make desktop-dev        # Tauri dev mode with hot reload
+make desktop-build      # Production desktop app build
 ```
 
 ## Frontend
@@ -97,7 +101,7 @@ Each transition creates a git checkpoint. `undo`/`redo` navigate between checkpo
 |---------|---------|
 | `socket/` | Unix domain socket servers (global + per-worktree) |
 | `conductor/` | Task state machine and lifecycle transitions |
-| `agent/` | AI agent interface (claude, codex, custom) |
+| `agent/` | AI agent interface (claude, codex, custom); includes permission and recorder sub-packages |
 | `worker/` | Concurrent job execution pool |
 | `provider/` | Task sources (github, gitlab, linear, wrike, jira, file) |
 | `storage/` | Persistence for tasks, plans, reviews, chat |
@@ -119,6 +123,7 @@ Each transition creates a git checkpoint. `undo`/`redo` navigate between checkpo
 | `ciwatch/` | CI pipeline status monitoring |
 | `cli/` | CLI framework utilities and output helpers |
 | `configcheck/` | Configuration drift detection |
+| `discovery/` | Project command scanning (Makefile, package.json, Taskfile) |
 | `log/` | Structured logging (slog wrappers) |
 | `meta/` | Build metadata (version, commit, docs URL) |
 | `notify/` | Webhook notifications (Slack, generic) |
@@ -128,6 +133,7 @@ Each transition creates a git checkpoint. `undo`/`redo` navigate between checkpo
 | `report/` | Compliance report generation |
 | `testutil/` | Test helpers and fixtures |
 | `trace/` | Distributed tracing |
+| `tui/` | Terminal UI (Bubbletea-based dashboard) |
 | `watchdog/` | Background process monitoring |
 
 ### Web Frontend (`web/`)
@@ -189,9 +195,12 @@ Commands in `cmd/kvelmo/commands/`. Entry point: `serve` (global socket + web se
 - `undo`/`redo` - Navigate checkpoints
 - `status` - Show current state
 - `watch` - Stream progress
+- `wait` - Wait for current operation to complete
+- `retry` - Re-run failed phases
 - `stop`/`abort`/`reset` - Interrupt operations
 - `abandon` - Abandon current task
 - `delete` - Delete task permanently
+- `update` - Refresh task from source
 
 **Governance & quality:**
 - `approve` - Approve workflow transitions
@@ -214,6 +223,12 @@ Commands in `cmd/kvelmo/commands/`. Entry point: `serve` (global socket + web se
 - `prompt` - Shell prompt integration (PS1)
 - `explain` - Ask agent to explain last action
 - `diagnose` - System diagnostics
+- `show` - Display specification, plan, or review content
+- `diff` - Show file changes from agent work
+- `list` - List tasks (active, history, queue)
+- `jobs` - View job queue and status
+- `tui` - Terminal UI dashboard (Bubbletea)
+- `rpc` - Raw JSON-RPC calls to sockets
 
 **Management:**
 - `config` - Configuration (show, init, set, validate, check)
@@ -221,6 +236,9 @@ Commands in `cmd/kvelmo/commands/`. Entry point: `serve` (global socket + web se
 - `projects` - Project registry
 - `agent` - Agent status and health checks
 - `serve` - Start global socket + web server
+- `shutdown` - Gracefully stop the server
+- `cleanup` - Remove stale socket files
+- `login` - Authenticate with task providers (GitHub, GitLab, etc.)
 
 **Data & reporting:**
 - `export` - Export task history and metrics (JSON/CSV)
@@ -244,6 +262,8 @@ Commands in `cmd/kvelmo/commands/`. Entry point: `serve` (global socket + web se
 - `git` - Git operations
 - `completion` - Shell completion
 - `tutorial` - Interactive walkthrough
+- `pipe` - One-shot agent prompt (stdin/stdout, no server required)
+- `remote` - Remote PR operations (approve, merge)
 
 ## Code Style
 
