@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"strconv"
 	"strings"
 
 	"github.com/google/go-github/v67/github"
@@ -452,4 +453,151 @@ func (p *GitHubProvider) GetBranchProtection(ctx context.Context, owner, repo, b
 	}
 
 	return bp, nil
+}
+
+// ListTasks lists issues for a GitHub repository.
+// ListOptions.Team is used as "owner/repo" to identify the repository.
+// ListOptions.Status maps to GitHub issue state ("open", "closed", "all").
+func (p *GitHubProvider) ListTasks(ctx context.Context, opts ListOptions) (*ListResult, error) {
+	if opts.Team == "" {
+		return nil, errors.New("team must be set to owner/repo for GitHub")
+	}
+
+	parts := strings.SplitN(opts.Team, "/", 2)
+	if len(parts) != 2 {
+		return nil, fmt.Errorf("invalid repository format %q, expected owner/repo", opts.Team)
+	}
+	owner, repo := parts[0], parts[1]
+
+	limit := opts.Limit
+	if limit == 0 {
+		limit = 30
+	}
+
+	state := opts.Status
+	if state == "" {
+		state = "open"
+	}
+
+	listOpts := &github.IssueListByRepoOptions{
+		State: state,
+		ListOptions: github.ListOptions{
+			PerPage: limit,
+		},
+	}
+
+	// Parse cursor as page number.
+	if opts.Cursor != "" {
+		page, err := strconv.Atoi(opts.Cursor)
+		if err != nil {
+			return nil, fmt.Errorf("invalid cursor %q: %w", opts.Cursor, err)
+		}
+		listOpts.Page = page
+	}
+
+	issues, resp, err := p.client.Issues.ListByRepo(ctx, owner, repo, listOpts)
+	if err != nil {
+		return nil, fmt.Errorf("list issues: %w", err)
+	}
+
+	tasks := make([]*Task, 0, len(issues))
+	for _, issue := range issues {
+		// Skip pull requests (GitHub API returns PRs mixed in with issues).
+		if issue.IsPullRequest() {
+			continue
+		}
+		tasks = append(tasks, p.issueToTask(owner, repo, issue))
+	}
+
+	result := &ListResult{
+		Tasks: tasks,
+	}
+
+	if resp.NextPage > 0 {
+		result.HasMore = true
+		result.NextCursor = strconv.Itoa(resp.NextPage)
+	}
+
+	return result, nil
+}
+
+// FetchComments returns all comments on a GitHub issue or PR.
+func (p *GitHubProvider) FetchComments(ctx context.Context, id string) ([]Comment, error) {
+	owner, repo, number, err := parseGitHubIDFull(id)
+	if err != nil {
+		return nil, err
+	}
+
+	var allGhComments []*github.IssueComment
+	opts := &github.IssueListCommentsOptions{
+		ListOptions: github.ListOptions{PerPage: 100},
+	}
+	for {
+		ghComments, resp, err := p.client.Issues.ListComments(ctx, owner, repo, number, opts)
+		if err != nil {
+			return nil, fmt.Errorf("list comments: %w", err)
+		}
+		allGhComments = append(allGhComments, ghComments...)
+		if resp.NextPage == 0 {
+			break
+		}
+		opts.Page = resp.NextPage
+	}
+
+	comments := make([]Comment, 0, len(allGhComments))
+	for _, c := range allGhComments {
+		author := ""
+		if c.User != nil {
+			author = c.User.GetLogin()
+		}
+		createdAt := ""
+		if c.CreatedAt != nil {
+			createdAt = c.CreatedAt.GetTime().Format("2006-01-02T15:04:05Z")
+		}
+		comments = append(comments, Comment{
+			ID:        strconv.FormatInt(c.GetID(), 10),
+			Body:      c.GetBody(),
+			Author:    author,
+			CreatedAt: createdAt,
+		})
+	}
+
+	return comments, nil
+}
+
+// AddLabels adds labels to a GitHub issue or PR.
+func (p *GitHubProvider) AddLabels(ctx context.Context, id string, labels []string) error {
+	owner, repo, number, err := parseGitHubIDFull(id)
+	if err != nil {
+		return err
+	}
+
+	_, _, err = p.client.Issues.AddLabelsToIssue(ctx, owner, repo, number, labels)
+	if err != nil {
+		return fmt.Errorf("add labels: %w", err)
+	}
+
+	return nil
+}
+
+// RemoveLabels removes labels from a GitHub issue or PR.
+func (p *GitHubProvider) RemoveLabels(ctx context.Context, id string, labels []string) error {
+	owner, repo, number, err := parseGitHubIDFull(id)
+	if err != nil {
+		return err
+	}
+
+	for _, label := range labels {
+		resp, err := p.client.Issues.RemoveLabelForIssue(ctx, owner, repo, number, label)
+		if err != nil {
+			// Ignore 404 — the label may not be on the issue.
+			if resp != nil && resp.StatusCode == http.StatusNotFound {
+				continue
+			}
+
+			return fmt.Errorf("remove label %q: %w", label, err)
+		}
+	}
+
+	return nil
 }

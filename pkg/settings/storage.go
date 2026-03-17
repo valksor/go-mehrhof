@@ -163,6 +163,22 @@ func LoadEffective(projectRoot string) (*Settings, *Settings, *Settings, error) 
 	// Start with defaults
 	effective := DefaultSettings()
 
+	// Determine which preset to use (project overrides global)
+	presetName := ""
+	if global != nil && global.Preset != "" {
+		presetName = global.Preset
+	}
+	if project != nil && project.Preset != "" {
+		presetName = project.Preset
+	}
+
+	// Apply preset defaults (before user settings, so user values take precedence)
+	if presetName != "" {
+		if preset := ApplyPreset(presetName); preset != nil {
+			Merge(effective, preset)
+		}
+	}
+
 	// Merge global (if exists)
 	if global != nil {
 		Merge(effective, global)

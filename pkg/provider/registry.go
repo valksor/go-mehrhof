@@ -168,9 +168,7 @@ func (r *Registry) FetchWithHierarchy(ctx context.Context, providerName, sourceI
 	if opts.IncludeParent {
 		parent, err := hp.FetchParent(ctx, task)
 		if err != nil {
-			// Best-effort: don't fail the entire fetch for hierarchy errors.
-			// The conductor logs this via its verbose output.
-			_ = err
+			slog.Warn("failed to fetch parent task", "provider", providerName, "source", sourceID, "error", err)
 		} else {
 			task.ParentTask = parent
 		}
@@ -179,7 +177,7 @@ func (r *Registry) FetchWithHierarchy(ctx context.Context, providerName, sourceI
 	if opts.IncludeSiblings {
 		siblings, err := hp.FetchSiblings(ctx, task)
 		if err != nil {
-			_ = err
+			slog.Warn("failed to fetch sibling tasks", "provider", providerName, "source", sourceID, "error", err)
 		} else {
 			task.SiblingTasks = siblings
 		}
