@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useBrowserStore, type ConsoleMessage, type NetworkRequest } from '../stores/browserStore'
 
 type ActionCategory = 'navigate' | 'interact' | 'form' | 'capture' | 'console' | 'network'
@@ -8,7 +8,7 @@ function ConsolePanel() {
   const [messages, setMessages] = useState<ConsoleMessage[]>([])
   const [loading, setLoading] = useState(false)
 
-  const refresh = async () => {
+  const refresh = useCallback(async () => {
     setLoading(true)
     try {
       const result = await getConsole()
@@ -18,9 +18,9 @@ function ConsolePanel() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [getConsole])
 
-  useEffect(() => { refresh() }, [])
+  useEffect(() => { refresh() }, [refresh])
 
   const typeColor: Record<string, string> = {
     error: 'text-error',
@@ -57,7 +57,7 @@ function NetworkPanel() {
   const [requests, setRequests] = useState<NetworkRequest[]>([])
   const [loading, setLoading] = useState(false)
 
-  const refresh = async () => {
+  const refresh = useCallback(async () => {
     setLoading(true)
     try {
       const result = await getNetwork()
@@ -67,9 +67,9 @@ function NetworkPanel() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [getNetwork])
 
-  useEffect(() => { refresh() }, [])
+  useEffect(() => { refresh() }, [refresh])
 
   return (
     <div>

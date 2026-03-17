@@ -244,7 +244,7 @@ export function ActivityPanel({ isOpen, onClose }: ActivityPanelProps) {
             )}
             Export
           </button>
-          <a ref={downloadRef} className="hidden" aria-hidden="true" />
+          <a ref={downloadRef} className="hidden" href="data:" download aria-hidden="true" tabIndex={-1}>download</a>
         </div>
 
         {/* Error */}

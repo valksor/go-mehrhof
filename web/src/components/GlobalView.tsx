@@ -166,7 +166,7 @@ export function GlobalView() {
                 )}
                 <span className="hidden sm:inline">Batch</span>
               </div>
-              <ul tabIndex={0} className="dropdown-content z-10 menu p-2 shadow-lg bg-base-200 rounded-box w-48">
+              <ul tabIndex={0} role="menu" className="dropdown-content z-10 menu p-2 shadow-lg bg-base-200 rounded-box w-48">
                 {['plan', 'implement', 'review', 'submit', 'abort'].map(action => (
                   <li key={action}>
                     <button
