@@ -2,6 +2,7 @@ package conductor
 
 import (
 	"errors"
+	"fmt"
 	"os"
 	"os/user"
 	"slices"
@@ -18,6 +19,28 @@ func approverIdentity() string {
 	}
 
 	return "unknown"
+}
+
+// checkApproval verifies that the given event has been approved when required by policy.
+// Must be called with c.mu held (read or write).
+func (c *Conductor) checkApproval(event Event) error {
+	s := c.getEffectiveSettings()
+	if !s.Workflow.Policy.ApprovalRequired[string(event)] {
+		return nil
+	}
+
+	record, ok := c.workUnit.Approvals[string(event)]
+	if !ok || record.ApprovedAt.IsZero() {
+		c.emit(ConductorEvent{
+			Type:    "approval_required",
+			State:   c.machine.State(),
+			Message: fmt.Sprintf("Approval required for: %s", event),
+		})
+
+		return fmt.Errorf("cannot %s: explicit approval required. Run: kvelmo approve %s", event, event)
+	}
+
+	return nil
 }
 
 // Approve marks a transition event as approved by a human.

@@ -34,6 +34,11 @@ func (c *Conductor) Plan(ctx context.Context, force bool) (string, error) {
 		return "", err
 	}
 
+	// Check approval requirement
+	if err := c.checkApproval(EventPlan); err != nil {
+		return "", err
+	}
+
 	// Run pre-transition hooks (release lock during shell execution)
 	c.mu.Unlock()
 	if err := c.RunTransitionHooks(ctx, EventPlan); err != nil {

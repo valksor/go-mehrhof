@@ -49,18 +49,10 @@ func (c *Conductor) Submit(ctx context.Context, deleteBranch bool) error {
 	}
 
 	// Check approval requirement
-	if settings.Workflow.Policy.ApprovalRequired[string(EventSubmit)] {
-		record, ok := c.workUnit.Approvals[string(EventSubmit)]
-		if !ok || record.ApprovedAt.IsZero() {
-			c.emit(ConductorEvent{
-				Type:    "approval_required",
-				State:   c.machine.State(),
-				Message: fmt.Sprintf("Approval required for: %s", EventSubmit),
-			})
-			c.mu.Unlock()
+	if err := c.checkApproval(EventSubmit); err != nil {
+		c.mu.Unlock()
 
-			return errors.New("cannot submit: explicit approval required. Run: kvelmo approve submit")
-		}
+		return err
 	}
 
 	// Run pre-transition hooks (release lock during shell execution)

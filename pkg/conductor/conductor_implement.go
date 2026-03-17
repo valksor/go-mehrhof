@@ -34,6 +34,11 @@ func (c *Conductor) Implement(ctx context.Context, force bool) (string, error) {
 		return "", err
 	}
 
+	// Check approval requirement
+	if err := c.checkApproval(EventImplement); err != nil {
+		return "", err
+	}
+
 	// Run pre-transition hooks (release lock during shell execution)
 	c.mu.Unlock()
 	if err := c.RunTransitionHooks(ctx, EventImplement); err != nil {
