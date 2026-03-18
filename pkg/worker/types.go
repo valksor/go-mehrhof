@@ -76,6 +76,7 @@ type JobOptions struct {
 type Event struct {
 	Type      string    `json:"type"`
 	JobID     string    `json:"job_id,omitempty"`
+	NodeID    string    `json:"node_id,omitempty"` // Graph node that produced this event
 	Content   string    `json:"content,omitempty"`
 	Data      any       `json:"data,omitempty"`
 	Timestamp time.Time `json:"timestamp,omitempty"`

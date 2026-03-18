@@ -806,6 +806,26 @@ func (p *Pool) ListJobs() []*Job {
 	return jobs
 }
 
+// RemoveJob removes a completed or failed job from the pool.
+// Active jobs cannot be removed — cancel them first.
+func (p *Pool) RemoveJob(jobID string) {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+
+	job, ok := p.jobs[jobID]
+	if !ok {
+		return
+	}
+
+	// Only remove terminal jobs.
+	if job.Status != JobStatusDone && job.Status != JobStatusFailed {
+		return
+	}
+
+	delete(p.jobs, jobID)
+	delete(p.jobCancels, jobID)
+}
+
 // ListQueuedJobs returns jobs that are queued or in progress.
 func (p *Pool) ListQueuedJobs() []*Job {
 	p.mu.RLock()
