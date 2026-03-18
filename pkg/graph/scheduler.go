@@ -1,0 +1,476 @@
+package graph
+
+import (
+	"context"
+	"fmt"
+	"log/slog"
+	"strings"
+	"sync"
+	"time"
+
+	"github.com/valksor/kvelmo/pkg/worker"
+)
+
+const (
+	// DefaultMaxParallel is the maximum number of nodes running concurrently.
+	DefaultMaxParallel = 10
+)
+
+// SchedulerEventType identifies scheduler-level events.
+type SchedulerEventType string
+
+const (
+	EventNodeQueued    SchedulerEventType = "node_queued"
+	EventNodeStarted   SchedulerEventType = "node_started"
+	EventNodeCompleted SchedulerEventType = "node_completed"
+	EventNodeFailed    SchedulerEventType = "node_failed"
+	EventNodeSkipped   SchedulerEventType = "node_skipped"
+	EventNodeOutput    SchedulerEventType = "node_output"    // Streaming output from node's job
+	EventPhaseProgress SchedulerEventType = "phase_progress" // Aggregate progress
+	EventAllDone       SchedulerEventType = "all_done"       // All nodes finished
+)
+
+// SchedulerEvent is emitted during graph execution.
+type SchedulerEvent struct {
+	Type      SchedulerEventType `json:"type"`
+	NodeID    NodeID             `json:"node_id,omitempty"`
+	NodeLabel string             `json:"node_label,omitempty"`
+	JobID     string             `json:"job_id,omitempty"`
+	Content   string             `json:"content,omitempty"`
+	Error     string             `json:"error,omitempty"`
+	Done      int                `json:"done,omitempty"`  // Completed + failed + skipped count
+	Total     int                `json:"total,omitempty"` // Total node count
+	Timestamp time.Time          `json:"timestamp"`
+}
+
+// JobOpts provides execution context passed to each submitted job.
+type JobOpts struct {
+	WorktreeID  string
+	WorkDir     string
+	Environment map[string]string
+	Metadata    map[string]any
+}
+
+// Option configures a Scheduler.
+type Option func(*Scheduler)
+
+// WithMaxParallel sets the maximum concurrent node executions.
+func WithMaxParallel(n int) Option {
+	return func(s *Scheduler) {
+		if n > 0 && n <= DefaultMaxParallel {
+			s.maxParallel = n
+		}
+	}
+}
+
+// Scheduler executes a dependency graph by dispatching ready nodes to a worker pool.
+type Scheduler struct {
+	graph       *Graph
+	pool        *worker.Pool
+	state       *StateManager
+	maxParallel int
+	running     int // Number of currently executing nodes
+	mu          sync.Mutex
+	events      chan SchedulerEvent
+	nodeJobs    map[NodeID]string // NodeID → worker job ID
+}
+
+// NewScheduler creates a scheduler for the given graph and worker pool.
+func NewScheduler(g *Graph, pool *worker.Pool, opts ...Option) *Scheduler {
+	s := &Scheduler{
+		graph:       g,
+		pool:        pool,
+		state:       NewStateManager(g),
+		maxParallel: DefaultMaxParallel,
+		events:      make(chan SchedulerEvent, 100),
+		nodeJobs:    make(map[NodeID]string),
+	}
+
+	for _, opt := range opts {
+		opt(s)
+	}
+
+	return s
+}
+
+// ID returns a stable identifier for this scheduler instance, derived from
+// the graph's root nodes. For single-node graphs this is the node ID.
+func (s *Scheduler) ID() string {
+	roots := s.graph.Roots()
+	if len(roots) == 1 {
+		return string(roots[0])
+	}
+	ids := make([]string, len(roots))
+	for i, r := range roots {
+		ids[i] = string(r)
+	}
+
+	return strings.Join(ids, "+")
+}
+
+// Run executes the graph. Returns a channel of scheduler events.
+// The channel is closed when all nodes are complete (or context is canceled).
+func (s *Scheduler) Run(ctx context.Context, opts JobOpts) <-chan SchedulerEvent {
+	go s.run(ctx, opts)
+
+	return s.events
+}
+
+// State returns the state manager for querying node states.
+func (s *Scheduler) State() *StateManager {
+	return s.state
+}
+
+func (s *Scheduler) run(ctx context.Context, opts JobOpts) {
+	defer close(s.events)
+
+	// Validate graph before executing.
+	if err := s.graph.Validate(); err != nil {
+		s.emit(SchedulerEvent{
+			Type:    EventAllDone,
+			Error:   err.Error(),
+			Content: "graph validation failed",
+		})
+
+		return
+	}
+
+	// Seed the ready queue with root nodes.
+	s.enqueueReady(ctx, opts)
+
+	// Wait for all nodes to complete.
+	// The loop exits when the state manager reports all done.
+	for {
+		select {
+		case <-ctx.Done():
+			s.emit(SchedulerEvent{
+				Type:  EventAllDone,
+				Error: ctx.Err().Error(),
+			})
+
+			return
+		default:
+		}
+
+		if s.state.AllDone() {
+			s.emitProgress()
+			s.emit(SchedulerEvent{
+				Type:  EventAllDone,
+				Error: s.summaryError(),
+			})
+
+			return
+		}
+
+		// Brief sleep to avoid busy-waiting. Node completions are
+		// detected on the next iteration via state checks.
+		time.Sleep(50 * time.Millisecond)
+	}
+}
+
+// enqueueReady finds pending nodes whose dependencies are satisfied and dispatches them.
+func (s *Scheduler) enqueueReady(ctx context.Context, opts JobOpts) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	for _, id := range s.graph.NodeIDs() {
+		if s.state.Get(id) != StatePending {
+			continue
+		}
+
+		node := s.graph.Nodes[id]
+		if !s.state.DependenciesSatisfied(node) {
+			continue
+		}
+
+		// Frozen nodes with cached results skip execution entirely.
+		if node.Frozen {
+			cachedResult := s.state.Result(id)
+			if cachedResult != "" {
+				if err := s.state.Transition(id, StateDone); err != nil {
+					slog.Error("graph: failed to complete frozen node", "node", id, "error", err)
+
+					continue
+				}
+
+				s.emit(SchedulerEvent{
+					Type:      EventNodeCompleted,
+					NodeID:    id,
+					NodeLabel: node.Label,
+					Content:   cachedResult,
+				})
+
+				continue
+			}
+			// No cached result — fall through to normal execution.
+		}
+
+		// Auto-skip nodes whose ALL incoming edges are skipped (recursive propagation).
+		if s.state.AllIncomingEdgesSkipped(node) {
+			s.skipNodeAndPropagate(id, node)
+
+			continue
+		}
+
+		// Check condition function.
+		if node.Condition != nil && !node.Condition(s.state.Results()) {
+			s.skipNodeAndPropagate(id, node)
+
+			continue
+		}
+
+		// Check parallel limit.
+		if s.running >= s.maxParallel {
+			break
+		}
+
+		if err := s.state.Transition(id, StateQueued); err != nil {
+			slog.Error("graph: failed to queue node", "node", id, "error", err)
+
+			continue
+		}
+
+		s.emit(SchedulerEvent{
+			Type:      EventNodeQueued,
+			NodeID:    id,
+			NodeLabel: node.Label,
+		})
+
+		s.dispatchNode(ctx, id, node, opts)
+	}
+}
+
+// dispatchNode submits a node's job to the worker pool and monitors it.
+func (s *Scheduler) dispatchNode(ctx context.Context, id NodeID, node *Node, opts JobOpts) {
+	jobOpts := &worker.JobOptions{
+		WorkDir:     opts.WorkDir,
+		Environment: opts.Environment,
+		Metadata:    opts.Metadata,
+	}
+
+	if jobOpts.Metadata == nil {
+		jobOpts.Metadata = make(map[string]any)
+	}
+
+	jobOpts.Metadata["graph_node_id"] = string(id)
+	jobOpts.Metadata["graph_node_label"] = node.Label
+
+	job, err := s.pool.SubmitWithOptions(node.JobType, opts.WorktreeID, node.Prompt, jobOpts)
+	if err != nil {
+		slog.Error("graph: failed to submit job", "node", id, "error", err)
+
+		_ = s.state.Transition(id, StateRunning) // queued → running (briefly)
+		_ = s.state.Transition(id, StateFailed)
+		s.state.SetError(id, err.Error())
+
+		s.emit(SchedulerEvent{
+			Type:      EventNodeFailed,
+			NodeID:    id,
+			NodeLabel: node.Label,
+			Error:     err.Error(),
+		})
+
+		// Check if skipped dependencies unlock new nodes.
+		go s.enqueueReady(ctx, opts)
+
+		return
+	}
+
+	s.nodeJobs[id] = job.ID
+	s.running++
+
+	if err := s.state.Transition(id, StateRunning); err != nil {
+		slog.Error("graph: failed to transition to running", "node", id, "error", err)
+	}
+
+	s.emit(SchedulerEvent{
+		Type:      EventNodeStarted,
+		NodeID:    id,
+		NodeLabel: node.Label,
+		JobID:     job.ID,
+	})
+
+	s.emitProgress()
+
+	// Monitor the job in a goroutine.
+	go s.watchNode(ctx, id, node, job.ID, opts)
+}
+
+// watchNode monitors a running job and updates state on completion.
+func (s *Scheduler) watchNode(ctx context.Context, id NodeID, node *Node, jobID string, opts JobOpts) {
+	stream := s.pool.Stream(jobID)
+	if stream == nil {
+		s.completeNode(ctx, id, node, "", fmt.Errorf("no stream for job %s", jobID), opts)
+
+		return
+	}
+
+	var result string
+
+	for {
+		select {
+		case <-ctx.Done():
+			s.completeNode(ctx, id, node, "", ctx.Err(), opts)
+
+			return
+		case evt, ok := <-stream:
+			if !ok {
+				// Stream closed — check job status.
+				job := s.pool.GetJob(jobID)
+				if job != nil && job.Status == worker.JobStatusFailed {
+					s.completeNode(ctx, id, node, "", fmt.Errorf("%s", job.Error), opts)
+				} else {
+					s.completeNode(ctx, id, node, result, nil, opts)
+				}
+
+				return
+			}
+
+			switch evt.Type {
+			case "job_completed":
+				job := s.pool.GetJob(jobID)
+				if job != nil {
+					result = job.Result
+				}
+
+				s.completeNode(ctx, id, node, result, nil, opts)
+
+				return
+			case "job_failed":
+				s.completeNode(ctx, id, node, "", fmt.Errorf("%s", evt.Content), opts)
+
+				return
+			default:
+				// Forward streaming output.
+				s.emit(SchedulerEvent{
+					Type:      EventNodeOutput,
+					NodeID:    id,
+					NodeLabel: node.Label,
+					JobID:     jobID,
+					Content:   evt.Content,
+				})
+			}
+		}
+	}
+}
+
+// completeNode handles node completion (success or failure).
+func (s *Scheduler) completeNode(ctx context.Context, id NodeID, node *Node, result string, err error, opts JobOpts) {
+	s.mu.Lock()
+	s.running--
+	s.mu.Unlock()
+
+	if err != nil {
+		_ = s.state.Transition(id, StateFailed)
+		s.state.SetError(id, err.Error())
+
+		// Mark outgoing edges as skipped so dependents can be propagated.
+		for _, dep := range s.graph.Dependents(id) {
+			s.state.SetEdgeState(id, dep, EdgeSkipped)
+		}
+
+		s.emit(SchedulerEvent{
+			Type:      EventNodeFailed,
+			NodeID:    id,
+			NodeLabel: node.Label,
+			Error:     err.Error(),
+		})
+	} else {
+		_ = s.state.Transition(id, StateDone)
+		s.state.SetResult(id, result)
+
+		// Mark outgoing edges as taken.
+		for _, dep := range s.graph.Dependents(id) {
+			s.state.SetEdgeState(id, dep, EdgeTaken)
+		}
+
+		s.emit(SchedulerEvent{
+			Type:      EventNodeCompleted,
+			NodeID:    id,
+			NodeLabel: node.Label,
+		})
+	}
+
+	s.emitProgress()
+
+	// Enqueue newly unblocked nodes.
+	s.enqueueReady(ctx, opts)
+}
+
+// skipNodeAndPropagate skips a node and marks all its outgoing edges as skipped.
+// Dependent nodes may be auto-skipped on the next enqueueReady cycle via AllIncomingEdgesSkipped.
+// Must be called with s.mu held.
+func (s *Scheduler) skipNodeAndPropagate(id NodeID, node *Node) {
+	if err := s.state.Transition(id, StateSkipped); err != nil {
+		slog.Error("graph: failed to skip node", "node", id, "error", err)
+
+		return
+	}
+
+	// Mark outgoing edges as skipped.
+	for _, dep := range s.graph.Dependents(id) {
+		s.state.SetEdgeState(id, dep, EdgeSkipped)
+	}
+
+	s.emit(SchedulerEvent{
+		Type:      EventNodeSkipped,
+		NodeID:    id,
+		NodeLabel: node.Label,
+	})
+}
+
+// emitProgress sends an aggregate progress event.
+func (s *Scheduler) emitProgress() {
+	counts := s.state.CountByState()
+	done := counts[StateDone] + counts[StateFailed] + counts[StateSkipped]
+
+	s.emit(SchedulerEvent{
+		Type:  EventPhaseProgress,
+		Done:  done,
+		Total: s.graph.NodeCount(),
+	})
+}
+
+// summaryError returns a combined error string if any nodes failed, or empty string.
+func (s *Scheduler) summaryError() string {
+	if !s.state.HasFailures() {
+		return ""
+	}
+
+	var msgs []string
+
+	for _, id := range s.graph.NodeIDs() {
+		if s.state.Get(id) == StateFailed {
+			msgs = append(msgs, fmt.Sprintf("%s: %s", id, s.state.Error(id)))
+		}
+	}
+
+	return fmt.Sprintf("graph: %d node(s) failed: %s", len(msgs), joinErrors(msgs))
+}
+
+func joinErrors(msgs []string) string {
+	if len(msgs) == 0 {
+		return ""
+	}
+
+	var sb strings.Builder
+	sb.WriteString(msgs[0])
+	for _, m := range msgs[1:] {
+		sb.WriteString("; ")
+		sb.WriteString(m)
+	}
+
+	return sb.String()
+}
+
+func (s *Scheduler) emit(evt SchedulerEvent) {
+	if evt.Timestamp.IsZero() {
+		evt.Timestamp = time.Now()
+	}
+
+	select {
+	case s.events <- evt:
+	default:
+		slog.Warn("graph: scheduler event channel full, dropping event", "type", evt.Type)
+	}
+}

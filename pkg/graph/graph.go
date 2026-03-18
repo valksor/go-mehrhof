@@ -1,0 +1,231 @@
+// Package graph provides a dependency graph for scheduling parallel sub-tasks
+// within kvelmo's phase-based task lifecycle. Inspired by Dify's queue-based
+// graph scheduling pattern.
+package graph
+
+import (
+	"errors"
+	"fmt"
+	"slices"
+
+	"github.com/valksor/kvelmo/pkg/worker"
+)
+
+// NodeID uniquely identifies a node within a graph.
+type NodeID string
+
+// ConditionFunc decides whether a node should execute based on completed results.
+// Returning false causes the node to be skipped.
+type ConditionFunc func(results map[NodeID]string) bool
+
+// Node represents a schedulable unit of work within a phase.
+type Node struct {
+	ID        NodeID
+	Label     string         // Human-readable description
+	JobType   worker.JobType // plan, implement, review, etc.
+	Prompt    string
+	DependsOn []NodeID      // Nodes that must complete before this one runs
+	Condition ConditionFunc // Optional: skip if returns false (nil = always run)
+	Frozen    bool          // If true, return cached result instead of re-executing (Langflow pattern)
+}
+
+// EdgeState tracks the execution state of an edge between two nodes.
+// Inspired by Dify's TAKEN/SKIPPED/UNKNOWN model.
+type EdgeState int
+
+const (
+	EdgeUnknown EdgeState = iota // Not yet resolved
+	EdgeTaken                    // Dependency completed successfully
+	EdgeSkipped                  // Dependency was skipped (branch unreachable)
+)
+
+// Edge represents a dependency between two nodes (From must complete before To starts).
+type Edge struct {
+	From NodeID
+	To   NodeID
+}
+
+// Graph holds a set of nodes with dependency edges.
+type Graph struct {
+	Nodes map[NodeID]*Node
+	edges []Edge // derived from node DependsOn
+}
+
+// New creates an empty graph.
+func New() *Graph {
+	return &Graph{
+		Nodes: make(map[NodeID]*Node),
+	}
+}
+
+// AddNode adds a node to the graph. Returns an error if the ID already exists.
+func (g *Graph) AddNode(n *Node) error {
+	if _, exists := g.Nodes[n.ID]; exists {
+		return fmt.Errorf("graph: duplicate node ID %q", n.ID)
+	}
+
+	g.Nodes[n.ID] = n
+
+	return nil
+}
+
+// SingleNode creates a graph with one node and no dependencies.
+// This is the default for backward-compatible single-job phases.
+func SingleNode(id NodeID, label string, jobType worker.JobType, prompt string) *Graph {
+	g := New()
+	_ = g.AddNode(&Node{
+		ID:      id,
+		Label:   label,
+		JobType: jobType,
+		Prompt:  prompt,
+	})
+
+	return g
+}
+
+// buildEdges derives edges from node DependsOn declarations.
+func (g *Graph) buildEdges() {
+	g.edges = nil
+
+	for _, node := range g.Nodes {
+		for _, dep := range node.DependsOn {
+			g.edges = append(g.edges, Edge{From: dep, To: node.ID})
+		}
+	}
+}
+
+// Roots returns nodes with no dependencies (entry points).
+func (g *Graph) Roots() []NodeID {
+	var roots []NodeID
+
+	for _, node := range g.Nodes {
+		if len(node.DependsOn) == 0 {
+			roots = append(roots, node.ID)
+		}
+	}
+
+	slices.Sort(roots)
+
+	return roots
+}
+
+// Dependents returns nodes that directly depend on the given node.
+func (g *Graph) Dependents(id NodeID) []NodeID {
+	var deps []NodeID
+
+	for _, node := range g.Nodes {
+		if slices.Contains(node.DependsOn, id) {
+			deps = append(deps, node.ID)
+		}
+	}
+
+	slices.Sort(deps)
+
+	return deps
+}
+
+// Validate checks the graph for errors:
+//   - All DependsOn references point to existing nodes
+//   - No cycles exist
+//   - At least one node exists
+func (g *Graph) Validate() error {
+	if len(g.Nodes) == 0 {
+		return errors.New("graph: empty graph")
+	}
+
+	// Check for missing references.
+	for _, node := range g.Nodes {
+		for _, dep := range node.DependsOn {
+			if _, exists := g.Nodes[dep]; !exists {
+				return fmt.Errorf("graph: node %q depends on unknown node %q", node.ID, dep)
+			}
+		}
+	}
+
+	// Check for cycles via DFS.
+	if err := g.detectCycles(); err != nil {
+		return err
+	}
+
+	g.buildEdges()
+
+	return nil
+}
+
+// detectCycles uses iterative DFS with coloring to detect cycles.
+// White (0) = unvisited, Gray (1) = in current path, Black (2) = fully explored.
+func (g *Graph) detectCycles() error {
+	const (
+		white = 0
+		gray  = 1
+		black = 2
+	)
+
+	color := make(map[NodeID]int, len(g.Nodes))
+
+	// Collect and sort node IDs for deterministic traversal.
+	ids := make([]NodeID, 0, len(g.Nodes))
+	for id := range g.Nodes {
+		ids = append(ids, id)
+	}
+
+	slices.Sort(ids)
+
+	type frame struct {
+		id       NodeID
+		depIndex int
+	}
+
+	for _, startID := range ids {
+		if color[startID] != white {
+			continue
+		}
+
+		stack := []frame{{id: startID, depIndex: 0}}
+		color[startID] = gray
+
+		for len(stack) > 0 {
+			top := &stack[len(stack)-1]
+			node := g.Nodes[top.id]
+			deps := node.DependsOn
+
+			if top.depIndex >= len(deps) {
+				color[top.id] = black
+				stack = stack[:len(stack)-1]
+
+				continue
+			}
+
+			dep := deps[top.depIndex]
+			top.depIndex++
+
+			switch color[dep] {
+			case white:
+				color[dep] = gray
+				stack = append(stack, frame{id: dep, depIndex: 0})
+			case gray:
+				return fmt.Errorf("graph: cycle detected involving node %q", dep)
+			}
+			// black = already explored, skip
+		}
+	}
+
+	return nil
+}
+
+// NodeCount returns the number of nodes.
+func (g *Graph) NodeCount() int {
+	return len(g.Nodes)
+}
+
+// NodeIDs returns a sorted list of all node IDs.
+func (g *Graph) NodeIDs() []NodeID {
+	ids := make([]NodeID, 0, len(g.Nodes))
+	for id := range g.Nodes {
+		ids = append(ids, id)
+	}
+
+	slices.Sort(ids)
+
+	return ids
+}
