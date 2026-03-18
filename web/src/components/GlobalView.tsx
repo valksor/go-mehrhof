@@ -1,4 +1,4 @@
-import { lazy, Suspense, useState, useMemo, useCallback } from 'react'
+import { lazy, Suspense, useState, useRef, useEffect, useMemo, useCallback } from 'react'
 import { useGlobalStore } from '../stores/globalStore'
 import { useDocsURL } from '../hooks/useDocsURL'
 import { FolderPicker } from './FolderPicker'
@@ -20,6 +20,7 @@ const SecurityPanel = lazy(() => import('./SecurityPanel').then(m => ({ default:
 const CatalogPanel = lazy(() => import('./CatalogPanel').then(m => ({ default: m.CatalogPanel })))
 const AccessPanel = lazy(() => import('./AccessPanel').then(m => ({ default: m.AccessPanel })))
 const ReportPanel = lazy(() => import('./ReportPanel').then(m => ({ default: m.ReportPanel })))
+const ExportPanel = lazy(() => import('./ExportPanel').then(m => ({ default: m.ExportPanel })))
 
 export function GlobalView() {
   const {
@@ -62,17 +63,26 @@ export function GlobalView() {
   const [showCatalog, setShowCatalog] = useState(false)
   const [showAccess, setShowAccess] = useState(false)
   const [showReport, setShowReport] = useState(false)
+  const [showExport, setShowExport] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [batchRunning, setBatchRunning] = useState(false)
+  const [batchStateFilter, setBatchStateFilter] = useState('')
+  const [silentMode, setSilentMode] = useState(false)
   const docsData = useDocsURL()
+  const selectedRef = useRef<HTMLLIElement>(null)
+
+  useEffect(() => {
+    selectedRef.current?.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
+  }, [selectedProject])
 
   const hasActiveProjects = activeTasks.some(t => t.state !== 'none')
 
   const handleBatchAction = useCallback(async (action: string) => {
-    if (!window.confirm(`Run "${action}" on all active projects? This affects every project with an active task.`)) return
+    const filterDesc = batchStateFilter ? ` (state: ${batchStateFilter})` : ' (all active)'
+    if (!window.confirm(`Run "${action}" on projects${filterDesc}?`)) return
     setBatchRunning(true)
     try {
-      const result = await batchAction(action)
+      const result = await batchAction(action, batchStateFilter || undefined)
       if (result) {
         window.alert(`Batch ${action}: ${result.succeeded}/${result.total} succeeded`)
       }
@@ -81,7 +91,19 @@ export function GlobalView() {
     } finally {
       setBatchRunning(false)
     }
-  }, [batchAction])
+  }, [batchAction, batchStateFilter])
+
+  const toggleSilentMode = useCallback(async () => {
+    const client = useGlobalStore.getState().client
+    if (!client) return
+    const newValue = !silentMode
+    setSilentMode(newValue)
+    try {
+      await client.call('settings.set', { path: 'notify.silent', value: newValue })
+    } catch {
+      setSilentMode(!newValue)
+    }
+  }, [silentMode])
 
   // Filter projects by search query (name or path)
   const filteredProjects = useMemo(() => {
@@ -166,7 +188,21 @@ export function GlobalView() {
                 )}
                 <span className="hidden sm:inline">Batch</span>
               </div>
-              <ul tabIndex={0} role="menu" className="dropdown-content z-10 menu p-2 shadow-lg bg-base-200 rounded-box w-48">
+              <ul tabIndex={0} role="menu" className="dropdown-content z-10 menu p-2 shadow-lg bg-base-200 rounded-box w-56">
+                <li className="px-2 pb-2">
+                  <select
+                    className="select select-xs select-bordered w-full"
+                    value={batchStateFilter}
+                    onChange={e => setBatchStateFilter(e.target.value)}
+                    aria-label="Filter by state"
+                  >
+                    <option value="">All active</option>
+                    <option value="planned">Planned</option>
+                    <option value="implemented">Implemented</option>
+                    <option value="reviewing">Reviewing</option>
+                    <option value="failed">Failed</option>
+                  </select>
+                </li>
                 {['plan', 'implement', 'review', 'submit', 'abort'].map(action => (
                   <li key={action}>
                     <button
@@ -299,6 +335,19 @@ export function GlobalView() {
             </svg>
           </button>
 
+          {/* Export button */}
+          <button
+            onClick={() => setShowExport(true)}
+            disabled={!connected}
+            className="btn btn-ghost btn-sm btn-square hidden lg:inline-flex"
+            aria-label="Export Data"
+            title="Export Data"
+          >
+            <svg aria-hidden="true" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+          </button>
+
           {/* Documentation link */}
           {docsData?.url && (
             <a
@@ -325,6 +374,24 @@ export function GlobalView() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
             </svg>
+          </button>
+
+          <button
+            className={`btn btn-ghost btn-sm btn-square ${silentMode ? 'text-warning' : ''}`}
+            onClick={toggleSilentMode}
+            title={silentMode ? 'Notifications muted (click to unmute)' : 'Mute notifications'}
+            aria-label={silentMode ? 'Unmute notifications' : 'Mute notifications'}
+          >
+            {silentMode ? (
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2" />
+              </svg>
+            ) : (
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+              </svg>
+            )}
           </button>
 
           <ThemeToggle />
@@ -461,7 +528,7 @@ export function GlobalView() {
               {filteredProjects.map(p => {
                 const task = taskByPath.get(p.path)
                 return (
-                <li key={p.id} className="group relative">
+                <li key={p.id} ref={selectedProject?.id === p.id ? selectedRef : undefined} className="group relative">
                   <button
                     type="button"
                     onClick={() => selectProject(p)}
@@ -597,6 +664,12 @@ export function GlobalView() {
           <ReportPanel
             isOpen={showReport}
             onClose={() => setShowReport(false)}
+          />
+        )}
+        {showExport && (
+          <ExportPanel
+            isOpen={showExport}
+            onClose={() => setShowExport(false)}
           />
         )}
       </Suspense>

@@ -1,10 +1,14 @@
 import { useState, useRef, useEffect, useCallback, useMemo, memo } from 'react'
 import { useChatStore, type ChatMessage } from '../stores/chatStore'
 import { useGlobalStore } from '../stores/globalStore'
+import { useProjectStore } from '../stores/projectStore'
 import { useScreenshotStore, getScreenshotById, formatScreenshotRef } from '../stores/screenshotStore'
 import { ChatMessageContent } from './ChatMessage'
 import { downloadJSON } from '../lib/export'
 import { parseCommand, getAvailableCommands, type ChatCommand, type ModalCommandDef } from '../lib/chatCommands'
+
+const TASK_URL_PATTERN = /^https?:\/\/(github\.com|gitlab\.com)\/[\w.-]+\/[\w.-]+\/(issues|pull|merge_requests)\/\d+\/?$/
+const SOURCE_SHORTHAND_PATTERN = /^(github|gitlab|linear|jira|wrike):\S+$/
 
 interface FileEntry {
   name: string
@@ -23,6 +27,7 @@ interface ChatWidgetProps {
 export function ChatWidget({ embedded = false, onModalCommand }: ChatWidgetProps) {
   const { messages, isTyping, sendMessage, clearMessages, handleAction, addMessage } = useChatStore()
   const { client, connected } = useGlobalStore()
+  const { start } = useProjectStore()
   const { attachedIds, clearAttached, detach } = useScreenshotStore()
   const [input, setInput] = useState('')
   const messagesEndRef = useRef<HTMLDivElement>(null)
@@ -218,6 +223,16 @@ export function ChatWidget({ embedded = false, onModalCommand }: ChatWidgetProps
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!input.trim() || isTyping) return
+
+    // Check for task source URLs
+    const trimmed = input.trim()
+    if (!trimmed.startsWith('/') && (TASK_URL_PATTERN.test(trimmed) || SOURCE_SHORTHAND_PATTERN.test(trimmed))) {
+      if (window.confirm(`Detected task source: ${trimmed}\n\nLoad as task? (Cancel to send as chat message)`)) {
+        await start(trimmed)
+        setInput('')
+        return
+      }
+    }
 
     // Check for slash commands
     if (input.trim().startsWith('/')) {
@@ -482,6 +497,12 @@ export function ChatWidget({ embedded = false, onModalCommand }: ChatWidgetProps
             </button>
           </div>
         </form>
+
+        {input.trim() && !input.trim().startsWith('/') && (TASK_URL_PATTERN.test(input.trim()) || SOURCE_SHORTHAND_PATTERN.test(input.trim())) && (
+          <div className="text-xs text-info px-2 py-1">
+            Task source detected — press Enter to load as task
+          </div>
+        )}
 
         {/* Quick actions */}
         <div className="flex gap-2 mt-2">

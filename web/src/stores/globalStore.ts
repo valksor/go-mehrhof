@@ -123,6 +123,9 @@ interface GlobalState {
   removeProject: (id: string) => Promise<void>
   selectProject: (project: Project | null) => void
 
+  selectNextProject: () => void
+  selectPrevProject: () => void
+
   // Workers
   loadWorkers: () => Promise<void>
   loadWorkerStats: () => Promise<void>
@@ -373,6 +376,26 @@ export const useGlobalStore = create<GlobalState>()(
         } else {
           sessionStorage.removeItem('kvelmo-selectedProjectId')
         }
+      },
+
+      selectNextProject: () => {
+        const { projects, selectedProject } = get()
+        if (projects.length === 0) return
+        const currentIdx = selectedProject
+          ? projects.findIndex(p => p.id === selectedProject.id)
+          : -1
+        const nextIdx = Math.min(currentIdx + 1, projects.length - 1)
+        get().selectProject(projects[nextIdx])
+      },
+
+      selectPrevProject: () => {
+        const { projects, selectedProject } = get()
+        if (projects.length === 0) return
+        const currentIdx = selectedProject
+          ? projects.findIndex(p => p.id === selectedProject.id)
+          : projects.length
+        const prevIdx = Math.max(currentIdx - 1, 0)
+        get().selectProject(projects[prevIdx])
       },
 
       loadWorkers: async () => {

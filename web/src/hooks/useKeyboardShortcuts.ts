@@ -15,6 +15,8 @@ export const SHORTCUTS: Shortcut[] = [
   { keys: 'Ctrl+/', description: 'Toggle shortcuts help', section: 'Navigation' },
   { keys: '/', description: 'Focus chat input', section: 'Navigation' },
   { keys: 'Escape', description: 'Close help / deselect project', section: 'Navigation' },
+  { keys: 'j', description: 'Next project', section: 'Navigation' },
+  { keys: 'k', description: 'Previous project', section: 'Navigation' },
   { keys: 'g p', description: 'Go to projects (GlobalView)', section: 'Navigation' },
   { keys: 'g a', description: 'Abort/stop current operation', section: 'Navigation' },
 
@@ -115,6 +117,26 @@ export function useKeyboardShortcuts() {
         const chatInput = document.querySelector<HTMLElement>('[data-chat-input]')
         if (chatInput) chatInput.focus()
         return
+      }
+
+      // j/k — navigate projects (only in GlobalView, i.e. no project selected)
+      if (e.key === 'j' && !ctrlOrMeta && !e.shiftKey && !e.altKey) {
+        const { selectedProject } = useGlobalStore.getState()
+        if (!selectedProject || !selectedProject.path) {
+          // In GlobalView — navigate project list
+          e.preventDefault()
+          useGlobalStore.getState().selectNextProject()
+          return
+        }
+      }
+
+      if (e.key === 'k' && !ctrlOrMeta && !e.shiftKey && !e.altKey) {
+        const { selectedProject } = useGlobalStore.getState()
+        if (!selectedProject || !selectedProject.path) {
+          e.preventDefault()
+          useGlobalStore.getState().selectPrevProject()
+          return
+        }
       }
 
       // Chord: g p — go to projects
