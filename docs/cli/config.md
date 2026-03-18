@@ -10,11 +10,17 @@ kvelmo config <subcommand>
 
 ## Subcommands
 
-| Command             | Description                      |
-|---------------------|----------------------------------|
-| `show`              | Show current configuration       |
-| `init`              | Initialize default configuration |
-| `set <key> <value>` | Set a configuration value        |
+| Command             | Description                                              |
+|---------------------|----------------------------------------------------------|
+| `show`              | Show current configuration                               |
+| `init`              | Initialize default configuration                         |
+| `get <key>`         | Get a specific configuration value                       |
+| `set <key> <value>` | Set a configuration value                                |
+| `edit`              | Open configuration file in editor                        |
+| `path`              | Show configuration file path                             |
+| `validate`          | Validate configuration against schema                    |
+| `check`             | Check for config drift between global and project settings |
+| `diff`              | Show differences between global and project configuration |
 
 ## Examples
 
@@ -25,9 +31,15 @@ kvelmo config show
 # Initialize defaults
 kvelmo config init
 
-# Set a value
-kvelmo config set default_agent claude
-kvelmo config set max_workers 8
+# Get/set a value
+kvelmo config get agent.default
+kvelmo config set agent.default claude
+kvelmo config set workers.max 8
+
+# Validate and check drift
+kvelmo config validate
+kvelmo config check
+kvelmo config check --json
 ```
 
 ## Configuration Files
@@ -41,9 +53,9 @@ kvelmo config set max_workers 8
 
 | Key             | Description                |
 |-----------------|----------------------------|
-| `default_agent` | Default AI agent           |
-| `max_workers`   | Maximum concurrent workers |
-| `web_port`      | Web UI port                |
+| `agent.default` | Default AI agent           |
+| `workers.max`   | Maximum concurrent workers |
+| `web.port`      | Web UI port                |
 
 ## Related
 

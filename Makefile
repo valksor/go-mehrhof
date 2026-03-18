@@ -51,22 +51,22 @@ install: build
 	cp $(BUILD_DIR)/$(BINARY_NAME) "$$INSTALL_DIR/$(BINARY_NAME)"; \
 	echo "Installed to $$INSTALL_DIR/$(BINARY_NAME)"
 
-## Run all tests
+## Run all tests (limit parallel packages to avoid resource exhaustion)
 test: quality
-	go test ./pkg/... ./cmd/...
+	go test -p 4 ./pkg/... ./cmd/...
 
 ## Run tests with verbose output
 test-v:
-	go test -v ./pkg/... ./cmd/...
+	go test -v -p 4 ./pkg/... ./cmd/...
 
 ## Run tests with coverage
 test-cover:
-	go test -coverprofile=coverage.out ./pkg/... ./cmd/...
+	go test -p 4 -coverprofile=coverage.out ./pkg/... ./cmd/...
 	go tool cover -html=coverage.out -o coverage.html
 
 ## Run tests with race detector
 test-race:
-	go test -race ./pkg/... ./cmd/...
+	go test -race -p 4 ./pkg/... ./cmd/...
 
 ## Run all E2E tests (requires GITHUB_TOKEN and E2E_GITHUB_REPO)
 test-e2e:

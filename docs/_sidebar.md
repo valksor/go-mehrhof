@@ -68,6 +68,8 @@
     - [delete](/cli/delete.md)
     - [update](/cli/update.md)
     - [stop](/cli/stop.md)
+    - [refresh](/cli/refresh.md)
+    - [checklist](/cli/checklist.md)
     - [diagnose](/cli/diagnose.md)
     - [cleanup](/cli/cleanup.md)
     - [shutdown](/cli/shutdown.md)
@@ -111,6 +113,7 @@
   - [Claude](/agents/claude.md)
   - [Codex](/agents/codex.md)
   - [Custom](/agents/custom.md)
+  - [Strategies](/agents/strategies.md)
 
 - Providers
   - [Overview](/providers/index.md)

@@ -75,6 +75,28 @@ The dashboard shows the current state with visual indicators:
 | `submitted`    | Green check    | Task complete              |
 | `failed`       | Red            | Error occurred             |
 
+## Browser Automation
+
+The **Browser** panel provides Playwright-powered browser automation directly from the dashboard. Use it to interact with web applications during implementation or testing.
+
+- **Navigate** — Enter a URL to open in the browser
+- **Click / Type / Fill** — Interact with page elements by CSS selector
+- **Screenshot** — Capture the current page state
+- **Evaluate** — Run JavaScript in the browser context
+- **Console / Network** — Inspect console messages and network requests
+
+The browser panel connects to a headless Chromium instance managed by kvelmo. Install it first with `kvelmo browser install` or via the panel's install button.
+
+## Screenshots
+
+The **Screenshots** panel manages captured screenshots. Screenshots can be:
+
+- Captured from the browser automation panel
+- Taken via `kvelmo screenshots capture`
+- Attached to chat messages for visual context
+
+The panel shows thumbnails with timestamps. Click to view full-size, or delete screenshots you no longer need.
+
 ## Refreshing
 
 The dashboard updates automatically via WebSocket. No manual refresh needed.

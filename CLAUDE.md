@@ -107,7 +107,7 @@ Each transition creates a git checkpoint. `undo`/`redo` navigate between checkpo
 |---------|---------|
 | `socket/` | Unix domain socket servers (global + per-worktree) |
 | `conductor/` | Task state machine and lifecycle transitions |
-| `agent/` | AI agent interface (claude, codex, custom); includes permission and recorder sub-packages |
+| `agent/` | AI agent interface (claude, codex, custom); includes permission, recorder, and strategy sub-packages |
 | `worker/` | Concurrent job execution pool |
 | `provider/` | Task sources (github, gitlab, linear, wrike, jira, file) |
 | `storage/` | Persistence for tasks, plans, reviews, chat |
@@ -130,6 +130,7 @@ Each transition creates a git checkpoint. `undo`/`redo` navigate between checkpo
 | `cli/` | CLI framework utilities and output helpers |
 | `configcheck/` | Configuration drift detection |
 | `discovery/` | Project command scanning (Makefile, package.json, Taskfile) |
+| `graph/` | Dependency graph scheduling for parallel sub-tasks within phases |
 | `log/` | Structured logging (slog wrappers) |
 | `meta/` | Build metadata (version, commit, docs URL) |
 | `notify/` | Webhook notifications (Slack, generic) |
@@ -140,6 +141,7 @@ Each transition creates a git checkpoint. `undo`/`redo` navigate between checkpo
 | `testutil/` | Test helpers and fixtures |
 | `trace/` | Distributed tracing |
 | `tui/` | Terminal UI (Bubbletea-based dashboard) |
+| `varpool/` | Variable pool for inter-node context sharing during graph execution |
 | `watchdog/` | Background process monitoring |
 
 ### Web Frontend (`web/`)
