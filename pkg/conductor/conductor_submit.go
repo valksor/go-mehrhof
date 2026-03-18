@@ -14,6 +14,7 @@ import (
 
 	"github.com/valksor/kvelmo/pkg/changelog"
 	"github.com/valksor/kvelmo/pkg/changeset"
+	"github.com/valksor/kvelmo/pkg/git"
 	"github.com/valksor/kvelmo/pkg/memory"
 	"github.com/valksor/kvelmo/pkg/provider"
 )
@@ -115,18 +116,32 @@ func (c *Conductor) Submit(ctx context.Context, deleteBranch bool) error {
 		sourceURL = c.workUnit.Source.URL
 	}
 	changelogPath := settings.Storage.ChangelogPath
-	git := c.git
+	repo := c.git
 	providers := c.providers
 	memoryIndexer := c.memoryIndexer
 	lifecycleCtx := c.lifecycleCtx
 	shouldComment := c.shouldPostTicketComment()
 	c.mu.Unlock()
 
+	// Get diff stats for PR body (best-effort, outside lock)
+	var diffStat string
+	var fileStatuses []git.FileStatus
+	if repo != nil {
+		if base, bErr := c.getBaseBranch(ctx); bErr == nil && base != "" {
+			if stat, sErr := repo.DiffAgainst(ctx, "origin/"+base, true); sErr == nil {
+				diffStat = stat
+			}
+		}
+		if statuses, fErr := repo.DiffFilesWithStatus(ctx); fErr == nil {
+			fileStatuses = statuses
+		}
+	}
+
 	// Phase 2.5: Auto-generate changelog entry if configured (before push)
-	if changelogPath != "" && git != nil {
+	if changelogPath != "" && repo != nil {
 		workDir := worktreePath
 		if workDir == "" {
-			workDir = git.Path()
+			workDir = repo.Path()
 		}
 		fullPath := filepath.Join(workDir, changelogPath)
 		if err := changelog.AppendEntry(fullPath, changelog.Entry{
@@ -136,8 +151,8 @@ func (c *Conductor) Submit(ctx context.Context, deleteBranch bool) error {
 		}); err != nil {
 			slog.Warn("changelog update failed", "error", err)
 		} else {
-			if err := git.StageAll(ctx); err == nil {
-				if _, err := git.Commit(ctx, "Update changelog for "+title); err != nil {
+			if err := repo.StageAll(ctx); err == nil {
+				if _, err := repo.Commit(ctx, "Update changelog for "+title); err != nil {
 					slog.Warn("changelog commit failed", "error", err)
 				}
 			}
@@ -145,11 +160,11 @@ func (c *Conductor) Submit(ctx context.Context, deleteBranch bool) error {
 	}
 
 	// Phase 3: Network operations (no lock held)
-	slog.Info("submit: starting network operations", "branch", branch, "has_git", git != nil)
+	slog.Info("submit: starting network operations", "branch", branch, "has_git", repo != nil)
 	var prURL, prID string
-	if git != nil && branch != "" {
+	if repo != nil && branch != "" {
 		slog.Info("submit: pushing branch", "branch", branch)
-		if err := git.Push(ctx, "origin", branch); err != nil {
+		if err := repo.Push(ctx, "origin", branch); err != nil {
 			wrapped := fmt.Errorf("push branch %s: %w", branch, err)
 			c.emitEnrichedError(wrapped, "submit")
 
@@ -193,11 +208,11 @@ func (c *Conductor) Submit(ctx context.Context, deleteBranch bool) error {
 
 					// Check for PR template in the repo
 					var prBody string
-					repoPath := git.Path()
+					repoPath := repo.Path()
 					if tmpl := detectPRTemplate(repoPath); tmpl != "" {
 						prBody = fillPRTemplate(tmpl, workUnitDescription, checkpointCount, sourceURL)
 					} else {
-						prBody = buildPRDescriptionWithDecisions(workUnitDescription, specCount, checkpointCount, "", nil)
+						prBody = buildPRDescriptionWithDecisions(workUnitDescription, specCount, checkpointCount, diffStat, fileStatuses, nil)
 					}
 					// Validate required PR template sections are filled
 					if len(prRequiredSections) > 0 {
@@ -239,7 +254,7 @@ func (c *Conductor) Submit(ctx context.Context, deleteBranch bool) error {
 
 		// Delete local branch after successful submission if requested
 		if deleteBranch {
-			if err := git.DeleteBranch(ctx, branch); err != nil {
+			if err := repo.DeleteBranch(ctx, branch); err != nil {
 				c.logVerbosef("Warning: could not delete branch: %v", err)
 			}
 		}
@@ -253,8 +268,8 @@ func (c *Conductor) Submit(ctx context.Context, deleteBranch bool) error {
 	}
 
 	// Remove git worktree if isolation was used (branch has the changes now)
-	if worktreePath != "" && git != nil {
-		if err := git.RemoveWorktree(ctx, worktreePath, false); err != nil {
+	if worktreePath != "" && repo != nil {
+		if err := repo.RemoveWorktree(ctx, worktreePath, false); err != nil {
 			c.logVerbosef("Warning: could not remove worktree %s: %v", worktreePath, err)
 		}
 	}
@@ -475,8 +490,34 @@ func fillPRTemplate(template, description string, checkpointCount int, sourceURL
 
 // buildPRDescription constructs the PR body from task metadata.
 // Takes explicit parameters so it can be called outside the lock with copied values.
-func buildPRDescription(description string, specCount, checkpointCount int) string {
+func buildPRDescription(description string, specCount, checkpointCount int, diffStat string, fileStatuses []git.FileStatus) string {
 	desc := fmt.Sprintf("## Summary\n\n%s\n", description)
+
+	if len(fileStatuses) > 0 {
+		desc += "\n## Changes\n\n"
+		var descSb498 strings.Builder
+		for _, fs := range fileStatuses {
+			var icon string
+			switch fs.Status {
+			case "added":
+				icon = "+"
+			case "deleted":
+				icon = "-"
+			case "modified":
+				icon = "~"
+			case "renamed":
+				icon = ">"
+			default:
+				icon = "?"
+			}
+			fmt.Fprintf(&descSb498, "- `%s` %s\n", icon, fs.Path)
+		}
+		desc += descSb498.String()
+	}
+
+	if diffStat != "" {
+		desc += "\n<details>\n<summary>Diff stats</summary>\n\n```\n" + strings.TrimSpace(diffStat) + "\n```\n</details>\n"
+	}
 
 	if specCount > 0 {
 		desc += "\n## Implementation\n\nImplemented according to kvelmo specifications.\n"
@@ -492,8 +533,8 @@ func buildPRDescription(description string, specCount, checkpointCount int) stri
 }
 
 // buildPRDescriptionWithDecisions extends the PR body with AI decision context.
-func buildPRDescriptionWithDecisions(description string, specCount, checkpointCount int, diffStat string, recordings []map[string]any) string {
-	base := buildPRDescription(description, specCount, checkpointCount)
+func buildPRDescriptionWithDecisions(description string, specCount, checkpointCount int, diffStat string, fileStatuses []git.FileStatus, recordings []map[string]any) string {
+	base := buildPRDescription(description, specCount, checkpointCount, diffStat, fileStatuses)
 
 	decisions := changeset.ExtractDecisions(recordings)
 	if len(decisions) == 0 {

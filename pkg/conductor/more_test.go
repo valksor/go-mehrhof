@@ -430,14 +430,14 @@ func TestConductorLogVerbosef_NotVerbose(t *testing.T) {
 // ─── buildPRDescription ───────────────────────────────────────────────────────
 
 func TestBuildPRDescription_EmptyDescription(t *testing.T) {
-	result := buildPRDescription("", 0, 0)
+	result := buildPRDescription("", 0, 0, "", nil)
 	if !strings.Contains(result, "## Summary") {
 		t.Error("buildPRDescription missing Summary section")
 	}
 }
 
 func TestBuildPRDescription_Basic(t *testing.T) {
-	result := buildPRDescription("Do something important", 0, 0)
+	result := buildPRDescription("Do something important", 0, 0, "", nil)
 	if !strings.Contains(result, "Do something important") {
 		t.Error("buildPRDescription missing description")
 	}
@@ -447,14 +447,14 @@ func TestBuildPRDescription_Basic(t *testing.T) {
 }
 
 func TestBuildPRDescription_WithSpecs(t *testing.T) {
-	result := buildPRDescription("desc", 1, 0)
+	result := buildPRDescription("desc", 1, 0, "", nil)
 	if !strings.Contains(result, "## Implementation") {
 		t.Error("buildPRDescription with specs missing Implementation section")
 	}
 }
 
 func TestBuildPRDescription_WithCheckpoints(t *testing.T) {
-	result := buildPRDescription("desc", 0, 2)
+	result := buildPRDescription("desc", 0, 2, "", nil)
 	if !strings.Contains(result, "## Checkpoints") {
 		t.Error("buildPRDescription with checkpoints missing Checkpoints section")
 	}

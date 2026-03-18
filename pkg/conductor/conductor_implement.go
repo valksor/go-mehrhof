@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"slices"
 	"strings"
 	"time"
 
@@ -244,7 +245,8 @@ func (c *Conductor) Simplify(ctx context.Context) (string, error) {
 }
 
 // maybeAutoAdvance triggers the next phase automatically if autoAdvance is enabled.
-// Called asynchronously after a job completes.
+// Called asynchronously after a job completes. When SkipPhases is configured in
+// workflow settings, phases in the skip list are bypassed during auto-advance.
 func (c *Conductor) maybeAutoAdvance(ctx context.Context, completedEvent Event) {
 	c.mu.RLock()
 	enabled := c.autoAdvance
@@ -254,13 +256,16 @@ func (c *Conductor) maybeAutoAdvance(ctx context.Context, completedEvent Event) 
 		return
 	}
 
-	var nextPhase string
-	switch completedEvent { //nolint:exhaustive // only PlanDone and ImplementDone trigger auto-advance
-	case EventPlanDone:
-		nextPhase = "implement"
-	case EventImplementDone:
-		nextPhase = "review"
-	default:
+	// Load skip phases from settings.
+	var skipPhases []string
+	if s := c.getEffectiveSettings(); s != nil {
+		skipPhases = s.Workflow.SkipPhases
+	}
+
+	// Determine the next phase based on completed event and skip list.
+	// The full auto-advance chain is: plan → implement → simplify → optimize → review.
+	nextPhase := c.resolveNextPhase(completedEvent, skipPhases)
+	if nextPhase == "" {
 		return
 	}
 
@@ -271,25 +276,59 @@ func (c *Conductor) maybeAutoAdvance(ctx context.Context, completedEvent Event) 
 		Message: "Auto-advancing to " + nextPhase,
 	})
 
-	switch completedEvent { //nolint:exhaustive // mirrors the switch above
+	c.dispatchAutoAdvance(ctx, nextPhase)
+}
+
+// resolveNextPhase determines which phase to advance to after completedEvent,
+// skipping any phases in skipPhases.
+func (c *Conductor) resolveNextPhase(completedEvent Event, skipPhases []string) string {
+	// Map completed events to the ordered list of candidate next phases.
+	var candidates []string
+	switch completedEvent { //nolint:exhaustive // only specific done events trigger auto-advance
 	case EventPlanDone:
-		if _, err := c.Implement(ctx, false); err != nil {
-			slog.Warn("auto-advance: implement failed", "error", err)
-			c.emit(ConductorEvent{
-				Type:    "auto_advance_failed",
-				State:   c.machine.State(),
-				Message: "Auto-advance to implement failed: " + err.Error(),
-			})
-		}
+		candidates = []string{"implement"}
 	case EventImplementDone:
-		if err := c.Review(ctx, false); err != nil {
-			slog.Warn("auto-advance: review failed", "error", err)
-			c.emit(ConductorEvent{
-				Type:    "auto_advance_failed",
-				State:   c.machine.State(),
-				Message: "Auto-advance to review failed: " + err.Error(),
-			})
+		candidates = []string{"simplify", "optimize", "review"}
+	case EventSimplifyDone:
+		candidates = []string{"optimize", "review"}
+	case EventOptimizeDone:
+		candidates = []string{"review"}
+	default:
+		return ""
+	}
+
+	for _, phase := range candidates {
+		if !slices.Contains(skipPhases, phase) {
+			return phase
 		}
+	}
+
+	return ""
+}
+
+// dispatchAutoAdvance calls the appropriate conductor method for the given phase.
+func (c *Conductor) dispatchAutoAdvance(ctx context.Context, phase string) {
+	var err error
+	switch phase {
+	case "implement":
+		_, err = c.Implement(ctx, false)
+	case "simplify":
+		_, err = c.Simplify(ctx)
+	case "optimize":
+		_, err = c.Optimize(ctx)
+	case "review":
+		err = c.Review(ctx, false)
+	default:
+		return
+	}
+
+	if err != nil {
+		slog.Warn("auto-advance: "+phase+" failed", "error", err)
+		c.emit(ConductorEvent{
+			Type:    "auto_advance_failed",
+			State:   c.machine.State(),
+			Message: "Auto-advance to " + phase + " failed: " + err.Error(),
+		})
 	}
 }
 

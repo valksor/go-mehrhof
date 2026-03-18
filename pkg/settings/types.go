@@ -241,6 +241,7 @@ type HooksSettings map[string][]TransitionHook
 type WorkflowSettings struct {
 	UseWorktreeIsolation *bool                `yaml:"use_worktree_isolation,omitempty" json:"use_worktree_isolation,omitempty" schema:"label=Use Worktree Isolation;desc=Create an isolated git worktree for each task, enabling parallel work without conflicts;default=true"`
 	AutoAdvance          bool                 `yaml:"auto_advance,omitempty" json:"auto_advance,omitempty" schema:"label=Auto Advance;desc=Automatically progress through plan, implement, and review phases;default=false"`
+	SkipPhases           []string             `yaml:"skip_phases,omitempty" json:"skip_phases,omitempty" schema:"label=Skip Phases;desc=Phases to skip by default when auto-advancing (simplify, optimize, plan);type=tags"`
 	ExternalReview       ExternalReviewConfig `yaml:"external_review,omitempty" json:"external_review,omitempty" schema:"label=External Review;desc=External CLI review tool integration"`
 	Policy               PolicySettings       `yaml:"policy,omitempty" json:"policy,omitempty"`
 	Retry                RetrySettings        `yaml:"retry,omitempty" json:"retry,omitempty"`
@@ -276,6 +277,11 @@ func (w *WorkflowSettings) UnmarshalYAML(value *yaml.Node) error {
 	}
 	if node, ok := raw["auto_advance"]; ok {
 		if err := node.Decode(&p.AutoAdvance); err != nil {
+			return err
+		}
+	}
+	if node, ok := raw["skip_phases"]; ok {
+		if err := node.Decode(&p.SkipPhases); err != nil {
 			return err
 		}
 	}
@@ -321,6 +327,7 @@ type WatchdogSettings struct {
 // NotifySettings configures webhook notifications.
 type NotifySettings struct {
 	Enabled   bool              `yaml:"enabled,omitempty" json:"enabled,omitempty" schema:"label=Enable Notifications;desc=Send webhook notifications on task state changes and failures;default=false"`
+	Silent    bool              `yaml:"silent,omitempty" json:"silent,omitempty" schema:"label=Silent Mode;desc=Mute all notifications (webhooks, desktop, terminal bell);default=false"`
 	Webhooks  []WebhookEndpoint `yaml:"webhooks,omitempty" json:"webhooks,omitempty" schema:"label=Webhook Endpoints;desc=HTTP endpoints to receive notifications;type=tags"`
 	OnFailure bool              `yaml:"on_failure,omitempty" json:"on_failure,omitempty" schema:"label=Always Notify Failures;desc=Send failure notifications regardless of event filter;default=true"`
 	Terminal  bool              `yaml:"terminal" json:"terminal" schema:"label=Terminal Bell;desc=Ring terminal bell when long-running operations complete or fail;default=true"`
