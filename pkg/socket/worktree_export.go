@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"html"
 	"log/slog"
 	"os"
 	"strings"
@@ -232,33 +233,33 @@ func renderTaskExportMarkdown(
 ) string {
 	var sb strings.Builder
 
-	fmt.Fprintf(&sb, "# Task Export: %s\n\n", meta.Title)
-	fmt.Fprintf(&sb, "**ID:** %s\n", meta.ID)
-	fmt.Fprintf(&sb, "**State:** %s\n", meta.State)
+	fmt.Fprintf(&sb, "# Task Export: %s\n\n", html.EscapeString(meta.Title))
+	fmt.Fprintf(&sb, "**ID:** %s\n", html.EscapeString(meta.ID))
+	fmt.Fprintf(&sb, "**State:** %s\n", html.EscapeString(meta.State))
 	if meta.Branch != "" {
-		fmt.Fprintf(&sb, "**Branch:** %s\n", meta.Branch)
+		fmt.Fprintf(&sb, "**Branch:** %s\n", html.EscapeString(meta.Branch))
 	}
 	if meta.Source != nil {
-		fmt.Fprintf(&sb, "**Source:** %s\n", meta.Source.Reference)
+		fmt.Fprintf(&sb, "**Source:** %s\n", html.EscapeString(meta.Source.Reference))
 	}
 	if len(meta.Tags) > 0 {
-		fmt.Fprintf(&sb, "**Tags:** %s\n", strings.Join(meta.Tags, ", "))
+		fmt.Fprintf(&sb, "**Tags:** %s\n", html.EscapeString(strings.Join(meta.Tags, ", ")))
 	}
 	if meta.PRID != "" {
-		fmt.Fprintf(&sb, "**PR:** %s\n", meta.PRID)
+		fmt.Fprintf(&sb, "**PR:** %s\n", html.EscapeString(meta.PRID))
 	}
-	fmt.Fprintf(&sb, "**Created:** %s\n", meta.CreatedAt)
-	fmt.Fprintf(&sb, "**Updated:** %s\n", meta.UpdatedAt)
-	fmt.Fprintf(&sb, "**Exported:** %s\n", exportedAt)
+	fmt.Fprintf(&sb, "**Created:** %s\n", html.EscapeString(meta.CreatedAt))
+	fmt.Fprintf(&sb, "**Updated:** %s\n", html.EscapeString(meta.UpdatedAt))
+	fmt.Fprintf(&sb, "**Exported:** %s\n", html.EscapeString(exportedAt))
 
 	if meta.Description != "" {
-		fmt.Fprintf(&sb, "\n## Description\n\n%s\n", meta.Description)
+		fmt.Fprintf(&sb, "\n## Description\n\n%s\n", html.EscapeString(meta.Description))
 	}
 
 	if len(specs) > 0 {
 		sb.WriteString("\n## Specifications\n\n")
 		for _, spec := range specs {
-			fmt.Fprintf(&sb, "### %s\n\n", spec.Path)
+			fmt.Fprintf(&sb, "### %s\n\n", html.EscapeString(spec.Path))
 			sb.WriteString("```\n")
 			sb.WriteString(spec.Content)
 			if !strings.HasSuffix(spec.Content, "\n") {
@@ -273,7 +274,7 @@ func renderTaskExportMarkdown(
 		sb.WriteString("| Status | Path |\n")
 		sb.WriteString("|--------|------|\n")
 		for _, f := range files {
-			fmt.Fprintf(&sb, "| %s | %s |\n", f.Status, f.Path)
+			fmt.Fprintf(&sb, "| %s | %s |\n", html.EscapeString(f.Status), html.EscapeString(f.Path))
 		}
 		sb.WriteString("\n")
 	}
@@ -285,7 +286,7 @@ func renderTaskExportMarkdown(
 			if msg == "" {
 				msg = "(no message)"
 			}
-			fmt.Fprintf(&sb, "- `%s` %s\n", cp.SHA[:min(8, len(cp.SHA))], msg)
+			fmt.Fprintf(&sb, "- `%s` %s\n", html.EscapeString(cp.SHA[:min(8, len(cp.SHA))]), html.EscapeString(msg))
 		}
 		sb.WriteString("\n")
 	}
@@ -297,15 +298,15 @@ func renderTaskExportMarkdown(
 			if title == "" {
 				title = fmt.Sprintf("Review #%d", r.Number)
 			}
-			fmt.Fprintf(&sb, "### %s\n\n", title)
+			fmt.Fprintf(&sb, "### %s\n\n", html.EscapeString(title))
 			if r.Status != "" {
-				fmt.Fprintf(&sb, "**Status:** %s\n", r.Status)
+				fmt.Fprintf(&sb, "**Status:** %s\n", html.EscapeString(r.Status))
 			}
 			if r.Reviewer != "" {
-				fmt.Fprintf(&sb, "**Reviewer:** %s\n", r.Reviewer)
+				fmt.Fprintf(&sb, "**Reviewer:** %s\n", html.EscapeString(r.Reviewer))
 			}
 			if r.Content != "" {
-				fmt.Fprintf(&sb, "\n%s\n", r.Content)
+				fmt.Fprintf(&sb, "\n%s\n", html.EscapeString(r.Content))
 			}
 			sb.WriteString("\n")
 		}
@@ -318,7 +319,7 @@ func renderTaskExportMarkdown(
 			if ts == "" {
 				ts = "?"
 			}
-			fmt.Fprintf(&sb, "**[%s] %s:**\n\n%s\n\n---\n\n", ts, msg.Role, msg.Content)
+			fmt.Fprintf(&sb, "**[%s] %s:**\n\n%s\n\n---\n\n", html.EscapeString(ts), html.EscapeString(msg.Role), html.EscapeString(msg.Content))
 		}
 	}
 
