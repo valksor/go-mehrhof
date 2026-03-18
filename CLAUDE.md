@@ -54,6 +54,12 @@ make web-build          # Production build → web/dist/
 # Desktop (Tauri)
 make desktop-dev        # Tauri dev mode with hot reload
 make desktop-build      # Production desktop app build
+
+# Additional targets
+make dev                # quality + test + run (full dev workflow)
+make install            # Install binary to $GOPATH/bin
+make man-pages          # Generate man pages for all commands
+make release            # Build release binaries for all platforms
 ```
 
 ## Frontend
@@ -150,6 +156,7 @@ Each transition creates a git checkpoint. `undo`/`redo` navigate between checkpo
 - `screenshotStore` - Screenshot selection and attachments
 - `themeStore` - Light/dark mode
 - `layoutStore` - Panels, widgets, tabs (13 tab types)
+- `debugStore` - Debug mode state and diagnostic helpers
 
 ## Key Patterns
 
@@ -238,7 +245,7 @@ Commands in `cmd/kvelmo/commands/`. Entry point: `serve` (global socket + web se
 - `serve` - Start global socket + web server
 - `shutdown` - Gracefully stop the server
 - `cleanup` - Remove stale socket files
-- `login` - Authenticate with task providers (GitHub, GitLab, etc.)
+- `login` - Authenticate with task providers (subcommands: `github login`, `gitlab login`, etc.)
 
 **Data & reporting:**
 - `export` - Export task history and metrics (JSON/CSV)

@@ -30,7 +30,7 @@ func TestCheckOrigin_AllowAll(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			req := httptest.NewRequest(http.MethodGet, "/ws/global", nil)
+			req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/ws/global", nil)
 			req.Header.Set("Origin", tt.origin)
 
 			if got := srv.checkOrigin(req); got != tt.want {
@@ -62,7 +62,7 @@ func TestCheckOrigin_ExactMatch(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			req := httptest.NewRequest(http.MethodGet, "/ws/global", nil)
+			req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/ws/global", nil)
 			req.Header.Set("Origin", tt.origin)
 
 			if got := srv.checkOrigin(req); got != tt.want {
@@ -95,7 +95,7 @@ func TestCheckOrigin_LocalhostVariants(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			req := httptest.NewRequest(http.MethodGet, "/ws/global", nil)
+			req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/ws/global", nil)
 			if tt.origin != "" {
 				req.Header.Set("Origin", tt.origin)
 			}
@@ -127,7 +127,7 @@ func TestCheckOrigin_RejectNonLocalhost(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			req := httptest.NewRequest(http.MethodGet, "/ws/global", nil)
+			req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/ws/global", nil)
 			req.Header.Set("Origin", tt.origin)
 
 			if got := srv.checkOrigin(req); got != tt.want {
@@ -145,7 +145,7 @@ func TestCheckOrigin_InvalidURL(t *testing.T) {
 	}
 	defer func() { _ = srv.Shutdown(context.Background()) }()
 
-	req := httptest.NewRequest(http.MethodGet, "/ws/global", nil)
+	req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/ws/global", nil)
 	req.Header.Set("Origin", "not-a-valid-url://\\invalid")
 
 	if got := srv.checkOrigin(req); got != false {
@@ -161,7 +161,7 @@ func TestSecurityHeaders(t *testing.T) {
 	}
 	defer func() { _ = srv.Shutdown(context.Background()) }()
 
-	req := httptest.NewRequest(http.MethodGet, "/", nil)
+	req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/", nil)
 	w := httptest.NewRecorder()
 
 	srv.httpServer.Handler.ServeHTTP(w, req)
@@ -232,7 +232,7 @@ func TestHandleStatic_NestedPath(t *testing.T) {
 	}
 	defer func() { _ = srv.Shutdown(context.Background()) }()
 
-	req := httptest.NewRequest(http.MethodGet, "/assets/js/app.js", nil)
+	req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/assets/js/app.js", nil)
 	w := httptest.NewRecorder()
 
 	srv.httpServer.Handler.ServeHTTP(w, req)
@@ -257,7 +257,7 @@ func TestHandleStatic_SPAFallback(t *testing.T) {
 	}
 	defer func() { _ = srv.Shutdown(context.Background()) }()
 
-	req := httptest.NewRequest(http.MethodGet, "/nonexistent-route", nil)
+	req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/nonexistent-route", nil)
 	w := httptest.NewRecorder()
 
 	srv.httpServer.Handler.ServeHTTP(w, req)
@@ -280,7 +280,7 @@ func TestHandleWorktreeWS_InvalidPath(t *testing.T) {
 	defer func() { _ = srv.Shutdown(context.Background()) }()
 
 	// Create request with path that doesn't match the prefix
-	req := httptest.NewRequest(http.MethodGet, "/ws/worktree", nil)
+	req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/ws/worktree", nil)
 	w := httptest.NewRecorder()
 
 	srv.handleWorktreeWS(w, req)
@@ -309,7 +309,7 @@ func TestServerEmbeddedStaticFallback(t *testing.T) {
 	}
 	defer func() { _ = srv.Shutdown(context.Background()) }()
 
-	req := httptest.NewRequest(http.MethodGet, "/", nil)
+	req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/", nil)
 	w := httptest.NewRecorder()
 
 	srv.httpServer.Handler.ServeHTTP(w, req)
@@ -328,7 +328,7 @@ func TestServerWorktreeWSPathParsing(t *testing.T) {
 	defer func() { _ = srv.Shutdown(context.Background()) }()
 
 	// Missing worktree ID should fail
-	req := httptest.NewRequest(http.MethodGet, "/ws/worktree/", nil)
+	req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/ws/worktree/", nil)
 	w := httptest.NewRecorder()
 
 	srv.httpServer.Handler.ServeHTTP(w, req)
@@ -376,7 +376,7 @@ func TestServerWorktreeWS_MissingID(t *testing.T) {
 	defer func() { _ = srv.Shutdown(context.Background()) }()
 
 	// Call handler directly with a short path that produces < 4 split parts
-	req := httptest.NewRequest(http.MethodGet, "/ws/worktree", nil)
+	req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/ws/worktree", nil)
 	w := httptest.NewRecorder()
 
 	srv.handleWorktreeWS(w, req)
@@ -394,7 +394,7 @@ func TestServerGlobalWS_NonUpgrade(t *testing.T) {
 	defer func() { _ = srv.Shutdown(context.Background()) }()
 
 	// A plain GET to /ws/global without WebSocket upgrade headers should fail
-	req := httptest.NewRequest(http.MethodGet, "/ws/global", nil)
+	req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/ws/global", nil)
 	w := httptest.NewRecorder()
 
 	srv.httpServer.Handler.ServeHTTP(w, req)
@@ -412,7 +412,7 @@ func TestServerWorktreeWS_EmptyID(t *testing.T) {
 	defer func() { _ = srv.Shutdown(context.Background()) }()
 
 	// Call handler directly with trailing slash but no ID
-	req := httptest.NewRequest(http.MethodGet, "/ws/worktree/", nil)
+	req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/ws/worktree/", nil)
 	w := httptest.NewRecorder()
 
 	srv.handleWorktreeWS(w, req)
@@ -435,7 +435,7 @@ func TestServerStatic_ContentType(t *testing.T) {
 	}
 	defer func() { _ = srv.Shutdown(context.Background()) }()
 
-	req := httptest.NewRequest(http.MethodGet, "/style.css", nil)
+	req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/style.css", nil)
 	w := httptest.NewRecorder()
 
 	srv.httpServer.Handler.ServeHTTP(w, req)
@@ -462,7 +462,7 @@ func TestServerStatic(t *testing.T) {
 	}
 	defer func() { _ = srv.Shutdown(context.Background()) }()
 
-	req := httptest.NewRequest(http.MethodGet, "/", nil)
+	req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/", nil)
 	w := httptest.NewRecorder()
 
 	srv.httpServer.Handler.ServeHTTP(w, req)

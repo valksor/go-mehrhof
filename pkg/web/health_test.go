@@ -16,7 +16,7 @@ func TestHandleHealthz(t *testing.T) {
 	}
 	defer func() { _ = srv.Shutdown(context.Background()) }()
 
-	req := httptest.NewRequest(http.MethodGet, "/healthz", nil)
+	req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/healthz", nil)
 	w := httptest.NewRecorder()
 
 	srv.httpServer.Handler.ServeHTTP(w, req)
@@ -45,7 +45,7 @@ func TestHandleReadyz_NoSocketPath(t *testing.T) {
 	}
 	defer func() { _ = srv.Shutdown(context.Background()) }()
 
-	req := httptest.NewRequest(http.MethodGet, "/readyz", nil)
+	req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/readyz", nil)
 	w := httptest.NewRecorder()
 
 	srv.httpServer.Handler.ServeHTTP(w, req)
@@ -71,7 +71,7 @@ func TestHandleReadyz_BadSocketPath(t *testing.T) {
 	}
 	defer func() { _ = srv.Shutdown(context.Background()) }()
 
-	req := httptest.NewRequest(http.MethodGet, "/readyz", nil)
+	req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/readyz", nil)
 	w := httptest.NewRecorder()
 
 	srv.httpServer.Handler.ServeHTTP(w, req)
@@ -96,7 +96,7 @@ func TestHandleMetrics(t *testing.T) {
 	}
 	defer func() { _ = srv.Shutdown(context.Background()) }()
 
-	req := httptest.NewRequest(http.MethodGet, "/metrics", nil)
+	req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/metrics", nil)
 	w := httptest.NewRecorder()
 
 	srv.httpServer.Handler.ServeHTTP(w, req)

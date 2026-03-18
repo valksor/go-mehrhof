@@ -44,13 +44,22 @@ make test-race          # Tests with race detector
 go test ./pkg/socket/...  # Run tests for specific package
 
 # Quality
-make lint               # golangci-lint with --fix
-make quality            # fmt + vet + lint
+make quality            # fmt + vet + lint + alias check
 make ci                 # quality + test + build
 
 # Frontend
 make web-dev            # Vite dev server with hot reload (port 5173)
 make web-build          # Production build → web/dist/
+
+# Desktop (Tauri)
+make desktop-dev        # Tauri dev mode with hot reload
+make desktop-build      # Production desktop app build
+
+# Additional targets
+make dev                # quality + test + run (full dev workflow)
+make install            # Install binary to $GOPATH/bin
+make man-pages          # Generate man pages for all commands
+make release            # Build release binaries for all platforms
 ```
 
 ## Frontend
@@ -98,9 +107,9 @@ Each transition creates a git checkpoint. `undo`/`redo` navigate between checkpo
 |---------|---------|
 | `socket/` | Unix domain socket servers (global + per-worktree) |
 | `conductor/` | Task state machine and lifecycle transitions |
-| `agent/` | AI agent interface (claude, codex, custom) |
+| `agent/` | AI agent interface (claude, codex, custom); includes permission and recorder sub-packages |
 | `worker/` | Concurrent job execution pool |
-| `provider/` | Task sources (github, gitlab, linear, wrike, file) |
+| `provider/` | Task sources (github, gitlab, linear, wrike, jira, file) |
 | `storage/` | Persistence for tasks, plans, reviews, chat |
 | `git/` | Repository operations and checkpoint management |
 | `browser/` | Playwright automation for interactive testing |
@@ -111,6 +120,27 @@ Each transition creates a git checkpoint. `undo`/`redo` navigate between checkpo
 | `metrics/` | Observability (counters, latency) |
 | `security/` | Security scanning |
 | `screenshot/` | Screenshot capture and storage |
+| `access/` | Socket access token management |
+| `activitylog/` | RPC activity logging and querying |
+| `backup/` | Backup and restore of kvelmo state |
+| `catalog/` | Task template library (built-in + custom) |
+| `changelog/` | Release changelog generation |
+| `changeset/` | Internal changeset tracking |
+| `ciwatch/` | CI pipeline status monitoring |
+| `cli/` | CLI framework utilities and output helpers |
+| `configcheck/` | Configuration drift detection |
+| `discovery/` | Project command scanning (Makefile, package.json, Taskfile) |
+| `log/` | Structured logging (slog wrappers) |
+| `meta/` | Build metadata (version, commit, docs URL) |
+| `notify/` | Webhook notifications (Slack, generic) |
+| `onboarding/` | User onboarding workflows |
+| `policy/` | Workflow policy checking and validation |
+| `quality/` | Code quality gate execution |
+| `report/` | Compliance report generation |
+| `testutil/` | Test helpers and fixtures |
+| `trace/` | Distributed tracing |
+| `tui/` | Terminal UI (Bubbletea-based dashboard) |
+| `watchdog/` | Background process monitoring |
 
 ### Web Frontend (`web/`)
 
@@ -126,6 +156,7 @@ Each transition creates a git checkpoint. `undo`/`redo` navigate between checkpo
 - `screenshotStore` - Screenshot selection and attachments
 - `themeStore` - Light/dark mode
 - `layoutStore` - Panels, widgets, tabs (13 tab types)
+- `debugStore` - Debug mode state and diagnostic helpers
 
 ## Key Patterns
 
@@ -145,7 +176,7 @@ Go: Return errors, wrap with context (`fmt.Errorf("action: %w", err)`)
 
 ### Quality Gate Rules
 
-When running `make quality`, `make test`, `make lint`, or `make ci`:
+When running `make quality`, `make test`, or `make ci`:
 - **Fix ALL errors and failures in the output, not just ones you introduced.** Pre-existing failures are your responsibility too.
 - Do not skip, ignore, or dismiss errors you didn't cause. The codebase must be clean after your work.
 - If `make quality` reports 10 lint errors and you caused 2, fix all 10.
@@ -165,23 +196,81 @@ Commands in `cmd/kvelmo/commands/`. Entry point: `serve` (global socket + web se
 - `review` - Enter human review mode
 - `submit` - Create pull request
 - `finish` - Cleanup after PR merge
+- `quick` - Quick-fix mode: load, implement, submit in one step
 
 **Workflow control:**
 - `undo`/`redo` - Navigate checkpoints
 - `status` - Show current state
 - `watch` - Stream progress
+- `wait` - Wait for current operation to complete
+- `retry` - Re-run failed phases
 - `stop`/`abort`/`reset` - Interrupt operations
+- `abandon` - Abandon current task
+- `delete` - Delete task permanently
+- `update` - Refresh task from source
+
+**Governance & quality:**
+- `approve` - Approve workflow transitions
+- `audit` - Audit trail inspection
+- `policy` - Check workflow policy compliance
+- `quality` - Run code quality gates
+- `ci` - CI pipeline status
+
+**Task organization:**
+- `tag` - Add/remove/list task tags
+- `queue` - Task queue management (add, remove, list, reorder)
+- `batch` - Run actions across all active projects
+- `catalog` - Browse and use task templates
 
 **Context & debugging:**
 - `chat` - Interactive agent conversation
 - `checkpoints` - List/manage git checkpoints
 - `memory` - View/manage context store
 - `logs` - View operation logs
+- `prompt` - Shell prompt integration (PS1)
+- `explain` - Ask agent to explain last action
+- `diagnose` - System diagnostics
+- `show` - Display specification, plan, or review content
+- `diff` - Show file changes from agent work
+- `list` - List tasks (active, history, queue)
+- `jobs` - View job queue and status
+- `tui` - Terminal UI dashboard (Bubbletea)
+- `rpc` - Raw JSON-RPC calls to sockets
 
 **Management:**
-- `config` - Configuration
-- `workers` - Worker pool
+- `config` - Configuration (show, init, set, validate, check)
+- `workers` - Worker pool (list, add, remove, stats)
 - `projects` - Project registry
+- `agent` - Agent status and health checks
+- `serve` - Start global socket + web server
+- `shutdown` - Gracefully stop the server
+- `cleanup` - Remove stale socket files
+- `login` - Authenticate with task providers (subcommands: `github login`, `gitlab login`, etc.)
+
+**Data & reporting:**
+- `export` - Export task history and metrics (JSON/CSV)
+- `report` - Generate compliance reports
+- `stats` - Show real-time metrics
+- `activity` - View RPC activity log
+
+**Infrastructure:**
+- `backup`/`restore` - State backup and restore
+- `access` - Socket access token management
+- `security` - Security scanning (secrets, dependencies)
+- `notify` - Webhook notification testing
+- `hooks` - List configured workflow hooks
+- `recordings` - View agent session recordings
+
+**Utilities:**
+- `browse` - Open URLs in browser
+- `browser` - Playwright browser automation
+- `screenshots` - Capture and manage screenshots
+- `files` - List/search project files
+- `git` - Git operations
+- `completion` - Shell completion
+- `tutorial` - Interactive walkthrough
+- `pipe` - One-shot agent prompt (stdin/stdout, no server required)
+- `remote` - Remote PR operations (approve, merge)
 
 ## Code Style
 
