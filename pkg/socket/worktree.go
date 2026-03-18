@@ -240,6 +240,9 @@ func (w *WorktreeSocket) registerHandlers() {
 	w.server.Handle("screenshots.capture", w.handleScreenshotsCapture)
 	w.server.Handle("screenshots.delete", w.handleScreenshotsDelete)
 
+	// Task export
+	w.server.Handle("task.export", w.handleTaskExport)
+
 	// Task tagging
 	w.server.Handle("task.tag", w.handleTaskTag)
 
