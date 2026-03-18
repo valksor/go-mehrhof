@@ -1,0 +1,276 @@
+package varpool
+
+import (
+	"path/filepath"
+	"sync"
+	"testing"
+)
+
+func TestSetAndGet(t *testing.T) {
+	p := New()
+
+	p.Set("name", "alice", "test")
+	p.Set("age", 30.0, "test")
+	p.Set("active", true, "test")
+	p.Set("tags", []string{"a", "b"}, "test")
+
+	tests := []struct {
+		name     string
+		key      string
+		wantType VarType
+	}{
+		{"string", "name", TypeString},
+		{"number", "age", TypeNumber},
+		{"bool", "active", TypeBool},
+		{"json", "tags", TypeJSON},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			v, ok := p.Get(tt.key)
+			if !ok {
+				t.Fatalf("key %q not found", tt.key)
+			}
+			if v.Type != tt.wantType {
+				t.Fatalf("expected type %s, got %s", tt.wantType, v.Type)
+			}
+			if v.SetBy != "test" {
+				t.Fatalf("expected SetBy 'test', got %q", v.SetBy)
+			}
+		})
+	}
+}
+
+func TestGetMissing(t *testing.T) {
+	p := New()
+
+	if _, ok := p.Get("missing"); ok {
+		t.Fatal("expected missing key to return false")
+	}
+
+	if s := p.GetString("missing"); s != "" {
+		t.Fatalf("expected empty string, got %q", s)
+	}
+
+	if n := p.GetNumber("missing"); n != 0 {
+		t.Fatalf("expected 0, got %f", n)
+	}
+
+	if b := p.GetBool("missing"); b {
+		t.Fatal("expected false")
+	}
+}
+
+func TestGetWrongType(t *testing.T) {
+	p := New()
+	p.Set("num", 42.0, "test")
+
+	if s := p.GetString("num"); s != "" {
+		t.Fatalf("GetString on number should return empty, got %q", s)
+	}
+
+	p.Set("str", "hello", "test")
+
+	if n := p.GetNumber("str"); n != 0 {
+		t.Fatalf("GetNumber on string should return 0, got %f", n)
+	}
+}
+
+func TestDeleteAndClear(t *testing.T) {
+	p := New()
+	p.Set("a", "1", "test")
+	p.Set("b", "2", "test")
+
+	p.Delete("a")
+
+	if _, ok := p.Get("a"); ok {
+		t.Fatal("a should be deleted")
+	}
+
+	if p.Len() != 1 {
+		t.Fatalf("expected 1 variable, got %d", p.Len())
+	}
+
+	p.Clear()
+
+	if p.Len() != 0 {
+		t.Fatal("expected 0 after clear")
+	}
+}
+
+func TestListSorted(t *testing.T) {
+	p := New()
+	p.Set("c", "3", "test")
+	p.Set("a", "1", "test")
+	p.Set("b", "2", "test")
+
+	vars := p.List()
+	if len(vars) != 3 {
+		t.Fatalf("expected 3 vars, got %d", len(vars))
+	}
+
+	if vars[0].Name != "a" || vars[1].Name != "b" || vars[2].Name != "c" {
+		t.Fatalf("expected sorted [a b c], got [%s %s %s]", vars[0].Name, vars[1].Name, vars[2].Name)
+	}
+}
+
+func TestSaveAndLoad(t *testing.T) {
+	p := New()
+	p.Set("greeting", "hello", "test")
+	p.Set("count", 42.0, "test")
+
+	path := filepath.Join(t.TempDir(), "varpool.json")
+
+	if err := p.Save(path); err != nil {
+		t.Fatalf("save: %v", err)
+	}
+
+	p2 := New()
+	if err := p2.Load(path); err != nil {
+		t.Fatalf("load: %v", err)
+	}
+
+	if p2.GetString("greeting") != "hello" {
+		t.Fatalf("expected 'hello', got %q", p2.GetString("greeting"))
+	}
+
+	if p2.GetNumber("count") != 42.0 {
+		t.Fatalf("expected 42, got %f", p2.GetNumber("count"))
+	}
+}
+
+func TestJSONRoundTrip(t *testing.T) {
+	p := New()
+	p.Set("x", "val", "test")
+
+	data, err := p.MarshalJSON()
+	if err != nil {
+		t.Fatalf("marshal: %v", err)
+	}
+
+	p2 := New()
+	if err := p2.UnmarshalJSON(data); err != nil {
+		t.Fatalf("unmarshal: %v", err)
+	}
+
+	if p2.GetString("x") != "val" {
+		t.Fatalf("expected 'val' after round trip, got %q", p2.GetString("x"))
+	}
+}
+
+func TestCloneIndependence(t *testing.T) {
+	p := New()
+	p.Set("k", "original", "test")
+
+	clone := p.Clone()
+	clone.Set("k", "modified", "clone")
+
+	if p.GetString("k") != "original" {
+		t.Fatal("clone mutation should not affect original")
+	}
+
+	if clone.GetString("k") != "modified" {
+		t.Fatal("clone should have modified value")
+	}
+}
+
+func TestAppend(t *testing.T) {
+	p := New()
+
+	// Append to non-existent key creates a new slice.
+	if err := p.Append("items", "first", "test"); err != nil {
+		t.Fatalf("Append to new key: %v", err)
+	}
+	v, ok := p.Get("items")
+	if !ok {
+		t.Fatal("items key should exist after Append")
+	}
+	if v.Type != TypeJSON {
+		t.Fatalf("expected type json, got %s", v.Type)
+	}
+	slice, ok := v.Value.([]any)
+	if !ok || len(slice) != 1 || slice[0] != "first" {
+		t.Fatalf("expected [first], got %v", v.Value)
+	}
+
+	// Append to existing slice.
+	if err := p.Append("items", "second", "test"); err != nil {
+		t.Fatalf("Append to existing: %v", err)
+	}
+	v, _ = p.Get("items")
+	slice, ok = v.Value.([]any)
+	if !ok {
+		t.Fatal("expected []any after second Append")
+	}
+	if len(slice) != 2 {
+		t.Fatalf("expected 2 items, got %d", len(slice))
+	}
+
+	// Append to non-slice should error.
+	p.Set("str", "hello", "test")
+	if err := p.Append("str", "fail", "test"); err == nil {
+		t.Fatal("expected error appending to string variable")
+	}
+}
+
+func TestIncrement(t *testing.T) {
+	p := New()
+
+	// Increment non-existent key creates it.
+	if err := p.Increment("counter", 5.0, "test"); err != nil {
+		t.Fatalf("Increment new key: %v", err)
+	}
+	if p.GetNumber("counter") != 5.0 {
+		t.Fatalf("expected 5.0, got %f", p.GetNumber("counter"))
+	}
+
+	// Increment existing number.
+	if err := p.Increment("counter", 3.0, "test"); err != nil {
+		t.Fatalf("Increment existing: %v", err)
+	}
+	if p.GetNumber("counter") != 8.0 {
+		t.Fatalf("expected 8.0, got %f", p.GetNumber("counter"))
+	}
+
+	// Increment non-number should error.
+	p.Set("name", "alice", "test")
+	if err := p.Increment("name", 1.0, "test"); err == nil {
+		t.Fatal("expected error incrementing string variable")
+	}
+}
+
+func TestDecrement(t *testing.T) {
+	p := New()
+	p.Set("counter", 10.0, "test")
+
+	if err := p.Decrement("counter", 3.0, "test"); err != nil {
+		t.Fatalf("Decrement: %v", err)
+	}
+	if p.GetNumber("counter") != 7.0 {
+		t.Fatalf("expected 7.0, got %f", p.GetNumber("counter"))
+	}
+}
+
+func TestConcurrentAccess(t *testing.T) {
+	p := New()
+	var wg sync.WaitGroup
+
+	for i := range 100 {
+		wg.Add(1)
+
+		go func(n int) {
+			defer wg.Done()
+			key := "key"
+			p.Set(key, float64(n), "goroutine")
+			_ = p.GetNumber(key)
+			_ = p.List()
+			_ = p.Len()
+		}(i)
+	}
+
+	wg.Wait()
+
+	if p.Len() != 1 {
+		t.Fatalf("expected 1 key, got %d", p.Len())
+	}
+}
