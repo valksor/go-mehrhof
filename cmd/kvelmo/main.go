@@ -247,7 +247,7 @@ func main() {
 
 					return
 				} else if len(suggestions) > 0 {
-					fmt.Fprint(os.Stderr, cli.FormatAmbiguousError(args[0], suggestions))
+					_, _ = os.Stderr.WriteString(cli.FormatAmbiguousError(args[0], suggestions))
 					os.Exit(cli.ExitUsage)
 				}
 			}

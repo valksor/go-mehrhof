@@ -233,33 +233,33 @@ func renderTaskExportMarkdown(
 ) string {
 	var sb strings.Builder
 
-	fmt.Fprintf(&sb, "# Task Export: %s\n\n", html.EscapeString(meta.Title))
-	fmt.Fprintf(&sb, "**ID:** %s\n", html.EscapeString(meta.ID))
-	fmt.Fprintf(&sb, "**State:** %s\n", html.EscapeString(meta.State))
+	sb.WriteString("# Task Export: " + html.EscapeString(meta.Title) + "\n\n")
+	sb.WriteString("**ID:** " + html.EscapeString(meta.ID) + "\n")
+	sb.WriteString("**State:** " + html.EscapeString(meta.State) + "\n")
 	if meta.Branch != "" {
-		fmt.Fprintf(&sb, "**Branch:** %s\n", html.EscapeString(meta.Branch))
+		sb.WriteString("**Branch:** " + html.EscapeString(meta.Branch) + "\n")
 	}
 	if meta.Source != nil {
-		fmt.Fprintf(&sb, "**Source:** %s\n", html.EscapeString(meta.Source.Reference))
+		sb.WriteString("**Source:** " + html.EscapeString(meta.Source.Reference) + "\n")
 	}
 	if len(meta.Tags) > 0 {
-		fmt.Fprintf(&sb, "**Tags:** %s\n", html.EscapeString(strings.Join(meta.Tags, ", ")))
+		sb.WriteString("**Tags:** " + html.EscapeString(strings.Join(meta.Tags, ", ")) + "\n")
 	}
 	if meta.PRID != "" {
-		fmt.Fprintf(&sb, "**PR:** %s\n", html.EscapeString(meta.PRID))
+		sb.WriteString("**PR:** " + html.EscapeString(meta.PRID) + "\n")
 	}
-	fmt.Fprintf(&sb, "**Created:** %s\n", html.EscapeString(meta.CreatedAt))
-	fmt.Fprintf(&sb, "**Updated:** %s\n", html.EscapeString(meta.UpdatedAt))
-	fmt.Fprintf(&sb, "**Exported:** %s\n", html.EscapeString(exportedAt))
+	sb.WriteString("**Created:** " + html.EscapeString(meta.CreatedAt) + "\n")
+	sb.WriteString("**Updated:** " + html.EscapeString(meta.UpdatedAt) + "\n")
+	sb.WriteString("**Exported:** " + html.EscapeString(exportedAt) + "\n")
 
 	if meta.Description != "" {
-		fmt.Fprintf(&sb, "\n## Description\n\n%s\n", html.EscapeString(meta.Description))
+		sb.WriteString("\n## Description\n\n" + html.EscapeString(meta.Description) + "\n")
 	}
 
 	if len(specs) > 0 {
 		sb.WriteString("\n## Specifications\n\n")
 		for _, spec := range specs {
-			fmt.Fprintf(&sb, "### %s\n\n", html.EscapeString(spec.Path))
+			sb.WriteString("### " + html.EscapeString(spec.Path) + "\n\n")
 			sb.WriteString("```\n")
 			sb.WriteString(spec.Content)
 			if !strings.HasSuffix(spec.Content, "\n") {
@@ -274,7 +274,7 @@ func renderTaskExportMarkdown(
 		sb.WriteString("| Status | Path |\n")
 		sb.WriteString("|--------|------|\n")
 		for _, f := range files {
-			fmt.Fprintf(&sb, "| %s | %s |\n", html.EscapeString(f.Status), html.EscapeString(f.Path))
+			sb.WriteString("| " + html.EscapeString(f.Status) + " | " + html.EscapeString(f.Path) + " |\n")
 		}
 		sb.WriteString("\n")
 	}
@@ -286,7 +286,7 @@ func renderTaskExportMarkdown(
 			if msg == "" {
 				msg = "(no message)"
 			}
-			fmt.Fprintf(&sb, "- `%s` %s\n", html.EscapeString(cp.SHA[:min(8, len(cp.SHA))]), html.EscapeString(msg))
+			sb.WriteString("- `" + html.EscapeString(cp.SHA[:min(8, len(cp.SHA))]) + "` " + html.EscapeString(msg) + "\n")
 		}
 		sb.WriteString("\n")
 	}
@@ -298,15 +298,15 @@ func renderTaskExportMarkdown(
 			if title == "" {
 				title = fmt.Sprintf("Review #%d", r.Number)
 			}
-			fmt.Fprintf(&sb, "### %s\n\n", html.EscapeString(title))
+			sb.WriteString("### " + html.EscapeString(title) + "\n\n")
 			if r.Status != "" {
-				fmt.Fprintf(&sb, "**Status:** %s\n", html.EscapeString(r.Status))
+				sb.WriteString("**Status:** " + html.EscapeString(r.Status) + "\n")
 			}
 			if r.Reviewer != "" {
-				fmt.Fprintf(&sb, "**Reviewer:** %s\n", html.EscapeString(r.Reviewer))
+				sb.WriteString("**Reviewer:** " + html.EscapeString(r.Reviewer) + "\n")
 			}
 			if r.Content != "" {
-				fmt.Fprintf(&sb, "\n%s\n", html.EscapeString(r.Content))
+				sb.WriteString("\n" + html.EscapeString(r.Content) + "\n")
 			}
 			sb.WriteString("\n")
 		}
@@ -319,7 +319,7 @@ func renderTaskExportMarkdown(
 			if ts == "" {
 				ts = "?"
 			}
-			fmt.Fprintf(&sb, "**[%s] %s:**\n\n%s\n\n---\n\n", html.EscapeString(ts), html.EscapeString(msg.Role), html.EscapeString(msg.Content))
+			sb.WriteString("**[" + html.EscapeString(ts) + "] " + html.EscapeString(msg.Role) + ":**\n\n" + html.EscapeString(msg.Content) + "\n\n---\n\n")
 		}
 	}
 
