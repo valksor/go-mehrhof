@@ -41,7 +41,8 @@ Examples:
   kvelmo list history                          # All archived tasks
   kvelmo list history --json                   # Output as JSON
   kvelmo list history -s "auth"                # Search by keyword
-  kvelmo list history -s "login" --state finished --since 2026-03-01`,
+  kvelmo list history -s "login" --state finished --since 2026-03-01
+  kvelmo list history --file "auth/"           # Tasks that touched auth files`,
 	RunE: runListHistoryCmd,
 }
 
@@ -53,7 +54,8 @@ var listSearchCmd = &cobra.Command{
 Examples:
   kvelmo list search "auth"                           # Search by keyword
   kvelmo list search "login" --state finished          # Filter by state
-  kvelmo list search "" --tag backend --since 2026-03-01  # Filter by tag and date`,
+  kvelmo list search "" --tag backend --since 2026-03-01  # Filter by tag and date
+  kvelmo list search "" --file "auth/login.go"        # Tasks that touched a file`,
 	Args: cobra.ExactArgs(1),
 	RunE: runListSearchCmd,
 }
@@ -72,6 +74,7 @@ func init() {
 	ListCmd.Flags().String("until", "", "Show tasks completed before this date (RFC3339 or YYYY-MM-DD)")
 	ListCmd.Flags().String("state", "", "Filter by final state (e.g., finished, abandoned)")
 	ListCmd.Flags().Int("limit", 0, "Maximum number of results (0 = unlimited)")
+	ListCmd.Flags().String("file", "", "Filter by file path touched (substring match)")
 
 	// history subcommand flags
 	listHistoryCmd.Flags().BoolVar(&listHistoryJSON, "json", false, "Output as JSON")
@@ -81,6 +84,7 @@ func init() {
 	listHistoryCmd.Flags().String("until", "", "Show tasks completed before this date (RFC3339 or YYYY-MM-DD)")
 	listHistoryCmd.Flags().String("state", "", "Filter by final state (e.g., finished, abandoned)")
 	listHistoryCmd.Flags().Int("limit", 0, "Maximum number of results (0 = unlimited)")
+	listHistoryCmd.Flags().String("file", "", "Filter by file path touched (substring match)")
 
 	// search subcommand flags
 	listSearchCmd.Flags().BoolVar(&listSearchJSON, "json", false, "Output as JSON")
@@ -89,6 +93,7 @@ func init() {
 	listSearchCmd.Flags().String("until", "", "Show tasks completed before this date (RFC3339 or YYYY-MM-DD)")
 	listSearchCmd.Flags().String("state", "", "Filter by final state (e.g., finished, abandoned)")
 	listSearchCmd.Flags().Int("limit", 0, "Maximum number of results (0 = unlimited)")
+	listSearchCmd.Flags().String("file", "", "Filter by file path touched (substring match)")
 
 	ListCmd.AddCommand(listHistoryCmd)
 	ListCmd.AddCommand(listSearchCmd)
@@ -175,7 +180,9 @@ func runListHistoryCmd(cmd *cobra.Command, _ []string) error {
 	state, _ := cmd.Flags().GetString("state")
 	limit, _ := cmd.Flags().GetInt("limit")
 
-	if tag != "" || sinceStr != "" || untilStr != "" || state != "" || limit > 0 {
+	fileFilter, _ := cmd.Flags().GetString("file")
+
+	if tag != "" || sinceStr != "" || untilStr != "" || state != "" || limit > 0 || fileFilter != "" {
 		return runTaskSearch(cmd, "", listHistoryJSON)
 	}
 
@@ -275,6 +282,10 @@ func runTaskSearch(cmd *cobra.Command, query string, outputJSON bool) error {
 	if limit > 0 {
 		params["limit"] = limit
 	}
+	fileFilter, _ := cmd.Flags().GetString("file")
+	if fileFilter != "" {
+		params["file"] = fileFilter
+	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
@@ -355,7 +366,9 @@ func runListHistoryLegacy(cmd *cobra.Command) error {
 	state, _ := cmd.Flags().GetString("state")
 	limit, _ := cmd.Flags().GetInt("limit")
 
-	if tag != "" || sinceStr != "" || untilStr != "" || state != "" || limit > 0 {
+	fileFilter, _ := cmd.Flags().GetString("file")
+
+	if tag != "" || sinceStr != "" || untilStr != "" || state != "" || limit > 0 || fileFilter != "" {
 		return runTaskSearch(cmd, "", false)
 	}
 

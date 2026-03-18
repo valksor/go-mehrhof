@@ -3,8 +3,11 @@ package commands
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"io"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/spf13/cobra"
@@ -12,7 +15,10 @@ import (
 	"github.com/valksor/kvelmo/pkg/socket"
 )
 
-var quickSource string
+var (
+	quickSource string
+	quickText   string
+)
 
 var QuickCmd = &cobra.Command{
 	Use:   "quick",
@@ -21,16 +27,34 @@ var QuickCmd = &cobra.Command{
 Useful for trivial fixes where the full lifecycle is overkill.
 
   kvelmo quick --from github:owner/repo#123
-  kvelmo quick --from file:task.md`,
+  kvelmo quick --from file:task.md
+  kvelmo quick --text "Fix typo in README"`,
 	RunE: runQuick,
 }
 
 func init() {
-	QuickCmd.Flags().StringVar(&quickSource, "from", "", "Task source (required)")
-	_ = QuickCmd.MarkFlagRequired("from")
+	QuickCmd.Flags().StringVar(&quickSource, "from", "", "Task source")
+	QuickCmd.Flags().StringVar(&quickText, "text", "", "Inline task description")
 }
 
 func runQuick(_ *cobra.Command, _ []string) error {
+	if quickText == "-" {
+		data, err := io.ReadAll(os.Stdin)
+		if err != nil {
+			return fmt.Errorf("read stdin: %w", err)
+		}
+		quickText = strings.TrimSpace(string(data))
+	}
+	if quickText != "" && quickSource != "" {
+		return errors.New("--text and --from are mutually exclusive")
+	}
+	if quickText != "" {
+		quickSource = "empty:" + quickText
+	}
+	if quickSource == "" {
+		return errors.New("one of --from or --text is required")
+	}
+
 	cwd, err := os.Getwd()
 	if err != nil {
 		return fmt.Errorf("get working directory: %w", err)

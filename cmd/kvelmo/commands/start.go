@@ -5,9 +5,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
@@ -24,6 +26,7 @@ var (
 	startForeground bool
 	startVerbose    bool
 	startFrom       string
+	startText       string
 	startAuto       bool
 	startJSON       bool
 )
@@ -41,9 +44,14 @@ Use --from to load a task from a source:
   kvelmo start --from github:owner/repo#123  Load GitHub issue/PR
   kvelmo start --from https://github.com/... Load from URL
 
+Use --text to create a task from inline description:
+  kvelmo start --text "Fix login button alignment"  Load from inline text
+  echo "Fix X" | kvelmo start --text -              Load from stdin
+
 Examples:
   kvelmo start                              # Just start sockets
   kvelmo start --from github:org/repo#42    # Start and load task
+  kvelmo start --text "Fix typo in README"  # Start and load inline task
   kvelmo plan                               # Then run planning`,
 	RunE: runStart,
 }
@@ -52,6 +60,7 @@ func init() {
 	StartCmd.Flags().BoolVar(&startForeground, "foreground", false, "Run in foreground (for debugging)")
 	StartCmd.Flags().BoolVarP(&startVerbose, "verbose", "v", false, "Show socket paths")
 	StartCmd.Flags().StringVar(&startFrom, "from", "", "Task source (file:path, github:owner/repo#123, or URL)")
+	StartCmd.Flags().StringVar(&startText, "text", "", "Inline task description (creates task without external source)")
 	StartCmd.Flags().BoolVar(&startAuto, "auto", false, "Auto-advance through plan → implement → review")
 	StartCmd.Flags().BoolVar(&startJSON, "json", false, "Output result as JSON")
 
@@ -61,6 +70,20 @@ func init() {
 }
 
 func runStart(_ *cobra.Command, _ []string) error {
+	if startText == "-" {
+		data, err := io.ReadAll(os.Stdin)
+		if err != nil {
+			return fmt.Errorf("read stdin: %w", err)
+		}
+		startText = strings.TrimSpace(string(data))
+	}
+	if startText != "" && startFrom != "" {
+		return errors.New("--text and --from are mutually exclusive")
+	}
+	if startText != "" {
+		startFrom = "empty:" + startText
+	}
+
 	cwd, err := os.Getwd()
 	if err != nil {
 		return fmt.Errorf("get working directory: %w", err)
