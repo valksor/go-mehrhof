@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/valksor/kvelmo/pkg/agent"
+	"github.com/valksor/kvelmo/pkg/agent/strategy"
 	"github.com/valksor/kvelmo/pkg/browser"
 	"github.com/valksor/kvelmo/pkg/conductor"
 	"github.com/valksor/kvelmo/pkg/meta"
@@ -269,6 +270,7 @@ func (g *GlobalSocket) registerHandlers() {
 
 	// Agent status
 	g.server.Handle("agent.status", g.handleAgentStatus)
+	g.server.Handle("strategy.list", g.handleStrategyList)
 
 	// Provider token testing
 	g.server.Handle("providers.test", g.handleProvidersTest)
@@ -348,6 +350,10 @@ func (g *GlobalSocket) handleAgentStatus(_ context.Context, req *Request) (*Resp
 	}
 
 	return NewResultResponse(req.ID, result)
+}
+
+func (g *GlobalSocket) handleStrategyList(_ context.Context, req *Request) (*Response, error) {
+	return NewResultResponse(req.ID, strategy.List())
 }
 
 // --- Provider Token Testing ---

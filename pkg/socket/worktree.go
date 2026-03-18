@@ -14,6 +14,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/valksor/kvelmo/pkg/agent/strategy"
 	"github.com/valksor/kvelmo/pkg/conductor"
 	"github.com/valksor/kvelmo/pkg/git"
 	"github.com/valksor/kvelmo/pkg/memory"
@@ -105,6 +106,26 @@ func NewWorktreeSocket(cfg WorktreeConfig) (*WorktreeSocket, error) {
 		cond.SetMemoryIndexer(idxr)
 	}
 
+	// Wire agent strategy from settings.
+	if effective.Agent.Strategy != "" {
+		if s, ok := strategy.Get(effective.Agent.Strategy); ok {
+			cond.SetStrategy(s)
+		} else {
+			slog.Warn("unknown agent strategy in config, using default",
+				"strategy", effective.Agent.Strategy,
+				"available", strategy.List())
+		}
+	}
+	for phase, name := range effective.Agent.PhaseStrategy {
+		if s, ok := strategy.Get(name); ok {
+			cond.SetPhaseStrategy(phase, s)
+		} else {
+			slog.Warn("unknown phase strategy in config, ignoring",
+				"phase", phase, "strategy", name,
+				"available", strategy.List())
+		}
+	}
+
 	// Initialize screenshot store in .mehrhof directory
 	mehrhofPath := filepath.Join(cfg.WorktreePath, ".mehrhof")
 
@@ -149,6 +170,7 @@ func NewWorktreeSocketSimple(socketPath, worktreePath string) *WorktreeSocket {
 func (w *WorktreeSocket) registerBasicHandlers() {
 	w.server.Handle("status", w.handleStatus)
 	w.server.Handle("ping", w.handlePing)
+	w.server.Handle("strategy.list", w.handleStrategyList)
 	w.server.Handle("checkpoints", w.handleCheckpoints)
 	w.server.Handle("checkpoint.goto", w.handleCheckpointGoto)
 
@@ -172,6 +194,7 @@ func (w *WorktreeSocket) registerHandlers() {
 	// Basic
 	w.server.Handle("ping", w.handlePing)
 	w.server.Handle("status", w.handleStatus)
+	w.server.Handle("strategy.list", w.handleStrategyList)
 
 	// Task lifecycle
 	w.server.Handle("start", w.handleStart)
@@ -335,6 +358,10 @@ func (w *WorktreeSocket) setupEventForwarding() {
 
 func (w *WorktreeSocket) handlePing(ctx context.Context, req *Request) (*Response, error) {
 	return NewResultResponse(req.ID, map[string]string{"status": "ok"})
+}
+
+func (w *WorktreeSocket) handleStrategyList(_ context.Context, req *Request) (*Response, error) {
+	return NewResultResponse(req.ID, strategy.List())
 }
 
 func (w *WorktreeSocket) handleStatus(ctx context.Context, req *Request) (*Response, error) {
