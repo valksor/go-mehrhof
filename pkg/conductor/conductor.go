@@ -15,11 +15,13 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/valksor/kvelmo/pkg/agent/strategy"
 	"github.com/valksor/kvelmo/pkg/git"
 	"github.com/valksor/kvelmo/pkg/memory"
 	"github.com/valksor/kvelmo/pkg/provider"
 	"github.com/valksor/kvelmo/pkg/settings"
 	"github.com/valksor/kvelmo/pkg/storage"
+	"github.com/valksor/kvelmo/pkg/varpool"
 	"github.com/valksor/kvelmo/pkg/worker"
 )
 
@@ -81,6 +83,24 @@ type Conductor struct {
 	// Storage (optional, set via SetStore)
 	store *storage.Store
 
+	// Variable pool for sharing context between graph nodes
+	varPool *varpool.Pool
+
+	// Agent strategy (default: "direct"). Per-phase overrides take precedence.
+	strategy        strategy.Strategy
+	phaseStrategies map[string]strategy.Strategy
+
+	// Iteration tracking for strategy evaluation (bounded re-submission).
+	// When a strategy's EvaluateOutput returns "needs_iteration", the phase
+	// is re-submitted up to maxIterations times before accepting the result.
+	iterationCount map[string]int // phase → current iteration count
+	maxIterations  int            // default 3
+
+	// Per-phase failure policies (retry, skip, or fail).
+	// Inspired by Dify/RAGFlow per-node error strategies.
+	phasePolicies map[string]PhasePolicy
+	retryCount    map[string]int // phase → current retry count
+
 	// Cached settings (loaded once, reused across phases).
 	// Uses atomic.Pointer for lock-free access to avoid deadlock when called
 	// from methods that already hold c.mu.
@@ -92,6 +112,7 @@ type ConductorEvent struct {
 	Type          string          `json:"type"`
 	State         State           `json:"state,omitempty"`
 	JobID         string          `json:"job_id,omitempty"`
+	NodeID        string          `json:"node_id,omitempty"` // Graph node that produced this event
 	CorrelationID string          `json:"correlation_id,omitempty"`
 	Message       string          `json:"message,omitempty"`
 	Data          json.RawMessage `json:"data,omitempty"`
@@ -101,6 +122,92 @@ type ConductorEvent struct {
 
 // EventListener is called when events occur.
 type EventListener func(event ConductorEvent)
+
+// FailurePolicy defines how a phase handles errors.
+type FailurePolicy int
+
+const (
+	// FailurePolicyFail stops execution and waits for user intervention (default).
+	FailurePolicyFail FailurePolicy = iota
+	// FailurePolicyRetry re-runs the phase up to MaxRetries times.
+	FailurePolicyRetry
+	// FailurePolicySkip marks the phase as completed and advances the workflow.
+	FailurePolicySkip
+)
+
+// PhasePolicy configures error handling for a specific phase.
+type PhasePolicy struct {
+	Policy     FailurePolicy
+	MaxRetries int           // For FailurePolicyRetry
+	RetryDelay time.Duration // For FailurePolicyRetry
+}
+
+// defaultPhasePolicies returns sensible defaults for each phase.
+// Plan and review failures require user attention; implement retries once;
+// simplify and optimize are optional and can be skipped on failure.
+func defaultPhasePolicies() map[string]PhasePolicy {
+	return map[string]PhasePolicy{
+		"plan":      {Policy: FailurePolicyFail},
+		"implement": {Policy: FailurePolicyRetry, MaxRetries: 2, RetryDelay: 5 * time.Second},
+		"simplify":  {Policy: FailurePolicySkip},
+		"optimize":  {Policy: FailurePolicySkip},
+		"review":    {Policy: FailurePolicyFail},
+		"submit":    {Policy: FailurePolicyFail},
+	}
+}
+
+// loadPhasePoliciesFromSettings applies user-configured phase policy overrides.
+func (c *Conductor) loadPhasePoliciesFromSettings() {
+	s := c.getEffectiveSettings()
+	if s == nil {
+		return
+	}
+	for phase, policyStr := range s.Workflow.PhasePolicies {
+		switch policyStr {
+		case "fail":
+			c.phasePolicies[phase] = PhasePolicy{Policy: FailurePolicyFail}
+		case "retry":
+			retryDelay := time.Duration(s.Workflow.Retry.BackoffSeconds) * time.Second
+			if retryDelay == 0 {
+				retryDelay = 5 * time.Second
+			}
+			maxAttempts := s.Workflow.Retry.MaxAttempts
+			if maxAttempts == 0 {
+				maxAttempts = 2
+			}
+			c.phasePolicies[phase] = PhasePolicy{
+				Policy:     FailurePolicyRetry,
+				MaxRetries: maxAttempts,
+				RetryDelay: retryDelay,
+			}
+		case "skip":
+			c.phasePolicies[phase] = PhasePolicy{Policy: FailurePolicySkip}
+		}
+	}
+}
+
+// loadStrategiesFromSettings applies user-configured strategy overrides.
+func (c *Conductor) loadStrategiesFromSettings() {
+	s := c.getEffectiveSettings()
+	if s == nil {
+		return
+	}
+	// Default strategy.
+	if s.Agent.Strategy != "" {
+		if start, ok := strategy.Get(s.Agent.Strategy); ok {
+			c.strategy = start
+		}
+	}
+	// Per-phase strategy overrides.
+	for phase, stratName := range s.Agent.PhaseStrategy {
+		if start, ok := strategy.Get(stratName); ok {
+			if c.phaseStrategies == nil {
+				c.phaseStrategies = make(map[string]strategy.Strategy)
+			}
+			c.phaseStrategies[phase] = start
+		}
+	}
+}
 
 // Options configures the conductor.
 type Options struct {
@@ -206,8 +313,15 @@ func New(opts ...Option) (*Conductor, error) {
 		opts:            options,
 		stdout:          options.Stdout,
 		stderr:          options.Stderr,
+		varPool:         varpool.New(),
+		iterationCount:  make(map[string]int),
+		maxIterations:   3,
+		phasePolicies:   defaultPhasePolicies(),
+		retryCount:      make(map[string]int),
 	}
 	c.cachedSettings.Store(effectiveSettings) // Cache pre-loaded settings (atomic)
+	c.loadPhasePoliciesFromSettings()
+	c.loadStrategiesFromSettings()
 
 	// Subscribe to state machine changes
 	machine.AddListener(c.onStateChanged)
@@ -512,6 +626,11 @@ func NewConductor(cfg ConductorConfig) *Conductor {
 		pendingPrompts:  make(map[string]chan bool),
 		stdout:          os.Stdout,
 		stderr:          os.Stderr,
+		varPool:         varpool.New(),
+		iterationCount:  make(map[string]int),
+		maxIterations:   3,
+		phasePolicies:   defaultPhasePolicies(),
+		retryCount:      make(map[string]int),
 	}
 
 	// Set worktree path - prefer explicit config, fallback to repo path

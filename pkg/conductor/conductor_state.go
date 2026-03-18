@@ -8,6 +8,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/valksor/kvelmo/pkg/agent/strategy"
 	"github.com/valksor/kvelmo/pkg/memory"
 	"github.com/valksor/kvelmo/pkg/storage"
 )
@@ -28,6 +29,29 @@ func (c *Conductor) SetStore(store *storage.Store) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	c.store = store
+}
+
+// SetStrategy sets the default agent strategy. Per-phase overrides
+// (set via SetPhaseStrategy) take precedence over this default.
+func (c *Conductor) SetStrategy(s strategy.Strategy) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.strategy = s
+}
+
+// SetPhaseStrategy sets the agent strategy for a specific phase.
+// Pass nil to clear the override and fall back to the default strategy.
+func (c *Conductor) SetPhaseStrategy(phase string, s strategy.Strategy) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	if c.phaseStrategies == nil {
+		c.phaseStrategies = make(map[string]strategy.Strategy)
+	}
+	if s == nil {
+		delete(c.phaseStrategies, phase)
+	} else {
+		c.phaseStrategies[phase] = s
+	}
 }
 
 // archiveTask records the current work unit in the archive before clearing.
@@ -82,6 +106,10 @@ func (c *Conductor) persistState() {
 	if c.store == nil || c.workUnit == nil {
 		return
 	}
+
+	// Persist variable pool first so VarPoolPath is set before snapshot.
+	c.persistVarPool()
+
 	history := c.machine.History()
 	ts := workUnitToTaskState(c.machine.State(), c.workUnit, history)
 	if err := c.store.SaveTaskState(ts); err != nil {
@@ -125,6 +153,7 @@ func (c *Conductor) LoadState(ctx context.Context) error {
 	c.machine.ForceState(state)
 	c.machine.SetWorkUnit(wu)
 	c.machine.RestoreHistory(history)
+	c.loadVarPool()
 	c.mu.Unlock()
 
 	slog.Info("task state restored", "task_id", taskID, "state", state)
@@ -135,24 +164,26 @@ func (c *Conductor) LoadState(ctx context.Context) error {
 // workUnitToTaskState converts a WorkUnit + state to the on-disk TaskState struct.
 func workUnitToTaskState(state State, wu *WorkUnit, history []HistoryEntry) *storage.TaskState {
 	ts := &storage.TaskState{
-		State:            string(state),
-		ID:               wu.ID,
-		ExternalID:       wu.ExternalID,
-		Title:            wu.Title,
-		Description:      wu.Description,
-		Branch:           wu.Branch,
-		WorktreePath:     wu.WorktreePath,
-		Specifications:   wu.Specifications,
-		Checkpoints:      wu.Checkpoints,
-		RedoStack:        wu.RedoStack,
-		Jobs:             wu.Jobs,
-		Metadata:         wu.Metadata,
-		ChecklistChecked: wu.ChecklistChecked,
-		Tags:             wu.Tags,
-		Priority:         wu.Priority,
-		DependsOn:        wu.DependsOn,
-		CreatedAt:        wu.CreatedAt,
-		UpdatedAt:        wu.UpdatedAt,
+		State:             string(state),
+		ID:                wu.ID,
+		ExternalID:        wu.ExternalID,
+		Title:             wu.Title,
+		Description:       wu.Description,
+		Branch:            wu.Branch,
+		WorktreePath:      wu.WorktreePath,
+		Specifications:    wu.Specifications,
+		Checkpoints:       wu.Checkpoints,
+		RedoStack:         wu.RedoStack,
+		Jobs:              wu.Jobs,
+		Metadata:          wu.Metadata,
+		ChecklistChecked:  wu.ChecklistChecked,
+		Tags:              wu.Tags,
+		Priority:          wu.Priority,
+		DependsOn:         wu.DependsOn,
+		QualityGatePassed: wu.QualityGatePassed,
+		VarPoolPath:       wu.VarPoolPath,
+		CreatedAt:         wu.CreatedAt,
+		UpdatedAt:         wu.UpdatedAt,
 	}
 	// Convert approval records
 	if len(wu.Approvals) > 0 {
@@ -210,23 +241,25 @@ func workUnitToTaskState(state State, wu *WorkUnit, history []HistoryEntry) *sto
 // along with the persisted state machine history.
 func taskStateToWorkUnit(ts *storage.TaskState) (State, *WorkUnit, []HistoryEntry) {
 	wu := &WorkUnit{
-		ID:               ts.ID,
-		ExternalID:       ts.ExternalID,
-		Title:            ts.Title,
-		Description:      ts.Description,
-		Branch:           ts.Branch,
-		WorktreePath:     ts.WorktreePath,
-		Specifications:   ts.Specifications,
-		Checkpoints:      ts.Checkpoints,
-		RedoStack:        ts.RedoStack,
-		Jobs:             ts.Jobs,
-		Metadata:         ts.Metadata,
-		ChecklistChecked: ts.ChecklistChecked,
-		Tags:             ts.Tags,
-		Priority:         ts.Priority,
-		DependsOn:        ts.DependsOn,
-		CreatedAt:        ts.CreatedAt,
-		UpdatedAt:        ts.UpdatedAt,
+		ID:                ts.ID,
+		ExternalID:        ts.ExternalID,
+		Title:             ts.Title,
+		Description:       ts.Description,
+		Branch:            ts.Branch,
+		WorktreePath:      ts.WorktreePath,
+		Specifications:    ts.Specifications,
+		Checkpoints:       ts.Checkpoints,
+		RedoStack:         ts.RedoStack,
+		Jobs:              ts.Jobs,
+		Metadata:          ts.Metadata,
+		ChecklistChecked:  ts.ChecklistChecked,
+		Tags:              ts.Tags,
+		Priority:          ts.Priority,
+		DependsOn:         ts.DependsOn,
+		QualityGatePassed: ts.QualityGatePassed,
+		VarPoolPath:       ts.VarPoolPath,
+		CreatedAt:         ts.CreatedAt,
+		UpdatedAt:         ts.UpdatedAt,
 	}
 	// Convert approval records
 	if len(ts.Approvals) > 0 {

@@ -130,6 +130,7 @@ func (c *Conductor) Start(ctx context.Context, sourceRef string) error {
 		return fmt.Errorf("dispatch start: %w", err)
 	}
 
+	c.populateStandardVars()
 	c.persistState()
 
 	c.emit(ConductorEvent{

@@ -140,15 +140,20 @@ type WorkUnit struct {
 	Hierarchy *HierarchyContext `json:"hierarchy,omitempty"`
 	// QualityGate caches the result of async quality gate (run during Review).
 	// nil = not yet run, true = passed, false = failed
-	QualityGatePassed *bool                     `json:"quality_gate_passed,omitempty"`
-	QualityGateError  string                    `json:"quality_gate_error,omitempty"`
-	Approvals         map[string]ApprovalRecord `json:"approvals,omitempty"`         // Event -> approval record
-	ChecklistChecked  []string                  `json:"checklist_checked,omitempty"` // Checked review items
-	Tags              []string                  `json:"tags,omitempty"`
-	Priority          int                       `json:"priority,omitempty"`
-	DependsOn         []string                  `json:"depends_on,omitempty"`
-	CreatedAt         time.Time                 `json:"created_at"`
-	UpdatedAt         time.Time                 `json:"updated_at"`
+	QualityGatePassed *bool  `json:"quality_gate_passed,omitempty"`
+	QualityGateError  string `json:"quality_gate_error,omitempty"`
+	// CancelledBy records who/what initiated cancellation: "user", "timeout", "policy", or "" (not cancelled).
+	CancelledBy string `json:"cancelled_by,omitempty"`
+	// CancelledAt records when cancellation occurred.
+	CancelledAt      time.Time                 `json:"cancelled_at,omitempty"`
+	Approvals        map[string]ApprovalRecord `json:"approvals,omitempty"`         // Event -> approval record
+	ChecklistChecked []string                  `json:"checklist_checked,omitempty"` // Checked review items
+	Tags             []string                  `json:"tags,omitempty"`
+	Priority         int                       `json:"priority,omitempty"`
+	DependsOn        []string                  `json:"depends_on,omitempty"`
+	VarPoolPath      string                    `json:"var_pool_path,omitempty"` // Path to varpool.json
+	CreatedAt        time.Time                 `json:"created_at"`
+	UpdatedAt        time.Time                 `json:"updated_at"`
 }
 
 // Source represents where the task came from.
@@ -370,6 +375,7 @@ var TransitionTable = map[TransitionKey][]Transition{
 	{StateReviewing, EventSubmit}: {
 		{From: StateReviewing, Event: EventSubmit, To: StateSubmitted, Guards: []Guard{
 			{Check: guardCanSubmit, Message: "cannot submit: no provider configured"},
+			{Check: guardQualityGatePassed, Message: "quality gate failed. Fix issues and re-run: kvelmo review"},
 		}},
 	},
 	{StateReviewing, EventReject}: {
@@ -500,6 +506,19 @@ func guardCanRedo(ctx context.Context, wu *WorkUnit) bool {
 
 func guardCanSubmit(ctx context.Context, wu *WorkUnit) bool {
 	return wu != nil && wu.Source != nil && wu.Source.Provider != ""
+}
+
+// guardQualityGatePassed checks that quality gates passed (or haven't been run yet).
+// When QualityGatePassed is nil (not yet run), we allow submission to avoid blocking
+// workflows that don't use quality gates. When explicitly false, we block.
+func guardQualityGatePassed(_ context.Context, wu *WorkUnit) bool {
+	if wu == nil {
+		return false
+	}
+	// nil = not yet run → allow (don't block non-quality-gate workflows)
+	// true = passed → allow
+	// false = failed → block
+	return wu.QualityGatePassed == nil || *wu.QualityGatePassed
 }
 
 // EvaluateGuards checks if all guards pass for a transition.

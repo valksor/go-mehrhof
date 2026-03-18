@@ -236,6 +236,12 @@ func (c *Conductor) Stop(ctx context.Context) error {
 	jobID := c.activeJobID
 	c.activeJobID = ""
 
+	// Record cancellation reason
+	if c.workUnit != nil {
+		c.workUnit.CancelledBy = "user"
+		c.workUnit.CancelledAt = time.Now()
+	}
+
 	// Transition to previous stable state
 	if err := c.machine.Dispatch(ctx, EventStop); err != nil {
 		return fmt.Errorf("cannot stop: %w", err)

@@ -43,8 +43,10 @@ type TUISettings struct {
 
 // AgentSettings configures AI agent behavior.
 type AgentSettings struct {
-	Default string   `yaml:"default,omitempty" json:"default,omitempty" schema:"label=Default Agent;desc=Agent used when none specified;options=claude|codex"`
-	Allowed []string `yaml:"allowed,omitempty" json:"allowed,omitempty" schema:"label=Allowed Agents;desc=Agents permitted for this project;type=multiselect;options=claude|codex"`
+	Default       string            `yaml:"default,omitempty" json:"default,omitempty" schema:"label=Default Agent;desc=Agent used when none specified;options=claude|codex"`
+	Allowed       []string          `yaml:"allowed,omitempty" json:"allowed,omitempty" schema:"label=Allowed Agents;desc=Agents permitted for this project;type=multiselect;options=claude|codex"`
+	Strategy      string            `yaml:"strategy,omitempty" json:"strategy,omitempty" schema:"label=Default Strategy;desc=Agent reasoning strategy (direct = pass-through, iterative = self-review loop);options=direct|iterative;default=direct"`
+	PhaseStrategy map[string]string `yaml:"phase_strategy,omitempty" json:"phase_strategy,omitempty" schema:"label=Per-Phase Strategy;desc=Override strategy per phase (e.g. plan: iterative);type=keyvalue;advanced"`
 }
 
 // CustomAgent defines a user-created agent that wraps a base agent.
@@ -245,6 +247,7 @@ type WorkflowSettings struct {
 	ExternalReview       ExternalReviewConfig `yaml:"external_review,omitempty" json:"external_review,omitempty" schema:"label=External Review;desc=External CLI review tool integration"`
 	Policy               PolicySettings       `yaml:"policy,omitempty" json:"policy,omitempty"`
 	Retry                RetrySettings        `yaml:"retry,omitempty" json:"retry,omitempty"`
+	PhasePolicies        map[string]string    `yaml:"phase_policies,omitempty" json:"phase_policies,omitempty" schema:"label=Phase Policies;desc=Per-phase failure policy overrides: fail, retry, or skip (e.g., simplify: skip)"`
 	CI                   CISettings           `yaml:"ci,omitempty" json:"ci,omitempty"`
 	Hooks                HooksSettings        `yaml:"hooks,omitempty" json:"hooks,omitempty"`
 }
@@ -297,6 +300,11 @@ func (w *WorkflowSettings) UnmarshalYAML(value *yaml.Node) error {
 	}
 	if node, ok := raw["retry"]; ok {
 		if err := node.Decode(&p.Retry); err != nil {
+			return err
+		}
+	}
+	if node, ok := raw["phase_policies"]; ok {
+		if err := node.Decode(&p.PhasePolicies); err != nil {
 			return err
 		}
 	}

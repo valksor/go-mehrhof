@@ -107,6 +107,22 @@ func (c *Conductor) watchJob(ctx context.Context, jobID string, completionEvent 
 					}
 				}
 
+				// Evaluate output via strategy before dispatching completion.
+				// If the strategy requests iteration, re-submit and skip normal completion.
+				var jobOutput string
+				if c.pool != nil {
+					if job := c.pool.GetJob(jobID); job != nil {
+						jobOutput = job.Result
+					}
+				}
+				c.mu.Unlock()
+
+				if jobOutput != "" && c.evaluateAndMaybeIterate(ctx, completionEvent, jobOutput) {
+					return // Re-submitted; skip normal completion path
+				}
+
+				c.mu.Lock()
+
 				// Dispatch completion event
 				_ = c.machine.Dispatch(ctx, completionEvent)
 
@@ -146,6 +162,15 @@ func (c *Conductor) watchJob(ctx context.Context, jobID string, completionEvent 
 			// Auto-advance: trigger next phase if enabled
 			c.maybeAutoAdvance(ctx, completionEvent)
 
+			// Grace-period cleanup: keep job metadata queryable for 60s
+			// to prevent "job not found" races with UI/CLI polling.
+			if c.pool != nil {
+				pool := c.pool
+				time.AfterFunc(60*time.Second, func() {
+					pool.RemoveJob(jobID)
+				})
+			}
+
 			return
 		}
 
@@ -166,6 +191,14 @@ func (c *Conductor) watchJob(ctx context.Context, jobID string, completionEvent 
 					}
 				}
 			}
+			c.mu.Unlock()
+
+			// Apply per-phase failure policy before default error handling.
+			if c.applyFailurePolicy(ctx, completionEvent) {
+				return // Policy handled it (retry or skip)
+			}
+
+			c.mu.Lock()
 			_ = c.machine.Dispatch(ctx, EventError)
 			c.persistState()
 			c.mu.Unlock()

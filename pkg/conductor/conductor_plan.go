@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/valksor/kvelmo/pkg/graph"
 	"github.com/valksor/kvelmo/pkg/storage"
 	"github.com/valksor/kvelmo/pkg/worker"
 )
@@ -78,37 +79,29 @@ func (c *Conductor) Plan(ctx context.Context, force bool) (string, error) {
 		false,
 	)
 	prompt := c.buildPlanPromptForComplexity(complexity, existingSpecs)
+	prompt = c.applyStrategy("plan", prompt)
 
-	opts := c.buildJobOptions()
-	job, err := c.pool.SubmitWithOptions(worker.JobTypePlan, c.getWorkDir(), prompt, opts)
-	if err != nil {
-		// Rollback state
-		_ = c.machine.Dispatch(ctx, EventError)
+	// Build a phase graph (single node for planning, future: multiple sub-tasks).
+	g := buildPhaseGraph(worker.JobTypePlan, "planning", prompt)
+	sched := graph.NewScheduler(g, c.pool)
 
-		wrapped := fmt.Errorf("submit plan job: %w", err)
-		c.emitEnrichedError(wrapped, "plan")
+	// Create pre-job safety checkpoint before the scheduler starts.
+	c.createSafetyCheckpoint(ctx, "pre-plan_done checkpoint")
 
-		return "", wrapped
-	}
-
-	c.workUnit.Jobs = append(c.workUnit.Jobs, job.ID)
 	c.workUnit.UpdatedAt = time.Now()
-	c.activeJobID = job.ID
-	c.saveJobSession(job.ID, "planning", "")
 	c.persistState()
 
 	c.emit(ConductorEvent{
 		Type:    "planning_started",
 		State:   c.machine.State(),
-		JobID:   job.ID,
 		Message: fmt.Sprintf("Planning started (complexity: %s)", complexity),
 	})
 
-	// Watch job completion in background using lifecycle context
+	// Watch graph completion in background using lifecycle context
 	// (not request ctx which may be cancelled when handler returns)
-	go c.watchJob(c.lifecycleCtx, job.ID, EventPlanDone) //nolint:contextcheck // intentionally uses lifecycle context
+	go c.watchGraph(c.lifecycleCtx, sched, EventPlanDone) //nolint:contextcheck // intentionally uses lifecycle context
 
-	return job.ID, nil
+	return sched.ID(), nil
 }
 
 // GenerateDeltaSpecification creates a specification file describing what changed between old and new content.
