@@ -202,12 +202,17 @@ func TestVectorStoreStats(t *testing.T) {
 		t.Errorf("expected 0 documents initially, got %d", store.Stats().TotalDocuments)
 	}
 
+	contents := []string{
+		"specification alpha: implement the new API endpoint for user profiles",
+		"solution beta: fix the race condition in the connection pool handler",
+		"specification gamma: design the caching layer for frequent database queries",
+	}
 	for i, docType := range []DocumentType{TypeSpecification, TypeSolution, TypeSpecification} {
 		doc := &Document{
 			ID:      "doc-" + string(rune('1'+i)),
 			TaskID:  "task-1",
 			Type:    docType,
-			Content: "some document content",
+			Content: contents[i],
 		}
 		if err := store.Store(ctx, doc); err != nil {
 			t.Fatalf("Store() error = %v", err)
@@ -909,7 +914,10 @@ func TestIndexerIndexTask_WithSessionFiles(t *testing.T) {
 	}
 	taskID := "task-sess"
 	filename := filepath.Join(sessionDir, taskID+"-session.jsonl")
-	if err := os.WriteFile(filename, []byte("{\"type\":\"done\"}\n"), 0o644); err != nil {
+	// Session content must pass the significance gate — use realistic, content-rich text.
+	sessionContent := `{"type":"agent_output","content":"Implemented the user authentication module with JWT token validation. Added error handling for expired tokens and invalid signatures. Created middleware that intercepts requests and validates the Authorization header. The implementation follows the existing patterns in the codebase for consistent error responses."}
+{"type":"done"}`
+	if err := os.WriteFile(filename, []byte(sessionContent), 0o644); err != nil {
 		t.Fatal(err)
 	}
 	store := newTestStore(t)
@@ -954,5 +962,216 @@ func TestHashEmbedderEmbedBatch(t *testing.T) {
 	}
 	if len(vecs) != len(texts) {
 		t.Errorf("EmbedBatch() len = %d, want %d", len(vecs), len(texts))
+	}
+}
+
+// --- Deduplication tests ---
+
+func TestStoreDedup_SkipNearDuplicate(t *testing.T) {
+	ctx := context.Background()
+	store := newTestStore(t)
+
+	doc1 := &Document{
+		ID:      "doc-1",
+		Type:    TypeSession,
+		Content: "the quick brown fox jumps over the lazy dog near the river",
+	}
+	doc2 := &Document{
+		ID:      "doc-2",
+		Type:    TypeSession,
+		Content: "the quick brown fox jumps over the lazy dog near the river bank",
+	}
+
+	if err := store.Store(ctx, doc1); err != nil {
+		t.Fatalf("Store doc1: %v", err)
+	}
+	if err := store.Store(ctx, doc2); err != nil {
+		t.Fatalf("Store doc2: %v", err)
+	}
+
+	// doc2 should have been skipped (>0.85 Jaccard similarity)
+	if store.Stats().TotalDocuments != 1 {
+		t.Errorf("expected 1 document (dedup skip), got %d", store.Stats().TotalDocuments)
+	}
+}
+
+func TestStoreDedup_MergeModerateSimilarity(t *testing.T) {
+	ctx := context.Background()
+	store := newTestStore(t)
+
+	// 8 shared out of 12 unique = 0.667 Jaccard (moderate overlap, triggers merge)
+	doc1 := &Document{
+		ID:      "doc-1",
+		Type:    TypeSession,
+		Content: "alpha beta gamma delta epsilon zeta eta theta iota kappa",
+	}
+	doc2 := &Document{
+		ID:      "doc-2",
+		Type:    TypeSession,
+		Content: "alpha beta gamma delta epsilon zeta eta theta lambda mu",
+	}
+
+	if err := store.Store(ctx, doc1); err != nil {
+		t.Fatalf("Store doc1: %v", err)
+	}
+	if err := store.Store(ctx, doc2); err != nil {
+		t.Fatalf("Store doc2: %v", err)
+	}
+
+	// Should merge (0.6-0.85 overlap): still 1 document, but with updated content.
+	if store.Stats().TotalDocuments != 1 {
+		t.Errorf("expected 1 document (dedup merge), got %d", store.Stats().TotalDocuments)
+	}
+
+	// Merged document should have doc2's content
+	got, err := store.Get(ctx, "doc-1")
+	if err != nil {
+		t.Fatalf("Get doc-1: %v", err)
+	}
+	if got.Content != doc2.Content {
+		t.Errorf("merged document should have new content")
+	}
+}
+
+func TestStoreDedup_CreateDifferentContent(t *testing.T) {
+	ctx := context.Background()
+	store := newTestStore(t)
+
+	doc1 := &Document{
+		ID:      "doc-1",
+		Type:    TypeSession,
+		Content: "implementing the authentication middleware with JWT token validation",
+	}
+	doc2 := &Document{
+		ID:      "doc-2",
+		Type:    TypeSession,
+		Content: "database schema migration adding new user_preferences table with JSONB column",
+	}
+
+	if err := store.Store(ctx, doc1); err != nil {
+		t.Fatalf("Store doc1: %v", err)
+	}
+	if err := store.Store(ctx, doc2); err != nil {
+		t.Fatalf("Store doc2: %v", err)
+	}
+
+	// Different content should create separate documents.
+	if store.Stats().TotalDocuments != 2 {
+		t.Errorf("expected 2 documents (different content), got %d", store.Stats().TotalDocuments)
+	}
+}
+
+func TestStoreDedup_DifferentTypesNotDeduped(t *testing.T) {
+	ctx := context.Background()
+	store := newTestStore(t)
+
+	content := "the quick brown fox jumps over the lazy dog"
+	doc1 := &Document{ID: "doc-1", Type: TypeSession, Content: content}
+	doc2 := &Document{ID: "doc-2", Type: TypeSpecification, Content: content}
+
+	if err := store.Store(ctx, doc1); err != nil {
+		t.Fatalf("Store doc1: %v", err)
+	}
+	if err := store.Store(ctx, doc2); err != nil {
+		t.Fatalf("Store doc2: %v", err)
+	}
+
+	// Same content but different types should NOT be deduped.
+	if store.Stats().TotalDocuments != 2 {
+		t.Errorf("expected 2 documents (different types), got %d", store.Stats().TotalDocuments)
+	}
+}
+
+// --- ACT-R activation tests ---
+
+func TestActivationScore_WithAccessTimes(t *testing.T) {
+	now := time.Now()
+
+	// Document with recent burst of accesses should score higher
+	recentBurst := &Document{
+		CreatedAt: now.Add(-24 * time.Hour),
+		AccessTimes: []time.Time{
+			now.Add(-10 * time.Second),
+			now.Add(-20 * time.Second),
+			now.Add(-30 * time.Second),
+		},
+	}
+
+	// Document with same count but spread over time
+	spreadOut := &Document{
+		CreatedAt: now.Add(-24 * time.Hour),
+		AccessTimes: []time.Time{
+			now.Add(-1 * time.Hour),
+			now.Add(-12 * time.Hour),
+			now.Add(-23 * time.Hour),
+		},
+	}
+
+	burstScore := activationScore(recentBurst, now)
+	spreadScore := activationScore(spreadOut, now)
+
+	if burstScore <= spreadScore {
+		t.Errorf("recent burst (%f) should score higher than spread-out (%f)", burstScore, spreadScore)
+	}
+}
+
+func TestActivationScore_LegacyFallback(t *testing.T) {
+	now := time.Now()
+
+	// Document without AccessTimes but with AccessCount should use legacy formula.
+	doc := &Document{
+		CreatedAt:   now.Add(-1 * time.Hour),
+		AccessCount: 5,
+	}
+
+	score := activationScore(doc, now)
+	if score <= 0 || score > 1 {
+		t.Errorf("legacy activation score should be in (0, 1], got %f", score)
+	}
+}
+
+// --- Jaccard similarity tests ---
+
+func TestJaccardSimilarity(t *testing.T) {
+	tests := []struct {
+		name string
+		a, b string
+		want float64
+		tol  float64
+	}{
+		{"identical", "a b c", "a b c", 1.0, 0.001},
+		{"disjoint", "a b c", "d e f", 0.0, 0.001},
+		{"partial overlap", "a b c d", "c d e f", 0.333, 0.05},
+		{"empty both", "", "", 1.0, 0.001},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := jaccardSimilarity(tokenize(tt.a), tokenize(tt.b))
+			if got < tt.want-tt.tol || got > tt.want+tt.tol {
+				t.Errorf("jaccardSimilarity(%q, %q) = %f, want ~%f", tt.a, tt.b, got, tt.want)
+			}
+		})
+	}
+}
+
+// --- Content richness tests ---
+
+func TestContentRichness_DevMarkerBonus(t *testing.T) {
+	// Content with dev markers should score higher than equivalent without.
+	withMarkers := contentRichness(strings.Repeat("word ", 50) + "migration schema rollback")
+	withoutMarkers := contentRichness(strings.Repeat("word ", 50) + "something else entirely")
+
+	if withMarkers <= withoutMarkers {
+		t.Errorf("content with dev markers (%f) should score higher than without (%f)", withMarkers, withoutMarkers)
+	}
+}
+
+func TestContentRichness_MarkerBonusCapped(t *testing.T) {
+	// Even with many markers, bonus is capped at 0.2.
+	content := "migration schema rollback deadlock race security vulnerability breaking regression cve endpoint deprecat backward incompatible"
+	score := contentRichness(content)
+	if score > 1.0 {
+		t.Errorf("score should be capped at 1.0, got %f", score)
 	}
 }

@@ -16,14 +16,17 @@ import (
 // log files from the project directory.
 type Indexer struct {
 	store      *VectorStore
-	projectDir string // root of the project (contains .kvelmo/)
+	projectDir string              // root of the project (contains .kvelmo/)
+	scorer     *SignificanceScorer // optional; nil disables the significance gate
 }
 
 // NewIndexer creates an Indexer for the given project directory.
+// The significance gate is enabled automatically using the store's embedder.
 func NewIndexer(store *VectorStore, projectDir string) *Indexer {
 	return &Indexer{
 		store:      store,
 		projectDir: projectDir,
+		scorer:     NewSignificanceScorer(store, store.embedder),
 	}
 }
 
@@ -33,15 +36,18 @@ func NewIndexer(store *VectorStore, projectDir string) *Indexer {
 // branch is the git branch containing the implementation; baseBranch is the
 // branch it diverged from (used to compute the diff).
 func (idx *Indexer) IndexTask(ctx context.Context, taskID, title, description, branch, baseBranch string) error {
+	// Use description as the task spec for significance scoring.
+	taskSpec := description
+
 	if err := idx.indexSpecifications(ctx, taskID, title); err != nil {
 		slog.Warn("index specifications failed", "task_id", taskID, "error", err)
 	}
 
-	if err := idx.indexCodeChange(ctx, taskID, title, branch, baseBranch); err != nil {
+	if err := idx.indexCodeChange(ctx, taskID, title, branch, baseBranch, taskSpec); err != nil {
 		slog.Warn("index code change failed", "task_id", taskID, "error", err)
 	}
 
-	if err := idx.indexSession(ctx, taskID, title, description); err != nil {
+	if err := idx.indexSession(ctx, taskID, title, description, taskSpec); err != nil {
 		slog.Warn("index session failed", "task_id", taskID, "error", err)
 	}
 
@@ -60,6 +66,29 @@ func (idx *Indexer) SearchSimilar(ctx context.Context, query string, limit int) 
 // Stats returns current store statistics.
 func (idx *Indexer) Stats() Stats {
 	return idx.store.Stats()
+}
+
+// storeIfSignificant checks the significance gate before storing a document.
+// Specifications and solutions always pass (high-value by definition).
+// Session logs and code changes are gated.
+func (idx *Indexer) storeIfSignificant(ctx context.Context, doc *Document, taskSpec string) error {
+	// Always store specifications and solutions — they're high-value by definition.
+	if doc.Type == TypeSpecification || doc.Type == TypeSolution || doc.Type == TypeDecision {
+		return idx.store.Store(ctx, doc)
+	}
+
+	// Apply significance gate for session logs and code changes.
+	if idx.scorer != nil {
+		significant, score := idx.scorer.IsSignificant(ctx, doc.Content, taskSpec)
+		if !significant {
+			slog.Debug("skipping low-significance content",
+				"id", doc.ID, "type", doc.Type, "score", fmt.Sprintf("%.2f", score))
+
+			return nil
+		}
+	}
+
+	return idx.store.Store(ctx, doc)
 }
 
 // --- private helpers ---
@@ -105,7 +134,7 @@ func (idx *Indexer) indexSpecifications(ctx context.Context, taskID, title strin
 	return nil
 }
 
-func (idx *Indexer) indexCodeChange(ctx context.Context, taskID, title, branch, baseBranch string) error {
+func (idx *Indexer) indexCodeChange(ctx context.Context, taskID, title, branch, baseBranch, taskSpec string) error {
 	if branch == "" {
 		return nil
 	}
@@ -128,10 +157,10 @@ func (idx *Indexer) indexCodeChange(ctx context.Context, taskID, title, branch, 
 		CreatedAt: time.Now(),
 	}
 
-	return idx.store.Store(ctx, doc)
+	return idx.storeIfSignificant(ctx, doc, taskSpec)
 }
 
-func (idx *Indexer) indexSession(ctx context.Context, taskID, title, description string) error {
+func (idx *Indexer) indexSession(ctx context.Context, taskID, title, description, taskSpec string) error {
 	logDir := filepath.Join(idx.projectDir, ".kvelmo", "sessions")
 	entries, err := os.ReadDir(logDir)
 	if err != nil {
@@ -163,7 +192,7 @@ func (idx *Indexer) indexSession(ctx context.Context, taskID, title, description
 			Tags:      []string{"session", "completed"},
 			CreatedAt: time.Now(),
 		}
-		if err := idx.store.Store(ctx, doc); err != nil {
+		if err := idx.storeIfSignificant(ctx, doc, taskSpec); err != nil {
 			slog.Warn("store session document", "task_id", taskID, "error", err)
 		}
 	}

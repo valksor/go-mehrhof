@@ -5,13 +5,17 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log/slog"
 	"math"
 	"os"
 	"path/filepath"
 	"sort"
+	"strings"
 	"sync"
 	"time"
 )
+
+const maxAccessTimes = 50
 
 // VectorStore is a file-backed, in-memory vector store that persists documents
 // as individual JSON files under a configurable directory.  Search uses cosine
@@ -46,6 +50,10 @@ func NewVectorStore(dir string, embedder Embedder) (*VectorStore, error) {
 
 // Store saves a document to the store.  If the document has no embedding and
 // non-empty content the store generates one via the configured Embedder.
+//
+// Deduplication: before storing, Jaccard similarity is checked against existing
+// documents of the same type.  Similarity >0.85 skips the store (already exists),
+// 0.6–0.85 merges into the existing document, <0.6 creates a new entry.
 func (vs *VectorStore) Store(ctx context.Context, doc *Document) error {
 	if doc.ID == "" {
 		return errors.New("document must have an ID")
@@ -65,21 +73,106 @@ func (vs *VectorStore) Store(ctx context.Context, doc *Document) error {
 	}
 
 	vs.mu.Lock()
+
+	// Dedup: check for similar existing documents of the same type.
+	if doc.Content != "" {
+		if existing, sim := vs.findSimilarLocked(doc.Content, doc.Type); existing != nil {
+			if sim > 0.85 {
+				// Near-duplicate — skip storing.
+				vs.mu.Unlock()
+
+				return nil
+			}
+			// Moderate overlap — merge into existing document.
+			existing.Content = doc.Content
+			existing.Embedding = doc.Embedding
+			existing.CreatedAt = time.Now()
+			persistErr := vs.persist(existing)
+			vs.mu.Unlock()
+
+			return persistErr
+		}
+	}
+
 	vs.documents[doc.ID] = doc
+	persistErr := vs.persist(doc)
 	vs.mu.Unlock()
 
-	return vs.persist(doc)
+	return persistErr
 }
 
-// Search performs cosine-similarity search against all stored embeddings.
+// findSimilarLocked returns the most similar existing document of the same type
+// with Jaccard similarity >= 0.6.  Must be called with vs.mu held.
+func (vs *VectorStore) findSimilarLocked(content string, docType DocumentType) (*Document, float64) {
+	newTokens := tokenize(content)
+	if len(newTokens) == 0 {
+		return nil, 0
+	}
+
+	var (
+		bestDoc *Document
+		bestSim float64
+	)
+
+	for _, doc := range vs.documents {
+		if doc.Type != docType || doc.Content == "" {
+			continue
+		}
+		sim := jaccardSimilarity(newTokens, tokenize(doc.Content))
+		if sim >= 0.6 && sim > bestSim {
+			bestSim = sim
+			bestDoc = doc
+		}
+	}
+
+	return bestDoc, bestSim
+}
+
+// tokenize splits content into a set of lowercased words.
+func tokenize(content string) map[string]struct{} {
+	words := strings.Fields(content)
+	set := make(map[string]struct{}, len(words))
+	for _, w := range words {
+		set[strings.ToLower(w)] = struct{}{}
+	}
+
+	return set
+}
+
+// jaccardSimilarity computes |A ∩ B| / |A ∪ B| for two token sets.
+func jaccardSimilarity(a, b map[string]struct{}) float64 {
+	if len(a) == 0 && len(b) == 0 {
+		return 1.0
+	}
+
+	intersection := 0
+	for k := range a {
+		if _, ok := b[k]; ok {
+			intersection++
+		}
+	}
+
+	union := len(a) + len(b) - intersection
+	if union == 0 {
+		return 0
+	}
+
+	return float64(intersection) / float64(union)
+}
+
+// Search performs cosine-similarity search with ACT-R activation scoring.
+// The final score is a weighted combination of cosine similarity (70%) and
+// activation (30%), where activation captures recency and access frequency.
+// Inspired by Soul Protocol's ACT-R cognitive architecture.
 func (vs *VectorStore) Search(ctx context.Context, query string, opts SearchOptions) ([]*SearchResult, error) {
 	queryEmb, err := vs.embedder.Embed(ctx, query)
 	if err != nil {
 		return nil, fmt.Errorf("embed query: %w", err)
 	}
 
+	now := time.Now()
+
 	vs.mu.RLock()
-	defer vs.mu.RUnlock()
 
 	type candidate struct {
 		doc   *Document
@@ -94,12 +187,18 @@ func (vs *VectorStore) Search(ctx context.Context, query string, opts SearchOpti
 		if len(doc.Embedding) == 0 {
 			continue
 		}
-		score := cosineSimilarity(queryEmb, doc.Embedding)
-		if opts.MinScore > 0 && score < opts.MinScore {
+		cosineSim := cosineSimilarity(queryEmb, doc.Embedding)
+		activation := activationScore(doc, now)
+		// Weighted: 70% similarity, 30% activation
+		finalScore := 0.7*float64(cosineSim) + 0.3*activation
+
+		if opts.MinScore > 0 && float32(finalScore) < opts.MinScore {
 			continue
 		}
-		candidates = append(candidates, candidate{doc: doc, score: score})
+		candidates = append(candidates, candidate{doc: doc, score: float32(finalScore)})
 	}
+
+	vs.mu.RUnlock()
 
 	sort.Slice(candidates, func(i, j int) bool {
 		return candidates[i].score > candidates[j].score
@@ -118,7 +217,65 @@ func (vs *VectorStore) Search(ctx context.Context, query string, opts SearchOpti
 		}
 	}
 
+	// Update access tracking for returned results and persist changes.
+	if len(results) > 0 {
+		vs.mu.Lock()
+		for _, r := range results {
+			r.Document.AccessCount++
+			r.Document.LastAccessed = now
+			r.Document.AccessTimes = append(r.Document.AccessTimes, now)
+			if len(r.Document.AccessTimes) > maxAccessTimes {
+				r.Document.AccessTimes = r.Document.AccessTimes[len(r.Document.AccessTimes)-maxAccessTimes:]
+			}
+		}
+		// Deep-copy documents for persistence outside the lock to avoid
+		// racing with concurrent Store() calls on the same pointer.
+		dirty := make([]Document, len(results))
+		for i, r := range results {
+			dirty[i] = *r.Document
+		}
+		vs.mu.Unlock()
+
+		// Persist updated access counts to disk so they survive restarts.
+		for i := range dirty {
+			if err := vs.persist(&dirty[i]); err != nil {
+				slog.Warn("persist access tracking", "id", dirty[i].ID, "error", err)
+			}
+		}
+	}
+
 	return results, nil
+}
+
+// activationScore computes an ACT-R-inspired activation value.
+// When AccessTimes are available, uses the full ACT-R formula B_i = ln(Σ t_j^(-d))
+// which captures temporal distribution of accesses.  Falls back to the simplified
+// recency × frequency formula for legacy documents without AccessTimes.
+func activationScore(doc *Document, now time.Time) float64 {
+	// Full ACT-R when timestamp history is available.
+	if len(doc.AccessTimes) > 0 {
+		var sum float64
+		for _, t := range doc.AccessTimes {
+			ageSec := now.Sub(t).Seconds() + 1 // +1 to avoid zero
+			sum += math.Pow(ageSec, -0.5)      // decay exponent d=0.5
+		}
+
+		return math.Min(math.Log(sum+1)/3.0, 1.0) // normalize to [0, 1]
+	}
+
+	if doc.AccessCount == 0 {
+		// Never accessed — use recency of creation only.
+		ageHours := now.Sub(doc.CreatedAt).Hours() + 1 // +1 to avoid log(0)
+
+		return math.Min(1.0/math.Log(ageHours), 1.0)
+	}
+
+	// Legacy fallback: simplified recency × frequency.
+	ageHours := now.Sub(doc.CreatedAt).Hours() + 1
+	recency := 1.0 / math.Log(ageHours)
+	frequency := math.Log(float64(doc.AccessCount) + 1)
+
+	return math.Min(recency*frequency, 1.0)
 }
 
 // Delete removes a document by ID from memory and disk.

@@ -14,8 +14,10 @@ import (
 // memoryState lazily creates and caches the global memory adapter.
 // It is initialised on first use so startup is not blocked by model probing.
 var (
-	memOnce    sync.Once
+	memMu      sync.Mutex
 	memAdapter *memory.Adapter
+	errMem     error
+	memInited  bool
 )
 
 // PrewarmMemory starts background initialization of the memory adapter so
@@ -27,30 +29,35 @@ func PrewarmMemory(ctx context.Context) {
 }
 
 // getMemoryAdapter returns the singleton global memory adapter, creating it on
-// first call.  The store is persisted at ~/.valksor/kvelmo/memory/.
+// first call.  The result (success or failure) is cached to prevent repeated
+// expensive initialization attempts.
+// The store is persisted at ~/.valksor/kvelmo/memory/.
 func getMemoryAdapter(ctx context.Context) (*memory.Adapter, error) {
-	var initErr error
-	memOnce.Do(func() {
-		storeDir := filepath.Join(BaseDir(), "memory")
-		if err := os.MkdirAll(storeDir, 0o755); err != nil {
-			initErr = fmt.Errorf("create memory store dir: %w", err)
+	memMu.Lock()
+	defer memMu.Unlock()
 
-			return
-		}
-		adapter, _, err := memory.NewAdapterAuto(ctx, storeDir)
-		if err != nil {
-			initErr = fmt.Errorf("init memory adapter: %w", err)
-
-			return
-		}
-		memAdapter = adapter
-	})
-	if initErr != nil {
-		// Reset once so the next call retries.
-		memOnce = sync.Once{}
-
-		return nil, initErr
+	if memInited {
+		return memAdapter, errMem
 	}
+
+	storeDir := filepath.Join(BaseDir(), "memory")
+	if err := os.MkdirAll(storeDir, 0o755); err != nil {
+		errMem = fmt.Errorf("create memory store dir: %w", err)
+		memInited = true
+
+		return nil, errMem
+	}
+
+	adapter, _, err := memory.NewAdapterAuto(ctx, storeDir)
+	if err != nil {
+		errMem = fmt.Errorf("init memory adapter: %w", err)
+		memInited = true
+
+		return nil, errMem
+	}
+
+	memAdapter = adapter
+	memInited = true
 
 	return memAdapter, nil
 }
