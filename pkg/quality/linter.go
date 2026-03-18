@@ -24,19 +24,96 @@ const (
 
 // Issue represents a lint finding.
 type Issue struct {
-	Severity Severity `json:"severity"`
-	File     string   `json:"file"`
-	Line     int      `json:"line"`
-	Column   int      `json:"column"`
-	Message  string   `json:"message"`
-	Rule     string   `json:"rule"`
+	Severity    Severity `json:"severity"`
+	File        string   `json:"file"`
+	Line        int      `json:"line"`
+	Column      int      `json:"column"`
+	Message     string   `json:"message"`
+	Rule        string   `json:"rule"`
+	Remediation string   `json:"remediation,omitempty"`
 }
+
+// CoverageStatus indicates how thoroughly a linter was able to run.
+type CoverageStatus string
+
+const (
+	CoverageFull        CoverageStatus = "full"        // Linter ran to completion
+	CoverageSkipped     CoverageStatus = "skipped"     // Wrong project type
+	CoverageUnavailable CoverageStatus = "unavailable" // Tool not installed
+	CoverageError       CoverageStatus = "error"       // Tool crashed or timed out
+)
 
 // Report contains the results of a lint run.
 type Report struct {
-	Linter   string        `json:"linter"`
-	Issues   []Issue       `json:"issues"`
-	Duration time.Duration `json:"duration"`
+	Linter         string         `json:"linter"`
+	Issues         []Issue        `json:"issues"`
+	Duration       time.Duration  `json:"duration"`
+	Coverage       CoverageStatus `json:"coverage"`
+	CoverageReason string         `json:"coverage_reason,omitempty"`
+}
+
+// HasErrors returns true if the report contains any error-severity issues.
+func (r *Report) HasErrors() bool {
+	for _, issue := range r.Issues {
+		if issue.Severity == SeverityError {
+			return true
+		}
+	}
+
+	return false
+}
+
+// ErrorCount returns the number of error-severity issues.
+func (r *Report) ErrorCount() int {
+	count := 0
+	for _, issue := range r.Issues {
+		if issue.Severity == SeverityError {
+			count++
+		}
+	}
+
+	return count
+}
+
+// Score computes a weighted quality score (0-100) across linter reports.
+// Errors deduct 10 points, warnings 3, info 1. Each linter scored independently,
+// then averaged. Inspired by mcp-certify's gate/score duality.
+func Score(reports []*Report) float64 {
+	if len(reports) == 0 {
+		return 100
+	}
+	total := 0.0
+	for _, r := range reports {
+		linterScore := 100.0
+		for _, issue := range r.Issues {
+			switch issue.Severity {
+			case SeverityError:
+				linterScore -= 10
+			case SeverityWarning:
+				linterScore -= 3
+			case SeverityInfo:
+				linterScore -= 1
+			}
+		}
+		if linterScore < 0 {
+			linterScore = 0
+		}
+		total += linterScore
+	}
+
+	return total / float64(len(reports))
+}
+
+// HasBlockers returns true if any report contains error-severity issues.
+// This is the "gate" half of the gate/score duality — hard pass/fail.
+func HasBlockers(reports []*Report) bool {
+	for _, r := range reports {
+		if r.HasErrors() {
+			return true
+		}
+	}
+
+	return false
 }
 
 // Linter defines the interface for code quality checkers.
@@ -86,13 +163,12 @@ func (g *GolangCILint) Lint(ctx context.Context, dir string) (*Report, error) {
 	if !g.Available() {
 		report.Issues = append(report.Issues, Issue{
 			Severity: SeverityInfo,
-			File:     "",
-			Line:     0,
-			Column:   0,
 			Message:  "golangci-lint not installed",
 			Rule:     "tool-missing",
 		})
 		report.Duration = time.Since(start)
+		report.Coverage = CoverageUnavailable
+		report.CoverageReason = "golangci-lint not found in PATH"
 
 		return report, nil
 	}
@@ -100,6 +176,8 @@ func (g *GolangCILint) Lint(ctx context.Context, dir string) (*Report, error) {
 	// Check if this is a Go project
 	if _, err := os.Stat(filepath.Join(dir, "go.mod")); os.IsNotExist(err) {
 		report.Duration = time.Since(start)
+		report.Coverage = CoverageSkipped
+		report.CoverageReason = "no go.mod found"
 
 		return report, nil // Not a Go project
 	}
@@ -117,6 +195,7 @@ func (g *GolangCILint) Lint(ctx context.Context, dir string) (*Report, error) {
 	issues := g.parseOutput(output, dir)
 	report.Issues = append(report.Issues, issues...)
 	report.Duration = time.Since(start)
+	report.Coverage = CoverageFull
 
 	return report, nil
 }
@@ -207,13 +286,12 @@ func (e *ESLint) Lint(ctx context.Context, dir string) (*Report, error) {
 	if !e.Available() {
 		report.Issues = append(report.Issues, Issue{
 			Severity: SeverityInfo,
-			File:     "",
-			Line:     0,
-			Column:   0,
 			Message:  "npx not installed (required for eslint)",
 			Rule:     "tool-missing",
 		})
 		report.Duration = time.Since(start)
+		report.Coverage = CoverageUnavailable
+		report.CoverageReason = "npx not found in PATH"
 
 		return report, nil
 	}
@@ -225,6 +303,8 @@ func (e *ESLint) Lint(ctx context.Context, dir string) (*Report, error) {
 	}
 	if !hasPackageJSON {
 		report.Duration = time.Since(start)
+		report.Coverage = CoverageSkipped
+		report.CoverageReason = "no package.json found"
 
 		return report, nil // Not a JS/TS project
 	}
@@ -242,6 +322,7 @@ func (e *ESLint) Lint(ctx context.Context, dir string) (*Report, error) {
 	issues := e.parseOutput(output, dir)
 	report.Issues = append(report.Issues, issues...)
 	report.Duration = time.Since(start)
+	report.Coverage = CoverageFull
 
 	return report, nil
 }
@@ -383,6 +464,8 @@ func (g *GoVet) Lint(ctx context.Context, dir string) (*Report, error) {
 
 	if !g.Available() {
 		report.Duration = time.Since(start)
+		report.Coverage = CoverageUnavailable
+		report.CoverageReason = "go not found in PATH"
 
 		return report, nil
 	}
@@ -390,6 +473,8 @@ func (g *GoVet) Lint(ctx context.Context, dir string) (*Report, error) {
 	// Check if this is a Go project
 	if _, err := os.Stat(filepath.Join(dir, "go.mod")); os.IsNotExist(err) {
 		report.Duration = time.Since(start)
+		report.Coverage = CoverageSkipped
+		report.CoverageReason = "no go.mod found"
 
 		return report, nil
 	}
@@ -401,6 +486,7 @@ func (g *GoVet) Lint(ctx context.Context, dir string) (*Report, error) {
 	issues := g.parseOutput(string(output), dir)
 	report.Issues = append(report.Issues, issues...)
 	report.Duration = time.Since(start)
+	report.Coverage = CoverageFull
 
 	return report, nil
 }
