@@ -3,16 +3,13 @@ package commands
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"os"
 	"strings"
 	"time"
 
 	"github.com/spf13/cobra"
-	"github.com/valksor/kvelmo/pkg/meta"
 	"github.com/valksor/kvelmo/pkg/security"
-	"github.com/valksor/kvelmo/pkg/socket"
 )
 
 // SecurityCmd is the root command for security subcommands.
@@ -47,14 +44,9 @@ func runSecurityScan(cmd *cobra.Command, args []string) error {
 		dir = args[0]
 	}
 
-	globalPath := socket.GlobalSocketPath()
-	if !socket.SocketExists(globalPath) {
-		return errors.New("global socket not running\nRun '" + meta.Name + " serve' first")
-	}
-
-	client, err := socket.NewClient(globalPath, socket.WithTimeout(60*time.Second))
+	client, err := globalClient(60 * time.Second)
 	if err != nil {
-		return fmt.Errorf("connect to global socket: %w", err)
+		return err
 	}
 	defer func() { _ = client.Close() }()
 
@@ -69,21 +61,7 @@ func runSecurityScan(cmd *cobra.Command, args []string) error {
 	}
 
 	if securityScanJSON {
-		var pretty any
-		if jsonErr := json.Unmarshal(resp.Result, &pretty); jsonErr != nil {
-			fmt.Println(string(resp.Result))
-
-			return nil
-		}
-		out, jsonErr := json.MarshalIndent(pretty, "", "  ")
-		if jsonErr != nil {
-			fmt.Println(string(resp.Result))
-
-			return nil
-		}
-		fmt.Println(string(out))
-
-		return nil
+		return outputJSON(resp.Result)
 	}
 
 	var result struct {

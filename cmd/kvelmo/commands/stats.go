@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"math"
-	"os"
 	"time"
 
 	"github.com/spf13/cobra"
@@ -60,21 +59,10 @@ func runStats(cmd *cobra.Command, args []string) error {
 }
 
 func runStatsHistory() error {
-	globalPath := socket.GlobalSocketPath()
-	if !socket.SocketExists(globalPath) {
-		return fmt.Errorf("global socket not running\nRun '%s serve' first", meta.Name)
-	}
-
-	client, err := socket.NewClient(globalPath, socket.WithTimeout(5*time.Second))
-	if err != nil {
-		return fmt.Errorf("connect to global socket: %w", err)
-	}
-	defer func() { _ = client.Close() }()
-
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), defaultTimeout)
 	defer cancel()
 
-	resp, err := client.Call(ctx, "metrics.history", map[string]any{})
+	resp, err := callGlobal(ctx, "metrics.history", map[string]any{})
 	if err != nil {
 		return fmt.Errorf("metrics.history: %w", err)
 	}
@@ -133,26 +121,10 @@ func runStatsHistory() error {
 }
 
 func runStatsProject() error {
-	cwd, err := os.Getwd()
-	if err != nil {
-		return fmt.Errorf("get working directory: %w", err)
-	}
-
-	wtPath := socket.WorktreeSocketPath(cwd)
-	if !socket.SocketExists(wtPath) {
-		return fmt.Errorf("no worktree socket running for %s\nRun '%s start' first", cwd, meta.Name)
-	}
-
-	client, err := socket.NewClient(wtPath, socket.WithTimeout(5*time.Second))
-	if err != nil {
-		return fmt.Errorf("connect to worktree socket: %w", err)
-	}
-	defer func() { _ = client.Close() }()
-
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), defaultTimeout)
 	defer cancel()
 
-	resp, err := client.Call(ctx, "task.history", nil)
+	resp, err := callWorktree(ctx, "task.history", nil)
 	if err != nil {
 		return fmt.Errorf("task.history: %w", err)
 	}

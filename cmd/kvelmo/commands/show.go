@@ -4,11 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"os"
-	"time"
 
 	"github.com/spf13/cobra"
-	"github.com/valksor/kvelmo/pkg/meta"
 	"github.com/valksor/kvelmo/pkg/socket"
 )
 
@@ -51,47 +48,14 @@ func runShowPlan(cmd *cobra.Command, _ []string) error {
 }
 
 func showArtifact(cmd *cobra.Command, method string) error {
-	cwd, err := os.Getwd()
-	if err != nil {
-		return fmt.Errorf("get working directory: %w", err)
-	}
-
-	wtPath := socket.WorktreeSocketPath(cwd)
-	if !socket.SocketExists(wtPath) {
-		return fmt.Errorf("no worktree socket running for %s\nRun '%s start' first", cwd, meta.Name)
-	}
-
-	client, err := socket.NewClient(wtPath, socket.WithTimeout(5*time.Second))
-	if err != nil {
-		return fmt.Errorf("connect to worktree socket: %w", err)
-	}
-	defer func() { _ = client.Close() }()
-
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	resp, err := client.Call(ctx, method, nil)
+	resp, err := callWorktree(context.Background(), method, nil)
 	if err != nil {
 		return fmt.Errorf("%s call: %w", method, err)
 	}
 
 	jsonFlag, _ := cmd.Flags().GetBool("json")
 	if jsonFlag {
-		var pretty interface{}
-		if jsonErr := json.Unmarshal(resp.Result, &pretty); jsonErr != nil {
-			fmt.Println(string(resp.Result))
-
-			return nil
-		}
-		out, jsonErr := json.MarshalIndent(pretty, "", "  ")
-		if jsonErr != nil {
-			fmt.Println(string(resp.Result))
-
-			return nil
-		}
-		fmt.Println(string(out))
-
-		return nil
+		return outputJSON(resp.Result)
 	}
 
 	var result socket.ShowSpecResult

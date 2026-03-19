@@ -3,13 +3,9 @@ package commands
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
-	"time"
 
 	"github.com/spf13/cobra"
-	"github.com/valksor/kvelmo/pkg/meta"
-	"github.com/valksor/kvelmo/pkg/socket"
 )
 
 var workersJSON bool
@@ -26,42 +22,16 @@ func init() {
 }
 
 func runWorkers(cmd *cobra.Command, args []string) error {
-	globalPath := socket.GlobalSocketPath()
-
-	if !socket.SocketExists(globalPath) {
-		return errors.New("global socket not running\nRun '" + meta.Name + " start' first")
-	}
-
-	client, err := socket.NewClient(globalPath, socket.WithTimeout(5*time.Second))
-	if err != nil {
-		return fmt.Errorf("connect to global socket: %w", err)
-	}
-	defer func() { _ = client.Close() }()
-
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), defaultTimeout)
 	defer cancel()
 
-	resp, err := client.Call(ctx, "workers.list", nil)
+	resp, err := callGlobal(ctx, "workers.list", nil)
 	if err != nil {
 		return fmt.Errorf("list workers: %w", err)
 	}
 
 	if workersJSON {
-		var pretty any
-		if jsonErr := json.Unmarshal(resp.Result, &pretty); jsonErr != nil {
-			fmt.Println(string(resp.Result))
-
-			return nil
-		}
-		out, jsonErr := json.MarshalIndent(pretty, "", "  ")
-		if jsonErr != nil {
-			fmt.Println(string(resp.Result))
-
-			return nil
-		}
-		fmt.Println(string(out))
-
-		return nil
+		return outputJSON(resp.Result)
 	}
 
 	var result WorkersListResult

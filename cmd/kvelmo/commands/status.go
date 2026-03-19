@@ -73,21 +73,7 @@ func runStatus(cmd *cobra.Command, args []string) error {
 
 	// --json: output raw JSON
 	if statusJSON {
-		var pretty interface{}
-		if jsonErr := json.Unmarshal(resp.Result, &pretty); jsonErr != nil {
-			fmt.Println(string(resp.Result))
-
-			return nil
-		}
-		out, jsonErr := json.MarshalIndent(pretty, "", "  ")
-		if jsonErr != nil {
-			fmt.Println(string(resp.Result))
-
-			return nil
-		}
-		fmt.Println(string(out))
-
-		return nil
+		return outputJSON(resp.Result)
 	}
 
 	var result socket.StatusResult
@@ -158,21 +144,7 @@ func showAllStatus() error {
 
 	// --json: output raw JSON
 	if statusJSON {
-		var pretty interface{}
-		if jsonErr := json.Unmarshal(resp.Result, &pretty); jsonErr != nil {
-			fmt.Println(string(resp.Result))
-
-			return nil
-		}
-		out, jsonErr := json.MarshalIndent(pretty, "", "  ")
-		if jsonErr != nil {
-			fmt.Println(string(resp.Result))
-
-			return nil
-		}
-		fmt.Println(string(out))
-
-		return nil
+		return outputJSON(resp.Result)
 	}
 
 	var result socket.TasksListResult

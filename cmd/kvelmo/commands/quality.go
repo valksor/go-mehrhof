@@ -4,12 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"os"
-	"time"
 
 	"github.com/spf13/cobra"
-	"github.com/valksor/kvelmo/pkg/meta"
-	"github.com/valksor/kvelmo/pkg/socket"
 )
 
 // QualityCmd is the parent command for quality gate controls.
@@ -37,22 +33,6 @@ func init() {
 }
 
 func runQualityRespond(cmd *cobra.Command, args []string) error {
-	cwd, err := os.Getwd()
-	if err != nil {
-		return fmt.Errorf("get working directory: %w", err)
-	}
-
-	socketPath := socket.WorktreeSocketPath(cwd)
-	if !socket.SocketExists(socketPath) {
-		return errors.New("no worktree socket running\nRun '" + meta.Name + " start' first")
-	}
-
-	client, err := socket.NewClient(socketPath, socket.WithTimeout(5*time.Second))
-	if err != nil {
-		return fmt.Errorf("connect to socket: %w", err)
-	}
-	defer func() { _ = client.Close() }()
-
 	promptID, _ := cmd.Flags().GetString("prompt-id")
 	yes, _ := cmd.Flags().GetBool("yes")
 	no, _ := cmd.Flags().GetBool("no")
@@ -64,10 +44,7 @@ func runQualityRespond(cmd *cobra.Command, args []string) error {
 		return errors.New("cannot specify both --yes and --no")
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	_, err = client.Call(ctx, "quality.respond", map[string]any{
+	_, err := callWorktree(context.Background(), "quality.respond", map[string]any{
 		"prompt_id": promptID,
 		"answer":    yes,
 	})

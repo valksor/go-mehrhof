@@ -3,13 +3,9 @@ package commands
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
-	"os"
-	"time"
 
 	"github.com/spf13/cobra"
-	"github.com/valksor/kvelmo/pkg/meta"
 	"github.com/valksor/kvelmo/pkg/socket"
 )
 
@@ -22,27 +18,7 @@ If the task has changed, a delta specification file is generated describing what
 }
 
 func runUpdate(cmd *cobra.Command, args []string) error {
-	cwd, err := os.Getwd()
-	if err != nil {
-		return fmt.Errorf("get cwd: %w", err)
-	}
-
-	socketPath := socket.WorktreeSocketPath(cwd)
-
-	if !socket.SocketExists(socketPath) {
-		return errors.New("no worktree socket running\nRun '" + meta.Name + " start' first")
-	}
-
-	client, err := socket.NewClient(socketPath, socket.WithTimeout(30*time.Second))
-	if err != nil {
-		return fmt.Errorf("connect to socket: %w", err)
-	}
-	defer func() { _ = client.Close() }()
-
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-	defer cancel()
-
-	resp, err := client.Call(ctx, "update", nil)
+	resp, err := callWorktree(context.Background(), "update", nil)
 	if err != nil {
 		return fmt.Errorf("update: %w", err)
 	}

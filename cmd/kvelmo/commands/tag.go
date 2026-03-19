@@ -58,16 +58,7 @@ func init() {
 }
 
 func runTagAdd(_ *cobra.Command, args []string) error {
-	client, cleanup, err := connectWorktree()
-	if err != nil {
-		return err
-	}
-	defer cleanup()
-
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	resp, err := client.Call(ctx, "task.tag", map[string]any{
+	resp, err := callWorktree(context.Background(), "task.tag", map[string]any{
 		"action": "add",
 		"tags":   args,
 	})
@@ -84,16 +75,7 @@ func runTagAdd(_ *cobra.Command, args []string) error {
 }
 
 func runTagRemove(_ *cobra.Command, args []string) error {
-	client, cleanup, err := connectWorktree()
-	if err != nil {
-		return err
-	}
-	defer cleanup()
-
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	resp, err := client.Call(ctx, "task.tag", map[string]any{
+	resp, err := callWorktree(context.Background(), "task.tag", map[string]any{
 		"action": "remove",
 		"tags":   []string{args[0]},
 	})
@@ -110,16 +92,7 @@ func runTagRemove(_ *cobra.Command, args []string) error {
 }
 
 func runTagList(_ *cobra.Command, _ []string) error {
-	client, cleanup, err := connectWorktree()
-	if err != nil {
-		return err
-	}
-	defer cleanup()
-
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	resp, err := client.Call(ctx, "task.tag", map[string]any{
+	resp, err := callWorktree(context.Background(), "task.tag", map[string]any{
 		"action": "list",
 	})
 	if err != nil {
@@ -130,21 +103,7 @@ func runTagList(_ *cobra.Command, _ []string) error {
 	}
 
 	if tagListJSON {
-		var pretty any
-		if jsonErr := json.Unmarshal(resp.Result, &pretty); jsonErr != nil {
-			fmt.Println(string(resp.Result))
-
-			return nil
-		}
-		out, jsonErr := json.MarshalIndent(pretty, "", "  ")
-		if jsonErr != nil {
-			fmt.Println(string(resp.Result))
-
-			return nil
-		}
-		fmt.Println(string(out))
-
-		return nil
+		return outputJSON(resp.Result)
 	}
 
 	var result struct {
