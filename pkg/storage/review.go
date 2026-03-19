@@ -5,8 +5,6 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
-	"slices"
-	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -102,32 +100,10 @@ func (r *ReviewStore) ListReviews(taskID string) ([]int, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
-	reviewsDir := r.store.ReviewsDir(taskID)
-
-	entries, err := os.ReadDir(reviewsDir)
+	numbers, err := ListNumberedFiles(r.store.ReviewsDir(taskID), buildReviewPatternRegex())
 	if err != nil {
-		if os.IsNotExist(err) {
-			return []int{}, nil
-		}
-
-		return nil, fmt.Errorf("read reviews directory: %w", err)
+		return nil, fmt.Errorf("list reviews: %w", err)
 	}
-
-	pattern := buildReviewPatternRegex()
-	var numbers []int
-
-	for _, entry := range entries {
-		if entry.IsDir() {
-			continue
-		}
-		matches := pattern.FindStringSubmatch(entry.Name())
-		if matches != nil {
-			num, _ := strconv.Atoi(matches[1])
-			numbers = append(numbers, num)
-		}
-	}
-
-	slices.Sort(numbers)
 
 	return numbers, nil
 }

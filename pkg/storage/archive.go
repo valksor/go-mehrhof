@@ -3,12 +3,11 @@ package storage
 import (
 	"os"
 	"path/filepath"
-	"sort"
+	"slices"
 	"strings"
 	"time"
 
 	"github.com/valksor/kvelmo/pkg/meta"
-	"gopkg.in/yaml.v3"
 )
 
 // SearchOptions filters archived tasks.
@@ -50,18 +49,13 @@ func (s *Store) ArchiveTask(task ArchivedTask) error {
 	tasks, _ := s.ListArchivedTasks() // ignore error, start fresh if corrupt
 	tasks = append(tasks, task)
 
-	data, err := yaml.Marshal(tasks)
-	if err != nil {
-		return err
-	}
-
-	return os.WriteFile(s.ArchiveFile(), data, 0o644)
+	return SaveYAML(s.ArchiveFile(), tasks)
 }
 
 // ListArchivedTasks returns all archived tasks, newest first.
 func (s *Store) ListArchivedTasks() ([]ArchivedTask, error) {
-	data, err := os.ReadFile(s.ArchiveFile())
-	if err != nil {
+	var tasks []ArchivedTask
+	if err := LoadYAML(s.ArchiveFile(), &tasks); err != nil {
 		if os.IsNotExist(err) {
 			return nil, nil
 		}
@@ -69,13 +63,8 @@ func (s *Store) ListArchivedTasks() ([]ArchivedTask, error) {
 		return nil, err
 	}
 
-	var tasks []ArchivedTask
-	if err := yaml.Unmarshal(data, &tasks); err != nil {
-		return nil, err
-	}
-
-	sort.Slice(tasks, func(i, j int) bool {
-		return tasks[i].CompletedAt.After(tasks[j].CompletedAt)
+	slices.SortFunc(tasks, func(a, b ArchivedTask) int {
+		return b.CompletedAt.Compare(a.CompletedAt)
 	})
 
 	return tasks, nil

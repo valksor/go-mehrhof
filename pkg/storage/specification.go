@@ -5,8 +5,6 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
-	"slices"
-	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -116,32 +114,10 @@ func (s *SpecStore) ListSpecifications(taskID string) ([]int, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
-	specsDir := s.store.SpecificationsDir(taskID)
-
-	entries, err := os.ReadDir(specsDir)
+	numbers, err := ListNumberedFiles(s.store.SpecificationsDir(taskID), buildSpecPatternRegex())
 	if err != nil {
-		if os.IsNotExist(err) {
-			return []int{}, nil
-		}
-
-		return nil, fmt.Errorf("read specifications directory: %w", err)
+		return nil, fmt.Errorf("list specifications: %w", err)
 	}
-
-	pattern := buildSpecPatternRegex()
-	var numbers []int
-
-	for _, entry := range entries {
-		if entry.IsDir() {
-			continue
-		}
-		matches := pattern.FindStringSubmatch(entry.Name())
-		if matches != nil {
-			num, _ := strconv.Atoi(matches[1])
-			numbers = append(numbers, num)
-		}
-	}
-
-	slices.Sort(numbers)
 
 	return numbers, nil
 }

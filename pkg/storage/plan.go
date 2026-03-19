@@ -7,8 +7,6 @@ import (
 	"strings"
 	"sync"
 	"time"
-
-	"gopkg.in/yaml.v3"
 )
 
 const (
@@ -112,12 +110,7 @@ func (p *PlanStore) savePlanLocked(taskID string, plan *Plan) error {
 	plan.Updated = time.Now()
 	planFile := p.PlanFilePath(taskID, plan.ID)
 
-	data, err := yaml.Marshal(plan)
-	if err != nil {
-		return fmt.Errorf("marshal plan: %w", err)
-	}
-
-	return os.WriteFile(planFile, data, 0o644)
+	return SaveYAML(planFile, plan)
 }
 
 // SavePlan saves a plan's metadata.
@@ -133,19 +126,7 @@ func (p *PlanStore) LoadPlan(taskID, planID string) (*Plan, error) {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
 
-	planFile := p.PlanFilePath(taskID, planID)
-
-	data, err := os.ReadFile(planFile)
-	if err != nil {
-		return nil, fmt.Errorf("read plan file: %w", err)
-	}
-
-	var plan Plan
-	if err := yaml.Unmarshal(data, &plan); err != nil {
-		return nil, fmt.Errorf("parse plan file: %w", err)
-	}
-
-	return &plan, nil
+	return p.loadPlanLocked(taskID, planID)
 }
 
 // AppendPlanHistory appends an entry to the plan history (both YAML and markdown).
@@ -190,16 +171,9 @@ func (p *PlanStore) AppendPlanHistory(taskID, planID, role, content string) erro
 
 // loadPlanLocked loads a plan without acquiring lock (caller must hold lock).
 func (p *PlanStore) loadPlanLocked(taskID, planID string) (*Plan, error) {
-	planFile := p.PlanFilePath(taskID, planID)
-
-	data, err := os.ReadFile(planFile)
-	if err != nil {
-		return nil, fmt.Errorf("read plan file: %w", err)
-	}
-
 	var plan Plan
-	if err := yaml.Unmarshal(data, &plan); err != nil {
-		return nil, fmt.Errorf("parse plan file: %w", err)
+	if err := LoadYAML(p.PlanFilePath(taskID, planID), &plan); err != nil {
+		return nil, fmt.Errorf("load plan: %w", err)
 	}
 
 	return &plan, nil

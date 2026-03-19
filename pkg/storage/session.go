@@ -1,7 +1,6 @@
 package storage
 
 import (
-	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -215,20 +214,15 @@ func (s *SessionStore) UpdateSessionTimestamp(taskID, phase string) error {
 func (s *SessionStore) loadSessionsLocked() (*Sessions, error) {
 	path := s.store.SessionsFile()
 
-	data, err := os.ReadFile(path)
-	if err != nil {
+	var sessions Sessions
+	if err := LoadJSON(path, &sessions); err != nil {
 		if os.IsNotExist(err) {
 			return &Sessions{
 				Entries: make(map[string]SessionEntry),
 			}, nil
 		}
 
-		return nil, fmt.Errorf("read sessions file: %w", err)
-	}
-
-	var sessions Sessions
-	if err := json.Unmarshal(data, &sessions); err != nil {
-		return nil, fmt.Errorf("parse sessions file: %w", err)
+		return nil, fmt.Errorf("load sessions: %w", err)
 	}
 
 	if sessions.Entries == nil {
@@ -247,13 +241,8 @@ func (s *SessionStore) saveSessionsLocked(sessions *Sessions) error {
 		return fmt.Errorf("create sessions directory: %w", err)
 	}
 
-	data, err := json.MarshalIndent(sessions, "", "  ")
-	if err != nil {
-		return fmt.Errorf("marshal sessions: %w", err)
-	}
-
-	if err := os.WriteFile(path, data, 0o644); err != nil {
-		return fmt.Errorf("write sessions file: %w", err)
+	if err := SaveJSON(path, sessions); err != nil {
+		return fmt.Errorf("save sessions: %w", err)
 	}
 
 	return nil

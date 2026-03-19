@@ -1,7 +1,6 @@
 package storage
 
 import (
-	"encoding/json"
 	"fmt"
 	"os"
 	"sync"
@@ -79,8 +78,8 @@ func (c *ChatStore) LoadHistory(taskID string) (*ChatHistory, error) {
 func (c *ChatStore) loadHistoryLocked(taskID string) (*ChatHistory, error) {
 	path := c.store.ChatFile(taskID)
 
-	data, err := os.ReadFile(path)
-	if err != nil {
+	var history ChatHistory
+	if err := LoadJSON(path, &history); err != nil {
 		if os.IsNotExist(err) {
 			return &ChatHistory{
 				TaskID:   taskID,
@@ -88,12 +87,7 @@ func (c *ChatStore) loadHistoryLocked(taskID string) (*ChatHistory, error) {
 			}, nil
 		}
 
-		return nil, fmt.Errorf("read chat history: %w", err)
-	}
-
-	var history ChatHistory
-	if err := json.Unmarshal(data, &history); err != nil {
-		return nil, fmt.Errorf("parse chat history: %w", err)
+		return nil, fmt.Errorf("load chat history: %w", err)
 	}
 
 	return &history, nil
@@ -108,13 +102,8 @@ func (c *ChatStore) saveHistoryLocked(taskID string, history *ChatHistory) error
 		return fmt.Errorf("create work directory: %w", err)
 	}
 
-	data, err := json.MarshalIndent(history, "", "  ")
-	if err != nil {
-		return fmt.Errorf("marshal chat history: %w", err)
-	}
-
-	if err := os.WriteFile(path, data, 0o644); err != nil {
-		return fmt.Errorf("write chat history: %w", err)
+	if err := SaveJSON(path, history); err != nil {
+		return fmt.Errorf("save chat history: %w", err)
 	}
 
 	return nil

@@ -4,8 +4,6 @@ import (
 	"os"
 	"path/filepath"
 	"time"
-
-	"gopkg.in/yaml.v3"
 )
 
 // TaskHistoryEntry records a single state machine transition for audit persistence.
@@ -80,23 +78,15 @@ func (s *Store) SaveTaskState(ts *TaskState) error {
 	if err := EnsureDir(s.WorkDir(ts.ID)); err != nil {
 		return err
 	}
-	data, err := yaml.Marshal(ts)
-	if err != nil {
-		return err
-	}
 
-	return os.WriteFile(s.TaskStateFile(ts.ID), data, 0o644)
+	return SaveYAML(s.TaskStateFile(ts.ID), ts)
 }
 
 // LoadTaskState reads and parses task.yaml for the given task ID.
 // Returns os.ErrNotExist (wrapped) if the file does not exist.
 func (s *Store) LoadTaskState(taskID string) (*TaskState, error) {
-	data, err := os.ReadFile(s.TaskStateFile(taskID))
-	if err != nil {
-		return nil, err
-	}
 	var ts TaskState
-	if err := yaml.Unmarshal(data, &ts); err != nil {
+	if err := LoadYAML(s.TaskStateFile(taskID), &ts); err != nil {
 		return nil, err
 	}
 
