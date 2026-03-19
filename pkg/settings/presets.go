@@ -48,7 +48,7 @@ func fastPreset() *Settings {
 			Max: 5,
 		},
 		Workflow: WorkflowSettings{
-			AutoAdvance: true,
+			AutoAdvance: boolPtr(true),
 		},
 	}
 }

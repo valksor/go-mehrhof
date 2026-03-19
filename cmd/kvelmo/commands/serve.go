@@ -193,7 +193,7 @@ func runServe(cmd *cobra.Command, args []string) error {
 		cfg, _, _, _ := settings.LoadEffective("")
 
 		// Start notification engine if enabled
-		if cfg.Notify.Enabled && len(cfg.Notify.Webhooks) > 0 {
+		if cfg.Notify.Enabled != nil && *cfg.Notify.Enabled && len(cfg.Notify.Webhooks) > 0 {
 			endpoints := make([]notify.WebhookEndpoint, len(cfg.Notify.Webhooks))
 			for i, wh := range cfg.Notify.Webhooks {
 				endpoints[i] = notify.WebhookEndpoint{
