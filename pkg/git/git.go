@@ -9,6 +9,9 @@ import (
 	"os/exec"
 	"regexp"
 	"strings"
+	"time"
+
+	"github.com/valksor/kvelmo/pkg/retry"
 )
 
 type Repository struct {
@@ -30,6 +33,12 @@ func (r *Repository) Path() string {
 	return r.path
 }
 
+// gitRetryDelay is the base delay between retries for lock-contended git operations.
+const gitRetryDelay = 100 * time.Millisecond
+
+// gitMaxRetries is the number of retry attempts for retryable git operations.
+const gitMaxRetries = 3
+
 func (r *Repository) run(ctx context.Context, args ...string) (string, error) {
 	cmd := exec.CommandContext(ctx, "git", append([]string{"-C", r.path}, args...)...)
 	var stdout, stderr bytes.Buffer
@@ -42,6 +51,31 @@ func (r *Repository) run(ctx context.Context, args ...string) (string, error) {
 	}
 
 	return strings.TrimSpace(stdout.String()), nil
+}
+
+// runRetryable executes a git command with automatic retry on lock-file
+// conflicts and other transient errors.
+func (r *Repository) runRetryable(ctx context.Context, args ...string) (string, error) {
+	var result string
+
+	err := retry.RetryableOp(ctx, gitMaxRetries, gitRetryDelay, func() error {
+		var runErr error
+		result, runErr = r.run(ctx, args...)
+
+		return runErr
+	}, retry.WithRetryCheck(isRetryableGitError))
+
+	return result, err
+}
+
+// isRetryableGitError checks for lock file conflicts and transient git errors
+// that may resolve on retry.
+func isRetryableGitError(err error) bool {
+	if err == nil {
+		return false
+	}
+
+	return retry.IsRetryable(err)
 }
 
 // formatGitError converts git command errors to user-friendly messages.
@@ -148,7 +182,7 @@ func (r *Repository) HasUncommittedChanges(ctx context.Context) (bool, error) {
 }
 
 func (r *Repository) StageAll(ctx context.Context) error {
-	_, err := r.run(ctx, "add", "-A")
+	_, err := r.runRetryable(ctx, "add", "-A")
 
 	return err
 }
@@ -193,7 +227,7 @@ func (r *Repository) Commit(ctx context.Context, message string) (string, error)
 		args = append(args, "--gpg-sign")
 	}
 	args = append(args, "-m", message)
-	_, err := r.run(ctx, args...)
+	_, err := r.runRetryable(ctx, args...)
 	if err != nil {
 		// Check if this looks like a pre-commit hook failure where files were modified
 		// (formatters that fix files but reject the commit)
@@ -202,7 +236,7 @@ func (r *Repository) Commit(ctx context.Context, message string) (string, error)
 			if stageErr := r.StageAll(ctx); stageErr != nil {
 				return "", fmt.Errorf("re-stage after hook: %w", stageErr)
 			}
-			_, retryErr := r.run(ctx, args...)
+			_, retryErr := r.runRetryable(ctx, args...)
 			if retryErr != nil {
 				return "", fmt.Errorf("commit after hook retry: %w", retryErr)
 			}
@@ -247,7 +281,7 @@ func (r *Repository) Reset(ctx context.Context, commit string, hard bool) error 
 		args = append(args, "--hard")
 	}
 	args = append(args, commit)
-	_, err := r.run(ctx, args...)
+	_, err := r.runRetryable(ctx, args...)
 
 	return err
 }
@@ -267,7 +301,7 @@ func (r *Repository) StashPop(ctx context.Context) error {
 // Push pushes to the remote repository.
 func (r *Repository) Push(ctx context.Context, remote, branch string) error {
 	slog.Debug("git: pushing", "remote", remote, "branch", branch)
-	_, err := r.run(ctx, "push", remote, branch)
+	_, err := r.runRetryable(ctx, "push", remote, branch)
 
 	return err
 }
@@ -285,7 +319,7 @@ func (r *Repository) PushDefault(ctx context.Context) error {
 // Pull pulls from the remote repository.
 func (r *Repository) Pull(ctx context.Context) error {
 	slog.Debug("git: pulling")
-	_, err := r.run(ctx, "pull")
+	_, err := r.runRetryable(ctx, "pull")
 
 	return err
 }
@@ -293,7 +327,7 @@ func (r *Repository) Pull(ctx context.Context) error {
 // Fetch fetches from the remote repository.
 func (r *Repository) Fetch(ctx context.Context) error {
 	slog.Debug("git: fetching")
-	_, err := r.run(ctx, "fetch")
+	_, err := r.runRetryable(ctx, "fetch")
 
 	return err
 }
