@@ -63,6 +63,12 @@ func runDiagnose(cmd *cobra.Command, args []string) error {
 		return runDiagnoseHealth()
 	}
 
+	// Try server-side diagnose first (consistent with web UI).
+	if handled, err := runDiagnoseViaRPC(); handled {
+		return err
+	}
+
+	// Fall back to offline diagnostics when server is not available.
 	var issues []string
 
 	// Run preflight checks for git and agent CLIs
@@ -209,6 +215,109 @@ func runDiagnose(cmd *cobra.Command, args []string) error {
 	}
 
 	return nil
+}
+
+// runDiagnoseViaRPC attempts to call system.diagnose on the global socket.
+// Returns (true, nil) on success, (true, err) on display error, (false, nil) if unavailable.
+func runDiagnoseViaRPC() (bool, error) {
+	globalPath := socket.GlobalSocketPath()
+	if !socket.SocketExists(globalPath) {
+		return false, nil
+	}
+
+	client, err := socket.NewClient(globalPath, socket.WithTimeout(2*time.Second))
+	if err != nil {
+		return false, nil
+	}
+	defer func() { _ = client.Close() }()
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	resp, err := client.Call(ctx, "system.diagnose", nil)
+	if err != nil {
+		return false, nil
+	}
+
+	if diagnoseJSON {
+		out, jsonErr := json.MarshalIndent(resp.Result, "", "  ")
+		if jsonErr != nil {
+			fmt.Println(string(resp.Result))
+		} else {
+			fmt.Println(string(out))
+		}
+
+		return true, nil
+	}
+
+	// Parse and display the server-side diagnose result using the same format.
+	var result diagnoseResult
+	if err := json.Unmarshal(resp.Result, &result); err != nil {
+		return false, nil
+	}
+
+	fmt.Println()
+	fmt.Printf("  %s Diagnostics (via server)\n", meta.Name)
+	fmt.Println("  ─────────────────────────────────────")
+	fmt.Println()
+
+	for _, c := range result.Checks {
+		symbol := "✓"
+		label := "installed"
+
+		switch c.Status {
+		case "fail", "failed":
+			symbol = "✗"
+			label = "not found"
+		case "warning", "warn":
+			symbol = "⚠"
+			label = "not found"
+		}
+
+		detail := ""
+		if (c.Status == "ok" || c.Status == "pass") && c.Detail != "" {
+			detail = " (" + c.Detail + ")"
+		}
+
+		displayName := c.Name
+		switch c.Name {
+		case "claude":
+			displayName = "Claude CLI"
+		case "codex":
+			displayName = "Codex CLI"
+		case "git":
+			displayName = "Git"
+		}
+
+		fmt.Printf("  %-14s %s %s%s\n", displayName+":", symbol, label, detail)
+	}
+
+	fmt.Printf("  Global socket: ✓ %s\n", result.GlobalSocket)
+	fmt.Println()
+	fmt.Println("  Providers:")
+
+	for _, p := range result.Providers {
+		if p.Configured {
+			fmt.Printf("    %-8s ✓ configured\n", p.Name+":")
+		} else {
+			fmt.Printf("    %-8s ✗ not configured\n", p.Name+":")
+		}
+	}
+
+	fmt.Println()
+
+	if len(result.Issues) > 0 {
+		fmt.Println("  Next steps:")
+		for _, issue := range result.Issues {
+			fmt.Printf("    • %s\n", issue)
+		}
+		fmt.Println()
+	} else {
+		fmt.Println("  ✓ All checks passed!")
+		fmt.Println()
+	}
+
+	return true, nil
 }
 
 func runDiagnoseHealth() error {

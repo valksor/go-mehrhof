@@ -183,6 +183,7 @@ func init() {
 
 	// Agent management
 	rootCmd.AddCommand(commands.AgentCmd)
+	rootCmd.AddCommand(commands.StrategyCmd)
 
 	// Provider connection testing (subcommand of config)
 	commands.ConfigCmd.AddCommand(commands.ProviderTestCmd)
