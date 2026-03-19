@@ -4,6 +4,7 @@ import { SocketClient } from '../lib/socket'
 import { debounce } from '../lib/debounce'
 import { reconnectDelay } from '../lib/reconnect'
 import { storeName } from '../meta'
+import { cacheGlobalState, getCachedGlobalState } from '../lib/offline-store'
 import type {
   WorktreeInfo,
   WorkerInfo,
@@ -113,6 +114,9 @@ interface GlobalState {
   // Jobs
   jobs: Job[]
 
+  // Offline cache
+  isStale: boolean
+
   // Connection
   connect: () => Promise<void>
   disconnect: () => void
@@ -178,6 +182,7 @@ export const useGlobalStore = create<GlobalState>()(
       loading: false,
       error: null,
       activeTasks: [],
+      isStale: false,
 
       connect: async () => {
         if (get().connected || get().connecting) return
@@ -311,7 +316,10 @@ export const useGlobalStore = create<GlobalState>()(
           const result = await client.call<{ projects: Project[] }>('projects.list')
           const projects = result.projects || []
 
-          set({ projects, loading: false })
+          set({ projects, loading: false, isStale: false })
+
+          // Update offline cache with fresh data (non-blocking)
+          cacheGlobalState({ projects, activeTasks: get().activeTasks })
         } catch (err) {
           set({
             error: err instanceof Error ? err.message : 'Failed to load projects',
@@ -526,6 +534,9 @@ export const useGlobalStore = create<GlobalState>()(
         try {
           const result = await client.call<{ tasks: TaskSummary[] }>('tasks.list')
           set({ activeTasks: result.tasks || [] })
+
+          // Update offline cache (non-blocking)
+          cacheGlobalState({ projects: get().projects, activeTasks: result.tasks || [] })
         } catch (err) {
           console.warn('Failed to load active tasks:', err)
         }
@@ -618,3 +629,20 @@ export const useGlobalStore = create<GlobalState>()(
     }
   )
 )
+
+// Hydrate from offline cache on startup (non-blocking).
+// This populates the store with cached data before the socket connects,
+// so the UI renders instantly on reconnect instead of showing a blank state.
+getCachedGlobalState<{ projects: Project[]; activeTasks: TaskSummary[] }>().then(cached => {
+  if (cached) {
+    const state = useGlobalStore.getState()
+    // Only hydrate if the store hasn't already been populated by a live connection
+    if (!state.connected && state.projects.length === 0) {
+      useGlobalStore.setState({
+        projects: cached.data.projects ?? [],
+        activeTasks: cached.data.activeTasks ?? [],
+        isStale: cached.stale,
+      })
+    }
+  }
+})

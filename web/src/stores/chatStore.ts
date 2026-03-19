@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import { useGlobalStore } from './globalStore'
 import { useProjectStore } from './projectStore'
 import { cliCmd } from '../meta'
+import { chatEvents } from '../lib/events'
 
 export type MessageRole = 'user' | 'assistant' | 'system' | 'subagent' | 'permission'
 export type MessageStatus = 'pending' | 'streaming' | 'complete' | 'error'
@@ -97,10 +98,14 @@ interface ChatState {
   loadHistory: (worktreeId: string) => Promise<void>
   setTaskId: (taskId: string | null) => void
   handleAction: (messageId: string, actionId: string) => void
+  cancelOperation: () => void
 }
 
 let messageIdCounter = 0
 const generateId = () => `msg-${++messageIdCounter}-${Date.now()}`
+
+// Module-scoped abort controller for cancellable agent operations
+let activeAbort: AbortController | null = null
 
 // Convert backend message to frontend format
 const convertMessage = (msg: BackendMessage): ChatMessage => ({
@@ -183,6 +188,11 @@ export const useChatStore = create<ChatState>((set, get) => ({
       status: 'complete'
     })
 
+    // Abort any previous operation before starting a new one
+    activeAbort?.abort()
+    const abort = new AbortController()
+    activeAbort = abort
+
     set({ isTyping: true, error: null })
 
     try {
@@ -206,6 +216,15 @@ export const useChatStore = create<ChatState>((set, get) => ({
       // Subscribe to streaming events from the server
       // Events are pushed via WebSocket instead of polling
       const unsubscribe = client.subscribe((data: unknown) => {
+        // Stop processing if this operation was cancelled
+        if (abort.signal.aborted) {
+          unsubscribe()
+          return
+        }
+
+        // Dispatch to typed event emitter so typed handlers receive chat events
+        chatEvents.dispatch(data)
+
         const event = data as ChatEvent
 
         // Only handle events for our job
@@ -235,6 +254,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
               ]
             })
             set({ isTyping: false, activeJobId: null })
+            if (activeAbort === abort) activeAbort = null
             unsubscribe()
             break
 
@@ -244,6 +264,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
               status: 'error'
             })
             set({ isTyping: false, activeJobId: null, error: event.error || 'Job failed' })
+            if (activeAbort === abort) activeAbort = null
             unsubscribe()
             break
 
@@ -440,6 +461,22 @@ export const useChatStore = create<ChatState>((set, get) => ({
     } else if (action.type === 'reject') {
       await useProjectStore.getState().review({ reject: true })
     }
+  },
+
+  cancelOperation: () => {
+    if (activeAbort) {
+      activeAbort.abort()
+      activeAbort = null
+    }
+    // Also stop the active job on the backend
+    const { activeJobId } = get()
+    if (activeJobId) {
+      const worktreeId = useProjectStore.getState().worktreeId
+      if (worktreeId) {
+        useGlobalStore.getState().stopChat(worktreeId, activeJobId)
+      }
+    }
+    set({ isTyping: false, activeJobId: null })
   }
 }))
 

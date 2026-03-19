@@ -4,6 +4,7 @@ import { debounce } from '../lib/debounce'
 import { reconnectDelay } from '../lib/reconnect'
 import { useScreenshotStore, Screenshot } from './screenshotStore'
 import { sendNotification, requestNotificationPermission } from '../lib/notify'
+import { worktreeEvents } from '../lib/events'
 
 type TaskState =
   | 'none'
@@ -330,6 +331,9 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
 
       // Handle streaming events
       const unsubscribe = client.subscribe((data: unknown) => {
+        // Dispatch to typed event emitter so typed handlers receive events
+        worktreeEvents.dispatch(data)
+
         const msg = data as {
           seq?: number
           type?: string
@@ -432,6 +436,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
           debouncedRefresh.cancel()
           debouncedLoadQueue.cancel()
           unsubscribe()
+          worktreeEvents.clear()
         }
       })
 

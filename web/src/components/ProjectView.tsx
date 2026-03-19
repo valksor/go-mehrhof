@@ -6,6 +6,7 @@ import { useDebugStore } from '../stores/debugStore'
 import { useDocsURL } from '../hooks/useDocsURL'
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts'
 import { Widget, TaskIcon, FilesIcon, CheckpointsIcon } from './Widget'
+import { ErrorBoundary } from './ErrorBoundary'
 import { PanelLayout } from './PanelLayout'
 import { TaskWidget } from './TaskWidget'
 import { CheckpointsWidget } from './CheckpointsWidget'
@@ -198,7 +199,7 @@ export function ProjectView() {
 
   // Left sidebar content
   const leftContent = (
-    <>
+    <ErrorBoundary>
       <Widget
         id="task"
         title="Task"
@@ -223,12 +224,12 @@ export function ProjectView() {
       </Widget>
 
       {taskQueue.length > 0 && <TaskQueue />}
-    </>
+    </ErrorBoundary>
   )
 
   // Right panel content
   const rightContent = (
-    <>
+    <ErrorBoundary>
       <AgentPanel />
 
       <Widget
@@ -272,7 +273,7 @@ export function ProjectView() {
       >
         <TaskHistory />
       </Widget>
-    </>
+    </ErrorBoundary>
   )
 
   return (
