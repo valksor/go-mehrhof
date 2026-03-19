@@ -1,7 +1,9 @@
-import { Component, ReactNode } from 'react'
+import { Component, type ErrorInfo, type ReactNode } from 'react'
 
 interface Props {
   children: ReactNode
+  fallback?: ReactNode
+  onError?: (error: Error, errorInfo: ErrorInfo) => void
 }
 
 interface State {
@@ -19,8 +21,9 @@ export class ErrorBoundary extends Component<Props, State> {
     return { hasError: true, error }
   }
 
-  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-    console.error('ErrorBoundary caught error:', error, errorInfo)
+  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+    console.error('[ErrorBoundary]', error, errorInfo)
+    this.props.onError?.(error, errorInfo)
   }
 
   handleReload = () => {
@@ -33,34 +36,37 @@ export class ErrorBoundary extends Component<Props, State> {
 
   render() {
     if (this.state.hasError) {
+      if (this.props.fallback) return this.props.fallback
+
       return (
-        <div className="min-h-screen bg-base-100 flex items-center justify-center">
-          <div className="text-center max-w-md px-4" role="alert">
-            <div className="text-error text-6xl mb-4" aria-hidden="true">!</div>
-            <h1 className="text-xl font-semibold text-base-content mb-2">
-              Something went wrong
-            </h1>
-            <p className="text-base-content/60 mb-4">
-              An unexpected error occurred. You can try reloading the page.
-            </p>
-            {this.state.error && (
-              <details className="mb-4 text-left">
-                <summary className="cursor-pointer text-sm text-base-content/50">
-                  Error details
-                </summary>
-                <pre className="mt-2 p-2 bg-base-200 rounded text-xs overflow-auto max-h-32">
-                  {this.state.error.message}
-                </pre>
-              </details>
-            )}
-            <div className="flex gap-2 justify-center">
-              <button onClick={this.handleReset} className="btn btn-outline">
-                Try Again
-              </button>
-              <button onClick={this.handleReload} className="btn btn-primary">
-                Reload Page
-              </button>
-            </div>
+        <div className="flex flex-col items-center justify-center p-6 text-center">
+          <h3 className="text-lg font-semibold text-error mb-2">Something went wrong</h3>
+          <p className="text-sm text-base-content/60 mb-4">
+            {this.state.error?.message || 'An unexpected error occurred'}
+          </p>
+          {import.meta.env.DEV && this.state.error && (
+            <details className="text-left w-full max-w-lg">
+              <summary className="cursor-pointer text-sm text-base-content/40">
+                Stack trace
+              </summary>
+              <pre className="text-xs bg-base-200 p-3 rounded mt-2 overflow-auto max-h-48">
+                {this.state.error.stack}
+              </pre>
+            </details>
+          )}
+          <div className="flex gap-2 justify-center mt-4">
+            <button
+              className="btn btn-sm btn-outline"
+              onClick={this.handleReset}
+            >
+              Try again
+            </button>
+            <button
+              className="btn btn-sm btn-primary"
+              onClick={this.handleReload}
+            >
+              Reload Page
+            </button>
           </div>
         </div>
       )
