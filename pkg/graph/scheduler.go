@@ -20,14 +20,15 @@ const (
 type SchedulerEventType string
 
 const (
-	EventNodeQueued    SchedulerEventType = "node_queued"
-	EventNodeStarted   SchedulerEventType = "node_started"
-	EventNodeCompleted SchedulerEventType = "node_completed"
-	EventNodeFailed    SchedulerEventType = "node_failed"
-	EventNodeSkipped   SchedulerEventType = "node_skipped"
-	EventNodeOutput    SchedulerEventType = "node_output"    // Streaming output from node's job
-	EventPhaseProgress SchedulerEventType = "phase_progress" // Aggregate progress
-	EventAllDone       SchedulerEventType = "all_done"       // All nodes finished
+	EventNodeQueued     SchedulerEventType = "node_queued"
+	EventNodeStarted    SchedulerEventType = "node_started"
+	EventNodeCompleted  SchedulerEventType = "node_completed"
+	EventNodeFailed     SchedulerEventType = "node_failed"
+	EventNodeSkipped    SchedulerEventType = "node_skipped"
+	EventNodeFailRouted SchedulerEventType = "node_fail_routed" // Failure routed to handler node
+	EventNodeOutput     SchedulerEventType = "node_output"      // Streaming output from node's job
+	EventPhaseProgress  SchedulerEventType = "phase_progress"   // Aggregate progress
+	EventAllDone        SchedulerEventType = "all_done"         // All nodes finished
 )
 
 // SchedulerEvent is emitted during graph execution.
@@ -262,6 +263,7 @@ func (s *Scheduler) dispatchNode(ctx context.Context, id NodeID, node *Node, opt
 		_ = s.state.Transition(id, StateRunning) // queued → running (briefly)
 		_ = s.state.Transition(id, StateFailed)
 		s.state.SetError(id, err.Error())
+		s.markFailureEdges(id, err.Error())
 
 		s.emit(SchedulerEvent{
 			Type:      EventNodeFailed,
@@ -270,7 +272,7 @@ func (s *Scheduler) dispatchNode(ctx context.Context, id NodeID, node *Node, opt
 			Error:     err.Error(),
 		})
 
-		// Check if skipped dependencies unlock new nodes.
+		// Check if fail-branch or skipped dependencies unlock new nodes.
 		go s.enqueueReady(ctx, opts)
 
 		return
@@ -363,11 +365,7 @@ func (s *Scheduler) completeNode(ctx context.Context, id NodeID, node *Node, res
 	if err != nil {
 		_ = s.state.Transition(id, StateFailed)
 		s.state.SetError(id, err.Error())
-
-		// Mark outgoing edges as skipped so dependents can be propagated.
-		for _, dep := range s.graph.Dependents(id) {
-			s.state.SetEdgeState(id, dep, EdgeSkipped)
-		}
+		s.markFailureEdges(id, err.Error())
 
 		s.emit(SchedulerEvent{
 			Type:      EventNodeFailed,
@@ -395,6 +393,39 @@ func (s *Scheduler) completeNode(ctx context.Context, id NodeID, node *Node, res
 
 	// Enqueue newly unblocked nodes.
 	s.enqueueReady(ctx, opts)
+}
+
+// markFailureEdges sets edge states after a node failure.
+// Normal dependents get EdgeSkipped; the fail-branch target (if any) gets EdgeTaken.
+func (s *Scheduler) markFailureEdges(id NodeID, errMsg string) {
+	failTarget, hasFailBranch := s.graph.FailBranchTarget(id)
+
+	for _, dep := range s.graph.Dependents(id) {
+		if hasFailBranch && dep == failTarget {
+			s.state.SetEdgeState(id, dep, EdgeTaken)
+		} else {
+			s.state.SetEdgeState(id, dep, EdgeSkipped)
+		}
+	}
+
+	if hasFailBranch {
+		s.state.SetResult(FailErrorKey(id), errMsg)
+		s.emit(SchedulerEvent{
+			Type:    EventNodeFailRouted,
+			NodeID:  id,
+			Content: string(failTarget),
+		})
+	}
+}
+
+// isFailHandled returns true if a failed node has a fail-branch target that completed.
+func (s *Scheduler) isFailHandled(id NodeID) bool {
+	target, ok := s.graph.FailBranchTarget(id)
+	if !ok {
+		return false
+	}
+
+	return s.state.Get(target) == StateDone
 }
 
 // skipNodeAndPropagate skips a node and marks all its outgoing edges as skipped.
@@ -431,7 +462,8 @@ func (s *Scheduler) emitProgress() {
 	})
 }
 
-// summaryError returns a combined error string if any nodes failed, or empty string.
+// summaryError returns a combined error string if any unhandled nodes failed, or empty string.
+// Nodes whose failure was handled by a successful fail-branch target are excluded.
 func (s *Scheduler) summaryError() string {
 	if !s.state.HasFailures() {
 		return ""
@@ -440,9 +472,13 @@ func (s *Scheduler) summaryError() string {
 	var msgs []string
 
 	for _, id := range s.graph.NodeIDs() {
-		if s.state.Get(id) == StateFailed {
+		if s.state.Get(id) == StateFailed && !s.isFailHandled(id) {
 			msgs = append(msgs, fmt.Sprintf("%s: %s", id, s.state.Error(id)))
 		}
+	}
+
+	if len(msgs) == 0 {
+		return ""
 	}
 
 	return fmt.Sprintf("graph: %d node(s) failed: %s", len(msgs), joinErrors(msgs))

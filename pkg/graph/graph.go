@@ -20,13 +20,14 @@ type ConditionFunc func(results map[NodeID]string) bool
 
 // Node represents a schedulable unit of work within a phase.
 type Node struct {
-	ID        NodeID
-	Label     string         // Human-readable description
-	JobType   worker.JobType // plan, implement, review, etc.
-	Prompt    string
-	DependsOn []NodeID      // Nodes that must complete before this one runs
-	Condition ConditionFunc // Optional: skip if returns false (nil = always run)
-	Frozen    bool          // If true, return cached result instead of re-executing (Langflow pattern)
+	ID         NodeID
+	Label      string         // Human-readable description
+	JobType    worker.JobType // plan, implement, review, etc.
+	Prompt     string
+	DependsOn  []NodeID      // Nodes that must complete before this one runs
+	Condition  ConditionFunc // Optional: skip if returns false (nil = always run)
+	Frozen     bool          // If true, return cached result instead of re-executing (Langflow pattern)
+	FailBranch *NodeID       // Optional: route to this node on failure instead of cascading skip
 }
 
 // EdgeState tracks the execution state of an edge between two nodes.
@@ -47,8 +48,9 @@ type Edge struct {
 
 // Graph holds a set of nodes with dependency edges.
 type Graph struct {
-	Nodes map[NodeID]*Node
-	edges []Edge // derived from node DependsOn
+	Nodes     map[NodeID]*Node
+	edges     []Edge            // derived from node DependsOn
+	failEdges map[NodeID]NodeID // source → fail-branch target
 }
 
 // New creates an empty graph.
@@ -83,15 +85,40 @@ func SingleNode(id NodeID, label string, jobType worker.JobType, prompt string) 
 	return g
 }
 
-// buildEdges derives edges from node DependsOn declarations.
+// buildEdges derives edges from node DependsOn declarations and fail-branch mappings.
 func (g *Graph) buildEdges() {
 	g.edges = nil
+	g.failEdges = make(map[NodeID]NodeID)
 
 	for _, node := range g.Nodes {
 		for _, dep := range node.DependsOn {
 			g.edges = append(g.edges, Edge{From: dep, To: node.ID})
 		}
+
+		if node.FailBranch != nil {
+			g.failEdges[node.ID] = *node.FailBranch
+		}
 	}
+}
+
+// FailBranchTarget returns the fail-branch target for a node, if configured.
+func (g *Graph) FailBranchTarget(id NodeID) (NodeID, bool) {
+	target, ok := g.failEdges[id]
+
+	return target, ok
+}
+
+// IsFailBranchEdge returns true if the edge from→to is a fail-branch edge.
+func (g *Graph) IsFailBranchEdge(from, to NodeID) bool {
+	target, ok := g.failEdges[from]
+
+	return ok && target == to
+}
+
+// FailErrorKey returns the results-map key that holds a failed node's error message.
+// Fail-branch handler nodes can read results[FailErrorKey(sourceID)] to inspect the error.
+func FailErrorKey(id NodeID) NodeID {
+	return NodeID("__fail_error:" + string(id))
 }
 
 // Roots returns nodes with no dependencies (entry points).
@@ -139,6 +166,27 @@ func (g *Graph) Validate() error {
 			if _, exists := g.Nodes[dep]; !exists {
 				return fmt.Errorf("graph: node %q depends on unknown node %q", node.ID, dep)
 			}
+		}
+	}
+
+	// Validate fail-branch references.
+	for _, node := range g.Nodes {
+		if node.FailBranch == nil {
+			continue
+		}
+
+		target := *node.FailBranch
+		if target == node.ID {
+			return fmt.Errorf("graph: node %q cannot be its own fail-branch target", node.ID)
+		}
+
+		targetNode, exists := g.Nodes[target]
+		if !exists {
+			return fmt.Errorf("graph: node %q fail-branch references unknown node %q", node.ID, target)
+		}
+
+		if !slices.Contains(targetNode.DependsOn, node.ID) {
+			return fmt.Errorf("graph: fail-branch target %q must list %q in DependsOn", target, node.ID)
 		}
 	}
 

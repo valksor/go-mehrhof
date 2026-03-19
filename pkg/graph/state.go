@@ -25,6 +25,7 @@ type StateManager struct {
 	results    map[NodeID]string
 	errors     map[NodeID]string
 	edgeStates map[string]EdgeState // key: "from->to"
+	failEdges  map[NodeID]NodeID    // source → fail-branch target (copied from graph)
 }
 
 // NewStateManager creates a state manager with all nodes in pending state.
@@ -34,10 +35,16 @@ func NewStateManager(g *Graph) *StateManager {
 		results:    make(map[NodeID]string),
 		errors:     make(map[NodeID]string),
 		edgeStates: make(map[string]EdgeState),
+		failEdges:  make(map[NodeID]NodeID),
 	}
 
 	for id := range g.Nodes {
 		sm.states[id] = StatePending
+	}
+
+	// Copy fail-branch mappings (populated after Validate/buildEdges).
+	for src, target := range g.failEdges {
+		sm.failEdges[src] = target
 	}
 
 	return sm
@@ -156,14 +163,28 @@ func (sm *StateManager) CountByState() map[NodeState]int {
 	return counts
 }
 
-// DependenciesSatisfied checks if all dependencies of a node are in done state.
+// DependenciesSatisfied checks if all dependencies of a node are resolved.
+// A dependency is satisfied when it is done or skipped, or when it failed and
+// this node is its fail-branch target.
 func (sm *StateManager) DependenciesSatisfied(node *Node) bool {
 	sm.mu.RLock()
 	defer sm.mu.RUnlock()
 
 	for _, dep := range node.DependsOn {
 		state := sm.states[dep]
-		if state != StateDone && state != StateSkipped {
+
+		switch state {
+		case StateDone, StateSkipped:
+			continue
+		case StateFailed:
+			// A failed dependency satisfies this node only if there is
+			// a fail-branch edge from the dependency to this node.
+			if sm.failEdges[dep] == node.ID {
+				continue
+			}
+
+			return false
+		case StatePending, StateQueued, StateRunning:
 			return false
 		}
 	}
