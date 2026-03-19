@@ -2,6 +2,8 @@ package activitylog
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"log/slog"
@@ -28,16 +30,18 @@ type Entry struct {
 	TaskID        string    `json:"task_id,omitempty"`
 	AgentModel    string    `json:"agent_model,omitempty"`
 	FilesAffected []string  `json:"files_affected,omitempty"`
+	PrevHash      string    `json:"prev_hash,omitempty"`
 }
 
 // Log manages append-only JSONL activity log files with non-blocking writes,
 // daily file rotation, and automatic cleanup of old files.
 type Log struct {
-	dir      string
-	maxFiles int
-	entries  chan Entry
-	done     chan struct{}
-	once     sync.Once
+	dir       string
+	maxFiles  int
+	entries   chan Entry
+	done      chan struct{}
+	once      sync.Once
+	forwarder *Forwarder
 
 	// nowFunc allows overriding time.Now for testing.
 	nowFunc func() time.Time
@@ -76,6 +80,12 @@ func New(dir string, maxFiles int) (*Log, error) {
 	}, nil
 }
 
+// SetForwarder configures a webhook forwarder for activity entries.
+// Must be called before Start.
+func (l *Log) SetForwarder(f *Forwarder) {
+	l.forwarder = f
+}
+
 // Record enqueues an entry for writing. It is non-blocking; if the channel is
 // full the entry is silently dropped to avoid blocking RPC handlers.
 func (l *Log) Record(entry Entry) {
@@ -92,6 +102,7 @@ func (l *Log) Start(ctx context.Context) {
 	var (
 		currentDay  string
 		currentFile *os.File
+		prevHash    string
 	)
 
 	openFileForDay := func(day string) {
@@ -108,6 +119,9 @@ func (l *Log) Start(ctx context.Context) {
 		}
 		currentFile = f
 		currentDay = day
+
+		// Seed prevHash from last entry in the file (for appending to existing files)
+		prevHash = lastHashFromFile(filepath.Join(l.dir, filePrefix+day+fileExt))
 	}
 
 	writeEntry := func(e Entry) {
@@ -119,15 +133,27 @@ func (l *Log) Start(ctx context.Context) {
 		if currentFile == nil {
 			return
 		}
+
+		// Set hash chain: this entry's PrevHash points to the hash of the previous entry
+		e.PrevHash = prevHash
 		data, err := json.Marshal(e)
 		if err != nil {
 			slog.Error("failed to marshal activity entry", "error", err)
 
 			return
 		}
+
+		// Compute hash of this entry for the next entry's PrevHash
+		h := sha256.Sum256(data)
+		prevHash = hex.EncodeToString(h[:])
+
 		data = append(data, '\n')
 		if _, err := currentFile.Write(data); err != nil {
 			slog.Error("failed to write activity entry", "error", err)
+		}
+
+		if l.forwarder != nil {
+			l.forwarder.ForwardAsync(ctx, e)
 		}
 	}
 
