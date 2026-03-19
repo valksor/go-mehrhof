@@ -63,3 +63,49 @@ func TestSlogAttrWithoutID(t *testing.T) {
 		t.Fatalf("SlogAttr on empty context: key = %q, want empty", attr.Key)
 	}
 }
+
+func TestWithTaskTrace_RoundTrip(t *testing.T) {
+	ctx := trace.WithTaskTrace(context.Background(), "ttrace-123")
+	got := trace.TaskTrace(ctx)
+	if got != "ttrace-123" {
+		t.Fatalf("TaskTrace() = %q, want %q", got, "ttrace-123")
+	}
+}
+
+func TestTaskTrace_EmptyForFreshContext(t *testing.T) {
+	got := trace.TaskTrace(context.Background())
+	if got != "" {
+		t.Fatalf("TaskTrace() = %q, want empty", got)
+	}
+}
+
+func TestTaskTraceSlogAttr_NonEmpty(t *testing.T) {
+	ctx := trace.WithTaskTrace(context.Background(), "ttrace-456")
+	attr := trace.TaskTraceSlogAttr(ctx)
+	if attr.Key != "task_trace_id" {
+		t.Fatalf("TaskTraceSlogAttr key = %q, want %q", attr.Key, "task_trace_id")
+	}
+	if attr.Value.String() != "ttrace-456" {
+		t.Fatalf("TaskTraceSlogAttr value = %q, want %q", attr.Value.String(), "ttrace-456")
+	}
+}
+
+func TestTaskTraceSlogAttr_EmptyForMissing(t *testing.T) {
+	attr := trace.TaskTraceSlogAttr(context.Background())
+	if attr.Key != "" {
+		t.Fatalf("TaskTraceSlogAttr on empty context: key = %q, want empty", attr.Key)
+	}
+}
+
+func TestBothTraceTypes_Independent(t *testing.T) {
+	ctx := context.Background()
+	ctx = trace.WithID(ctx, "corr-1")
+	ctx = trace.WithTaskTrace(ctx, "ttrace-1")
+
+	if trace.ID(ctx) != "corr-1" {
+		t.Fatalf("ID() = %q, want %q", trace.ID(ctx), "corr-1")
+	}
+	if trace.TaskTrace(ctx) != "ttrace-1" {
+		t.Fatalf("TaskTrace() = %q, want %q", trace.TaskTrace(ctx), "ttrace-1")
+	}
+}

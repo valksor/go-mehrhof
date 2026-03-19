@@ -30,6 +30,8 @@ type Entry struct {
 	TaskID        string    `json:"task_id,omitempty"`
 	AgentModel    string    `json:"agent_model,omitempty"`
 	FilesAffected []string  `json:"files_affected,omitempty"`
+	TaskTraceID   string    `json:"task_trace_id,omitempty"`   // Links all entries for a task lifecycle
+	ParentEntryID string    `json:"parent_entry_id,omitempty"` // Hierarchical grouping
 	PrevHash      string    `json:"prev_hash,omitempty"`
 }
 

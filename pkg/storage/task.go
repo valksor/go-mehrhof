@@ -39,6 +39,7 @@ type TaskState struct {
 	DependsOn         []string                      `yaml:"depends_on,omitempty"`
 	QualityGatePassed *bool                         `yaml:"quality_gate_passed,omitempty"`
 	VarPoolPath       string                        `yaml:"var_pool_path,omitempty"`
+	TaskTraceID       string                        `yaml:"task_trace_id,omitempty"`
 	History           []TaskHistoryEntry            `yaml:"history,omitempty"`
 	CreatedAt         time.Time                     `yaml:"created_at"`
 	UpdatedAt         time.Time                     `yaml:"updated_at"`

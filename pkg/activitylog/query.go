@@ -82,6 +82,63 @@ func (l *Log) Query(opts QueryOptions) ([]Entry, error) {
 	return results, nil
 }
 
+// ListByTaskTrace returns all entries matching a task trace ID, ordered by
+// timestamp (oldest first). This scans all log files and filters by the
+// TaskTraceID field to reconstruct the full causality chain for a task lifecycle.
+func (l *Log) ListByTaskTrace(traceID string) ([]Entry, error) {
+	logFiles, err := l.logFilesSorted()
+	if err != nil {
+		return nil, err
+	}
+
+	var results []Entry
+
+	for _, name := range logFiles {
+		entries, readErr := l.readFile(filepath.Join(l.dir, name))
+		if readErr != nil {
+			return nil, readErr
+		}
+
+		for _, e := range entries {
+			if e.TaskTraceID == traceID {
+				results = append(results, e)
+			}
+		}
+	}
+
+	return results, nil
+}
+
+// ListByMethod returns entries matching the exact method name, ordered newest
+// first. If limit <= 0, all matching entries are returned.
+func (l *Log) ListByMethod(method string, limit int) ([]Entry, error) {
+	logFiles, err := l.logFilesSorted()
+	if err != nil {
+		return nil, err
+	}
+
+	var results []Entry
+
+	for i := len(logFiles) - 1; i >= 0; i-- {
+		entries, readErr := l.readFile(filepath.Join(l.dir, logFiles[i]))
+		if readErr != nil {
+			return nil, readErr
+		}
+
+		for j := len(entries) - 1; j >= 0; j-- {
+			if entries[j].Method == method {
+				results = append(results, entries[j])
+
+				if limit > 0 && len(results) >= limit {
+					return results, nil
+				}
+			}
+		}
+	}
+
+	return results, nil
+}
+
 // readFile reads all entries from a single JSONL file.
 func (l *Log) readFile(path string) ([]Entry, error) {
 	f, err := os.Open(path)
