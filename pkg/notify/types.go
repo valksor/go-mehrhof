@@ -1,33 +1,48 @@
 package notify
 
-import "time"
-
-// Format specifies the webhook payload format.
-type Format string
-
-const (
-	// FormatGeneric sends the Payload directly as JSON.
-	FormatGeneric Format = "generic"
-	// FormatSlack sends a Slack Block Kit formatted payload.
-	FormatSlack Format = "slack"
-)
-
-// WebhookEndpoint configures a single webhook destination.
-type WebhookEndpoint struct {
-	URL    string   `yaml:"url"    json:"url"`
-	Format Format   `yaml:"format" json:"format"`
-	Events []string `yaml:"events" json:"events"`
+// NotificationType defines a category of notification.
+type NotificationType struct {
+	Name        string `json:"name"`        // e.g., "task.phase_complete"
+	Description string `json:"description"` // Human-readable
+	Default     bool   `json:"default"`     // Enabled by default
 }
 
-// Payload carries event data for webhook dispatch.
-type Payload struct {
-	Event         string    `json:"event"`
-	Timestamp     time.Time `json:"timestamp"`
-	TaskID        string    `json:"task_id"`
-	TaskTitle     string    `json:"task_title"`
-	State         string    `json:"state"`
-	PreviousState string    `json:"previous_state"`
-	Error         string    `json:"error,omitempty"`
-	Message       string    `json:"message"`
-	ProjectPath   string    `json:"project_path"`
+// Built-in notification types.
+var (
+	TypePhaseComplete = NotificationType{Name: "task.phase_complete", Description: "Task phase completed", Default: true}
+	TypeReviewNeeded  = NotificationType{Name: "task.review_needed", Description: "Task needs review", Default: true}
+	TypeFailed        = NotificationType{Name: "task.failed", Description: "Task failed", Default: true}
+	TypeSubmitted     = NotificationType{Name: "task.submitted", Description: "PR submitted", Default: true}
+	TypeAgentError    = NotificationType{Name: "agent.error", Description: "Agent encountered an error", Default: true}
+	TypeGateFailed    = NotificationType{Name: "quality.gate_failed", Description: "Quality gate failed", Default: false}
+)
+
+// allTypes is the registry of built-in notification types.
+var allTypes = []NotificationType{
+	TypePhaseComplete,
+	TypeReviewNeeded,
+	TypeFailed,
+	TypeSubmitted,
+	TypeAgentError,
+	TypeGateFailed,
+}
+
+// AllTypes returns all registered notification types.
+func AllTypes() []NotificationType {
+	out := make([]NotificationType, len(allTypes))
+	copy(out, allTypes)
+
+	return out
+}
+
+// LookupType returns the notification type with the given name and true,
+// or a zero value and false if not found.
+func LookupType(name string) (NotificationType, bool) {
+	for _, t := range allTypes {
+		if t.Name == name {
+			return t, true
+		}
+	}
+
+	return NotificationType{}, false
 }
