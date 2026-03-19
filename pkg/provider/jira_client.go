@@ -159,6 +159,44 @@ func (c *JiraClient) AddComment(ctx context.Context, key, body string) error {
 	return nil
 }
 
+// TransitionIssue executes a status transition on a Jira issue.
+func (c *JiraClient) TransitionIssue(ctx context.Context, key string, transitionID string) error {
+	url := fmt.Sprintf("%s/rest/api/3/issue/%s/transitions", c.baseURL, key)
+
+	payload := map[string]any{
+		"transition": map[string]string{"id": transitionID},
+	}
+	payloadBytes, err := json.Marshal(payload)
+	if err != nil {
+		return fmt.Errorf("jira: marshal transition: %w", err)
+	}
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewReader(payloadBytes))
+	if err != nil {
+		return fmt.Errorf("jira: create request: %w", err)
+	}
+
+	c.setAuth(req)
+	req.Header.Set("Content-Type", "application/json")
+
+	slog.Debug("jira: transitioning issue", "key", key, "transition_id", transitionID)
+
+	resp, err := DoWithRetry(c.httpClient, req, DefaultRetryConfig)
+	if err != nil {
+		return fmt.Errorf("jira: transition issue: %w", err)
+	}
+	defer func() { _ = resp.Body.Close() }()
+
+	// Jira returns 204 No Content on successful transition
+	if resp.StatusCode != http.StatusNoContent && resp.StatusCode != http.StatusOK {
+		respBody, _ := io.ReadAll(resp.Body)
+
+		return fmt.Errorf("jira: transition %s with id %s: status %d - %s", key, transitionID, resp.StatusCode, string(respBody))
+	}
+
+	return nil
+}
+
 // GetIssueTransitions fetches available transitions for a Jira issue.
 func (c *JiraClient) GetIssueTransitions(ctx context.Context, key string) ([]jiraTransition, error) {
 	url := fmt.Sprintf("%s/rest/api/3/issue/%s/transitions", c.baseURL, key)

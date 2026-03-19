@@ -306,6 +306,16 @@ func Parse(source string) (provider string, id string, err error) {
 			}
 		}
 
+		if strings.Contains(host, "dev.azure.com") || strings.Contains(host, "visualstudio.com") {
+			// Azure DevOps: /org/project/_workitems/edit/12345
+			parts := strings.Split(strings.Trim(path, "/"), "/")
+			for i, p := range parts {
+				if p == "edit" && i+1 < len(parts) {
+					return "azuredevops", parts[i+1], nil
+				}
+			}
+		}
+
 		if strings.Contains(host, "linear.app") {
 			// Linear: /team/issue/ENG-123-title or /issue/ENG-123/title
 			parts := strings.Split(strings.Trim(path, "/"), "/")
@@ -345,6 +355,12 @@ func Parse(source string) (provider string, id string, err error) {
 	}
 	if strings.HasPrefix(source, "jira:") {
 		return "jira", strings.TrimPrefix(source, "jira:"), nil
+	}
+	if strings.HasPrefix(source, "azuredevops:") {
+		return "azuredevops", strings.TrimPrefix(source, "azuredevops:"), nil
+	}
+	if strings.HasPrefix(source, "ado:") {
+		return "azuredevops", strings.TrimPrefix(source, "ado:"), nil
 	}
 
 	return "", "", fmt.Errorf("unknown source format: %s", source)

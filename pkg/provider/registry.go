@@ -30,6 +30,11 @@ func NewRegistry(s *settings.Settings) *Registry {
 		jiraToken   string
 		jiraEmail   string
 		jiraBaseURL string
+		adoToken    string
+		adoBaseURL  string
+		adoOrg      string
+		adoProject  string
+		adoRepo     string
 	)
 	if s != nil {
 		githubToken = s.Providers.GitHub.Token
@@ -40,6 +45,11 @@ func NewRegistry(s *settings.Settings) *Registry {
 		jiraToken = s.Providers.Jira.Token
 		jiraEmail = s.Providers.Jira.Email
 		jiraBaseURL = s.Providers.Jira.BaseURL
+		adoToken = s.Providers.AzureDevOps.Token
+		adoBaseURL = s.Providers.AzureDevOps.BaseURL
+		adoOrg = s.Providers.AzureDevOps.Organization
+		adoProject = s.Providers.AzureDevOps.Project
+		adoRepo = s.Providers.AzureDevOps.Repository
 	}
 
 	// Register default providers with tokens from settings
@@ -53,6 +63,7 @@ func NewRegistry(s *settings.Settings) *Registry {
 	r.Register(NewWrikeProvider(wrikeToken))
 	r.Register(NewLinearProvider(linearToken, linearTeam))
 	r.Register(NewJiraProvider(jiraBaseURL, jiraEmail, jiraToken))
+	r.Register(NewAzureDevOpsProvider(adoBaseURL, adoOrg, adoProject, adoToken, adoRepo))
 	r.Register(NewEmptyProvider())
 
 	return r

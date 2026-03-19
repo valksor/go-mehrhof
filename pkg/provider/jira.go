@@ -61,12 +61,7 @@ func (p *JiraProvider) UpdateStatus(ctx context.Context, ref string, status stri
 	statusLower := strings.ToLower(status)
 	for _, t := range transitions {
 		if strings.ToLower(t.Name) == statusLower {
-			// Found matching transition — would need to POST to transitions endpoint
-			// For now, log and return nil since full transition support would need
-			// an additional client method.
-			_ = t.ID
-
-			return nil
+			return p.client.TransitionIssue(ctx, key, t.ID)
 		}
 	}
 
