@@ -223,6 +223,7 @@ func Merge(dst, src *Settings) {
 	mergeWrikeConfig(&dst.Providers.Wrike, &src.Providers.Wrike)
 	mergeLinearConfig(&dst.Providers.Linear, &src.Providers.Linear)
 	mergeJiraConfig(&dst.Providers.Jira, &src.Providers.Jira)
+	mergeAzureDevOpsConfig(&dst.Providers.AzureDevOps, &src.Providers.AzureDevOps)
 
 	// Git settings
 	if src.Git.BaseBranch != "" {
@@ -385,6 +386,17 @@ func mergeGitLabConfig(dst, src *GitLabConfig) {
 	if src.AllowTicketComment {
 		dst.AllowTicketComment = true
 	}
+	if src.StatusSync {
+		dst.StatusSync = true
+	}
+	if len(src.StatusMapping) > 0 {
+		if dst.StatusMapping == nil {
+			dst.StatusMapping = make(map[string]string)
+		}
+		for k, v := range src.StatusMapping {
+			dst.StatusMapping[k] = v
+		}
+	}
 }
 
 func mergeWrikeConfig(dst, src *WrikeConfig) {
@@ -450,6 +462,38 @@ func mergeJiraConfig(dst, src *JiraConfig) {
 	}
 	if src.BaseURL != "" {
 		dst.BaseURL = src.BaseURL
+	}
+	if src.AllowTicketComment {
+		dst.AllowTicketComment = true
+	}
+	if src.StatusSync {
+		dst.StatusSync = true
+	}
+	if len(src.StatusMapping) > 0 {
+		if dst.StatusMapping == nil {
+			dst.StatusMapping = make(map[string]string)
+		}
+		for k, v := range src.StatusMapping {
+			dst.StatusMapping[k] = v
+		}
+	}
+}
+
+func mergeAzureDevOpsConfig(dst, src *AzureDevOpsConfig) {
+	if src.Token != "" {
+		dst.Token = src.Token
+	}
+	if src.BaseURL != "" {
+		dst.BaseURL = src.BaseURL
+	}
+	if src.Organization != "" {
+		dst.Organization = src.Organization
+	}
+	if src.Project != "" {
+		dst.Project = src.Project
+	}
+	if src.Repository != "" {
+		dst.Repository = src.Repository
 	}
 	if src.AllowTicketComment {
 		dst.AllowTicketComment = true
@@ -608,6 +652,16 @@ func SetValue(s *Settings, path string, value any) error {
 		}
 
 		return errors.New("providers.gitlab.allow_ticket_comment must be a boolean")
+	case "providers.gitlab.status_sync":
+		if v, ok := value.(bool); ok {
+			s.Providers.GitLab.StatusSync = v
+
+			return nil
+		}
+
+		return errors.New("providers.gitlab.status_sync must be a boolean")
+	case "providers.gitlab.status_mapping":
+		return setStatusMapping(&s.Providers.GitLab.StatusMapping, value, "providers.gitlab.status_mapping")
 	case "providers.wrike.allow_ticket_comment":
 		if v, ok := value.(bool); ok {
 			s.Providers.Wrike.AllowTicketComment = v
@@ -722,6 +776,66 @@ func SetValue(s *Settings, path string, value any) error {
 		return errors.New("providers.jira.status_sync must be a boolean")
 	case "providers.jira.status_mapping":
 		return setStatusMapping(&s.Providers.Jira.StatusMapping, value, "providers.jira.status_mapping")
+
+	// Azure DevOps
+	case "providers.azuredevops.token":
+		if v, ok := value.(string); ok {
+			s.Providers.AzureDevOps.Token = v
+
+			return nil
+		}
+
+		return errors.New("providers.azuredevops.token must be a string")
+	case "providers.azuredevops.base_url":
+		if v, ok := value.(string); ok {
+			s.Providers.AzureDevOps.BaseURL = v
+
+			return nil
+		}
+
+		return errors.New("providers.azuredevops.base_url must be a string")
+	case "providers.azuredevops.organization":
+		if v, ok := value.(string); ok {
+			s.Providers.AzureDevOps.Organization = v
+
+			return nil
+		}
+
+		return errors.New("providers.azuredevops.organization must be a string")
+	case "providers.azuredevops.project":
+		if v, ok := value.(string); ok {
+			s.Providers.AzureDevOps.Project = v
+
+			return nil
+		}
+
+		return errors.New("providers.azuredevops.project must be a string")
+	case "providers.azuredevops.repository":
+		if v, ok := value.(string); ok {
+			s.Providers.AzureDevOps.Repository = v
+
+			return nil
+		}
+
+		return errors.New("providers.azuredevops.repository must be a string")
+	case "providers.azuredevops.allow_ticket_comment":
+		if v, ok := value.(bool); ok {
+			s.Providers.AzureDevOps.AllowTicketComment = v
+
+			return nil
+		}
+
+		return errors.New("providers.azuredevops.allow_ticket_comment must be a boolean")
+	case "providers.azuredevops.status_sync":
+		if v, ok := value.(bool); ok {
+			s.Providers.AzureDevOps.StatusSync = v
+
+			return nil
+		}
+
+		return errors.New("providers.azuredevops.status_sync must be a boolean")
+	case "providers.azuredevops.status_mapping":
+		return setStatusMapping(&s.Providers.AzureDevOps.StatusMapping, value, "providers.azuredevops.status_mapping")
 
 	// Git
 	case "git.base_branch":
@@ -1025,6 +1139,10 @@ func GetValue(s *Settings, path string) (any, error) {
 		return s.Providers.Wrike.IncludeSiblingContext, nil
 	case "providers.gitlab.allow_ticket_comment":
 		return s.Providers.GitLab.AllowTicketComment, nil
+	case "providers.gitlab.status_sync":
+		return s.Providers.GitLab.StatusSync, nil
+	case "providers.gitlab.status_mapping":
+		return s.Providers.GitLab.StatusMapping, nil
 	case "providers.wrike.allow_ticket_comment":
 		return s.Providers.Wrike.AllowTicketComment, nil
 	case "providers.linear.token":
@@ -1061,6 +1179,24 @@ func GetValue(s *Settings, path string) (any, error) {
 		return s.Providers.Jira.StatusSync, nil
 	case "providers.jira.status_mapping":
 		return s.Providers.Jira.StatusMapping, nil
+
+	// Azure DevOps
+	case "providers.azuredevops.token":
+		return s.Providers.AzureDevOps.Token, nil
+	case "providers.azuredevops.base_url":
+		return s.Providers.AzureDevOps.BaseURL, nil
+	case "providers.azuredevops.organization":
+		return s.Providers.AzureDevOps.Organization, nil
+	case "providers.azuredevops.project":
+		return s.Providers.AzureDevOps.Project, nil
+	case "providers.azuredevops.repository":
+		return s.Providers.AzureDevOps.Repository, nil
+	case "providers.azuredevops.allow_ticket_comment":
+		return s.Providers.AzureDevOps.AllowTicketComment, nil
+	case "providers.azuredevops.status_sync":
+		return s.Providers.AzureDevOps.StatusSync, nil
+	case "providers.azuredevops.status_mapping":
+		return s.Providers.AzureDevOps.StatusMapping, nil
 
 	// Git
 	case "git.base_branch":
@@ -1140,11 +1276,12 @@ func GetValue(s *Settings, path string) (any, error) {
 //
 
 var SensitivePaths = map[string]string{
-	"providers.github.token": "GITHUB_TOKEN",
-	"providers.gitlab.token": "GITLAB_TOKEN",
-	"providers.wrike.token":  "WRIKE_TOKEN",
-	"providers.linear.token": "LINEAR_TOKEN",
-	"providers.jira.token":   "JIRA_TOKEN",
+	"providers.github.token":      "GITHUB_TOKEN",
+	"providers.gitlab.token":      "GITLAB_TOKEN",
+	"providers.wrike.token":       "WRIKE_TOKEN",
+	"providers.linear.token":      "LINEAR_TOKEN",
+	"providers.jira.token":        "JIRA_TOKEN",
+	"providers.azuredevops.token": "AZURE_DEVOPS_TOKEN",
 }
 
 // IsSensitivePath returns true if the path should be stored in .env.

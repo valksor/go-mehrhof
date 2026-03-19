@@ -33,9 +33,10 @@ func compliancePreset() *Settings {
 		},
 		Workflow: WorkflowSettings{
 			Policy: PolicySettings{
-				RequireSecurityScan: true,
-				ApprovalRequired:    map[string]bool{"submit": true},
-				ReviewChecklist:     []string{"security review", "tests passing", "docs updated"},
+				RequireSecurityScan:  true,
+				RequireSignedCommits: true,
+				ApprovalRequired:     map[string]bool{"submit": true},
+				ReviewChecklist:      []string{"security review", "tests passing", "docs updated"},
 			},
 		},
 	}

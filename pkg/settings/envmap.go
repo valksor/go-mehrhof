@@ -3,7 +3,6 @@ package settings
 import (
 	"bufio"
 	"os"
-	"path/filepath"
 	"strings"
 )
 
@@ -89,17 +88,4 @@ func loadEnvFileInto(path string, env EnvMap) error {
 	}
 
 	return scanner.Err()
-}
-
-// GlobalEnvPath and ProjectEnvPath are defined in dotenv.go
-// and used here to determine .env file locations.
-
-// EnsureGlobalEnvDir creates the global .env directory if it doesn't exist.
-func EnsureGlobalEnvDir() error {
-	path, err := GlobalEnvPath()
-	if err != nil {
-		return err
-	}
-
-	return os.MkdirAll(filepath.Dir(path), 0o755)
 }

@@ -17,6 +17,7 @@ import "gopkg.in/yaml.v3"
 // Project settings override global settings when both are present.
 type Settings struct {
 	Preset       string                 `yaml:"preset,omitempty" json:"preset,omitempty" schema:"label=Preset;desc=Configuration preset to apply defaults (e.g. compliance);options=|compliance|fast|solo;advanced"`
+	Identity     string                 `yaml:"identity,omitempty" json:"identity,omitempty" schema:"label=Identity;desc=User identity for approval records and audit trail (defaults to OS username)"`
 	Agent        AgentSettings          `yaml:"agent,omitempty" json:"agent,omitempty"`
 	Providers    ProviderSettings       `yaml:"providers,omitempty" json:"providers,omitempty"`
 	Git          GitSettings            `yaml:"git,omitempty" json:"git,omitempty"`
@@ -25,6 +26,7 @@ type Settings struct {
 	Workflow     WorkflowSettings       `yaml:"workflow,omitempty" json:"workflow,omitempty"`
 	Notify       NotifySettings         `yaml:"notify,omitempty" json:"notify,omitempty"`
 	Watchdog     WatchdogSettings       `yaml:"watchdog,omitempty" json:"watchdog,omitempty"`
+	Security     SecuritySettings       `yaml:"security,omitempty" json:"security,omitempty"`
 	UI           UISettings             `yaml:"ui,omitempty" json:"ui,omitempty"`
 	TUI          TUISettings            `yaml:"tui,omitempty" json:"tui,omitempty"`
 	Environment  string                 `yaml:"environment,omitempty" json:"environment,omitempty" schema:"label=Environment;desc=Deployment environment (dev, staging, prod);options=dev|staging|prod;default=dev"`
@@ -61,12 +63,25 @@ type CustomAgent struct {
 
 // ProviderSettings configures task providers (GitHub, GitLab, etc.).
 type ProviderSettings struct {
-	Default string       `yaml:"default,omitempty" json:"default,omitempty" schema:"label=Default Provider;desc=Provider used when none specified;options=github|gitlab|wrike|linear|file"`
-	GitHub  GitHubConfig `yaml:"github,omitempty" json:"github,omitempty"`
-	GitLab  GitLabConfig `yaml:"gitlab,omitempty" json:"gitlab,omitempty"`
-	Wrike   WrikeConfig  `yaml:"wrike,omitempty" json:"wrike,omitempty"`
-	Linear  LinearConfig `yaml:"linear,omitempty" json:"linear,omitempty"`
-	Jira    JiraConfig   `yaml:"jira,omitempty" json:"jira,omitempty"`
+	Default     string            `yaml:"default,omitempty" json:"default,omitempty" schema:"label=Default Provider;desc=Provider used when none specified;options=github|gitlab|wrike|linear|azuredevops|file"`
+	GitHub      GitHubConfig      `yaml:"github,omitempty" json:"github,omitempty"`
+	GitLab      GitLabConfig      `yaml:"gitlab,omitempty" json:"gitlab,omitempty"`
+	Wrike       WrikeConfig       `yaml:"wrike,omitempty" json:"wrike,omitempty"`
+	Linear      LinearConfig      `yaml:"linear,omitempty" json:"linear,omitempty"`
+	Jira        JiraConfig        `yaml:"jira,omitempty" json:"jira,omitempty"`
+	AzureDevOps AzureDevOpsConfig `yaml:"azuredevops,omitempty" json:"azuredevops,omitempty"`
+}
+
+// AzureDevOpsConfig configures the Azure DevOps provider.
+type AzureDevOpsConfig struct {
+	Token              string            `yaml:"-" json:"token,omitempty" schema:"label=Token;desc=Personal access token (work items, code scopes);sensitive;env=AZURE_DEVOPS_TOKEN;helpUrl=https://learn.microsoft.com/en-us/azure/devops/organizations/accounts/use-personal-access-tokens-to-authenticate"`
+	BaseURL            string            `yaml:"base_url,omitempty" json:"base_url,omitempty" schema:"label=Base URL;desc=Azure DevOps instance URL;default=https://dev.azure.com;placeholder=https://dev.azure.com"`
+	Organization       string            `yaml:"organization,omitempty" json:"organization,omitempty" schema:"label=Organization;desc=Azure DevOps organization name;required"`
+	Project            string            `yaml:"project,omitempty" json:"project,omitempty" schema:"label=Project;desc=Azure DevOps project name;required"`
+	Repository         string            `yaml:"repository,omitempty" json:"repository,omitempty" schema:"label=Repository;desc=Git repository name (defaults to project name)"`
+	AllowTicketComment bool              `yaml:"allow_ticket_comment,omitempty" json:"allow_ticket_comment,omitempty" schema:"label=Allow Ticket Comments;desc=Post status comments on work items"`
+	StatusSync         bool              `yaml:"status_sync,omitempty" json:"status_sync,omitempty" schema:"label=Status Sync;desc=Update work item state when task state changes"`
+	StatusMapping      map[string]string `yaml:"status_mapping,omitempty" json:"status_mapping,omitempty" schema:"label=Status Mapping;desc=Map kvelmo states to Azure DevOps work item states;type=keyvalue"`
 }
 
 // GitHubConfig configures the GitHub provider.
@@ -83,9 +98,11 @@ type GitHubConfig struct {
 
 // GitLabConfig configures the GitLab provider.
 type GitLabConfig struct {
-	Token              string `yaml:"-" json:"token,omitempty" schema:"label=Token;desc=Personal access token (api scope);sensitive;env=GITLAB_TOKEN;helpUrl=https://gitlab.com/-/user_settings/personal_access_tokens"`
-	BaseURL            string `yaml:"base_url,omitempty" json:"base_url,omitempty" schema:"label=Base URL;desc=GitLab instance URL;default=https://gitlab.com;placeholder=https://gitlab.com"`
-	AllowTicketComment bool   `yaml:"allow_ticket_comment,omitempty" json:"allow_ticket_comment,omitempty" schema:"label=Allow Ticket Comments;desc=Post status comments on GitLab issues"`
+	Token              string            `yaml:"-" json:"token,omitempty" schema:"label=Token;desc=Personal access token (api scope);sensitive;env=GITLAB_TOKEN;helpUrl=https://gitlab.com/-/user_settings/personal_access_tokens"`
+	BaseURL            string            `yaml:"base_url,omitempty" json:"base_url,omitempty" schema:"label=Base URL;desc=GitLab instance URL;default=https://gitlab.com;placeholder=https://gitlab.com"`
+	AllowTicketComment bool              `yaml:"allow_ticket_comment,omitempty" json:"allow_ticket_comment,omitempty" schema:"label=Allow Ticket Comments;desc=Post status comments on GitLab issues"`
+	StatusSync         bool              `yaml:"status_sync,omitempty" json:"status_sync,omitempty" schema:"label=Status Sync;desc=Update issue/MR status when task state changes"`
+	StatusMapping      map[string]string `yaml:"status_mapping,omitempty" json:"status_mapping,omitempty" schema:"label=Status Mapping;desc=Map kvelmo states to GitLab labels or statuses (e.g. implementing: in-progress);type=keyvalue"`
 }
 
 // WrikeConfig configures the Wrike provider.
@@ -133,18 +150,25 @@ type JiraConfig struct {
 // GitSettings configures git behavior for the workflow.
 // Pointer bools allow project-level false to override global-level true.
 type GitSettings struct {
-	BaseBranch              string   `yaml:"base_branch,omitempty" json:"base_branch,omitempty" schema:"label=Base Branch;desc=Default branch for PRs (auto-detected from git remote if empty);placeholder=auto-detect"`
-	BranchPattern           string   `yaml:"branch_pattern,omitempty" json:"branch_pattern,omitempty" schema:"label=Branch Pattern;desc=Pattern for branch names. Variables: {key}, {type}, {slug};default=feature/{key}--{slug}"`
-	CommitPrefix            string   `yaml:"commit_prefix,omitempty" json:"commit_prefix,omitempty" schema:"label=Commit Prefix;desc=Pattern for commit messages. Variables: {key};default=[{key}]"`
-	CommitPattern           string   `yaml:"commit_pattern,omitempty" json:"commit_pattern,omitempty" schema:"label=Commit Pattern;desc=Regex to validate commit messages. Leave empty to skip validation;placeholder=^(feat|fix|chore)\\(.*\\):.*;advanced"`
-	CheckpointPrefix        string   `yaml:"checkpoint_prefix,omitempty" json:"checkpoint_prefix,omitempty" schema:"label=Checkpoint Prefix;desc=Prefix for kvelmo internal checkpoint commits. Variables: {key}. Leave empty for default 'kvelmo:' format;advanced"`
-	PRTitlePattern          string   `yaml:"pr_title_pattern,omitempty" json:"pr_title_pattern,omitempty" schema:"label=PR Title Pattern;desc=Template for PR titles. Variables: {title}, {key}, {type}, {slug};default=[{key}] {title}"`
-	PRRequiredSections      []string `yaml:"pr_required_sections,omitempty" json:"pr_required_sections,omitempty" schema:"label=PR Required Sections;desc=PR template section keywords that must be filled before submission (e.g. summary, test plan);type=tags;advanced"`
-	BranchValidationPattern string   `yaml:"branch_validation_pattern,omitempty" json:"branch_validation_pattern,omitempty" schema:"label=Branch Validation;desc=Regex to validate generated branch names. Leave empty to skip validation;advanced"`
-	CreateBranch            *bool    `yaml:"create_branch,omitempty" json:"create_branch,omitempty" schema:"label=Create Branch;desc=Automatically create a branch when starting a task. If the branch already exists, switches to it;default=true"`
-	AutoCommit              *bool    `yaml:"auto_commit,omitempty" json:"auto_commit,omitempty" schema:"label=Auto Commit;desc=Automatically commit after implementation;default=true"`
-	SignCommits             *bool    `yaml:"sign_commits,omitempty" json:"sign_commits,omitempty" schema:"label=Sign Commits;desc=GPG sign commits;showWhen=git.auto_commit:true"`
-	AllowPRComment          *bool    `yaml:"allow_pr_comment,omitempty" json:"allow_pr_comment,omitempty" schema:"label=Allow PR Comments;desc=Post status comments on pull requests after submit"`
+	BaseBranch              string      `yaml:"base_branch,omitempty" json:"base_branch,omitempty" schema:"label=Base Branch;desc=Default branch for PRs (auto-detected from git remote if empty);placeholder=auto-detect"`
+	BranchPattern           string      `yaml:"branch_pattern,omitempty" json:"branch_pattern,omitempty" schema:"label=Branch Pattern;desc=Pattern for branch names. Variables: {key}, {type}, {slug};default=feature/{key}--{slug}"`
+	CommitPrefix            string      `yaml:"commit_prefix,omitempty" json:"commit_prefix,omitempty" schema:"label=Commit Prefix;desc=Pattern for commit messages. Variables: {key};default=[{key}]"`
+	CommitPattern           string      `yaml:"commit_pattern,omitempty" json:"commit_pattern,omitempty" schema:"label=Commit Pattern;desc=Regex to validate commit messages. Leave empty to skip validation;placeholder=^(feat|fix|chore)\\(.*\\):.*;advanced"`
+	CheckpointPrefix        string      `yaml:"checkpoint_prefix,omitempty" json:"checkpoint_prefix,omitempty" schema:"label=Checkpoint Prefix;desc=Prefix for kvelmo internal checkpoint commits. Variables: {key}. Leave empty for default 'kvelmo:' format;advanced"`
+	PRTitlePattern          string      `yaml:"pr_title_pattern,omitempty" json:"pr_title_pattern,omitempty" schema:"label=PR Title Pattern;desc=Template for PR titles. Variables: {title}, {key}, {type}, {slug};default=[{key}] {title}"`
+	PRRequiredSections      []string    `yaml:"pr_required_sections,omitempty" json:"pr_required_sections,omitempty" schema:"label=PR Required Sections;desc=PR template section keywords that must be filled before submission (e.g. summary, test plan);type=tags;advanced"`
+	BranchValidationPattern string      `yaml:"branch_validation_pattern,omitempty" json:"branch_validation_pattern,omitempty" schema:"label=Branch Validation;desc=Regex to validate generated branch names. Leave empty to skip validation;advanced"`
+	CreateBranch            *bool       `yaml:"create_branch,omitempty" json:"create_branch,omitempty" schema:"label=Create Branch;desc=Automatically create a branch when starting a task. If the branch already exists, switches to it;default=true"`
+	AutoCommit              *bool       `yaml:"auto_commit,omitempty" json:"auto_commit,omitempty" schema:"label=Auto Commit;desc=Automatically commit after implementation;default=true"`
+	SignCommits             *bool       `yaml:"sign_commits,omitempty" json:"sign_commits,omitempty" schema:"label=Sign Commits;desc=GPG sign commits;showWhen=git.auto_commit:true"`
+	AllowPRComment          *bool       `yaml:"allow_pr_comment,omitempty" json:"allow_pr_comment,omitempty" schema:"label=Allow PR Comments;desc=Post status comments on pull requests after submit"`
+	PRCustomSections        []PRSection `yaml:"pr_custom_sections,omitempty" json:"pr_custom_sections,omitempty" schema:"label=Custom PR Sections;desc=Additional sections to include in auto-generated PR body;advanced"`
+}
+
+// PRSection defines a custom section to include in auto-generated PR descriptions.
+type PRSection struct {
+	Title   string `yaml:"title" json:"title" schema:"label=Section Title;required"`
+	Content string `yaml:"content,omitempty" json:"content,omitempty" schema:"label=Default Content;desc=Default content or instructions for this section"`
 }
 
 // WorkerSettings configures the worker pool.
@@ -165,8 +189,10 @@ type StorageSettings struct {
 
 // ActivityLogSettings configures the RPC activity log.
 type ActivityLogSettings struct {
-	Enabled  bool `yaml:"enabled,omitempty" json:"enabled,omitempty" schema:"label=Enable Activity Log;desc=Log all RPC calls to JSONL files for debugging and audit;default=false"`
-	MaxFiles int  `yaml:"max_files,omitempty" json:"max_files,omitempty" schema:"label=Max Log Files;desc=Maximum number of daily log files to retain;default=30;min=1;max=365;advanced"`
+	Enabled     bool   `yaml:"enabled,omitempty" json:"enabled,omitempty" schema:"label=Enable Activity Log;desc=Log all RPC calls to JSONL files for debugging and audit;default=false"`
+	MaxFiles    int    `yaml:"max_files,omitempty" json:"max_files,omitempty" schema:"label=Max Log Files;desc=Maximum number of daily log files to retain;default=30;min=1;max=365;advanced"`
+	ForwardURL  string `yaml:"forward_url,omitempty" json:"forward_url,omitempty" schema:"label=Forward URL;desc=Webhook URL to forward activity entries to (e.g. SIEM endpoint);advanced"`
+	ForwardAuth string `yaml:"-" json:"forward_auth,omitempty" schema:"label=Forward Auth;desc=Authorization header value for forwarding;sensitive;env=KVELMO_LOG_FORWARD_AUTH"`
 }
 
 // MetricsHistorySettings configures time-series metrics storage.
@@ -199,13 +225,14 @@ type ExternalReviewConfig struct {
 
 // PolicySettings configures workflow enforcement guardrails.
 type PolicySettings struct {
-	RequiredPhases      []string         `yaml:"required_phases,omitempty" json:"required_phases,omitempty" schema:"label=Required Phases;desc=Workflow phases that cannot be skipped (e.g. review, simplify);type=tags"`
-	SensitivePaths      []string         `yaml:"sensitive_paths,omitempty" json:"sensitive_paths,omitempty" schema:"label=Sensitive Paths;desc=Glob patterns for files requiring mandatory review (e.g. pkg/auth/*);type=tags"`
-	MinSpecSections     int              `yaml:"min_spec_sections,omitempty" json:"min_spec_sections,omitempty" schema:"label=Min Specifications;desc=Minimum specification files required before implementation;default=0;min=0;max=10"`
-	RequireSecurityScan bool             `yaml:"require_security_scan,omitempty" json:"require_security_scan,omitempty" schema:"label=Require Security Scan;desc=Block submission when security findings exist;default=false"`
-	ApprovalRequired    map[string]bool  `yaml:"approval_required,omitempty" json:"approval_required,omitempty" schema:"label=Approval Required;desc=Transitions requiring explicit human approval (e.g. submit: true);type=keyvalue"`
-	ReviewChecklist     []string         `yaml:"review_checklist,omitempty" json:"review_checklist,omitempty" schema:"label=Review Checklist;desc=Items that must be checked before submit completes (e.g. security, performance);type=tags"`
-	DocRequirements     []DocRequirement `yaml:"doc_requirements,omitempty" json:"doc_requirements,omitempty"`
+	RequiredPhases       []string         `yaml:"required_phases,omitempty" json:"required_phases,omitempty" schema:"label=Required Phases;desc=Workflow phases that cannot be skipped (e.g. review, simplify);type=tags"`
+	SensitivePaths       []string         `yaml:"sensitive_paths,omitempty" json:"sensitive_paths,omitempty" schema:"label=Sensitive Paths;desc=Glob patterns for files requiring mandatory review (e.g. pkg/auth/*);type=tags"`
+	MinSpecSections      int              `yaml:"min_spec_sections,omitempty" json:"min_spec_sections,omitempty" schema:"label=Min Specifications;desc=Minimum specification files required before implementation;default=0;min=0;max=10"`
+	RequireSecurityScan  bool             `yaml:"require_security_scan,omitempty" json:"require_security_scan,omitempty" schema:"label=Require Security Scan;desc=Block submission when security findings exist;default=false"`
+	ApprovalRequired     map[string]bool  `yaml:"approval_required,omitempty" json:"approval_required,omitempty" schema:"label=Approval Required;desc=Transitions requiring explicit human approval (e.g. submit: true);type=keyvalue"`
+	ReviewChecklist      []string         `yaml:"review_checklist,omitempty" json:"review_checklist,omitempty" schema:"label=Review Checklist;desc=Items that must be checked before submit completes (e.g. security, performance);type=tags"`
+	RequireSignedCommits bool             `yaml:"require_signed_commits,omitempty" json:"require_signed_commits,omitempty" schema:"label=Require Signed Commits;desc=Block workflow if GPG commit signing is not enabled;default=false"`
+	DocRequirements      []DocRequirement `yaml:"doc_requirements,omitempty" json:"doc_requirements,omitempty"`
 }
 
 // DocRequirement defines a rule: when files matching Trigger change, files matching Requires must also change.
@@ -322,6 +349,11 @@ func (w *WorkflowSettings) UnmarshalYAML(value *yaml.Node) error {
 	*w = WorkflowSettings(p)
 
 	return nil
+}
+
+// SecuritySettings configures agent security controls.
+type SecuritySettings struct {
+	CanaryEnabled bool `yaml:"canary_enabled,omitempty" json:"canary_enabled,omitempty" schema:"label=Canary Sandboxing;desc=Seed fake credentials in agent HOME to detect unauthorized file access;default=false"`
 }
 
 // WatchdogSettings configures the memory leak watchdog.
