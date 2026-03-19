@@ -15,6 +15,13 @@
   - [Planning](/web-ui/planning.md)
   - [Implementing](/web-ui/implementing.md)
   - [Reviewing](/web-ui/reviewing.md)
+  - [Chat](/web-ui/chat.md)
+  - [Browser Automation](/web-ui/browser.md)
+  - [Workers](/web-ui/workers.md)
+  - [Activity & Audit](/web-ui/activity.md)
+  - [Backup & Restore](/web-ui/backup.md)
+  - [Security Scanning](/web-ui/security.md)
+  - [Export](/web-ui/export.md)
   - [Settings](/web-ui/settings.md)
 
 - CLI Reference
@@ -50,7 +57,7 @@
     - [stats](/cli/stats.md)
     - [diff](/cli/diff.md)
     - [logs](/cli/logs.md)
-    - [wait](/cli/wait.md)
+    - [--wait flag](/cli/wait.md)
     - [watch](/cli/watch.md)
     - [tui](/cli/tui.md)
   - Task Organization
@@ -65,6 +72,7 @@
     - [projects](/cli/projects.md)
     - [workers](/cli/workers.md)
     - [agent](/cli/agent.md)
+    - [strategy](/cli/strategy.md)
     - [delete](/cli/delete.md)
     - [update](/cli/update.md)
     - [stop](/cli/stop.md)
@@ -117,6 +125,7 @@
 
 - Providers
   - [Overview](/providers/index.md)
+  - [Azure DevOps](/providers/azuredevops.md)
   - [File](/providers/file.md)
   - [GitHub](/providers/github.md)
   - [GitLab](/providers/gitlab.md)

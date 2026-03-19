@@ -4,13 +4,15 @@ Providers are task sources that kvelmo can load tasks from.
 
 ## Supported Providers
 
-| Provider                       | Description           | Reference Format        |
-|--------------------------------|-----------------------|-------------------------|
-| [File](/providers/file.md)     | Local markdown files  | `file:path/to/task.md`  |
-| [GitHub](/providers/github.md) | GitHub issues and PRs | `github:owner/repo#123` |
-| [GitLab](/providers/gitlab.md) | GitLab issues and MRs | `gitlab:project#123`    |
-| [Linear](/providers/linear.md) | Linear app issues     | `linear:ENG-123`        |
-| [Wrike](/providers/wrike.md)   | Wrike tasks           | `wrike:taskid`          |
+| Provider                                    | Description               | Reference Format        |
+|---------------------------------------------|---------------------------|-------------------------|
+| [Azure DevOps](/providers/azuredevops.md)   | Azure DevOps work items   | `ado:12345`             |
+| [File](/providers/file.md)                  | Local markdown files      | `file:path/to/task.md`  |
+| [GitHub](/providers/github.md)              | GitHub issues and PRs     | `github:owner/repo#123` |
+| [GitLab](/providers/gitlab.md)              | GitLab issues and MRs     | `gitlab:project#123`    |
+| [Jira](/providers/jira.md)                  | Jira issues               | `jira:PROJ-123`         |
+| [Linear](/providers/linear.md)              | Linear app issues         | `linear:ENG-123`        |
+| [Wrike](/providers/wrike.md)                | Wrike tasks               | `wrike:taskid`          |
 
 ## Using Providers
 
@@ -31,19 +33,27 @@ kvelmo start --from linear:ENG-123
 
 # From Wrike
 kvelmo start --from wrike:abc123
+
+# From Azure DevOps
+kvelmo start --from ado:12345
+
+# From Jira
+kvelmo start --from jira:PROJ-123
 ```
 
 ## Provider Authentication
 
 Some providers require authentication:
 
-| Provider | Token Variable |
-|----------|----------------|
-| File     | None           |
-| GitHub   | `GITHUB_TOKEN` |
-| GitLab   | `GITLAB_TOKEN` |
-| Linear   | `LINEAR_TOKEN` |
-| Wrike    | `WRIKE_TOKEN`  |
+| Provider    | Token Variable       |
+|-------------|----------------------|
+| Azure DevOps| `AZURE_DEVOPS_TOKEN` |
+| File        | None                 |
+| GitHub      | `GITHUB_TOKEN`       |
+| GitLab      | `GITLAB_TOKEN`       |
+| Jira        | `JIRA_TOKEN`         |
+| Linear      | `LINEAR_TOKEN`       |
+| Wrike       | `WRIKE_TOKEN`        |
 
 ### Setting Tokens
 
@@ -104,8 +114,10 @@ provider.Register("myprovider", NewMyProvider)
 
 ## Related
 
+- [Azure DevOps Provider](/providers/azuredevops.md)
 - [File Provider](/providers/file.md)
 - [GitHub Provider](/providers/github.md)
 - [GitLab Provider](/providers/gitlab.md)
+- [Jira Provider](/providers/jira.md)
 - [Linear Provider](/providers/linear.md)
 - [Wrike Provider](/providers/wrike.md)
