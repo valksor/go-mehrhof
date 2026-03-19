@@ -24,6 +24,7 @@ func (a *activityLogAdapter) Record(entry ActivityEntry) {
 		UserID:        entry.UserID,
 		TaskID:        entry.TaskID,
 		AgentModel:    entry.AgentModel,
+		TaskTraceID:   entry.TaskTraceID,
 	})
 }
 

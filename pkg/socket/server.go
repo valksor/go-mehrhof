@@ -15,7 +15,7 @@ import (
 	"time"
 
 	"github.com/valksor/kvelmo/pkg/metrics"
-	"github.com/valksor/kvelmo/pkg/trace"
+	"github.com/valksor/kvelmo/pkg/ratelimit"
 )
 
 const (
@@ -32,48 +32,6 @@ type Handler func(ctx context.Context, req *Request, conn net.Conn) (*Response, 
 // Deprecated: Use Handler instead for new handlers.
 type LegacyHandler func(ctx context.Context, req *Request) (*Response, error)
 
-// RateLimiter tracks request counts per connection.
-type RateLimiter struct {
-	mu        sync.Mutex
-	counts    map[net.Conn]int
-	limit     int           // Max requests per window
-	window    time.Duration // Time window
-	lastReset time.Time     // Last reset time
-}
-
-func newRateLimiter(limit int, window time.Duration) *RateLimiter {
-	return &RateLimiter{
-		counts:    make(map[net.Conn]int),
-		limit:     limit,
-		window:    window,
-		lastReset: time.Now(),
-	}
-}
-
-func (r *RateLimiter) allow(conn net.Conn) bool {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-
-	// Reset counts if window has passed
-	if time.Since(r.lastReset) > r.window {
-		r.counts = make(map[net.Conn]int)
-		r.lastReset = time.Now()
-	}
-
-	if r.counts[conn] >= r.limit {
-		return false
-	}
-	r.counts[conn]++
-
-	return true
-}
-
-func (r *RateLimiter) remove(conn net.Conn) {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-	delete(r.counts, conn)
-}
-
 // ActivityLogger is called after each RPC dispatch to record activity.
 type ActivityLogger interface {
 	Record(entry ActivityEntry)
@@ -89,6 +47,45 @@ type ActivityEntry struct {
 	UserID        string
 	TaskID        string
 	AgentModel    string
+	TaskTraceID   string
+}
+
+// ServerOption configures a Server during construction.
+type ServerOption func(*Server)
+
+// WithActivityLogger sets the activity logger for RPC call recording.
+func WithActivityLogger(logger ActivityLogger) ServerOption {
+	return func(s *Server) {
+		if logger != nil {
+			s.activityLogger = logger
+		}
+	}
+}
+
+// WithMetrics sets a custom metrics recorder. When nil, the global
+// metrics.Global() instance is used (default behaviour in dispatch).
+func WithMetrics(m *metrics.Metrics) ServerOption {
+	return func(s *Server) {
+		s.metrics = m
+	}
+}
+
+// WithDrainTimeout overrides the default shutdown drain timeout.
+func WithDrainTimeout(d time.Duration) ServerOption {
+	return func(s *Server) {
+		if d > 0 {
+			s.drainTimeout = d
+		}
+	}
+}
+
+// WithRateLimiter replaces the default rate limiter.
+func WithRateLimiter(rl *ratelimit.Limiter) ServerOption {
+	return func(s *Server) {
+		if rl != nil {
+			s.rateLimiter = rl
+		}
+	}
 }
 
 type Server struct {
@@ -103,30 +100,72 @@ type Server struct {
 	shutdownCh     chan struct{}
 	isShutdown     atomic.Bool
 	shutdownOnce   sync.Once
-	rateLimiter    *RateLimiter
+	rateLimiter    *ratelimit.Limiter
 	activityLogger ActivityLogger
-	username       string // Cached OS username for audit logging
+	metrics        *metrics.Metrics // nil means use metrics.Global()
+	drainTimeout   time.Duration    // 0 means use ShutdownTimeout
+	username       string           // Cached OS username for audit logging
+	middleware     []Middleware      // Middleware chain applied to every handler
 }
 
-func NewServer(path string) *Server {
+// NewServer creates a new Unix domain socket server.
+// Options are applied after default initialization, so callers that pass
+// no options get the same behaviour as before.
+func NewServer(path string, opts ...ServerOption) *Server {
 	s := &Server{
 		path:           path,
 		handlers:       make(map[string]Handler),
 		legacyHandlers: make(map[string]LegacyHandler),
 		conns:          make(map[net.Conn]struct{}),
 		shutdownCh:     make(chan struct{}),
-		rateLimiter:    newRateLimiter(1000, time.Minute), // 1000 requests/min per connection
+		rateLimiter:    ratelimit.NewLimiter(16.67, 100), // ~1000 requests/min with burst of 100
 	}
 	if u, err := user.Current(); err == nil {
 		s.username = u.Username
+	}
+	for _, opt := range opts {
+		opt(s)
+	}
+
+	// Register default middleware in order: Recovery (outermost), Trace,
+	// RateLimit, Metrics, ActivityLog (innermost).
+	// ActivityLogMiddleware takes a function so that loggers set after
+	// construction (via SetActivityLogger) are picked up.
+	s.middleware = []Middleware{
+		RecoveryMiddleware(),
+		TraceMiddleware(),
+		RateLimitMiddleware(s.rateLimiter, defaultConnKeyFn),
+		MetricsMiddleware(s.metrics),
+		ActivityLogMiddleware(func() ActivityLogger { return s.activityLogger }, false),
 	}
 
 	return s
 }
 
 // SetActivityLogger sets the activity logger for RPC call recording.
+//
+// Deprecated: Use WithActivityLogger option in NewServer instead.
 func (s *Server) SetActivityLogger(l ActivityLogger) {
 	s.activityLogger = l
+}
+
+// Use adds middleware that wraps every handler in the dispatch chain.
+// Middleware is applied in the order added (first added = outermost wrapper).
+func (s *Server) Use(mw ...Middleware) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	s.middleware = append(s.middleware, mw...)
+}
+
+// getDrainTimeout returns the configured drain timeout, falling back to
+// ShutdownTimeout when none was provided via WithDrainTimeout.
+func (s *Server) getDrainTimeout() time.Duration {
+	if s.drainTimeout > 0 {
+		return s.drainTimeout
+	}
+
+	return ShutdownTimeout
 }
 
 // Handle registers a legacy handler (without connection access).
@@ -168,6 +207,8 @@ func (s *Server) Start(ctx context.Context) error {
 
 		return fmt.Errorf("chmod socket: %w", err)
 	}
+
+	s.rateLimiter.Start(ctx)
 
 	go func() {
 		<-ctx.Done()
@@ -219,7 +260,7 @@ func (s *Server) initiateShutdown() {
 }
 
 func (s *Server) waitForDrain() {
-	deadline := time.After(ShutdownTimeout)
+	deadline := time.After(s.getDrainTimeout())
 	ticker := time.NewTicker(100 * time.Millisecond)
 	defer ticker.Stop()
 
@@ -257,14 +298,28 @@ func (s *Server) trackConn(conn net.Conn, add bool) {
 	}
 }
 
+func (s *Server) connKey(conn net.Conn) string {
+	if addr := conn.RemoteAddr(); addr != nil {
+		return addr.String()
+	}
+
+	return fmt.Sprintf("conn-%p", conn)
+}
+
 func (s *Server) handleConn(ctx context.Context, conn net.Conn) {
+	key := s.connKey(conn)
+
+	// Enrich context with connection info so middleware can access it.
+	ctx = WithConn(ctx, conn)
+	ctx = withConnInfo(ctx, ConnInfo{Key: key})
+
 	defer func() {
 		if r := recover(); r != nil {
 			slog.Error("socket handler panic recovered", "panic", r, "stack", string(debug.Stack()))
 		}
 		_ = conn.Close()
 		s.trackConn(conn, false)
-		s.rateLimiter.remove(conn)
+		s.rateLimiter.Remove(key)
 	}()
 
 	scanner := bufio.NewScanner(conn)
@@ -280,18 +335,6 @@ func (s *Server) handleConn(ctx context.Context, conn net.Conn) {
 
 		line := scanner.Bytes()
 		if len(line) == 0 {
-			continue
-		}
-
-		// Check rate limit
-		if !s.rateLimiter.allow(conn) {
-			resp := NewErrorResponse("", ErrCodeRateLimited, "rate limit exceeded")
-			if err := s.writeResponse(conn, resp); err != nil {
-				slog.Debug("failed to write rate limit response", "error", err)
-
-				return
-			}
-
 			continue
 		}
 
@@ -317,69 +360,40 @@ func (s *Server) handleConn(ctx context.Context, conn net.Conn) {
 }
 
 func (s *Server) dispatch(ctx context.Context, req *Request, conn net.Conn) *Response {
-	start := time.Now()
-	corrID := trace.NewID()
-	ctx = trace.WithID(ctx, corrID)
-
+	// The shutdown method is handled directly, outside the middleware chain,
+	// because it triggers server teardown.
 	if req.Method == "shutdown" {
 		go s.initiateShutdown()
 		resp, _ := NewResultResponse(req.ID, map[string]bool{"ok": true})
-		slog.Debug("rpc request", "method", req.Method, "id", req.ID, "correlation_id", corrID, "duration_ms", time.Since(start).Milliseconds())
 
 		return resp
 	}
 
+	// Look up the registered handler.
 	s.mu.RLock()
 	handler, hasHandler := s.handlers[req.Method]
 	legacyHandler, hasLegacy := s.legacyHandlers[req.Method]
+	middleware := make([]Middleware, len(s.middleware))
+	copy(middleware, s.middleware)
 	s.mu.RUnlock()
 
 	if !hasHandler && !hasLegacy {
-		slog.Warn("rpc method not found", "method", req.Method, "id", req.ID, "correlation_id", corrID)
-		// Record as failed RPC request for observability
-		metrics.Global().RecordRPCRequest(req.Method, 0, fmt.Errorf("method not found: %s", req.Method))
+		slog.Warn("rpc method not found", "method", req.Method, "id", req.ID)
 
 		return NewErrorResponse(req.ID, ErrCodeMethodNotFound, "method not found: "+req.Method)
 	}
 
-	var resp *Response
-	var err error
-
+	// Convert the handler to a HandlerFunc and wrap with the middleware chain.
+	var hf HandlerFunc
 	if hasHandler {
-		resp, err = handler(ctx, req, conn)
+		hf = adaptHandler(handler)
 	} else {
-		resp, err = legacyHandler(ctx, req)
+		hf = adaptLegacyHandler(legacyHandler)
 	}
 
-	duration := time.Since(start)
-	if err != nil {
-		slog.Error("rpc request failed", "method", req.Method, "id", req.ID, "correlation_id", corrID, "error", err, "duration_ms", duration.Milliseconds())
-		metrics.Global().RecordRPCRequest(req.Method, duration, err)
-		s.recordActivity(req, corrID, duration, err.Error())
+	wrapped := buildChain(hf, middleware)
 
-		return NewErrorResponse(req.ID, ErrCodeInternal, err.Error())
-	}
-
-	slog.Debug("rpc request", "method", req.Method, "id", req.ID, "correlation_id", corrID, "duration_ms", duration.Milliseconds())
-	metrics.Global().RecordRPCRequest(req.Method, duration, nil)
-	s.recordActivity(req, corrID, duration, "")
-
-	return resp
-}
-
-func (s *Server) recordActivity(req *Request, corrID string, duration time.Duration, errMsg string) {
-	if s.activityLogger == nil {
-		return
-	}
-	paramsSize := len(req.Params)
-	s.activityLogger.Record(ActivityEntry{
-		Method:        req.Method,
-		CorrelationID: corrID,
-		DurationMs:    duration.Milliseconds(),
-		Error:         errMsg,
-		ParamsSize:    paramsSize,
-		UserID:        s.username,
-	})
+	return wrapped(ctx, req)
 }
 
 func (s *Server) writeResponse(conn net.Conn, resp *Response) error {
@@ -422,6 +436,7 @@ func (s *Server) Path() string {
 
 // Stop gracefully stops the server.
 func (s *Server) Stop() error {
+	s.rateLimiter.Stop()
 	s.initiateShutdown()
 	s.waitForDrain()
 	s.forceCloseAll()
