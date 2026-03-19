@@ -1423,7 +1423,9 @@ func (g *GlobalSocket) getBrowserOpts(params BrowserParams) *browser.ExecOptions
 func (g *GlobalSocket) handleBrowserSnapshot(ctx context.Context, req *Request) (*Response, error) {
 	var params BrowserParams
 	if req.Params != nil {
-		_ = json.Unmarshal(req.Params, &params)
+		if err := json.Unmarshal(req.Params, &params); err != nil {
+			return NewErrorResponse(req.ID, ErrCodeInvalidParams, "invalid params: "+err.Error()), nil //nolint:nilerr // Error conveyed via JSON-RPC response
+		}
 	}
 
 	result, err := browser.Snapshot(ctx, g.getBrowserOpts(params))
@@ -1462,7 +1464,9 @@ func (g *GlobalSocket) handleBrowserEval(ctx context.Context, req *Request) (*Re
 func (g *GlobalSocket) handleBrowserConsole(ctx context.Context, req *Request) (*Response, error) {
 	var params BrowserParams
 	if req.Params != nil {
-		_ = json.Unmarshal(req.Params, &params)
+		if err := json.Unmarshal(req.Params, &params); err != nil {
+			return NewErrorResponse(req.ID, ErrCodeInvalidParams, "invalid params: "+err.Error()), nil //nolint:nilerr // Error conveyed via JSON-RPC response
+		}
 	}
 
 	result, err := browser.Console(ctx, g.getBrowserOpts(params))
@@ -1476,7 +1480,9 @@ func (g *GlobalSocket) handleBrowserConsole(ctx context.Context, req *Request) (
 func (g *GlobalSocket) handleBrowserNetwork(ctx context.Context, req *Request) (*Response, error) {
 	var params BrowserParams
 	if req.Params != nil {
-		_ = json.Unmarshal(req.Params, &params)
+		if err := json.Unmarshal(req.Params, &params); err != nil {
+			return NewErrorResponse(req.ID, ErrCodeInvalidParams, "invalid params: "+err.Error()), nil //nolint:nilerr // Error conveyed via JSON-RPC response
+		}
 	}
 
 	result, err := browser.Network(ctx, g.getBrowserOpts(params))
@@ -1501,7 +1507,9 @@ type BrowserScreenshotParams struct {
 func (g *GlobalSocket) handleBrowserScreenshot(ctx context.Context, req *Request) (*Response, error) {
 	var params BrowserScreenshotParams
 	if req.Params != nil {
-		_ = json.Unmarshal(req.Params, &params)
+		if err := json.Unmarshal(req.Params, &params); err != nil {
+			return NewErrorResponse(req.ID, ErrCodeInvalidParams, "invalid params: "+err.Error()), nil
+		}
 	}
 
 	screenshotOpts := &browser.ScreenshotOptions{
@@ -1929,7 +1937,9 @@ func (g *GlobalSocket) handleBrowserPress(ctx context.Context, req *Request) (*R
 func (g *GlobalSocket) handleBrowserBack(ctx context.Context, req *Request) (*Response, error) {
 	var params BrowserParams
 	if req.Params != nil {
-		_ = json.Unmarshal(req.Params, &params)
+		if err := json.Unmarshal(req.Params, &params); err != nil {
+			return NewErrorResponse(req.ID, ErrCodeInvalidParams, "invalid params: "+err.Error()), nil //nolint:nilerr // Error conveyed via JSON-RPC response
+		}
 	}
 
 	result, err := browser.Back(ctx, g.getBrowserOpts(params))
@@ -1943,7 +1953,9 @@ func (g *GlobalSocket) handleBrowserBack(ctx context.Context, req *Request) (*Re
 func (g *GlobalSocket) handleBrowserForward(ctx context.Context, req *Request) (*Response, error) {
 	var params BrowserParams
 	if req.Params != nil {
-		_ = json.Unmarshal(req.Params, &params)
+		if err := json.Unmarshal(req.Params, &params); err != nil {
+			return NewErrorResponse(req.ID, ErrCodeInvalidParams, "invalid params: "+err.Error()), nil //nolint:nilerr // Error conveyed via JSON-RPC response
+		}
 	}
 
 	result, err := browser.Forward(ctx, g.getBrowserOpts(params))
@@ -1957,7 +1969,9 @@ func (g *GlobalSocket) handleBrowserForward(ctx context.Context, req *Request) (
 func (g *GlobalSocket) handleBrowserReload(ctx context.Context, req *Request) (*Response, error) {
 	var params BrowserParams
 	if req.Params != nil {
-		_ = json.Unmarshal(req.Params, &params)
+		if err := json.Unmarshal(req.Params, &params); err != nil {
+			return NewErrorResponse(req.ID, ErrCodeInvalidParams, "invalid params: "+err.Error()), nil //nolint:nilerr // Error conveyed via JSON-RPC response
+		}
 	}
 
 	result, err := browser.Reload(ctx, g.getBrowserOpts(params))
@@ -2036,7 +2050,9 @@ type BrowserPDFParams struct {
 func (g *GlobalSocket) handleBrowserPDF(ctx context.Context, req *Request) (*Response, error) {
 	var params BrowserPDFParams
 	if req.Params != nil {
-		_ = json.Unmarshal(req.Params, &params)
+		if err := json.Unmarshal(req.Params, &params); err != nil {
+			return NewErrorResponse(req.ID, ErrCodeInvalidParams, "invalid params: "+err.Error()), nil //nolint:nilerr // Error conveyed via JSON-RPC response
+		}
 	}
 
 	pdfOpts := &browser.PDFOptions{

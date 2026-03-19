@@ -191,10 +191,9 @@ func (w *WorktreeSocket) registerBasicHandlers() {
 }
 
 func (w *WorktreeSocket) registerHandlers() {
-	// Basic
-	w.server.Handle("ping", w.handlePing)
-	w.server.Handle("status", w.handleStatus)
-	w.server.Handle("strategy.list", w.handleStrategyList)
+	// Note: ping, status, strategy.list, checkpoints, checkpoint.goto,
+	// git.*, browse, stream.subscribe, and review.list are already
+	// registered in registerBasicHandlers().
 
 	// Task lifecycle
 	w.server.Handle("start", w.handleStart)
@@ -228,8 +227,7 @@ func (w *WorktreeSocket) registerHandlers() {
 	w.server.Handle("task.history", w.handleTaskHistory)
 	w.server.Handle("task.search", w.handleTaskSearch)
 
-	// Review history
-	w.server.Handle("review.list", w.handleReviewList)
+	// Review
 	w.server.Handle("review.view", w.handleReviewView)
 
 	// Quality gate user prompts
@@ -238,24 +236,10 @@ func (w *WorktreeSocket) registerHandlers() {
 	// Checkpoint navigation
 	w.server.Handle("undo", w.handleUndo)
 	w.server.Handle("redo", w.handleRedo)
-	w.server.Handle("checkpoints", w.handleCheckpoints)
-	w.server.Handle("checkpoint.goto", w.handleCheckpointGoto)
-
-	// Git operations
-	w.server.Handle("git.status", w.handleGitStatus)
-	w.server.Handle("git.diff", w.handleGitDiff)
-	w.server.Handle("git.diff_against", w.handleGitDiffAgainst)
-	w.server.Handle("git.log", w.handleGitLog)
-
-	// Streaming
-	w.server.HandleWithConn("stream.subscribe", w.handleStreamSubscribe)
 
 	// Show spec/plan content
 	w.server.Handle("show.spec", w.handleShowSpec)
 	w.server.Handle("show.plan", w.handleShowSpec) // plan output is stored as specifications
-
-	// File browsing
-	w.server.Handle("browse", w.handleBrowse)
 
 	// Screenshots
 	w.server.Handle("screenshots.list", w.handleScreenshotsList)
@@ -354,6 +338,16 @@ func (w *WorktreeSocket) setupEventForwarding() {
 	})
 }
 
+// noConductor returns an error response when a handler requires a conductor
+// but none is configured. Returns nil if conductor is available.
+func (w *WorktreeSocket) noConductor(id string) *Response {
+	if w.conductor != nil {
+		return nil
+	}
+
+	return NewErrorResponse(id, -32600, "no conductor configured")
+}
+
 // --- Basic Handlers ---
 
 func (w *WorktreeSocket) handlePing(ctx context.Context, req *Request) (*Response, error) {
@@ -422,8 +416,8 @@ type ShowSpecResult struct {
 }
 
 func (w *WorktreeSocket) handleShowSpec(_ context.Context, req *Request) (*Response, error) {
-	if w.conductor == nil {
-		return NewErrorResponse(req.ID, -32600, "no conductor configured"), nil
+	if resp := w.noConductor(req.ID); resp != nil {
+		return resp, nil
 	}
 
 	wu := w.conductor.WorkUnit()
@@ -454,8 +448,8 @@ type StartParams struct {
 }
 
 func (w *WorktreeSocket) handleStart(ctx context.Context, req *Request) (*Response, error) {
-	if w.conductor == nil {
-		return NewErrorResponse(req.ID, -32600, "no conductor configured"), nil
+	if resp := w.noConductor(req.ID); resp != nil {
+		return resp, nil
 	}
 
 	var params StartParams
@@ -524,8 +518,8 @@ type PlanParams struct {
 }
 
 func (w *WorktreeSocket) handlePlan(ctx context.Context, req *Request) (*Response, error) {
-	if w.conductor == nil {
-		return NewErrorResponse(req.ID, -32600, "no conductor configured"), nil
+	if resp := w.noConductor(req.ID); resp != nil {
+		return resp, nil
 	}
 
 	var params PlanParams
@@ -554,8 +548,8 @@ type ImplementParams struct {
 }
 
 func (w *WorktreeSocket) handleImplement(ctx context.Context, req *Request) (*Response, error) {
-	if w.conductor == nil {
-		return NewErrorResponse(req.ID, -32600, "no conductor configured"), nil
+	if resp := w.noConductor(req.ID); resp != nil {
+		return resp, nil
 	}
 
 	var params ImplementParams
@@ -583,8 +577,8 @@ type OptimizeParams struct {
 }
 
 func (w *WorktreeSocket) handleOptimize(ctx context.Context, req *Request) (*Response, error) {
-	if w.conductor == nil {
-		return NewErrorResponse(req.ID, -32600, "no conductor configured"), nil
+	if resp := w.noConductor(req.ID); resp != nil {
+		return resp, nil
 	}
 
 	var params OptimizeParams
@@ -606,8 +600,8 @@ func (w *WorktreeSocket) handleOptimize(ctx context.Context, req *Request) (*Res
 }
 
 func (w *WorktreeSocket) handleSimplify(ctx context.Context, req *Request) (*Response, error) {
-	if w.conductor == nil {
-		return NewErrorResponse(req.ID, -32600, "no conductor configured"), nil
+	if resp := w.noConductor(req.ID); resp != nil {
+		return resp, nil
 	}
 
 	jobID, err := w.conductor.Simplify(ctx)
@@ -642,8 +636,8 @@ type ReviewParams struct {
 }
 
 func (w *WorktreeSocket) handleReview(ctx context.Context, req *Request) (*Response, error) {
-	if w.conductor == nil {
-		return NewErrorResponse(req.ID, -32600, "no conductor configured"), nil
+	if resp := w.noConductor(req.ID); resp != nil {
+		return resp, nil
 	}
 
 	var params ReviewParams
@@ -677,8 +671,8 @@ type SubmitParams struct {
 }
 
 func (w *WorktreeSocket) handleSubmit(ctx context.Context, req *Request) (*Response, error) {
-	if w.conductor == nil {
-		return NewErrorResponse(req.ID, -32600, "no conductor configured"), nil
+	if resp := w.noConductor(req.ID); resp != nil {
+		return resp, nil
 	}
 
 	var params SubmitParams
@@ -703,8 +697,8 @@ type FinishParams struct {
 }
 
 func (w *WorktreeSocket) handleFinish(ctx context.Context, req *Request) (*Response, error) {
-	if w.conductor == nil {
-		return NewErrorResponse(req.ID, -32600, "no conductor configured"), nil
+	if resp := w.noConductor(req.ID); resp != nil {
+		return resp, nil
 	}
 
 	var params FinishParams
@@ -729,8 +723,8 @@ func (w *WorktreeSocket) handleFinish(ctx context.Context, req *Request) (*Respo
 }
 
 func (w *WorktreeSocket) handleRefresh(ctx context.Context, req *Request) (*Response, error) {
-	if w.conductor == nil {
-		return NewErrorResponse(req.ID, -32600, "no conductor configured"), nil
+	if resp := w.noConductor(req.ID); resp != nil {
+		return resp, nil
 	}
 
 	result, err := w.conductor.Refresh(ctx)
@@ -756,8 +750,8 @@ type RemoteApproveParams struct {
 }
 
 func (w *WorktreeSocket) handleRemoteApprove(ctx context.Context, req *Request) (*Response, error) {
-	if w.conductor == nil {
-		return NewErrorResponse(req.ID, -32600, "no conductor configured"), nil
+	if resp := w.noConductor(req.ID); resp != nil {
+		return resp, nil
 	}
 
 	var params RemoteApproveParams
@@ -781,8 +775,8 @@ type RemoteMergeParams struct {
 }
 
 func (w *WorktreeSocket) handleRemoteMerge(ctx context.Context, req *Request) (*Response, error) {
-	if w.conductor == nil {
-		return NewErrorResponse(req.ID, -32600, "no conductor configured"), nil
+	if resp := w.noConductor(req.ID); resp != nil {
+		return resp, nil
 	}
 
 	var params RemoteMergeParams
@@ -801,8 +795,8 @@ func (w *WorktreeSocket) handleRemoteMerge(ctx context.Context, req *Request) (*
 }
 
 func (w *WorktreeSocket) handleAbort(ctx context.Context, req *Request) (*Response, error) {
-	if w.conductor == nil {
-		return NewErrorResponse(req.ID, -32600, "no conductor configured"), nil
+	if resp := w.noConductor(req.ID); resp != nil {
+		return resp, nil
 	}
 
 	if err := w.conductor.Abort(ctx); err != nil {
@@ -816,8 +810,8 @@ func (w *WorktreeSocket) handleAbort(ctx context.Context, req *Request) (*Respon
 }
 
 func (w *WorktreeSocket) handleStop(ctx context.Context, req *Request) (*Response, error) {
-	if w.conductor == nil {
-		return NewErrorResponse(req.ID, -32600, "no conductor configured"), nil
+	if resp := w.noConductor(req.ID); resp != nil {
+		return resp, nil
 	}
 
 	if err := w.conductor.Stop(ctx); err != nil {
@@ -831,8 +825,8 @@ func (w *WorktreeSocket) handleStop(ctx context.Context, req *Request) (*Respons
 }
 
 func (w *WorktreeSocket) handleReset(ctx context.Context, req *Request) (*Response, error) {
-	if w.conductor == nil {
-		return NewErrorResponse(req.ID, -32600, "no conductor configured"), nil
+	if resp := w.noConductor(req.ID); resp != nil {
+		return resp, nil
 	}
 
 	if err := w.conductor.Reset(ctx); err != nil {
@@ -853,8 +847,8 @@ type AbandonParams struct {
 }
 
 func (w *WorktreeSocket) handleAbandon(ctx context.Context, req *Request) (*Response, error) {
-	if w.conductor == nil {
-		return NewErrorResponse(req.ID, -32600, "no conductor configured"), nil
+	if resp := w.noConductor(req.ID); resp != nil {
+		return resp, nil
 	}
 
 	var params AbandonParams
@@ -879,8 +873,8 @@ type DeleteParams struct {
 }
 
 func (w *WorktreeSocket) handleDelete(ctx context.Context, req *Request) (*Response, error) {
-	if w.conductor == nil {
-		return NewErrorResponse(req.ID, -32600, "no conductor configured"), nil
+	if resp := w.noConductor(req.ID); resp != nil {
+		return resp, nil
 	}
 
 	var params DeleteParams
@@ -910,8 +904,8 @@ type UpdateResult struct {
 }
 
 func (w *WorktreeSocket) handleUpdate(ctx context.Context, req *Request) (*Response, error) {
-	if w.conductor == nil {
-		return NewErrorResponse(req.ID, -32600, "no conductor configured"), nil
+	if resp := w.noConductor(req.ID); resp != nil {
+		return resp, nil
 	}
 
 	changed, specPath, err := w.conductor.UpdateTask(ctx)
@@ -958,8 +952,8 @@ type ReviewViewParams struct {
 }
 
 func (w *WorktreeSocket) handleReviewView(ctx context.Context, req *Request) (*Response, error) {
-	if w.conductor == nil {
-		return NewErrorResponse(req.ID, -32600, "no conductor configured"), nil
+	if resp := w.noConductor(req.ID); resp != nil {
+		return resp, nil
 	}
 
 	var params ReviewViewParams
@@ -985,8 +979,8 @@ type qualityRespondParams struct {
 }
 
 func (w *WorktreeSocket) handleQualityRespond(ctx context.Context, req *Request) (*Response, error) {
-	if w.conductor == nil {
-		return NewErrorResponse(req.ID, -32600, "no conductor configured"), nil
+	if resp := w.noConductor(req.ID); resp != nil {
+		return resp, nil
 	}
 
 	var params qualityRespondParams
@@ -1012,8 +1006,8 @@ type UndoParams struct {
 }
 
 func (w *WorktreeSocket) handleUndo(ctx context.Context, req *Request) (*Response, error) {
-	if w.conductor == nil {
-		return NewErrorResponse(req.ID, -32600, "no conductor configured"), nil
+	if resp := w.noConductor(req.ID); resp != nil {
+		return resp, nil
 	}
 
 	var params UndoParams
@@ -1042,8 +1036,8 @@ type RedoParams struct {
 }
 
 func (w *WorktreeSocket) handleRedo(ctx context.Context, req *Request) (*Response, error) {
-	if w.conductor == nil {
-		return NewErrorResponse(req.ID, -32600, "no conductor configured"), nil
+	if resp := w.noConductor(req.ID); resp != nil {
+		return resp, nil
 	}
 
 	var params RedoParams
@@ -1073,8 +1067,8 @@ type CheckpointGotoParams struct {
 }
 
 func (w *WorktreeSocket) handleCheckpointGoto(ctx context.Context, req *Request) (*Response, error) {
-	if w.conductor == nil {
-		return NewErrorResponse(req.ID, -32600, "no conductor configured"), nil
+	if resp := w.noConductor(req.ID); resp != nil {
+		return resp, nil
 	}
 
 	var params CheckpointGotoParams
@@ -1108,8 +1102,8 @@ type CheckpointInfo struct {
 }
 
 func (w *WorktreeSocket) handleCheckpoints(ctx context.Context, req *Request) (*Response, error) {
-	if w.conductor == nil {
-		return NewErrorResponse(req.ID, -32600, "no conductor configured"), nil
+	if resp := w.noConductor(req.ID); resp != nil {
+		return resp, nil
 	}
 
 	wu := w.conductor.WorkUnit()

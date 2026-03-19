@@ -36,9 +36,11 @@ func (w *WorktreeSocket) handlePolicyCheck(_ context.Context, req *Request) (*Re
 
 	state := string(w.conductor.Machine().State())
 	violations := policy.Evaluate(policyCfg, "", state, wu.Specifications, nil)
+	unified := policy.ViolationsToFindings(violations)
 
 	return NewResultResponse(req.ID, map[string]any{
 		"violations": violations,
+		"findings":   unified,
 		"blocking":   policy.HasBlockingViolation(violations),
 	})
 }

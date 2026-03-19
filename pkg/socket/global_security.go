@@ -27,17 +27,17 @@ func (g *GlobalSocket) handleSecurityScan(ctx context.Context, req *Request) (*R
 		return NewErrorResponse(req.ID, ErrCodeInternal, err.Error()), nil
 	}
 
-	// Collect all findings across scanners.
-	var allFindings []security.Finding
+	// Convert to unified findings model.
+	unified := security.ReportsToFindings(reports)
+
 	var scanners []string
 	for _, r := range reports {
-		allFindings = append(allFindings, r.Findings...)
 		scanners = append(scanners, r.Scanner)
 	}
 
 	return NewResultResponse(req.ID, map[string]any{
-		"findings": allFindings,
-		"count":    len(allFindings),
+		"findings": unified,
+		"count":    len(unified),
 		"scanners": scanners,
 	})
 }
