@@ -90,10 +90,11 @@ func (c *Conductor) Start(ctx context.Context, sourceRef string) error {
 			Reference: sourceRef,
 			Content:   task.Description,
 		},
-		Hierarchy: hierarchyCtx,
-		Metadata:  make(map[string]string),
-		CreatedAt: time.Now(),
-		UpdatedAt: time.Now(),
+		Hierarchy:   hierarchyCtx,
+		TaskTraceID: "ttrace-" + uuid.New().String(),
+		Metadata:    make(map[string]string),
+		CreatedAt:   time.Now(),
+		UpdatedAt:   time.Now(),
 	}
 
 	// Create branch if we have git and CreateBranch is enabled

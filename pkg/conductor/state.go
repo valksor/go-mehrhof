@@ -132,6 +132,9 @@ type WorkUnit struct {
 	RedoStack      []string          `json:"redo_stack"`     // For redo after undo
 	Jobs           []string          `json:"jobs"`           // Job IDs submitted
 	Metadata       map[string]string `json:"metadata"`
+	// TaskTraceID links all activity log entries across the entire task lifecycle.
+	// Generated when a task is loaded and propagated through context to all phases.
+	TaskTraceID string `json:"task_trace_id,omitempty"`
 	// PRID stores the PR/MR ID after submission (e.g., "owner/repo#123").
 	// Used by ApprovePR and MergePR conductor methods.
 	PRID string `json:"pr_id,omitempty"`

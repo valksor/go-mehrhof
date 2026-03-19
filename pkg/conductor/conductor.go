@@ -85,6 +85,11 @@ type Conductor struct {
 	// Storage (optional, set via SetStore)
 	store *storage.Store
 
+	// Optional service integrations (set via SetNotifier, SetQualityRunner, SetMetricsRecorder)
+	notifier        Notifier
+	qualityRunner   QualityRunner
+	metricsRecorder MetricsRecorder
+
 	// Variable pool for sharing context between graph nodes
 	varPool *varpool.Pool
 
@@ -427,6 +432,18 @@ func (c *Conductor) MarkDirty() {
 // Machine returns the state machine.
 func (c *Conductor) Machine() *Machine {
 	return c.machine
+}
+
+// TaskTraceID returns the current task's trace ID. Returns empty string if
+// no task is loaded.
+func (c *Conductor) TaskTraceID() string {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	if c.workUnit == nil {
+		return ""
+	}
+
+	return c.workUnit.TaskTraceID
 }
 
 // SetAutoAdvance enables or disables automatic phase progression.

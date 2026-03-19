@@ -13,6 +13,47 @@ import (
 	"github.com/valksor/kvelmo/pkg/storage"
 )
 
+// Notifier delivers notifications about conductor events to external systems
+// (e.g. Slack webhooks, email). Implementations should be safe for concurrent use.
+type Notifier interface {
+	Notify(ctx context.Context, eventType string, data map[string]any) error
+}
+
+// QualityRunner executes quality gates against project code and reports
+// whether the gates passed along with any findings.
+type QualityRunner interface {
+	RunGates(ctx context.Context, workDir string) (passed bool, findings []string, err error)
+}
+
+// MetricsRecorder records phase-level metrics for observability dashboards.
+type MetricsRecorder interface {
+	RecordPhaseTransition(phase string, duration time.Duration, err error)
+}
+
+// SetNotifier configures an optional notification service.
+// Safe to call with nil (clears the notifier).
+func (c *Conductor) SetNotifier(n Notifier) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.notifier = n
+}
+
+// SetQualityRunner configures an optional quality gate runner.
+// Safe to call with nil (clears the runner).
+func (c *Conductor) SetQualityRunner(q QualityRunner) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.qualityRunner = q
+}
+
+// SetMetricsRecorder configures an optional phase-level metrics recorder.
+// Safe to call with nil (clears the recorder).
+func (c *Conductor) SetMetricsRecorder(m MetricsRecorder) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.metricsRecorder = m
+}
+
 // SetMemoryIndexer configures the memory indexer used to index task artefacts
 // after major phase completions (plan, implement, submit).
 // Calling this is optional; if not set, memory indexing is skipped.
@@ -182,6 +223,7 @@ func workUnitToTaskState(state State, wu *WorkUnit, history []HistoryEntry) *sto
 		DependsOn:         wu.DependsOn,
 		QualityGatePassed: wu.QualityGatePassed,
 		VarPoolPath:       wu.VarPoolPath,
+		TaskTraceID:       wu.TaskTraceID,
 		CreatedAt:         wu.CreatedAt,
 		UpdatedAt:         wu.UpdatedAt,
 	}
@@ -258,6 +300,7 @@ func taskStateToWorkUnit(ts *storage.TaskState) (State, *WorkUnit, []HistoryEntr
 		DependsOn:         ts.DependsOn,
 		QualityGatePassed: ts.QualityGatePassed,
 		VarPoolPath:       ts.VarPoolPath,
+		TaskTraceID:       ts.TaskTraceID,
 		CreatedAt:         ts.CreatedAt,
 		UpdatedAt:         ts.UpdatedAt,
 	}
