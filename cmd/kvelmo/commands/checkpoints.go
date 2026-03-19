@@ -3,14 +3,9 @@ package commands
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
-	"os"
-	"time"
 
 	"github.com/spf13/cobra"
-	"github.com/valksor/kvelmo/pkg/meta"
-	"github.com/valksor/kvelmo/pkg/socket"
 )
 
 var CheckpointsCmd = &cobra.Command{
@@ -24,47 +19,13 @@ and can be navigated with 'undo' and 'redo' commands.`,
 }
 
 func runCheckpoints(cmd *cobra.Command, args []string) error {
-	cwd, err := os.Getwd()
-	if err != nil {
-		return fmt.Errorf("get working directory: %w", err)
-	}
-
-	wtPath := socket.WorktreeSocketPath(cwd)
-
-	if !socket.SocketExists(wtPath) {
-		return errors.New("no worktree socket running\nRun '" + meta.Name + " start' first")
-	}
-
-	client, err := socket.NewClient(wtPath, socket.WithTimeout(5*time.Second))
-	if err != nil {
-		return fmt.Errorf("connect to worktree socket: %w", err)
-	}
-	defer func() { _ = client.Close() }()
-
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	resp, err := client.Call(ctx, "checkpoints", nil)
+	resp, err := callWorktree(context.Background(), "checkpoints", nil)
 	if err != nil {
 		return fmt.Errorf("checkpoints call: %w", err)
 	}
 
 	if checkpointsJSON {
-		var pretty any
-		if jsonErr := json.Unmarshal(resp.Result, &pretty); jsonErr != nil {
-			fmt.Println(string(resp.Result))
-
-			return nil
-		}
-		out, jsonErr := json.MarshalIndent(pretty, "", "  ")
-		if jsonErr != nil {
-			fmt.Println(string(resp.Result))
-
-			return nil
-		}
-		fmt.Println(string(out))
-
-		return nil
+		return outputJSON(resp.Result)
 	}
 
 	// CheckpointInfo matches the socket response structure
@@ -130,27 +91,7 @@ func init() {
 func runCheckpointsGoto(cmd *cobra.Command, args []string) error {
 	sha := args[0]
 
-	cwd, err := os.Getwd()
-	if err != nil {
-		return fmt.Errorf("get working directory: %w", err)
-	}
-
-	wtPath := socket.WorktreeSocketPath(cwd)
-
-	if !socket.SocketExists(wtPath) {
-		return errors.New("no worktree socket running\nRun '" + meta.Name + " start' first")
-	}
-
-	client, err := socket.NewClient(wtPath, socket.WithTimeout(5*time.Second))
-	if err != nil {
-		return fmt.Errorf("connect to worktree socket: %w", err)
-	}
-	defer func() { _ = client.Close() }()
-
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	resp, err := client.Call(ctx, "checkpoint.goto", map[string]any{"sha": sha})
+	resp, err := callWorktree(context.Background(), "checkpoint.goto", map[string]any{"sha": sha})
 	if err != nil {
 		return fmt.Errorf("checkpoint.goto call: %w", err)
 	}

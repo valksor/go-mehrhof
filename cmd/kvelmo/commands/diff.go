@@ -85,22 +85,6 @@ func runDiff(cmd *cobra.Command, args []string) error {
 	return showRegularDiff(ctx, client, stat)
 }
 
-func printJSONResult(raw json.RawMessage) {
-	var pretty any
-	if jsonErr := json.Unmarshal(raw, &pretty); jsonErr != nil {
-		fmt.Println(string(raw))
-
-		return
-	}
-	out, jsonErr := json.MarshalIndent(pretty, "", "  ")
-	if jsonErr != nil {
-		fmt.Println(string(raw))
-
-		return
-	}
-	fmt.Println(string(out))
-}
-
 func showDiffAgainst(ctx context.Context, client *socket.Client, ref string, stat bool) error {
 	resp, err := client.Call(ctx, "git.diff_against", map[string]any{
 		"ref":  ref,
@@ -111,9 +95,7 @@ func showDiffAgainst(ctx context.Context, client *socket.Client, ref string, sta
 	}
 
 	if diffJSON {
-		printJSONResult(resp.Result)
-
-		return nil
+		return outputJSON(resp.Result)
 	}
 
 	var result struct {
@@ -144,9 +126,7 @@ func showRegularDiff(ctx context.Context, client *socket.Client, stat bool) erro
 		}
 
 		if diffJSON {
-			printJSONResult(resp.Result)
-
-			return nil
+			return outputJSON(resp.Result)
 		}
 
 		var result struct {
@@ -171,9 +151,7 @@ func showRegularDiff(ctx context.Context, client *socket.Client, stat bool) erro
 	}
 
 	if diffJSON {
-		printJSONResult(resp.Result)
-
-		return nil
+		return outputJSON(resp.Result)
 	}
 
 	var result struct {

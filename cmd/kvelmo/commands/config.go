@@ -9,7 +9,6 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
-	"time"
 
 	"github.com/spf13/cobra"
 
@@ -354,15 +353,11 @@ func runConfigEdit(cmd *cobra.Command, args []string) error {
 
 // globalSocketClient connects to the global socket and returns a client, context, and cancel func.
 func globalSocketClient() (*socket.Client, context.Context, context.CancelFunc, error) {
-	gPath := socket.GlobalSocketPath()
-	if !socket.SocketExists(gPath) {
-		return nil, nil, nil, errors.New(meta.Name + " server not running\nRun '" + meta.Name + " serve' first")
-	}
-	client, err := socket.NewClient(gPath, socket.WithTimeout(5*time.Second))
+	client, err := globalClient(defaultTimeout)
 	if err != nil {
-		return nil, nil, nil, fmt.Errorf("connect to server: %w", err)
+		return nil, nil, nil, err
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), defaultTimeout)
 
 	return client, ctx, cancel, nil
 }

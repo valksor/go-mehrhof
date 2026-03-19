@@ -3,12 +3,10 @@ package commands
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"time"
 
 	"github.com/spf13/cobra"
-	"github.com/valksor/kvelmo/pkg/meta"
 	"github.com/valksor/kvelmo/pkg/socket"
 )
 
@@ -95,41 +93,16 @@ type JobInfo struct {
 }
 
 func runJobsList(cmd *cobra.Command, args []string) error {
-	gPath := socket.GlobalSocketPath()
-	if !socket.SocketExists(gPath) {
-		return errors.New("global socket not running\nRun '" + meta.Name + " start' first")
-	}
-
-	client, err := socket.NewClient(gPath, socket.WithTimeout(5*time.Second))
-	if err != nil {
-		return fmt.Errorf("connect to global socket: %w", err)
-	}
-	defer func() { _ = client.Close() }()
-
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), defaultTimeout)
 	defer cancel()
 
-	resp, err := client.Call(ctx, "jobs.list", nil)
+	resp, err := callGlobal(ctx, "jobs.list", nil)
 	if err != nil {
 		return fmt.Errorf("jobs.list call: %w", err)
 	}
 
 	if jobsListJSON {
-		var pretty any
-		if jsonErr := json.Unmarshal(resp.Result, &pretty); jsonErr != nil {
-			fmt.Println(string(resp.Result))
-
-			return nil
-		}
-		out, jsonErr := json.MarshalIndent(pretty, "", "  ")
-		if jsonErr != nil {
-			fmt.Println(string(resp.Result))
-
-			return nil
-		}
-		fmt.Println(string(out))
-
-		return nil
+		return outputJSON(resp.Result)
 	}
 
 	var result struct {
@@ -171,41 +144,16 @@ func runJobsList(cmd *cobra.Command, args []string) error {
 func runJobsGet(cmd *cobra.Command, args []string) error {
 	id := args[0]
 
-	gPath := socket.GlobalSocketPath()
-	if !socket.SocketExists(gPath) {
-		return errors.New("global socket not running\nRun '" + meta.Name + " start' first")
-	}
-
-	client, err := socket.NewClient(gPath, socket.WithTimeout(5*time.Second))
-	if err != nil {
-		return fmt.Errorf("connect to global socket: %w", err)
-	}
-	defer func() { _ = client.Close() }()
-
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), defaultTimeout)
 	defer cancel()
 
-	resp, err := client.Call(ctx, "jobs.get", map[string]any{"id": id})
+	resp, err := callGlobal(ctx, "jobs.get", map[string]any{"id": id})
 	if err != nil {
 		return fmt.Errorf("jobs.get call: %w", err)
 	}
 
 	if jobsGetJSON {
-		var pretty any
-		if jsonErr := json.Unmarshal(resp.Result, &pretty); jsonErr != nil {
-			fmt.Println(string(resp.Result))
-
-			return nil
-		}
-		out, jsonErr := json.MarshalIndent(pretty, "", "  ")
-		if jsonErr != nil {
-			fmt.Println(string(resp.Result))
-
-			return nil
-		}
-		fmt.Println(string(out))
-
-		return nil
+		return outputJSON(resp.Result)
 	}
 
 	var job JobInfo

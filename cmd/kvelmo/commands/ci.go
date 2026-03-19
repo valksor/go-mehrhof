@@ -4,11 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"os"
-	"time"
 
 	"github.com/spf13/cobra"
-	"github.com/valksor/kvelmo/pkg/socket"
 )
 
 var ciJSON bool
@@ -30,28 +27,10 @@ func init() {
 }
 
 func runCIStatus(_ *cobra.Command, _ []string) error {
-	cwd, err := os.Getwd()
-	if err != nil {
-		return fmt.Errorf("get working directory: %w", err)
-	}
-
-	wtPath := socket.WorktreeSocketPath(cwd)
-	if !socket.SocketExists(wtPath) {
-		fmt.Println("No worktree socket running. CI status requires an active task.")
-
-		return nil
-	}
-
-	client, err := socket.NewClient(wtPath, socket.WithTimeout(5*time.Second))
-	if err != nil {
-		return fmt.Errorf("connect: %w", err)
-	}
-	defer func() { _ = client.Close() }()
-
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), defaultTimeout)
 	defer cancel()
 
-	resp, err := client.Call(ctx, "ci.status", nil)
+	resp, err := callWorktree(ctx, "ci.status", nil)
 	if err != nil {
 		return fmt.Errorf("ci.status: %w", err)
 	}

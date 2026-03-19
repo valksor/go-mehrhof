@@ -4,11 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"os"
-	"time"
 
 	"github.com/spf13/cobra"
-	"github.com/valksor/kvelmo/pkg/socket"
 )
 
 // ApproveCmd grants explicit approval for a workflow transition that requires it.
@@ -48,23 +45,7 @@ func init() {
 func runApprove(_ *cobra.Command, args []string) error {
 	event := args[0]
 
-	cwd, err := os.Getwd()
-	if err != nil {
-		return fmt.Errorf("get cwd: %w", err)
-	}
-
-	wtPath := socket.WorktreeSocketPath(cwd)
-
-	client, err := socket.NewClient(wtPath, socket.WithTimeout(10*time.Second))
-	if err != nil {
-		return fmt.Errorf("connect to socket: %w", err)
-	}
-	defer func() { _ = client.Close() }()
-
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-
-	_, err = client.Call(ctx, "approve", map[string]any{
+	_, err := callWorktree(context.Background(), "approve", map[string]any{
 		"event": event,
 	})
 	if err != nil {
@@ -77,21 +58,13 @@ func runApprove(_ *cobra.Command, args []string) error {
 }
 
 func runChecklist(cmd *cobra.Command, _ []string) error {
-	cwd, err := os.Getwd()
+	client, err := worktreeClient(defaultTimeout)
 	if err != nil {
-		return fmt.Errorf("get cwd: %w", err)
-	}
-
-	wtPath := socket.WorktreeSocketPath(cwd)
-
-	client, err := socket.NewClient(wtPath, socket.WithTimeout(10*time.Second))
-	if err != nil {
-		return fmt.Errorf("connect to socket: %w", err)
+		return err
 	}
 	defer func() { _ = client.Close() }()
 
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
+	ctx := context.Background()
 
 	// Handle --check flag
 	if checkItem, _ := cmd.Flags().GetString("check"); checkItem != "" {

@@ -3,14 +3,9 @@ package commands
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
-	"os"
-	"time"
 
 	"github.com/spf13/cobra"
-	"github.com/valksor/kvelmo/pkg/meta"
-	"github.com/valksor/kvelmo/pkg/socket"
 )
 
 var hooksJSON bool
@@ -28,26 +23,7 @@ func init() {
 }
 
 func runHooks(_ *cobra.Command, _ []string) error {
-	cwd, err := os.Getwd()
-	if err != nil {
-		return fmt.Errorf("get working directory: %w", err)
-	}
-
-	wtPath := socket.WorktreeSocketPath(cwd)
-	if !socket.SocketExists(wtPath) {
-		return errors.New("no worktree socket running\nRun '" + meta.Name + " start' first")
-	}
-
-	client, err := socket.NewClient(wtPath, socket.WithTimeout(5*time.Second))
-	if err != nil {
-		return fmt.Errorf("connect to worktree socket: %w", err)
-	}
-	defer func() { _ = client.Close() }()
-
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-
-	resp, err := client.Call(ctx, "hooks.list", nil)
+	resp, err := callWorktree(context.Background(), "hooks.list", nil)
 	if err != nil {
 		return fmt.Errorf("hooks.list: %w", err)
 	}

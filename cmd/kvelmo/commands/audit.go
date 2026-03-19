@@ -3,14 +3,11 @@ package commands
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"strings"
 	"time"
 
 	"github.com/spf13/cobra"
-	"github.com/valksor/kvelmo/pkg/meta"
-	"github.com/valksor/kvelmo/pkg/socket"
 )
 
 var (
@@ -33,21 +30,10 @@ func init() {
 }
 
 func runAudit(_ *cobra.Command, _ []string) error {
-	globalPath := socket.GlobalSocketPath()
-	if !socket.SocketExists(globalPath) {
-		return errors.New("global socket not running\nRun '" + meta.Name + " serve' first")
-	}
-
-	client, err := socket.NewClient(globalPath, socket.WithTimeout(30*time.Second))
-	if err != nil {
-		return fmt.Errorf("connect to global socket: %w", err)
-	}
-	defer func() { _ = client.Close() }()
-
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), defaultTimeout)
 	defer cancel()
 
-	resp, err := client.Call(ctx, "export", map[string]any{
+	resp, err := callGlobal(ctx, "export", map[string]any{
 		"format":  "json",
 		"since":   auditSince,
 		"include": "tasks,metrics,activity",

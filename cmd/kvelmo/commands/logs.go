@@ -68,23 +68,9 @@ func runLogs(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("chat.history call: %w", err)
 	}
 
-	outputJSON, _ := cmd.Flags().GetBool("json")
-	if outputJSON {
-		var pretty interface{}
-		if jsonErr := json.Unmarshal(resp.Result, &pretty); jsonErr != nil {
-			fmt.Println(string(resp.Result))
-
-			return nil
-		}
-		out, jsonErr := json.MarshalIndent(pretty, "", "  ")
-		if jsonErr != nil {
-			fmt.Println(string(resp.Result))
-
-			return nil
-		}
-		fmt.Println(string(out))
-
-		return nil
+	jsonFlag, _ := cmd.Flags().GetBool("json")
+	if jsonFlag {
+		return outputJSON(resp.Result)
 	}
 
 	var result struct {
