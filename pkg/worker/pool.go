@@ -1,11 +1,12 @@
 package worker
 
 import (
+	"cmp"
 	"context"
 	"errors"
 	"fmt"
 	"log/slog"
-	"sort"
+	"slices"
 	"strings"
 	"sync"
 	"time"
@@ -781,8 +782,8 @@ func (p *Pool) ListWorkers() []*Worker {
 	}
 
 	// Sort by ID for consistent ordering
-	sort.Slice(workers, func(i, j int) bool {
-		return workers[i].ID < workers[j].ID
+	slices.SortFunc(workers, func(a, b *Worker) int {
+		return cmp.Compare(a.ID, b.ID)
 	})
 
 	return workers
@@ -799,8 +800,8 @@ func (p *Pool) ListJobs() []*Job {
 	}
 
 	// Sort by creation time
-	sort.Slice(jobs, func(i, j int) bool {
-		return jobs[i].CreatedAt.Before(jobs[j].CreatedAt)
+	slices.SortFunc(jobs, func(a, b *Job) int {
+		return a.CreatedAt.Compare(b.CreatedAt)
 	})
 
 	return jobs
@@ -838,8 +839,8 @@ func (p *Pool) ListQueuedJobs() []*Job {
 		}
 	}
 
-	sort.Slice(jobs, func(i, j int) bool {
-		return jobs[i].CreatedAt.Before(jobs[j].CreatedAt)
+	slices.SortFunc(jobs, func(a, b *Job) int {
+		return a.CreatedAt.Compare(b.CreatedAt)
 	})
 
 	return jobs

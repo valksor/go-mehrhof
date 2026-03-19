@@ -3,10 +3,10 @@
 package configcheck
 
 import (
+	"cmp"
 	"fmt"
 	"maps"
 	"slices"
-	"sort"
 )
 
 // Drift represents a single configuration difference between
@@ -25,8 +25,8 @@ func Check(reference, actual map[string]any) []Drift {
 	var drifts []Drift
 	checkRecursive("", reference, actual, &drifts)
 
-	sort.Slice(drifts, func(i, j int) bool {
-		return drifts[i].Path < drifts[j].Path
+	slices.SortFunc(drifts, func(a, b Drift) int {
+		return cmp.Compare(a.Path, b.Path)
 	})
 
 	return drifts

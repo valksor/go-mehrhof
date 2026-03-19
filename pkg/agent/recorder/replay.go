@@ -2,12 +2,13 @@ package recorder
 
 import (
 	"bufio"
+	"cmp"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
-	"sort"
+	"slices"
 	"strings"
 	"time"
 )
@@ -147,8 +148,8 @@ func ListRecordings(dir string) ([]RecordingInfo, error) {
 	}
 
 	// Sort by path (which includes timestamp)
-	sort.Slice(infos, func(i, j int) bool {
-		return infos[i].Path > infos[j].Path // Newest first
+	slices.SortFunc(infos, func(a, b RecordingInfo) int {
+		return cmp.Compare(b.Path, a.Path) // Newest first
 	})
 
 	return infos, nil

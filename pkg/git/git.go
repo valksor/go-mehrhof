@@ -12,7 +12,8 @@ import (
 )
 
 type Repository struct {
-	path string
+	path        string
+	signCommits bool
 }
 
 func Open(path string) (*Repository, error) {
@@ -170,9 +171,29 @@ func ValidateCommitMessage(message, pattern string) error {
 	return nil
 }
 
+// SetSignCommits enables or disables GPG commit signing.
+func (r *Repository) SetSignCommits(sign bool) {
+	r.signCommits = sign
+}
+
+// IsSigningConfigured checks whether git commit signing is configured in the repository.
+func (r *Repository) IsSigningConfigured(ctx context.Context) bool {
+	out, err := r.run(ctx, "config", "commit.gpgsign")
+	if err != nil {
+		return false
+	}
+
+	return strings.TrimSpace(out) == "true"
+}
+
 func (r *Repository) Commit(ctx context.Context, message string) (string, error) {
 	slog.Debug("git: committing", "message", message)
-	_, err := r.run(ctx, "commit", "-m", message)
+	args := []string{"commit"}
+	if r.signCommits {
+		args = append(args, "--gpg-sign")
+	}
+	args = append(args, "-m", message)
+	_, err := r.run(ctx, args...)
 	if err != nil {
 		// Check if this looks like a pre-commit hook failure where files were modified
 		// (formatters that fix files but reject the commit)
@@ -181,7 +202,7 @@ func (r *Repository) Commit(ctx context.Context, message string) (string, error)
 			if stageErr := r.StageAll(ctx); stageErr != nil {
 				return "", fmt.Errorf("re-stage after hook: %w", stageErr)
 			}
-			_, retryErr := r.run(ctx, "commit", "-m", message)
+			_, retryErr := r.run(ctx, args...)
 			if retryErr != nil {
 				return "", fmt.Errorf("commit after hook retry: %w", retryErr)
 			}

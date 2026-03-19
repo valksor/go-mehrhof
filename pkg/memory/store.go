@@ -1,6 +1,7 @@
 package memory
 
 import (
+	"cmp"
 	"context"
 	"encoding/json"
 	"errors"
@@ -9,7 +10,7 @@ import (
 	"math"
 	"os"
 	"path/filepath"
-	"sort"
+	"slices"
 	"strings"
 	"sync"
 	"time"
@@ -200,8 +201,8 @@ func (vs *VectorStore) Search(ctx context.Context, query string, opts SearchOpti
 
 	vs.mu.RUnlock()
 
-	sort.Slice(candidates, func(i, j int) bool {
-		return candidates[i].score > candidates[j].score
+	slices.SortFunc(candidates, func(a, b candidate) int {
+		return cmp.Compare(b.score, a.score)
 	})
 
 	count := len(candidates)

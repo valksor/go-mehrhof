@@ -358,36 +358,24 @@ const (
 	ScopeReview    = "review"
 )
 
-// ScopedKey creates a namespaced key: ScopedKey("plan", "spec") → "plan.spec".
-func ScopedKey(scope, name string) string {
+// scopedKey creates a namespaced key: scopedKey("plan", "spec") → "plan.spec".
+func scopedKey(scope, name string) string {
 	return scope + "." + name
-}
-
-// ParseKey splits a namespaced key into scope and name.
-// "plan.spec" → ("plan", "spec"). Bare keys return ("", key).
-func ParseKey(key string) (string, string) {
-	for i := range key {
-		if key[i] == '.' {
-			return key[:i], key[i+1:]
-		}
-	}
-
-	return "", key
 }
 
 // SetScoped stores a variable with an explicit namespace scope.
 func (p *Pool) SetScoped(scope, name string, value any, setBy string) {
-	p.Set(ScopedKey(scope, name), value, setBy)
+	p.Set(scopedKey(scope, name), value, setBy)
 }
 
 // GetScoped retrieves a variable by scope and name.
 func (p *Pool) GetScoped(scope, name string) (Variable, bool) {
-	return p.Get(ScopedKey(scope, name))
+	return p.Get(scopedKey(scope, name))
 }
 
 // GetScopedString returns the string value of a scoped variable, or empty string.
 func (p *Pool) GetScopedString(scope, name string) string {
-	return p.GetString(ScopedKey(scope, name))
+	return p.GetString(scopedKey(scope, name))
 }
 
 // ListScope returns all variables in the given scope, sorted by name.

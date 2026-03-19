@@ -321,45 +321,6 @@ func PDF(ctx context.Context, opts *ExecOptions, outputPath string) error {
 	return nil
 }
 
-// GetAttribute gets an attribute value from an element.
-func GetAttribute(ctx context.Context, opts *ExecOptions, selector, attribute string) (string, error) {
-	output, err := Exec(ctx, opts, "eval", fmt.Sprintf(
-		`document.querySelector('%s')?.getAttribute('%s')`,
-		selector, attribute,
-	))
-	if err != nil {
-		return "", fmt.Errorf("get attribute: %w", err)
-	}
-
-	return strings.TrimSpace(string(output)), nil
-}
-
-// GetText gets the text content of an element.
-func GetText(ctx context.Context, opts *ExecOptions, selector string) (string, error) {
-	output, err := Exec(ctx, opts, "eval", fmt.Sprintf(
-		`document.querySelector('%s')?.textContent`,
-		selector,
-	))
-	if err != nil {
-		return "", fmt.Errorf("get text: %w", err)
-	}
-
-	return strings.TrimSpace(string(output)), nil
-}
-
-// GetHTML gets the inner HTML of an element.
-func GetHTML(ctx context.Context, opts *ExecOptions, selector string) (string, error) {
-	output, err := Exec(ctx, opts, "eval", fmt.Sprintf(
-		`document.querySelector('%s')?.innerHTML`,
-		selector,
-	))
-	if err != nil {
-		return "", fmt.Errorf("get html: %w", err)
-	}
-
-	return strings.TrimSpace(string(output)), nil
-}
-
 // FillResult represents the result of filling an input.
 type FillResult struct {
 	Success  bool   `json:"success"`

@@ -9,7 +9,7 @@ import (
 	_ "image/png"
 	"os"
 	"path/filepath"
-	"sort"
+	"slices"
 	"sync"
 	"time"
 
@@ -103,8 +103,8 @@ func (s *Store) List(taskID string) ([]Screenshot, error) {
 	}
 
 	// Sort by timestamp descending (newest first)
-	sort.Slice(screenshots, func(i, j int) bool {
-		return screenshots[i].Timestamp.After(screenshots[j].Timestamp)
+	slices.SortFunc(screenshots, func(a, b Screenshot) int {
+		return b.Timestamp.Compare(a.Timestamp)
 	})
 
 	return screenshots, nil
