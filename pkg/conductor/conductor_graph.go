@@ -66,6 +66,13 @@ func (c *Conductor) watchGraph(ctx context.Context, sched *graph.Scheduler, comp
 				Message: "Node failed: " + evt.NodeLabel,
 			})
 
+		case graph.EventNodeFailRouted:
+			c.emit(ConductorEvent{
+				Type:    "node_fail_routed",
+				NodeID:  string(evt.NodeID),
+				Message: "Failure routed to handler: " + evt.Content,
+			})
+
 		case graph.EventNodeSkipped:
 			c.emit(ConductorEvent{
 				Type:    "node_skipped",

@@ -2,6 +2,7 @@ package conductor
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log/slog"
 	"os"
@@ -12,9 +13,56 @@ import (
 
 	"github.com/valksor/kvelmo/pkg/git"
 	"github.com/valksor/kvelmo/pkg/memory"
+	"github.com/valksor/kvelmo/pkg/security"
 	"github.com/valksor/kvelmo/pkg/storage"
 	"github.com/valksor/kvelmo/pkg/worker"
 )
+
+// setupCanaryHarness creates a canary harness if canary sandboxing is enabled.
+// Must be called with c.mu held. Call cleanupCanaryHarness when the job finishes.
+func (c *Conductor) setupCanaryHarness() {
+	cfg := c.GetEffectiveSettings()
+	if !cfg.Security.CanaryEnabled {
+		return
+	}
+
+	harness, err := security.NewCanaryHarness()
+	if err != nil {
+		slog.Warn("canary harness setup failed", "error", err)
+
+		return
+	}
+
+	c.canaryHarness = harness
+	slog.Info("canary harness active", "dir", harness.Dir)
+}
+
+// checkCanaryViolations checks canary files for unauthorized access and logs violations.
+// Must be called with c.mu held. Cleans up the harness afterward.
+func (c *Conductor) checkCanaryViolations(jobOutput string) {
+	if c.canaryHarness == nil {
+		return
+	}
+
+	violations := c.canaryHarness.Check(jobOutput)
+	if len(violations) > 0 {
+		slog.Warn("canary violations detected", "count", len(violations))
+		for _, v := range violations {
+			slog.Warn("canary violation", "file", v.File, "method", v.Method)
+		}
+
+		if data, err := json.Marshal(violations); err == nil {
+			c.emit(ConductorEvent{
+				Type:    "canary_violation",
+				Message: fmt.Sprintf("%d canary violations detected", len(violations)),
+				Data:    data,
+			})
+		}
+	}
+
+	c.canaryHarness.Cleanup()
+	c.canaryHarness = nil
+}
 
 //nolint:contextcheck // Intentionally accepts lifecycle context, not request context
 func (c *Conductor) watchJob(ctx context.Context, jobID string, completionEvent Event) {
@@ -115,6 +163,10 @@ func (c *Conductor) watchJob(ctx context.Context, jobID string, completionEvent 
 						jobOutput = job.Result
 					}
 				}
+
+				// Check canary violations using job output
+				c.checkCanaryViolations(jobOutput)
+
 				c.mu.Unlock()
 
 				if jobOutput != "" && c.evaluateAndMaybeIterate(ctx, completionEvent, jobOutput) {
@@ -177,6 +229,10 @@ func (c *Conductor) watchJob(ctx context.Context, jobID string, completionEvent 
 		if event.Type == "job_failed" {
 			c.mu.Lock()
 			c.activeJobID = "" // Clear active job on failure
+
+			// Clean up canary harness on failure (no output to check)
+			c.checkCanaryViolations("")
+
 			// Capture any partial work the agent completed before crashing
 			if c.workUnit != nil {
 				workDir := c.getWorkDir()
@@ -443,6 +499,7 @@ func (c *Conductor) shouldPostTicketComment() bool {
 
 // buildJobOptions creates JobOptions with execution context for multi-project support.
 // This ensures jobs carry full context (WorkDir, metadata) so any worker can execute them.
+// If canary sandboxing is enabled, injects fake HOME environment variables.
 func (c *Conductor) buildJobOptions() *worker.JobOptions {
 	opts := &worker.JobOptions{
 		WorkDir:  c.getWorkDir(), // Use isolated worktree if available
@@ -459,6 +516,16 @@ func (c *Conductor) buildJobOptions() *worker.JobOptions {
 		if c.workUnit.Source != nil {
 			opts.Metadata["provider"] = c.workUnit.Source.Provider
 			opts.Metadata["reference"] = c.workUnit.Source.Reference
+		}
+	}
+
+	// Inject canary harness environment if active
+	if c.canaryHarness != nil {
+		if opts.Environment == nil {
+			opts.Environment = make(map[string]string)
+		}
+		for k, v := range c.canaryHarness.Env() {
+			opts.Environment[k] = v
 		}
 	}
 

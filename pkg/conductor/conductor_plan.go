@@ -81,6 +81,8 @@ func (c *Conductor) Plan(ctx context.Context, force bool) (string, error) {
 	prompt := c.buildPlanPromptForComplexity(complexity, existingSpecs)
 	prompt = c.applyStrategy("plan", prompt)
 
+	c.setupCanaryHarness()
+
 	// Build a phase graph (single node for planning, future: multiple sub-tasks).
 	g := buildPhaseGraph(worker.JobTypePlan, "planning", prompt)
 	sched := graph.NewScheduler(g, c.pool)

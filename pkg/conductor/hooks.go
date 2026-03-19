@@ -40,6 +40,35 @@ func (c *Conductor) RunTransitionHooks(ctx context.Context, event Event) error {
 	return nil
 }
 
+// RunPostTransitionHooks executes all post-event hooks configured for the given event.
+// Post hooks run after a successful transition. Required post hooks that fail return an error;
+// non-required failures are logged. Post hooks enable workflows like running security scans
+// after implementation completes.
+func (c *Conductor) RunPostTransitionHooks(ctx context.Context, event Event) error {
+	s := c.getEffectiveSettings()
+	if s == nil || s.Workflow.Hooks == nil {
+		return nil
+	}
+
+	hookKey := "post_" + string(event)
+	hooks := s.Workflow.Hooks[hookKey]
+	if len(hooks) == 0 {
+		return nil
+	}
+
+	workDir := c.getWorkDir()
+	for _, hook := range hooks {
+		if err := executeHook(ctx, hook, workDir); err != nil {
+			if hook.Required {
+				return fmt.Errorf("required post-hook %q failed: %w", hookDescription(hook), err)
+			}
+			slog.Warn("optional post-hook failed", "hook", hookDescription(hook), "error", err)
+		}
+	}
+
+	return nil
+}
+
 // executeHook runs a single shell command and returns an error if it fails.
 func executeHook(ctx context.Context, hook settings.TransitionHook, workDir string) error {
 	ctx, cancel := context.WithTimeout(ctx, hookTimeout)

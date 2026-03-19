@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"sync"
@@ -19,6 +20,7 @@ import (
 	"github.com/valksor/kvelmo/pkg/git"
 	"github.com/valksor/kvelmo/pkg/memory"
 	"github.com/valksor/kvelmo/pkg/provider"
+	"github.com/valksor/kvelmo/pkg/security"
 	"github.com/valksor/kvelmo/pkg/settings"
 	"github.com/valksor/kvelmo/pkg/storage"
 	"github.com/valksor/kvelmo/pkg/varpool"
@@ -85,6 +87,9 @@ type Conductor struct {
 
 	// Variable pool for sharing context between graph nodes
 	varPool *varpool.Pool
+
+	// Canary harness for credential sandboxing (nil when disabled)
+	canaryHarness *security.CanaryHarness
 
 	// Agent strategy (default: "direct"). Per-phase overrides take precedence.
 	strategy        strategy.Strategy
@@ -329,6 +334,9 @@ func New(opts ...Option) (*Conductor, error) {
 	// Register status sync listener for bidirectional provider status updates
 	c.setupStatusSync()
 
+	// Register post-transition hook listener
+	c.setupPostHooks()
+
 	return c, nil
 }
 
@@ -344,9 +352,39 @@ func (c *Conductor) Initialize(ctx context.Context) error {
 		// Continue without git - some operations will be limited
 	} else {
 		c.git = repo
+
+		// Apply commit signing setting
+		s := c.getEffectiveSettings()
+		if s.Git.SignCommits != nil && *s.Git.SignCommits {
+			repo.SetSignCommits(true)
+		}
+
+		// Enforce signed commits policy
+		if s.Workflow.Policy.RequireSignedCommits && !repo.IsSigningConfigured(ctx) {
+			return errors.New("policy requires signed commits but GPG signing is not configured. Run: git config commit.gpgsign true")
+		}
 	}
 
 	return nil
+}
+
+// setupPostHooks registers a state machine listener that runs post-transition hooks
+// after each successful state change. This allows workflows like running security scans
+// after implementation or audit logging after submission.
+func (c *Conductor) setupPostHooks() {
+	c.machine.AddListener(func(_, _ State, event Event, _ *WorkUnit) {
+		go func() {
+			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
+			defer cancel()
+			if err := c.RunPostTransitionHooks(ctx, event); err != nil {
+				slog.Warn("post-transition hook failed", "event", event, "error", err)
+				c.emit(ConductorEvent{
+					Type:    "hook_error",
+					Message: fmt.Sprintf("Post-%s hook failed: %v", event, err),
+				})
+			}
+		}()
+	})
 }
 
 // State returns the current workflow state.
@@ -644,6 +682,9 @@ func NewConductor(cfg ConductorConfig) *Conductor {
 
 	// Register status sync listener for bidirectional provider status updates
 	c.setupStatusSync()
+
+	// Register post-transition hook listener
+	c.setupPostHooks()
 
 	return c
 }

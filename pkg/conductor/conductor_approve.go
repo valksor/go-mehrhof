@@ -10,7 +10,11 @@ import (
 )
 
 // approverIdentity returns a best-effort user identity string for audit purposes.
-func approverIdentity() string {
+// If a configured identity is provided (from settings), it takes precedence.
+func approverIdentity(configuredIdentity string) string {
+	if configuredIdentity != "" {
+		return configuredIdentity
+	}
 	if u, err := user.Current(); err == nil && u.Username != "" {
 		return u.Username
 	}
@@ -56,8 +60,9 @@ func (c *Conductor) Approve(event string) error {
 	if c.workUnit.Approvals == nil {
 		c.workUnit.Approvals = make(map[string]ApprovalRecord)
 	}
+	s := c.getEffectiveSettings()
 	c.workUnit.Approvals[event] = ApprovalRecord{
-		ApprovedBy: approverIdentity(),
+		ApprovedBy: approverIdentity(s.Identity),
 		ApprovedAt: time.Now(),
 	}
 	c.workUnit.UpdatedAt = time.Now()

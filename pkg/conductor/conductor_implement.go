@@ -69,6 +69,7 @@ func (c *Conductor) Implement(ctx context.Context, force bool) (string, error) {
 		c.logVerbosef("Skipping planning phase — using task description as specification")
 	}
 
+	c.setupCanaryHarness()
 	prompt := c.applyStrategy("implement", c.buildImplementPrompt())
 	opts := c.buildJobOptions()
 	job, err := c.pool.SubmitWithOptions(worker.JobTypeImplement, c.getWorkDir(), prompt, opts)
@@ -140,6 +141,7 @@ func (c *Conductor) Optimize(ctx context.Context) (string, error) {
 		return "", wrapped
 	}
 
+	c.setupCanaryHarness()
 	prompt := c.applyStrategy("optimize", c.buildOptimizePrompt())
 	opts := c.buildJobOptions()
 	job, err := c.pool.SubmitWithOptions(worker.JobTypeOptimize, c.getWorkDir(), prompt, opts)
@@ -211,6 +213,7 @@ func (c *Conductor) Simplify(ctx context.Context) (string, error) {
 		return "", wrapped
 	}
 
+	c.setupCanaryHarness()
 	prompt := c.applyStrategy("simplify", c.buildSimplifyPrompt())
 	opts := c.buildJobOptions()
 	job, err := c.pool.SubmitWithOptions(worker.JobTypeSimplify, c.getWorkDir(), prompt, opts)

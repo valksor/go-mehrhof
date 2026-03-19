@@ -69,10 +69,14 @@ func isStatusSyncEnabled(s *settings.Settings, providerName string) bool {
 	switch providerName {
 	case "github":
 		return s.Providers.GitHub.StatusSync
+	case "gitlab":
+		return s.Providers.GitLab.StatusSync
 	case "linear":
 		return s.Providers.Linear.StatusSync
 	case "jira":
 		return s.Providers.Jira.StatusSync
+	case "azuredevops":
+		return s.Providers.AzureDevOps.StatusSync
 	default:
 		return false
 	}
@@ -90,10 +94,14 @@ func getMappedStatus(s *settings.Settings, providerName, kvelmoState string) str
 	switch providerName {
 	case "github":
 		mapping = s.Providers.GitHub.StatusMapping
+	case "gitlab":
+		mapping = s.Providers.GitLab.StatusMapping
 	case "linear":
 		mapping = s.Providers.Linear.StatusMapping
 	case "jira":
 		mapping = s.Providers.Jira.StatusMapping
+	case "azuredevops":
+		mapping = s.Providers.AzureDevOps.StatusMapping
 	}
 
 	if mapping != nil {
