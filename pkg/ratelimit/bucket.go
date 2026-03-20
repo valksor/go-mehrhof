@@ -93,7 +93,10 @@ func (l *Limiter) Allow(key string) bool {
 
 	val, loaded := l.buckets.Load(key)
 	if loaded {
-		entry := val.(*bucketEntry)
+		entry, ok := val.(*bucketEntry)
+		if !ok {
+			return false
+		}
 		entry.lastUsed.Store(now.UnixNano())
 
 		return entry.bucket.Allow()
@@ -106,7 +109,10 @@ func (l *Limiter) Allow(key string) bool {
 
 	actual, loaded := l.buckets.LoadOrStore(key, entry)
 	if loaded {
-		existing := actual.(*bucketEntry)
+		existing, ok := actual.(*bucketEntry)
+		if !ok {
+			return false
+		}
 		existing.lastUsed.Store(now.UnixNano())
 
 		return existing.bucket.Allow()
@@ -125,9 +131,10 @@ func (l *Limiter) Remove(key string) {
 // ctx is cancelled or Stop is called.
 func (l *Limiter) Start(ctx context.Context) {
 	l.startOnce.Do(func() {
-		ctx, l.cancel = context.WithCancel(ctx)
+		var ctx2 context.Context
+		ctx2, l.cancel = context.WithCancel(ctx)
 
-		go l.cleanup(ctx)
+		go l.cleanup(ctx2)
 	})
 }
 
@@ -163,7 +170,10 @@ func (l *Limiter) removeStale() {
 	var removed int
 
 	l.buckets.Range(func(key, value any) bool {
-		entry := value.(*bucketEntry)
+		entry, ok := value.(*bucketEntry)
+		if !ok {
+			return true
+		}
 		lastUsed := time.Unix(0, entry.lastUsed.Load())
 		if now.Sub(lastUsed) > staleThreshold {
 			l.buckets.Delete(key)
