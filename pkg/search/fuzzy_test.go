@@ -15,9 +15,9 @@ func TestLevenshtein_SingleEdit(t *testing.T) {
 		a, b string
 		want int
 	}{
-		{"cat", "bat", 1},   // substitution
-		{"cat", "cats", 1},  // insertion
-		{"cats", "cat", 1},  // deletion
+		{"cat", "bat", 1},  // substitution
+		{"cat", "cats", 1}, // insertion
+		{"cats", "cat", 1}, // deletion
 		{"kitten", "sitten", 1},
 	}
 

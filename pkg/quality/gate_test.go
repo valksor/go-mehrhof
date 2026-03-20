@@ -2,7 +2,7 @@ package quality
 
 import (
 	"context"
-	"fmt"
+	"errors"
 	"testing"
 
 	"github.com/valksor/kvelmo/pkg/findings"
@@ -185,7 +185,7 @@ func TestRunGatesIntegration(t *testing.T) {
 func TestRunGatesWithFailingChecker(t *testing.T) {
 	checker := &mockChecker{
 		name: "failing-checker",
-		err:  fmt.Errorf("connection refused"),
+		err:  errors.New("connection refused"),
 	}
 
 	result, err := RunGates(context.Background(), "/tmp", []Checker{checker}, []Gate{NoErrorsGate{}})

@@ -15,14 +15,14 @@ import (
 // Activity represents a single human-readable event in the project timeline.
 type Activity struct {
 	Timestamp   time.Time      `json:"timestamp"`
-	Type        string         `json:"type"`                   // e.g., "task.loaded", "phase.started", "checkpoint.created"
-	Description string         `json:"description"`            // Human-readable
-	TaskID      string         `json:"task_id,omitempty"`      // Task that produced this event
-	Phase       string         `json:"phase,omitempty"`        // Phase context (plan, implement, etc.)
-	TraceID     string         `json:"trace_id,omitempty"`     // Task trace ID for causality chain
-	Metadata    map[string]any `json:"metadata,omitempty"`     // Additional context
-	Error       string         `json:"error,omitempty"`        // Error message if this was a failure
-	DurationMs  int64          `json:"duration_ms,omitempty"`  // How long the operation took
+	Type        string         `json:"type"`                  // e.g., "task.loaded", "phase.started", "checkpoint.created"
+	Description string         `json:"description"`           // Human-readable
+	TaskID      string         `json:"task_id,omitempty"`     // Task that produced this event
+	Phase       string         `json:"phase,omitempty"`       // Phase context (plan, implement, etc.)
+	TraceID     string         `json:"trace_id,omitempty"`    // Task trace ID for causality chain
+	Metadata    map[string]any `json:"metadata,omitempty"`    // Additional context
+	Error       string         `json:"error,omitempty"`       // Error message if this was a failure
+	DurationMs  int64          `json:"duration_ms,omitempty"` // How long the operation took
 }
 
 // Service provides timeline queries over the activity log. It is read-only:

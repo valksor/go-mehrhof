@@ -18,10 +18,10 @@ type SettingDefinition struct {
 	Key          string   `json:"key"`
 	DisplayName  string   `json:"display_name"`
 	Description  string   `json:"description"`
-	DataType     string   `json:"data_type"`    // "string", "int", "bool", "duration"
+	DataType     string   `json:"data_type"` // "string", "int", "bool", "duration"
 	DefaultValue any      `json:"default_value"`
-	Scopes       []string `json:"scopes"`    // ["global", "project"]
-	Category     string   `json:"category"`  // "agent", "quality", "workflow", "notify"
+	Scopes       []string `json:"scopes"`   // ["global", "project"]
+	Category     string   `json:"category"` // "agent", "quality", "workflow", "notify"
 }
 
 // DefaultDefinitions contains the known overridable settings with their metadata.
@@ -180,4 +180,3 @@ func getSettingFromConfig(key string, s *Settings) (any, bool) {
 
 	return nil, false
 }
-

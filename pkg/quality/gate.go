@@ -25,8 +25,8 @@ type Gate interface {
 type GateResult struct {
 	Passed   bool               `json:"passed"`
 	Blockers []findings.Finding `json:"blockers,omitempty"`
-	Total    int                `json:"total"`     // total findings
-	Blocked  int                `json:"blocked"`   // blocker count
+	Total    int                `json:"total"`   // total findings
+	Blocked  int                `json:"blocked"` // blocker count
 	GateName string             `json:"gate_name"`
 }
 

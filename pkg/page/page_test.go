@@ -17,9 +17,9 @@ func TestDefaultPagination(t *testing.T) {
 
 func TestPagination_Normalize(t *testing.T) {
 	tests := []struct {
-		name    string
-		input   Pagination
-		want    Pagination
+		name  string
+		input Pagination
+		want  Pagination
 	}{
 		{
 			name:  "valid values unchanged",

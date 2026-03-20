@@ -15,12 +15,12 @@ type mockItem struct {
 	priority    int
 }
 
-func (m mockItem) SearchTitle() string       { return m.title }
-func (m mockItem) SearchDescription() string { return m.description }
-func (m mockItem) SearchTags() []string      { return m.tags }
-func (m mockItem) SearchStatus() string      { return m.status }
+func (m mockItem) SearchTitle() string        { return m.title }
+func (m mockItem) SearchDescription() string  { return m.description }
+func (m mockItem) SearchTags() []string       { return m.tags }
+func (m mockItem) SearchStatus() string       { return m.status }
 func (m mockItem) SearchCreatedAt() time.Time { return m.createdAt }
-func (m mockItem) SearchPriority() int       { return m.priority }
+func (m mockItem) SearchPriority() int        { return m.priority }
 
 func newItem(title, desc, status string, tags ...string) mockItem {
 	return mockItem{

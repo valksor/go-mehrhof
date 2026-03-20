@@ -77,6 +77,7 @@ func similarity(a, b string) float64 {
 // Returns the similarity score and whether it meets the threshold.
 func fuzzyMatch(text, query string, threshold float64) (float64, bool) {
 	score := similarity(text, query)
+
 	return score, score >= threshold
 }
 
