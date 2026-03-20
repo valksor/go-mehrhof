@@ -28,6 +28,7 @@ func TestRetryableOp(t *testing.T) {
 			fn: func(calls *int) func() error {
 				return func() error {
 					*calls++
+
 					return nil
 				}
 			},
@@ -43,6 +44,7 @@ func TestRetryableOp(t *testing.T) {
 					if *calls < 3 {
 						return errors.New("Unable to create '/tmp/test.lock': File exists")
 					}
+
 					return nil
 				}
 			},
@@ -55,6 +57,7 @@ func TestRetryableOp(t *testing.T) {
 			fn: func(calls *int) func() error {
 				return func() error {
 					*calls++
+
 					return errors.New("could not lock ref 'refs/heads/main'")
 				}
 			},
@@ -69,6 +72,7 @@ func TestRetryableOp(t *testing.T) {
 			fn: func(calls *int) func() error {
 				return func() error {
 					*calls++
+
 					return errors.New("permission denied")
 				}
 			},
@@ -85,6 +89,7 @@ func TestRetryableOp(t *testing.T) {
 					if *calls < 3 {
 						return errors.New("custom-transient-error")
 					}
+
 					return nil
 				}
 			},
@@ -102,6 +107,7 @@ func TestRetryableOp(t *testing.T) {
 			fn: func(calls *int) func() error {
 				return func() error {
 					*calls++
+
 					return errors.New("Unable to create lock file")
 				}
 			},
@@ -146,6 +152,7 @@ func TestRetryableOp_ContextCancellation(t *testing.T) {
 		if calls == 1 {
 			cancel() // cancel after first attempt
 		}
+
 		return errors.New("Unable to create lock file")
 	}
 
@@ -237,5 +244,6 @@ func searchSubstring(s, substr string) bool {
 			return true
 		}
 	}
+
 	return false
 }

@@ -2,9 +2,10 @@ package retry
 
 import (
 	"context"
+	"crypto/rand"
+	"encoding/binary"
 	"fmt"
 	"log/slog"
-	"math/rand/v2"
 	"strings"
 	"time"
 )
@@ -92,7 +93,10 @@ func backoff(base time.Duration, attempt int) time.Duration {
 	}
 
 	// Apply jitter: multiply by a random factor in [0.8, 1.2).
-	jitter := 0.8 + rand.Float64()*0.4 //nolint:mnd // jitter range [0.8, 1.2) is a well-known backoff constant
+	var buf [8]byte
+	_, _ = rand.Read(buf[:])
+	randVal := float64(binary.LittleEndian.Uint64(buf[:])) / float64(^uint64(0)) //nolint:mnd // normalize to [0,1)
+	jitter := 0.8 + randVal*0.4                                                  //nolint:mnd // jitter range [0.8, 1.2) is a well-known backoff constant
 
 	return time.Duration(float64(delay) * jitter)
 }
