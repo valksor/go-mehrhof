@@ -105,7 +105,7 @@ type Server struct {
 	metrics        *metrics.Metrics // nil means use metrics.Global()
 	drainTimeout   time.Duration    // 0 means use ShutdownTimeout
 	username       string           // Cached OS username for audit logging
-	middleware     []Middleware      // Middleware chain applied to every handler
+	middleware     []Middleware     // Middleware chain applied to every handler
 }
 
 // NewServer creates a new Unix domain socket server.
@@ -359,7 +359,7 @@ func (s *Server) handleConn(ctx context.Context, conn net.Conn) {
 	}
 }
 
-func (s *Server) dispatch(ctx context.Context, req *Request, conn net.Conn) *Response {
+func (s *Server) dispatch(ctx context.Context, req *Request, _ net.Conn) *Response {
 	// The shutdown method is handled directly, outside the middleware chain,
 	// because it triggers server teardown.
 	if req.Method == "shutdown" {

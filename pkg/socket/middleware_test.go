@@ -62,9 +62,9 @@ func TestRecoveryMiddleware_PassesThrough(t *testing.T) {
 }
 
 func TestTraceMiddleware_AddsID(t *testing.T) {
-	var capturedCtx context.Context
+	captured := make([]context.Context, 0, 1)
 	capture := func(ctx context.Context, req *Request) *Response {
-		capturedCtx = ctx
+		captured = append(captured, ctx)
 
 		return echoHandler(ctx, req)
 	}
@@ -73,7 +73,10 @@ func TestTraceMiddleware_AddsID(t *testing.T) {
 	wrapped := mw(capture)
 	wrapped(context.Background(), newTestRequest("test"))
 
-	corrID := trace.ID(capturedCtx)
+	if len(captured) == 0 {
+		t.Fatal("handler was not called")
+	}
+	corrID := trace.ID(captured[0])
 	if corrID == "" {
 		t.Error("expected non-empty correlation ID in context")
 	}

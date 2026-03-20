@@ -70,8 +70,8 @@ func TestConnRoundTrip(t *testing.T) {
 
 	// Create a pipe to get a real net.Conn
 	server, client := net.Pipe()
-	defer server.Close()
-	defer client.Close()
+	defer func() { _ = server.Close() }()
+	defer func() { _ = client.Close() }()
 
 	ctx := WithConn(context.Background(), client)
 	got := ConnFromCtx(ctx)
@@ -128,6 +128,7 @@ func TestSlogAttrsAllFields(t *testing.T) {
 		want, ok := expected[attr.Key]
 		if !ok {
 			t.Errorf("unexpected attr key %q", attr.Key)
+
 			continue
 		}
 		if attr.Value.String() != want {
@@ -180,5 +181,6 @@ func attrsToStrings(attrs []slog.Attr) []string {
 	for i, a := range attrs {
 		out[i] = a.Key + "=" + a.Value.String()
 	}
+
 	return out
 }

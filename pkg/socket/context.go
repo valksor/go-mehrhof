@@ -36,6 +36,7 @@ func WithRPCContext(ctx context.Context, rc *RPCContext) context.Context {
 // Returns nil if not present.
 func RPCContextFromCtx(ctx context.Context) *RPCContext {
 	rc, _ := ctx.Value(rpcContextKey).(*RPCContext)
+
 	return rc
 }
 
@@ -48,6 +49,7 @@ func WithConn(ctx context.Context, conn net.Conn) context.Context {
 // Returns nil if not present.
 func ConnFromCtx(ctx context.Context) net.Conn {
 	conn, _ := ctx.Value(connKey).(net.Conn)
+
 	return conn
 }
 
