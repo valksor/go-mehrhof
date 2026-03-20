@@ -183,6 +183,8 @@ func TestLimiterConcurrentAccess(t *testing.T) {
 	t.Parallel()
 
 	l := NewLimiter(1000, 100)
+	frozen := time.Now()
+	l.nowFunc = func() time.Time { return frozen }
 
 	var wg sync.WaitGroup
 	var allowed atomic.Int64
