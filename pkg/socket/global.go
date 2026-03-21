@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"sync"
 	"time"
@@ -272,8 +273,10 @@ func (g *GlobalSocket) registerHandlers() {
 	g.server.Handle("agent.status", g.handleAgentStatus)
 	g.server.Handle("strategy.list", g.handleStrategyList)
 
-	// Provider token testing
+	// Provider token testing and login
 	g.server.Handle("providers.test", g.handleProvidersTest)
+	g.server.Handle("providers.list", g.handleProvidersList)
+	g.server.Handle("provider.login", g.handleProviderLogin)
 
 	// Configuration validation
 	g.server.Handle("config.validate", g.handleConfigValidate)
@@ -358,6 +361,43 @@ func (g *GlobalSocket) handleStrategyList(_ context.Context, req *Request) (*Res
 
 // --- Provider Token Testing ---
 
+func (g *GlobalSocket) handleProvidersList(_ context.Context, req *Request) (*Response, error) {
+	type providerInfo struct {
+		Name        string `json:"name"`
+		Label       string `json:"label"`
+		EnvVar      string `json:"env_var"`
+		HelpURL     string `json:"help_url"`
+		HelpSteps   string `json:"help_steps"`
+		Scopes      string `json:"scopes"`
+		TokenPrefix string `json:"token_prefix"`
+		Configured  bool   `json:"configured"`
+	}
+
+	providers := []providerInfo{}
+	for name, cfg := range providerLoginConfigs {
+		token := resolveProviderToken(name)
+		providers = append(providers, providerInfo{
+			Name:        name,
+			Label:       cfg.Name,
+			EnvVar:      cfg.EnvVar,
+			HelpURL:     cfg.HelpURL,
+			HelpSteps:   cfg.HelpSteps,
+			Scopes:      cfg.Scopes,
+			TokenPrefix: cfg.TokenPrefix,
+			Configured:  token != "",
+		})
+	}
+
+	// Sort alphabetically for stable output
+	slices.SortFunc(providers, func(a, b providerInfo) int {
+		return strings.Compare(a.Name, b.Name)
+	})
+
+	return NewResultResponse(req.ID, map[string]any{
+		"providers": providers,
+	})
+}
+
 func (g *GlobalSocket) handleProvidersTest(ctx context.Context, req *Request) (*Response, error) {
 	var params struct {
 		Provider string `json:"provider"`
@@ -391,6 +431,92 @@ func (g *GlobalSocket) handleProvidersTest(ctx context.Context, req *Request) (*
 	return NewResultResponse(req.ID, map[string]any{
 		"ok":     ok,
 		"detail": detail,
+	})
+}
+
+// providerLoginConfig holds display metadata for provider login flows.
+var providerLoginConfigs = map[string]struct {
+	Name        string `json:"name"`
+	EnvVar      string `json:"env_var"`
+	HelpURL     string `json:"help_url"`
+	HelpSteps   string `json:"help_steps"`
+	Scopes      string `json:"scopes"`
+	TokenPrefix string `json:"token_prefix"`
+}{
+	"github": {
+		Name:        "GitHub",
+		EnvVar:      "GITHUB_TOKEN",
+		HelpURL:     "https://github.com/settings/tokens",
+		HelpSteps:   "Settings → Developer settings → Personal access tokens → Tokens (classic)",
+		Scopes:      "repo, read:user (or Fine-grained with repository access)",
+		TokenPrefix: "ghp_",
+	},
+	"gitlab": {
+		Name:        "GitLab",
+		EnvVar:      "GITLAB_TOKEN",
+		HelpURL:     "https://gitlab.com/-/user_settings/personal_access_tokens",
+		HelpSteps:   "Preferences → Access Tokens → Add new token",
+		Scopes:      "api, read_user, read_repository",
+		TokenPrefix: "glpat-",
+	},
+	"linear": {
+		Name:        "Linear",
+		EnvVar:      "LINEAR_TOKEN",
+		HelpURL:     "https://linear.app/settings/api",
+		HelpSteps:   "Settings → API → Personal API keys → Create key",
+		Scopes:      "Workspace access",
+		TokenPrefix: "lin_api_",
+	},
+	"wrike": {
+		Name:        "Wrike",
+		EnvVar:      "WRIKE_TOKEN",
+		HelpURL:     "https://www.wrike.com/frontend/apps/index.html#/api",
+		HelpSteps:   "Apps & Integrations → API → Permanent access tokens",
+		Scopes:      "Default (read/write access)",
+		TokenPrefix: "",
+	},
+}
+
+func (g *GlobalSocket) handleProviderLogin(ctx context.Context, req *Request) (*Response, error) {
+	var params struct {
+		Provider string `json:"provider"`
+		Token    string `json:"token"`
+	}
+	if err := json.Unmarshal(req.Params, &params); err != nil {
+		return nil, fmt.Errorf("parse params: %w", err)
+	}
+
+	if params.Provider == "" {
+		return NewErrorResponse(req.ID, -32602, "provider is required"), nil
+	}
+	if params.Token == "" {
+		return NewErrorResponse(req.ID, -32602, "token is required"), nil
+	}
+
+	cfg, ok := providerLoginConfigs[params.Provider]
+	if !ok {
+		return NewErrorResponse(req.ID, -32602, "unknown provider: "+params.Provider), nil
+	}
+
+	// Validate token against provider API
+	valid, detail := testProviderToken(ctx, params.Provider, params.Token)
+
+	// Save token regardless of validation result (matches CLI behavior)
+	if err := settings.SaveEnvVar(settings.ScopeGlobal, "", cfg.EnvVar, params.Token); err != nil {
+		return NewErrorResponse(req.ID, -32603, "failed to save token: "+err.Error()), nil //nolint:nilerr // RPC error response pattern — Go error is nil, JSON-RPC error is in the response
+	}
+
+	envPath, envErr := settings.GlobalEnvPath()
+	if envErr != nil {
+		slog.Warn("failed to resolve global env path", "error", envErr)
+	}
+
+	return NewResultResponse(req.ID, map[string]any{
+		"saved":    true,
+		"valid":    valid,
+		"detail":   detail,
+		"env_path": envPath,
+		"masked":   settings.MaskToken(params.Token),
 	})
 }
 
