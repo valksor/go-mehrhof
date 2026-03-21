@@ -18,10 +18,18 @@
   - [Chat](/web-ui/chat.md)
   - [Browser Automation](/web-ui/browser.md)
   - [Workers](/web-ui/workers.md)
+  - [Jobs](/web-ui/jobs.md)
+  - [Queue](/web-ui/queue.md)
+  - [Screenshots](/web-ui/screenshots.md)
+  - [Memory](/web-ui/memory.md)
+  - [Catalog](/web-ui/catalog.md)
+  - [Recordings](/web-ui/recordings.md)
   - [Activity & Audit](/web-ui/activity.md)
   - [Backup & Restore](/web-ui/backup.md)
   - [Security Scanning](/web-ui/security.md)
   - [Export](/web-ui/export.md)
+  - [Report](/web-ui/report.md)
+  - [Diagnose](/web-ui/diagnose.md)
   - [Settings](/web-ui/settings.md)
 
 - CLI Reference
