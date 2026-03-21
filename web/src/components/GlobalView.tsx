@@ -1,7 +1,9 @@
 import { lazy, Suspense, useState, useRef, useEffect, useMemo, useCallback } from 'react'
 import { useGlobalStore } from '../stores/globalStore'
+import { useViewModeStore } from '../stores/viewModeStore'
 import { useDocsURL } from '../hooks/useDocsURL'
 import { FolderPicker } from './FolderPicker'
+import { ViewModeToggle } from './ViewModeToggle'
 import { ThemeToggle } from './ThemeToggle'
 import { ActiveTasksWidget } from './ActiveTasksWidget'
 import { MetricsWidget } from './MetricsWidget'
@@ -68,6 +70,8 @@ export function GlobalView() {
   const [batchRunning, setBatchRunning] = useState(false)
   const [batchStateFilter, setBatchStateFilter] = useState('')
   const [silentMode, setSilentMode] = useState(false)
+  const { mode } = useViewModeStore()
+  const isSimple = mode === 'simple'
   const docsData = useDocsURL()
   const selectedRef = useRef<HTMLLIElement>(null)
 
@@ -176,7 +180,7 @@ export function GlobalView() {
           )}
 
           {/* Batch actions dropdown */}
-          {hasActiveProjects && connected && (
+          {!isSimple && hasActiveProjects && connected && (
             <div className="dropdown dropdown-end">
               <div tabIndex={0} role="button" className="btn btn-ghost btn-sm" aria-label="Batch Actions" title="Batch Actions">
                 {batchRunning ? (
@@ -219,7 +223,7 @@ export function GlobalView() {
           )}
 
           {/* Diagnose button */}
-          <button
+          {!isSimple && <button
             onClick={() => setShowDiagnose(true)}
             disabled={!connected}
             className="btn btn-ghost btn-sm btn-square hidden lg:inline-flex"
@@ -229,10 +233,10 @@ export function GlobalView() {
             <svg aria-hidden="true" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
             </svg>
-          </button>
+          </button>}
 
           {/* Memory search button */}
-          <button
+          {!isSimple && <button
             onClick={() => setShowMemory(true)}
             disabled={!connected}
             className="btn btn-ghost btn-sm btn-square hidden lg:inline-flex"
@@ -242,10 +246,10 @@ export function GlobalView() {
             <svg aria-hidden="true" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
             </svg>
-          </button>
+          </button>}
 
           {/* Recordings button */}
-          <button
+          {!isSimple && <button
             onClick={() => setShowRecordings(true)}
             disabled={!connected}
             className="btn btn-ghost btn-sm btn-square hidden lg:inline-flex"
@@ -255,10 +259,10 @@ export function GlobalView() {
             <svg aria-hidden="true" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75a1.125 1.125 0 01-1.125-1.125V7.875c0-.621.504-1.125 1.125-1.125H6.75a9.06 9.06 0 011.5.124m7.5 10.376h3.375c.621 0 1.125-.504 1.125-1.125V11.25c0-4.46-3.243-8.161-7.5-8.876a9.06 9.06 0 00-1.5-.124H9.375c-.621 0-1.125.504-1.125 1.125v3.5m7.5 10.375H9.375a1.125 1.125 0 01-1.125-1.125v-9.25m12 6.625v-1.875a3.375 3.375 0 00-3.375-3.375h-1.5a1.125 1.125 0 01-1.125-1.125v-1.5a3.375 3.375 0 00-3.375-3.375H9.75" />
             </svg>
-          </button>
+          </button>}
 
           {/* Backup button */}
-          <button
+          {!isSimple && <button
             onClick={() => setShowBackup(true)}
             disabled={!connected}
             className="btn btn-ghost btn-sm btn-square hidden lg:inline-flex"
@@ -268,10 +272,10 @@ export function GlobalView() {
             <svg aria-hidden="true" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
             </svg>
-          </button>
+          </button>}
 
           {/* Activity log button */}
-          <button
+          {!isSimple && <button
             onClick={() => setShowActivity(true)}
             disabled={!connected}
             className="btn btn-ghost btn-sm btn-square hidden lg:inline-flex"
@@ -281,10 +285,10 @@ export function GlobalView() {
             <svg aria-hidden="true" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
             </svg>
-          </button>
+          </button>}
 
           {/* Security scan button */}
-          <button
+          {!isSimple && <button
             onClick={() => setShowSecurity(true)}
             disabled={!connected}
             className="btn btn-ghost btn-sm btn-square hidden lg:inline-flex"
@@ -294,10 +298,10 @@ export function GlobalView() {
             <svg aria-hidden="true" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
             </svg>
-          </button>
+          </button>}
 
           {/* Catalog button */}
-          <button
+          {!isSimple && <button
             onClick={() => setShowCatalog(true)}
             disabled={!connected}
             className="btn btn-ghost btn-sm btn-square hidden lg:inline-flex"
@@ -307,10 +311,10 @@ export function GlobalView() {
             <svg aria-hidden="true" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
             </svg>
-          </button>
+          </button>}
 
           {/* Access tokens button */}
-          <button
+          {!isSimple && <button
             onClick={() => setShowAccess(true)}
             disabled={!connected}
             className="btn btn-ghost btn-sm btn-square hidden lg:inline-flex"
@@ -320,10 +324,10 @@ export function GlobalView() {
             <svg aria-hidden="true" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
             </svg>
-          </button>
+          </button>}
 
           {/* Report button */}
-          <button
+          {!isSimple && <button
             onClick={() => setShowReport(true)}
             disabled={!connected}
             className="btn btn-ghost btn-sm btn-square hidden lg:inline-flex"
@@ -333,10 +337,10 @@ export function GlobalView() {
             <svg aria-hidden="true" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
             </svg>
-          </button>
+          </button>}
 
           {/* Export button */}
-          <button
+          {!isSimple && <button
             onClick={() => setShowExport(true)}
             disabled={!connected}
             className="btn btn-ghost btn-sm btn-square hidden lg:inline-flex"
@@ -346,7 +350,7 @@ export function GlobalView() {
             <svg aria-hidden="true" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
             </svg>
-          </button>
+          </button>}
 
           {/* Documentation link */}
           {docsData?.url && (
@@ -394,6 +398,7 @@ export function GlobalView() {
             )}
           </button>
 
+          <ViewModeToggle />
           <ThemeToggle />
 
           <button
@@ -416,7 +421,7 @@ export function GlobalView() {
       </header>
 
       {/* Agent Status Warning */}
-      {connected && agentStatus && !agentStatus.agent_available && (
+      {!isSimple && connected && agentStatus && !agentStatus.agent_available && (
         <div role="alert" className="alert alert-warning max-w-2xl mx-auto mb-4">
           <svg aria-hidden="true" className="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
@@ -441,7 +446,7 @@ export function GlobalView() {
       <ActiveTasksWidget />
 
       {/* System Metrics & Stats */}
-      {connected && (
+      {!isSimple && connected && (
         <div className="max-w-2xl mx-auto mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
           <MetricsWidget />
           <StatsWidget />

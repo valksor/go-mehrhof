@@ -2,21 +2,45 @@ import { useEffect } from 'react'
 import { useGlobalStore } from './stores/globalStore'
 import { useProjectStore } from './stores/projectStore'
 import { useThemeStore } from './stores/themeStore'
+import { useViewModeStore, isViewModeHydrated } from './stores/viewModeStore'
 import { useLeakWatchdog } from './hooks/useLeakWatchdog'
 import { useKeyboardShortcuts, SHORTCUTS } from './hooks/useKeyboardShortcuts'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { GlobalView } from './components/GlobalView'
 import { ProjectView } from './components/ProjectView'
+import { SimpleProjectView } from './components/SimpleProjectView'
+import { ModePickerModal } from './components/ModePickerModal'
 import { StateAnnouncer } from './components/StateAnnouncer'
 import { checkForUpdates } from './lib/updater'
 
-// Demo mode for testing UI without backend
-const DEMO_MODE = new URLSearchParams(window.location.search).has('demo')
+// Demo mode for testing UI without backend (dev builds only)
+const DEMO_MODE = import.meta.env.DEV && new URLSearchParams(window.location.search).has('demo')
+
+// URL param override for view mode — applied after rehydration so it wins over localStorage.
+const URL_VIEW_MODE = new URLSearchParams(window.location.search).get('mode')
+if (URL_VIEW_MODE === 'simple' || URL_VIEW_MODE === 'developer') {
+  const applyUrlMode = () => {
+    useViewModeStore.getState().setMode(URL_VIEW_MODE)
+    useViewModeStore.getState().setIsFirstVisit(false)
+  }
+  if (isViewModeHydrated()) {
+    applyUrlMode()
+  } else {
+    // Subscribe and apply once hydration fires
+    const unsub = useViewModeStore.subscribe(() => {
+      if (isViewModeHydrated()) {
+        applyUrlMode()
+        unsub()
+      }
+    })
+  }
+}
 
 export default function App() {
   const { selectedProject, selectProject, connect, connected, connecting, projects } = useGlobalStore()
   const { connect: connectWorktree, disconnect: disconnectWorktree } = useProjectStore()
   const { theme, setTheme } = useThemeStore()
+  const { mode, isFirstVisit } = useViewModeStore()
 
   const { showHelp, setShowHelp } = useKeyboardShortcuts()
 
@@ -80,10 +104,15 @@ export default function App() {
     return (
       <ErrorBoundary>
         <main id="main-content" tabIndex={-1} className="min-h-screen bg-base-100 transition-colors">
-          {selectedProject ? <ProjectView /> : (
-            <div className="h-screen flex items-center justify-center">
-              <span className="loading loading-spinner loading-lg"></span>
-            </div>
+          {!isViewModeHydrated() ? null : (
+            isFirstVisit ? <ModePickerModal /> :
+            selectedProject
+              ? (mode === 'simple' ? <SimpleProjectView /> : <ProjectView />)
+              : (
+                <div className="h-screen flex items-center justify-center">
+                  <span className="loading loading-spinner loading-lg"></span>
+                </div>
+              )
           )}
         </main>
       </ErrorBoundary>
@@ -123,7 +152,12 @@ export default function App() {
     <ErrorBoundary>
       <main id="main-content" tabIndex={-1} className="min-h-screen bg-base-100 transition-colors">
         <StateAnnouncer />
-        {selectedProject ? <ProjectView /> : <GlobalView />}
+        {!isViewModeHydrated() ? null : (
+          isFirstVisit ? <ModePickerModal /> :
+          selectedProject
+            ? (mode === 'simple' ? <SimpleProjectView /> : <ProjectView />)
+            : <GlobalView />
+        )}
       </main>
       {showHelp && (
         <div
@@ -151,7 +185,7 @@ export default function App() {
               </button>
             </div>
             {Object.entries(
-              SHORTCUTS.reduce<Record<string, typeof SHORTCUTS>>((acc, s) => {
+              SHORTCUTS.filter(s => !s.devOnly || mode === 'developer').reduce<Record<string, typeof SHORTCUTS>>((acc, s) => {
                 ;(acc[s.section] ??= []).push(s)
                 return acc
               }, {})

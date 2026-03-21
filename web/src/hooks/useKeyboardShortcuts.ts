@@ -2,11 +2,13 @@ import { useEffect, useRef, useState } from 'react'
 import { useProjectStore } from '../stores/projectStore'
 import { useGlobalStore } from '../stores/globalStore'
 import { useLayoutStore } from '../stores/layoutStore'
+import { useViewModeStore } from '../stores/viewModeStore'
 
 export interface Shortcut {
   keys: string
   description: string
   section: string
+  devOnly?: boolean
 }
 
 export const SHORTCUTS: Shortcut[] = [
@@ -17,18 +19,19 @@ export const SHORTCUTS: Shortcut[] = [
   { keys: 'Escape', description: 'Close help / deselect project', section: 'Navigation' },
   { keys: 'j', description: 'Next project', section: 'Navigation' },
   { keys: 'k', description: 'Previous project', section: 'Navigation' },
+  { keys: 'Ctrl+Shift+V', description: 'Toggle Simple/Developer mode', section: 'Navigation' },
   { keys: 'g p', description: 'Go to projects (GlobalView)', section: 'Navigation' },
   { keys: 'g a', description: 'Abort/stop current operation', section: 'Navigation' },
 
-  // Tab switching
-  { keys: '1-5', description: 'Switch to tab by index', section: 'Tabs' },
+  // Tab switching (developer only)
+  { keys: '1-5', description: 'Switch to tab by index', section: 'Tabs', devOnly: true },
 
-  // Workflow actions
-  { keys: 'g l', description: 'Plan (start planning)', section: 'Workflow' },
-  { keys: 'g i', description: 'Implement', section: 'Workflow' },
-  { keys: 'g r', description: 'Review', section: 'Workflow' },
-  { keys: 'g s', description: 'Submit', section: 'Workflow' },
-  { keys: 'g x', description: 'Stop current operation', section: 'Workflow' },
+  // Workflow actions (developer only)
+  { keys: 'g l', description: 'Plan (start planning)', section: 'Workflow', devOnly: true },
+  { keys: 'g i', description: 'Implement', section: 'Workflow', devOnly: true },
+  { keys: 'g r', description: 'Review', section: 'Workflow', devOnly: true },
+  { keys: 'g s', description: 'Submit', section: 'Workflow', devOnly: true },
+  { keys: 'g x', description: 'Stop current operation', section: 'Workflow', devOnly: true },
   { keys: 'Ctrl+z', description: 'Undo', section: 'Workflow' },
   { keys: 'Ctrl+Shift+z', description: 'Redo', section: 'Workflow' },
 ]
@@ -78,9 +81,8 @@ export function useKeyboardShortcuts() {
         return
       }
 
-      // Ctrl+z / Cmd+z — undo (works even in inputs for workflow undo)
-      if (ctrlOrMeta && !e.shiftKey && e.key === 'z') {
-        // Only intercept if we have an active project (otherwise let browser handle)
+      // Ctrl+z / Cmd+z — workflow undo (not in input fields — let browser handle native undo)
+      if (!inInput && ctrlOrMeta && !e.shiftKey && e.key === 'z') {
         const { selectedProject } = useGlobalStore.getState()
         if (selectedProject) {
           e.preventDefault()
@@ -90,8 +92,8 @@ export function useKeyboardShortcuts() {
         return
       }
 
-      // Ctrl+Shift+z / Cmd+Shift+z — redo (works even in inputs)
-      if (ctrlOrMeta && e.shiftKey && (e.key === 'z' || e.key === 'Z')) {
+      // Ctrl+Shift+z / Cmd+Shift+z — workflow redo (not in input fields)
+      if (!inInput && ctrlOrMeta && e.shiftKey && (e.key === 'z' || e.key === 'Z')) {
         const { selectedProject } = useGlobalStore.getState()
         if (selectedProject) {
           e.preventDefault()
@@ -103,6 +105,13 @@ export function useKeyboardShortcuts() {
 
       // Everything below is skipped when in input fields
       if (inInput) return
+
+      // Ctrl+Shift+V — toggle view mode (not in inputs to preserve paste-without-formatting)
+      if (ctrlOrMeta && e.shiftKey && (e.key === 'v' || e.key === 'V')) {
+        e.preventDefault()
+        useViewModeStore.getState().toggle()
+        return
+      }
 
       // ? — toggle help overlay
       if (e.key === '?' && !ctrlOrMeta) {
@@ -178,8 +187,12 @@ export function useKeyboardShortcuts() {
         return
       }
 
+      // Workflow chords and tab shortcuts are developer-mode only
+      const isDevMode = useViewModeStore.getState().mode === 'developer'
+
       // Chord: g l — plan
       if (
+        isDevMode &&
         e.key === 'l' &&
         !ctrlOrMeta &&
         !e.shiftKey &&
@@ -196,6 +209,7 @@ export function useKeyboardShortcuts() {
 
       // Chord: g i — implement
       if (
+        isDevMode &&
         e.key === 'i' &&
         !ctrlOrMeta &&
         !e.shiftKey &&
@@ -212,6 +226,7 @@ export function useKeyboardShortcuts() {
 
       // Chord: g r — review
       if (
+        isDevMode &&
         e.key === 'r' &&
         !ctrlOrMeta &&
         !e.shiftKey &&
@@ -228,6 +243,7 @@ export function useKeyboardShortcuts() {
 
       // Chord: g s — submit (opens modal)
       if (
+        isDevMode &&
         e.key === 's' &&
         !ctrlOrMeta &&
         !e.shiftKey &&
@@ -244,6 +260,7 @@ export function useKeyboardShortcuts() {
 
       // Chord: g x — stop
       if (
+        isDevMode &&
         e.key === 'x' &&
         !ctrlOrMeta &&
         !e.shiftKey &&
@@ -263,9 +280,9 @@ export function useKeyboardShortcuts() {
         chordKeyRef.current = null
       }
 
-      // 1-5 — switch to tab by index
+      // 1-5 — switch to tab by index (developer mode only)
       const num = parseInt(e.key, 10)
-      if (num >= 1 && num <= 5 && !ctrlOrMeta && !e.shiftKey && !e.altKey) {
+      if (isDevMode && num >= 1 && num <= 5 && !ctrlOrMeta && !e.shiftKey && !e.altKey) {
         e.preventDefault()
         const { tabs, setActiveTab } = useLayoutStore.getState()
         const targetTab = tabs[num - 1]

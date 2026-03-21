@@ -17,6 +17,7 @@ import { AgentPanel } from './AgentPanel'
 import { TaskQueue } from './TaskQueue'
 import { TaskHistory } from './TaskHistory'
 import { ThemeToggle } from './ThemeToggle'
+import { ViewModeToggle } from './ViewModeToggle'
 import { StatusBadge } from './StatusIndicator'
 import { WorkflowBar } from './WorkflowBar'
 
@@ -189,6 +190,7 @@ export function ProjectView() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
               </svg>
             </button>
+            <ViewModeToggle />
             <ThemeToggle />
           </div>
           <StatusBadge status={statusType} label={stateLabel} />

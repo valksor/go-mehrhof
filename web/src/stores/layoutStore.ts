@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { storeName } from '../meta'
 import { useProjectStore } from './projectStore'
+import { useViewModeStore, isViewModeHydrated } from './viewModeStore'
 
 type TaskState =
   | 'none'
@@ -195,6 +196,8 @@ export const useLayoutStore = create<LayoutState>()(
       openTab: (tab) => {
         set((state) => {
           // Check if tab already exists
+          // Re-opening an existing tab activates it without updating data.
+          // Stale tab cleanup on state regression (below) handles the common case.
           const existingTab = state.tabs.find((t) => t.id === tab.id)
           if (existingTab) {
             return { activeTabId: tab.id }
@@ -290,7 +293,30 @@ function setupReactiveTabsSubscription() {
     if (taskState === prevTaskState) return
     prevTaskState = taskState
 
-    const { openTab, setActiveTab, tabs } = useLayoutStore.getState()
+    const { openTab, setActiveTab, closeTab, tabs } = useLayoutStore.getState()
+
+    // Only suppress reactive tabs in simple mode AFTER hydration.
+    // Before hydration, fall through to developer behavior (the default).
+    if (isViewModeHydrated() && useViewModeStore.getState().mode === 'simple') return
+
+    // Close stale workflow tabs when state regresses (re-entry from submitted/implemented).
+    // This prevents old review/diff tabs from lingering while re-planning.
+    const staleTabTypes: Record<string, string[]> = {
+      loaded: ['spec', 'diff', 'filechanges', 'review'],
+      planning: ['diff', 'filechanges', 'review'],
+      planned: ['diff', 'filechanges', 'review'],
+      implementing: ['review'],
+      simplifying: ['review'],
+      optimizing: ['review'],
+    }
+    const typesToClose = staleTabTypes[taskState as string]
+    if (typesToClose) {
+      for (const tab of tabs) {
+        if (tab.closeable && typesToClose.includes(tab.type)) {
+          closeTab(tab.id)
+        }
+      }
+    }
 
     switch (taskState) {
       case 'loaded':
@@ -378,9 +404,73 @@ function setupReactiveTabsSubscription() {
 // Initialize subscription
 setupReactiveTabsSubscription()
 
-// Support HMR by re-subscribing when module is replaced
+// Subscribe to viewModeStore: on simple->developer switch, re-evaluate tabs
+let unsubscribeViewMode: (() => void) | null = null
+
+function handleViewModeChange(state: { mode: string }, prev: { mode: string }) {
+  if (prev.mode === 'simple' && state.mode === 'developer') {
+    // Reset tracker so reactive tabs fire on next state change
+    prevTaskState = null
+    // Re-read current taskState and trigger tab opening
+    const { state: taskState, task, fileChanges, reviews } = useProjectStore.getState()
+    const { openTab, tabs } = useLayoutStore.getState()
+    // Only auto-focus if user hasn't opened any workflow tabs yet
+    // (DEFAULT_TABS always includes the non-closeable chat tab, so length > 0)
+    const noWorkflowTabs = tabs.every(t => t.type === 'chat')
+
+    switch (taskState) {
+      case 'loaded':
+        if (task) {
+          openTab({ id: 'task-view', type: 'task', title: task.title || 'Task', data: { task }, closeable: true })
+          if (noWorkflowTabs) useLayoutStore.getState().setActiveTab('task-view')
+        }
+        break
+      case 'planned':
+        openTab({ id: 'spec-view', type: 'spec', title: 'Specification', data: { mode: 'spec' }, closeable: true })
+        if (noWorkflowTabs) useLayoutStore.getState().setActiveTab('spec-view')
+        break
+      case 'implemented':
+        if (fileChanges.length > 0 && fileChanges.length <= 3) {
+          const firstTabId = `diff-${fileChanges[0].path}`
+          for (const fc of fileChanges) {
+            const fileName = fc.path.split('/').pop() || fc.path
+            openTab({ id: `diff-${fc.path}`, type: 'diff', title: fileName, data: { path: fc.path, status: fc.status }, closeable: true })
+          }
+          if (noWorkflowTabs) useLayoutStore.getState().setActiveTab(firstTabId)
+        } else if (fileChanges.length > 3) {
+          openTab({ id: 'filechanges-view', type: 'filechanges', title: `${fileChanges.length} Files Changed`, data: { fileChanges }, closeable: true })
+          if (noWorkflowTabs) useLayoutStore.getState().setActiveTab('filechanges-view')
+        }
+        break
+      case 'submitted':
+        if (reviews.length > 0) {
+          openTab({ id: 'review-view', type: 'review', title: 'Review', data: { reviews }, closeable: true })
+          if (noWorkflowTabs) useLayoutStore.getState().setActiveTab('review-view')
+        }
+        break
+      case 'failed': {
+        const chatTab = tabs.find(t => t.type === 'chat')
+        if (chatTab) {
+          useLayoutStore.getState().setActiveTab(chatTab.id)
+        }
+        break
+      }
+    }
+
+    prevTaskState = taskState
+  }
+}
+
+unsubscribeViewMode = useViewModeStore.subscribe(handleViewModeChange)
+
+// Support HMR by cleaning up old subscriptions before module replacement
 if (import.meta.hot) {
+  import.meta.hot.dispose(() => {
+    if (unsubscribeReactiveTabs) unsubscribeReactiveTabs()
+    if (unsubscribeViewMode) unsubscribeViewMode()
+  })
   import.meta.hot.accept(() => {
     setupReactiveTabsSubscription()
+    unsubscribeViewMode = useViewModeStore.subscribe(handleViewModeChange)
   })
 }

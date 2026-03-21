@@ -709,7 +709,8 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
         return
       }
 
-      // Infer which phase failed from the last error message
+      // Phase inference uses substring matching on the error message.
+      // Good enough for retry UX — the backend doesn't report the failed phase directly.
       const lastError = (status.last_error || '').toLowerCase()
       let phase = 'plan'
       if (lastError.includes('implement')) phase = 'implement'
