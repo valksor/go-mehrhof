@@ -32,8 +32,6 @@ export function SimpleReviewSummary({ onReview, onRequestChanges, loading }: Sim
   useEffect(() => {
     if (!expandedFile) return
     let cancelled = false
-    setDiffError(null)
-    setFullDiff(null) // Clear stale diff to show loading state
     getGitDiff().then((diff) => {
       if (!cancelled) setFullDiff(diff)
     }).catch((err) => {
@@ -78,7 +76,14 @@ export function SimpleReviewSummary({ onReview, onRequestChanges, loading }: Sim
             return (
               <li key={fc.path}>
                 <button
-                  onClick={() => setExpandedFile(isExpanded ? null : fc.path)}
+                  onClick={() => {
+                    const next = isExpanded ? null : fc.path
+                    if (next) {
+                      setDiffError(null)
+                      setFullDiff(null)
+                    }
+                    setExpandedFile(next)
+                  }}
                   className="flex items-center gap-2 text-sm py-1 px-2 w-full text-left rounded hover:bg-base-200 transition-colors cursor-pointer"
                 >
                   <span className={`font-mono font-bold w-4 text-center ${info.color}`}>
