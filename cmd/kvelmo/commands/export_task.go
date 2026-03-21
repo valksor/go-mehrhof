@@ -71,7 +71,11 @@ func runExportTask(_ *cobra.Command, _ []string) error {
 		return nil
 	}
 
-	out, err := json.MarshalIndent(resp.Result, "", "  ")
+	var parsed any
+	if err := json.Unmarshal(resp.Result, &parsed); err != nil {
+		return fmt.Errorf("parse result: %w", err)
+	}
+	out, err := json.MarshalIndent(parsed, "", "  ")
 	if err != nil {
 		return fmt.Errorf("format result: %w", err)
 	}

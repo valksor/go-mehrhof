@@ -61,6 +61,10 @@ func (s *Service) TaskTimeline(taskTraceID string, limit int) ([]Activity, error
 // all activity log entries from the given time forward and groups them by
 // their method (which maps to the event type).
 func (s *Service) ProjectSummary(since time.Time) (map[string]int, error) {
+	// If since is in the future, return empty counts (no events can exist yet).
+	if since.After(time.Now()) {
+		return make(map[string]int), nil
+	}
 	sinceD := time.Since(since)
 	if sinceD < 0 {
 		sinceD = 0

@@ -46,7 +46,7 @@ func runSecurityScan(cmd *cobra.Command, args []string) error {
 
 	client, err := globalClient(60 * time.Second)
 	if err != nil {
-		return err
+		return fmt.Errorf("connect to global socket: %w", err)
 	}
 	defer func() { _ = client.Close() }()
 

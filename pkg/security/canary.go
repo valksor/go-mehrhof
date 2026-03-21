@@ -72,7 +72,9 @@ func NewCanaryHarness() (*CanaryHarness, error) {
 		seedTimes: make(map[string]time.Time, len(canaryFiles)),
 	}
 
-	now := time.Now()
+	// Subtract 1 second for filesystem timestamp resolution margin.
+	// Without this, reads at the same second as creation are missed by After().
+	now := time.Now().Add(-time.Second)
 
 	for _, cf := range canaryFiles {
 		token := uuid.New().String()

@@ -27,7 +27,7 @@ func ListNumberedFiles(dir string, pattern *regexp.Regexp) ([]int, error) {
 		}
 
 		matches := pattern.FindStringSubmatch(entry.Name())
-		if matches != nil {
+		if len(matches) > 1 {
 			num, _ := strconv.Atoi(matches[1])
 			numbers = append(numbers, num)
 		}

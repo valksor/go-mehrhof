@@ -3,6 +3,7 @@ package commands
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"time"
 
@@ -137,6 +138,10 @@ func runAccessTokenRevoke(_ *cobra.Command, args []string) error {
 	}
 	if err := json.Unmarshal(resp.Result, &result); err != nil {
 		return fmt.Errorf("parse result: %w", err)
+	}
+
+	if !result.Revoked {
+		return errors.New("token was not revoked")
 	}
 
 	fmt.Println("Token revoked.")

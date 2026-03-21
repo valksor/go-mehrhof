@@ -3,6 +3,7 @@ package commands
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/spf13/cobra"
 )
@@ -23,7 +24,10 @@ func init() {
 func runAbandon(cmd *cobra.Command, args []string) error {
 	keepBranch, _ := cmd.Flags().GetBool("keep-branch")
 
-	_, err := callWorktree(context.Background(), "abandon", map[string]any{
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	_, err := callWorktree(ctx, "abandon", map[string]any{
 		"keep_branch": keepBranch,
 	})
 	if err != nil {

@@ -36,12 +36,12 @@ func TestStrictProfileMediumCap(t *testing.T) {
 	p := Strict()
 
 	// 3 medium findings: within cap.
-	threeMedian := []Finding{
+	threeMedium := []Finding{
 		{Severity: SeverityMedium},
 		{Severity: SeverityMedium},
 		{Severity: SeverityMedium},
 	}
-	if p.HasBlockers(threeMedian) {
+	if p.HasBlockers(threeMedium) {
 		t.Error("strict profile should allow up to 3 medium findings")
 	}
 
