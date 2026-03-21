@@ -107,8 +107,8 @@ func TestWorktreeHandleCheckpoints_NilConductor(t *testing.T) {
 	if err != nil {
 		t.Fatalf("handleCheckpoints() error = %v", err)
 	}
-	if resp.Error == nil {
-		t.Error("handleCheckpoints() with nil conductor should return error response")
+	if resp.Error != nil {
+		t.Errorf("handleCheckpoints() with nil conductor should return empty list, got error: %s", resp.Error.Message)
 	}
 }
 

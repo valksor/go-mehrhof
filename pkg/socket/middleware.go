@@ -108,7 +108,9 @@ func MetricsMiddleware(m *metrics.Metrics) Middleware {
 
 			corrID := trace.ID(ctx)
 			if err != nil {
-				slog.Error("rpc request failed",
+				// RPC errors (returned to client) are expected; log at debug.
+				// Only unexpected handler failures warrant error level.
+				slog.Debug("rpc request failed",
 					"method", req.Method,
 					"id", req.ID,
 					"correlation_id", corrID,

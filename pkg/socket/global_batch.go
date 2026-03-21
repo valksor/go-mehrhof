@@ -10,7 +10,7 @@ import (
 
 // BatchParams is the request for tasks.batch.
 type BatchParams struct {
-	Action string            `json:"action"`           // "plan", "implement", "review", "submit", "abort", "reset", "stop"
+	Action string            `json:"action"`           // "plan", "implement", "review", "submit", "abort", "reset", "stop", "pause", "resume"
 	Filter map[string]string `json:"filter,omitempty"` // Optional: {"state": "reviewing"} to filter targets
 }
 

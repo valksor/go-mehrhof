@@ -300,7 +300,9 @@ func (s *Server) trackConn(conn net.Conn, add bool) {
 
 func (s *Server) connKey(conn net.Conn) string {
 	if addr := conn.RemoteAddr(); addr != nil {
-		return addr.String()
+		if key := addr.String(); key != "" {
+			return key
+		}
 	}
 
 	return fmt.Sprintf("conn-%p", conn)

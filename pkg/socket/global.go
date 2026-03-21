@@ -709,12 +709,18 @@ func (g *GlobalSocket) handleRegisterProject(ctx context.Context, req *Request) 
 		return NewErrorResponse(req.ID, ErrCodeInvalidParams, err.Error()), nil
 	}
 
+	// Default socket path if not provided (frontend sends only path)
+	socketPath := params.SocketPath
+	if socketPath == "" {
+		socketPath = WorktreeSocketPath(params.Path)
+	}
+
 	g.mu.Lock()
 	id := WorktreeIDFromPath(params.Path)
 	g.worktrees[id] = &WorktreeInfo{
 		ID:         id,
 		Path:       params.Path,
-		SocketPath: params.SocketPath,
+		SocketPath: socketPath,
 		State:      "none",
 		LastSeen:   time.Now(),
 	}

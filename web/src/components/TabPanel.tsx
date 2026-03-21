@@ -7,6 +7,7 @@ import { DiffMethod } from 'react-diff-viewer-continued'
 // Lazy-load heavy diff viewer component (only needed when viewing diffs)
 const ReactDiffViewer = lazy(() => import('react-diff-viewer-continued').then(m => ({ default: m.default })))
 import { useProjectStore } from '../stores/projectStore'
+import { parseDiffForFile } from '../lib/diff'
 import { OutputWidget } from './OutputWidget'
 import { ScreenshotsPanel } from './ScreenshotsPanel'
 import { JobsPanel } from './JobsPanel'
@@ -251,64 +252,7 @@ function DiffContent({ data }: { data?: Record<string, unknown> }) {
   )
 }
 
-// Parse unified diff to extract old/new content for a specific file
-function parseDiffForFile(fullDiff: string, filePath: string): { oldValue: string; newValue: string } | null {
-  if (!fullDiff) return null
-
-  // Find the section for this file in the unified diff
-  const lines = fullDiff.split('\n')
-  let inTargetFile = false
-  let oldLines: string[] = []
-  let newLines: string[] = []
-
-  for (const line of lines) {
-    // Check for file header (diff --git a/path b/path)
-    if (line.startsWith('diff --git')) {
-      // Parse exact paths from "diff --git a/path b/path" header
-      // Match pattern: diff --git a/<path> b/<path>
-      const match = line.match(/^diff --git a\/(.+?) b\/(.+)$/)
-      if (match) {
-        const [, leftPath, rightPath] = match
-        // Exact match instead of includes()
-        inTargetFile = leftPath === filePath || rightPath === filePath
-      } else {
-        inTargetFile = false
-      }
-      if (inTargetFile) {
-        oldLines = []
-        newLines = []
-      }
-      continue
-    }
-
-    if (!inTargetFile) continue
-
-    // Skip metadata lines
-    if (line.startsWith('index ') || line.startsWith('--- ') || line.startsWith('+++ ') || line.startsWith('@@')) {
-      continue
-    }
-
-    // Parse diff content
-    if (line.startsWith('-')) {
-      oldLines.push(line.slice(1))
-    } else if (line.startsWith('+')) {
-      newLines.push(line.slice(1))
-    } else if (line.startsWith(' ')) {
-      // Context line - appears in both
-      oldLines.push(line.slice(1))
-      newLines.push(line.slice(1))
-    }
-  }
-
-  if (oldLines.length === 0 && newLines.length === 0) {
-    return null
-  }
-
-  return {
-    oldValue: oldLines.join('\n'),
-    newValue: newLines.join('\n'),
-  }
-}
+// parseDiffForFile is imported from ../lib/diff
 
 function SpecContent({ data }: { data?: Record<string, unknown> }) {
   const loadSpec = useProjectStore(s => s.loadSpec)

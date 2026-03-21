@@ -42,7 +42,8 @@ type Pool struct {
 	wg     sync.WaitGroup
 
 	// Configuration
-	basePort int // Starting port for WebSocket workers
+	basePort      int      // Starting port for WebSocket workers
+	allowedAgents []string // If non-empty, only these agents can be used
 
 	// Recording
 	recordingEnabled   bool
@@ -55,6 +56,7 @@ type PoolConfig struct {
 	MaxWorkers         int
 	BasePort           int
 	Agents             *agent.Registry
+	AllowedAgents      []string // If non-empty, only these agent names can be used
 	RecordingEnabled   bool
 	RecordingDir       string
 	RecordingSanitizer *recorder.Sanitizer
@@ -86,6 +88,7 @@ func NewPool(cfg PoolConfig) *Pool {
 		jobCancels:         make(map[string]context.CancelFunc),
 		maxWorkers:         cfg.MaxWorkers,
 		basePort:           cfg.BasePort,
+		allowedAgents:      cfg.AllowedAgents,
 		recordingEnabled:   cfg.RecordingEnabled,
 		recordingDir:       cfg.RecordingDir,
 		recordingSanitizer: cfg.RecordingSanitizer,
@@ -695,6 +698,21 @@ func (p *Pool) AddAgentWorker(ctx context.Context, agentName string, isDefault b
 		return nil, fmt.Errorf("max workers (%d) reached", p.maxWorkers)
 	}
 	p.mu.Unlock()
+
+	// Validate against allowed agents whitelist
+	if agentName != "" && len(p.allowedAgents) > 0 {
+		allowed := false
+		for _, a := range p.allowedAgents {
+			if a == agentName {
+				allowed = true
+
+				break
+			}
+		}
+		if !allowed {
+			return nil, fmt.Errorf("agent %q is not in the allowed list (allowed: %v)", agentName, p.allowedAgents)
+		}
+	}
 
 	// Get agent from registry
 	var ag agent.Agent

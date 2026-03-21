@@ -74,6 +74,7 @@ type Scheduler struct {
 	mu          sync.Mutex
 	events      chan SchedulerEvent
 	nodeJobs    map[NodeID]string // NodeID → worker job ID
+	ctx         context.Context   //nolint:containedctx // needed by emit's blocking EventAllDone send; threading ctx through all callers is impractical
 }
 
 // NewScheduler creates a scheduler for the given graph and worker pool.
@@ -123,6 +124,7 @@ func (s *Scheduler) State() *StateManager {
 }
 
 func (s *Scheduler) run(ctx context.Context, opts JobOpts) {
+	s.ctx = ctx // Set before any child goroutine is spawned (happens-before via goroutine creation)
 	defer close(s.events)
 
 	// Validate graph before executing.
@@ -502,6 +504,17 @@ func joinErrors(msgs []string) string {
 func (s *Scheduler) emit(evt SchedulerEvent) {
 	if evt.Timestamp.IsZero() {
 		evt.Timestamp = time.Now()
+	}
+
+	// Critical events (completion) must not be dropped — block to ensure delivery,
+	// but respect context cancellation to avoid goroutine leaks.
+	if evt.Type == EventAllDone {
+		select {
+		case s.events <- evt:
+		case <-s.ctx.Done():
+		}
+
+		return
 	}
 
 	select {

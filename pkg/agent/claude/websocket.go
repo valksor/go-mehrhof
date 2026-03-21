@@ -378,13 +378,19 @@ func (w *WebSocketConnection) handleConnection(rw http.ResponseWriter, r *http.R
 	for {
 		_, data, err := conn.ReadMessage()
 		if err != nil {
-			slog.Error("claude websocket: read error", "error", err)
+			// Normal close during shutdown — not an error
+			if websocket.IsCloseError(err, websocket.CloseNormalClosure, websocket.CloseGoingAway) ||
+				strings.Contains(err.Error(), "use of closed") {
+				slog.Debug("claude websocket: connection closed", "error", err)
+			} else {
+				slog.Warn("claude websocket: read error", "error", err)
+			}
 			w.connected.Store(false)
 
 			return
 		}
 
-		slog.Info("claude websocket: raw message", "data", string(data))
+		slog.Debug("claude websocket: raw message", "data", string(data))
 
 		// Handle NDJSON - may have multiple JSON objects per message
 		lines := strings.Split(string(data), "\n")

@@ -129,9 +129,16 @@ func NewWorktreeSocket(cfg WorktreeConfig) (*WorktreeSocket, error) {
 	// Initialize screenshot store in .mehrhof directory
 	mehrhofPath := filepath.Join(cfg.WorktreePath, ".mehrhof")
 
+	// Canonicalize worktree path so path traversal guards in handlers
+	// (e.g., handleWorktreeFilesList) compare against a normalized prefix.
+	canonicalPath, err := filepath.Abs(cfg.WorktreePath)
+	if err != nil {
+		canonicalPath = filepath.Clean(cfg.WorktreePath)
+	}
+
 	w := &WorktreeSocket{
 		server:      NewServer(cfg.SocketPath),
-		path:        cfg.WorktreePath,
+		path:        canonicalPath,
 		globalPath:  cfg.GlobalPath,
 		conductor:   cond,
 		repo:        repo,
@@ -149,9 +156,14 @@ func NewWorktreeSocket(cfg WorktreeConfig) (*WorktreeSocket, error) {
 // NewWorktreeSocketSimple creates a worktree socket with git support but without conductor.
 // Useful for basic operations that don't require the full task lifecycle.
 func NewWorktreeSocketSimple(socketPath, worktreePath string) *WorktreeSocket {
+	// Canonicalize path for consistent path traversal guards (matches NewWorktreeSocket)
+	canonicalPath, err := filepath.Abs(worktreePath)
+	if err != nil {
+		canonicalPath = filepath.Clean(worktreePath)
+	}
 	w := &WorktreeSocket{
 		server:     NewServer(socketPath),
-		path:       worktreePath,
+		path:       canonicalPath,
 		globalPath: GlobalSocketPath(),
 		streams:    make(map[string]chan []byte),
 	}
@@ -180,8 +192,9 @@ func (w *WorktreeSocket) registerBasicHandlers() {
 	w.server.Handle("git.diff_against", w.handleGitDiffAgainst)
 	w.server.Handle("git.log", w.handleGitLog)
 
-	// File browsing
+	// File browsing and listing
 	w.server.Handle("browse", w.handleBrowse)
+	w.server.Handle("files.list", w.handleWorktreeFilesList)
 
 	// Streaming (required for frontend connection)
 	w.server.HandleWithConn("stream.subscribe", w.handleStreamSubscribe)
@@ -191,9 +204,8 @@ func (w *WorktreeSocket) registerBasicHandlers() {
 }
 
 func (w *WorktreeSocket) registerHandlers() {
-	// Note: ping, status, strategy.list, checkpoints, checkpoint.goto,
-	// git.*, browse, stream.subscribe, and review.list are already
-	// registered in registerBasicHandlers().
+	// Register basic handlers first (ping, status, git.*, stream.subscribe, etc.)
+	w.registerBasicHandlers()
 
 	// Task lifecycle
 	w.server.Handle("start", w.handleStart)
@@ -632,7 +644,8 @@ type ReviewParams struct {
 	Approve bool   `json:"approve"`
 	Reject  bool   `json:"reject"`
 	Message string `json:"message,omitempty"`
-	Fix     bool   `json:"fix,omitempty"` // Auto-fix issues after entering review
+	Fix     bool   `json:"fix,omitempty"`   // Auto-fix issues after entering review
+	Force   bool   `json:"force,omitempty"` // Allow re-entering review from already-reviewed state
 }
 
 func (w *WorktreeSocket) handleReview(ctx context.Context, req *Request) (*Response, error) {
@@ -1102,8 +1115,11 @@ type CheckpointInfo struct {
 }
 
 func (w *WorktreeSocket) handleCheckpoints(ctx context.Context, req *Request) (*Response, error) {
-	if resp := w.noConductor(req.ID); resp != nil {
-		return resp, nil
+	if w.conductor == nil {
+		return NewResultResponse(req.ID, map[string]any{
+			"checkpoints": []CheckpointInfo{},
+			"redo_stack":  []CheckpointInfo{},
+		})
 	}
 
 	wu := w.conductor.WorkUnit()
@@ -1349,6 +1365,105 @@ type WorktreeBrowseEntry struct {
 	Name  string `json:"name"`
 	Path  string `json:"path"`
 	IsDir bool   `json:"is_dir"`
+}
+
+// handleWorktreeFilesList lists files in the worktree for mentions/autocomplete.
+// Mirrors the global handleFilesList but scoped to this worktree's path.
+func (w *WorktreeSocket) handleWorktreeFilesList(_ context.Context, req *Request) (*Response, error) {
+	var params struct {
+		Path       string   `json:"path"`
+		Extensions []string `json:"extensions,omitempty"`
+		MaxDepth   int      `json:"max_depth,omitempty"`
+	}
+	if req.Params != nil {
+		_ = json.Unmarshal(req.Params, &params)
+	}
+
+	basePath := w.path
+	if params.Path != "" {
+		// Join to worktree root first, then verify the resolved path is still within it.
+		joined := filepath.Join(w.path, filepath.Clean(params.Path))
+		resolved, absErr := filepath.Abs(joined)
+		if absErr != nil {
+			return nil, fmt.Errorf("resolve path: %w", absErr)
+		}
+		if !strings.HasPrefix(resolved+string(filepath.Separator), w.path+string(filepath.Separator)) {
+			return NewErrorResponse(req.ID, -32602, "path outside worktree"), nil
+		}
+		basePath = resolved
+	}
+
+	maxDepth := params.MaxDepth
+	if maxDepth <= 0 || maxDepth > 10 {
+		maxDepth = 3
+	}
+
+	type fileEntry struct {
+		Name  string `json:"name"`
+		Path  string `json:"path"`
+		IsDir bool   `json:"is_dir"`
+		Size  int64  `json:"size,omitempty"`
+	}
+
+	var entries []fileEntry
+	skipDirs := map[string]bool{
+		"node_modules": true, "vendor": true, "dist": true,
+		"build": true, "__pycache__": true, ".git": true,
+	}
+
+	_ = filepath.WalkDir(basePath, func(p string, d os.DirEntry, err error) error {
+		if err != nil {
+			return nil //nolint:nilerr // Continue on individual errors
+		}
+		if strings.HasPrefix(d.Name(), ".") {
+			if d.IsDir() {
+				return filepath.SkipDir
+			}
+
+			return nil
+		}
+		relPath, _ := filepath.Rel(basePath, p)
+		depth := strings.Count(relPath, string(filepath.Separator))
+		if depth > maxDepth {
+			if d.IsDir() {
+				return filepath.SkipDir
+			}
+
+			return nil
+		}
+		if d.IsDir() && skipDirs[d.Name()] {
+			return filepath.SkipDir
+		}
+		if len(params.Extensions) > 0 && !d.IsDir() {
+			ext := strings.ToLower(filepath.Ext(d.Name()))
+			found := false
+			for _, e := range params.Extensions {
+				if ext == e || ext == "."+e {
+					found = true
+
+					break
+				}
+			}
+			if !found {
+				return nil
+			}
+		}
+		info, _ := d.Info()
+		var size int64
+		if info != nil && !d.IsDir() {
+			size = info.Size()
+		}
+		entries = append(entries, fileEntry{
+			Name:  d.Name(),
+			Path:  relPath,
+			IsDir: d.IsDir(),
+			Size:  size,
+		})
+
+		return nil
+	})
+
+	return NewResultResponse(req.ID, map[string]any{"files": entries})
 }
 
 func (w *WorktreeSocket) handleBrowse(ctx context.Context, req *Request) (*Response, error) {

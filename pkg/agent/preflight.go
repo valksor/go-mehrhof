@@ -166,9 +166,8 @@ func checkClaudeAuth() error {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	// Try "claude api get /organizations" as a lightweight auth check.
-	// If this fails with auth errors, the user needs to log in.
-	cmd := exec.CommandContext(ctx, path, "api", "get", "/organizations")
+	// Check Claude Code CLI login status (not API — kvelmo spawns claude as subprocess).
+	cmd := exec.CommandContext(ctx, path, "auth", "status")
 	output, err := cmd.CombinedOutput()
 	if err != nil {
 		outputStr := strings.TrimSpace(string(output))

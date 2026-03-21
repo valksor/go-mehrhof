@@ -430,11 +430,8 @@ func TestServerUse_AddsMiddleware(t *testing.T) {
 
 	initialCount := len(srv.middleware)
 
-	var called bool
 	srv.Use(func(next HandlerFunc) HandlerFunc {
 		return func(ctx context.Context, req *Request) *Response {
-			called = true
-
 			return next(ctx, req)
 		}
 	})
@@ -443,7 +440,7 @@ func TestServerUse_AddsMiddleware(t *testing.T) {
 		t.Errorf("expected %d middleware, got %d", initialCount+1, len(srv.middleware))
 	}
 
-	_ = called
+	// Middleware invocation is covered by TestServerMW_Roundtrip.
 }
 
 func TestServerMW_Roundtrip(t *testing.T) {
