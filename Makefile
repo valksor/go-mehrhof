@@ -1,8 +1,8 @@
-.PHONY: build test clean install run web-build web-dev fmt vet all help \
+.PHONY: build build-go test test-cover test-race test-e2e quality types \
+        web-build web-dev web-test web-e2e web-e2e-ui \
+        run run-dev install release man-pages \
         desktop-dev desktop-build desktop-sidecar desktop-sidecar-all desktop-clean tauri-install \
-        tidy deps version run-args check-alias web-test web-test-coverage \
-        test-e2e test-e2e-provider test-e2e-gitlab test-e2e-workflow test-e2e-cli \
-        man-pages
+        clean tidy deps ci dev version help all
 
 # Build variables
 BINARY_NAME := kvelmo
@@ -13,157 +13,74 @@ COMMIT := $(shell git rev-parse --short HEAD 2>/dev/null || echo "unknown")
 BUILD_TIME := $(shell date -u '+%Y-%m-%dT%H:%M:%SZ')
 LDFLAGS := -ldflags "-s -w -X github.com/valksor/kvelmo/pkg/meta.Version=$(VERSION) -X github.com/valksor/kvelmo/pkg/meta.Commit=$(COMMIT) -X github.com/valksor/kvelmo/pkg/meta.BuildTime=$(BUILD_TIME)"
 
+# E2E suite selection (SUITE=provider|gitlab|workflow|cli|all, default: all)
+SUITE ?= all
+
 # Default target
 all: build
 
-## Build the binary
-build: web-build
-	@mkdir -p $(BUILD_DIR)
-	CGO_ENABLED=0 go build -trimpath $(LDFLAGS) -o $(BUILD_DIR)/$(BINARY_NAME) $(CMD_DIR)
-	@echo "Built $(BUILD_DIR)/$(BINARY_NAME)"
+# ──────────────────────────────────────────────────────────────────────────────
+# Quality & Testing
+# ──────────────────────────────────────────────────────────────────────────────
 
-## Build without web (faster for Go-only changes)
-build-go:
-	@mkdir -p $(BUILD_DIR)
-	CGO_ENABLED=0 go build -trimpath $(LDFLAGS) -o $(BUILD_DIR)/$(BINARY_NAME) $(CMD_DIR)
-	@echo "Built $(BUILD_DIR)/$(BINARY_NAME)"
-
-## Run kvelmo (sockets + web UI)
-run: build
-	$(BUILD_DIR)/$(BINARY_NAME) serve
-
-## Run in development mode (no build, uses existing binary)
-run-dev:
-	$(BUILD_DIR)/$(BINARY_NAME) serve
-
-## Run with arguments (use ARGS=...)
-run-args: build
-	$(BUILD_DIR)/$(BINARY_NAME) $(ARGS)
-
-## Show version info
-version: build-go
-	$(BUILD_DIR)/$(BINARY_NAME) version
-
-## Install binary locally
-install: build
-	@INSTALL_DIR="$$HOME/.local/bin"; \
-	mkdir -p "$$INSTALL_DIR"; \
-	cp $(BUILD_DIR)/$(BINARY_NAME) "$$INSTALL_DIR/$(BINARY_NAME)"; \
-	echo "Installed to $$INSTALL_DIR/$(BINARY_NAME)"
-
-## Run all tests (limit parallel packages to avoid resource exhaustion)
-test: quality
-	go test -p 4 ./pkg/... ./cmd/...
-
-## Run tests with verbose output
-test-v:
-	go test -v -p 4 ./pkg/... ./cmd/...
-
-## Run tests with coverage
-test-cover:
-	go test -p 4 -coverprofile=coverage.out ./pkg/... ./cmd/...
-	go tool cover -html=coverage.out -o coverage.html
-
-## Run tests with race detector
-test-race:
-	go test -race -p 4 ./pkg/... ./cmd/...
-
-## Run all E2E tests (requires GITHUB_TOKEN and E2E_GITHUB_REPO)
-test-e2e:
-	go test -tags=e2e -v ./pkg/provider/... ./pkg/conductor/... -run TestE2E
-
-## Run E2E provider tests only
-test-e2e-provider:
-	go test -tags=e2e -v ./pkg/provider/... -run TestE2E
-
-## Run E2E GitLab provider tests only
-test-e2e-gitlab:
-	go test -tags=e2e -v -timeout=5m ./pkg/provider/... -run TestE2E_GitLab
-
-## Run E2E workflow tests only
-test-e2e-workflow:
-	go test -tags=e2e -v ./pkg/conductor/... -run TestE2E
-
-## Run full CLI E2E cycle test (requires GITHUB_TOKEN and E2E_GITHUB_REPO)
-test-e2e-cli:
-	go test -tags=e2e -v -timeout=30m ./e2e/... -run TestCLIFullCycle
-
-## Format code
-fmt:
+## Full-stack quality checks (Go fmt/vet/lint + frontend lint/typecheck)
+quality:
 	go fmt ./...
 	@command -v goimports >/dev/null && find . -name '*.go' -not -path './.claude/*' -not -path './prototype/*' -not -path './vendor/*' -exec goimports -w {} + || true
 	@command -v gofumpt >/dev/null && find . -name '*.go' -not -path './.claude/*' -not -path './prototype/*' -not -path './vendor/*' -exec gofumpt -l -w {} + || true
-
-## Vet code
-vet:
 	go vet ./...
-
-## Check for unnecessary import aliases
-check-alias:
 	@alias_issues="$$(./.github/alias.sh || true)"; \
 	if [ -n "$$alias_issues" ]; then \
 		echo "Unnecessary import alias detected:"; \
 		echo "$$alias_issues"; \
 		exit 1; \
 	fi
-
-## Quality checks (fmt + vet + lint + alias check)
-quality: fmt vet check-alias
 	golangci-lint run ./... --fix
+	cd web && bun install --frozen-lockfile && bun run lint && bun run typecheck
 
-# ──────────────────────────────────────────────────────────────────────────────
-# Web Frontend
-# ──────────────────────────────────────────────────────────────────────────────
-
-## Install web dependencies
-web-install:
-	cd web && bun install
-
-## Generate TypeScript types from Go structs
-types:
-	@mkdir -p web/src/types
-	tygo generate
-
-## Build web UI (generates types first)
-web-build: types
-	cd web && bun install && bun run build
-	@echo "Copying web assets for embedding..."
-	@rm -rf pkg/web/static/dist
-	@cp -r web/dist pkg/web/static/dist
-
-## Run web dev server (with hot reload, proxies to backend)
-web-dev:
-	cd web && bun run dev
-
-## Run web tests
-web-test:
+## Full-stack tests (Go + frontend unit tests)
+test: quality
+	go test -p 4 ./pkg/... ./cmd/...
 	cd web && bun run test:run
 
-## Run web tests with coverage
-web-test-coverage:
-	cd web && bun run test:coverage
+## Go tests with coverage report
+test-cover:
+	go test -p 4 -coverprofile=coverage.out ./pkg/... ./cmd/...
+	go tool cover -html=coverage.out -o coverage.html
 
-## Run web e2e tests (demo mode, safe - no backend needed)
-web-e2e:
-	cd web && bun run test:e2e
+## Go tests with race detector
+test-race:
+	go test -race -p 4 ./pkg/... ./cmd/...
 
-## Run web e2e tests with UI (interactive debugging)
-web-e2e-ui:
-	cd web && bun run test:e2e:ui
+## E2E tests (SUITE=provider|gitlab|workflow|cli|all, default: all provider+workflow tests; cli excluded due to 30m timeout)
+test-e2e:
+ifeq ($(SUITE),provider)
+	go test -tags=e2e -v ./pkg/provider/... -run TestE2E
+else ifeq ($(SUITE),gitlab)
+	go test -tags=e2e -v -timeout=5m ./pkg/provider/... -run TestE2E_GitLab
+else ifeq ($(SUITE),workflow)
+	go test -tags=e2e -v ./pkg/conductor/... -run TestE2E
+else ifeq ($(SUITE),cli)
+	go test -tags=e2e -v -timeout=30m ./e2e/... -run TestCLIFullCycle
+else
+	go test -tags=e2e -v ./pkg/provider/... ./pkg/conductor/... -run TestE2E
+endif
 
 # ──────────────────────────────────────────────────────────────────────────────
-# Documentation
+# Build
 # ──────────────────────────────────────────────────────────────────────────────
 
-## Generate man pages
-man-pages:
-	@mkdir -p man
-	@go run ./cmd/kvelmo gen-man-pages man
-	@echo "Man pages generated in man/"
+## Full build (web + Go binary)
+build: web-build
+	@mkdir -p $(BUILD_DIR)
+	CGO_ENABLED=0 go build -trimpath $(LDFLAGS) -o $(BUILD_DIR)/$(BINARY_NAME) $(CMD_DIR)
+	@echo "Built $(BUILD_DIR)/$(BINARY_NAME)"
 
-# ──────────────────────────────────────────────────────────────────────────────
-# Release
-# ──────────────────────────────────────────────────────────────────────────────
+## Go-only build (faster, skips web)
+build-go:
+	@mkdir -p $(BUILD_DIR)
+	CGO_ENABLED=0 go build -trimpath $(LDFLAGS) -o $(BUILD_DIR)/$(BINARY_NAME) $(CMD_DIR)
+	@echo "Built $(BUILD_DIR)/$(BINARY_NAME)"
 
 ## Build for release (all platforms)
 release: web-build
@@ -174,6 +91,61 @@ release: web-build
 	GOOS=linux GOARCH=arm64 go build -trimpath $(LDFLAGS) -o $(BUILD_DIR)/$(BINARY_NAME)-linux-arm64 $(CMD_DIR)
 	@echo "Release binaries in $(BUILD_DIR)/"
 
+## Install to ~/.local/bin
+install: build
+	@INSTALL_DIR="$$HOME/.local/bin"; \
+	mkdir -p "$$INSTALL_DIR"; \
+	cp $(BUILD_DIR)/$(BINARY_NAME) "$$INSTALL_DIR/$(BINARY_NAME)"; \
+	echo "Installed to $$INSTALL_DIR/$(BINARY_NAME)"
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Run
+# ──────────────────────────────────────────────────────────────────────────────
+
+## Build and run (sockets + web UI)
+run: build
+	$(BUILD_DIR)/$(BINARY_NAME) serve
+
+## Run without rebuilding (uses existing binary)
+run-dev:
+	$(BUILD_DIR)/$(BINARY_NAME) serve
+
+## Show version info
+version: build-go
+	$(BUILD_DIR)/$(BINARY_NAME) version
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Web Frontend
+# ──────────────────────────────────────────────────────────────────────────────
+
+## Generate TypeScript types from Go structs
+types:
+	@mkdir -p web/src/types
+	tygo generate
+
+## Build web UI
+web-build: types
+	cd web && bun install --frozen-lockfile && bun run build
+	@echo "Copying web assets for embedding..."
+	@rm -rf pkg/web/static/dist
+	@cp -r web/dist pkg/web/static/dist
+
+## Frontend dev server with hot reload
+web-dev:
+	cd web && bun run dev
+
+## Frontend unit tests
+web-test:
+	cd web && bun run test:run
+
+## Frontend e2e tests (demo mode, no backend needed)
+web-e2e:
+	cd web && bun run test:e2e
+
+## Frontend e2e tests with UI (interactive debugging)
+web-e2e-ui:
+	cd web && bun run test:e2e:ui
+
 # ──────────────────────────────────────────────────────────────────────────────
 # Desktop (Tauri)
 # ──────────────────────────────────────────────────────────────────────────────
@@ -182,11 +154,11 @@ release: web-build
 tauri-install:
 	cargo install tauri-cli --locked
 
-## Run desktop app in development mode
+## Desktop app dev mode
 desktop-dev: build-go desktop-sidecar
 	./.github/desktop-dev.sh
 
-## Build desktop app for production
+## Desktop app production build
 desktop-build: desktop-sidecar
 	cd web && bun tauri build
 
@@ -200,13 +172,10 @@ desktop-sidecar: build-go
 ## Prepare sidecar binaries for all platforms (for CI)
 desktop-sidecar-all: release
 	@mkdir -p web/src-tauri/binaries web/src-tauri/resources
-	# macOS: sidecar binaries (Tauri auto-selects by target triple)
 	cp $(BUILD_DIR)/$(BINARY_NAME)-darwin-amd64 web/src-tauri/binaries/$(BINARY_NAME)-x86_64-apple-darwin
 	cp $(BUILD_DIR)/$(BINARY_NAME)-darwin-arm64 web/src-tauri/binaries/$(BINARY_NAME)-aarch64-apple-darwin
-	# Linux: sidecar binaries
 	cp $(BUILD_DIR)/$(BINARY_NAME)-linux-amd64 web/src-tauri/binaries/$(BINARY_NAME)-x86_64-unknown-linux-gnu
 	cp $(BUILD_DIR)/$(BINARY_NAME)-linux-arm64 web/src-tauri/binaries/$(BINARY_NAME)-aarch64-unknown-linux-gnu
-	# Windows: Linux binaries as resources (for WSL deployment, not sidecar)
 	cp $(BUILD_DIR)/$(BINARY_NAME)-linux-amd64 web/src-tauri/resources/$(BINARY_NAME)-wsl-x64
 	cp $(BUILD_DIR)/$(BINARY_NAME)-linux-arm64 web/src-tauri/resources/$(BINARY_NAME)-wsl-arm64
 	@echo "Prepared sidecars for all platforms"
@@ -218,16 +187,22 @@ desktop-clean:
 	rm -rf web/src-tauri/resources/*
 
 # ──────────────────────────────────────────────────────────────────────────────
-# Cleanup
+# Misc
 # ──────────────────────────────────────────────────────────────────────────────
 
-## Clean build artifacts
+## Generate man pages
+man-pages:
+	@mkdir -p man
+	@go run ./cmd/kvelmo gen-man-pages man
+	@echo "Man pages generated in man/"
+
+## Clean all build artifacts
 clean: desktop-clean
 	rm -rf $(BUILD_DIR)
 	rm -f coverage.out coverage.html
 	rm -rf web/dist web/node_modules
 
-## Download dependencies
+## Download Go dependencies
 deps:
 	go mod download
 
@@ -239,21 +214,37 @@ tidy: clean
 ## CI checks (quality + test + build)
 ci: quality test build
 
-## Development workflow (quality + test + build + run)
+## Full dev workflow (quality + test + run)
 dev: quality test run
 
-## Show help
+## Show available targets
 help:
-	@echo "kvelmo Makefile"
+	@echo "Development:"
+	@echo "  make dev            Quality + test + run"
+	@echo "  make run            Build and run (sockets + web UI)"
+	@echo "  make run-dev        Run without rebuilding"
+	@echo "  make web-dev        Frontend dev server with hot reload"
 	@echo ""
-	@grep -E '^## ' $(MAKEFILE_LIST) | sed 's/## //' | while read line; do \
-		target=$$(echo "$$line" | head -1); \
-		echo "  $$target"; \
-	done
+	@echo "Quality & Testing:"
+	@echo "  make quality        Full-stack: Go fmt/vet/lint + frontend lint/typecheck"
+	@echo "  make test           Full-stack: Go tests + frontend unit tests"
+	@echo "  make test-e2e       E2E tests (SUITE=provider|gitlab|workflow|cli|all)"
+	@echo "  make test-cover     Go tests with coverage report"
+	@echo "  make test-race      Go tests with race detector"
+	@echo "  make web-test       Frontend unit tests only"
+	@echo "  make web-e2e        Frontend e2e tests (demo mode)"
 	@echo ""
-	@echo "Common workflows:"
-	@echo "  make run          - Build and run (sockets + web)"
-	@echo "  make dev          - Quality + test + run"
-	@echo "  make web-dev      - Frontend dev with hot reload"
-	@echo "  make desktop-dev  - Desktop app dev with hot reload"
-	@echo "  make desktop-build - Build desktop app for distribution"
+	@echo "Build & Release:"
+	@echo "  make build          Full build (web + Go binary)"
+	@echo "  make build-go       Go-only build (faster)"
+	@echo "  make release        Release binaries for all platforms"
+	@echo "  make install        Install to ~/.local/bin"
+	@echo "  make ci             quality + test + build"
+	@echo ""
+	@echo "Desktop:"
+	@echo "  make desktop-dev    Desktop app dev mode"
+	@echo "  make desktop-build  Desktop app production build"
+	@echo ""
+	@echo "Cleanup:"
+	@echo "  make clean          Remove all build artifacts"
+	@echo "  make tidy           Clean and tidy dependencies"

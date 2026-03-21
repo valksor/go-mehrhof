@@ -28,58 +28,35 @@ kvelmo is a **development orchestrator** - it doesn't write code itself, it mana
 ## Build & Development Commands
 
 ```bash
-# Build (includes web frontend)
+# Development
+make dev                # Quality + test + run (full dev workflow)
+make run                # Build and run (sockets + web UI)
+make run-dev            # Run without rebuilding
+make web-dev            # Vite dev server with hot reload (port 5173)
+
+# Quality & Testing
+make quality            # Full-stack: Go fmt/vet/lint + frontend lint/typecheck
+make test               # Full-stack: Go tests + frontend unit tests
+make test-e2e           # E2E tests (SUITE=provider|gitlab|workflow|cli|all)
+make test-cover         # Go coverage report → coverage.html
+make test-race          # Go tests with race detector
+make web-test           # Frontend unit tests only
+make web-e2e            # Frontend e2e tests (demo mode)
+
+# Build & Release
 make build              # Full build: web + Go binary → ./build/kvelmo
 make build-go           # Go-only build (faster, skip web)
-
-# Run
-make run                # Build and run (sockets + web UI)
-make run-dev            # Run without rebuilding (uses existing binary)
-
-# Tests
-make test               # Run all tests
-make test-v             # Verbose test output
-make test-cover         # Coverage report → coverage.html
-make test-race          # Tests with race detector
-go test ./pkg/socket/...  # Run tests for specific package
-
-# Quality
-make quality            # fmt + vet + lint + alias check
+make release            # Release binaries for all platforms
+make install            # Install to ~/.local/bin
 make ci                 # quality + test + build
-
-# Frontend
-make web-dev            # Vite dev server with hot reload (port 5173)
-make web-build          # Production build → web/dist/
 
 # Desktop (Tauri)
 make desktop-dev        # Tauri dev mode with hot reload
 make desktop-build      # Production desktop app build
-make desktop-sidecar    # Prepare sidecar binary (current platform)
-make desktop-clean      # Clean desktop build artifacts
 
-# Frontend testing
-make web-test           # Frontend unit tests
-make web-test-coverage  # Frontend test coverage report
-make web-e2e            # Web end-to-end tests (demo mode)
-
-# Type generation
-make types              # Generate TypeScript types from Go structs (tygo)
-
-# E2E tests
-make test-e2e           # Full E2E tests (requires GITHUB_TOKEN + E2E_GITHUB_REPO)
-make test-e2e-cli       # CLI E2E cycle test
-make test-e2e-provider  # E2E provider tests only
-make test-e2e-gitlab    # E2E GitLab tests only
-make test-e2e-workflow  # E2E workflow tests only
-
-# Additional targets
-make dev                # quality + test + run (full dev workflow)
-make install            # Install binary to $GOPATH/bin
-make man-pages          # Generate man pages for all commands
-make release            # Build release binaries for all platforms
+# Cleanup
 make clean              # Remove all build artifacts
-make deps               # Download Go module dependencies
-make tidy               # Clean and tidy Go module dependencies
+make tidy               # Clean and tidy dependencies
 ```
 
 ## Frontend
