@@ -54,12 +54,32 @@ make web-build          # Production build → web/dist/
 # Desktop (Tauri)
 make desktop-dev        # Tauri dev mode with hot reload
 make desktop-build      # Production desktop app build
+make desktop-sidecar    # Prepare sidecar binary (current platform)
+make desktop-clean      # Clean desktop build artifacts
+
+# Frontend testing
+make web-test           # Frontend unit tests
+make web-test-coverage  # Frontend test coverage report
+make web-e2e            # Web end-to-end tests (demo mode)
+
+# Type generation
+make types              # Generate TypeScript types from Go structs (tygo)
+
+# E2E tests
+make test-e2e           # Full E2E tests (requires GITHUB_TOKEN + E2E_GITHUB_REPO)
+make test-e2e-cli       # CLI E2E cycle test
+make test-e2e-provider  # E2E provider tests only
+make test-e2e-gitlab    # E2E GitLab tests only
+make test-e2e-workflow  # E2E workflow tests only
 
 # Additional targets
 make dev                # quality + test + run (full dev workflow)
 make install            # Install binary to $GOPATH/bin
 make man-pages          # Generate man pages for all commands
 make release            # Build release binaries for all platforms
+make clean              # Remove all build artifacts
+make deps               # Download Go module dependencies
+make tidy               # Clean and tidy Go module dependencies
 ```
 
 ## Frontend
@@ -109,7 +129,7 @@ Each transition creates a git checkpoint. `undo`/`redo` navigate between checkpo
 | `conductor/` | Task state machine and lifecycle transitions |
 | `agent/` | AI agent interface (claude, codex, custom); includes permission, recorder, and strategy sub-packages |
 | `worker/` | Concurrent job execution pool |
-| `provider/` | Task sources (github, gitlab, linear, wrike, jira, file) |
+| `provider/` | Task sources (github, gitlab, linear, wrike, jira, azuredevops, file) |
 | `storage/` | Persistence for tasks, plans, reviews, chat |
 | `git/` | Repository operations and checkpoint management |
 | `browser/` | Playwright automation for interactive testing |
@@ -130,15 +150,22 @@ Each transition creates a git checkpoint. `undo`/`redo` navigate between checkpo
 | `cli/` | CLI framework utilities and output helpers |
 | `configcheck/` | Configuration drift detection |
 | `discovery/` | Project command scanning (Makefile, package.json, Taskfile) |
+| `filter/` | Filtering utilities |
+| `findings/` | Unified finding model with gate rules and phase-aware quality profiles |
 | `graph/` | Dependency graph scheduling for parallel sub-tasks within phases |
 | `log/` | Structured logging (slog wrappers) |
 | `meta/` | Build metadata (version, commit, docs URL) |
 | `notify/` | Webhook notifications (Slack, generic) |
 | `onboarding/` | User onboarding workflows |
+| `page/` | Pagination utilities |
 | `policy/` | Workflow policy checking and validation |
 | `quality/` | Code quality gate execution |
+| `ratelimit/` | Rate limiting utilities |
 | `report/` | Compliance report generation |
+| `retry/` | Retry logic with exponential backoff |
+| `search/` | File and content search utilities |
 | `testutil/` | Test helpers and fixtures |
+| `timeline/` | Event timeline utilities |
 | `trace/` | Distributed tracing |
 | `tui/` | Terminal UI (Bubbletea-based dashboard) |
 | `varpool/` | Variable pool for inter-node context sharing during graph execution |
@@ -204,12 +231,12 @@ Commands in `cmd/kvelmo/commands/`. Entry point: `serve` (global socket + web se
 - `undo`/`redo` - Navigate checkpoints
 - `status` - Show current state
 - `watch` - Stream progress
-- `wait` - Wait for current operation to complete
-- `retry` - Re-run failed phases
+- `retry` - Re-run failed phases (phase commands accept `--wait` flag to block until completion)
 - `stop`/`abort`/`reset` - Interrupt operations
 - `abandon` - Abandon current task
 - `delete` - Delete task permanently
 - `update` - Refresh task from source
+- `autostart` - Auto-start task phases on load
 
 **Governance & quality:**
 - `approve` - Approve workflow transitions
@@ -240,10 +267,11 @@ Commands in `cmd/kvelmo/commands/`. Entry point: `serve` (global socket + web se
 - `rpc` - Raw JSON-RPC calls to sockets
 
 **Management:**
-- `config` - Configuration (show, init, set, validate, check)
+- `config` - Configuration (show, get, set, init, edit, diff, path, validate, check)
 - `workers` - Worker pool (list, add, remove, stats)
 - `projects` - Project registry
 - `agent` - Agent status and health checks
+- `strategy` - List available agent reasoning strategies
 - `serve` - Start global socket + web server
 - `shutdown` - Gracefully stop the server
 - `cleanup` - Remove stale socket files

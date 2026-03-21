@@ -150,16 +150,22 @@ Each transition creates a git checkpoint. `undo`/`redo` navigate between checkpo
 | `cli/` | CLI framework utilities and output helpers |
 | `configcheck/` | Configuration drift detection |
 | `discovery/` | Project command scanning (Makefile, package.json, Taskfile) |
+| `filter/` | Filtering utilities |
 | `findings/` | Unified finding model with gate rules and phase-aware quality profiles |
 | `graph/` | Dependency graph scheduling for parallel sub-tasks within phases |
 | `log/` | Structured logging (slog wrappers) |
 | `meta/` | Build metadata (version, commit, docs URL) |
 | `notify/` | Webhook notifications (Slack, generic) |
 | `onboarding/` | User onboarding workflows |
+| `page/` | Pagination utilities |
 | `policy/` | Workflow policy checking and validation |
 | `quality/` | Code quality gate execution |
+| `ratelimit/` | Rate limiting utilities |
 | `report/` | Compliance report generation |
+| `retry/` | Retry logic with exponential backoff |
+| `search/` | File and content search utilities |
 | `testutil/` | Test helpers and fixtures |
+| `timeline/` | Event timeline utilities |
 | `trace/` | Distributed tracing |
 | `tui/` | Terminal UI (Bubbletea-based dashboard) |
 | `varpool/` | Variable pool for inter-node context sharing during graph execution |
