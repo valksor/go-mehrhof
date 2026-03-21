@@ -8,6 +8,12 @@ Delete a terminal task from the registry.
 kvelmo delete
 ```
 
+## Options
+
+| Flag | Description |
+|------|-------------|
+| `--delete-branch` | Also delete the git branch |
+
 ## Prerequisites
 
 - Task must be in terminal state (`submitted` or `failed`)

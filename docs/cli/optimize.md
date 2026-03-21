@@ -8,6 +8,12 @@ Optional: Optimize code quality after implementation.
 kvelmo optimize
 ```
 
+## Options
+
+| Flag | Short | Description |
+|------|-------|-------------|
+| `--wait` | `-w` | Wait for job to complete, streaming output |
+
 ## Prerequisites
 
 - Task must be in `implemented` state

@@ -8,6 +8,12 @@ Optional: Simplify code for clarity after implementation.
 kvelmo simplify
 ```
 
+## Options
+
+| Flag | Short | Description |
+|------|-------|-------------|
+| `--wait` | `-w` | Wait for job to complete, streaming output |
+
 ## Prerequisites
 
 - Task must be in `implemented` state

@@ -8,6 +8,12 @@ Full cleanup: stop task, delete branch, clean work directory.
 kvelmo abandon
 ```
 
+## Options
+
+| Flag | Description |
+|------|-------------|
+| `--keep-branch` | Keep the git branch after abandoning |
+
 ## What Happens
 
 1. Current task stops

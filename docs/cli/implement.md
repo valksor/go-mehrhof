@@ -10,14 +10,17 @@ kvelmo implement
 
 ## Options
 
-| Flag      | Description                        |
-|-----------|------------------------------------|
-| `--force` | Re-run even if already implemented |
+| Flag | Short | Description |
+|------|-------|-------------|
+| `--force` | | Re-run implementation even if already implemented |
+| `--wait` | `-w` | Wait for job to complete, streaming output |
+| `--json` | | Output result as JSON |
 
 ## Prerequisites
 
-- Task must be in `planned` state
-- Run `kvelmo plan` first
+- Task must be in `loaded`, `planned`, `implemented`, or `submitted` state
+- From `loaded`: skips planning and uses the task description as specification
+- From `implemented` or `submitted`: re-runs implementation (re-entry)
 
 ## Examples
 

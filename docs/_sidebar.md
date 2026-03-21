@@ -10,6 +10,7 @@
 
 - Web UI
   - [Getting Started](/web-ui/getting-started.md)
+  - [Simple & Developer Modes](/web-ui/modes.md)
   - [Dashboard](/web-ui/dashboard.md)
   - [Creating Tasks](/web-ui/creating-tasks.md)
   - [Planning](/web-ui/planning.md)

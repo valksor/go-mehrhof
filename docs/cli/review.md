@@ -8,10 +8,30 @@ Start the review phase for implemented changes.
 kvelmo review
 ```
 
+## Options
+
+| Flag | Short | Description |
+|------|-------|-------------|
+| `--approve` | | Immediately approve (skip interactive review) |
+| `--reject` | | Reject and return to planning state |
+| `--message` | `-m` | Review message/notes |
+| `--fix` | | Auto-fix issues after entering review state |
+| `--force` | | Re-run review even if already reviewed |
+| `--wait` | `-w` | Wait for job to complete, streaming output |
+
+## Subcommands
+
+| Subcommand | Description |
+|------------|-------------|
+| `review list` | List all reviews for current task |
+| `review view <N>` | View review number N |
+
 ## Prerequisites
 
-- Task must be in `implemented` state
-- Run `kvelmo implement` first
+- Task must be in `implemented`, `planned`, or `submitted` state
+- From `implemented`: standard review after implementation
+- From `planned`: only available after at least one implementation has run
+- From `submitted`: re-review after re-entry (new commits on existing PR)
 
 ## Examples
 

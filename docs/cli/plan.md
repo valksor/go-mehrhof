@@ -10,14 +10,17 @@ kvelmo plan
 
 ## Options
 
-| Flag      | Description                    |
-|-----------|--------------------------------|
-| `--force` | Re-run even if already planned |
+| Flag | Short | Description |
+|------|-------|-------------|
+| `--force` | | Re-run planning even if already planned |
+| `--wait` | `-w` | Wait for job to complete, streaming output |
+| `--json` | | Output result as JSON |
 
 ## Prerequisites
 
-- Task must be in `loaded` state
-- Run `kvelmo start` first
+- Task must be in `loaded`, `planned`, `implemented`, or `submitted` state
+- From `loaded`: creates initial plan from task description
+- From `planned`, `implemented`, or `submitted`: re-plans (re-entry)
 
 ## Examples
 
@@ -41,12 +44,12 @@ kvelmo plan --force
 
 The specification is saved to:
 ```
-.kvelmo/specifications/specification.md
+.kvelmo/specifications/specification-1.md
 ```
 
 Review it before implementing:
 ```bash
-cat .kvelmo/specifications/specification.md
+cat .kvelmo/specifications/specification-1.md
 ```
 
 ## If Planning Fails

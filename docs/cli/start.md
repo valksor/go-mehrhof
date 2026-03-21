@@ -10,10 +10,14 @@ kvelmo start
 
 ## Options
 
-| Flag              | Description                        |
-|-------------------|------------------------------------|
-| `--from`          | Load task from provider (optional) |
-| `--verbose`, `-v` | Show socket paths                  |
+| Flag | Short | Description |
+|------|-------|-------------|
+| `--foreground` | | Run in foreground (for debugging) |
+| `--verbose` | `-v` | Show socket paths |
+| `--from` | | Task source (`file:path`, `github:owner/repo#123`, or URL) |
+| `--text` | | Inline task description (creates task without external source) |
+| `--auto` | | Auto-advance through plan, implement, and review |
+| `--json` | | Output result as JSON |
 
 ## Provider Formats
 
@@ -40,6 +44,15 @@ kvelmo start --from file:task.md
 
 # Start and load from GitHub issue
 kvelmo start --from github:valksor/kvelmo#123
+
+# Start with inline task description
+kvelmo start --text "Fix login button alignment"
+
+# Load from stdin
+echo "Fix X" | kvelmo start --text -
+
+# Auto-advance through plan, implement, review
+kvelmo start --from file:task.md --auto
 ```
 
 ## What Happens
