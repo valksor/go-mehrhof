@@ -228,8 +228,12 @@ export function ChatWidget({ embedded = false, onModalCommand }: ChatWidgetProps
     const trimmed = input.trim()
     if (!trimmed.startsWith('/') && (TASK_URL_PATTERN.test(trimmed) || SOURCE_SHORTHAND_PATTERN.test(trimmed))) {
       if (window.confirm(`Detected task source: ${trimmed}\n\nLoad as task? (Cancel to send as chat message)`)) {
-        await start(trimmed)
-        setInput('')
+        try {
+          await start(trimmed)
+          setInput('')
+        } catch (err) {
+          console.error('Failed to start task from URL:', err)
+        }
         return
       }
     }

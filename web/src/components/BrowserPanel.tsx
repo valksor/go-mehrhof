@@ -13,8 +13,8 @@ function ConsolePanel() {
     try {
       const result = await getConsole()
       setMessages(result.messages || [])
-    } catch {
-      // ignore
+    } catch (err) {
+      console.error('Failed to fetch console messages:', err)
     } finally {
       setLoading(false)
     }
@@ -62,8 +62,8 @@ function NetworkPanel() {
     try {
       const result = await getNetwork()
       setRequests(result.requests || [])
-    } catch {
-      // ignore
+    } catch (err) {
+      console.error('Failed to fetch network requests:', err)
     } finally {
       setLoading(false)
     }
