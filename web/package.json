@@ -35,7 +35,7 @@
     "react-dom": "^19.2.4",
     "react-hook-form": "^7.71.2",
     "react-markdown": "^10.1.0",
-    "react-resizable-panels": "^4.7.3",
+    "react-resizable-panels": "^4.7.4",
     "zod": "^4.3.6",
     "zustand": "^5.0.12"
   },
@@ -56,7 +56,7 @@
     "@vitejs/plugin-react": "^6.0.1",
     "@vitest/coverage-v8": "^4.1.0",
     "daisyui": "^5.5.19",
-    "eslint": "^10.0.3",
+    "eslint": "^10.1.0",
     "eslint-plugin-jsx-a11y": "^6.10.2",
     "eslint-plugin-react-hooks": "^7.0.1",
     "globals": "^17.4.0",
