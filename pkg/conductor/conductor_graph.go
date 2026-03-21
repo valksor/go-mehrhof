@@ -160,6 +160,14 @@ func (c *Conductor) handleGraphCompletion(ctx context.Context, sched *graph.Sche
 
 	c.mu.Lock()
 
+	// Mark implementation as done for guard checks (matches watchJob)
+	if completionEvent == EventImplementDone {
+		c.workUnit.HasImplemented = true
+	}
+
+	// Clear stale PriorStableState on successful completion (matches watchJob)
+	c.machine.ClearPriorStableState()
+
 	// Dispatch completion event.
 	_ = c.machine.Dispatch(ctx, completionEvent)
 	c.persistState()
@@ -410,7 +418,7 @@ func (c *Conductor) applyFailurePolicy(ctx context.Context, completionEvent Even
 				Message: fmt.Sprintf("Retrying %s (attempt %d/%d)", phase, attempt, policy.MaxRetries),
 			})
 			time.AfterFunc(policy.RetryDelay, func() {
-				c.dispatchAutoAdvance(ctx, phase)
+				c.dispatchAutoAdvance(c.lifecycleCtx, phase)
 			})
 
 			return true
@@ -442,6 +450,10 @@ func (c *Conductor) applyFailurePolicy(ctx context.Context, completionEvent Even
 
 			return false
 		}
+		// Clear priorStableState before dispatching completion to prevent
+		// it leaking into subsequent operations (the skip advances past
+		// the phase, so rollback is no longer relevant).
+		c.machine.ClearPriorStableState()
 		_ = c.machine.Dispatch(ctx, completionEvent)
 		c.persistState()
 		c.mu.Unlock()

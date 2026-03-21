@@ -153,6 +153,7 @@ func (c *Conductor) persistState() {
 
 	history := c.machine.History()
 	ts := workUnitToTaskState(c.machine.State(), c.workUnit, history)
+	ts.ProjectRoot = c.worktree // Tag task with owning project for cross-project filtering
 	if err := c.store.SaveTaskState(ts); err != nil {
 		slog.Warn("persist task state failed", "task_id", c.workUnit.ID, "error", err)
 	}
@@ -223,6 +224,7 @@ func workUnitToTaskState(state State, wu *WorkUnit, history []HistoryEntry) *sto
 		DependsOn:         wu.DependsOn,
 		QualityGatePassed: wu.QualityGatePassed,
 		VarPoolPath:       wu.VarPoolPath,
+		HasImplemented:    wu.HasImplemented,
 		TaskTraceID:       wu.TaskTraceID,
 		CreatedAt:         wu.CreatedAt,
 		UpdatedAt:         wu.UpdatedAt,
@@ -300,6 +302,7 @@ func taskStateToWorkUnit(ts *storage.TaskState) (State, *WorkUnit, []HistoryEntr
 		DependsOn:         ts.DependsOn,
 		QualityGatePassed: ts.QualityGatePassed,
 		VarPoolPath:       ts.VarPoolPath,
+		HasImplemented:    ts.HasImplemented,
 		TaskTraceID:       ts.TaskTraceID,
 		CreatedAt:         ts.CreatedAt,
 		UpdatedAt:         ts.UpdatedAt,

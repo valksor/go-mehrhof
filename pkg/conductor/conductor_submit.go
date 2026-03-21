@@ -50,6 +50,48 @@ func (c *Conductor) Submit(ctx context.Context, deleteBranch bool) error {
 		}
 	}
 
+	// Check required phases policy.
+	// On re-submit, only check phases completed since the last submit (not cumulative history).
+	if requiredPhases := settings.Workflow.Policy.RequiredPhases; len(requiredPhases) > 0 {
+		history := c.machine.History()
+		// Find the most recent EventSubmit to scope the check to the current cycle
+		sinceIdx := 0
+		for i := len(history) - 1; i >= 0; i-- {
+			if history[i].Event == EventSubmit {
+				sinceIdx = i + 1
+
+				break
+			}
+		}
+		recentHistory := history[sinceIdx:]
+		phaseEventMap := map[string]Event{
+			"plan":      EventPlanDone,
+			"implement": EventImplementDone,
+			"review":    EventReviewDone,
+			"simplify":  EventSimplifyDone,
+			"optimize":  EventOptimizeDone,
+		}
+		for _, phase := range requiredPhases {
+			doneEvent, ok := phaseEventMap[phase]
+			if !ok {
+				continue
+			}
+			found := false
+			for _, h := range recentHistory {
+				if h.Event == doneEvent {
+					found = true
+
+					break
+				}
+			}
+			if !found {
+				c.mu.Unlock()
+
+				return fmt.Errorf("cannot submit: required phase %q was not completed", phase)
+			}
+		}
+	}
+
 	// Check approval requirement
 	if err := c.checkApproval(EventSubmit); err != nil {
 		c.mu.Unlock()
@@ -90,7 +132,83 @@ func (c *Conductor) Submit(ctx context.Context, deleteBranch bool) error {
 
 			return fmt.Errorf("quality gate failed: %w", err)
 		}
+		// Cache the result so downstream checks (e.g. RequireSecurityScan) see it
+		passed := true
+		c.workUnit.QualityGatePassed = &passed
 		slog.Info("submit: quality gate passed (sync)")
+	}
+
+	// Check sensitive paths policy — changes to sensitive files require review.
+	// The mutex is released during DiffFilesWithStatus, creating a narrow TOCTOU
+	// window where both history and git index state could change. Acceptable
+	// for single-user (concurrent agent staging is not expected during submit).
+	if sensitivePaths := settings.Workflow.Policy.SensitivePaths; len(sensitivePaths) > 0 && c.git != nil {
+		// Get changed files
+		c.mu.Unlock()
+		changedFiles, diffErr := c.git.DiffFilesWithStatus(ctx)
+		c.mu.Lock()
+		if diffErr != nil {
+			slog.Warn("failed to diff files for sensitive path check", "error", diffErr)
+		} else {
+			// Scope review check to current cycle (since last EventSubmit),
+			// matching the required-phases check above.
+			history := c.machine.History()
+			sinceIdx := 0
+			for i := len(history) - 1; i >= 0; i-- {
+				if history[i].Event == EventSubmit {
+					sinceIdx = i + 1
+
+					break
+				}
+			}
+			reviewDone := false
+			for _, h := range history[sinceIdx:] {
+				if h.Event == EventReviewDone {
+					reviewDone = true
+
+					break
+				}
+			}
+			if !reviewDone {
+				var matchedPatterns []string
+				for _, pattern := range sensitivePaths {
+					for _, fs := range changedFiles {
+						// Use filepath.Match for simple patterns and fall back to
+						// prefix matching for directory patterns (filepath.Match
+						// does not match across path separators with *).
+						matched, _ := filepath.Match(pattern, fs.Path)
+						if !matched {
+							// Check if pattern is a directory prefix (e.g., "config/" matches "config/prod/secrets.yaml")
+							dir := strings.TrimRight(pattern, "*")
+							if strings.HasSuffix(dir, "/") || strings.HasSuffix(dir, string(filepath.Separator)) {
+								matched = strings.HasPrefix(fs.Path, dir)
+							}
+						}
+						if matched {
+							matchedPatterns = append(matchedPatterns, pattern)
+
+							break
+						}
+					}
+				}
+				if len(matchedPatterns) > 0 {
+					c.mu.Unlock()
+
+					return fmt.Errorf("changes to sensitive files require review: %s", strings.Join(matchedPatterns, ", "))
+				}
+			}
+		}
+	}
+
+	// Check security scan requirement.
+	// Note: Uses QualityGatePassed as a proxy — a dedicated SecurityScanPassed field
+	// would make this check independent of the general quality gate result.
+	if settings.Workflow.Policy.RequireSecurityScan {
+		if c.workUnit.QualityGatePassed == nil {
+			c.mu.Unlock()
+
+			return errors.New("security scan required before submission")
+		}
 	}
 
 	// Verify state transition is possible before starting network operations.
@@ -110,6 +228,7 @@ func (c *Conductor) Submit(ctx context.Context, deleteBranch bool) error {
 	externalID := c.workUnit.ExternalID
 	worktreePath := c.workUnit.WorktreePath
 	workUnitDescription := c.workUnit.Description
+	existingPRID := c.workUnit.PRID
 	specCount := len(c.workUnit.Specifications)
 	checkpointCount := len(c.workUnit.Checkpoints)
 	var sourceProvider, sourceURL string
@@ -231,7 +350,12 @@ func (c *Conductor) Submit(ctx context.Context, deleteBranch bool) error {
 						TaskID:  externalID,
 						TaskURL: sourceURL,
 					}
-					if result, err := sp.CreatePR(ctx, prOpts); err == nil {
+					// If PR already exists (re-submit after re-entry), push new
+					// commits instead of creating a duplicate PR.
+					if existingPRID != "" {
+						c.logVerbosef("PR already exists (%s), pushing updates to existing branch", existingPRID)
+						prID = existingPRID
+					} else if result, err := sp.CreatePR(ctx, prOpts); err == nil {
 						prURL = result.URL
 						prID = result.ID // Store PR ID for approve/merge operations
 						c.logVerbosef("Created PR: %s", prURL)
@@ -306,6 +430,15 @@ func (c *Conductor) Submit(ctx context.Context, deleteBranch bool) error {
 		Message: "Task submitted",
 		Data:    eventData,
 	})
+
+	// Start CI status watcher if enabled.
+	// CI watching requires providers to implement ciwatch.StatusFetcher.
+	// Once GitHub/GitLab providers implement FetchCIStatus, wire:
+	//   watcher := ciwatch.New(fetcher, prID, interval)
+	//   go watcher.Start(lifecycleCtx)
+	if s := c.getEffectiveSettings(); s.Workflow.CI.WatchEnabled && prID != "" {
+		slog.Debug("CI watching enabled but not yet implemented for this provider", "pr_id", prID)
+	}
 
 	// Trigger async memory indexing for submitted task.
 	// Use lifecycle context (not request ctx which may be cancelled when handler returns).

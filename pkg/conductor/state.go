@@ -155,8 +155,11 @@ type WorkUnit struct {
 	Priority         int                       `json:"priority,omitempty"`
 	DependsOn        []string                  `json:"depends_on,omitempty"`
 	VarPoolPath      string                    `json:"var_pool_path,omitempty"` // Path to varpool.json
-	CreatedAt        time.Time                 `json:"created_at"`
-	UpdatedAt        time.Time                 `json:"updated_at"`
+	// HasImplemented is set to true when EventImplementDone fires.
+	// Used by guardHasImplementation to gate simplify/optimize/review transitions.
+	HasImplemented bool      `json:"has_implemented,omitempty"`
+	CreatedAt      time.Time `json:"created_at"`
+	UpdatedAt      time.Time `json:"updated_at"`
 }
 
 // Source represents where the task came from.
@@ -483,6 +486,89 @@ var TransitionTable = map[TransitionKey][]Transition{
 	{StateOptimizing, EventStop}: {
 		{From: StateOptimizing, Event: EventStop, To: StateImplemented},
 	},
+	{StateReviewing, EventStop}: {
+		{From: StateReviewing, Event: EventStop, To: StateImplemented},
+	},
+
+	// === Free phase movement from stable states ===
+
+	// Re-plan from any stable state
+	{StatePlanned, EventPlan}: {
+		{From: StatePlanned, Event: EventPlan, To: StatePlanning, Guards: []Guard{
+			{Check: guardHasDescription, Message: "task has no description"},
+		}},
+	},
+	{StateImplemented, EventPlan}: {
+		{From: StateImplemented, Event: EventPlan, To: StatePlanning, Guards: []Guard{
+			{Check: guardHasDescription, Message: "task has no description"},
+		}},
+	},
+	{StateSubmitted, EventPlan}: {
+		{From: StateSubmitted, Event: EventPlan, To: StatePlanning, Guards: []Guard{
+			{Check: guardHasDescription, Message: "task has no description"},
+		}},
+	},
+
+	// Re-implement from any stable state
+	{StateImplemented, EventImplement}: {
+		{From: StateImplemented, Event: EventImplement, To: StateImplementing, Guards: []Guard{
+			{Check: guardHasSpecifications, Message: "no specifications found. Run plan first"},
+		}},
+	},
+	{StateSubmitted, EventImplement}: {
+		{From: StateSubmitted, Event: EventImplement, To: StateImplementing, Guards: []Guard{
+			{Check: guardHasSpecifications, Message: "no specifications found. Run plan first"},
+		}},
+	},
+
+	// Simplify/optimize from any stable state (where code exists)
+	{StatePlanned, EventSimplify}: {
+		{From: StatePlanned, Event: EventSimplify, To: StateSimplifying, Guards: []Guard{
+			{Check: guardHasImplementation, Message: "no implementation yet. Run implement first"},
+		}},
+	},
+	{StatePlanned, EventOptimize}: {
+		{From: StatePlanned, Event: EventOptimize, To: StateOptimizing, Guards: []Guard{
+			{Check: guardHasImplementation, Message: "no implementation yet. Run implement first"},
+		}},
+	},
+	{StateSubmitted, EventSimplify}: {
+		{From: StateSubmitted, Event: EventSimplify, To: StateSimplifying, Guards: []Guard{
+			{Check: guardHasImplementation, Message: "no implementation yet. Run implement first"},
+		}},
+	},
+	{StateSubmitted, EventOptimize}: {
+		{From: StateSubmitted, Event: EventOptimize, To: StateOptimizing, Guards: []Guard{
+			{Check: guardHasImplementation, Message: "no implementation yet. Run implement first"},
+		}},
+	},
+
+	// Review from any stable state (where code exists)
+	{StatePlanned, EventReview}: {
+		{From: StatePlanned, Event: EventReview, To: StateReviewing, Guards: []Guard{
+			{Check: guardHasImplementation, Message: "no implementation yet. Run implement first"},
+		}},
+	},
+	{StateSubmitted, EventReview}: {
+		{From: StateSubmitted, Event: EventReview, To: StateReviewing},
+	},
+
+	// Undo/Redo from Submitted
+	{StateSubmitted, EventUndo}: {
+		{From: StateSubmitted, Event: EventUndo, To: StateSubmitted, Guards: []Guard{
+			{Check: guardCanUndo, Message: "no checkpoints to undo"},
+		}},
+	},
+	{StateSubmitted, EventRedo}: {
+		{From: StateSubmitted, Event: EventRedo, To: StateSubmitted, Guards: []Guard{
+			{Check: guardCanRedo, Message: "nothing to redo"},
+		}},
+	},
+
+	// Abort from Submitted
+	{StateSubmitted, EventAbort}: {
+		{From: StateSubmitted, Event: EventAbort, To: StateFailed},
+	},
 }
 
 // Guard functions
@@ -505,6 +591,13 @@ func guardCanUndo(ctx context.Context, wu *WorkUnit) bool {
 
 func guardCanRedo(ctx context.Context, wu *WorkUnit) bool {
 	return wu != nil && len(wu.RedoStack) > 0
+}
+
+// guardHasImplementation checks that code has been implemented at least once.
+// Uses explicit HasImplemented flag — NOT checkpoint count, which is unreliable
+// (safety checkpoints from Plan() inflate the count before any code is written).
+func guardHasImplementation(_ context.Context, wu *WorkUnit) bool {
+	return wu != nil && wu.HasImplemented
 }
 
 func guardCanSubmit(ctx context.Context, wu *WorkUnit) bool {
@@ -582,7 +675,7 @@ func stateDescription(s State) string {
 	case StateReviewing:
 		return "under review"
 	case StateSubmitted:
-		return "already submitted"
+		return "submitted — can re-enter plan/implement/review or finish"
 	case StateFailed:
 		return "in failed state"
 	case StateWaiting:
@@ -676,7 +769,7 @@ func suggestNextAction(from State, _ *WorkUnit) string {
 	case StateReviewing:
 		return "Run: kvelmo submit"
 	case StateSubmitted:
-		return "Task complete. Start a new task with: kvelmo start --from <provider:reference>"
+		return "PR submitted. Run: kvelmo finish (cleanup), kvelmo plan (re-plan), or kvelmo implement (re-implement)"
 	case StateFailed:
 		return "Run: kvelmo reset to recover"
 	case StateWaiting:
@@ -697,6 +790,15 @@ type Machine struct {
 	history       []HistoryEntry
 	listeners     []StateListener
 	previousState State // For resuming after wait/pause
+	// priorStableState records the stable state before a re-entry transition.
+	// Used by EventError/EventStop to roll back to the correct state instead of
+	// the hardcoded default. Set by conductor before re-entry dispatches,
+	// cleared after error/stop uses it.
+	// Intentionally NOT persisted: only relevant while a job is running, and
+	// running jobs don't survive server restarts. On restart, LoadState restores
+	// the last persisted state (the in-progress state), which is acceptable.
+	// Access via SetPriorStableState/ClearPriorStableState (holds m.mu).
+	priorStableState State
 }
 
 // HistoryEntry records a state transition.
@@ -744,6 +846,29 @@ func (m *Machine) SetWorkUnit(wu *WorkUnit) {
 	}
 }
 
+// SetPriorStableState records the stable state before a re-entry transition.
+// Thread-safe: holds m.mu so callers do not need to coordinate with Dispatch.
+func (m *Machine) SetPriorStableState(s State) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.priorStableState = s
+}
+
+// ClearPriorStableState resets the prior stable state (e.g. on dispatch failure).
+func (m *Machine) ClearPriorStableState() {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.priorStableState = ""
+}
+
+// PriorStableState returns the current prior stable state (for testing).
+func (m *Machine) PriorStableState() State {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+
+	return m.priorStableState
+}
+
 // AddListener registers a state change listener.
 func (m *Machine) AddListener(listener StateListener) {
 	m.mu.Lock()
@@ -784,11 +909,19 @@ func (m *Machine) Dispatch(ctx context.Context, event Event) error {
 		m.previousState = from
 	}
 
+	// For error/stop during re-entry, override the hardcoded rollback target
+	// with the actual prior stable state.
+	targetState := validTransition.To
+	if (event == EventError || event == EventStop) && m.priorStableState != "" {
+		targetState = m.priorStableState
+		m.priorStableState = "" // Consumed
+	}
+
 	// Execute transition
-	m.state = validTransition.To
+	m.state = targetState
 	m.history = append(m.history, HistoryEntry{
 		From:      from,
-		To:        validTransition.To,
+		To:        targetState,
 		Event:     event,
 		Timestamp: time.Now(),
 	})
@@ -806,7 +939,7 @@ func (m *Machine) Dispatch(ctx context.Context, event Event) error {
 	// Call listeners outside lock
 	go func() {
 		for _, listener := range listeners {
-			listener(from, validTransition.To, event, wu)
+			listener(from, targetState, event, wu)
 		}
 	}()
 

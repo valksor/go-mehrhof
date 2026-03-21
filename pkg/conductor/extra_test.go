@@ -960,9 +960,19 @@ func TestNextStates_FromNone(t *testing.T) {
 
 func TestNextStates_FromSubmitted(t *testing.T) {
 	states := NextStates(StateSubmitted)
-	// Submitted can transition to None via Finish event
-	if len(states) != 1 || states[0] != StateNone {
-		t.Errorf("NextStates(Submitted) should return [none] (via Finish), got %v", states)
+	// Submitted can transition to many states via re-entry transitions + finish + abort
+	if len(states) < 2 {
+		t.Errorf("NextStates(Submitted) should return multiple states (re-entry + finish), got %v", states)
+	}
+	// Must include None (via Finish)
+	hasNone := false
+	for _, s := range states {
+		if s == StateNone {
+			hasNone = true
+		}
+	}
+	if !hasNone {
+		t.Errorf("NextStates(Submitted) should include none (via Finish), got %v", states)
 	}
 }
 

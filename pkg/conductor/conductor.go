@@ -703,5 +703,12 @@ func NewConductor(cfg ConductorConfig) *Conductor {
 	// Register post-transition hook listener
 	c.setupPostHooks()
 
+	// Load auto_advance from effective settings (can still be overridden via SetAutoAdvance)
+	if s := c.getEffectiveSettings(); s != nil {
+		if settings.BoolValue(s.Workflow.AutoAdvance, false) {
+			c.autoAdvance = true
+		}
+	}
+
 	return c
 }

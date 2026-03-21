@@ -3,6 +3,8 @@ package conductor
 import (
 	"context"
 	"fmt"
+	"log/slog"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -97,7 +99,7 @@ func (c *Conductor) Start(ctx context.Context, sourceRef string) error {
 		UpdatedAt:   time.Now(),
 	}
 
-	// Create branch if we have git and CreateBranch is enabled
+	// Create branch (and optionally an isolated worktree) if git is available.
 	if c.git != nil && settings.BoolValue(effectiveSettings.Git.CreateBranch, true) {
 		branchName := c.generateBranchName(c.workUnit)
 		if validationPattern := effectiveSettings.Git.BranchValidationPattern; validationPattern != "" {
@@ -105,22 +107,38 @@ func (c *Conductor) Start(ctx context.Context, sourceRef string) error {
 				return fmt.Errorf("branch name validation: %w", err)
 			}
 		}
-		// Check if branch already exists
-		if c.git.BranchExists(ctx, branchName) {
-			// Switch to existing branch
-			if err := c.git.SwitchBranch(ctx, branchName); err != nil {
-				c.logVerbosef("Warning: could not switch to branch %s: %v", branchName, err)
+
+		useWorktree := settings.BoolValue(effectiveSettings.Workflow.UseWorktreeIsolation, true)
+		if useWorktree {
+			// Create isolated git worktree so the main branch stays clean.
+			wtBasePath := filepath.Join(c.git.Path(), ".kvelmo", "worktrees")
+			wt, wtErr := c.git.CreateTaskWorktree(ctx, c.workUnit.ID, wtBasePath)
+			if wtErr != nil {
+				slog.Warn("worktree isolation failed, falling back to branch", "error", wtErr)
+				useWorktree = false
 			} else {
-				c.workUnit.Branch = branchName
-				c.logVerbosef("Switched to existing branch: %s", branchName)
+				c.workUnit.Branch = wt.Branch
+				c.workUnit.WorktreePath = wt.Path
+				c.logVerbosef("Created isolated worktree: %s (branch: %s)", wt.Path, wt.Branch)
 			}
-		} else {
-			// Create new branch
-			if err := c.git.CreateBranch(ctx, branchName); err != nil {
-				c.logVerbosef("Warning: could not create branch: %v", err)
+		}
+
+		// Fallback: just create/switch branch on the main repo
+		if !useWorktree {
+			if c.git.BranchExists(ctx, branchName) {
+				if err := c.git.SwitchBranch(ctx, branchName); err != nil {
+					c.logVerbosef("Warning: could not switch to branch %s: %v", branchName, err)
+				} else {
+					c.workUnit.Branch = branchName
+					c.logVerbosef("Switched to existing branch: %s", branchName)
+				}
 			} else {
-				c.workUnit.Branch = branchName
-				c.logVerbosef("Created branch: %s", branchName)
+				if err := c.git.CreateBranch(ctx, branchName); err != nil {
+					c.logVerbosef("Warning: could not create branch: %v", err)
+				} else {
+					c.workUnit.Branch = branchName
+					c.logVerbosef("Created branch: %s", branchName)
+				}
 			}
 		}
 	}

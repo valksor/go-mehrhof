@@ -39,10 +39,15 @@ type TaskState struct {
 	DependsOn         []string                      `yaml:"depends_on,omitempty"`
 	QualityGatePassed *bool                         `yaml:"quality_gate_passed,omitempty"`
 	VarPoolPath       string                        `yaml:"var_pool_path,omitempty"`
+	HasImplemented    bool                          `yaml:"has_implemented,omitempty"`
 	TaskTraceID       string                        `yaml:"task_trace_id,omitempty"`
-	History           []TaskHistoryEntry            `yaml:"history,omitempty"`
-	CreatedAt         time.Time                     `yaml:"created_at"`
-	UpdatedAt         time.Time                     `yaml:"updated_at"`
+	// ProjectRoot identifies which project this task belongs to.
+	// Used by FindActiveTask to filter tasks for the current project
+	// when storage is global (~/.valksor/kvelmo/work/).
+	ProjectRoot string             `yaml:"project_root,omitempty"`
+	History     []TaskHistoryEntry `yaml:"history,omitempty"`
+	CreatedAt   time.Time          `yaml:"created_at"`
+	UpdatedAt   time.Time          `yaml:"updated_at"`
 }
 
 // TaskApprovalRecord mirrors conductor.ApprovalRecord without an import cycle.
@@ -135,6 +140,19 @@ func (s *Store) FindActiveTask() (string, error) {
 		if err != nil {
 			continue
 		}
+
+		// When using global storage, only load tasks that belong to this project.
+		// Tasks without ProjectRoot are orphans from before this check — skip them too.
+		if !s.saveInProject && s.projectRoot != "" {
+			ts, loadErr := s.LoadTaskState(e.Name())
+			if loadErr != nil {
+				continue
+			}
+			if ts.ProjectRoot != s.projectRoot {
+				continue
+			}
+		}
+
 		if info.ModTime().After(newestTime) {
 			newestTime = info.ModTime()
 			newest = e.Name()

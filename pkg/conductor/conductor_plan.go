@@ -40,22 +40,37 @@ func (c *Conductor) Plan(ctx context.Context, force bool) (string, error) {
 		return "", err
 	}
 
+	// force is now a no-op — transition table handles re-entry natively.
+	// Kept for CLI backward compat (--force flag).
+	_ = force
+
 	// Run pre-transition hooks (release lock during shell execution)
 	c.mu.Unlock()
 	if err := c.RunTransitionHooks(ctx, EventPlan); err != nil {
+		c.mu.Lock() // Re-lock so deferred Unlock is balanced
 		c.emitEnrichedError(err, "plan")
 
 		return "", err
 	}
 	c.mu.Lock()
 
-	// Handle force: allow re-running from planned state
-	if force && c.machine.State() == StatePlanned {
-		c.machine.ForceState(StateLoaded)
+	// Record prior stable state for error/stop rollback during re-entry.
+	// Set AFTER lock re-acquisition to avoid race with concurrent calls.
+	currentState := c.machine.State()
+	if currentState != StateLoaded {
+		c.machine.SetPriorStableState(currentState)
+	}
+
+	// Clear stale quality gate result on re-plan so it doesn't carry
+	// into a subsequent submit (e.g., Submitted → plan → implement → submit).
+	if currentState == StateImplemented || currentState == StateSubmitted {
+		c.workUnit.QualityGatePassed = nil
+		c.workUnit.QualityGateError = ""
 	}
 
 	// Dispatch plan event to transition state
 	if err := c.machine.Dispatch(ctx, EventPlan); err != nil {
+		c.machine.ClearPriorStableState()
 		wrapped := fmt.Errorf("cannot plan: %w", err)
 		c.emitEnrichedError(wrapped, "plan")
 

@@ -40,25 +40,50 @@ func (c *Conductor) Implement(ctx context.Context, force bool) (string, error) {
 		return "", err
 	}
 
+	// Check minimum specification files policy.
+	// MinSpecSections counts spec files (not sections within a spec).
+	if s := c.getEffectiveSettings(); s != nil {
+		if minSpecs := s.Workflow.Policy.MinSpecSections; minSpecs > 0 {
+			specCount := len(c.workUnit.Specifications)
+			if specCount < minSpecs {
+				return "", fmt.Errorf("minimum %d specification file(s) required, found %d", minSpecs, specCount)
+			}
+		}
+	}
+
+	// force is now a no-op — transition table handles re-entry natively.
+	// Kept for CLI backward compat (--force flag).
+	_ = force
+
 	// Run pre-transition hooks (release lock during shell execution)
 	c.mu.Unlock()
 	if err := c.RunTransitionHooks(ctx, EventImplement); err != nil {
+		c.mu.Lock() // Re-lock so deferred Unlock is balanced
 		c.emitEnrichedError(err, "implement")
 
 		return "", err
 	}
 	c.mu.Lock()
 
-	// Handle force: allow re-running from implemented state
-	if force && c.machine.State() == StateImplemented {
-		c.machine.ForceState(StatePlanned)
+	// Record prior stable state for error/stop rollback during re-entry.
+	// Set AFTER lock re-acquisition to avoid race with concurrent calls.
+	currentState := c.machine.State()
+	if currentState != StateLoaded && currentState != StatePlanned {
+		c.machine.SetPriorStableState(currentState)
+	}
+
+	// Reset quality gate on re-implement so stale results don't carry forward
+	if currentState == StateImplemented || currentState == StateSubmitted {
+		c.workUnit.QualityGatePassed = nil
+		c.workUnit.QualityGateError = ""
 	}
 
 	// Skip-plan: when implementing from loaded state, use description as implicit spec
-	skippingPlan := c.machine.State() == StateLoaded
+	skippingPlan := currentState == StateLoaded
 
 	// Dispatch implement event to transition state
 	if err := c.machine.Dispatch(ctx, EventImplement); err != nil {
+		c.machine.ClearPriorStableState()
 		wrapped := fmt.Errorf("cannot implement: %w", err)
 		c.emitEnrichedError(wrapped, "implement")
 
@@ -127,14 +152,22 @@ func (c *Conductor) Optimize(ctx context.Context) (string, error) {
 	// Run pre-transition hooks (release lock during shell execution)
 	c.mu.Unlock()
 	if err := c.RunTransitionHooks(ctx, EventOptimize); err != nil {
+		c.mu.Lock() // Re-lock so deferred Unlock is balanced
 		c.emitEnrichedError(err, "optimize")
 
 		return "", err
 	}
 	c.mu.Lock()
 
+	// Record prior stable state for error/stop rollback during re-entry
+	currentState := c.machine.State()
+	if currentState != StateImplemented {
+		c.machine.SetPriorStableState(currentState)
+	}
+
 	// Dispatch optimize event to transition state
 	if err := c.machine.Dispatch(ctx, EventOptimize); err != nil {
+		c.machine.ClearPriorStableState()
 		wrapped := fmt.Errorf("cannot optimize: %w", err)
 		c.emitEnrichedError(wrapped, "optimize")
 
@@ -199,14 +232,22 @@ func (c *Conductor) Simplify(ctx context.Context) (string, error) {
 	// Run pre-transition hooks (release lock during shell execution)
 	c.mu.Unlock()
 	if err := c.RunTransitionHooks(ctx, EventSimplify); err != nil {
+		c.mu.Lock() // Re-lock so deferred Unlock is balanced
 		c.emitEnrichedError(err, "simplify")
 
 		return "", err
 	}
 	c.mu.Lock()
 
+	// Record prior stable state for error/stop rollback during re-entry
+	currentState := c.machine.State()
+	if currentState != StateImplemented {
+		c.machine.SetPriorStableState(currentState)
+	}
+
 	// Dispatch simplify event to transition state
 	if err := c.machine.Dispatch(ctx, EventSimplify); err != nil {
+		c.machine.ClearPriorStableState()
 		wrapped := fmt.Errorf("cannot simplify: %w", err)
 		c.emitEnrichedError(wrapped, "simplify")
 

@@ -175,6 +175,15 @@ func (c *Conductor) watchJob(ctx context.Context, jobID string, completionEvent 
 
 				c.mu.Lock()
 
+				// Mark implementation as done for guard checks
+				if completionEvent == EventImplementDone {
+					c.workUnit.HasImplemented = true
+				}
+
+				// Clear stale PriorStableState on successful completion so it
+				// doesn't affect rollback targets in subsequent operations.
+				c.machine.ClearPriorStableState()
+
 				// Dispatch completion event
 				_ = c.machine.Dispatch(ctx, completionEvent)
 

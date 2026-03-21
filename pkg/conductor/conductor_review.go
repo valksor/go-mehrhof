@@ -36,13 +36,23 @@ func (c *Conductor) Review(ctx context.Context, fix bool) error {
 	// Run pre-transition hooks (release lock during shell execution)
 	c.mu.Unlock()
 	if err := c.RunTransitionHooks(ctx, EventReview); err != nil {
+		// Review() does NOT use defer c.mu.Unlock() — explicit lock management.
+		// No re-lock needed here.
 		c.emitEnrichedError(err, "review")
 
 		return err
 	}
 	c.mu.Lock()
 
+	// Record prior stable state for error/stop rollback during re-entry
+	// (e.g., review from Submitted should stop back to Submitted, not Implemented).
+	currentState := c.machine.State()
+	if currentState != StateImplemented {
+		c.machine.SetPriorStableState(currentState)
+	}
+
 	if err := c.machine.Dispatch(ctx, EventReview); err != nil {
+		c.machine.ClearPriorStableState()
 		wrapped := fmt.Errorf("cannot review: %w", err)
 		c.mu.Unlock()
 		c.emitEnrichedError(wrapped, "review")
