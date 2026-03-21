@@ -11,41 +11,43 @@ test.describe('ProjectView in demo mode', () => {
   test('displays back button to projects', async ({ page }) => {
     await page.goto('/?demo')
 
-    // Back link shows "Projects" text
+    // Back link shows "Projects" text (hidden on small screens, visible on SM+)
     await expect(page.getByText('Projects').first()).toBeVisible()
   })
 
   test('shows task widget in left sidebar', async ({ page }) => {
     await page.goto('/?demo')
 
-    // Widget title "Task" in the left sidebar (rendered as span)
+    // Widget title "Task" in the left sidebar (rendered as span, uppercased by CSS)
     const leftSidebar = page.getByRole('complementary', { name: 'Left sidebar' })
     await expect(leftSidebar.getByText('Task', { exact: true })).toBeVisible()
   })
 
-  test('shows actions widget in right sidebar', async ({ page }) => {
+  test('shows agents widget in right sidebar', async ({ page }) => {
     await page.goto('/?demo')
 
     const rightSidebar = page.getByRole('complementary', { name: 'Right sidebar' })
-    await expect(rightSidebar.getByText('Actions', { exact: true })).toBeVisible()
+    await expect(rightSidebar.getByText('Agents', { exact: true })).toBeVisible()
   })
 
   test('shows file changes widget', async ({ page }) => {
     await page.goto('/?demo')
 
-    await expect(page.getByText('FILE CHANGES')).toBeVisible()
+    const leftSidebar = page.getByRole('complementary', { name: 'Left sidebar' })
+    await expect(leftSidebar.getByText('File Changes', { exact: true })).toBeVisible()
   })
 
-  test('shows agents widget', async ({ page }) => {
+  test('shows checkpoints widget', async ({ page }) => {
     await page.goto('/?demo')
 
-    await expect(page.getByText('AGENTS')).toBeVisible()
+    const rightSidebar = page.getByRole('complementary', { name: 'Right sidebar' })
+    await expect(rightSidebar.getByText('Checkpoints', { exact: true })).toBeVisible()
   })
 
   test('displays status badge with No Task state', async ({ page }) => {
     await page.goto('/?demo')
 
-    // Demo mode sets state to 'idle', which shows 'No Task'
+    // Demo mode state is 'none', which shows 'No Task' in the status badge
     await expect(page.getByText('No Task')).toBeVisible()
   })
 
@@ -63,12 +65,11 @@ test.describe('ProjectView in demo mode', () => {
     await expect(settingsButton).toBeVisible()
   })
 
-  test('action buttons are present', async ({ page }) => {
+  test('task widget has load task button', async ({ page }) => {
     await page.goto('/?demo')
 
-    // Action buttons in the ACTIONS widget
-    await expect(page.getByRole('button', { name: 'Plan' })).toBeVisible()
-    await expect(page.getByRole('button', { name: 'Implement' })).toBeVisible()
+    // In 'none' state, the Task widget shows a Load Task button
+    await expect(page.getByRole('button', { name: 'Load Task' })).toBeVisible()
   })
 
   test('output panel is present', async ({ page }) => {

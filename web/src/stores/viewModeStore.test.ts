@@ -43,9 +43,9 @@ describe('viewModeStore', () => {
     expect(useViewModeStore.getState().isFirstVisit).toBe(false)
   })
 
-  it('isViewModeHydrated returns false without localStorage', () => {
-    // In test environment, localStorage is unavailable so onRehydrateStorage
-    // never fires — hydration flag stays false. This is correct behavior.
-    expect(isViewModeHydrated()).toBe(false)
+  it('isViewModeHydrated returns true after store creation', () => {
+    // In test environment with happy-dom, localStorage is mocked and available,
+    // so zustand persist rehydrates synchronously, triggering onRehydrateStorage.
+    expect(isViewModeHydrated()).toBe(true)
   })
 })

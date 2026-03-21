@@ -16,6 +16,12 @@ import { checkForUpdates } from './lib/updater'
 // Demo mode for testing UI without backend (dev builds only)
 const DEMO_MODE = import.meta.env.DEV && new URLSearchParams(window.location.search).has('demo')
 
+// In demo mode, skip the mode picker and default to developer mode
+if (DEMO_MODE) {
+  useViewModeStore.getState().setIsFirstVisit(false)
+  useViewModeStore.getState().setMode('developer')
+}
+
 // URL param override for view mode — applied after rehydration so it wins over localStorage.
 const URL_VIEW_MODE = new URLSearchParams(window.location.search).get('mode')
 if (URL_VIEW_MODE === 'simple' || URL_VIEW_MODE === 'developer') {
@@ -99,6 +105,54 @@ export default function App() {
     })
   }, [selectedProject, selectProject])
 
+  // Keyboard shortcuts help overlay (shared by demo and production paths)
+  const helpOverlay = showHelp ? (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+      onClick={() => setShowHelp(false)}
+      onKeyDown={(e) => { if (e.key === 'Escape') setShowHelp(false) }}
+      role="button"
+      tabIndex={0}
+      aria-label="Close keyboard shortcuts dialog"
+    >
+      <div
+        className="bg-base-200 rounded-lg shadow-xl p-6 max-w-md w-full mx-4"
+        onClick={(e) => e.stopPropagation()}
+        onKeyDown={(e) => e.stopPropagation()}
+        role="presentation"
+      >
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-semibold">Keyboard Shortcuts</h2>
+          <button
+            className="btn btn-ghost btn-sm"
+            onClick={() => setShowHelp(false)}
+            aria-label="Close"
+          >
+            Esc
+          </button>
+        </div>
+        {Object.entries(
+          SHORTCUTS.filter(s => !s.devOnly || mode === 'developer').reduce<Record<string, typeof SHORTCUTS>>((acc, s) => {
+            ;(acc[s.section] ??= []).push(s)
+            return acc
+          }, {})
+        ).map(([section, items]) => (
+          <div key={section} className="mb-3">
+            <h3 className="text-xs font-semibold uppercase text-base-content/50 mb-1">
+              {section}
+            </h3>
+            {items.map((s) => (
+              <div key={s.keys} className="flex justify-between py-1">
+                <span className="text-sm text-base-content/80">{s.description}</span>
+                <kbd className="kbd kbd-sm">{s.keys}</kbd>
+              </div>
+            ))}
+          </div>
+        ))}
+      </div>
+    </div>
+  ) : null
+
   // Demo mode: show ProjectView with mock data
   if (DEMO_MODE) {
     return (
@@ -115,6 +169,7 @@ export default function App() {
               )
           )}
         </main>
+        {helpOverlay}
       </ErrorBoundary>
     )
   }
@@ -159,52 +214,7 @@ export default function App() {
             : <GlobalView />
         )}
       </main>
-      {showHelp && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
-          onClick={() => setShowHelp(false)}
-          onKeyDown={(e) => { if (e.key === 'Escape') setShowHelp(false) }}
-          role="button"
-          tabIndex={0}
-          aria-label="Close keyboard shortcuts dialog"
-        >
-          <div
-            className="bg-base-200 rounded-lg shadow-xl p-6 max-w-md w-full mx-4"
-            onClick={(e) => e.stopPropagation()}
-            onKeyDown={(e) => e.stopPropagation()}
-            role="presentation"
-          >
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold">Keyboard Shortcuts</h2>
-              <button
-                className="btn btn-ghost btn-sm"
-                onClick={() => setShowHelp(false)}
-                aria-label="Close"
-              >
-                Esc
-              </button>
-            </div>
-            {Object.entries(
-              SHORTCUTS.filter(s => !s.devOnly || mode === 'developer').reduce<Record<string, typeof SHORTCUTS>>((acc, s) => {
-                ;(acc[s.section] ??= []).push(s)
-                return acc
-              }, {})
-            ).map(([section, items]) => (
-              <div key={section} className="mb-3">
-                <h3 className="text-xs font-semibold uppercase text-base-content/50 mb-1">
-                  {section}
-                </h3>
-                {items.map((s) => (
-                  <div key={s.keys} className="flex justify-between py-1">
-                    <span className="text-sm text-base-content/80">{s.description}</span>
-                    <kbd className="kbd kbd-sm">{s.keys}</kbd>
-                  </div>
-                ))}
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+      {helpOverlay}
     </ErrorBoundary>
   )
 }

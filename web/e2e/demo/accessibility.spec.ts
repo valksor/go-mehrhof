@@ -62,11 +62,11 @@ test.describe('Accessibility in demo mode', () => {
     expect(focusedElement.isInteractive, 'Expected Tab to focus an interactive element').toBe(true)
   })
 
-  test('action buttons have accessible names', async ({ page }) => {
+  test('task loading controls have accessible labels', async ({ page }) => {
     await page.goto('/?demo')
 
-    // All action buttons should have clear names
-    await expect(page.getByRole('button', { name: 'Plan' })).toBeVisible()
-    await expect(page.getByRole('button', { name: 'Implement' })).toBeVisible()
+    // Task widget tabs and load button have accessible names
+    await expect(page.getByRole('tab', { name: 'Quick Task' })).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Load Task' })).toBeVisible()
   })
 })
