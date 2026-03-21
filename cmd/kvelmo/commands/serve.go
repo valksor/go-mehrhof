@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"net"
 	"os"
 	"os/exec"
@@ -16,6 +17,7 @@ import (
 	"github.com/valksor/kvelmo/pkg/activitylog"
 	"github.com/valksor/kvelmo/pkg/agent"
 	"github.com/valksor/kvelmo/pkg/agent/claude"
+	"github.com/valksor/kvelmo/pkg/agent/codex"
 	"github.com/valksor/kvelmo/pkg/catalog"
 	"github.com/valksor/kvelmo/pkg/meta"
 	"github.com/valksor/kvelmo/pkg/metrics"
@@ -122,11 +124,22 @@ func runServe(cmd *cobra.Command, args []string) error {
 			_ = os.Remove(globalPath)
 		}
 
-		// Create worker pool with Claude agent registered
-		// Use KvelmoPermissionHandler to allow Write/Edit/Bash for planning/implementation
+		// Create worker pool with available agents registered.
+		// Use KvelmoPermissionHandler to allow Write/Edit/Bash for planning/implementation.
 		registry := agent.NewRegistry()
 		if err := claude.RegisterWithPermissionHandler(registry, agent.KvelmoPermissionHandler); err != nil {
-			return fmt.Errorf("register claude agent: %w", err)
+			slog.Debug("claude agent not available", "error", err)
+		}
+		if err := codex.RegisterWithPermissionHandler(registry, agent.KvelmoPermissionHandler); err != nil {
+			slog.Debug("codex agent not available", "error", err)
+		}
+
+		// Apply agent.default from settings
+		effective, _, _, _ := settings.LoadEffective("")
+		if effective != nil && effective.Agent.Default != "" {
+			if setErr := registry.SetDefault(effective.Agent.Default); setErr != nil {
+				slog.Warn("agent.default setting invalid", "agent", effective.Agent.Default, "error", setErr)
+			}
 		}
 
 		if debugTiming {
@@ -136,6 +149,9 @@ func runServe(cmd *cobra.Command, args []string) error {
 
 		poolCfg := worker.DefaultPoolConfig()
 		poolCfg.Agents = registry
+		if effective != nil && len(effective.Agent.Allowed) > 0 {
+			poolCfg.AllowedAgents = effective.Agent.Allowed
+		}
 		pool := worker.NewPool(poolCfg)
 		if err := pool.Start(); err != nil {
 			return fmt.Errorf("start worker pool: %w", err)
