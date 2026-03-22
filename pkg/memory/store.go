@@ -250,8 +250,7 @@ func (vs *VectorStore) Search(ctx context.Context, query string, opts SearchOpti
 
 // activationScore computes an ACT-R-inspired activation value.
 // When AccessTimes are available, uses the full ACT-R formula B_i = ln(Σ t_j^(-d))
-// which captures temporal distribution of accesses.  Falls back to the simplified
-// recency × frequency formula for legacy documents without AccessTimes.
+// which captures temporal distribution of accesses.
 func activationScore(doc *Document, now time.Time) float64 {
 	// Full ACT-R when timestamp history is available.
 	if len(doc.AccessTimes) > 0 {
@@ -264,19 +263,21 @@ func activationScore(doc *Document, now time.Time) float64 {
 		return math.Min(math.Log(sum+1)/3.0, 1.0) // normalize to [0, 1]
 	}
 
-	if doc.AccessCount == 0 {
-		// Never accessed — use recency of creation only.
-		ageHours := now.Sub(doc.CreatedAt).Hours() + 1 // +1 to avoid log(0)
-
-		return math.Min(1.0/math.Log(ageHours), 1.0)
+	// Recency of creation with optional frequency boost from AccessCount.
+	ageHours := now.Sub(doc.CreatedAt).Hours() + 1 // +1 to avoid log(0)
+	if ageHours <= 1.0 {
+		return 1.0 // brand-new docs get max score
 	}
 
-	// Legacy fallback: simplified recency × frequency.
-	ageHours := now.Sub(doc.CreatedAt).Hours() + 1
 	recency := 1.0 / math.Log(ageHours)
-	frequency := math.Log(float64(doc.AccessCount) + 1)
 
-	return math.Min(recency*frequency, 1.0)
+	if doc.AccessCount > 0 {
+		frequency := math.Log(float64(doc.AccessCount) + 1)
+
+		return math.Min(recency*frequency, 1.0)
+	}
+
+	return math.Min(recency, 1.0)
 }
 
 // Delete removes a document by ID from memory and disk.

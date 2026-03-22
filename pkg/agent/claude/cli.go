@@ -62,9 +62,8 @@ type cliMessage struct {
 	IsError   bool   `json:"is_error,omitempty"`
 
 	// For result
-	Result  string `json:"result,omitempty"`
-	Success bool   `json:"success,omitempty"` // Deprecated: use Subtype == "success"
-	Error   string `json:"error,omitempty"`
+	Result string `json:"result,omitempty"`
+	Error  string `json:"error,omitempty"`
 
 	// For message - can be string or object, use RawMessage
 	Role    string          `json:"role,omitempty"`
@@ -280,8 +279,8 @@ func (c *CLIConnection) handleMessage(msg cliMessage) {
 		}
 
 	case "result":
-		// Check for success: explicit success subtype or success flag
-		isSuccess := msg.Success || msg.Subtype == "success"
+		// Success when subtype is "success" or result has no error flag
+		isSuccess := msg.Subtype == "success" || !msg.IsError
 		if isSuccess {
 			c.events <- agent.Event{
 				Type:      agent.EventComplete,

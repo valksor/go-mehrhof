@@ -47,15 +47,18 @@ make web-e2e-ui         # Interactive Playwright e2e UI
 # Build & Release
 make build              # Full build: web + Go binary → ./build/kvelmo
 make build-go           # Go-only build (faster, skip web)
+make web-build          # Frontend build only (Vite production)
 make release            # Release binaries for all platforms
 make install            # Install to ~/.local/bin
 make ci                 # quality + test + build
+make version            # Show current version info
 
 # Desktop (Tauri)
 make desktop-dev        # Tauri dev mode with hot reload
 make desktop-build      # Production desktop app build
 make desktop-sidecar    # Prepare sidecar binary (current platform)
 make desktop-sidecar-all # Prepare sidecar binaries (all platforms)
+make desktop-clean      # Remove desktop build artifacts
 make tauri-install      # Install Tauri CLI prerequisites
 
 # Setup & Utilities

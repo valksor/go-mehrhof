@@ -11,8 +11,6 @@
 // Schema tags on struct fields drive automatic React form generation.
 package settings
 
-import "gopkg.in/yaml.v3"
-
 // Settings represents the complete configuration for kvelmo.
 // Project settings override global settings when both are present.
 type Settings struct {
@@ -277,80 +275,6 @@ type WorkflowSettings struct {
 	PhasePolicies        map[string]string    `yaml:"phase_policies,omitempty" json:"phase_policies,omitempty" schema:"label=Phase Policies;desc=Per-phase failure policy overrides: fail, retry, or skip (e.g., simplify: skip)"`
 	CI                   CISettings           `yaml:"ci,omitempty" json:"ci,omitempty"`
 	Hooks                HooksSettings        `yaml:"hooks,omitempty" json:"hooks,omitempty"`
-}
-
-// UnmarshalYAML provides backward compatibility for the old "coderabbit" YAML key.
-func (w *WorkflowSettings) UnmarshalYAML(value *yaml.Node) error {
-	// Decode into a raw map to check for the legacy key.
-	var raw map[string]yaml.Node
-	if err := value.Decode(&raw); err != nil {
-		return err
-	}
-
-	// Handle legacy "coderabbit" key by mapping it to "external_review".
-	if legacy, ok := raw["coderabbit"]; ok {
-		if _, hasNew := raw["external_review"]; !hasNew {
-			raw["external_review"] = legacy
-		}
-		delete(raw, "coderabbit")
-	}
-
-	// Re-encode the cleaned map and decode into the struct.
-	type plain WorkflowSettings
-	var p plain
-
-	// Decode known fields manually.
-	if node, ok := raw["use_worktree_isolation"]; ok {
-		if err := node.Decode(&p.UseWorktreeIsolation); err != nil {
-			return err
-		}
-	}
-	if node, ok := raw["auto_advance"]; ok {
-		var v bool
-		if err := node.Decode(&v); err != nil {
-			return err
-		}
-		p.AutoAdvance = &v
-	}
-	if node, ok := raw["skip_phases"]; ok {
-		if err := node.Decode(&p.SkipPhases); err != nil {
-			return err
-		}
-	}
-	if node, ok := raw["external_review"]; ok {
-		if err := node.Decode(&p.ExternalReview); err != nil {
-			return err
-		}
-	}
-	if node, ok := raw["policy"]; ok {
-		if err := node.Decode(&p.Policy); err != nil {
-			return err
-		}
-	}
-	if node, ok := raw["retry"]; ok {
-		if err := node.Decode(&p.Retry); err != nil {
-			return err
-		}
-	}
-	if node, ok := raw["phase_policies"]; ok {
-		if err := node.Decode(&p.PhasePolicies); err != nil {
-			return err
-		}
-	}
-	if node, ok := raw["ci"]; ok {
-		if err := node.Decode(&p.CI); err != nil {
-			return err
-		}
-	}
-	if node, ok := raw["hooks"]; ok {
-		if err := node.Decode(&p.Hooks); err != nil {
-			return err
-		}
-	}
-
-	*w = WorkflowSettings(p)
-
-	return nil
 }
 
 // SecuritySettings configures agent security controls.

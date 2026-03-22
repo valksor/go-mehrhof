@@ -28,9 +28,7 @@ func NewPathResolver(baseDir string) *PathResolver {
 
 // DefaultPathResolver creates a resolver using standard path resolution:
 // 1. KVELMO_HOME env var (if set)
-// 2. ~/.valksor/kvelmo (if legacy path exists, for backwards compatibility)
-// 3. XDG_DATA_HOME/kvelmo (if XDG_DATA_HOME is set)
-// 4. ~/.local/share/kvelmo (default for new installations).
+// 2. ~/.valksor/kvelmo (default).
 func DefaultPathResolver() *PathResolver {
 	if home := os.Getenv(meta.EnvPrefix + "_HOME"); home != "" {
 		return &PathResolver{baseDir: home}
@@ -41,21 +39,7 @@ func DefaultPathResolver() *PathResolver {
 		home = "."
 	}
 
-	// Check if legacy path exists; prefer it for backwards compatibility
-	legacyPath := filepath.Join(home, meta.GlobalDir)
-	if _, err := os.Stat(legacyPath); err == nil {
-		return &PathResolver{baseDir: legacyPath}
-	}
-
-	// XDG Base Directory support: use XDG_DATA_HOME if set
-	if xdgData := os.Getenv("XDG_DATA_HOME"); xdgData != "" {
-		return &PathResolver{baseDir: filepath.Join(xdgData, meta.Name)}
-	}
-
-	// For new installations, use XDG default (~/.local/share/kvelmo)
-	xdgDefault := filepath.Join(home, ".local", "share", meta.Name)
-
-	return &PathResolver{baseDir: xdgDefault}
+	return &PathResolver{baseDir: filepath.Join(home, meta.GlobalDir)}
 }
 
 // BaseDir returns the base directory for all kvelmo data.

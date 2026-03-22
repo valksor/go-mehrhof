@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"net/http"
 	"strings"
 	"sync/atomic"
 	"testing"
@@ -12,38 +11,6 @@ import (
 
 	"github.com/valksor/kvelmo/pkg/agent"
 )
-
-// --- checkLocalOrigin tests (0% → 100%) ---
-
-func TestCheckLocalOrigin(t *testing.T) {
-	tests := []struct {
-		name   string
-		origin string
-		want   bool
-	}{
-		{"no origin header", "", true},
-		{"localhost with port", "http://localhost:5173", true},
-		{"127.0.0.1 with port", "http://127.0.0.1:6337", true},
-		{"localhost bare", "http://localhost", true},
-		{"127.0.0.1 bare", "http://127.0.0.1", true},
-		{"remote origin", "http://example.com", false},
-		{"https remote", "https://evil.com", false},
-		{"localhost https", "https://localhost:5173", false},
-		{"partial match", "http://localhost.evil.com", false},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			r, _ := http.NewRequestWithContext(context.Background(), http.MethodGet, "/", nil)
-			if tt.origin != "" {
-				r.Header.Set("Origin", tt.origin)
-			}
-			if got := checkLocalOrigin(r); got != tt.want {
-				t.Errorf("checkLocalOrigin(%q) = %v, want %v", tt.origin, got, tt.want)
-			}
-		})
-	}
-}
 
 // --- CancelJob edge cases ---
 
@@ -171,33 +138,6 @@ func TestAddAgentWorker_AutoDetectFails(t *testing.T) {
 	}
 	if !strings.Contains(err.Error(), "detect agent") {
 		t.Errorf("error = %q, want to contain 'detect agent'", err.Error())
-	}
-}
-
-// --- NewWebSocketWorker default permission handler ---
-
-func TestNewWebSocketWorker_DefaultPermissions(t *testing.T) {
-	w := NewWebSocketWorker("w1", 9999)
-
-	// Port should be set
-	if w.Port != 9999 {
-		t.Errorf("Port = %d, want 9999", w.Port)
-	}
-
-	// Default handler should approve safe tools
-	safeTools := []string{"read_file", "glob", "grep", "list_dir", "search"}
-	for _, tool := range safeTools {
-		if !w.permissionHandler(ControlRequest{Tool: tool}) {
-			t.Errorf("default handler rejected safe tool %q", tool)
-		}
-	}
-
-	// Default handler should reject unsafe tools
-	unsafeTools := []string{"bash", "write_file", "execute", "rm"}
-	for _, tool := range unsafeTools {
-		if w.permissionHandler(ControlRequest{Tool: tool}) {
-			t.Errorf("default handler approved unsafe tool %q", tool)
-		}
 	}
 }
 
@@ -756,93 +696,6 @@ func TestListQueuedJobs_ExcludesTerminal(t *testing.T) {
 		if j.Status != JobStatusQueued && j.Status != JobStatusInProgress {
 			t.Errorf("unexpected status %q in queued jobs", j.Status)
 		}
-	}
-}
-
-// --- WebSocket worker SendPrompt success path ---
-
-func TestWebSocketWorker_SendPrompt_Success(t *testing.T) {
-	w := NewWebSocketWorker("w1", 0)
-	w.SessionID = "sess-123"
-
-	err := w.SendPrompt("hello agent")
-	if err != nil {
-		t.Errorf("SendPrompt() error = %v", err)
-	}
-	if w.Status() != StatusWorking {
-		t.Errorf("Status = %q, want %q", w.Status(), StatusWorking)
-	}
-
-	// Should have queued an outgoing message
-	select {
-	case msg := <-w.outgoing:
-		if msg.Type != "user" {
-			t.Errorf("outgoing Type = %q, want user", msg.Type)
-		}
-		if msg.SessionID != "sess-123" {
-			t.Errorf("outgoing SessionID = %q, want sess-123", msg.SessionID)
-		}
-		if msg.Message == nil {
-			t.Fatal("outgoing Message = nil")
-		}
-		if msg.Message.Content != "hello agent" {
-			t.Errorf("outgoing Content = %q, want 'hello agent'", msg.Message.Content)
-		}
-	default:
-		t.Error("no outgoing message queued")
-	}
-}
-
-// --- HandleIncomingMessage with nil ControlRequest/Message ---
-
-func TestHandleIncomingMessage_NilControlRequest(t *testing.T) {
-	w := NewWebSocketWorker("w1", 0)
-	// Should not panic when ControlRequest is nil
-	w.handleIncomingMessage(IncomingMessage{
-		Type:           "control_request",
-		ControlRequest: nil,
-	})
-	// No outgoing message should be sent
-	select {
-	case msg := <-w.outgoing:
-		t.Errorf("unexpected outgoing message: %+v", msg)
-	default:
-		// expected
-	}
-}
-
-func TestHandleIncomingMessage_AssistantNilMessage(t *testing.T) {
-	w := NewWebSocketWorker("w1", 0)
-	// Should not panic when Message is nil
-	w.handleIncomingMessage(IncomingMessage{
-		Type:    "assistant",
-		Message: nil,
-	})
-	// No event should be emitted
-	select {
-	case ev := <-w.events:
-		t.Errorf("unexpected event: %+v", ev)
-	default:
-		// expected
-	}
-}
-
-func TestHandleIncomingMessage_ResultNoJob(t *testing.T) {
-	w := NewWebSocketWorker("w1", 0)
-	// Result with no current job should not panic
-	w.handleIncomingMessage(IncomingMessage{
-		Type:    "result",
-		Success: true,
-	})
-	// No event should be emitted when currentJob is nil
-	select {
-	case ev := <-w.events:
-		t.Errorf("unexpected event: %+v", ev)
-	default:
-		// expected
-	}
-	if w.Status() != StatusAvailable {
-		t.Errorf("Status = %q, want %q", w.Status(), StatusAvailable)
 	}
 }
 

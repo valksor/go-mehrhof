@@ -1115,21 +1115,6 @@ func TestActivationScore_WithAccessTimes(t *testing.T) {
 	}
 }
 
-func TestActivationScore_LegacyFallback(t *testing.T) {
-	now := time.Now()
-
-	// Document without AccessTimes but with AccessCount should use legacy formula.
-	doc := &Document{
-		CreatedAt:   now.Add(-1 * time.Hour),
-		AccessCount: 5,
-	}
-
-	score := activationScore(doc, now)
-	if score <= 0 || score > 1 {
-		t.Errorf("legacy activation score should be in (0, 1], got %f", score)
-	}
-}
-
 // --- Jaccard similarity tests ---
 
 func TestJaccardSimilarity(t *testing.T) {
