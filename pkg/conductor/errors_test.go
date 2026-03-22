@@ -110,3 +110,36 @@ func TestUserError_Unwrap(t *testing.T) {
 		t.Error("errors.Is should find the wrapped cause")
 	}
 }
+
+func TestClassifyError(t *testing.T) {
+	tests := []struct {
+		name  string
+		err   error
+		phase string
+		want  FailureClass
+	}{
+		{"nil error", nil, "plan", FailureClass("")},
+		{"rate limit", errors.New("rate_limit exceeded"), "implement", FailureClassRecoverable},
+		{"429 status", errors.New("HTTP 429 Too Many Requests"), "plan", FailureClassRecoverable},
+		{"context overflow", errors.New("context_length exceeded"), "implement", FailureClassRecoverable},
+		{"timeout", errors.New("context deadline exceeded"), "plan", FailureClassRecoverable},
+		{"connection refused", errors.New("connection refused"), "implement", FailureClassRecoverable},
+		{"EOF", errors.New("unexpected EOF"), "plan", FailureClassRecoverable},
+		{"empty diff in simplify", errors.New("empty diff"), "simplify", FailureClassSkippable},
+		{"no changes in optimize", errors.New("no changes found"), "optimize", FailureClassSkippable},
+		{"empty diff in implement is NOT skippable", errors.New("empty diff"), "implement", FailureClassHardStop},
+		{"memory indexer down", errors.New("memory indexer unavailable"), "plan", FailureClassDegraded},
+		{"git conflict", errors.New("merge conflict in file.go"), "implement", FailureClassHardStop},
+		{"auth failure", errors.New("authentication required"), "plan", FailureClassHardStop},
+		{"unknown error", errors.New("something weird happened"), "implement", FailureClassHardStop},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := ClassifyError(tt.err, tt.phase)
+			if got != tt.want {
+				t.Errorf("ClassifyError(%v, %q) = %q, want %q", tt.err, tt.phase, got, tt.want)
+			}
+		})
+	}
+}

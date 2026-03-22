@@ -224,3 +224,64 @@ func EnrichError(err error, phase string) *UserError {
 		Cause:   err,
 	}
 }
+
+// FailureClass categorizes errors for automated handling.
+type FailureClass string
+
+const (
+	// FailureClassHardStop requires human intervention (git conflict, auth failure, agent crash).
+	FailureClassHardStop FailureClass = "hard_stop"
+	// FailureClassRecoverable can be auto-retried (rate limit, network timeout, context overflow).
+	FailureClassRecoverable FailureClass = "recoverable"
+	// FailureClassDegraded allows continuing with a warning (optional check unavailable).
+	FailureClassDegraded FailureClass = "degraded"
+	// FailureClassSkippable means the phase has nothing to do (empty diff, no changes).
+	FailureClassSkippable FailureClass = "skippable"
+)
+
+// ClassifyError determines the failure class of an error based on its content and phase.
+func ClassifyError(err error, phase string) FailureClass {
+	if err == nil {
+		return "" // No error, no classification needed
+	}
+
+	errStr := err.Error()
+
+	// Recoverable: transient failures that can be retried
+	recoverablePatterns := []string{
+		"rate_limit", "429", "context_length", "maximum context",
+		"context deadline exceeded", "connection refused", "connection reset",
+		"temporary failure", "i/o timeout", "EOF",
+	}
+	for _, p := range recoverablePatterns {
+		if strings.Contains(errStr, p) {
+			return FailureClassRecoverable
+		}
+	}
+
+	// Skippable: nothing to do (only for optional phases)
+	if phase == "simplify" || phase == "optimize" {
+		skippablePatterns := []string{
+			"no changes", "nothing to simplify", "nothing to optimize",
+			"empty diff", "no modifications",
+		}
+		for _, p := range skippablePatterns {
+			if strings.Contains(errStr, p) {
+				return FailureClassSkippable
+			}
+		}
+	}
+
+	// Degraded: optional subsystem failure
+	degradedPatterns := []string{
+		"memory indexer", "quality check unavailable", "optional",
+	}
+	for _, p := range degradedPatterns {
+		if strings.Contains(errStr, p) {
+			return FailureClassDegraded
+		}
+	}
+
+	// Default: hard stop
+	return FailureClassHardStop
+}
