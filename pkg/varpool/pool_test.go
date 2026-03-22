@@ -4,6 +4,7 @@ import (
 	"path/filepath"
 	"sync"
 	"testing"
+	"time"
 )
 
 func TestSetAndGet(t *testing.T) {
@@ -294,6 +295,163 @@ func TestClearScopeEmpty(t *testing.T) {
 
 	if p.Len() != 1 {
 		t.Fatalf("expected 1 var, got %d", p.Len())
+	}
+}
+
+func TestSetWithTTL(t *testing.T) {
+	p := New()
+
+	p.SetWithTTL("temp", "value", "test", 50*time.Millisecond)
+
+	// Immediately available
+	v, ok := p.Get("temp")
+	if !ok {
+		t.Fatal("expected temp to exist immediately")
+	}
+	if v.Value != "value" {
+		t.Fatalf("expected value, got %v", v.Value)
+	}
+	if v.ExpiresAt.IsZero() {
+		t.Fatal("expected non-zero ExpiresAt")
+	}
+
+	// Wait for expiry
+	time.Sleep(60 * time.Millisecond)
+
+	_, ok = p.Get("temp")
+	if ok {
+		t.Fatal("expected temp to be expired")
+	}
+	if p.GetString("temp") != "" {
+		t.Fatal("GetString should return empty for expired var")
+	}
+}
+
+func TestSetWithTTL_ZeroMeansNoExpiry(t *testing.T) {
+	p := New()
+
+	p.SetWithTTL("persistent", "val", "test", 0)
+
+	v, ok := p.Get("persistent")
+	if !ok {
+		t.Fatal("expected persistent to exist")
+	}
+	if !v.ExpiresAt.IsZero() {
+		t.Fatal("zero TTL should mean no expiry")
+	}
+}
+
+func TestCleanExpired(t *testing.T) {
+	p := New()
+
+	p.SetWithTTL("expires-soon", "a", "test", 10*time.Millisecond)
+	p.SetWithTTL("expires-later", "b", "test", 5*time.Second)
+	p.Set("no-expiry", "c", "test")
+
+	time.Sleep(15 * time.Millisecond)
+
+	removed := p.CleanExpired()
+	if removed != 1 {
+		t.Fatalf("expected 1 removed, got %d", removed)
+	}
+	if p.Len() != 2 {
+		t.Fatalf("expected 2 remaining vars, got %d", p.Len())
+	}
+
+	// Verify the right one was removed
+	if _, ok := p.Get("expires-soon"); ok {
+		t.Fatal("expires-soon should be removed")
+	}
+	if _, ok := p.Get("expires-later"); !ok {
+		t.Fatal("expires-later should still exist")
+	}
+	if _, ok := p.Get("no-expiry"); !ok {
+		t.Fatal("no-expiry should still exist")
+	}
+}
+
+func TestExecutionScoped(t *testing.T) {
+	p := New()
+
+	p.SetExecutionScoped("exec-1", "results_1", "data1", "graph")
+	p.SetExecutionScoped("exec-1", "status_1", "running", "graph")
+	p.SetExecutionScoped("exec-2", "results_2", "data2", "graph")
+	p.Set("global", "val", "system")
+
+	if p.Len() != 4 {
+		t.Fatalf("expected 4 vars, got %d", p.Len())
+	}
+
+	// Verify scoped vars are accessible
+	v, ok := p.Get("results_2")
+	if !ok {
+		t.Fatal("expected results_2 to exist")
+	}
+	if v.ExecutionID != "exec-2" {
+		t.Fatalf("expected exec-2, got %s", v.ExecutionID)
+	}
+
+	// Clear exec-1 vars
+	p.ClearExecution("exec-1")
+
+	if p.Len() != 2 {
+		t.Fatalf("expected 2 vars after clearing exec-1, got %d", p.Len())
+	}
+
+	if _, ok := p.Get("results_1"); ok {
+		t.Fatal("results_1 (exec-1) should be cleared")
+	}
+	if _, ok := p.Get("status_1"); ok {
+		t.Fatal("status_1 (exec-1) should be cleared")
+	}
+	if _, ok := p.Get("results_2"); !ok {
+		t.Fatal("results_2 (exec-2) should still exist")
+	}
+	if _, ok := p.Get("global"); !ok {
+		t.Fatal("global (no execution) should still exist")
+	}
+}
+
+func TestClearExecution_NoMatch(t *testing.T) {
+	p := New()
+	p.Set("safe", "val", "test")
+
+	p.ClearExecution("nonexistent")
+
+	if p.Len() != 1 {
+		t.Fatal("should not remove non-execution-scoped vars")
+	}
+}
+
+func TestExpiredGetNumber(t *testing.T) {
+	p := New()
+
+	p.SetWithTTL("counter", 42.0, "test", 10*time.Millisecond)
+
+	if p.GetNumber("counter") != 42.0 {
+		t.Fatal("expected 42 before expiry")
+	}
+
+	time.Sleep(15 * time.Millisecond)
+
+	if p.GetNumber("counter") != 0 {
+		t.Fatal("expected 0 after expiry")
+	}
+}
+
+func TestExpiredGetBool(t *testing.T) {
+	p := New()
+
+	p.SetWithTTL("flag", true, "test", 10*time.Millisecond)
+
+	if !p.GetBool("flag") {
+		t.Fatal("expected true before expiry")
+	}
+
+	time.Sleep(15 * time.Millisecond)
+
+	if p.GetBool("flag") {
+		t.Fatal("expected false after expiry")
 	}
 }
 

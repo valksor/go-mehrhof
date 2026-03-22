@@ -25,11 +25,13 @@ const (
 
 // Variable is a single typed entry in the pool.
 type Variable struct {
-	Name      string    `json:"name"`
-	Type      VarType   `json:"type"`
-	Value     any       `json:"value"`
-	SetBy     string    `json:"set_by"`
-	Timestamp time.Time `json:"timestamp"`
+	Name        string    `json:"name"`
+	Type        VarType   `json:"type"`
+	Value       any       `json:"value"`
+	SetBy       string    `json:"set_by"`
+	Timestamp   time.Time `json:"timestamp"`
+	ExpiresAt   time.Time `json:"expires_at,omitempty"`   // Zero means no expiry
+	ExecutionID string    `json:"execution_id,omitempty"` // Scoped to a specific execution
 }
 
 // Pool is a thread-safe typed key-value store.
@@ -58,21 +60,27 @@ func (p *Pool) Set(name string, value any, setBy string) {
 }
 
 // Get returns a variable and whether it exists.
+// Expired variables are treated as nonexistent.
 func (p *Pool) Get(name string) (Variable, bool) {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
 
 	v, ok := p.vars[name]
+	if !ok {
+		return v, false
+	}
 
-	return v, ok
+	if !v.ExpiresAt.IsZero() && time.Now().After(v.ExpiresAt) {
+		return Variable{}, false
+	}
+
+	return v, true
 }
 
 // GetString returns the string value of a variable, or empty string.
+// Expired variables return empty string.
 func (p *Pool) GetString(name string) string {
-	p.mu.RLock()
-	defer p.mu.RUnlock()
-
-	v, ok := p.vars[name]
+	v, ok := p.Get(name)
 	if !ok {
 		return ""
 	}
@@ -83,33 +91,20 @@ func (p *Pool) GetString(name string) string {
 }
 
 // GetNumber returns the numeric value of a variable, or 0.
+// Expired variables return 0.
 func (p *Pool) GetNumber(name string) float64 {
-	p.mu.RLock()
-	defer p.mu.RUnlock()
-
-	v, ok := p.vars[name]
+	v, ok := p.Get(name)
 	if !ok {
 		return 0
 	}
 
-	switch n := v.Value.(type) {
-	case float64:
-		return n
-	case int:
-		return float64(n)
-	case int64:
-		return float64(n)
-	default:
-		return 0
-	}
+	return toFloat64(v.Value)
 }
 
 // GetBool returns the bool value of a variable, or false.
+// Expired variables return false.
 func (p *Pool) GetBool(name string) bool {
-	p.mu.RLock()
-	defer p.mu.RUnlock()
-
-	v, ok := p.vars[name]
+	v, ok := p.Get(name)
 	if !ok {
 		return false
 	}
@@ -206,6 +201,75 @@ func toFloat64(v any) float64 {
 	default:
 		return 0
 	}
+}
+
+// SetWithTTL stores a variable that expires after the given duration.
+// A zero or negative TTL is treated as no expiry.
+func (p *Pool) SetWithTTL(name string, value any, setBy string, ttl time.Duration) {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+
+	now := time.Now()
+	v := Variable{
+		Name:      name,
+		Type:      detectType(value),
+		Value:     value,
+		SetBy:     setBy,
+		Timestamp: now,
+	}
+
+	if ttl > 0 {
+		v.ExpiresAt = now.Add(ttl)
+	}
+
+	p.vars[name] = v
+}
+
+// SetExecutionScoped stores a variable scoped to a specific execution ID.
+// Use ClearExecution to remove all variables for a completed execution.
+func (p *Pool) SetExecutionScoped(executionID, name string, value any, setBy string) {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+
+	p.vars[name] = Variable{
+		Name:        name,
+		Type:        detectType(value),
+		Value:       value,
+		SetBy:       setBy,
+		Timestamp:   time.Now(),
+		ExecutionID: executionID,
+	}
+}
+
+// ClearExecution removes all variables scoped to the given execution ID.
+func (p *Pool) ClearExecution(executionID string) {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+
+	for k, v := range p.vars {
+		if v.ExecutionID == executionID {
+			delete(p.vars, k)
+		}
+	}
+}
+
+// CleanExpired removes all variables whose TTL has elapsed.
+// Returns the number of variables removed.
+func (p *Pool) CleanExpired() int {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+
+	now := time.Now()
+	removed := 0
+
+	for k, v := range p.vars {
+		if !v.ExpiresAt.IsZero() && now.After(v.ExpiresAt) {
+			delete(p.vars, k)
+			removed++
+		}
+	}
+
+	return removed
 }
 
 // Delete removes a variable.
