@@ -37,9 +37,13 @@ type Metrics struct {
 	// Per-method RPC metrics (lock-free via sync.Map)
 	methodMetrics sync.Map // map[string]*methodCounter
 
+	// Token tracking
+	TokensConsumed atomic.Int64
+
 	// Latency tracking (simple moving average)
 	mu              sync.RWMutex
 	rpcLatencies    []time.Duration
+	agentLatencies  []time.Duration
 	maxLatencySamps int
 }
 
@@ -88,6 +92,21 @@ func (m *Metrics) RecordPermissionApproved() {
 // RecordPermissionDenied increments the denied permissions counter.
 func (m *Metrics) RecordPermissionDenied() {
 	m.PermissionsDenied.Add(1)
+}
+
+// RecordAgentLatency records the duration of an agent execution.
+func (m *Metrics) RecordAgentLatency(d time.Duration) {
+	m.mu.Lock()
+	m.agentLatencies = append(m.agentLatencies, d)
+	if len(m.agentLatencies) > m.maxLatencySamps {
+		m.agentLatencies = m.agentLatencies[1:]
+	}
+	m.mu.Unlock()
+}
+
+// RecordTokens adds to the cumulative token consumption counter.
+func (m *Metrics) RecordTokens(tokens int64) {
+	m.TokensConsumed.Add(tokens)
 }
 
 // RecordRPCRequest records an RPC request with its latency and per-method breakdown.
@@ -139,11 +158,13 @@ type Snapshot struct {
 	P99LatencyMs   float64 `json:"p99_latency_ms"`
 
 	// Agent metrics
-	AgentConnects       int64 `json:"agent_connects"`
-	AgentDisconnects    int64 `json:"agent_disconnects"`
-	EventsDropped       int64 `json:"events_dropped"`
-	PermissionsApproved int64 `json:"permissions_approved"`
-	PermissionsDenied   int64 `json:"permissions_denied"`
+	AgentConnects       int64   `json:"agent_connects"`
+	AgentDisconnects    int64   `json:"agent_disconnects"`
+	AgentAvgLatencyMs   float64 `json:"agent_avg_latency_ms"`
+	EventsDropped       int64   `json:"events_dropped"`
+	PermissionsApproved int64   `json:"permissions_approved"`
+	PermissionsDenied   int64   `json:"permissions_denied"`
+	TokensConsumed      int64   `json:"tokens_consumed"`
 
 	// Per-method RPC metrics
 	Methods map[string]MethodSnapshot `json:"methods,omitempty"`
@@ -164,6 +185,7 @@ func (m *Metrics) Snapshot() Snapshot {
 	s.EventsDropped = m.EventsDropped.Load()
 	s.PermissionsApproved = m.PermissionsApproved.Load()
 	s.PermissionsDenied = m.PermissionsDenied.Load()
+	s.TokensConsumed = m.TokensConsumed.Load()
 
 	// Collect per-method metrics
 	methods := make(map[string]MethodSnapshot)
@@ -218,6 +240,13 @@ func (m *Metrics) Snapshot() Snapshot {
 			s.P99LatencyMs = float64(sorted[p99Idx].Milliseconds())
 		}
 	}
+	if len(m.agentLatencies) > 0 {
+		var total time.Duration
+		for _, l := range m.agentLatencies {
+			total += l
+		}
+		s.AgentAvgLatencyMs = float64(total.Milliseconds()) / float64(len(m.agentLatencies))
+	}
 	m.mu.RUnlock()
 
 	return s
@@ -236,6 +265,7 @@ func (m *Metrics) RestoreFrom(snap Snapshot) {
 	m.EventsDropped.Store(snap.EventsDropped)
 	m.PermissionsApproved.Store(snap.PermissionsApproved)
 	m.PermissionsDenied.Store(snap.PermissionsDenied)
+	m.TokensConsumed.Store(snap.TokensConsumed)
 }
 
 // Global metrics instance.

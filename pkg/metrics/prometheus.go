@@ -38,9 +38,11 @@ func RenderPrometheus(snap Snapshot) string {
 	// Agent metrics
 	write("kvelmo_agent_connects_total", "Total agent connections.", "counter", snap.AgentConnects)
 	write("kvelmo_agent_disconnects_total", "Total agent disconnections.", "counter", snap.AgentDisconnects)
+	write("kvelmo_agent_latency_avg_ms", "Average agent execution latency in milliseconds.", "gauge", snap.AgentAvgLatencyMs)
 	write("kvelmo_events_dropped_total", "Total events dropped.", "counter", snap.EventsDropped)
 	write("kvelmo_permissions_approved_total", "Total permissions approved.", "counter", snap.PermissionsApproved)
 	write("kvelmo_permissions_denied_total", "Total permissions denied.", "counter", snap.PermissionsDenied)
+	write("kvelmo_tokens_consumed_total", "Total tokens consumed by agent executions.", "counter", snap.TokensConsumed)
 
 	// Per-method RPC metrics
 	if len(snap.Methods) > 0 {

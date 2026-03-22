@@ -378,6 +378,19 @@ func (p *Pool) GetScopedString(scope, name string) string {
 	return p.GetString(scopedKey(scope, name))
 }
 
+// ClearScope removes all variables in the given scope.
+func (p *Pool) ClearScope(scope string) {
+	prefix := scope + "."
+	p.mu.Lock()
+	defer p.mu.Unlock()
+
+	for k := range p.vars {
+		if len(k) > len(prefix) && k[:len(prefix)] == prefix {
+			delete(p.vars, k)
+		}
+	}
+}
+
 // ListScope returns all variables in the given scope, sorted by name.
 func (p *Pool) ListScope(scope string) []Variable {
 	prefix := scope + "."

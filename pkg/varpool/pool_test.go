@@ -251,6 +251,52 @@ func TestDecrement(t *testing.T) {
 	}
 }
 
+func TestClearScope(t *testing.T) {
+	p := New()
+	p.SetScoped(ScopePlan, "spec", "v1", "test")
+	p.SetScoped(ScopePlan, "draft", "d1", "test")
+	p.SetScoped(ScopeImplement, "result", "ok", "test")
+	p.Set("global_key", "keep", "test")
+
+	if p.Len() != 4 {
+		t.Fatalf("expected 4 vars, got %d", p.Len())
+	}
+
+	p.ClearScope(ScopePlan)
+
+	if p.Len() != 2 {
+		t.Fatalf("expected 2 vars after ClearScope(plan), got %d", p.Len())
+	}
+
+	// Plan-scoped vars should be gone
+	if _, ok := p.GetScoped(ScopePlan, "spec"); ok {
+		t.Fatal("plan.spec should be cleared")
+	}
+	if _, ok := p.GetScoped(ScopePlan, "draft"); ok {
+		t.Fatal("plan.draft should be cleared")
+	}
+
+	// Other scopes and unscoped vars should remain
+	if p.GetScopedString(ScopeImplement, "result") != "ok" {
+		t.Fatal("implement.result should be untouched")
+	}
+	if p.GetString("global_key") != "keep" {
+		t.Fatal("global_key should be untouched")
+	}
+}
+
+func TestClearScopeEmpty(t *testing.T) {
+	p := New()
+	p.Set("unscoped", "val", "test")
+
+	// ClearScope on a scope with no vars should be a no-op
+	p.ClearScope(ScopeReview)
+
+	if p.Len() != 1 {
+		t.Fatalf("expected 1 var, got %d", p.Len())
+	}
+}
+
 func TestConcurrentAccess(t *testing.T) {
 	p := New()
 	var wg sync.WaitGroup
