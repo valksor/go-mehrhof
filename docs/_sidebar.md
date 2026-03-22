@@ -120,6 +120,7 @@
     - [hooks](/cli/hooks.md)
     - [ci](/cli/ci.md)
     - [login](/cli/login.md)
+    - [test-provider](/cli/test-provider.md)
     - [tutorial](/cli/tutorial.md)
 
 - Concepts

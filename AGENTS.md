@@ -42,6 +42,7 @@ make test-cover         # Go coverage report → coverage.html
 make test-race          # Go tests with race detector
 make web-test           # Frontend unit tests only
 make web-e2e            # Frontend e2e tests (demo mode)
+make web-e2e-ui         # Interactive Playwright e2e UI
 
 # Build & Release
 make build              # Full build: web + Go binary → ./build/kvelmo
@@ -53,6 +54,15 @@ make ci                 # quality + test + build
 # Desktop (Tauri)
 make desktop-dev        # Tauri dev mode with hot reload
 make desktop-build      # Production desktop app build
+make desktop-sidecar    # Prepare sidecar binary (current platform)
+make desktop-sidecar-all # Prepare sidecar binaries (all platforms)
+make tauri-install      # Install Tauri CLI prerequisites
+
+# Setup & Utilities
+make deps               # Download Go module dependencies
+make types              # Generate TypeScript types from Go (tygo)
+make man-pages          # Generate man pages
+make help               # List all available targets
 
 # Cleanup
 make clean              # Remove all build artifacts
@@ -253,6 +263,7 @@ Commands in `cmd/kvelmo/commands/`. Entry point: `serve` (global socket + web se
 - `shutdown` - Gracefully stop the server
 - `cleanup` - Remove stale socket files
 - `login` - Authenticate with task providers (subcommands: `github login`, `gitlab login`, etc.)
+- `test-provider` - Test a provider connection (verify token and reachability)
 
 **Data & reporting:**
 - `export` - Export task history and metrics (JSON/CSV)

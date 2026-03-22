@@ -263,6 +263,7 @@ Commands in `cmd/kvelmo/commands/`. Entry point: `serve` (global socket + web se
 - `shutdown` - Gracefully stop the server
 - `cleanup` - Remove stale socket files
 - `login` - Authenticate with task providers (subcommands: `github login`, `gitlab login`, etc.)
+- `test-provider` - Test a provider connection (verify token and reachability)
 
 **Data & reporting:**
 - `export` - Export task history and metrics (JSON/CSV)
