@@ -347,3 +347,17 @@ func (r *Recorder) LineCount() int {
 
 	return r.lineCount
 }
+
+// Scratchpad builds a structured scratchpad from the recorder's saved records.
+func (r *Recorder) Scratchpad(phase string) (*Scratchpad, error) {
+	if err := r.Flush(); err != nil {
+		return nil, fmt.Errorf("flush before scratchpad: %w", err)
+	}
+
+	records, err := ReadAll(r.Path())
+	if err != nil {
+		return nil, fmt.Errorf("read records: %w", err)
+	}
+
+	return BuildScratchpad(r.jobID, phase, records), nil
+}
