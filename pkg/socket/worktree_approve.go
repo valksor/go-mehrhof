@@ -30,6 +30,40 @@ func (w *WorktreeSocket) handleApprove(_ context.Context, req *Request) (*Respon
 	return NewResultResponse(req.ID, map[string]any{"approved": params.Event})
 }
 
+// handleApproveNode approves or rejects a pending graph node approval gate.
+func (w *WorktreeSocket) handleApproveNode(_ context.Context, req *Request) (*Response, error) {
+	if w.conductor == nil {
+		return NewErrorResponse(req.ID, ErrCodeInternal, "no conductor"), nil
+	}
+
+	var params struct {
+		NodeID string `json:"node_id"`
+		Reject bool   `json:"reject"`
+	}
+	if req.Params != nil {
+		if err := json.Unmarshal(req.Params, &params); err != nil {
+			return NewErrorResponse(req.ID, ErrCodeInvalidParams, "invalid params"), nil //nolint:nilerr // JSON-RPC error response
+		}
+	}
+	if params.NodeID == "" {
+		return NewErrorResponse(req.ID, ErrCodeInvalidParams, "node_id is required"), nil
+	}
+
+	if params.Reject {
+		if err := w.conductor.RejectNode(params.NodeID); err != nil {
+			return NewErrorResponse(req.ID, ErrCodeInternal, err.Error()), nil
+		}
+
+		return NewResultResponse(req.ID, map[string]any{"rejected": params.NodeID})
+	}
+
+	if err := w.conductor.ApproveNode(params.NodeID); err != nil {
+		return NewErrorResponse(req.ID, ErrCodeInternal, err.Error()), nil
+	}
+
+	return NewResultResponse(req.ID, map[string]any{"approved": params.NodeID})
+}
+
 // handleReviewChecklistGet returns the configured checklist items and which are checked.
 func (w *WorktreeSocket) handleReviewChecklistGet(_ context.Context, req *Request) (*Response, error) {
 	if w.conductor == nil {

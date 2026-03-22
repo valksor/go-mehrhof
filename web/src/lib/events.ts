@@ -139,6 +139,9 @@ export interface GraphNodeEvent extends BaseEvent {
     | 'node_failed'
     | 'node_fail_routed'
     | 'node_skipped'
+    | 'node_iteration'
+    | 'node_retry'
+    | 'node_approval_required'
   node_id?: string
   job_id?: string
   message?: string

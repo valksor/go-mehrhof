@@ -144,6 +144,9 @@ func runWatch(cmd *cobra.Command, args []string) error {
 				return fmt.Errorf("job failed: %s", event.Error)
 			case "error":
 				fmt.Fprintf(os.Stderr, "\n\033[31m[Error] %s\033[0m\n", event.Error)
+			case "node_approval_required":
+				fmt.Printf("\n⏸ Approval required: %s\n", event.Message)
+				fmt.Printf("  Run: %s approve --node <id>\n", meta.Name)
 			case "heartbeat":
 				// Keepalive, ignore.
 			}
@@ -165,6 +168,17 @@ func runWatch(cmd *cobra.Command, args []string) error {
 			if event.Message != "" {
 				fmt.Fprintf(os.Stderr, "  %s\n", event.Message)
 			}
+		case "node_iteration":
+			fmt.Printf("  ↻ %s\n", event.Message)
+		case "node_retry":
+			if event.Error != "" {
+				fmt.Printf("  ↺ %s (error: %s)\n", event.Message, event.Error)
+			} else {
+				fmt.Printf("  ↺ %s\n", event.Message)
+			}
+		case "node_approval_required":
+			fmt.Printf("\n⏸ Approval required: %s\n", event.Message)
+			fmt.Printf("  Run: %s approve --node <id>\n", meta.Name)
 		case "heartbeat":
 			// Keepalive, ignore.
 		default:

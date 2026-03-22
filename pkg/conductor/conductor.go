@@ -18,6 +18,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/valksor/kvelmo/pkg/agent/strategy"
 	"github.com/valksor/kvelmo/pkg/git"
+	"github.com/valksor/kvelmo/pkg/graph"
 	"github.com/valksor/kvelmo/pkg/memory"
 	"github.com/valksor/kvelmo/pkg/provider"
 	"github.com/valksor/kvelmo/pkg/security"
@@ -52,8 +53,9 @@ type Conductor struct {
 	closed    atomic.Bool
 
 	// Current task state
-	workUnit    *WorkUnit
-	activeJobID string // ID of currently running job (for cancellation)
+	workUnit        *WorkUnit
+	activeJobID     string           // ID of currently running job (for cancellation)
+	activeScheduler *graph.Scheduler // Currently running graph scheduler (for node approvals)
 
 	// Task queue (pending tasks to auto-start after current finishes)
 	taskQueue []*QueuedTask

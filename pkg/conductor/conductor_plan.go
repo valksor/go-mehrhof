@@ -99,7 +99,7 @@ func (c *Conductor) Plan(ctx context.Context, force bool) (string, error) {
 	if c.dryRun {
 		jobType = worker.JobTypeDryRun
 	}
-	g := buildPhaseGraph(jobType, "planning", prompt)
+	g := buildPhaseGraph(jobType, "planning", prompt, c.getWorkDir())
 	sched := graph.NewScheduler(g, c.pool)
 
 	// Create pre-job safety checkpoint before the scheduler starts.

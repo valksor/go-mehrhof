@@ -3,6 +3,7 @@ package commands
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 
 	"github.com/spf13/cobra"
@@ -11,16 +12,20 @@ import (
 // ApproveCmd grants explicit approval for a workflow transition that requires it.
 var ApproveCmd = &cobra.Command{
 	Use:   "approve [event]",
-	Short: "Approve a workflow transition",
-	Long: `Explicitly approve a workflow transition that requires human approval.
+	Short: "Approve a workflow transition or graph node",
+	Long: `Explicitly approve a workflow transition or graph node that requires human approval.
 
 When policy.approval_required is configured (e.g. submit: true), the transition
 is blocked until a human runs this command.
 
+Use --node to approve or reject a graph node's approval gate.
+
 Examples:
-  kvelmo approve submit      # Approve the submit transition
-  kvelmo approve implement   # Approve the implement transition`,
-	Args: cobra.ExactArgs(1),
+  kvelmo approve submit               # Approve the submit transition
+  kvelmo approve implement            # Approve the implement transition
+  kvelmo approve --node review_sql    # Approve a graph node
+  kvelmo approve --node review_sql --reject  # Reject a graph node`,
+	Args: cobra.MaximumNArgs(1),
 	RunE: runApprove,
 }
 
@@ -38,11 +43,43 @@ Subcommands:
 }
 
 func init() {
+	ApproveCmd.Flags().String("node", "", "Approve a graph node (by node ID)")
+	ApproveCmd.Flags().Bool("reject", false, "Reject instead of approve (with --node)")
 	ChecklistCmd.Flags().String("check", "", "Mark a checklist item as checked")
 	ChecklistCmd.Flags().String("uncheck", "", "Mark a checklist item as unchecked")
 }
 
-func runApprove(_ *cobra.Command, args []string) error {
+func runApprove(cmd *cobra.Command, args []string) error {
+	nodeID, _ := cmd.Flags().GetString("node")
+	reject, _ := cmd.Flags().GetBool("reject")
+
+	if reject && nodeID == "" {
+		return errors.New("--reject can only be used with --node")
+	}
+
+	// Node-level approval
+	if nodeID != "" {
+		_, err := callWorktree(context.Background(), "approve.node", map[string]any{
+			"node_id": nodeID,
+			"reject":  reject,
+		})
+		if err != nil {
+			return fmt.Errorf("approve node: %w", err)
+		}
+
+		if reject {
+			fmt.Printf("Rejected node: %s\n", nodeID)
+		} else {
+			fmt.Printf("Approved node: %s\n", nodeID)
+		}
+
+		return nil
+	}
+
+	// Workflow transition approval (requires event argument)
+	if len(args) == 0 {
+		return errors.New("event argument required (or use --node)")
+	}
 	event := args[0]
 
 	_, err := callWorktree(context.Background(), "approve", map[string]any{

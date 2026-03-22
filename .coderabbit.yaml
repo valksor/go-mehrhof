@@ -1,25 +1,93 @@
-# CodeRabbit configuration
-# https://docs.coderabbit.ai/configuration
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
+language: en-US
 
 early_access: true
 
 reviews:
-  # Project context for better reviews
-  path_instructions:
-    - path: "pkg/socket/**"
-      instructions: |
-        This is a Unix-only socket package using Unix domain sockets.
-        Do NOT suggest Windows build constraints or Windows compatibility.
-        The desktop app uses Tauri + WSL, so Go always runs on Linux.
+  profile: assertive
+  high_level_summary: true
+  collapse_walkthrough: false
+  request_changes_workflow: true
+  poem: false
 
+  path_instructions:
     - path: "**/*.go"
       instructions: |
-        - Target platform is Linux/macOS only. Windows builds are not needed.
-        - Desktop app on Windows uses Tauri calling WSL (Linux).
-        - Do not suggest Windows-specific changes or build constraints.
+        This is a Go 1.25+ project. golangci-lint already handles all Go linting
+        (see .golangci.yml) — do NOT duplicate lint checks that golangci-lint covers.
+
+        Key conventions:
+        - Import order: stdlib → third-party → local (alphabetical within groups). No import aliases unless needed to resolve conflicts.
+        - Import packages directly. No type aliases, no wrapper functions, no re-exports.
+        - Error wrapping: `fmt.Errorf("context: %w", err)` — always wrap with context.
+        - Logging: `log/slog` only. No `log.Printf` or `fmt.Println`.
+        - Context: Always pass `context.Context` for cancelable operations.
+        - Modern Go idioms: `slices.Contains()`, `maps.Clone()`, range-over-int. Do not suggest older patterns.
+        - Files should stay under 500 lines. Split by feature/responsibility.
+        - `//nolint:lintername // justification` is acceptable and required by project policy. Do not flag these as code smells if they include a justification.
+        - No backwards compatibility needed — no external consumers. Old code is deleted entirely. Do NOT suggest deprecation warnings, compatibility shims, or tombstone comments.
+        - Target platform is Linux/macOS only. Windows builds are not needed. Desktop app on Windows uses Tauri + WSL (Go always runs on Linux). Do not suggest Windows-specific changes or build constraints.
+
+    - path: "pkg/socket/**"
+      instructions: |
+        Unix domain socket servers using JSON-RPC 2.0 protocol.
+        Two socket types: global (`~/.valksor/kvelmo/global.sock`) and per-worktree (`<project>/.kvelmo/worktree.sock`).
+        This dual-socket pattern is intentional architecture — do not suggest consolidating into one.
+        Unix-only. Do NOT suggest Windows build constraints or Windows compatibility.
+
+    - path: "pkg/conductor/**"
+      instructions: |
+        Task lifecycle state machine orchestrating AI agent work in external projects.
+        States: none → loaded → planning → planned → implementing → implemented → simplifying → optimizing → reviewing → submitted → waiting → paused → failed.
+        Each transition creates a git checkpoint. undo/redo navigate between checkpoints.
+        The state machine complexity is intentional — do not suggest simplifying the state graph.
+
+    - path: "pkg/graph/**"
+      instructions: |
+        Dependency graph scheduler for parallel sub-task execution within phases.
+        Uses varpool (`pkg/varpool/`) for inter-node context sharing during graph execution.
+        The scheduling complexity (topological sort, parallel execution, dependency tracking) is intentional.
+        Do not suggest simplifying the graph scheduler.
+
+    - path: "pkg/varpool/**"
+      instructions: |
+        Variable pool for inter-node context sharing during graph execution.
+        Tightly coupled with `pkg/graph/` by design. Do not suggest decoupling.
+
+    - path: "cmd/kvelmo/commands/**"
+      instructions: |
+        CLI commands following consistent patterns. Entry point is the `serve` command.
+        Commit style: plain imperative sentences. No conventional commits prefix (feat:, fix:, chore:, etc.).
+        Do not suggest conventional commits or any commit prefix format.
 
     - path: "web/**"
       instructions: |
-        - Uses bun, not npm/node
-        - React 19 + TypeScript + Vite 7
-        - Zustand for state management
+        Uses **bun**, not npm or node. Do not suggest npm/npx commands.
+        Frontend stack: React 19, TypeScript, Vite 8, Tailwind CSS 4, DaisyUI 5, Zustand.
+        Communicates with backend via WebSocket (socket proxy), not REST.
+        Views: GlobalView (project picker) ↔ ProjectView (active project dashboard).
+        Add `?demo` URL param for UI testing without backend.
+
+    - path: "prototype/**"
+      instructions: |
+        This is a read-only reference prototype — NOT active code.
+        Do not review, do not suggest changes. Skip entirely.
+
+  path_filters:
+    - "!go.sum"
+    - "!web/bun.lockb"
+    - "!web/node_modules/**"
+    - "!build/**"
+    - "!**/*.min.js"
+    - "!**/*.min.css"
+    - "!prototype/**"
+    - "!man/**"
+
+  tools:
+    golangci-lint:
+      enabled: true
+    eslint:
+      enabled: true
+
+chat:
+  auto_reply: true

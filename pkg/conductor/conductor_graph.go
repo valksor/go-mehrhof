@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log/slog"
+	"os"
 	"path/filepath"
 	"strings"
 	"time"
@@ -23,6 +24,17 @@ import (
 //
 
 func (c *Conductor) watchGraph(ctx context.Context, sched *graph.Scheduler, completionEvent Event) {
+	// Store active scheduler for node approval RPCs.
+	c.mu.Lock()
+	c.activeScheduler = sched
+	c.mu.Unlock()
+
+	defer func() {
+		c.mu.Lock()
+		c.activeScheduler = nil
+		c.mu.Unlock()
+	}()
+
 	// Pre-job safety checkpoint is created by the caller (Plan, etc.) before
 	// starting this goroutine, matching the pattern used by watchJob callers.
 	// Load cached partial results and build job opts under lock.
@@ -85,6 +97,28 @@ func (c *Conductor) watchGraph(ctx context.Context, sched *graph.Scheduler, comp
 				Type:    "node_skipped",
 				NodeID:  string(evt.NodeID),
 				Message: "Node skipped: " + evt.NodeLabel,
+			})
+
+		case graph.EventNodeIteration:
+			c.emit(ConductorEvent{
+				Type:    "node_iteration",
+				NodeID:  string(evt.NodeID),
+				Message: "Node iterating: " + evt.Content,
+			})
+
+		case graph.EventNodeRetry:
+			c.emit(ConductorEvent{
+				Type:    "node_retry",
+				NodeID:  string(evt.NodeID),
+				Error:   evt.Error,
+				Message: "Node retrying: " + evt.Content,
+			})
+
+		case graph.EventNodeApprovalRequired:
+			c.emit(ConductorEvent{
+				Type:    "node_approval_required",
+				NodeID:  string(evt.NodeID),
+				Message: evt.Content,
 			})
 
 		case graph.EventPhaseProgress:
@@ -395,10 +429,32 @@ func (c *Conductor) createCompletionCheckpoint(ctx context.Context, completionEv
 	}
 }
 
-// buildPhaseGraph creates a graph for a phase. Currently returns a single-node
-// graph for backward compatibility. Future: read sub-task definitions from
-// task config or plan output to build multi-node graphs.
-func buildPhaseGraph(jobType worker.JobType, label, prompt string) *graph.Graph {
+// buildPhaseGraph creates a graph for a phase.
+// Checks for a YAML graph definition at <workDir>/.kvelmo/graphs/<phase>.yaml.
+// Falls back to a single-node graph when no definition exists.
+func buildPhaseGraph(jobType worker.JobType, label, prompt, workDir string) *graph.Graph {
+	if workDir != "" {
+		phase := string(jobType)
+		defPath := filepath.Join(workDir, ".kvelmo", "graphs", phase+".yaml")
+
+		g, err := graph.ParseGraphDefFile(defPath)
+		if err == nil {
+			slog.Info("graph: loaded phase graph definition",
+				"phase", phase,
+				"path", defPath,
+				"nodes", g.NodeCount(),
+			)
+
+			return g
+		} else if !os.IsNotExist(err) {
+			slog.Warn("graph: failed to parse phase graph definition, using default",
+				"phase", phase,
+				"path", defPath,
+				"error", err,
+			)
+		}
+	}
+
 	return graph.SingleNode(graph.NodeID(string(jobType)), label, jobType, prompt)
 }
 

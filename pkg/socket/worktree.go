@@ -270,6 +270,7 @@ func (w *WorktreeSocket) registerHandlers() {
 
 	// Approval & review gates
 	w.server.Handle("approve", w.handleApprove)
+	w.server.Handle("approve.node", w.handleApproveNode)
 	w.server.Handle("review.checklist.get", w.handleReviewChecklistGet)
 	w.server.Handle("review.checklist.check", w.handleReviewChecklistCheck)
 	w.server.Handle("review.checklist.uncheck", w.handleReviewChecklistUncheck)

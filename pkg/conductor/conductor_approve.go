@@ -7,6 +7,8 @@ import (
 	"os/user"
 	"slices"
 	"time"
+
+	"github.com/valksor/kvelmo/pkg/graph"
 )
 
 // approverIdentity returns a best-effort user identity string for audit purposes.
@@ -109,6 +111,52 @@ func (c *Conductor) UncheckReviewItem(item string) error {
 	})
 	c.workUnit.UpdatedAt = time.Now()
 	c.persistState()
+
+	return nil
+}
+
+// ApproveNode approves a pending graph node approval gate.
+func (c *Conductor) ApproveNode(nodeID string) error {
+	c.mu.RLock()
+	sched := c.activeScheduler
+	c.mu.RUnlock()
+
+	if sched == nil {
+		return errors.New("no active graph execution")
+	}
+
+	if !sched.ApproveNode(graph.NodeID(nodeID)) {
+		return fmt.Errorf("no pending approval for node %q", nodeID)
+	}
+
+	c.emit(ConductorEvent{
+		Type:    "node_approved",
+		NodeID:  nodeID,
+		Message: "Node approved: " + nodeID,
+	})
+
+	return nil
+}
+
+// RejectNode rejects a pending graph node approval gate.
+func (c *Conductor) RejectNode(nodeID string) error {
+	c.mu.RLock()
+	sched := c.activeScheduler
+	c.mu.RUnlock()
+
+	if sched == nil {
+		return errors.New("no active graph execution")
+	}
+
+	if !sched.RejectNode(graph.NodeID(nodeID)) {
+		return fmt.Errorf("no pending approval for node %q", nodeID)
+	}
+
+	c.emit(ConductorEvent{
+		Type:    "node_rejected",
+		NodeID:  nodeID,
+		Message: "Node rejected: " + nodeID,
+	})
 
 	return nil
 }
