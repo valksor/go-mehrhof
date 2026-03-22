@@ -1,12 +1,11 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest'
 import {
   useGlobalStore,
-  type Project,
-  type Worker,
   type AgentStatus,
   type Job,
   type MemoryResult,
 } from './globalStore'
+import type { WorktreeInfo, WorkerInfo } from '../types/socket'
 
 // Mock SocketClient to avoid real WebSocket connections
 vi.mock('../lib/socket', () => ({
@@ -19,7 +18,7 @@ vi.mock('../lib/socket', () => ({
   }))
 }))
 
-const createMockProject = (overrides: Partial<Project> = {}): Project => ({
+const createMockProject = (overrides: Partial<WorktreeInfo> = {}): WorktreeInfo => ({
   id: 'proj-1',
   path: '/workspace/project',
   socket_path: '/tmp/proj.sock',
@@ -27,7 +26,7 @@ const createMockProject = (overrides: Partial<Project> = {}): Project => ({
   ...overrides,
 })
 
-const createMockWorker = (overrides: Partial<Worker> = {}): Worker => ({
+const createMockWorker = (overrides: Partial<WorkerInfo> = {}): WorkerInfo => ({
   id: 'worker-1',
   agent_name: 'claude',
   status: 'idle',

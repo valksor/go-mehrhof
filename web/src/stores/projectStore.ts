@@ -195,8 +195,8 @@ interface ProjectState {
   // Task actions
   start: (source: string) => Promise<void>
   quickStart: (source: string) => Promise<void>
-  plan: (force?: boolean) => Promise<void>
-  implement: (force?: boolean) => Promise<void>
+  plan: () => Promise<void>
+  implement: () => Promise<void>
   simplify: () => Promise<void>
   optimize: () => Promise<void>
   review: (options?: ReviewOptions) => Promise<void>
@@ -564,15 +564,15 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
     }
   },
 
-  plan: async (force: boolean = false) => {
+  plan: async () => {
     const client = get().client
     if (!client) return
 
     set({ loading: true, error: null })
-    get().appendOutput(force ? 'Force re-running planning...' : 'Starting planning...')
+    get().appendOutput('Starting planning...')
 
     try {
-      const result = await client.call<{ status: string; state: TaskState; job_id?: string }>('plan', { force, dry_run: get().dryRunMode })
+      const result = await client.call<{ status: string; state: TaskState; job_id?: string }>('plan', { dry_run: get().dryRunMode })
       set({ state: result.state, loading: false })
       get().appendOutput(`Planning job started: ${result.job_id || ''}`)
     } catch (err) {
@@ -580,15 +580,15 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
     }
   },
 
-  implement: async (force: boolean = false) => {
+  implement: async () => {
     const client = get().client
     if (!client) return
 
     set({ loading: true, error: null })
-    get().appendOutput(force ? 'Force re-running implementation...' : 'Starting implementation...')
+    get().appendOutput('Starting implementation...')
 
     try {
-      const result = await client.call<{ status: string; state: TaskState; job_id?: string }>('implement', { force, dry_run: get().dryRunMode })
+      const result = await client.call<{ status: string; state: TaskState; job_id?: string }>('implement', { dry_run: get().dryRunMode })
       set({ state: result.state, loading: false })
       get().appendOutput(`Implementation job started: ${result.job_id || ''}`)
     } catch (err) {

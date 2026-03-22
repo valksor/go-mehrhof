@@ -13,13 +13,6 @@ import type {
   TaskListSummary,
 } from '../types/socket'
 
-// Re-export types used by components
-export type Project = WorktreeInfo
-export type Worker = WorkerInfo
-export type WorkerStats = WorkersStats
-export type MemoryStats = MemoryStatsResponse
-export type TaskSummary = TaskListSummary
-
 // Agent status from agent.status RPC
 export interface AgentCheckResult {
   name: string
@@ -103,14 +96,14 @@ interface GlobalState {
   unsubscribeSocket: (() => void) | null // Cleanup function for socket subscription
 
   // Data
-  projects: Project[]
-  workers: Worker[]
-  workerStats: WorkerStats | null
+  projects: WorktreeInfo[]
+  workers: WorkerInfo[]
+  workerStats: WorkersStats | null
   metrics: Metrics | null
   metricsHistory: TimedSnapshot[]
-  memoryStats: MemoryStats | null
+  memoryStats: MemoryStatsResponse | null
   selectedProjectId: string | null
-  selectedProject: Project | null
+  selectedProject: WorktreeInfo | null
   loading: boolean
   error: string | null
 
@@ -121,7 +114,7 @@ interface GlobalState {
   worktreeHealth: WorktreeHealth[]
 
   // Active tasks across all projects
-  activeTasks: TaskSummary[]
+  activeTasks: TaskListSummary[]
 
   // Jobs
   jobs: Job[]
@@ -137,7 +130,7 @@ interface GlobalState {
   loadProjects: () => Promise<void>
   addProject: (path: string) => Promise<void>
   removeProject: (id: string) => Promise<void>
-  selectProject: (project: Project | null) => void
+  selectProject: (project: WorktreeInfo | null) => void
 
   selectNextProject: () => void
   selectPrevProject: () => void
@@ -330,7 +323,7 @@ export const useGlobalStore = create<GlobalState>()(
 
         set({ loading: true, error: null })
         try {
-          const result = await client.call<{ projects: Project[] }>('projects.list')
+          const result = await client.call<{ projects: WorktreeInfo[] }>('projects.list')
           const projects = result.projects || []
 
           set({ projects, loading: false, isStale: false })
@@ -428,7 +421,7 @@ export const useGlobalStore = create<GlobalState>()(
         if (!client) return
 
         try {
-          const result = await client.call<{ workers: Worker[]; stats: WorkerStats }>('workers.list')
+          const result = await client.call<{ workers: WorkerInfo[]; stats: WorkersStats }>('workers.list')
           set({
             workers: result.workers || [],
             workerStats: result.stats || null
@@ -443,7 +436,7 @@ export const useGlobalStore = create<GlobalState>()(
         if (!client) return
 
         try {
-          const result = await client.call<WorkerStats>('workers.stats', {})
+          const result = await client.call<WorkersStats>('workers.stats', {})
           set({ workerStats: result })
         } catch (err) {
           console.warn('Failed to load worker stats:', err)
@@ -561,7 +554,7 @@ export const useGlobalStore = create<GlobalState>()(
         if (!client) return
 
         try {
-          const result = await client.call<{ tasks: TaskSummary[] }>('tasks.list')
+          const result = await client.call<{ tasks: TaskListSummary[] }>('tasks.list')
           set({ activeTasks: result.tasks || [] })
 
           // Update offline cache (non-blocking)
@@ -607,7 +600,7 @@ export const useGlobalStore = create<GlobalState>()(
         if (!client) return
 
         try {
-          const result = await client.call<MemoryStats>('memory.stats', {})
+          const result = await client.call<MemoryStatsResponse>('memory.stats', {})
           set({ memoryStats: result })
         } catch (err) {
           console.warn('Failed to load memory stats:', err)
@@ -662,7 +655,7 @@ export const useGlobalStore = create<GlobalState>()(
 // Hydrate from offline cache on startup (non-blocking).
 // This populates the store with cached data before the socket connects,
 // so the UI renders instantly on reconnect instead of showing a blank state.
-getCachedGlobalState<{ projects: Project[]; activeTasks: TaskSummary[] }>().then(cached => {
+getCachedGlobalState<{ projects: WorktreeInfo[]; activeTasks: TaskListSummary[] }>().then(cached => {
   if (cached) {
     const state = useGlobalStore.getState()
     // Only hydrate if the store hasn't already been populated by a live connection

@@ -1,4 +1,4 @@
-import { render, waitFor } from '@testing-library/react'
+import { render, waitFor, act } from '@testing-library/react'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { BackupPanel } from './BackupPanel'
 
@@ -56,28 +56,31 @@ describe('BackupPanel', () => {
 
   it('renders modal with title when open', async () => {
     mockCall.mockResolvedValueOnce({ backups: [] })
-    const { getByText } = render(
+    const { getByText, findByText } = render(
       <BackupPanel isOpen={true} onClose={vi.fn()} />,
     )
     expect(getByText('Backup')).toBeInTheDocument()
+    await findByText('No backups found')
   })
 
   it('shows description text', async () => {
     mockCall.mockResolvedValueOnce({ backups: [] })
-    const { getByText } = render(
+    const { getByText, findByText } = render(
       <BackupPanel isOpen={true} onClose={vi.fn()} />,
     )
     expect(
       getByText('Create and manage backups of kvelmo state'),
     ).toBeInTheDocument()
+    await findByText('No backups found')
   })
 
   it('has a Create Backup button', async () => {
     mockCall.mockResolvedValueOnce({ backups: [] })
-    const { getByText } = render(
+    const { getByText, findByText } = render(
       <BackupPanel isOpen={true} onClose={vi.fn()} />,
     )
     expect(getByText('Create Backup')).toBeInTheDocument()
+    await findByText('No backups found')
   })
 
   it('shows loading spinner while fetching backups', () => {
@@ -162,7 +165,7 @@ describe('BackupPanel', () => {
 
     mockCall.mockResolvedValueOnce(createResult) // backup.create
     mockCall.mockResolvedValueOnce({ backups: sampleBackups }) // refresh list
-    btn.click()
+    await act(async () => { btn.click() })
 
     await waitFor(() => {
       expect(mockCall).toHaveBeenCalledWith('backup.create')
@@ -179,7 +182,7 @@ describe('BackupPanel', () => {
 
     mockCall.mockResolvedValueOnce(createResult) // backup.create
     mockCall.mockResolvedValueOnce({ backups: [] }) // refresh list
-    btn.click()
+    await act(async () => { btn.click() })
 
     expect(
       await findByText('Backup created successfully'),
@@ -195,7 +198,7 @@ describe('BackupPanel', () => {
     const btn = await findByText('Create Backup')
     mockCall.mockResolvedValueOnce(createResult)
     mockCall.mockResolvedValueOnce({ backups: [] })
-    btn.click()
+    await act(async () => { btn.click() })
 
     expect(
       await findByText(createResult.path),
@@ -211,7 +214,7 @@ describe('BackupPanel', () => {
     const btn = await findByText('Create Backup')
     mockCall.mockResolvedValueOnce(createResult)
     mockCall.mockResolvedValueOnce({ backups: [] })
-    btn.click()
+    await act(async () => { btn.click() })
 
     expect(await findByText('512 KB (15 files)')).toBeInTheDocument()
   })
@@ -225,7 +228,7 @@ describe('BackupPanel', () => {
     const btn = await findByText('Create Backup')
     mockCall.mockResolvedValueOnce(createResult) // backup.create
     mockCall.mockResolvedValueOnce({ backups: sampleBackups }) // refresh
-    btn.click()
+    await act(async () => { btn.click() })
 
     // After refresh, should show the backups
     expect(await findByText('backup-2026-03-01.tar.gz')).toBeInTheDocument()
@@ -239,7 +242,7 @@ describe('BackupPanel', () => {
 
     const btn = await findByText('Create Backup')
     mockCall.mockRejectedValueOnce(new Error('Disk full'))
-    btn.click()
+    await act(async () => { btn.click() })
 
     expect(await findByText('Disk full')).toBeInTheDocument()
   })
@@ -252,7 +255,7 @@ describe('BackupPanel', () => {
 
     const btn = await findByText('Create Backup')
     mockCall.mockRejectedValueOnce('unknown')
-    btn.click()
+    await act(async () => { btn.click() })
 
     expect(await findByText('Failed to create backup')).toBeInTheDocument()
   })
@@ -284,9 +287,10 @@ describe('BackupPanel', () => {
   it('calls onClose when close button is clicked', async () => {
     mockCall.mockResolvedValueOnce({ backups: [] })
     const onClose = vi.fn()
-    const { getByLabelText } = render(
+    const { getByLabelText, findByText } = render(
       <BackupPanel isOpen={true} onClose={onClose} />,
     )
+    await findByText('No backups found')
     getByLabelText('Close dialog').click()
     expect(onClose).toHaveBeenCalledOnce()
   })

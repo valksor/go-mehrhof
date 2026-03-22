@@ -7,16 +7,26 @@ interface PolicyPanelProps {
   onClose: () => void
 }
 
-interface PolicyResult {
-  name: string
-  status: 'pass' | 'fail'
+interface PolicyViolation {
+  severity: 'error' | 'warning'
+  rule: string
   message: string
+}
+
+interface PolicyCheckResult {
+  violations: PolicyViolation[]
+  blocking: boolean
+}
+
+const SEVERITY_BADGE: Record<PolicyViolation['severity'], string> = {
+  error: 'badge-error',
+  warning: 'badge-warning',
 }
 
 export function PolicyPanel({ isOpen, onClose }: PolicyPanelProps) {
   const { client, connected } = useProjectStore()
 
-  const [policies, setPolicies] = useState<PolicyResult[]>([])
+  const [result, setResult] = useState<PolicyCheckResult | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -27,11 +37,14 @@ export function PolicyPanel({ isOpen, onClose }: PolicyPanelProps) {
     setError(null)
 
     try {
-      const result = await client.call<{ results: PolicyResult[] }>('policy.check', {})
-      setPolicies(result.results || [])
+      const data = await client.call<PolicyCheckResult>('policy.check', {})
+      setResult({
+        violations: data?.violations ?? [],
+        blocking: data?.blocking ?? false,
+      })
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to check policies')
-      setPolicies([])
+      setResult(null)
     } finally {
       setLoading(false)
     }
@@ -43,11 +56,20 @@ export function PolicyPanel({ isOpen, onClose }: PolicyPanelProps) {
     }
   }, [isOpen, connected, checkPolicies])
 
+  const violations = result?.violations ?? []
+
   return (
     <AccessibleModal isOpen={isOpen} onClose={onClose} title="Policy Checks" size="2xl">
       <div className="max-h-[70vh] flex flex-col">
         {/* Toolbar */}
-        <div className="flex items-center justify-end mb-4">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            {result && (
+              <span className={`badge ${result.blocking ? 'badge-error' : 'badge-success'}`}>
+                {result.blocking ? 'Blocking' : 'Passing'}
+              </span>
+            )}
+          </div>
           <button
             onClick={checkPolicies}
             disabled={loading || !connected}
@@ -74,37 +96,37 @@ export function PolicyPanel({ isOpen, onClose }: PolicyPanelProps) {
 
         {/* Content */}
         <div className="flex-1 overflow-y-auto">
-          {loading && policies.length === 0 ? (
+          {loading && !result ? (
             <div className="flex items-center justify-center py-12">
               <span className="loading loading-spinner loading-lg text-primary"></span>
             </div>
-          ) : policies.length === 0 ? (
+          ) : violations.length === 0 ? (
             <div className="text-center py-12 text-base-content/50">
               <svg aria-hidden="true" className="w-10 h-10 mx-auto mb-3 opacity-30" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
               </svg>
-              <p>No policy data available</p>
+              <p>{result ? 'All policies pass' : 'No policy data available'}</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="table table-sm table-zebra w-full">
                 <thead>
                   <tr>
-                    <th>Policy</th>
-                    <th>Status</th>
+                    <th>Severity</th>
+                    <th>Rule</th>
                     <th>Message</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {policies.map((policy, i) => (
-                    <tr key={`${policy.name}-${i}`}>
-                      <td className="font-mono text-xs">{policy.name}</td>
+                  {violations.map((v, i) => (
+                    <tr key={`${v.rule}-${i}`}>
                       <td>
-                        <span className={`badge badge-sm ${policy.status === 'pass' ? 'badge-success' : 'badge-error'}`}>
-                          {policy.status === 'pass' ? 'Pass' : 'Fail'}
+                        <span className={`badge badge-sm ${SEVERITY_BADGE[v.severity] || 'badge-ghost'}`}>
+                          {v.severity}
                         </span>
                       </td>
-                      <td className="text-xs text-base-content/70">{policy.message}</td>
+                      <td className="font-mono text-xs">{v.rule}</td>
+                      <td className="text-xs text-base-content/70">{v.message}</td>
                     </tr>
                   ))}
                 </tbody>

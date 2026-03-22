@@ -203,7 +203,7 @@ export function useKeyboardShortcuts() {
         e.preventDefault()
         chordKeyRef.current = null
         const { plan } = useProjectStore.getState()
-        plan(false)
+        plan()
         return
       }
 
@@ -220,7 +220,7 @@ export function useKeyboardShortcuts() {
         e.preventDefault()
         chordKeyRef.current = null
         const { implement } = useProjectStore.getState()
-        implement(false)
+        implement()
         return
       }
 

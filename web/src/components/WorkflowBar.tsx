@@ -107,8 +107,8 @@ export function WorkflowBar() {
 
   const steps: WorkflowStep[] = [
     { id: 'load', label: 'Load', states: ['loaded'] },
-    { id: 'plan', label: 'Plan', states: ['planning', 'planned'], triggerState: 'loaded', action: () => plan(false) },
-    { id: 'implement', label: 'Implement', states: ['implementing', 'implemented'], triggerState: 'planned', action: () => implement(false) },
+    { id: 'plan', label: 'Plan', states: ['planning', 'planned'], triggerState: 'loaded', action: () => plan() },
+    { id: 'implement', label: 'Implement', states: ['implementing', 'implemented'], triggerState: 'planned', action: () => implement() },
     { id: 'review', label: 'Review', states: ['reviewing'], triggerState: 'implemented', action: () => review({ approve: true }) },
     { id: 'submit', label: 'Submit', states: ['submitted'], triggerState: 'reviewing' },
     { id: 'finish', label: 'Finish', states: [] },

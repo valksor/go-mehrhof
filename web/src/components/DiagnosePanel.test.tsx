@@ -1,4 +1,4 @@
-import { render, waitFor } from '@testing-library/react'
+import { render, waitFor, act } from '@testing-library/react'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { DiagnosePanel } from './DiagnosePanel'
 
@@ -61,10 +61,11 @@ describe('DiagnosePanel', () => {
 
   it('renders modal with title when open', async () => {
     mockCall.mockResolvedValueOnce(allPassedData)
-    const { getByText } = render(
+    const { getByText, findByText } = render(
       <DiagnosePanel isOpen={true} onClose={vi.fn()} />,
     )
     expect(getByText('System Diagnostics')).toBeInTheDocument()
+    await findByText('All checks passed')
   })
 
   it('shows loading spinner while fetching', () => {
@@ -215,7 +216,7 @@ describe('DiagnosePanel', () => {
     expect(rerun).toBeInTheDocument()
 
     mockCall.mockResolvedValueOnce(failedData)
-    rerun.click()
+    await act(async () => { rerun.click() })
     await waitFor(() => {
       expect(mockCall).toHaveBeenCalledTimes(2)
     })
@@ -232,9 +233,10 @@ describe('DiagnosePanel', () => {
   it('calls onClose when close button is clicked', async () => {
     mockCall.mockResolvedValueOnce(allPassedData)
     const onClose = vi.fn()
-    const { getByLabelText } = render(
+    const { getByLabelText, findByText } = render(
       <DiagnosePanel isOpen={true} onClose={onClose} />,
     )
+    await findByText('All checks passed')
     getByLabelText('Close dialog').click()
     expect(onClose).toHaveBeenCalledOnce()
   })

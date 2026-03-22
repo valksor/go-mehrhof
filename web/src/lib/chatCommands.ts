@@ -33,16 +33,16 @@ export const COMMANDS: ChatCommand[] = [
     description: 'Run planning phase',
     isAvailable: () => getState().state === 'loaded',
     execute: async () => {
-      await getState().plan(false)
+      await getState().plan()
       return 'Planning started.'
     },
   },
   {
     name: '/plan!',
-    description: 'Force re-run planning',
+    description: 'Re-run planning',
     isAvailable: () => getState().state === 'planned',
     execute: async () => {
-      await getState().plan(true)
+      await getState().plan()
       return 'Re-planning started.'
     },
   },
@@ -51,16 +51,16 @@ export const COMMANDS: ChatCommand[] = [
     description: 'Run implementation phase',
     isAvailable: () => getState().state === 'planned',
     execute: async () => {
-      await getState().implement(false)
+      await getState().implement()
       return 'Implementation started.'
     },
   },
   {
     name: '/implement!',
-    description: 'Force re-run implementation',
+    description: 'Re-run implementation',
     isAvailable: () => getState().state === 'implemented',
     execute: async () => {
-      await getState().implement(true)
+      await getState().implement()
       return 'Re-implementation started.'
     },
   },

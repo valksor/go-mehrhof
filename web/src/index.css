@@ -40,22 +40,10 @@ body {
    ELEVATION SYSTEM
    ============================================ */
 
-.elevation-1 {
-  box-shadow:
-    0 1px 2px oklch(0% 0 0 / 0.05),
-    0 1px 3px oklch(0% 0 0 / 0.04);
-}
-
 .elevation-2 {
   box-shadow:
     0 4px 6px -1px oklch(0% 0 0 / 0.08),
     0 2px 4px -2px oklch(0% 0 0 / 0.05);
-}
-
-.elevation-3 {
-  box-shadow:
-    0 10px 15px -3px oklch(0% 0 0 / 0.1),
-    0 4px 6px -4px oklch(0% 0 0 / 0.07);
 }
 
 /* ============================================
@@ -209,22 +197,6 @@ body {
    MICRO-INTERACTIONS
    ============================================ */
 
-.card-interactive {
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-
-.card-interactive:hover {
-  transform: translateY(-2px);
-}
-
-.btn-enhanced {
-  transition: all 0.15s ease;
-}
-
-.btn-enhanced:active {
-  transform: scale(0.98);
-}
-
 /* List item stagger animation */
 @keyframes fade-in-up {
   from {
@@ -239,23 +211,6 @@ body {
 
 .animate-in {
   animation: fade-in-up 0.25s ease forwards;
-}
-
-/* Skeleton loading */
-.skeleton-pulse {
-  background: linear-gradient(
-    90deg,
-    oklch(var(--b3)) 25%,
-    oklch(var(--b2)) 50%,
-    oklch(var(--b3)) 75%
-  );
-  background-size: 200% 100%;
-  animation: skeleton-shimmer 1.5s ease-in-out infinite;
-}
-
-@keyframes skeleton-shimmer {
-  0% { background-position: 200% 0; }
-  100% { background-position: -200% 0; }
 }
 
 /* ============================================

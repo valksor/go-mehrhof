@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
-import { useGlobalStore, type TaskSummary } from '../stores/globalStore'
+import { useGlobalStore } from '../stores/globalStore'
+import type { TaskListSummary } from '../types/socket'
 
 const STATE_BADGE: Record<string, string> = {
   none: 'badge-ghost',
@@ -39,7 +40,7 @@ export function ActiveTasksWidget({ onSelectProject }: ActiveTasksWidgetProps) {
 
   if (active.length === 0) return null
 
-  const handleClick = (task: TaskSummary) => {
+  const handleClick = (task: TaskListSummary) => {
     // Select project by path (strict matching to avoid cross-project task display)
     const project = projects.find(p => p.path === task.path)
     if (project) {

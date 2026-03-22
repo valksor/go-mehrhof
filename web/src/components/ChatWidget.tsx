@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback, useMemo, memo } from 'react'
-import { useChatStore, type ChatMessage } from '../stores/chatStore'
+import { useChatStore, type UIChatMessage } from '../stores/chatStore'
 import { useGlobalStore } from '../stores/globalStore'
 import { useProjectStore } from '../stores/projectStore'
 import { useScreenshotStore, getScreenshotById, formatScreenshotRef } from '../stores/screenshotStore'
@@ -562,7 +562,7 @@ export function ChatWidget({ embedded = false, onModalCommand }: ChatWidgetProps
 
 // Message bubble component - memoized to prevent re-renders on new messages
 interface MessageBubbleProps {
-  message: ChatMessage
+  message: UIChatMessage
   onAction: (actionId: string) => void
 }
 

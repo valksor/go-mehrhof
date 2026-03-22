@@ -21,9 +21,6 @@
     "lint:a11y": "eslint -c eslint.a11y.config.js \"src/**/*.{ts,tsx}\""
   },
   "dependencies": {
-    "@dnd-kit/core": "^6.3.1",
-    "@dnd-kit/sortable": "^10.0.0",
-    "@dnd-kit/utilities": "^3.2.2",
     "@hookform/resolvers": "^5.2.2",
     "@tailwindcss/vite": "^4.2.2",
     "@tanstack/react-virtual": "^3.13.23",
@@ -35,7 +32,6 @@
     "react-dom": "^19.2.4",
     "react-hook-form": "^7.71.2",
     "react-markdown": "^10.1.0",
-    "react-resizable-panels": "^4.7.4",
     "zod": "^4.3.6",
     "zustand": "^5.0.12"
   },

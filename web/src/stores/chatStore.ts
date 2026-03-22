@@ -13,7 +13,7 @@ export type SubagentStatus = 'started' | 'completed' | 'failed'
 // Danger level for permission requests
 export type DangerLevel = 'safe' | 'caution' | 'dangerous'
 
-export interface ChatMessage {
+export interface UIChatMessage {
   id: string
   role: MessageRole
   content: string
@@ -81,7 +81,7 @@ interface ChatEvent {
 }
 
 interface ChatState {
-  messages: ChatMessage[]
+  messages: UIChatMessage[]
   isTyping: boolean
   error: string | null
   activeJobId: string | null
@@ -90,8 +90,8 @@ interface ChatState {
 
   // Actions
   sendMessage: (content: string, worktreeId?: string) => Promise<void>
-  addMessage: (message: Omit<ChatMessage, 'id' | 'timestamp'>) => string
-  updateMessage: (id: string, updates: Partial<ChatMessage>) => void
+  addMessage: (message: Omit<UIChatMessage, 'id' | 'timestamp'>) => string
+  updateMessage: (id: string, updates: Partial<UIChatMessage>) => void
   appendToMessage: (id: string, content: string) => void
   setTyping: (typing: boolean) => void
   clearMessages: () => Promise<void>
@@ -108,7 +108,7 @@ const generateId = () => `msg-${++messageIdCounter}-${Date.now()}`
 let activeAbort: AbortController | null = null
 
 // Convert backend message to frontend format
-const convertMessage = (msg: BackendMessage): ChatMessage => ({
+const convertMessage = (msg: BackendMessage): UIChatMessage => ({
   id: msg.id || generateId(),
   role: msg.role as MessageRole,
   content: msg.content,
@@ -351,7 +351,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
 
   addMessage: (message) => {
     const id = generateId()
-    const newMessage: ChatMessage = {
+    const newMessage: UIChatMessage = {
       ...message,
       id,
       timestamp: new Date()

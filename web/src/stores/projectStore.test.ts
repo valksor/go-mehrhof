@@ -538,7 +538,7 @@ describe('projectStore', () => {
       expect(useProjectStore.getState().loading).toBe(false)
     })
 
-    it('calls client.call with force=false by default', async () => {
+    it('calls client.call with dry_run=false by default', async () => {
       const client = makeMockClient()
       client.call.mockResolvedValue({ status: 'ok', state: 'planning', job_id: 'j1' })
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -546,20 +546,9 @@ describe('projectStore', () => {
 
       await useProjectStore.getState().plan()
 
-      expect(client.call).toHaveBeenCalledWith('plan', { force: false, dry_run: false })
+      expect(client.call).toHaveBeenCalledWith('plan', { dry_run: false })
       expect(useProjectStore.getState().state).toBe('planning')
       expect(useProjectStore.getState().loading).toBe(false)
-    })
-
-    it('calls client.call with force=true', async () => {
-      const client = makeMockClient()
-      client.call.mockResolvedValue({ status: 'ok', state: 'planning', job_id: 'j2' })
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      useProjectStore.setState({ client: client as any, connected: true })
-
-      await useProjectStore.getState().plan(true)
-
-      expect(client.call).toHaveBeenCalledWith('plan', { force: true, dry_run: false })
     })
 
     it('sets error on failure', async () => {
@@ -583,7 +572,7 @@ describe('projectStore', () => {
       expect(useProjectStore.getState().loading).toBe(false)
     })
 
-    it('calls client.call with force=false by default', async () => {
+    it('calls client.call with dry_run=false by default', async () => {
       const client = makeMockClient()
       client.call.mockResolvedValue({ status: 'ok', state: 'implementing', job_id: 'j3' })
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -591,20 +580,9 @@ describe('projectStore', () => {
 
       await useProjectStore.getState().implement()
 
-      expect(client.call).toHaveBeenCalledWith('implement', { force: false, dry_run: false })
+      expect(client.call).toHaveBeenCalledWith('implement', { dry_run: false })
       expect(useProjectStore.getState().state).toBe('implementing')
       expect(useProjectStore.getState().loading).toBe(false)
-    })
-
-    it('calls client.call with force=true', async () => {
-      const client = makeMockClient()
-      client.call.mockResolvedValue({ status: 'ok', state: 'implementing', job_id: 'j4' })
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      useProjectStore.setState({ client: client as any, connected: true })
-
-      await useProjectStore.getState().implement(true)
-
-      expect(client.call).toHaveBeenCalledWith('implement', { force: true, dry_run: false })
     })
 
     it('sets error on failure', async () => {
