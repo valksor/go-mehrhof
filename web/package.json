@@ -30,7 +30,7 @@
     "react": "^19.2.4",
     "react-diff-viewer-continued": "^4.2.0",
     "react-dom": "^19.2.4",
-    "react-hook-form": "^7.71.2",
+    "react-hook-form": "^7.72.0",
     "react-markdown": "^10.1.0",
     "zod": "^4.3.6",
     "zustand": "^5.0.12"
@@ -62,6 +62,6 @@
     "typescript-eslint": "^8.57.1",
     "vite": "^8.0.1",
     "vitest": "^4.1.0",
-    "ws": "^8.19.0"
+    "ws": "^8.20.0"
   }
 }
