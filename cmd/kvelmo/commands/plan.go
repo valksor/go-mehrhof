@@ -13,7 +13,6 @@ import (
 )
 
 var (
-	planForce  bool
 	planWait   bool
 	planJSON   bool
 	planDryRun bool
@@ -28,7 +27,6 @@ var PlanCmd = &cobra.Command{
 }
 
 func init() {
-	PlanCmd.Flags().BoolVar(&planForce, "force", false, "Re-run planning even if already planned")
 	PlanCmd.Flags().BoolVarP(&planWait, "wait", "w", false, "Wait for job to complete, streaming output")
 	PlanCmd.Flags().BoolVar(&planJSON, "json", false, "Output result as JSON")
 	PlanCmd.Flags().BoolVar(&planDryRun, "dry-run", false, "Simulate without executing agent")
@@ -55,7 +53,6 @@ func runPlan(cmd *cobra.Command, args []string) error {
 	defer cancel()
 
 	params := map[string]any{
-		"force":   planForce,
 		"dry_run": planDryRun,
 	}
 

@@ -495,7 +495,7 @@ func (w *WorktreeSocket) handleStart(ctx context.Context, req *Request) (*Respon
 	// Auto-advance: trigger planning immediately after start
 	if params.AutoAdvance {
 		go func() {
-			if _, err := w.conductor.Plan(ctx, false); err != nil {
+			if _, err := w.conductor.Plan(ctx); err != nil {
 				slog.Warn("auto-advance: plan after start failed", "error", err)
 			}
 		}()
@@ -509,7 +509,6 @@ func (w *WorktreeSocket) handleStart(ctx context.Context, req *Request) (*Respon
 
 type PlanParams struct {
 	Prompt string `json:"prompt,omitempty"`  // Additional context for planning
-	Force  bool   `json:"force,omitempty"`   // Re-run even if already planned
 	DryRun bool   `json:"dry_run,omitempty"` // Simulate without executing agent
 }
 
@@ -533,7 +532,7 @@ func (w *WorktreeSocket) handlePlan(ctx context.Context, req *Request) (*Respons
 	}
 
 	// Submit planning job
-	jobID, err := w.conductor.Plan(ctx, params.Force)
+	jobID, err := w.conductor.Plan(ctx)
 	if err != nil {
 		return NewErrorResponse(req.ID, -32603, err.Error()), nil
 	}
@@ -547,7 +546,6 @@ func (w *WorktreeSocket) handlePlan(ctx context.Context, req *Request) (*Respons
 
 type ImplementParams struct {
 	Prompt string `json:"prompt,omitempty"`  // Additional context for implementation
-	Force  bool   `json:"force,omitempty"`   // Re-run even if already implemented
 	DryRun bool   `json:"dry_run,omitempty"` // Simulate without executing agent
 }
 
@@ -571,7 +569,7 @@ func (w *WorktreeSocket) handleImplement(ctx context.Context, req *Request) (*Re
 	}
 
 	// Submit implementation job
-	jobID, err := w.conductor.Implement(ctx, params.Force)
+	jobID, err := w.conductor.Implement(ctx)
 	if err != nil {
 		return NewErrorResponse(req.ID, -32603, err.Error()), nil
 	}

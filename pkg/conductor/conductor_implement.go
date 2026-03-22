@@ -15,8 +15,7 @@ import (
 // Implement begins the implementation phase.
 // When called from the planned state, requires specifications to exist.
 // When called from the loaded state (skip-plan), uses the task description as spec.
-// Accepts force parameter to allow re-running from already-implemented state.
-func (c *Conductor) Implement(ctx context.Context, force bool) (string, error) {
+func (c *Conductor) Implement(ctx context.Context) (string, error) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -50,10 +49,6 @@ func (c *Conductor) Implement(ctx context.Context, force bool) (string, error) {
 			}
 		}
 	}
-
-	// force is now a no-op — transition table handles re-entry natively.
-	// Kept for CLI backward compat (--force flag).
-	_ = force
 
 	// Run pre-transition hooks (release lock during shell execution)
 	c.mu.Unlock()
@@ -370,7 +365,7 @@ func (c *Conductor) dispatchAutoAdvance(ctx context.Context, phase string) {
 	var err error
 	switch phase {
 	case "implement":
-		_, err = c.Implement(ctx, false)
+		_, err = c.Implement(ctx)
 	case "simplify":
 		_, err = c.Simplify(ctx)
 	case "optimize":

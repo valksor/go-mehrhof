@@ -13,7 +13,6 @@ import (
 )
 
 var (
-	implementForce  bool
 	implementWait   bool
 	implementJSON   bool
 	implementDryRun bool
@@ -28,7 +27,6 @@ var ImplementCmd = &cobra.Command{
 }
 
 func init() {
-	ImplementCmd.Flags().BoolVar(&implementForce, "force", false, "Re-run implementation even if already implemented")
 	ImplementCmd.Flags().BoolVarP(&implementWait, "wait", "w", false, "Wait for job to complete, streaming output")
 	ImplementCmd.Flags().BoolVar(&implementJSON, "json", false, "Output result as JSON")
 	ImplementCmd.Flags().BoolVar(&implementDryRun, "dry-run", false, "Simulate without executing agent")
@@ -55,7 +53,6 @@ func runImplement(cmd *cobra.Command, args []string) error {
 	defer cancel()
 
 	params := map[string]any{
-		"force":   implementForce,
 		"dry_run": implementDryRun,
 	}
 

@@ -10,7 +10,7 @@ import (
 
 func TestConductorImplement_NoTaskError(t *testing.T) {
 	c, _ := New()
-	_, err := c.Implement(context.Background(), false)
+	_, err := c.Implement(context.Background())
 	if err == nil {
 		t.Error("Implement() with no task should return error")
 	}
@@ -28,7 +28,7 @@ func TestConductorImplement_NoPoolError(t *testing.T) {
 		Specifications: []string{"spec-1.md"},
 	})
 	c.machine.ForceState(StatePlanned)
-	_, err := c.Implement(context.Background(), false)
+	_, err := c.Implement(context.Background())
 	if err == nil {
 		t.Error("Implement() with no pool should return error")
 	}
@@ -41,7 +41,7 @@ func TestConductorImplement_WrongStateError(t *testing.T) {
 	c, _ := New()
 	c.ForceWorkUnit(&WorkUnit{ID: "i2", Title: "T", Description: "desc"})
 	// StateNone does not allow EventImplement; pool check runs first (pool is nil)
-	_, err := c.Implement(context.Background(), false)
+	_, err := c.Implement(context.Background())
 	if err == nil {
 		t.Error("Implement() from wrong state should return error")
 	}

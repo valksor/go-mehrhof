@@ -87,11 +87,6 @@ type Guard struct {
 	Message string // Shown when this guard fails
 }
 
-// GuardFunc is a predicate that must return true for a transition to occur.
-//
-// Deprecated: Use Guard struct instead for better error messages.
-type GuardFunc func(ctx context.Context, wu *WorkUnit) bool
-
 // TaskSummary is a compact representation of a task used for hierarchy context.
 // It contains only the fields needed to build meaningful AI prompt sections.
 type TaskSummary struct {

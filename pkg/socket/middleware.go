@@ -246,9 +246,9 @@ func buildChain(handler HandlerFunc, middleware []Middleware) HandlerFunc {
 	return wrapped
 }
 
-// adaptHandler converts a Handler (with net.Conn parameter) into a
-// HandlerFunc by pulling the connection from the context.
-func adaptHandler(h Handler) HandlerFunc {
+// adaptConnHandler converts a ConnHandler into a HandlerFunc by pulling
+// the connection from the context.
+func adaptConnHandler(h ConnHandler) HandlerFunc {
 	return func(ctx context.Context, req *Request) *Response {
 		conn := ConnFromContext(ctx)
 		resp, err := h(ctx, req, conn)
@@ -260,8 +260,8 @@ func adaptHandler(h Handler) HandlerFunc {
 	}
 }
 
-// adaptLegacyHandler converts a LegacyHandler into a HandlerFunc.
-func adaptLegacyHandler(h LegacyHandler) HandlerFunc {
+// adaptHandler converts a Handler into a HandlerFunc.
+func adaptHandler(h Handler) HandlerFunc {
 	return func(ctx context.Context, req *Request) *Response {
 		resp, err := h(ctx, req)
 		if err != nil {

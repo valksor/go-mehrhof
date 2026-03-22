@@ -10,7 +10,7 @@ import (
 
 func TestConductorPlan_NoTaskError(t *testing.T) {
 	c, _ := New()
-	_, err := c.Plan(context.Background(), false)
+	_, err := c.Plan(context.Background())
 	if err == nil {
 		t.Error("Plan() with no task should return error")
 	}
@@ -23,7 +23,7 @@ func TestConductorPlan_NoPoolError(t *testing.T) {
 	c, _ := New()
 	c.ForceWorkUnit(&WorkUnit{ID: "p1", Title: "T", Description: "desc"})
 	c.machine.ForceState(StateLoaded)
-	_, err := c.Plan(context.Background(), false)
+	_, err := c.Plan(context.Background())
 	if err == nil {
 		t.Error("Plan() with no pool should return error")
 	}
@@ -38,13 +38,13 @@ func TestConductorPlan_WrongStateError(t *testing.T) {
 	// StateNone with work unit — pool check runs first (pool is nil), so error is about pool.
 	// To truly test wrong state, we need to bypass pool check. Since pool is nil, we get pool error.
 	// This still exercises the no-pool guard from a non-loaded state.
-	_, err := c.Plan(context.Background(), false)
+	_, err := c.Plan(context.Background())
 	if err == nil {
 		t.Error("Plan() from wrong state should return error")
 	}
 }
 
-func TestConductorPlan_ForceFromPlannedResetsState(t *testing.T) {
+func TestConductorPlan_FromPlannedReEntry(t *testing.T) {
 	c, _ := New()
 	c.ForceWorkUnit(&WorkUnit{
 		ID:          "p3",
@@ -53,13 +53,13 @@ func TestConductorPlan_ForceFromPlannedResetsState(t *testing.T) {
 		Source:      &Source{Provider: "empty", Reference: "empty:test"},
 	})
 	c.machine.ForceState(StatePlanned)
-	// Force=true should reset to StateLoaded, then fail because no pool
-	_, err := c.Plan(context.Background(), true)
+	// Re-entry from planned state should still fail without pool
+	_, err := c.Plan(context.Background())
 	if err == nil {
-		t.Error("Plan(force=true) should still fail without pool")
+		t.Error("Plan() from planned state should still fail without pool")
 	}
 	if !strings.Contains(err.Error(), "no worker pool available") {
-		t.Errorf("Plan(force=true) error = %q, want 'no worker pool available'", err.Error())
+		t.Errorf("Plan() error = %q, want 'no worker pool available'", err.Error())
 	}
 }
 

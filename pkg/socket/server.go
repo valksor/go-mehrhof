@@ -23,14 +23,12 @@ const (
 	StaleCheckTimeout = 100 * time.Millisecond
 )
 
-// Handler handles a JSON-RPC request and returns a response.
-// The conn parameter allows handlers to send streaming events outside the request/response cycle.
-type Handler func(ctx context.Context, req *Request, conn net.Conn) (*Response, error)
+// Handler is the standard handler signature for JSON-RPC methods.
+type Handler func(ctx context.Context, req *Request) (*Response, error)
 
-// LegacyHandler is the old handler signature without connection access.
-//
-// Deprecated: Use Handler instead for new handlers.
-type LegacyHandler func(ctx context.Context, req *Request) (*Response, error)
+// ConnHandler is a handler that also receives the connection for streaming events
+// outside the request/response cycle.
+type ConnHandler func(ctx context.Context, req *Request, conn net.Conn) (*Response, error)
 
 // ActivityLogger is called after each RPC dispatch to record activity.
 type ActivityLogger interface {
@@ -91,8 +89,8 @@ func WithRateLimiter(rl *ratelimit.Limiter) ServerOption {
 type Server struct {
 	path           string
 	listener       net.Listener
+	connHandlers   map[string]ConnHandler
 	handlers       map[string]Handler
-	legacyHandlers map[string]LegacyHandler
 	mu             sync.RWMutex
 	conns          map[net.Conn]struct{}
 	connsMu        sync.Mutex
@@ -113,12 +111,12 @@ type Server struct {
 // no options get the same behaviour as before.
 func NewServer(path string, opts ...ServerOption) *Server {
 	s := &Server{
-		path:           path,
-		handlers:       make(map[string]Handler),
-		legacyHandlers: make(map[string]LegacyHandler),
-		conns:          make(map[net.Conn]struct{}),
-		shutdownCh:     make(chan struct{}),
-		rateLimiter:    ratelimit.NewLimiter(16.67, 100), // ~1000 requests/min with burst of 100
+		path:         path,
+		connHandlers: make(map[string]ConnHandler),
+		handlers:     make(map[string]Handler),
+		conns:        make(map[net.Conn]struct{}),
+		shutdownCh:   make(chan struct{}),
+		rateLimiter:  ratelimit.NewLimiter(16.67, 100), // ~1000 requests/min with burst of 100
 	}
 	if u, err := user.Current(); err == nil {
 		s.username = u.Username
@@ -143,8 +141,6 @@ func NewServer(path string, opts ...ServerOption) *Server {
 }
 
 // SetActivityLogger sets the activity logger for RPC call recording.
-//
-// Deprecated: Use WithActivityLogger option in NewServer instead.
 func (s *Server) SetActivityLogger(l ActivityLogger) {
 	s.activityLogger = l
 }
@@ -168,19 +164,19 @@ func (s *Server) getDrainTimeout() time.Duration {
 	return ShutdownTimeout
 }
 
-// Handle registers a legacy handler (without connection access).
+// Handle registers a handler for the given method.
 // For handlers that need to send streaming events, use HandleWithConn.
-func (s *Server) Handle(method string, h LegacyHandler) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	s.legacyHandlers[method] = h
-}
-
-// HandleWithConn registers a handler that receives the connection for streaming events.
-func (s *Server) HandleWithConn(method string, h Handler) {
+func (s *Server) Handle(method string, h Handler) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.handlers[method] = h
+}
+
+// HandleWithConn registers a handler that receives the connection for streaming events.
+func (s *Server) HandleWithConn(method string, h ConnHandler) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.connHandlers[method] = h
 }
 
 func (s *Server) ActiveConnections() int {
@@ -373,13 +369,13 @@ func (s *Server) dispatch(ctx context.Context, req *Request, _ net.Conn) *Respon
 
 	// Look up the registered handler.
 	s.mu.RLock()
+	connHandler, hasConn := s.connHandlers[req.Method]
 	handler, hasHandler := s.handlers[req.Method]
-	legacyHandler, hasLegacy := s.legacyHandlers[req.Method]
 	middleware := make([]Middleware, len(s.middleware))
 	copy(middleware, s.middleware)
 	s.mu.RUnlock()
 
-	if !hasHandler && !hasLegacy {
+	if !hasHandler && !hasConn {
 		slog.Warn("rpc method not found", "method", req.Method, "id", req.ID)
 
 		return NewErrorResponse(req.ID, ErrCodeMethodNotFound, "method not found: "+req.Method)
@@ -387,10 +383,10 @@ func (s *Server) dispatch(ctx context.Context, req *Request, _ net.Conn) *Respon
 
 	// Convert the handler to a HandlerFunc and wrap with the middleware chain.
 	var hf HandlerFunc
-	if hasHandler {
-		hf = adaptHandler(handler)
+	if hasConn {
+		hf = adaptConnHandler(connHandler)
 	} else {
-		hf = adaptLegacyHandler(legacyHandler)
+		hf = adaptHandler(handler)
 	}
 
 	wrapped := buildChain(hf, middleware)

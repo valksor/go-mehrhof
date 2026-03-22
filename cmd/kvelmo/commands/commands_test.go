@@ -11,14 +11,8 @@ func TestStartCommand(t *testing.T) {
 		t.Errorf("Use = %s, want start", cmd.Use)
 	}
 
-	// Check --daemon flag exists
-	f := cmd.Flags().Lookup("daemon")
-	if f == nil {
-		t.Error("--daemon flag should exist")
-	}
-
 	// Check --verbose flag exists
-	f = cmd.Flags().Lookup("verbose")
+	f := cmd.Flags().Lookup("verbose")
 	if f == nil {
 		t.Error("--verbose flag should exist")
 	}

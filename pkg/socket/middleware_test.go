@@ -262,8 +262,8 @@ func TestBuildChain_Order(t *testing.T) {
 	}
 }
 
-func TestAdaptHandler(t *testing.T) {
-	adapted := adaptHandler(func(_ context.Context, req *Request, _ net.Conn) (*Response, error) {
+func TestAdaptConnHandler(t *testing.T) {
+	adapted := adaptConnHandler(func(_ context.Context, req *Request, _ net.Conn) (*Response, error) {
 		return NewResultResponse(req.ID, map[string]string{"ok": "true"})
 	})
 
@@ -272,8 +272,8 @@ func TestAdaptHandler(t *testing.T) {
 		t.Fatal("expected successful response from adapted handler")
 	}
 
-	// Test adaptHandler with error
-	errAdapted := adaptHandler(func(_ context.Context, _ *Request, _ net.Conn) (*Response, error) {
+	// Test adaptConnHandler with error
+	errAdapted := adaptConnHandler(func(_ context.Context, _ *Request, _ net.Conn) (*Response, error) {
 		return nil, &RPCError{Code: ErrCodeInternal, Message: "fail"}
 	})
 	resp = errAdapted(context.Background(), newTestRequest("test"))
@@ -282,9 +282,9 @@ func TestAdaptHandler(t *testing.T) {
 	}
 }
 
-func TestAdaptLegacyHandler(t *testing.T) {
-	adapted := adaptLegacyHandler(func(_ context.Context, req *Request) (*Response, error) {
-		return NewResultResponse(req.ID, map[string]string{"legacy": "true"})
+func TestAdaptHandler(t *testing.T) {
+	adapted := adaptHandler(func(_ context.Context, req *Request) (*Response, error) {
+		return NewResultResponse(req.ID, map[string]string{"ok": "true"})
 	})
 
 	resp := adapted(context.Background(), newTestRequest("test"))
@@ -293,8 +293,8 @@ func TestAdaptLegacyHandler(t *testing.T) {
 	}
 }
 
-func TestAdaptLegacyHandler_Error(t *testing.T) {
-	adapted := adaptLegacyHandler(func(_ context.Context, _ *Request) (*Response, error) {
+func TestAdaptHandler_Error(t *testing.T) {
+	adapted := adaptHandler(func(_ context.Context, _ *Request) (*Response, error) {
 		return nil, &RPCError{Code: ErrCodeInternal, Message: "handler error"}
 	})
 

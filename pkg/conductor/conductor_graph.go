@@ -534,14 +534,8 @@ func (c *Conductor) populateStandardVars() {
 	c.varPool.SetScoped(varpool.ScopeSystem, "task_title", c.workUnit.Title, "conductor")
 	c.varPool.SetScoped(varpool.ScopeSystem, "task_description", c.workUnit.Description, "conductor")
 
-	// Legacy flat keys for backward compatibility.
-	c.varPool.Set("task.id", c.workUnit.ID, "conductor")
-	c.varPool.Set("task.title", c.workUnit.Title, "conductor")
-	c.varPool.Set("task.description", c.workUnit.Description, "conductor")
-
 	if c.workUnit.Branch != "" {
 		c.varPool.SetScoped(varpool.ScopeSystem, "branch", c.workUnit.Branch, "conductor")
-		c.varPool.Set("task.branch", c.workUnit.Branch, "conductor")
 	}
 }
 
@@ -758,13 +752,13 @@ func (c *Conductor) evaluateAndMaybeIterate(_ context.Context, completionEvent E
 		var err error
 		switch phase {
 		case "implement":
-			_, err = c.Implement(c.lifecycleCtx, true) // force re-run
+			_, err = c.Implement(c.lifecycleCtx)
 		case "simplify":
 			_, err = c.Simplify(c.lifecycleCtx)
 		case "optimize":
 			_, err = c.Optimize(c.lifecycleCtx)
 		case "plan":
-			_, err = c.Plan(c.lifecycleCtx, true)
+			_, err = c.Plan(c.lifecycleCtx)
 		}
 		if err != nil {
 			slog.Warn("iteration re-submit failed", "phase", phase, "error", err)

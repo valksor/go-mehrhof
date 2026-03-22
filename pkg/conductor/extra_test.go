@@ -249,7 +249,7 @@ func TestConductorForceWorkUnit(t *testing.T) {
 
 func TestConductorPlan_NoTask(t *testing.T) {
 	c, _ := New()
-	_, err := c.Plan(context.Background(), false)
+	_, err := c.Plan(context.Background())
 	if err == nil {
 		t.Error("Plan() with no task should return an error")
 	}
@@ -266,7 +266,7 @@ func TestConductorPlan_NilPool(t *testing.T) {
 	c.ForceWorkUnit(wu)
 	c.machine.ForceState(StateLoaded)
 
-	_, err := c.Plan(context.Background(), false)
+	_, err := c.Plan(context.Background())
 	if err == nil {
 		t.Error("Plan() with nil pool should return an error")
 	}
@@ -277,7 +277,7 @@ func TestConductorPlan_NilPool(t *testing.T) {
 
 func TestConductorImplement_NoTask(t *testing.T) {
 	c, _ := New()
-	_, err := c.Implement(context.Background(), false)
+	_, err := c.Implement(context.Background())
 	if err == nil {
 		t.Error("Implement() with no task should return an error")
 	}
@@ -295,7 +295,7 @@ func TestConductorImplement_NilPool(t *testing.T) {
 	c.ForceWorkUnit(wu)
 	c.machine.ForceState(StatePlanned)
 
-	_, err := c.Implement(context.Background(), false)
+	_, err := c.Implement(context.Background())
 	if err == nil {
 		t.Error("Implement() with nil pool should return an error")
 	}

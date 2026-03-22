@@ -63,10 +63,6 @@ func init() {
 	StartCmd.Flags().StringVar(&startText, "text", "", "Inline task description (creates task without external source)")
 	StartCmd.Flags().BoolVar(&startAuto, "auto", false, "Auto-advance through plan → implement → review")
 	StartCmd.Flags().BoolVar(&startJSON, "json", false, "Output result as JSON")
-
-	// Keep --daemon as hidden alias for backwards compat (now it's the default)
-	StartCmd.Flags().Bool("daemon", true, "Run in background (deprecated: now default)")
-	_ = StartCmd.Flags().MarkHidden("daemon")
 }
 
 func runStart(_ *cobra.Command, _ []string) error {

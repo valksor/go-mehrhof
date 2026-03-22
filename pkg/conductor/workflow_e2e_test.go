@@ -375,7 +375,7 @@ This is a minimal task for E2E testing. Just create the file with the specified 
 
 	// Step 2: Planning phase
 	t.Log("Step 2: Running planning phase with Claude...")
-	jobID, err := conductor.Plan(ctx, false)
+	jobID, err := conductor.Plan(ctx)
 	if err != nil {
 		t.Fatalf("Plan: %v", err)
 	}
@@ -395,7 +395,7 @@ This is a minimal task for E2E testing. Just create the file with the specified 
 
 	// Step 3: Implementation phase
 	t.Log("Step 3: Running implementation phase with Claude...")
-	jobID, err = conductor.Implement(ctx, false)
+	jobID, err = conductor.Implement(ctx)
 	if err != nil {
 		t.Fatalf("Implement: %v", err)
 	}
@@ -604,7 +604,7 @@ Add a README.md file with project description.
 
 	// Run planning
 	t.Log("Running planning with Claude...")
-	jobID, err := conductor.Plan(ctx, false)
+	jobID, err := conductor.Plan(ctx)
 	if err != nil {
 		t.Fatalf("Plan: %v", err)
 	}

@@ -15,8 +15,7 @@ import (
 
 // Plan begins the planning phase.
 // Submits a planning job to the worker pool.
-// Accepts force parameter to allow re-running from already-planned state.
-func (c *Conductor) Plan(ctx context.Context, force bool) (string, error) {
+func (c *Conductor) Plan(ctx context.Context) (string, error) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -39,10 +38,6 @@ func (c *Conductor) Plan(ctx context.Context, force bool) (string, error) {
 	if err := c.checkApproval(EventPlan); err != nil {
 		return "", err
 	}
-
-	// force is now a no-op — transition table handles re-entry natively.
-	// Kept for CLI backward compat (--force flag).
-	_ = force
 
 	// Run pre-transition hooks (release lock during shell execution)
 	c.mu.Unlock()

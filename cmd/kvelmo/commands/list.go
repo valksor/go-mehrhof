@@ -23,10 +23,7 @@ var ListCmd = &cobra.Command{
 
 Subcommands:
   history   Show completed/archived task history for the current project
-  search    Search archived tasks by keyword
-
-Legacy flag --history is still supported:
-  kvelmo list --history --search "auth" --state finished --since 2026-03-01`,
+  search    Search archived tasks by keyword`,
 	RunE: runList,
 }
 
@@ -66,16 +63,6 @@ var (
 )
 
 func init() {
-	// Legacy flags on parent command (backward compat)
-	ListCmd.Flags().Bool("history", false, "Search archived task history for the current project")
-	ListCmd.Flags().String("search", "", "Filter history by keyword (matches title, branch, source)")
-	ListCmd.Flags().String("tag", "", "Filter history by tag")
-	ListCmd.Flags().String("since", "", "Show tasks completed after this date (RFC3339 or YYYY-MM-DD)")
-	ListCmd.Flags().String("until", "", "Show tasks completed before this date (RFC3339 or YYYY-MM-DD)")
-	ListCmd.Flags().String("state", "", "Filter by final state (e.g., finished, abandoned)")
-	ListCmd.Flags().Int("limit", 0, "Maximum number of results (0 = unlimited)")
-	ListCmd.Flags().String("file", "", "Filter by file path touched (substring match)")
-
 	// history subcommand flags
 	listHistoryCmd.Flags().BoolVar(&listHistoryJSON, "json", false, "Output as JSON")
 	listHistoryCmd.Flags().StringP("search", "s", "", "Filter by keyword (uses task.search RPC)")
@@ -99,12 +86,7 @@ func init() {
 	ListCmd.AddCommand(listSearchCmd)
 }
 
-func runList(cmd *cobra.Command, _ []string) error {
-	history, _ := cmd.Flags().GetBool("history")
-	if history {
-		return runListHistoryLegacy(cmd)
-	}
-
+func runList(_ *cobra.Command, _ []string) error {
 	return runListProjects()
 }
 
@@ -350,29 +332,6 @@ func printArchivedTasks(tasks []storage.ArchivedTask, count int, outputJSON bool
 	fmt.Printf("\n%d task(s) found\n", count)
 
 	return nil
-}
-
-// runListHistoryLegacy handles the legacy "list --history" flag path.
-func runListHistoryLegacy(cmd *cobra.Command) error {
-	search, _ := cmd.Flags().GetString("search")
-	if search != "" {
-		return runTaskSearch(cmd, search, false)
-	}
-
-	// Check if any filter flags are set
-	tag, _ := cmd.Flags().GetString("tag")
-	sinceStr, _ := cmd.Flags().GetString("since")
-	untilStr, _ := cmd.Flags().GetString("until")
-	state, _ := cmd.Flags().GetString("state")
-	limit, _ := cmd.Flags().GetInt("limit")
-
-	fileFilter, _ := cmd.Flags().GetString("file")
-
-	if tag != "" || sinceStr != "" || untilStr != "" || state != "" || limit > 0 || fileFilter != "" {
-		return runTaskSearch(cmd, "", false)
-	}
-
-	return runTaskHistory(false)
 }
 
 // parseFlexibleTime parses a time string as either RFC3339 or YYYY-MM-DD.
