@@ -4,6 +4,7 @@
 package strategy
 
 import (
+	"context"
 	"slices"
 	"sync"
 )
@@ -29,6 +30,35 @@ type Strategy interface {
 	Name() string
 	BuildPrompt(input Input) string
 	EvaluateOutput(output string) Output
+}
+
+// Runner is an optional interface that strategies can implement to control
+// the full agent execution loop. When a strategy implements Runner, the
+// conductor delegates execution to RunLoop instead of the normal single-call path.
+type Runner interface {
+	// RunLoop executes the agent in a controlled loop.
+	// exec sends a prompt and returns the agent's response.
+	// emit forwards events to the conductor's event stream.
+	// Returns the final combined output.
+	RunLoop(ctx context.Context, exec ExecFunc, input Input, emit func(Event)) (Output, error)
+}
+
+// ExecFunc sends a prompt to an agent and returns its response.
+// This abstracts the actual agent call so strategies don't depend on agent internals.
+type ExecFunc func(ctx context.Context, prompt string) (string, error)
+
+// Event is a lightweight event emitted during strategy execution.
+type Event struct {
+	Type    string // "pass_started", "pass_completed", "reflection"
+	Message string
+	Pass    int
+}
+
+// IsRunner returns true if the strategy implements the Runner interface.
+func IsRunner(s Strategy) bool {
+	_, ok := s.(Runner)
+
+	return ok
 }
 
 var (
