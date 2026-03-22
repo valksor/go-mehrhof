@@ -144,6 +144,13 @@ func (p *Pool) dispatcher() {
 
 // assignJob finds an available worker and assigns the job.
 func (p *Pool) assignJob(job *Job) {
+	// Dry-run: bypass worker assignment, complete immediately
+	if job.Type == JobTypeDryRun {
+		p.executeDryRunJob(job)
+
+		return
+	}
+
 	p.mu.Lock()
 
 	// Find an available worker with a connected agent
@@ -921,4 +928,37 @@ func minInt(a, b int) int {
 	}
 
 	return b
+}
+
+// executeDryRunJob completes a job immediately without spawning an agent.
+func (p *Pool) executeDryRunJob(job *Job) {
+	p.mu.Lock()
+	job.Status = JobStatusInProgress
+	now := time.Now()
+	job.StartedAt = &now
+	p.mu.Unlock()
+
+	result := fmt.Sprintf("[dry-run] Phase would execute. Prompt: %d chars", len(job.Prompt))
+
+	p.emitEvent(job.ID, Event{
+		Type:    "job_output",
+		JobID:   job.ID,
+		Content: result,
+	})
+
+	p.mu.Lock()
+	job.Status = JobStatusDone
+	end := time.Now()
+	job.CompletedAt = &end
+	job.Result = result
+	p.mu.Unlock()
+
+	p.emitEvent(job.ID, Event{
+		Type:    "job_completed",
+		JobID:   job.ID,
+		Content: result,
+	})
+
+	metrics.Global().RecordJobCompleted()
+	p.closeStream(job.ID)
 }

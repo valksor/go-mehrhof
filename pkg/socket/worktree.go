@@ -409,6 +409,10 @@ func (w *WorktreeSocket) handleStatus(ctx context.Context, req *Request) (*Respo
 		}
 
 		result.QueueDepth = w.conductor.QueueLength()
+
+		if fc := w.conductor.LastFailureClass(); fc != "" {
+			result.LastFailureClass = string(fc)
+		}
 	}
 
 	return NewResultResponse(req.ID, result)
@@ -503,8 +507,9 @@ func (w *WorktreeSocket) handleStart(ctx context.Context, req *Request) (*Respon
 }
 
 type PlanParams struct {
-	Prompt string `json:"prompt,omitempty"` // Additional context for planning
-	Force  bool   `json:"force,omitempty"`  // Re-run even if already planned
+	Prompt string `json:"prompt,omitempty"`  // Additional context for planning
+	Force  bool   `json:"force,omitempty"`   // Re-run even if already planned
+	DryRun bool   `json:"dry_run,omitempty"` // Simulate without executing agent
 }
 
 func (w *WorktreeSocket) handlePlan(ctx context.Context, req *Request) (*Response, error) {
@@ -515,8 +520,15 @@ func (w *WorktreeSocket) handlePlan(ctx context.Context, req *Request) (*Respons
 	var params PlanParams
 	if req.Params != nil {
 		if err := json.Unmarshal(req.Params, &params); err != nil {
-			return NewErrorResponse(req.ID, ErrCodeInvalidParams, "invalid params: "+err.Error()), nil //nolint:nilerr // JSON-RPC error response
+			return NewErrorResponse(req.ID, ErrCodeInvalidParams, "invalid params: "+err.Error()), nil
 		}
+	}
+
+	// Apply dry-run mode for this call
+	prevDryRun := w.conductor.DryRunEnabled()
+	if params.DryRun {
+		w.conductor.SetDryRun(true)
+		defer w.conductor.SetDryRun(prevDryRun)
 	}
 
 	// Submit planning job
@@ -533,8 +545,9 @@ func (w *WorktreeSocket) handlePlan(ctx context.Context, req *Request) (*Respons
 }
 
 type ImplementParams struct {
-	Prompt string `json:"prompt,omitempty"` // Additional context for implementation
-	Force  bool   `json:"force,omitempty"`  // Re-run even if already implemented
+	Prompt string `json:"prompt,omitempty"`  // Additional context for implementation
+	Force  bool   `json:"force,omitempty"`   // Re-run even if already implemented
+	DryRun bool   `json:"dry_run,omitempty"` // Simulate without executing agent
 }
 
 func (w *WorktreeSocket) handleImplement(ctx context.Context, req *Request) (*Response, error) {
@@ -545,8 +558,15 @@ func (w *WorktreeSocket) handleImplement(ctx context.Context, req *Request) (*Re
 	var params ImplementParams
 	if req.Params != nil {
 		if err := json.Unmarshal(req.Params, &params); err != nil {
-			return NewErrorResponse(req.ID, ErrCodeInvalidParams, "invalid params: "+err.Error()), nil //nolint:nilerr // JSON-RPC error response
+			return NewErrorResponse(req.ID, ErrCodeInvalidParams, "invalid params: "+err.Error()), nil
 		}
+	}
+
+	// Apply dry-run mode for this call
+	prevDryRun := w.conductor.DryRunEnabled()
+	if params.DryRun {
+		w.conductor.SetDryRun(true)
+		defer w.conductor.SetDryRun(prevDryRun)
 	}
 
 	// Submit implementation job
@@ -563,7 +583,8 @@ func (w *WorktreeSocket) handleImplement(ctx context.Context, req *Request) (*Re
 }
 
 type OptimizeParams struct {
-	Prompt string `json:"prompt,omitempty"` // Additional context for optimization
+	Prompt string `json:"prompt,omitempty"`  // Additional context for optimization
+	DryRun bool   `json:"dry_run,omitempty"` // Simulate without executing agent
 }
 
 func (w *WorktreeSocket) handleOptimize(ctx context.Context, req *Request) (*Response, error) {
@@ -574,6 +595,13 @@ func (w *WorktreeSocket) handleOptimize(ctx context.Context, req *Request) (*Res
 	var params OptimizeParams
 	if req.Params != nil {
 		_ = json.Unmarshal(req.Params, &params)
+	}
+
+	// Apply dry-run mode for this call
+	prevDryRun := w.conductor.DryRunEnabled()
+	if params.DryRun {
+		w.conductor.SetDryRun(true)
+		defer w.conductor.SetDryRun(prevDryRun)
 	}
 
 	// Submit optimization job
@@ -589,9 +617,25 @@ func (w *WorktreeSocket) handleOptimize(ctx context.Context, req *Request) (*Res
 	})
 }
 
+type SimplifyParams struct {
+	DryRun bool `json:"dry_run,omitempty"` // Simulate without executing agent
+}
+
 func (w *WorktreeSocket) handleSimplify(ctx context.Context, req *Request) (*Response, error) {
 	if resp := w.noConductor(req.ID); resp != nil {
 		return resp, nil
+	}
+
+	var params SimplifyParams
+	if req.Params != nil {
+		_ = json.Unmarshal(req.Params, &params)
+	}
+
+	// Apply dry-run mode for this call
+	prevDryRun := w.conductor.DryRunEnabled()
+	if params.DryRun {
+		w.conductor.SetDryRun(true)
+		defer w.conductor.SetDryRun(prevDryRun)
 	}
 
 	jobID, err := w.conductor.Simplify(ctx)
@@ -1773,13 +1817,14 @@ const (
 )
 
 type StatusResult struct {
-	State           TaskState `json:"state"`
-	Path            string    `json:"path"`
-	Task            *TaskInfo `json:"task,omitempty"`
-	PendingPromptID string    `json:"pending_prompt_id,omitempty"`
-	ActiveJobID     string    `json:"active_job_id,omitempty"`
-	QueueDepth      int       `json:"queue_depth,omitempty"`
-	LastError       string    `json:"last_error,omitempty"`
+	State            TaskState `json:"state"`
+	Path             string    `json:"path"`
+	Task             *TaskInfo `json:"task,omitempty"`
+	PendingPromptID  string    `json:"pending_prompt_id,omitempty"`
+	ActiveJobID      string    `json:"active_job_id,omitempty"`
+	QueueDepth       int       `json:"queue_depth,omitempty"`
+	LastError        string    `json:"last_error,omitempty"`
+	LastFailureClass string    `json:"last_failure_class,omitempty"`
 }
 
 type TaskInfo struct {

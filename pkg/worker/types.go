@@ -23,6 +23,7 @@ const (
 	JobTypeSimplify  JobType = "simplify"
 	JobTypeOptimize  JobType = "optimize"
 	JobTypeChat      JobType = "chat"
+	JobTypeDryRun    JobType = "dry_run"
 )
 
 type JobStatus string
