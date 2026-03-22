@@ -546,7 +546,7 @@ describe('projectStore', () => {
 
       await useProjectStore.getState().plan()
 
-      expect(client.call).toHaveBeenCalledWith('plan', { force: false })
+      expect(client.call).toHaveBeenCalledWith('plan', { force: false, dry_run: false })
       expect(useProjectStore.getState().state).toBe('planning')
       expect(useProjectStore.getState().loading).toBe(false)
     })
@@ -559,7 +559,7 @@ describe('projectStore', () => {
 
       await useProjectStore.getState().plan(true)
 
-      expect(client.call).toHaveBeenCalledWith('plan', { force: true })
+      expect(client.call).toHaveBeenCalledWith('plan', { force: true, dry_run: false })
     })
 
     it('sets error on failure', async () => {
@@ -591,7 +591,7 @@ describe('projectStore', () => {
 
       await useProjectStore.getState().implement()
 
-      expect(client.call).toHaveBeenCalledWith('implement', { force: false })
+      expect(client.call).toHaveBeenCalledWith('implement', { force: false, dry_run: false })
       expect(useProjectStore.getState().state).toBe('implementing')
       expect(useProjectStore.getState().loading).toBe(false)
     })
@@ -604,7 +604,7 @@ describe('projectStore', () => {
 
       await useProjectStore.getState().implement(true)
 
-      expect(client.call).toHaveBeenCalledWith('implement', { force: true })
+      expect(client.call).toHaveBeenCalledWith('implement', { force: true, dry_run: false })
     })
 
     it('sets error on failure', async () => {
@@ -636,7 +636,7 @@ describe('projectStore', () => {
 
       await useProjectStore.getState().simplify()
 
-      expect(client.call).toHaveBeenCalledWith('simplify', {})
+      expect(client.call).toHaveBeenCalledWith('simplify', { dry_run: false })
       expect(useProjectStore.getState().state).toBe('simplifying')
       expect(useProjectStore.getState().loading).toBe(false)
     })
@@ -670,7 +670,7 @@ describe('projectStore', () => {
 
       await useProjectStore.getState().optimize()
 
-      expect(client.call).toHaveBeenCalledWith('optimize', {})
+      expect(client.call).toHaveBeenCalledWith('optimize', { dry_run: false })
       expect(useProjectStore.getState().state).toBe('optimizing')
       expect(useProjectStore.getState().loading).toBe(false)
     })

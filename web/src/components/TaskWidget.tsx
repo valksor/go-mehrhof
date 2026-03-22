@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react'
 import { useProjectStore } from '../stores/projectStore'
 import { FilePicker } from './FilePicker'
+import type { FailureClass } from '../lib/events'
 
 type DetectedProvider = { name: string; icon: string; example: string } | null
 
@@ -26,8 +27,35 @@ interface TaskWidgetProps {
   embedded?: boolean
 }
 
+function stateBadgeClass(state: string, failureClass?: FailureClass): string {
+  if (state === 'failed') {
+    switch (failureClass) {
+      case 'recoverable': return 'badge-warning'
+      case 'degraded': return 'badge-warning'
+      case 'skippable': return 'badge-info'
+      case 'hard_stop':
+      default: return 'badge-error'
+    }
+  }
+  if (state === 'implemented') return 'badge-success'
+  if (state === 'planned') return 'badge-primary'
+  if (state === 'planning' || state === 'implementing') return 'badge-warning'
+  if (state === 'submitted') return 'badge-secondary'
+  return 'badge-ghost'
+}
+
+function errorBannerClass(failureClass?: FailureClass): string {
+  switch (failureClass) {
+    case 'recoverable': return 'text-warning bg-warning/10 border-warning/20'
+    case 'degraded': return 'text-warning bg-warning/10 border-warning/20'
+    case 'skippable': return 'text-info bg-info/10 border-info/20'
+    case 'hard_stop':
+    default: return 'text-error bg-error/10 border-error/20'
+  }
+}
+
 export function TaskWidget({ embedded = false }: TaskWidgetProps) {
-  const { task, state, start, quickStart, queueTask, loading, error, connected, connecting, undo, reset } = useProjectStore()
+  const { task, state, start, quickStart, queueTask, loading, error, connected, connecting, undo, reset, phaseError } = useProjectStore()
   const [inputMode, setInputMode] = useState<'quick' | 'file' | 'url'>('quick')
   const [taskDescription, setTaskDescription] = useState('')
   const [urlInput, setUrlInput] = useState('')
@@ -258,14 +286,7 @@ export function TaskWidget({ embedded = false }: TaskWidgetProps) {
           <h3 className="font-medium text-base-content truncate">{task.title}</h3>
           <p className="text-xs text-base-content/60 font-mono truncate">{task.source}</p>
         </div>
-        <span className={`flex-shrink-0 badge badge-sm ${
-          state === 'implemented' ? 'badge-success' :
-          state === 'planned' ? 'badge-primary' :
-          state === 'planning' || state === 'implementing' ? 'badge-warning' :
-          state === 'submitted' ? 'badge-secondary' :
-          state === 'failed' ? 'badge-error' :
-          'badge-ghost'
-        }`}>
+        <span className={`flex-shrink-0 badge badge-sm ${stateBadgeClass(state, phaseError?.class)}`}>
           {state}
         </span>
       </div>
@@ -291,7 +312,7 @@ export function TaskWidget({ embedded = false }: TaskWidgetProps) {
         </div>
       )}
       {error && (
-        <p className="text-sm text-error bg-error/10 px-3 py-2 rounded-lg border border-error/20 mt-3">{error}</p>
+        <p className={`text-sm px-3 py-2 rounded-lg border mt-3 ${errorBannerClass(phaseError?.class)}`}>{error}</p>
       )}
 
       {/* Recovery hints when task has failed */}

@@ -45,6 +45,17 @@ export interface JobFailedEvent extends BaseEvent {
   error?: string
   content?: string
   message?: string
+  failure_class?: FailureClass
+  failure_message?: string
+}
+
+/** Phase failure classified (emitted before retry/skip decision). */
+export interface PhaseFailureClassifiedEvent extends BaseEvent {
+  type: 'phase_failure_classified'
+  error?: string
+  message?: string
+  failure_class?: FailureClass
+  failure_message?: string
 }
 
 /** Git checkpoint created. */
@@ -193,6 +204,7 @@ export type WorktreeEvent =
   | ErrorEvent
   | GraphNodeEvent
   | PhaseControlEvent
+  | PhaseFailureClassifiedEvent
   | PREvent
   | ApprovalEvent
   | HookErrorEvent
@@ -204,6 +216,8 @@ export type WorktreeEventType = WorktreeEvent['type']
 // ---------------------------------------------------------------------------
 // Chat event payloads (streamed from global socket via chat.send)
 // ---------------------------------------------------------------------------
+
+export type FailureClass = 'hard_stop' | 'recoverable' | 'degraded' | 'skippable'
 
 export type SubagentStatus = 'started' | 'completed' | 'failed'
 export type DangerLevel = 'safe' | 'caution' | 'dangerous'

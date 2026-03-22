@@ -5,6 +5,7 @@ import { reconnectDelay } from '../lib/reconnect'
 import { useScreenshotStore, Screenshot } from './screenshotStore'
 import { sendNotification, requestNotificationPermission } from '../lib/notify'
 import { worktreeEvents } from '../lib/events'
+import type { FailureClass } from '../lib/events'
 
 type TaskState =
   | 'none'
@@ -180,6 +181,13 @@ interface ProjectState {
   // Quality gate prompt (set when conductor needs a yes/no answer)
   qualityPrompt: { id: string; question: string } | null
 
+  // Phase failure classification
+  phaseError: { message: string; class: FailureClass; phase: string } | null
+
+  // Dry-run mode
+  dryRunMode: boolean
+  toggleDryRun: () => void
+
   // Connection
   connect: (worktreeId: string) => Promise<void>
   disconnect: () => void
@@ -272,6 +280,11 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
   error: null,
   taskQueue: [],
   qualityPrompt: null,
+  phaseError: null,
+  dryRunMode: false,
+  toggleDryRun: () => {
+    set(s => ({ dryRunMode: !s.dryRunMode }))
+  },
 
   connect: async (worktreeId: string) => {
     if (import.meta.env.DEV) {
@@ -358,7 +371,12 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
         if (msg.type === 'heartbeat') {
           return
         } else if (msg.type === 'state_changed') {
-          set({ state: msg.state || 'none' })
+          const newState = msg.state || 'none'
+          const updates: Partial<ProjectState> = { state: newState }
+          if (newState !== 'failed') {
+            updates.phaseError = null
+          }
+          set(updates)
           get().appendOutput(`State: ${msg.state}`)
           debouncedRefresh()
           if (msg.state === 'planned') {
@@ -381,6 +399,17 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
           get().appendOutput('Job completed')
           debouncedRefresh()
           sendNotification('Task Completed', get().task?.title || 'Job finished successfully')
+        } else if (msg.type === 'phase_failure_classified') {
+          const classified = msg as { failure_class?: FailureClass; failure_message?: string; message?: string; phase?: string }
+          if (classified.failure_class) {
+            set({
+              phaseError: {
+                message: classified.failure_message || classified.message || 'Unknown error',
+                class: classified.failure_class,
+                phase: classified.phase || 'unknown',
+              },
+            })
+          }
         } else if (msg.type === 'job_failed') {
           get().appendOutput(`Job failed: ${msg.error || msg.content}`)
           set({ error: msg.error || 'Job failed' })
@@ -543,7 +572,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
     get().appendOutput(force ? 'Force re-running planning...' : 'Starting planning...')
 
     try {
-      const result = await client.call<{ status: string; state: TaskState; job_id?: string }>('plan', { force })
+      const result = await client.call<{ status: string; state: TaskState; job_id?: string }>('plan', { force, dry_run: get().dryRunMode })
       set({ state: result.state, loading: false })
       get().appendOutput(`Planning job started: ${result.job_id || ''}`)
     } catch (err) {
@@ -559,7 +588,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
     get().appendOutput(force ? 'Force re-running implementation...' : 'Starting implementation...')
 
     try {
-      const result = await client.call<{ status: string; state: TaskState; job_id?: string }>('implement', { force })
+      const result = await client.call<{ status: string; state: TaskState; job_id?: string }>('implement', { force, dry_run: get().dryRunMode })
       set({ state: result.state, loading: false })
       get().appendOutput(`Implementation job started: ${result.job_id || ''}`)
     } catch (err) {
@@ -575,7 +604,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
     get().appendOutput('Starting simplification...')
 
     try {
-      const result = await client.call<{ status: string; state: TaskState; job_id?: string }>('simplify', {})
+      const result = await client.call<{ status: string; state: TaskState; job_id?: string }>('simplify', { dry_run: get().dryRunMode })
       set({ state: result.state, loading: false })
       get().appendOutput(`Simplification job started: ${result.job_id || ''}`)
     } catch (err) {
@@ -591,7 +620,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
     get().appendOutput('Starting optimization...')
 
     try {
-      const result = await client.call<{ status: string; state: TaskState; job_id?: string }>('optimize', {})
+      const result = await client.call<{ status: string; state: TaskState; job_id?: string }>('optimize', { dry_run: get().dryRunMode })
       set({ state: result.state, loading: false })
       get().appendOutput(`Optimization job started: ${result.job_id || ''}`)
     } catch (err) {

@@ -3,6 +3,7 @@ import { useShallow } from 'zustand/react/shallow'
 import { useProjectStore } from '../stores/projectStore'
 import { useLayoutStore } from '../stores/layoutStore'
 import { ConfirmModal } from './ui/ConfirmModal'
+import type { FailureClass } from '../lib/events'
 
 interface WorkflowStep {
   id: string
@@ -33,11 +34,34 @@ const HINTS: Record<string, string> = {
   paused: 'Task paused.',
 }
 
+function failureBadgeClass(isFailed: boolean, failureClass?: FailureClass): string {
+  if (!isFailed) return 'badge-warning'
+  switch (failureClass) {
+    case 'recoverable': return 'badge-warning'
+    case 'degraded': return 'badge-warning'
+    case 'skippable': return 'badge-info'
+    case 'hard_stop':
+    default: return 'badge-error'
+  }
+}
+
+function failureBadgeLabel(isFailed: boolean, failureClass?: FailureClass): string {
+  if (!isFailed) return 'Paused'
+  switch (failureClass) {
+    case 'recoverable': return 'Retrying...'
+    case 'degraded': return 'Degraded'
+    case 'skippable': return 'Skipped'
+    case 'hard_stop':
+    default: return 'Failed'
+  }
+}
+
 export function WorkflowBar() {
   const {
     state, plan, implement, review, submit, finish,
     stop, undo, redo, abandon, approveTransition, retry,
     loading, checkpoints, redoStack, approveRemote, mergeRemote, refresh, error,
+    phaseError, dryRunMode, toggleDryRun,
   } = useProjectStore(useShallow(s => ({
     state: s.state,
     plan: s.plan,
@@ -58,6 +82,9 @@ export function WorkflowBar() {
     mergeRemote: s.mergeRemote,
     refresh: s.refresh,
     error: s.error,
+    phaseError: s.phaseError,
+    dryRunMode: s.dryRunMode,
+    toggleDryRun: s.toggleDryRun,
   })))
 
   const [showSubmitModal, setShowSubmitModal] = useState(false)
@@ -130,10 +157,23 @@ export function WorkflowBar() {
   return (
     <>
       <div className="flex items-center gap-1 px-3 py-1.5 bg-base-200/50 border-b border-base-300">
+        {/* Dry-run toggle */}
+        <label className="flex items-center gap-1 mr-2 cursor-pointer">
+          <input
+            type="checkbox"
+            className={`checkbox checkbox-xs ${dryRunMode ? 'checkbox-warning' : ''}`}
+            checked={dryRunMode}
+            onChange={toggleDryRun}
+          />
+          <span className={`text-xs ${dryRunMode ? 'text-warning font-semibold' : 'opacity-60'}`}>
+            Dry Run
+          </span>
+        </label>
+
         {/* Status indicator for failed/paused */}
         {(isFailed || isPaused) && (
-          <span className={`text-xs font-medium mr-1 ${isFailed ? 'text-error' : 'text-warning'}`}>
-            {isFailed ? 'Failed' : 'Paused'}
+          <span className={`badge badge-xs mr-1 ${failureBadgeClass(isFailed, phaseError?.class)}`}>
+            {failureBadgeLabel(isFailed, phaseError?.class)}
           </span>
         )}
 
