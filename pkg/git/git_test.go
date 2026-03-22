@@ -104,7 +104,7 @@ func TestCreateBranch(t *testing.T) {
 
 	repo, _ := Open(dir)
 
-	err := repo.CreateBranch(ctx, "test-branch")
+	err := repo.CreateBranch(ctx, "test-branch", "")
 	if err != nil {
 		t.Fatalf("CreateBranch() error = %v", err)
 	}
@@ -123,7 +123,7 @@ func TestSwitchBranch(t *testing.T) {
 	repo, _ := Open(dir)
 	originalBranch, _ := repo.CurrentBranch(ctx)
 
-	_ = repo.CreateBranch(ctx, "other-branch")
+	_ = repo.CreateBranch(ctx, "other-branch", "")
 	_ = repo.SwitchBranch(ctx, originalBranch)
 
 	current, _ := repo.CurrentBranch(ctx)

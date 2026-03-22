@@ -4,6 +4,7 @@ import (
 	"context"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -18,7 +19,7 @@ func TestDeleteBranch(t *testing.T) {
 	}
 
 	// Create branch from current
-	if err := repo.CreateBranch(ctx, "to-delete"); err != nil {
+	if err := repo.CreateBranch(ctx, "to-delete", ""); err != nil {
 		t.Fatalf("CreateBranch: %v", err)
 	}
 
@@ -183,7 +184,7 @@ func TestCreateTaskBranch(t *testing.T) {
 		t.Fatalf("Open() error = %v", err)
 	}
 
-	branchName, err := repo.CreateTaskBranch(ctx, "task-123")
+	branchName, err := repo.CreateTaskBranch(ctx, "task-123", "")
 	if err != nil {
 		t.Fatalf("CreateTaskBranch() error = %v", err)
 	}
@@ -203,7 +204,7 @@ func TestCreateTaskBranch_Idempotent(t *testing.T) {
 	}
 
 	// Create the branch
-	if _, err := repo.CreateTaskBranch(ctx, "task-idem"); err != nil {
+	if _, err := repo.CreateTaskBranch(ctx, "task-idem", ""); err != nil {
 		t.Fatalf("first CreateTaskBranch() error = %v", err)
 	}
 
@@ -215,7 +216,7 @@ func TestCreateTaskBranch_Idempotent(t *testing.T) {
 	}
 
 	// Create again — should not error (branch exists, just switches)
-	if _, err := repo.CreateTaskBranch(ctx, "task-idem"); err != nil {
+	if _, err := repo.CreateTaskBranch(ctx, "task-idem", ""); err != nil {
 		t.Fatalf("second CreateTaskBranch() error = %v", err)
 	}
 }
@@ -233,7 +234,7 @@ func TestAddRemoveWorktree(t *testing.T) {
 	wtPath := filepath.Join(t.TempDir(), "my-worktree")
 
 	// Add a new worktree with a new branch
-	if err := repo.AddWorktree(ctx, wtPath, "wt-branch", true); err != nil {
+	if err := repo.AddWorktree(ctx, wtPath, "wt-branch", true, ""); err != nil {
 		t.Fatalf("AddWorktree() error = %v", err)
 	}
 
@@ -260,10 +261,11 @@ func TestCreateTaskWorktree(t *testing.T) {
 
 	basePath := t.TempDir()
 
-	wt, err := repo.CreateTaskWorktree(ctx, "task-wt-1", basePath)
+	wt, err := repo.CreateTaskWorktree(ctx, "task-wt-1", basePath, "")
 	if err != nil {
 		t.Fatalf("CreateTaskWorktree() error = %v", err)
 	}
+	t.Cleanup(func() { _ = repo.RemoveWorktree(ctx, wt.Path, true) })
 	if wt == nil {
 		t.Fatal("CreateTaskWorktree() returned nil worktree")
 	}
@@ -287,10 +289,11 @@ func TestCreateTaskWorktree_InjectsGuardrails(t *testing.T) {
 
 	basePath := t.TempDir()
 
-	wt, err := repo.CreateTaskWorktree(ctx, "task-guardrails", basePath)
+	wt, err := repo.CreateTaskWorktree(ctx, "task-guardrails", basePath, "")
 	if err != nil {
 		t.Fatalf("CreateTaskWorktree() error = %v", err)
 	}
+	t.Cleanup(func() { _ = repo.RemoveWorktree(ctx, wt.Path, true) })
 
 	// Check that .claude/CLAUDE.md was created
 	claudeMdPath := filepath.Join(wt.Path, ".claude", "CLAUDE.md")
@@ -301,13 +304,13 @@ func TestCreateTaskWorktree_InjectsGuardrails(t *testing.T) {
 
 	// Verify guardrails content
 	contentStr := string(content)
-	if !contains(contentStr, "Branch Guardrails") {
+	if !strings.Contains(contentStr, "Branch Guardrails") {
 		t.Error("CLAUDE.md should contain 'Branch Guardrails'")
 	}
-	if !contains(contentStr, wt.Branch) {
+	if !strings.Contains(contentStr, wt.Branch) {
 		t.Errorf("CLAUDE.md should contain branch name %q", wt.Branch)
 	}
-	if !contains(contentStr, "DO NOT run git checkout") {
+	if !strings.Contains(contentStr, "DO NOT run git checkout") {
 		t.Error("CLAUDE.md should contain git checkout warning")
 	}
 }
@@ -344,7 +347,7 @@ func TestInjectBranchGuardrails_Idempotent(t *testing.T) {
 	}
 
 	// Guardrails should appear exactly once
-	count := countOccurrences(string(content2), "Branch Guardrails")
+	count := strings.Count(string(content2), "Branch Guardrails")
 	if count != 1 {
 		t.Errorf("CLAUDE.md contains %d 'Branch Guardrails', want 1", count)
 	}
@@ -379,35 +382,145 @@ func TestInjectBranchGuardrails_AppendsToExisting(t *testing.T) {
 	contentStr := string(content)
 
 	// Should contain both existing content and guardrails
-	if !contains(contentStr, "Existing Project Rules") {
+	if !strings.Contains(contentStr, "Existing Project Rules") {
 		t.Error("CLAUDE.md should preserve existing content")
 	}
-	if !contains(contentStr, "Branch Guardrails") {
+	if !strings.Contains(contentStr, "Branch Guardrails") {
 		t.Error("CLAUDE.md should contain guardrails")
 	}
 }
 
-func contains(s, substr string) bool {
-	return len(s) >= len(substr) && (s == substr || len(s) > 0 && containsHelper(s, substr))
-}
+func TestLocalBranchExists(t *testing.T) {
+	ctx := context.Background()
+	dir, cleanup := setupTestRepo(t)
+	defer cleanup()
 
-func containsHelper(s, substr string) bool {
-	for i := 0; i <= len(s)-len(substr); i++ {
-		if s[i:i+len(substr)] == substr {
-			return true
-		}
+	repo, err := Open(dir)
+	if err != nil {
+		t.Fatalf("Open() error = %v", err)
 	}
 
-	return false
-}
-
-func countOccurrences(s, substr string) int {
-	count := 0
-	for i := 0; i <= len(s)-len(substr); i++ {
-		if s[i:i+len(substr)] == substr {
-			count++
-		}
+	// The default branch (main or master) should exist locally
+	mainExists := repo.LocalBranchExists(ctx, "main")
+	masterExists := repo.LocalBranchExists(ctx, "master")
+	if !mainExists && !masterExists {
+		t.Error("LocalBranchExists should find main or master")
 	}
 
-	return count
+	// A non-existent branch should not be found
+	if repo.LocalBranchExists(ctx, "nonexistent-branch-xyz") {
+		t.Error("LocalBranchExists should return false for nonexistent branch")
+	}
+}
+
+func TestDefaultBranch_NoRemote(t *testing.T) {
+	ctx := context.Background()
+	dir, cleanup := setupTestRepo(t)
+	defer cleanup()
+
+	repo, err := Open(dir)
+	if err != nil {
+		t.Fatalf("Open() error = %v", err)
+	}
+
+	// Should detect default branch from local refs even without a remote
+	branch, err := repo.DefaultBranch(ctx)
+	if err != nil {
+		t.Fatalf("DefaultBranch() error = %v", err)
+	}
+	if branch != "main" && branch != "master" {
+		t.Errorf("DefaultBranch() = %q, want main or master", branch)
+	}
+}
+
+func TestCreateBranch_WithStartPoint(t *testing.T) {
+	ctx := context.Background()
+	dir, cleanup := setupTestRepo(t)
+	defer cleanup()
+
+	repo, err := Open(dir)
+	if err != nil {
+		t.Fatalf("Open() error = %v", err)
+	}
+
+	// Record the commit on the default branch
+	defaultBranch, _ := repo.DefaultBranch(ctx)
+	baseCommit, _ := repo.CurrentCommit(ctx)
+
+	// Create a divergent branch with a new commit
+	if err := repo.CreateBranch(ctx, "divergent", ""); err != nil {
+		t.Fatalf("CreateBranch divergent: %v", err)
+	}
+	testFile := filepath.Join(dir, "divergent.txt")
+	if err := os.WriteFile(testFile, []byte("divergent"), 0o644); err != nil {
+		t.Fatalf("write file: %v", err)
+	}
+	if _, err := repo.run(ctx, "add", "."); err != nil {
+		t.Fatalf("git add: %v", err)
+	}
+	if _, err := repo.run(ctx, "commit", "-m", "divergent commit"); err != nil {
+		t.Fatalf("git commit: %v", err)
+	}
+	divergentCommit, _ := repo.CurrentCommit(ctx)
+	if divergentCommit == baseCommit {
+		t.Fatal("divergent commit should differ from base")
+	}
+
+	// Now create a new branch from the default branch (not from current HEAD)
+	if err := repo.CreateBranch(ctx, "from-base", defaultBranch); err != nil {
+		t.Fatalf("CreateBranch from-base: %v", err)
+	}
+
+	// The new branch should be at the base commit, not the divergent commit
+	fromBaseCommit, _ := repo.CurrentCommit(ctx)
+	if fromBaseCommit != baseCommit {
+		t.Errorf("branch from-base commit = %s, want %s (base)", fromBaseCommit, baseCommit)
+	}
+}
+
+func TestCreateTaskWorktree_WithStartPoint(t *testing.T) {
+	ctx := context.Background()
+	dir, cleanup := setupTestRepo(t)
+	defer cleanup()
+
+	repo, err := Open(dir)
+	if err != nil {
+		t.Fatalf("Open() error = %v", err)
+	}
+
+	defaultBranch, _ := repo.DefaultBranch(ctx)
+	baseCommit, _ := repo.CurrentCommit(ctx)
+
+	// Create a divergent branch
+	if err := repo.CreateBranch(ctx, "divergent-wt", ""); err != nil {
+		t.Fatalf("CreateBranch: %v", err)
+	}
+	testFile := filepath.Join(dir, "divergent-wt.txt")
+	if err := os.WriteFile(testFile, []byte("divergent"), 0o644); err != nil {
+		t.Fatalf("write file: %v", err)
+	}
+	if _, err := repo.run(ctx, "add", "."); err != nil {
+		t.Fatalf("git add: %v", err)
+	}
+	if _, err := repo.run(ctx, "commit", "-m", "divergent commit"); err != nil {
+		t.Fatalf("git commit: %v", err)
+	}
+
+	// Create worktree from the default branch, not from current HEAD
+	basePath := t.TempDir()
+	wt, err := repo.CreateTaskWorktree(ctx, "task-startpoint", basePath, defaultBranch)
+	if err != nil {
+		t.Fatalf("CreateTaskWorktree() error = %v", err)
+	}
+	t.Cleanup(func() { _ = repo.RemoveWorktree(ctx, wt.Path, true) })
+
+	// Open the worktree as a repo and check its HEAD
+	wtRepo, err := Open(wt.Path)
+	if err != nil {
+		t.Fatalf("Open worktree: %v", err)
+	}
+	wtCommit, _ := wtRepo.CurrentCommit(ctx)
+	if wtCommit != baseCommit {
+		t.Errorf("worktree commit = %s, want %s (base branch commit)", wtCommit, baseCommit)
+	}
 }

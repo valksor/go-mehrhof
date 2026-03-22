@@ -50,7 +50,7 @@ func (r *Repository) ListWorktrees(ctx context.Context) ([]Worktree, error) {
 	return worktrees, nil
 }
 
-func (r *Repository) AddWorktree(ctx context.Context, path, branch string, create bool) error {
+func (r *Repository) AddWorktree(ctx context.Context, path, branch string, create bool, startPoint string) error {
 	args := []string{"worktree", "add"}
 	if create {
 		args = append(args, "-b", branch)
@@ -58,6 +58,9 @@ func (r *Repository) AddWorktree(ctx context.Context, path, branch string, creat
 	args = append(args, path)
 	if !create {
 		args = append(args, branch)
+	}
+	if create && startPoint != "" {
+		args = append(args, startPoint)
 	}
 
 	_, err := r.run(ctx, args...)
@@ -77,21 +80,25 @@ func (r *Repository) RemoveWorktree(ctx context.Context, path string, force bool
 	return err
 }
 
-func (r *Repository) CreateTaskBranch(ctx context.Context, taskID string) (string, error) {
+// CreateTaskBranch creates a kvelmo/<taskID> branch from startPoint (or HEAD
+// if empty). If the branch already exists, it switches to it and startPoint
+// is ignored — the existing branch history is preserved.
+func (r *Repository) CreateTaskBranch(ctx context.Context, taskID, startPoint string) (string, error) {
 	branchName := "kvelmo/" + taskID
 
-	// Check if branch exists
+	// Check if branch exists — if so, reattach to it as-is.
+	// The startPoint is intentionally ignored here: the branch already has
+	// its own history and we don't want to reset it to a different root.
 	_, err := r.run(ctx, "rev-parse", "--verify", branchName)
 	if err == nil {
-		// Branch exists, switch to it
 		return branchName, r.SwitchBranch(ctx, branchName)
 	}
 
-	// Create new branch
-	return branchName, r.CreateBranch(ctx, branchName)
+	// Create new branch from start point (or HEAD if empty)
+	return branchName, r.CreateBranch(ctx, branchName, startPoint)
 }
 
-func (r *Repository) CreateTaskWorktree(ctx context.Context, taskID, basePath string) (*Worktree, error) {
+func (r *Repository) CreateTaskWorktree(ctx context.Context, taskID, basePath, startPoint string) (*Worktree, error) {
 	branchName := "kvelmo/" + taskID
 	worktreePath := filepath.Join(basePath, taskID)
 
@@ -100,7 +107,7 @@ func (r *Repository) CreateTaskWorktree(ctx context.Context, taskID, basePath st
 		_ = r.RemoveWorktree(ctx, worktreePath, true)
 	}
 
-	if err := r.AddWorktree(ctx, worktreePath, branchName, true); err != nil {
+	if err := r.AddWorktree(ctx, worktreePath, branchName, true, startPoint); err != nil {
 		return nil, fmt.Errorf("add worktree: %w", err)
 	}
 

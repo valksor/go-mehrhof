@@ -127,9 +127,15 @@ func (r *Repository) CurrentCommit(ctx context.Context) (string, error) {
 	return r.run(ctx, "rev-parse", "HEAD")
 }
 
-func (r *Repository) CreateBranch(ctx context.Context, name string) error {
-	slog.Debug("git: creating branch", "name", name)
-	_, err := r.run(ctx, "checkout", "-b", name)
+func (r *Repository) CreateBranch(ctx context.Context, name, startPoint string) error {
+	slog.Debug("git: creating branch", "name", name, "startPoint", startPoint)
+
+	args := []string{"checkout", "-b", name}
+	if startPoint != "" {
+		args = append(args, startPoint)
+	}
+
+	_, err := r.run(ctx, args...)
 
 	return err
 }
@@ -163,6 +169,14 @@ func (r *Repository) DeleteRemoteBranch(ctx context.Context, name string) error 
 // BranchExists checks if a branch exists (local or remote).
 func (r *Repository) BranchExists(ctx context.Context, name string) bool {
 	_, err := r.run(ctx, "rev-parse", "--verify", name)
+
+	return err == nil
+}
+
+// LocalBranchExists checks if a local branch exists (refs/heads/ only).
+// Unlike BranchExists, this won't match remote tracking branches.
+func (r *Repository) LocalBranchExists(ctx context.Context, name string) bool {
+	_, err := r.run(ctx, "rev-parse", "--verify", "refs/heads/"+name)
 
 	return err == nil
 }
@@ -494,22 +508,31 @@ func (r *Repository) DiffFilesWithStatus(ctx context.Context) ([]FileStatus, err
 	return result, nil
 }
 
-// DefaultBranch returns the default branch name for the remote origin.
-// It queries git symbolic-ref for origin/HEAD and extracts the branch name.
-// Returns an error if detection fails (no silent fallback).
+// DefaultBranch returns the default branch name.
+// Detection order: remote HEAD symbolic ref (authoritative), then local
+// main/master existence as fallback for offline or no-remote scenarios.
+// Returns error if detection fails — callers should configure git.base_branch.
 func (r *Repository) DefaultBranch(ctx context.Context) (string, error) {
+	// 1. Try remote HEAD symbolic ref — this is authoritative when available.
 	out, err := r.run(ctx, "symbolic-ref", "refs/remotes/origin/HEAD")
-	if err != nil || out == "" {
-		return "", errors.New("cannot detect default branch: run 'git remote set-head origin --auto' or configure git.base_branch in settings")
-	}
-	// Output is like "refs/remotes/origin/main" - trim the known prefix.
-	// Using prefix trim (not split) to handle branch names with slashes like "feature/login".
-	if strings.HasPrefix(out, "refs/remotes/origin/") {
-		return strings.TrimPrefix(out, "refs/remotes/origin/"), nil
-	}
-	if strings.HasPrefix(out, "refs/heads/") {
-		return strings.TrimPrefix(out, "refs/heads/"), nil
+	if err == nil && out != "" {
+		var name string
+		if strings.HasPrefix(out, "refs/remotes/origin/") {
+			name = strings.TrimPrefix(out, "refs/remotes/origin/")
+		} else if strings.HasPrefix(out, "refs/heads/") {
+			name = strings.TrimPrefix(out, "refs/heads/")
+		}
+		if name != "" {
+			return name, nil
+		}
 	}
 
-	return "", fmt.Errorf("cannot parse default branch from: %s", out)
+	// 2. Fall back to local main/master for offline or no-remote repos.
+	for _, name := range []string{"main", "master"} {
+		if r.LocalBranchExists(ctx, name) {
+			return name, nil
+		}
+	}
+
+	return "", errors.New("cannot detect default branch: origin/HEAD not set and no local main/master branch found; run 'kvelmo config set git.base_branch <branch>' to configure")
 }
