@@ -491,6 +491,11 @@ func (c *Conductor) getBaseBranch(ctx context.Context) (string, error) {
 	return "", errors.New("cannot determine base branch: git not available and git.base_branch not configured")
 }
 
+// GetBaseBranch returns the base branch from settings or git detection.
+func (c *Conductor) GetBaseBranch(ctx context.Context) (string, error) {
+	return c.getBaseBranch(ctx)
+}
+
 // GetEffectiveSettings returns the effective (merged) settings.
 func (c *Conductor) GetEffectiveSettings() *settings.Settings {
 	return c.getEffectiveSettings()

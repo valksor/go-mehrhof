@@ -482,31 +482,9 @@ func (w *WorktreeSocket) handleStart(ctx context.Context, req *Request) (*Respon
 		w.conductor.SetAutoAdvance(true)
 	}
 
-	// Determine worktree isolation: explicit param overrides, else check effective settings.
-	useIsolation := params.UseWorktreeIsolation
-	if !useIsolation {
-		if effective, _, _, err := settings.LoadEffective(w.path); err == nil {
-			useIsolation = settings.BoolValue(effective.Workflow.UseWorktreeIsolation, true)
-		}
-	}
-
-	if useIsolation && w.repo != nil {
-		wu := w.conductor.WorkUnit()
-		if wu != nil {
-			isolationBasePath := filepath.Join(w.path, ".kvelmo", "worktrees")
-			if err := os.MkdirAll(isolationBasePath, 0o755); err == nil {
-				wt, err := w.repo.CreateTaskWorktree(ctx, wu.ID, isolationBasePath)
-				if err == nil {
-					wu.WorktreePath = wt.Path
-					wu.Branch = wt.Branch
-					slog.Info("handleStart: created worktree isolation", "path", wt.Path, "branch", wt.Branch)
-				} else {
-					slog.Warn("handleStart: worktree creation failed", "error", err)
-				}
-			} else {
-				slog.Warn("handleStart: mkdir failed for worktree base", "path", isolationBasePath, "error", err)
-			}
-		}
+	// Worktree isolation is handled inside conductor.Start(). Log if active.
+	if wu := w.conductor.WorkUnit(); wu != nil && wu.WorktreePath != "" {
+		slog.Info("handleStart: worktree isolation active", "path", wu.WorktreePath, "branch", wu.Branch)
 	}
 
 	// Auto-advance: trigger planning immediately after start

@@ -487,7 +487,7 @@ func TestE2E_GitOperations(t *testing.T) {
 
 	// Test creating a branch
 	branchName := fmt.Sprintf("e2e-git-test-%d", time.Now().Unix())
-	if err := gitRepo.CreateBranch(ctx, branchName); err != nil {
+	if err := gitRepo.CreateBranch(ctx, branchName, ""); err != nil {
 		t.Fatalf("CreateBranch: %v", err)
 	}
 	t.Logf("Created branch: %s", branchName)

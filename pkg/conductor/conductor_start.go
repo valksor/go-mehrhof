@@ -108,18 +108,29 @@ func (c *Conductor) Start(ctx context.Context, sourceRef string) error {
 			}
 		}
 
+		// Resolve local base branch to use as start point for new branches/worktrees.
+		baseBranch, baseErr := c.getBaseBranch(ctx)
+		if baseErr != nil {
+			slog.Warn("could not detect base branch, new branches will fork from HEAD", "error", baseErr)
+			c.logVerbosef("Warning: could not detect base branch, new branches will fork from HEAD")
+		}
+
 		useWorktree := settings.BoolValue(effectiveSettings.Workflow.UseWorktreeIsolation, true)
 		if useWorktree {
-			// Create isolated git worktree so the main branch stays clean.
+			// Create isolated git worktree from the local base branch.
 			wtBasePath := filepath.Join(c.git.Path(), ".kvelmo", "worktrees")
-			wt, wtErr := c.git.CreateTaskWorktree(ctx, c.workUnit.ID, wtBasePath)
+			wt, wtErr := c.git.CreateTaskWorktree(ctx, c.workUnit.ID, wtBasePath, baseBranch)
 			if wtErr != nil {
 				slog.Warn("worktree isolation failed, falling back to branch", "error", wtErr)
 				useWorktree = false
 			} else {
 				c.workUnit.Branch = wt.Branch
 				c.workUnit.WorktreePath = wt.Path
-				c.logVerbosef("Created isolated worktree: %s (branch: %s)", wt.Path, wt.Branch)
+				if baseBranch != "" {
+					c.logVerbosef("Created isolated worktree: %s (branch: %s, base: %s)", wt.Path, wt.Branch, baseBranch)
+				} else {
+					c.logVerbosef("Created isolated worktree: %s (branch: %s)", wt.Path, wt.Branch)
+				}
 			}
 		}
 
@@ -133,11 +144,15 @@ func (c *Conductor) Start(ctx context.Context, sourceRef string) error {
 					c.logVerbosef("Switched to existing branch: %s", branchName)
 				}
 			} else {
-				if err := c.git.CreateBranch(ctx, branchName); err != nil {
+				if err := c.git.CreateBranch(ctx, branchName, baseBranch); err != nil {
 					c.logVerbosef("Warning: could not create branch: %v", err)
 				} else {
 					c.workUnit.Branch = branchName
-					c.logVerbosef("Created branch: %s", branchName)
+					if baseBranch != "" {
+						c.logVerbosef("Created branch: %s (base: %s)", branchName, baseBranch)
+					} else {
+						c.logVerbosef("Created branch: %s", branchName)
+					}
 				}
 			}
 		}
