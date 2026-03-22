@@ -20,22 +20,26 @@ const (
 // StateManager tracks execution state for all nodes and edges in a graph.
 // Thread-safe for concurrent scheduler access.
 type StateManager struct {
-	mu         sync.RWMutex
-	states     map[NodeID]NodeState
-	results    map[NodeID]string
-	errors     map[NodeID]string
-	edgeStates map[string]EdgeState // key: "from->to"
-	failEdges  map[NodeID]NodeID    // source → fail-branch target (copied from graph)
+	mu             sync.RWMutex
+	states         map[NodeID]NodeState
+	results        map[NodeID]string
+	errors         map[NodeID]string
+	edgeStates     map[string]EdgeState // key: "from->to"
+	failEdges      map[NodeID]NodeID    // source → fail-branch target (copied from graph)
+	iterationCount map[NodeID]int       // tracks iteration count per node
+	retryCount     map[NodeID]int       // tracks retry count per node (ErrorRetryThenFail)
 }
 
 // NewStateManager creates a state manager with all nodes in pending state.
 func NewStateManager(g *Graph) *StateManager {
 	sm := &StateManager{
-		states:     make(map[NodeID]NodeState, len(g.Nodes)),
-		results:    make(map[NodeID]string),
-		errors:     make(map[NodeID]string),
-		edgeStates: make(map[string]EdgeState),
-		failEdges:  make(map[NodeID]NodeID),
+		states:         make(map[NodeID]NodeState, len(g.Nodes)),
+		results:        make(map[NodeID]string),
+		errors:         make(map[NodeID]string),
+		edgeStates:     make(map[string]EdgeState),
+		failEdges:      make(map[NodeID]NodeID),
+		iterationCount: make(map[NodeID]int),
+		retryCount:     make(map[NodeID]int),
 	}
 
 	for id := range g.Nodes {
@@ -207,6 +211,67 @@ func (sm *StateManager) DependenciesSatisfied(node *Node) bool {
 	}
 
 	return true
+}
+
+// IncrementIteration increments and returns the iteration count for a node.
+func (sm *StateManager) IncrementIteration(id NodeID) int {
+	sm.mu.Lock()
+	defer sm.mu.Unlock()
+
+	sm.iterationCount[id]++
+
+	return sm.iterationCount[id]
+}
+
+// IterationCount returns the current iteration count for a node.
+func (sm *StateManager) IterationCount(id NodeID) int {
+	sm.mu.RLock()
+	defer sm.mu.RUnlock()
+
+	return sm.iterationCount[id]
+}
+
+// IncrementRetry increments and returns the retry count for a node.
+func (sm *StateManager) IncrementRetry(id NodeID) int {
+	sm.mu.Lock()
+	defer sm.mu.Unlock()
+
+	sm.retryCount[id]++
+
+	return sm.retryCount[id]
+}
+
+// RetryCount returns the current retry count for a node.
+func (sm *StateManager) RetryCount(id NodeID) int {
+	sm.mu.RLock()
+	defer sm.mu.RUnlock()
+
+	return sm.retryCount[id]
+}
+
+// ResetForIteration moves a completed node back to pending state for re-execution.
+// This is only valid from StateDone (iteration) or StateFailed (retry).
+func (sm *StateManager) ResetForIteration(id NodeID) error {
+	sm.mu.Lock()
+	defer sm.mu.Unlock()
+
+	state, exists := sm.states[id]
+	if !exists {
+		return fmt.Errorf("graph: unknown node %q", id)
+	}
+
+	if state != StateDone && state != StateFailed {
+		return fmt.Errorf("graph: cannot reset node %q from %s (must be done or failed)", id, state)
+	}
+
+	sm.states[id] = StatePending
+	delete(sm.errors, id)
+
+	if state == StateFailed {
+		delete(sm.results, id)
+	}
+
+	return nil
 }
 
 // edgeKey creates a map key for an edge.

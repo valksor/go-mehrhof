@@ -2,6 +2,7 @@ package graph
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"strings"
@@ -20,16 +21,23 @@ const (
 type SchedulerEventType string
 
 const (
-	EventNodeQueued     SchedulerEventType = "node_queued"
-	EventNodeStarted    SchedulerEventType = "node_started"
-	EventNodeCompleted  SchedulerEventType = "node_completed"
-	EventNodeFailed     SchedulerEventType = "node_failed"
-	EventNodeSkipped    SchedulerEventType = "node_skipped"
-	EventNodeFailRouted SchedulerEventType = "node_fail_routed" // Failure routed to handler node
-	EventNodeOutput     SchedulerEventType = "node_output"      // Streaming output from node's job
-	EventPhaseProgress  SchedulerEventType = "phase_progress"   // Aggregate progress
-	EventAllDone        SchedulerEventType = "all_done"         // All nodes finished
+	EventNodeQueued           SchedulerEventType = "node_queued"
+	EventNodeStarted          SchedulerEventType = "node_started"
+	EventNodeCompleted        SchedulerEventType = "node_completed"
+	EventNodeFailed           SchedulerEventType = "node_failed"
+	EventNodeSkipped          SchedulerEventType = "node_skipped"
+	EventNodeFailRouted       SchedulerEventType = "node_fail_routed"       // Failure routed to handler node
+	EventNodeOutput           SchedulerEventType = "node_output"            // Streaming output from node's job
+	EventNodeIteration        SchedulerEventType = "node_iteration"         // Node re-executing (iteration loop)
+	EventNodeRetry            SchedulerEventType = "node_retry"             // Node retrying after failure
+	EventNodeApprovalRequired SchedulerEventType = "node_approval_required" // Waiting for human approval
+	EventPhaseProgress        SchedulerEventType = "phase_progress"         // Aggregate progress
+	EventAllDone              SchedulerEventType = "all_done"               // All nodes finished
 )
+
+// SubTaskExecutor runs a sub-task in an isolated worktree and returns its result.
+// Provided by the conductor layer; the graph package does not depend on conductor.
+type SubTaskExecutor func(ctx context.Context, config SubTaskConfig) (string, error)
 
 // SchedulerEvent is emitted during graph execution.
 type SchedulerEvent struct {
@@ -69,6 +77,14 @@ func WithMaxParallel(n int) Option {
 	}
 }
 
+// WithSubTaskExecutor sets the function used to execute sub-task nodes.
+// Without this, sub-task nodes will fail with "no sub-task executor configured".
+func WithSubTaskExecutor(exec SubTaskExecutor) Option {
+	return func(s *Scheduler) {
+		s.subTaskExecutor = exec
+	}
+}
+
 // Scheduler executes a dependency graph by dispatching ready nodes to a worker pool.
 type Scheduler struct {
 	graph       *Graph
@@ -81,6 +97,13 @@ type Scheduler struct {
 	nodeJobs    map[NodeID]string // NodeID → worker job ID
 	nodeWg      sync.WaitGroup    // tracks in-flight watchNode goroutines
 	ctx         context.Context   //nolint:containedctx // needed by emit's blocking EventAllDone send; threading ctx through all callers is impractical
+
+	// Approval gates: channels for pending approval decisions.
+	approvals   map[NodeID]chan bool // NodeID → approval channel (true=approve, false=reject)
+	approvalsMu sync.Mutex
+
+	// SubTask executor: provided by the conductor layer to handle sub-task nodes.
+	subTaskExecutor SubTaskExecutor
 }
 
 // NewScheduler creates a scheduler for the given graph and worker pool.
@@ -92,6 +115,7 @@ func NewScheduler(g *Graph, pool *worker.Pool, opts ...Option) *Scheduler {
 		maxParallel: DefaultMaxParallel,
 		events:      make(chan SchedulerEvent, 100),
 		nodeJobs:    make(map[NodeID]string),
+		approvals:   make(map[NodeID]chan bool),
 	}
 
 	for _, opt := range opts {
@@ -280,12 +304,27 @@ func (s *Scheduler) enqueueReady(ctx context.Context, opts JobOpts) {
 			NodeLabel: node.Label,
 		})
 
+		// Approval gate: wait for human decision before dispatching.
+		if node.RequiresApproval {
+			s.waitForApproval(ctx, id, node, opts)
+
+			continue
+		}
+
 		s.dispatchNode(ctx, id, node, opts)
 	}
 }
 
 // dispatchNode submits a node's job to the worker pool and monitors it.
+// For sub-task nodes, it invokes the SubTaskExecutor instead.
 func (s *Scheduler) dispatchNode(ctx context.Context, id NodeID, node *Node, opts JobOpts) {
+	// Handle sub-task nodes via the executor callback.
+	if node.IsSubTask() {
+		s.dispatchSubTask(ctx, id, node, opts)
+
+		return
+	}
+
 	jobOpts := &worker.JobOptions{
 		WorkDir:     opts.WorkDir,
 		Environment: opts.Environment,
@@ -304,19 +343,15 @@ func (s *Scheduler) dispatchNode(ctx context.Context, id NodeID, node *Node, opt
 		slog.Error("graph: failed to submit job", "node", id, "error", err)
 
 		_ = s.state.Transition(id, StateRunning) // queued → running (briefly)
-		_ = s.state.Transition(id, StateFailed)
-		s.state.SetError(id, err.Error())
-		s.markFailureEdges(id, err.Error())
-
-		s.emit(SchedulerEvent{
-			Type:      EventNodeFailed,
-			NodeID:    id,
-			NodeLabel: node.Label,
-			Error:     err.Error(),
-		})
+		s.handleNodeFailure(ctx, id, node, err, opts)
 
 		// Check if fail-branch or skipped dependencies unlock new nodes.
-		go s.enqueueReady(ctx, opts)
+		s.nodeWg.Add(1)
+
+		go func() {
+			defer s.nodeWg.Done()
+			s.enqueueReady(ctx, opts)
+		}()
 
 		return
 	}
@@ -410,21 +445,83 @@ func (s *Scheduler) completeNode(ctx context.Context, id NodeID, node *Node, res
 	s.mu.Unlock()
 
 	if err != nil {
-		_ = s.state.Transition(id, StateFailed)
-		s.state.SetError(id, err.Error())
-		s.markFailureEdges(id, err.Error())
-
-		s.emit(SchedulerEvent{
-			Type:      EventNodeFailed,
-			NodeID:    id,
-			NodeLabel: node.Label,
-			Error:     err.Error(),
-		})
+		s.handleNodeFailure(ctx, id, node, err, opts)
 	} else {
-		_ = s.state.Transition(id, StateDone)
-		s.state.SetResult(id, result)
+		s.handleNodeSuccess(ctx, id, node, result, opts)
+	}
 
-		// Mark outgoing edges as taken.
+	s.emitProgress()
+
+	// Enqueue newly unblocked nodes.
+	s.enqueueReady(ctx, opts)
+}
+
+// handleNodeSuccess processes a successful node completion, including iteration checks.
+func (s *Scheduler) handleNodeSuccess(_ context.Context, id NodeID, node *Node, result string, _ JobOpts) {
+	// Check iteration loop: should this node re-execute?
+	if node.MaxIterations > 0 && node.IterationCheck != nil && node.IterationCheck(result) {
+		iteration := s.state.IncrementIteration(id)
+		if iteration < node.MaxIterations {
+			slog.Info("graph: node iterating",
+				"node", id,
+				"iteration", iteration+1,
+				"max", node.MaxIterations,
+			)
+
+			s.emit(SchedulerEvent{
+				Type:      EventNodeIteration,
+				NodeID:    id,
+				NodeLabel: node.Label,
+				Content:   fmt.Sprintf("iteration %d/%d", iteration+1, node.MaxIterations),
+			})
+
+			// Transition Running→Done, store result, then reset to Pending for re-execution.
+			_ = s.state.Transition(id, StateDone)
+			s.state.SetResult(id, result)
+
+			if err := s.state.ResetForIteration(id); err != nil {
+				slog.Error("graph: failed to reset node for iteration", "node", id, "error", err)
+			}
+			// Node will be re-enqueued by the next enqueueReady cycle.
+			return
+		}
+
+		slog.Info("graph: node iteration limit reached", "node", id, "iterations", iteration)
+	}
+
+	// Normal completion.
+	_ = s.state.Transition(id, StateDone)
+	s.state.SetResult(id, result)
+
+	// Mark outgoing edges as taken.
+	for _, dep := range s.graph.Dependents(id) {
+		s.state.SetEdgeState(id, dep, EdgeTaken)
+	}
+
+	s.emit(SchedulerEvent{
+		Type:      EventNodeCompleted,
+		NodeID:    id,
+		NodeLabel: node.Label,
+	})
+}
+
+// handleNodeFailure processes a node failure with error strategy support.
+func (s *Scheduler) handleNodeFailure(ctx context.Context, id NodeID, node *Node, err error, opts JobOpts) {
+	switch node.ErrorStrategy {
+	case ErrorFail:
+		// Fall through to default failure handling below.
+
+	case ErrorDefaultValue:
+		// Use fallback output and treat as success.
+		slog.Info("graph: node failed, using default output",
+			"node", id,
+			"error", err,
+			"default", node.DefaultOutput,
+		)
+
+		_ = s.state.Transition(id, StateDone)
+		s.state.SetResult(id, node.DefaultOutput)
+
 		for _, dep := range s.graph.Dependents(id) {
 			s.state.SetEdgeState(id, dep, EdgeTaken)
 		}
@@ -433,13 +530,72 @@ func (s *Scheduler) completeNode(ctx context.Context, id NodeID, node *Node, res
 			Type:      EventNodeCompleted,
 			NodeID:    id,
 			NodeLabel: node.Label,
+			Content:   "default-value",
 		})
+
+		return
+
+	case ErrorRetryThenFail:
+		retryCount := s.state.IncrementRetry(id)
+		if retryCount <= node.MaxRetries {
+			slog.Info("graph: node retrying",
+				"node", id,
+				"retry", retryCount,
+				"max", node.MaxRetries,
+				"error", err,
+			)
+
+			s.emit(SchedulerEvent{
+				Type:      EventNodeRetry,
+				NodeID:    id,
+				NodeLabel: node.Label,
+				Content:   fmt.Sprintf("retry %d/%d", retryCount, node.MaxRetries),
+				Error:     err.Error(),
+			})
+
+			// Transition to failed first (valid from Running), then reset to pending.
+			if s.state.Get(id) == StateRunning {
+				_ = s.state.Transition(id, StateFailed)
+			}
+
+			if err := s.state.ResetForIteration(id); err != nil {
+				slog.Error("graph: failed to reset node for retry", "node", id, "error", err)
+			}
+
+			// Schedule retry with delay if configured.
+			if node.RetryDelay > 0 {
+				s.nodeWg.Add(1)
+
+				go func() {
+					defer s.nodeWg.Done()
+
+					select {
+					case <-time.After(node.RetryDelay):
+						s.enqueueReady(ctx, opts)
+					case <-ctx.Done():
+					}
+				}()
+
+				return
+			}
+
+			// Node will be re-enqueued by the next enqueueReady cycle.
+			return
+		}
+		// Fall through to normal failure after retries exhausted.
 	}
 
-	s.emitProgress()
+	// Default failure handling (ErrorFail or retries exhausted).
+	_ = s.state.Transition(id, StateFailed)
+	s.state.SetError(id, err.Error())
+	s.markFailureEdges(id, err.Error())
 
-	// Enqueue newly unblocked nodes.
-	s.enqueueReady(ctx, opts)
+	s.emit(SchedulerEvent{
+		Type:      EventNodeFailed,
+		NodeID:    id,
+		NodeLabel: node.Label,
+		Error:     err.Error(),
+	})
 }
 
 // markFailureEdges sets edge states after a node failure.
@@ -544,6 +700,153 @@ func joinErrors(msgs []string) string {
 	}
 
 	return sb.String()
+}
+
+// dispatchSubTask handles execution of sub-task nodes via the SubTaskExecutor.
+func (s *Scheduler) dispatchSubTask(ctx context.Context, id NodeID, node *Node, opts JobOpts) {
+	if s.subTaskExecutor == nil {
+		slog.Error("graph: no sub-task executor configured", "node", id)
+
+		_ = s.state.Transition(id, StateRunning)
+		s.handleNodeFailure(ctx, id, node, errors.New("no sub-task executor configured"), opts)
+
+		s.nodeWg.Add(1)
+
+		go func() {
+			defer s.nodeWg.Done()
+			s.enqueueReady(ctx, opts)
+		}()
+
+		return
+	}
+
+	// Note: s.running is accessed without lock because caller (enqueueReady) holds s.mu.
+	s.running++
+
+	if err := s.state.Transition(id, StateRunning); err != nil {
+		slog.Error("graph: failed to transition sub-task to running", "node", id, "error", err)
+	}
+
+	s.emit(SchedulerEvent{
+		Type:      EventNodeStarted,
+		NodeID:    id,
+		NodeLabel: node.Label,
+		Content:   "sub-task: " + node.SubTask.Title,
+	})
+
+	s.emitProgress()
+
+	// Run the sub-task in a goroutine.
+	s.nodeWg.Add(1)
+
+	go func() {
+		defer s.nodeWg.Done()
+
+		result, err := s.subTaskExecutor(ctx, *node.SubTask)
+		s.completeNode(ctx, id, node, result, err, opts)
+	}()
+}
+
+// waitForApproval emits an approval event and spawns a goroutine that blocks
+// until approved, rejected, or timed out. Must be called with s.mu held;
+// the caller's deferred unlock releases the lock after this function returns.
+func (s *Scheduler) waitForApproval(ctx context.Context, id NodeID, node *Node, opts JobOpts) {
+	ch := make(chan bool, 1)
+
+	s.approvalsMu.Lock()
+	s.approvals[id] = ch
+	s.approvalsMu.Unlock()
+
+	prompt := node.ApprovalPrompt
+	if prompt == "" {
+		prompt = fmt.Sprintf("Approve execution of node %q?", id)
+	}
+
+	s.emit(SchedulerEvent{
+		Type:      EventNodeApprovalRequired,
+		NodeID:    id,
+		NodeLabel: node.Label,
+		Content:   prompt,
+	})
+
+	s.nodeWg.Add(1)
+
+	go func() {
+		defer s.nodeWg.Done()
+		defer func() {
+			s.approvalsMu.Lock()
+			delete(s.approvals, id)
+			s.approvalsMu.Unlock()
+		}()
+
+		var timeoutCh <-chan time.Time
+		if node.ApprovalTimeout > 0 {
+			timer := time.NewTimer(node.ApprovalTimeout)
+			defer timer.Stop()
+			timeoutCh = timer.C
+		}
+
+		select {
+		case approved := <-ch:
+			if approved {
+				slog.Info("graph: node approved", "node", id)
+				s.mu.Lock()
+				s.dispatchNode(ctx, id, node, opts)
+				s.mu.Unlock()
+			} else {
+				slog.Info("graph: node rejected", "node", id)
+				_ = s.state.Transition(id, StateRunning) // queued → running (briefly)
+				s.handleNodeFailure(ctx, id, node, errors.New("approval rejected"), opts)
+				s.emitProgress()
+				s.enqueueReady(ctx, opts)
+			}
+		case <-timeoutCh:
+			slog.Info("graph: node approval timed out", "node", id, "timeout", node.ApprovalTimeout)
+			_ = s.state.Transition(id, StateRunning)
+			s.handleNodeFailure(ctx, id, node, fmt.Errorf("approval timed out after %v", node.ApprovalTimeout), opts)
+			s.emitProgress()
+			s.enqueueReady(ctx, opts)
+		case <-ctx.Done():
+			_ = s.state.Transition(id, StateRunning)
+			s.handleNodeFailure(ctx, id, node, ctx.Err(), opts)
+		}
+	}()
+}
+
+// ApproveNode approves a pending approval gate, allowing the node to execute.
+func (s *Scheduler) ApproveNode(id NodeID) bool {
+	s.approvalsMu.Lock()
+	ch, ok := s.approvals[id]
+	s.approvalsMu.Unlock()
+
+	if !ok {
+		return false
+	}
+
+	select {
+	case ch <- true:
+		return true
+	default:
+		return false
+	}
+}
+
+// RejectNode rejects a pending approval gate, failing the node.
+func (s *Scheduler) RejectNode(id NodeID) bool {
+	s.approvalsMu.Lock()
+	ch, ok := s.approvals[id]
+	s.approvalsMu.Unlock()
+
+	if !ok {
+		return false
+	}
+
+	select {
+	case ch <- false:
+		return true
+	default:
+		return false
+	}
 }
 
 func (s *Scheduler) emit(evt SchedulerEvent) {

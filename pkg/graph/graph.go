@@ -7,9 +7,23 @@ import (
 	"errors"
 	"fmt"
 	"slices"
+	"time"
 
 	"github.com/valksor/kvelmo/pkg/worker"
 )
+
+// ErrorStrategy defines how a node handles execution failures.
+type ErrorStrategy int
+
+const (
+	ErrorFail          ErrorStrategy = iota // Default: mark failed, cascade skip to dependents
+	ErrorDefaultValue                       // Use DefaultOutput as result, mark done
+	ErrorRetryThenFail                      // Retry up to MaxRetries times, then fail
+)
+
+// IterationCheck decides whether a completed node should re-execute.
+// It receives the node's output and returns true if another iteration is needed.
+type IterationCheck func(output string) bool
 
 // NodeID uniquely identifies a node within a graph.
 type NodeID string
@@ -22,11 +36,11 @@ type ConditionFunc func(results map[NodeID]string) bool
 // Instead of running an agent prompt, the node creates an isolated worktree
 // and runs the specified lifecycle phases within it.
 type SubTaskConfig struct {
-	Title       string            `json:"title"`
-	Description string            `json:"description"`
-	Phases      []string          `json:"phases"`   // e.g., ["plan", "implement"]
-	Branch      string            `json:"branch"`   // branch name for sub-task worktree
-	Metadata    map[string]string `json:"metadata"` // passed to sub-task conductor
+	Title       string            `json:"title"       yaml:"title"`
+	Description string            `json:"description" yaml:"description"`
+	Phases      []string          `json:"phases"      yaml:"phases"`   // e.g., ["plan", "implement"]
+	Branch      string            `json:"branch"      yaml:"branch"`   // branch name for sub-task worktree
+	Metadata    map[string]string `json:"metadata"    yaml:"metadata"` // passed to sub-task conductor
 }
 
 // Node represents a schedulable unit of work within a phase.
@@ -39,6 +53,22 @@ type Node struct {
 	Condition  ConditionFunc // Optional: skip if returns false (nil = always run)
 	Frozen     bool          // If true, return cached result instead of re-executing (Langflow pattern)
 	FailBranch *NodeID       // Optional: route to this node on failure instead of cascading skip
+
+	// Iteration: re-execute the node until IterationCheck returns false or
+	// MaxIterations is reached. 0 means no iteration (execute once).
+	MaxIterations  int            // Max iteration count (0 = no loop)
+	IterationCheck IterationCheck // Check output; return true to re-execute
+
+	// Error strategy: controls how failures are handled before fail-branch routing.
+	ErrorStrategy ErrorStrategy // Default: ErrorFail
+	DefaultOutput string        // Fallback result when ErrorStrategy == ErrorDefaultValue
+	MaxRetries    int           // Retry count when ErrorStrategy == ErrorRetryThenFail
+	RetryDelay    time.Duration // Delay between retries
+
+	// Approval gate: pause execution until human approves.
+	RequiresApproval bool          // If true, emit approval event and wait before executing
+	ApprovalPrompt   string        // Shown to user for context
+	ApprovalTimeout  time.Duration // Auto-reject after timeout (0 = wait forever)
 
 	// SubTask, if set, makes this node spawn a sub-task lifecycle instead of
 	// submitting an agent prompt. The sub-task runs in an isolated worktree.
@@ -214,6 +244,23 @@ func (g *Graph) Validate() error {
 	for _, node := range g.Nodes {
 		if node.SubTask != nil && node.Prompt != "" {
 			return fmt.Errorf("graph: node %q cannot have both prompt and sub-task", node.ID)
+		}
+	}
+
+	// Validate iteration config.
+	for _, node := range g.Nodes {
+		if node.MaxIterations > 0 && node.IterationCheck == nil {
+			return fmt.Errorf("graph: node %q has MaxIterations=%d but no IterationCheck", node.ID, node.MaxIterations)
+		}
+		if node.MaxIterations < 0 {
+			return fmt.Errorf("graph: node %q has negative MaxIterations", node.ID)
+		}
+	}
+
+	// Validate error strategy config.
+	for _, node := range g.Nodes {
+		if node.ErrorStrategy == ErrorRetryThenFail && node.MaxRetries <= 0 {
+			return fmt.Errorf("graph: node %q uses ErrorRetryThenFail but MaxRetries=%d", node.ID, node.MaxRetries)
 		}
 	}
 
