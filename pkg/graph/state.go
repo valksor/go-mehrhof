@@ -122,6 +122,23 @@ func (sm *StateManager) Results() map[NodeID]string {
 	return out
 }
 
+// PreloadResults marks nodes as completed with cached results from a previous run.
+// These nodes will be skipped during execution, enabling partial re-execution
+// when a graph fails midway and is retried.
+func (sm *StateManager) PreloadResults(results map[NodeID]string) {
+	sm.mu.Lock()
+	defer sm.mu.Unlock()
+
+	for nodeID, result := range results {
+		if _, exists := sm.states[nodeID]; !exists {
+			continue // Skip unknown nodes (graph may have changed between runs)
+		}
+
+		sm.states[nodeID] = StateDone
+		sm.results[nodeID] = result
+	}
+}
+
 // AllDone returns true if every node is in a terminal state (done, failed, or skipped).
 func (sm *StateManager) AllDone() bool {
 	sm.mu.RLock()

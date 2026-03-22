@@ -50,6 +50,11 @@ type JobOpts struct {
 	WorkDir     string
 	Environment map[string]string
 	Metadata    map[string]any
+
+	// ResumeFrom pre-populates results for completed nodes, skipping their
+	// execution. Keys are node IDs, values are cached results from a previous
+	// run. This enables partial re-execution when a graph fails midway.
+	ResumeFrom map[NodeID]string
 }
 
 // Option configures a Scheduler.
@@ -74,6 +79,7 @@ type Scheduler struct {
 	mu          sync.Mutex
 	events      chan SchedulerEvent
 	nodeJobs    map[NodeID]string // NodeID → worker job ID
+	nodeWg      sync.WaitGroup    // tracks in-flight watchNode goroutines
 	ctx         context.Context   //nolint:containedctx // needed by emit's blocking EventAllDone send; threading ctx through all callers is impractical
 }
 
@@ -125,7 +131,10 @@ func (s *Scheduler) State() *StateManager {
 
 func (s *Scheduler) run(ctx context.Context, opts JobOpts) {
 	s.ctx = ctx // Set before any child goroutine is spawned (happens-before via goroutine creation)
-	defer close(s.events)
+	defer func() {
+		s.nodeWg.Wait() // Wait for all watchNode goroutines before closing the event channel
+		close(s.events)
+	}()
 
 	// Validate graph before executing.
 	if err := s.graph.Validate(); err != nil {
@@ -136,6 +145,38 @@ func (s *Scheduler) run(ctx context.Context, opts JobOpts) {
 		})
 
 		return
+	}
+
+	// Preload cached results from a previous run for partial re-execution.
+	if len(opts.ResumeFrom) > 0 {
+		s.state.PreloadResults(opts.ResumeFrom)
+
+		// Emit skip events for preloaded nodes and mark their outgoing edges.
+		for _, id := range s.graph.NodeIDs() {
+			if s.state.Get(id) != StateDone {
+				continue
+			}
+
+			if _, cached := opts.ResumeFrom[id]; !cached {
+				continue
+			}
+
+			node := s.graph.Nodes[id]
+
+			// Mark outgoing edges as taken so dependents become eligible.
+			for _, dep := range s.graph.Dependents(id) {
+				s.state.SetEdgeState(id, dep, EdgeTaken)
+			}
+
+			s.emit(SchedulerEvent{
+				Type:      EventNodeSkipped,
+				NodeID:    id,
+				NodeLabel: node.Label,
+				Content:   "cached",
+			})
+		}
+
+		slog.Info("graph: resumed from cached results", "cached_nodes", len(opts.ResumeFrom))
 	}
 
 	// Seed the ready queue with root nodes.
@@ -297,7 +338,11 @@ func (s *Scheduler) dispatchNode(ctx context.Context, id NodeID, node *Node, opt
 	s.emitProgress()
 
 	// Monitor the job in a goroutine.
-	go s.watchNode(ctx, id, node, job.ID, opts)
+	s.nodeWg.Add(1)
+	go func() {
+		defer s.nodeWg.Done()
+		s.watchNode(ctx, id, node, job.ID, opts)
+	}()
 }
 
 // watchNode monitors a running job and updates state on completion.

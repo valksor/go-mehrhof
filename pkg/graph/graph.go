@@ -18,6 +18,17 @@ type NodeID string
 // Returning false causes the node to be skipped.
 type ConditionFunc func(results map[NodeID]string) bool
 
+// SubTaskConfig defines a sub-task to be spawned as a graph node.
+// Instead of running an agent prompt, the node creates an isolated worktree
+// and runs the specified lifecycle phases within it.
+type SubTaskConfig struct {
+	Title       string            `json:"title"`
+	Description string            `json:"description"`
+	Phases      []string          `json:"phases"`   // e.g., ["plan", "implement"]
+	Branch      string            `json:"branch"`   // branch name for sub-task worktree
+	Metadata    map[string]string `json:"metadata"` // passed to sub-task conductor
+}
+
 // Node represents a schedulable unit of work within a phase.
 type Node struct {
 	ID         NodeID
@@ -28,6 +39,15 @@ type Node struct {
 	Condition  ConditionFunc // Optional: skip if returns false (nil = always run)
 	Frozen     bool          // If true, return cached result instead of re-executing (Langflow pattern)
 	FailBranch *NodeID       // Optional: route to this node on failure instead of cascading skip
+
+	// SubTask, if set, makes this node spawn a sub-task lifecycle instead of
+	// submitting an agent prompt. The sub-task runs in an isolated worktree.
+	SubTask *SubTaskConfig `json:"sub_task,omitempty"`
+}
+
+// IsSubTask returns true if the node spawns a sub-task lifecycle.
+func (n *Node) IsSubTask() bool {
+	return n.SubTask != nil
 }
 
 // EdgeState tracks the execution state of an edge between two nodes.
@@ -187,6 +207,13 @@ func (g *Graph) Validate() error {
 
 		if !slices.Contains(targetNode.DependsOn, node.ID) {
 			return fmt.Errorf("graph: fail-branch target %q must list %q in DependsOn", target, node.ID)
+		}
+	}
+
+	// Validate prompt/sub-task mutual exclusivity.
+	for _, node := range g.Nodes {
+		if node.SubTask != nil && node.Prompt != "" {
+			return fmt.Errorf("graph: node %q cannot have both prompt and sub-task", node.ID)
 		}
 	}
 
