@@ -2,6 +2,7 @@ package conductor
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log/slog"
 	"path/filepath"
@@ -24,7 +25,13 @@ import (
 func (c *Conductor) watchGraph(ctx context.Context, sched *graph.Scheduler, completionEvent Event) {
 	// Pre-job safety checkpoint is created by the caller (Plan, etc.) before
 	// starting this goroutine, matching the pattern used by watchJob callers.
-	events := sched.Run(ctx, c.buildGraphJobOpts())
+	// Load cached partial results and build job opts under lock.
+	c.mu.RLock()
+	opts := c.buildGraphJobOpts()
+	opts.ResumeFrom = c.loadPartialResults(completionEvent)
+	c.mu.RUnlock()
+
+	events := sched.Run(ctx, opts)
 
 	for evt := range events {
 		switch evt.Type {
@@ -109,12 +116,15 @@ func (c *Conductor) handleGraphCompletion(ctx context.Context, sched *graph.Sche
 	}
 
 	if errMsg != "" {
-		// Graph had failures — save partial work checkpoint.
+		// Graph had failures — save partial results for resume-on-retry.
+		c.savePartialResults(sched, completionEvent)
+
+		// Save partial work checkpoint.
 		c.createSafetyCheckpoint(ctx, fmt.Sprintf("partial work before %s failure", completionEvent))
 		c.mu.Unlock()
 
 		// Apply per-phase failure policy before default error handling.
-		if c.applyFailurePolicy(ctx, completionEvent) {
+		if c.applyFailurePolicy(ctx, completionEvent, errMsg) {
 			return // Policy handled it (retry or skip)
 		}
 
@@ -132,6 +142,9 @@ func (c *Conductor) handleGraphCompletion(ctx context.Context, sched *graph.Sche
 
 		return
 	}
+
+	// Success — clear cached partial results since they are no longer needed.
+	c.clearPartialResults(completionEvent)
 
 	// Success path — same as watchJob completion.
 	if completionEvent == EventPlanDone {
@@ -224,6 +237,90 @@ func (c *Conductor) buildGraphJobOpts() graph.JobOpts {
 	}
 
 	return opts
+}
+
+// partialResultsKey returns the varpool key for caching partial graph results.
+func partialResultsKey(phase string) string {
+	return "_graph_partial_results_" + phase
+}
+
+// savePartialResults saves completed node results to the varpool so they can
+// be restored on retry, enabling partial re-execution.
+// Must be called with c.mu held.
+func (c *Conductor) savePartialResults(sched *graph.Scheduler, completionEvent Event) {
+	phase := phaseFromEvent(completionEvent)
+	if phase == "" || c.varPool == nil || sched == nil {
+		return
+	}
+
+	results := sched.State().Results()
+
+	// Filter to only nodes that completed successfully (exclude internal keys).
+	completed := make(map[graph.NodeID]string, len(results))
+	for id, val := range results {
+		if strings.HasPrefix(string(id), "__") {
+			continue
+		}
+		if sched.State().Get(id) == graph.StateDone {
+			completed[id] = val
+		}
+	}
+
+	if len(completed) == 0 {
+		return
+	}
+
+	data, err := json.Marshal(completed)
+	if err != nil {
+		slog.Warn("failed to marshal partial results", "phase", phase, "error", err)
+
+		return
+	}
+
+	c.varPool.SetScoped(varpool.ScopeSystem, partialResultsKey(phase), string(data), "graph-scheduler")
+	c.persistVarPool()
+
+	slog.Info("saved partial graph results for retry",
+		"phase", phase, "completed_nodes", len(completed))
+}
+
+// loadPartialResults loads cached partial results from the varpool.
+// Returns nil if no cached results exist for the phase.
+// Must be called with c.mu held.
+func (c *Conductor) loadPartialResults(completionEvent Event) map[graph.NodeID]string {
+	phase := phaseFromEvent(completionEvent)
+	if phase == "" || c.varPool == nil {
+		return nil
+	}
+
+	raw := c.varPool.GetScopedString(varpool.ScopeSystem, partialResultsKey(phase))
+	if raw == "" {
+		return nil
+	}
+
+	var results map[graph.NodeID]string
+	if err := json.Unmarshal([]byte(raw), &results); err != nil {
+		slog.Warn("failed to unmarshal partial results", "phase", phase, "error", err)
+
+		return nil
+	}
+
+	slog.Info("loaded cached partial results for resume",
+		"phase", phase, "cached_nodes", len(results))
+
+	return results
+}
+
+// clearPartialResults removes cached partial results after successful completion.
+// Must be called with c.mu held.
+func (c *Conductor) clearPartialResults(completionEvent Event) {
+	phase := phaseFromEvent(completionEvent)
+	if phase == "" || c.varPool == nil {
+		return
+	}
+
+	// Match the key produced by SetScoped in savePartialResults: "sys." + name.
+	c.varPool.Delete(varpool.ScopeSystem + "." + partialResultsKey(phase))
 }
 
 // createSafetyCheckpoint stages and commits all changes as a safety checkpoint.
@@ -321,6 +418,9 @@ func (c *Conductor) resolveStrategy(phase string) strategy.Strategy {
 
 // applyStrategy wraps a raw prompt through the resolved strategy for the phase.
 // Must be called with c.mu held (at least RLock).
+// applyStrategy wraps a raw prompt with the phase strategy and phase-aware context.
+// It also builds phase-aware context using the context profile for the phase
+// and emits context_metrics as a ConductorEvent.
 func (c *Conductor) applyStrategy(phase, prompt string) string {
 	s := c.resolveStrategy(phase)
 
@@ -331,10 +431,28 @@ func (c *Conductor) applyStrategy(phase, prompt string) string {
 		}
 	}
 
+	// Build phase-aware context from the profile.
+	var phaseContext string
+	profiles := DefaultContextProfiles()
+	if profile, ok := profiles[phase]; ok {
+		var metrics ContextMetrics
+		phaseContext, metrics = BuildPhaseContext(profile, c.workUnit, c.varPool)
+
+		// Emit context metrics as an event (non-blocking, best-effort).
+		if metricsData, err := json.Marshal(metrics); err == nil {
+			go c.emit(ConductorEvent{
+				Type:    "context_metrics",
+				Message: fmt.Sprintf("Phase %s context: %d tokens used, %d sections", phase, metrics.TokensUsed, len(metrics.SectionsIncluded)),
+				Data:    metricsData,
+			})
+		}
+	}
+
 	return s.BuildPrompt(strategy.Input{
 		Task:      prompt,
 		Phase:     phase,
 		Variables: vars,
+		Context:   phaseContext,
 	})
 }
 
@@ -390,11 +508,27 @@ func (c *Conductor) persistVarPool() {
 // accordingly. Returns true if the error was handled (retry or skip), in which
 // case the caller should skip the default error path.
 // Must NOT be called with c.mu held.
-func (c *Conductor) applyFailurePolicy(ctx context.Context, completionEvent Event) bool {
+func (c *Conductor) applyFailurePolicy(ctx context.Context, completionEvent Event, errMsg string) bool {
 	phase := phaseFromEvent(completionEvent)
 	if phase == "" {
 		return false
 	}
+
+	// Classify the failure and store it for status reporting
+	failErr := fmt.Errorf("%s", errMsg)
+	failClass := ClassifyError(failErr, phase)
+	c.mu.Lock()
+	c.lastFailureClass = failClass
+	c.mu.Unlock()
+
+	c.emit(ConductorEvent{
+		Type:           "phase_failure_classified",
+		Phase:          phase,
+		Message:        fmt.Sprintf("Phase %s failed (%s): %s", phase, failClass, errMsg),
+		Error:          errMsg,
+		FailureClass:   failClass,
+		FailureMessage: errMsg,
+	})
 
 	c.mu.RLock()
 	policy, ok := c.phasePolicies[phase]

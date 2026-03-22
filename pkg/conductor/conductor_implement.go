@@ -72,11 +72,8 @@ func (c *Conductor) Implement(ctx context.Context, force bool) (string, error) {
 		c.machine.SetPriorStableState(currentState)
 	}
 
-	// Reset quality gate on re-implement so stale results don't carry forward
-	if currentState == StateImplemented || currentState == StateSubmitted {
-		c.workUnit.QualityGatePassed = nil
-		c.workUnit.QualityGateError = ""
-	}
+	// Clear per-phase transient state to prevent leakage across re-entries.
+	c.resetPhaseState("implement")
 
 	// Skip-plan: when implementing from loaded state, use description as implicit spec
 	skippingPlan := currentState == StateLoaded
@@ -96,8 +93,12 @@ func (c *Conductor) Implement(ctx context.Context, force bool) (string, error) {
 
 	c.setupCanaryHarness()
 	prompt := c.applyStrategy("implement", c.buildImplementPrompt())
+	implJobType := worker.JobTypeImplement
+	if c.dryRun {
+		implJobType = worker.JobTypeDryRun
+	}
 	opts := c.buildJobOptions()
-	job, err := c.pool.SubmitWithOptions(worker.JobTypeImplement, c.getWorkDir(), prompt, opts)
+	job, err := c.pool.SubmitWithOptions(implJobType, c.getWorkDir(), prompt, opts)
 	if err != nil {
 		// Rollback state
 		_ = c.machine.Dispatch(ctx, EventError)
@@ -165,6 +166,9 @@ func (c *Conductor) Optimize(ctx context.Context) (string, error) {
 		c.machine.SetPriorStableState(currentState)
 	}
 
+	// Clear per-phase transient state to prevent leakage across re-entries.
+	c.resetPhaseState("optimize")
+
 	// Dispatch optimize event to transition state
 	if err := c.machine.Dispatch(ctx, EventOptimize); err != nil {
 		c.machine.ClearPriorStableState()
@@ -175,9 +179,13 @@ func (c *Conductor) Optimize(ctx context.Context) (string, error) {
 	}
 
 	c.setupCanaryHarness()
+	optJobType := worker.JobTypeOptimize
+	if c.dryRun {
+		optJobType = worker.JobTypeDryRun
+	}
 	prompt := c.applyStrategy("optimize", c.buildOptimizePrompt())
 	opts := c.buildJobOptions()
-	job, err := c.pool.SubmitWithOptions(worker.JobTypeOptimize, c.getWorkDir(), prompt, opts)
+	job, err := c.pool.SubmitWithOptions(optJobType, c.getWorkDir(), prompt, opts)
 	if err != nil {
 		// Rollback state
 		_ = c.machine.Dispatch(ctx, EventError)
@@ -245,6 +253,9 @@ func (c *Conductor) Simplify(ctx context.Context) (string, error) {
 		c.machine.SetPriorStableState(currentState)
 	}
 
+	// Clear per-phase transient state to prevent leakage across re-entries.
+	c.resetPhaseState("simplify")
+
 	// Dispatch simplify event to transition state
 	if err := c.machine.Dispatch(ctx, EventSimplify); err != nil {
 		c.machine.ClearPriorStableState()
@@ -255,9 +266,13 @@ func (c *Conductor) Simplify(ctx context.Context) (string, error) {
 	}
 
 	c.setupCanaryHarness()
+	simJobType := worker.JobTypeSimplify
+	if c.dryRun {
+		simJobType = worker.JobTypeDryRun
+	}
 	prompt := c.applyStrategy("simplify", c.buildSimplifyPrompt())
 	opts := c.buildJobOptions()
-	job, err := c.pool.SubmitWithOptions(worker.JobTypeSimplify, c.getWorkDir(), prompt, opts)
+	job, err := c.pool.SubmitWithOptions(simJobType, c.getWorkDir(), prompt, opts)
 	if err != nil {
 		// Rollback state
 		_ = c.machine.Dispatch(ctx, EventError)

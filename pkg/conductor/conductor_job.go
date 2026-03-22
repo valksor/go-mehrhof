@@ -259,7 +259,7 @@ func (c *Conductor) watchJob(ctx context.Context, jobID string, completionEvent 
 			c.mu.Unlock()
 
 			// Apply per-phase failure policy before default error handling.
-			if c.applyFailurePolicy(ctx, completionEvent) {
+			if c.applyFailurePolicy(ctx, completionEvent, event.Content) {
 				return // Policy handled it (retry or skip)
 			}
 

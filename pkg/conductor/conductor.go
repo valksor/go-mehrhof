@@ -96,6 +96,12 @@ type Conductor struct {
 	// Canary harness for credential sandboxing (nil when disabled)
 	canaryHarness *security.CanaryHarness
 
+	// lastFailureClass records the classification of the most recent phase failure.
+	lastFailureClass FailureClass
+
+	// dryRun simulates phases without agent execution.
+	dryRun bool
+
 	// Agent strategy (default: "direct"). Per-phase overrides take precedence.
 	strategy        strategy.Strategy
 	phaseStrategies map[string]strategy.Strategy
@@ -119,15 +125,19 @@ type Conductor struct {
 
 // ConductorEvent represents an event emitted by the conductor.
 type ConductorEvent struct {
-	Type          string          `json:"type"`
-	State         State           `json:"state,omitempty"`
-	JobID         string          `json:"job_id,omitempty"`
-	NodeID        string          `json:"node_id,omitempty"` // Graph node that produced this event
-	CorrelationID string          `json:"correlation_id,omitempty"`
-	Message       string          `json:"message,omitempty"`
-	Data          json.RawMessage `json:"data,omitempty"`
-	Error         string          `json:"error,omitempty"`
-	Timestamp     time.Time       `json:"timestamp"`
+	Type           string          `json:"type"`
+	State          State           `json:"state,omitempty"`
+	JobID          string          `json:"job_id,omitempty"`
+	NodeID         string          `json:"node_id,omitempty"` // Graph node that produced this event
+	CorrelationID  string          `json:"correlation_id,omitempty"`
+	Message        string          `json:"message,omitempty"`
+	Data           json.RawMessage `json:"data,omitempty"`
+	Error          string          `json:"error,omitempty"`
+	Phase          string          `json:"phase,omitempty"` // Phase that produced this event (plan, implement, etc.)
+	FailureClass   FailureClass    `json:"failure_class,omitempty"`
+	FailureMessage string          `json:"failure_message,omitempty"`
+	SubTaskID      string          `json:"sub_task_id,omitempty"` // Set when event originates from a sub-task
+	Timestamp      time.Time       `json:"timestamp"`
 }
 
 // EventListener is called when events occur.
@@ -229,6 +239,8 @@ type Options struct {
 	Stderr     io.Writer
 	// Settings overrides file-based settings loading when non-nil (useful in tests).
 	Settings *settings.Settings
+	// DryRun simulates phase execution without spawning agents.
+	DryRun bool
 }
 
 // DefaultOptions returns default conductor options.
@@ -272,6 +284,11 @@ func WithStderr(w io.Writer) Option {
 // Useful in tests to inject specific configuration without filesystem access.
 func WithSettings(s *settings.Settings) Option {
 	return func(o *Options) { o.Settings = s }
+}
+
+// WithDryRun enables dry-run mode (no agent execution).
+func WithDryRun(v bool) Option {
+	return func(o *Options) { o.DryRun = v }
 }
 
 // New creates a new Conductor with the given options.
@@ -328,6 +345,7 @@ func New(opts ...Option) (*Conductor, error) {
 		maxIterations:   3,
 		phasePolicies:   defaultPhasePolicies(),
 		retryCount:      make(map[string]int),
+		dryRun:          options.DryRun,
 	}
 	c.cachedSettings.Store(effectiveSettings) // Cache pre-loaded settings (atomic)
 	c.loadPhasePoliciesFromSettings()
@@ -607,6 +625,64 @@ func mustMarshalJSON(v any) json.RawMessage {
 	}
 
 	return b
+}
+
+// phaseToScope maps a phase name to its varpool scope constant.
+func phaseToScope(phase string) string {
+	switch phase {
+	case "plan":
+		return varpool.ScopePlan
+	case "implement":
+		return varpool.ScopeImplement
+	case "simplify":
+		return varpool.ScopeSimplify
+	case "optimize":
+		return varpool.ScopeOptimize
+	case "review":
+		return varpool.ScopeReview
+	default:
+		return phase
+	}
+}
+
+// resetPhaseState clears all per-phase transient state before (re-)entering a phase.
+// This prevents iteration counts, retry counts, stale quality gate results, and
+// scoped varpool data from leaking across phase re-entries.
+// Quality gate is always cleared (not just on re-entry) to avoid stale results
+// from a previous lifecycle influencing the current one.
+// Must be called while holding c.mu.
+func (c *Conductor) resetPhaseState(phase string) {
+	c.iterationCount[phase] = 0
+	c.retryCount[phase] = 0
+	if c.workUnit != nil {
+		c.workUnit.QualityGatePassed = nil
+		c.workUnit.QualityGateError = ""
+	}
+	c.varPool.ClearScope(phaseToScope(phase))
+}
+
+// DryRunEnabled returns whether the conductor is in dry-run mode.
+func (c *Conductor) DryRunEnabled() bool {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+
+	return c.dryRun
+}
+
+// SetDryRun enables or disables dry-run mode.
+func (c *Conductor) SetDryRun(v bool) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	c.dryRun = v
+}
+
+// LastFailureClass returns the classification of the most recent phase failure.
+func (c *Conductor) LastFailureClass() FailureClass {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+
+	return c.lastFailureClass
 }
 
 func (c *Conductor) logVerbosef(format string, args ...any) {

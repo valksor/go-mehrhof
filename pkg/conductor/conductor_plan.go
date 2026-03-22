@@ -61,12 +61,8 @@ func (c *Conductor) Plan(ctx context.Context, force bool) (string, error) {
 		c.machine.SetPriorStableState(currentState)
 	}
 
-	// Clear stale quality gate result on re-plan so it doesn't carry
-	// into a subsequent submit (e.g., Submitted → plan → implement → submit).
-	if currentState == StateImplemented || currentState == StateSubmitted {
-		c.workUnit.QualityGatePassed = nil
-		c.workUnit.QualityGateError = ""
-	}
+	// Clear per-phase transient state to prevent leakage across re-entries.
+	c.resetPhaseState("plan")
 
 	// Dispatch plan event to transition state
 	if err := c.machine.Dispatch(ctx, EventPlan); err != nil {
@@ -99,7 +95,11 @@ func (c *Conductor) Plan(ctx context.Context, force bool) (string, error) {
 	c.setupCanaryHarness()
 
 	// Build a phase graph (single node for planning, future: multiple sub-tasks).
-	g := buildPhaseGraph(worker.JobTypePlan, "planning", prompt)
+	jobType := worker.JobTypePlan
+	if c.dryRun {
+		jobType = worker.JobTypeDryRun
+	}
+	g := buildPhaseGraph(jobType, "planning", prompt)
 	sched := graph.NewScheduler(g, c.pool)
 
 	// Create pre-job safety checkpoint before the scheduler starts.
