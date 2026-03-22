@@ -34,6 +34,15 @@ export interface AgentStatus {
   simulation_mode: boolean
 }
 
+// Worktree health from system.health RPC
+export interface WorktreeHealth {
+  id: string
+  path: string
+  state: string
+  healthy: boolean | null
+  last_ping?: string
+}
+
 // Types not yet in Go (UI-only or need backend work)
 export interface Job {
   id: string
@@ -108,6 +117,9 @@ interface GlobalState {
   // Agent status
   agentStatus: AgentStatus | null
 
+  // System health (per-worktree health from system.health RPC)
+  worktreeHealth: WorktreeHealth[]
+
   // Active tasks across all projects
   activeTasks: TaskSummary[]
 
@@ -144,6 +156,9 @@ interface GlobalState {
   // Agent
   loadAgentStatus: () => Promise<void>
 
+  // Health
+  loadHealth: () => Promise<void>
+
   // Tasks
   loadActiveTasks: () => Promise<void>
   batchAction: (action: string, stateFilter?: string) => Promise<{ total: number; succeeded: number }>
@@ -177,6 +192,7 @@ export const useGlobalStore = create<GlobalState>()(
       memoryStats: null,
       jobs: [],
       agentStatus: null,
+      worktreeHealth: [],
       selectedProjectId: null,
       selectedProject: null,
       loading: false,
@@ -271,6 +287,7 @@ export const useGlobalStore = create<GlobalState>()(
           await get().loadWorkers()
           await get().loadActiveTasks()
           await get().loadAgentStatus()
+          get().loadHealth()
           get().loadMetrics()
         } catch (err) {
           set({
@@ -524,6 +541,18 @@ export const useGlobalStore = create<GlobalState>()(
           set({ agentStatus: result })
         } catch (err) {
           console.warn('Failed to load agent status:', err)
+        }
+      },
+
+      loadHealth: async () => {
+        const client = get().client
+        if (!client) return
+
+        try {
+          const result = await client.call<{ worktrees: WorktreeHealth[] }>('system.health')
+          set({ worktreeHealth: result.worktrees || [] })
+        } catch {
+          // Non-critical — health data is informational
         }
       },
 

@@ -32,6 +32,7 @@ export function AgentPanel() {
   const { client, connected } = useGlobalStore()
   const [workers, setWorkers] = useState<Worker[]>([])
   const [stats, setStats] = useState<WorkerStats | null>(null)
+  const [strategies, setStrategies] = useState<string[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [showAddForm, setShowAddForm] = useState(false)
@@ -53,12 +54,23 @@ export function AgentPanel() {
     }
   }, [client, connected])
 
+  const fetchStrategies = useCallback(async () => {
+    if (!client || !connected) return
+    try {
+      const result = await client.call<string[]>('strategy.list')
+      setStrategies(result || [])
+    } catch {
+      // Non-critical — strategies display is informational
+    }
+  }, [client, connected])
+
   useEffect(() => {
     if (!connected) return
     fetchWorkers()
+    fetchStrategies()
     const interval = setInterval(fetchWorkers, 3000)
     return () => clearInterval(interval)
-  }, [connected, fetchWorkers])
+  }, [connected, fetchWorkers, fetchStrategies])
 
   const handleAddWorker = async () => {
     if (!client) return
@@ -121,6 +133,16 @@ export function AgentPanel() {
                 {stats.queued_jobs} queued
               </span>
             )}
+          </div>
+        )}
+
+        {/* Available reasoning strategies (read-only, configured per-task via settings) */}
+        {strategies.length > 0 && (
+          <div className="flex gap-2 text-xs flex-wrap">
+            <span className="text-base-content/60" title="Agent reasoning strategies (configure via settings or CLI)">Strategies:</span>
+            {strategies.map(s => (
+              <span key={s} className="badge badge-sm badge-outline capitalize" title={`${s} strategy`}>{s}</span>
+            ))}
           </div>
         )}
 
