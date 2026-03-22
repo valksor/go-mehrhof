@@ -2,6 +2,7 @@
         web-build web-dev web-test web-e2e web-e2e-ui \
         run run-dev install release man-pages \
         desktop-dev desktop-build desktop-sidecar desktop-sidecar-all desktop-clean tauri-install \
+        prototype-lock prototype-unlock \
         clean tidy deps ci dev version help all
 
 # Build variables
@@ -196,6 +197,14 @@ man-pages:
 	@go run ./cmd/kvelmo gen-man-pages man
 	@echo "Man pages generated in man/"
 
+## Lock prototype/ directory (remove write permissions)
+prototype-lock:
+	chmod -R a-w prototype/
+
+## Unlock prototype/ directory (restore write permissions for owner)
+prototype-unlock:
+	chmod -R u+w prototype/
+
 ## Clean all build artifacts
 clean: desktop-clean
 	rm -rf $(BUILD_DIR)
@@ -244,6 +253,10 @@ help:
 	@echo "Desktop:"
 	@echo "  make desktop-dev    Desktop app dev mode"
 	@echo "  make desktop-build  Desktop app production build"
+	@echo ""
+	@echo "Prototype:"
+	@echo "  make prototype-lock   Remove write permissions on prototype/"
+	@echo "  make prototype-unlock Restore write permissions on prototype/"
 	@echo ""
 	@echo "Cleanup:"
 	@echo "  make clean          Remove all build artifacts"

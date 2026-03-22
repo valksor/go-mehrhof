@@ -31,6 +31,15 @@ pre-commit:
     alias:
       run: .github/alias.sh
 
+    # Guard prototype/ directory from accidental modifications
+    prototype-guard:
+      run: |
+        if git diff --cached --name-only | grep -q '^prototype/'; then
+          echo "Error: prototype/ is read-only reference material. Unstage changes with:"
+          echo "  git restore --staged prototype/"
+          exit 1
+        fi
+
     # Web Frontend - lint TypeScript/React files
     web-lint:
       root: "web/"
@@ -39,3 +48,8 @@ pre-commit:
       skip:
         - merge
         - rebase
+
+post-checkout:
+  commands:
+    lock-prototype:
+      run: chmod -R a-w prototype/ 2>/dev/null || true
