@@ -17,7 +17,8 @@ const maxBackoff = 5 * time.Minute
 type Option func(*config)
 
 type config struct {
-	retryCheck func(error) bool
+	retryCheck     func(error) bool
+	circuitBreaker *CircuitBreaker
 }
 
 // WithRetryCheck supplies a custom function that decides whether a given error
@@ -45,9 +46,24 @@ func RetryableOp(ctx context.Context, maxRetries int, baseDelay time.Duration, f
 
 	var lastErr error
 	for attempt := range maxRetries + 1 {
+		// Check circuit breaker before attempting.
+		if cb := cfg.circuitBreaker; cb != nil {
+			if !cb.Allow() {
+				return circuitOpenError(cb.Name())
+			}
+		}
+
 		lastErr = fn()
 		if lastErr == nil {
+			if cb := cfg.circuitBreaker; cb != nil {
+				cb.RecordSuccess()
+			}
+
 			return nil
+		}
+
+		if cb := cfg.circuitBreaker; cb != nil {
+			cb.RecordFailure()
 		}
 
 		// Don't retry if this is the last attempt.
