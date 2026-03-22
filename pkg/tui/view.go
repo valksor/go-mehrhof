@@ -95,6 +95,12 @@ func (m *Model) renderStatusBar() string {
 	}
 
 	text := "kvelmo · " + base + " · " + state
+	if state == "failed" && wt.LastFailureClass != "" {
+		text += " [" + wt.LastFailureClass + "]"
+	}
+	if m.dryRun {
+		text += " [DRY RUN]"
+	}
 	if workerName != "" {
 		text += " · " + workerName
 	}
@@ -167,6 +173,7 @@ func (m *Model) renderHelp() string {
 		" i               Implement",
 		" s               Stop job",
 		" ctrl+a          Abort task",
+		" d               Toggle dry-run",
 		" q/ctrl+c        Quit",
 		" ?               Toggle help",
 	}

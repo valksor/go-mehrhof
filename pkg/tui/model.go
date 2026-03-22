@@ -30,11 +30,12 @@ type WorkerInfo struct {
 
 // WorktreeState holds all display state for one active worktree.
 type WorktreeState struct {
-	Dir     string
-	State   string   // task state: none/loaded/implementing/etc.
-	Output  []string // accumulated output lines
-	Workers []WorkerInfo
-	JobID   string
+	Dir              string
+	State            string   // task state: none/loaded/implementing/etc.
+	Output           []string // accumulated output lines
+	Workers          []WorkerInfo
+	JobID            string
+	LastFailureClass string // failure classification: hard_stop, recoverable, degraded, skippable
 }
 
 // Model is the root bubbletea model.
@@ -53,6 +54,7 @@ type Model struct {
 	height   int
 	ready    bool
 	showHelp bool
+	dryRun   bool
 	err      error
 }
 
@@ -179,6 +181,13 @@ func (m *Model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			return m, m.sendWorkflowCmd("stop")
 		}
 
+	case "d":
+		if !m.chatInput.Focused() {
+			m.dryRun = !m.dryRun
+
+			return m, nil
+		}
+
 	case "ctrl+a":
 		if !m.chatInput.Focused() {
 			return m, m.sendWorkflowCmd("abort")
@@ -226,6 +235,11 @@ func (m *Model) handleSocketEvent(msg socketEventMsg) (tea.Model, tea.Cmd) {
 			}
 		case "state_changed":
 			m.worktrees[i].State = string(msg.event.State)
+			if string(msg.event.State) != "failed" {
+				m.worktrees[i].LastFailureClass = ""
+			}
+		case "phase_failure_classified":
+			m.worktrees[i].LastFailureClass = string(msg.event.FailureClass)
 		}
 
 		break
@@ -311,6 +325,7 @@ func (m *Model) sendWorkflowCmd(method string) tea.Cmd {
 		return nil
 	}
 	dir := wt.Dir
+	dryRun := m.dryRun
 
 	return func() tea.Msg {
 		socketPath := socket.WorktreeSocketPath(dir)
@@ -320,7 +335,12 @@ func (m *Model) sendWorkflowCmd(method string) tea.Cmd {
 		}
 		defer func() { _ = client.Close() }()
 
-		if _, err := client.Call(m.ctx, method, nil); err != nil {
+		var params any
+		if dryRun {
+			params = map[string]any{"dry_run": true}
+		}
+
+		if _, err := client.Call(m.ctx, method, params); err != nil {
 			return errMsg{err: fmt.Errorf("%s: %w", method, err)}
 		}
 

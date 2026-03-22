@@ -101,6 +101,21 @@ func runStatus(cmd *cobra.Command, args []string) error {
 		fmt.Printf("Error: %s\n", result.LastError)
 	}
 
+	if result.LastFailureClass != "" {
+		switch result.LastFailureClass {
+		case "hard_stop":
+			fmt.Println("Failure: requires manual intervention")
+		case "recoverable":
+			fmt.Println("Failure: transient error, will auto-retry")
+		case "degraded":
+			fmt.Println("Failure: non-critical, workflow continued with warning")
+		case "skippable":
+			fmt.Println("Failure: phase had nothing to do, skipped")
+		default:
+			fmt.Printf("Failure: %s\n", result.LastFailureClass)
+		}
+	}
+
 	if result.PendingPromptID != "" {
 		fmt.Printf("\n! Quality gate waiting for your input.\n")
 		fmt.Printf("  Run: kvelmo quality respond --prompt-id %s [--yes|--no]\n", result.PendingPromptID)

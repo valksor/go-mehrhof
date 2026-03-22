@@ -34,10 +34,14 @@ You can run simplify multiple times before proceeding to review.`,
 	RunE: runSimplify,
 }
 
-var simplifyWait bool
+var (
+	simplifyWait   bool
+	simplifyDryRun bool
+)
 
 func init() {
 	SimplifyCmd.Flags().BoolVarP(&simplifyWait, "wait", "w", false, "Wait for job to complete, streaming output")
+	SimplifyCmd.Flags().BoolVar(&simplifyDryRun, "dry-run", false, "Simulate without executing agent")
 }
 
 func runSimplify(cmd *cobra.Command, args []string) error {
@@ -61,7 +65,12 @@ func runSimplify(cmd *cobra.Command, args []string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	resp, err := client.Call(ctx, "simplify", nil)
+	var params map[string]any
+	if simplifyDryRun {
+		params = map[string]any{"dry_run": true}
+	}
+
+	resp, err := client.Call(ctx, "simplify", params)
 	if err != nil {
 		return fmt.Errorf("simplify call: %w", err)
 	}

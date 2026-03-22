@@ -14,7 +14,10 @@ import (
 	"github.com/valksor/kvelmo/pkg/socket"
 )
 
-var optimizeWait bool
+var (
+	optimizeWait   bool
+	optimizeDryRun bool
+)
 
 var OptimizeCmd = &cobra.Command{
 	Use:     "optimize",
@@ -37,6 +40,7 @@ You can run optimize multiple times before proceeding to review.`,
 
 func init() {
 	OptimizeCmd.Flags().BoolVarP(&optimizeWait, "wait", "w", false, "Wait for job to complete, streaming output")
+	OptimizeCmd.Flags().BoolVar(&optimizeDryRun, "dry-run", false, "Simulate without executing agent")
 }
 
 func runOptimize(cmd *cobra.Command, args []string) error {
@@ -65,7 +69,12 @@ func runOptimize(cmd *cobra.Command, args []string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	resp, err := client.Call(ctx, "optimize", nil)
+	var params map[string]any
+	if optimizeDryRun {
+		params = map[string]any{"dry_run": true}
+	}
+
+	resp, err := client.Call(ctx, "optimize", params)
 	if err != nil {
 		spinner.Fail("Optimization submission failed")
 
