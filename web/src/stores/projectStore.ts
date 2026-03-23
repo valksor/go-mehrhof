@@ -6,6 +6,7 @@ import { useScreenshotStore, Screenshot } from './screenshotStore'
 import { sendNotification, requestNotificationPermission } from '../lib/notify'
 import { worktreeEvents } from '../lib/events'
 import type { FailureClass } from '../lib/events'
+import type { PhaseMetrics } from '../types/conductor'
 
 type TaskState =
   | 'none'
@@ -184,6 +185,15 @@ interface ProjectState {
   // Phase failure classification
   phaseError: { message: string; class: FailureClass; phase: string } | null
 
+  // Phase metrics from status RPC
+  phaseMetrics: Record<string, PhaseMetrics> | null
+
+  // Recovery state: interrupted phase name if recovery is needed
+  needsRecovery: string | null
+
+  // CI fix loop status
+  ciFixStatus: { active: boolean; attempt?: number; maxAttempts?: number; result?: 'success' | 'failed' } | null
+
   // Dry-run mode
   dryRunMode: boolean
   toggleDryRun: () => void
@@ -281,6 +291,9 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
   taskQueue: [],
   qualityPrompt: null,
   phaseError: null,
+  phaseMetrics: null,
+  needsRecovery: null,
+  ciFixStatus: null,
   dryRunMode: false,
   toggleDryRun: () => {
     set(s => ({ dryRunMode: !s.dryRunMode }))
@@ -443,6 +456,32 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
           get().appendOutput(msg.message || 'Task finished')
           debouncedRefresh()
           debouncedLoadQueue()
+        } else if (msg.type === 'spec_changed') {
+          get().appendOutput(msg.message || 'Specification changed')
+          debouncedRefresh()
+        } else if (msg.type === 'ci_fix_watching') {
+          const ciMsg = msg as { data?: { attempt?: number; max_attempts?: number } }
+          set({ ciFixStatus: { active: true, attempt: ciMsg.data?.attempt, maxAttempts: ciMsg.data?.max_attempts } })
+          get().appendOutput(msg.message || 'CI fix: watching pipeline...')
+        } else if (msg.type === 'ci_fix_success') {
+          set({ ciFixStatus: { active: false, result: 'success' } })
+          get().appendOutput(msg.message || 'CI fix: pipeline passed')
+          sendNotification('CI Fix Success', 'Pipeline passed after fix')
+        } else if (msg.type === 'ci_fix_exhausted') {
+          set({ ciFixStatus: { active: false, result: 'failed' } })
+          get().appendOutput(msg.message || 'CI fix: all attempts exhausted')
+          sendNotification('CI Fix Failed', 'Pipeline still failing after all fix attempts')
+        } else if (msg.type === 'ci_fix_attempt_failed') {
+          get().appendOutput(msg.message || 'CI fix: attempt failed, retrying...')
+        } else if (msg.type === 'ci_fix_started') {
+          get().appendOutput(msg.message || 'CI fix: starting fix job...')
+        } else if (msg.type === 'consensus_review_complete') {
+          get().appendOutput(msg.message || 'Consensus review complete')
+          debouncedRefresh()
+        } else if (msg.type === 'router_decision') {
+          const rd = msg as { data?: { action?: string; reason?: string; attempt?: number; max_retries?: number } }
+          const detail = rd.data ? `Router: ${rd.data.action ?? 'advance'}${rd.data.reason ? ` — ${rd.data.reason}` : ''}` : (msg.message || 'Router decision made')
+          get().appendOutput(detail)
         }
       })
 
@@ -523,7 +562,10 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
       reviews: [],
       reviewDetails: {},
       taskQueue: [],
-      qualityPrompt: null
+      qualityPrompt: null,
+      phaseMetrics: null,
+      needsRecovery: null,
+      ciFixStatus: null,
     })
   },
 
@@ -1217,9 +1259,15 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
           branch?: string
           worktree_path?: string
         }
+        phase_metrics?: Record<string, PhaseMetrics>
+        needs_recovery?: string
       }>('status', {})
 
-      set({ state: result.state })
+      set({
+        state: result.state,
+        phaseMetrics: result.phase_metrics ?? null,
+        needsRecovery: result.needs_recovery ?? null,
+      })
 
       if (result.task) {
         set({

@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/valksor/kvelmo/pkg/eventlog"
 	"github.com/valksor/kvelmo/pkg/graph"
 	"github.com/valksor/kvelmo/pkg/storage"
 	"github.com/valksor/kvelmo/pkg/worker"
@@ -68,6 +69,18 @@ func (c *Conductor) Plan(ctx context.Context) (string, error) {
 		return "", wrapped
 	}
 
+	// Run pre-phase guardrails (release lock during execution).
+	c.mu.Unlock()
+	if err := c.runPreGuardrails(ctx, "plan"); err != nil {
+		c.mu.Lock()
+		// Rollback state transition.
+		_ = c.machine.Dispatch(ctx, EventError)
+		c.emitEnrichedError(err, "plan")
+
+		return "", err
+	}
+	c.mu.Lock()
+
 	// Load existing specs so re-planning iterates rather than restarts from scratch
 	var existingSpecs string
 	if c.store != nil {
@@ -103,6 +116,8 @@ func (c *Conductor) Plan(ctx context.Context) (string, error) {
 	c.workUnit.UpdatedAt = time.Now()
 	c.persistState()
 
+	c.phaseStartedAt = time.Now()
+	c.emitEventLog(eventlog.Entry{Type: eventlog.EventPhaseStarted, Phase: "plan"})
 	c.emit(ConductorEvent{
 		Type:    "planning_started",
 		State:   c.machine.State(),

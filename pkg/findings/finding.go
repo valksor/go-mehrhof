@@ -31,6 +31,16 @@ func (s Severity) String() string {
 	}
 }
 
+// Origin indicates whether a finding was introduced by the current change or
+// already existed before the change (pre-existing tech debt).
+type Origin string
+
+const (
+	OriginIntroduced  Origin = "introduced"
+	OriginPreExisting Origin = "pre_existing"
+	OriginUnknown     Origin = "unknown"
+)
+
 // Category identifies which subsystem produced the finding.
 type Category string
 
@@ -52,6 +62,8 @@ type Finding struct {
 	Remediation string   `json:"remediation,omitempty"`
 	Evidence    string   `json:"evidence,omitempty"`
 	Source      string   `json:"source"`
+	Origin      Origin   `json:"origin,omitempty"`
+	DetectedBy  []string `json:"detected_by,omitempty"` // Agent names that detected this finding
 }
 
 // CountBySeverity returns the number of findings at each severity level.

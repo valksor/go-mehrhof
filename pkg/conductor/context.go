@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/valksor/kvelmo/pkg/storage"
 	"github.com/valksor/kvelmo/pkg/varpool"
 )
 
@@ -25,6 +26,20 @@ type ContextMetrics struct {
 	TokenBudget      int      `json:"token_budget"`
 	SectionsIncluded []string `json:"sections_included"`
 	SectionsExcluded []string `json:"sections_excluded"`
+}
+
+// buildContextDeps assembles optional dependencies for context assembly.
+// Must be called with c.mu held (at least RLock).
+func (c *Conductor) buildContextDeps() ContextDeps {
+	var deps ContextDeps
+	if c.workUnit != nil && c.store != nil && len(c.workUnit.Specifications) > 0 {
+		specStore := storage.NewSpecStore(c.store)
+		if content, err := specStore.GatherSpecificationsContent(c.workUnit.ID); err == nil && content != "" {
+			deps.SpecContent = content
+		}
+	}
+
+	return deps
 }
 
 // DefaultContextProfiles returns the default context profile for each phase.
@@ -62,9 +77,19 @@ func DefaultContextProfiles() map[string]PhaseContextProfile {
 	}
 }
 
+// ContextDeps provides optional dependencies for context assembly.
+// Fields are nil-safe — missing deps cause the corresponding section to be skipped.
+type ContextDeps struct {
+	SpecContent string // Pre-gathered specification content (from storage.GatherSpecificationsContent)
+}
+
 // BuildPhaseContext assembles context for a phase based on its profile.
 // Returns the context string and metrics about what was included.
-func BuildPhaseContext(profile PhaseContextProfile, wu *WorkUnit, pool *varpool.Pool) (string, ContextMetrics) {
+func BuildPhaseContext(profile PhaseContextProfile, wu *WorkUnit, pool *varpool.Pool, deps ...ContextDeps) (string, ContextMetrics) {
+	var dep ContextDeps
+	if len(deps) > 0 {
+		dep = deps[0]
+	}
 	var sections []string
 	metrics := ContextMetrics{
 		TokenBudget: profile.MaxTokenBudget,
@@ -113,7 +138,11 @@ func BuildPhaseContext(profile PhaseContextProfile, wu *WorkUnit, pool *varpool.
 
 	// Specifications
 	if profile.IncludeSpecs && len(wu.Specifications) > 0 {
-		addSection("Specifications", fmt.Sprintf("%d specification file(s) available", len(wu.Specifications)))
+		if dep.SpecContent != "" {
+			addSection("Specifications", dep.SpecContent)
+		} else {
+			addSection("Specifications", fmt.Sprintf("%d specification file(s) available", len(wu.Specifications)))
+		}
 	}
 
 	// Hierarchy (parent/sibling context)

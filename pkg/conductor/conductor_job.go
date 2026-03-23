@@ -11,12 +11,107 @@ import (
 	"strings"
 	"time"
 
+	"github.com/valksor/kvelmo/pkg/eventlog"
 	"github.com/valksor/kvelmo/pkg/git"
+	"github.com/valksor/kvelmo/pkg/graph"
 	"github.com/valksor/kvelmo/pkg/memory"
 	"github.com/valksor/kvelmo/pkg/security"
 	"github.com/valksor/kvelmo/pkg/storage"
 	"github.com/valksor/kvelmo/pkg/worker"
 )
+
+// recordPhaseMetrics captures execution metrics for a completed phase.
+// Must be called with c.mu held.
+func (c *Conductor) recordPhaseMetrics(completionEvent Event, jobID string) {
+	phase := phaseFromEvent(completionEvent)
+	if phase == "" || c.workUnit == nil {
+		return
+	}
+
+	if c.workUnit.PhaseMetrics == nil {
+		c.workUnit.PhaseMetrics = make(map[string]*PhaseMetrics)
+	}
+
+	pm := &PhaseMetrics{}
+
+	// Compute duration from phaseStartedAt or job timing.
+	if !c.phaseStartedAt.IsZero() {
+		pm.Duration = time.Since(c.phaseStartedAt)
+	}
+
+	// Get agent info from the job if available.
+	if c.pool != nil && jobID != "" {
+		if job := c.pool.GetJob(jobID); job != nil {
+			// Use job timing if phaseStartedAt wasn't set.
+			if pm.Duration == 0 && job.StartedAt != nil && job.CompletedAt != nil {
+				pm.Duration = job.CompletedAt.Sub(*job.StartedAt)
+			}
+			if agentName, ok := job.Metadata["agent_override"].(string); ok {
+				pm.Agent = agentName
+			} else if job.WorkerID != "" {
+				for _, w := range c.pool.ListWorkers() {
+					if w.ID == job.WorkerID {
+						pm.Agent = w.AgentName
+
+						break
+					}
+				}
+			}
+			if recPath, ok := job.Metadata["recording_path"].(string); ok {
+				pm.RecordingPath = recPath
+			}
+		}
+	}
+
+	// Capture latest checkpoint SHA if available.
+	if len(c.workUnit.Checkpoints) > 0 {
+		pm.CheckpointSHA = c.workUnit.Checkpoints[len(c.workUnit.Checkpoints)-1]
+	}
+
+	c.workUnit.PhaseMetrics[phase] = pm
+
+	// Emit event log entry for phase completion.
+	c.emitEventLog(eventlog.Entry{
+		Type:  eventlog.EventPhaseCompleted,
+		Phase: phase,
+		Data: map[string]any{
+			"duration_ms": pm.Duration.Milliseconds(),
+			"agent":       pm.Agent,
+		},
+	})
+}
+
+// recordPhaseMetricsFromGraph records metrics for graph-based phase execution.
+// Must be called with c.mu held.
+func (c *Conductor) recordPhaseMetricsFromGraph(completionEvent Event, _ *graph.Scheduler) {
+	phase := phaseFromEvent(completionEvent)
+	if phase == "" || c.workUnit == nil {
+		return
+	}
+
+	if c.workUnit.PhaseMetrics == nil {
+		c.workUnit.PhaseMetrics = make(map[string]*PhaseMetrics)
+	}
+
+	pm := &PhaseMetrics{}
+
+	// Compute duration from phaseStartedAt.
+	if !c.phaseStartedAt.IsZero() {
+		pm.Duration = time.Since(c.phaseStartedAt)
+	}
+
+	// Resolve agent name from settings.
+	if agentName := c.resolveAgent(phase); agentName != "" {
+		pm.Agent = agentName
+	}
+
+	// Capture latest checkpoint SHA if available.
+	if len(c.workUnit.Checkpoints) > 0 {
+		pm.CheckpointSHA = c.workUnit.Checkpoints[len(c.workUnit.Checkpoints)-1]
+	}
+
+	c.workUnit.PhaseMetrics[phase] = pm
+}
 
 // setupCanaryHarness creates a canary harness if canary sandboxing is enabled.
 // Must be called with c.mu held. Call cleanupCanaryHarness when the job finishes.
@@ -173,6 +268,16 @@ func (c *Conductor) watchJob(ctx context.Context, jobID string, completionEvent 
 					return // Re-submitted; skip normal completion path
 				}
 
+				// Router-based adaptive phase progression: evaluate output and decide next action.
+				// This runs AFTER strategy evaluation completes, wrapping the normal advance path.
+				if c.router != nil {
+					phase := phaseFromEvent(completionEvent)
+					decision := c.router.Route(ctx, phase, jobOutput, 0)
+					if c.applyRouteDecision(ctx, decision, completionEvent) {
+						return // Router handled it (retry/skip/rollback)
+					}
+				}
+
 				c.mu.Lock()
 
 				// Mark implementation as done for guard checks
@@ -184,10 +289,13 @@ func (c *Conductor) watchJob(ctx context.Context, jobID string, completionEvent 
 				// doesn't affect rollback targets in subsequent operations.
 				c.machine.ClearPriorStableState()
 
+				// Record per-phase execution metrics.
+				c.recordPhaseMetrics(completionEvent, jobID)
+
 				// Dispatch completion event
 				_ = c.machine.Dispatch(ctx, completionEvent)
 
-				// Persist updated state (new checkpoint + new state)
+				// Persist updated state (new checkpoint + new state + metrics)
 				c.persistState()
 
 				// Capture snapshot for async memory indexing (only for major phases)
@@ -509,6 +617,16 @@ func (c *Conductor) shouldPostTicketComment() bool {
 // buildJobOptions creates JobOptions with execution context for multi-project support.
 // This ensures jobs carry full context (WorkDir, metadata) so any worker can execute them.
 // If canary sandboxing is enabled, injects fake HOME environment variables.
+// buildJobOptionsForPhase creates JobOptions with the per-phase agent override set.
+func (c *Conductor) buildJobOptionsForPhase(phase string) *worker.JobOptions {
+	opts := c.buildJobOptions()
+	if agentName := c.resolveAgent(phase); agentName != "" {
+		opts.Agent = agentName
+	}
+
+	return opts
+}
+
 func (c *Conductor) buildJobOptions() *worker.JobOptions {
 	opts := &worker.JobOptions{
 		WorkDir:  c.getWorkDir(), // Use isolated worktree if available

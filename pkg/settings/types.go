@@ -47,6 +47,15 @@ type AgentSettings struct {
 	Allowed       []string          `yaml:"allowed,omitempty" json:"allowed,omitempty" schema:"label=Allowed Agents;desc=Agents permitted for this project;type=multiselect;options=claude|codex"`
 	Strategy      string            `yaml:"strategy,omitempty" json:"strategy,omitempty" schema:"label=Default Strategy;desc=Agent reasoning strategy (direct = pass-through, iterative = self-review loop);options=direct|iterative;default=direct"`
 	PhaseStrategy map[string]string `yaml:"phase_strategy,omitempty" json:"phase_strategy,omitempty" schema:"label=Per-Phase Strategy;desc=Override strategy per phase (e.g. plan: iterative);type=keyvalue;advanced"`
+	PhaseAgent    map[string]string `yaml:"phase_agent,omitempty" json:"phase_agent,omitempty" schema:"label=Per-Phase Agent;desc=Override agent per phase (e.g. plan: gemini, implement: claude);type=keyvalue;advanced"`
+	Consensus     *ConsensusConfig  `yaml:"consensus,omitempty" json:"consensus,omitempty"`
+}
+
+// ConsensusConfig configures multi-agent consensus review.
+type ConsensusConfig struct {
+	Enabled      bool     `yaml:"enabled,omitempty" json:"enabled,omitempty" schema:"label=Enable Consensus;desc=Run reviews with multiple agents and merge findings;default=false"`
+	Agents       []string `yaml:"agents,omitempty" json:"agents,omitempty" schema:"label=Consensus Agents;desc=Agent names to use for consensus review;type=tags"`
+	MinAgreement int      `yaml:"min_agreement,omitempty" json:"min_agreement,omitempty" schema:"label=Min Agreement;desc=Minimum number of agents that must detect a finding;default=1;min=1"`
 }
 
 // CustomAgent defines a user-created agent that wraps a base agent.
@@ -249,6 +258,8 @@ type RetrySettings struct {
 type CISettings struct {
 	WatchEnabled    bool `yaml:"watch_enabled,omitempty" json:"watch_enabled,omitempty" schema:"label=Watch CI;desc=Poll CI status after PR submission;default=false"`
 	PollIntervalSec int  `yaml:"poll_interval_sec,omitempty" json:"poll_interval_sec,omitempty" schema:"label=Poll Interval (sec);desc=Seconds between CI status polls;default=30;min=10;max=300;advanced"`
+	AutoFix         bool `yaml:"auto_fix,omitempty" json:"auto_fix,omitempty" schema:"label=Auto Fix CI;desc=Automatically attempt to fix CI failures after PR submission. When enabled, spawns an agent to fix failures, commits changes, and pushes to the PR branch;default=false"`
+	MaxFixAttempts  int  `yaml:"max_fix_attempts,omitempty" json:"max_fix_attempts,omitempty" schema:"label=Max Fix Attempts;desc=Maximum CI fix attempts before giving up;default=3;min=1;max=10;advanced"`
 }
 
 // TransitionHook is a shell command that runs before a workflow transition.
@@ -266,20 +277,30 @@ type HooksSettings map[string][]TransitionHook
 // WorkflowSettings contains per-project workflow options.
 // These are intentionally project-scoped and not meaningful at global level.
 type WorkflowSettings struct {
-	UseWorktreeIsolation *bool                `yaml:"use_worktree_isolation,omitempty" json:"use_worktree_isolation,omitempty" schema:"label=Use Worktree Isolation;desc=Create an isolated git worktree for each task, enabling parallel work without conflicts;default=true"`
-	AutoAdvance          *bool                `yaml:"auto_advance,omitempty" json:"auto_advance,omitempty" schema:"label=Auto Advance;desc=Automatically progress through plan, implement, and review phases;default=false"`
-	SkipPhases           []string             `yaml:"skip_phases,omitempty" json:"skip_phases,omitempty" schema:"label=Skip Phases;desc=Phases to skip by default when auto-advancing (simplify, optimize, plan);type=tags"`
-	ExternalReview       ExternalReviewConfig `yaml:"external_review,omitempty" json:"external_review,omitempty" schema:"label=External Review;desc=External CLI review tool integration"`
-	Policy               PolicySettings       `yaml:"policy,omitempty" json:"policy,omitempty"`
-	Retry                RetrySettings        `yaml:"retry,omitempty" json:"retry,omitempty"`
-	PhasePolicies        map[string]string    `yaml:"phase_policies,omitempty" json:"phase_policies,omitempty" schema:"label=Phase Policies;desc=Per-phase failure policy overrides: fail, retry, or skip (e.g., simplify: skip)"`
-	CI                   CISettings           `yaml:"ci,omitempty" json:"ci,omitempty"`
-	Hooks                HooksSettings        `yaml:"hooks,omitempty" json:"hooks,omitempty"`
+	UseWorktreeIsolation *bool                      `yaml:"use_worktree_isolation,omitempty" json:"use_worktree_isolation,omitempty" schema:"label=Use Worktree Isolation;desc=Create an isolated git worktree for each task, enabling parallel work without conflicts;default=true"`
+	AutoAdvance          *bool                      `yaml:"auto_advance,omitempty" json:"auto_advance,omitempty" schema:"label=Auto Advance;desc=Automatically progress through plan, implement, and review phases;default=false"`
+	SkipPhases           []string                   `yaml:"skip_phases,omitempty" json:"skip_phases,omitempty" schema:"label=Skip Phases;desc=Phases to skip by default when auto-advancing (simplify, optimize, plan);type=tags"`
+	ExternalReview       ExternalReviewConfig       `yaml:"external_review,omitempty" json:"external_review,omitempty" schema:"label=External Review;desc=External CLI review tool integration"`
+	Policy               PolicySettings             `yaml:"policy,omitempty" json:"policy,omitempty"`
+	Retry                RetrySettings              `yaml:"retry,omitempty" json:"retry,omitempty"`
+	PhasePolicies        map[string]string          `yaml:"phase_policies,omitempty" json:"phase_policies,omitempty" schema:"label=Phase Policies;desc=Per-phase failure policy overrides: fail, retry, or skip (e.g., simplify: skip)"`
+	CI                   CISettings                 `yaml:"ci,omitempty" json:"ci,omitempty"`
+	Hooks                HooksSettings              `yaml:"hooks,omitempty" json:"hooks,omitempty"`
+	HoldTheLine          *bool                      `yaml:"hold_the_line,omitempty" json:"hold_the_line,omitempty" schema:"label=Hold the Line;desc=Only gate on findings in lines changed by the agent, ignoring pre-existing tech debt;default=true"`
+	PhaseGuardrails      map[string]GuardrailConfig `yaml:"phase_guardrails,omitempty" json:"phase_guardrails,omitempty" schema:"label=Phase Guardrails;desc=Pre/post validation checks per phase;type=keyvalue;advanced"`
+}
+
+// GuardrailConfig defines pre and post guardrails for a workflow phase.
+type GuardrailConfig struct {
+	Pre  []string `yaml:"pre,omitempty" json:"pre,omitempty"`
+	Post []string `yaml:"post,omitempty" json:"post,omitempty"`
 }
 
 // SecuritySettings configures agent security controls.
 type SecuritySettings struct {
-	CanaryEnabled bool `yaml:"canary_enabled,omitempty" json:"canary_enabled,omitempty" schema:"label=Canary Sandboxing;desc=Seed fake credentials in agent HOME to detect unauthorized file access;default=false"`
+	CanaryEnabled    bool     `yaml:"canary_enabled,omitempty" json:"canary_enabled,omitempty" schema:"label=Canary Sandboxing;desc=Seed fake credentials in agent HOME to detect unauthorized file access;default=false"`
+	RedactionEnabled *bool    `yaml:"redaction_enabled,omitempty" json:"redaction_enabled,omitempty" schema:"label=Secret Redaction;desc=Automatically redact secrets from content sent to AI agents;default=true"`
+	RedactionExtra   []string `yaml:"redaction_extra,omitempty" json:"redaction_extra,omitempty" schema:"label=Extra Redaction Patterns;desc=Additional regex patterns to redact;type=tags;advanced"`
 }
 
 // WatchdogSettings configures the memory leak watchdog.

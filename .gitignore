@@ -36,6 +36,7 @@ node_modules/
 web/coverage/
 web/node_modules/
 web/src/types/socket.ts
+web/src/types/conductor.ts
 ~/.valksor/
 pkg/web/static/dist/
 web/src-tauri/lcov.info

@@ -431,13 +431,15 @@ func (c *Conductor) Submit(ctx context.Context, deleteBranch bool) error {
 		Data:    eventData,
 	})
 
-	// Start CI status watcher if enabled.
+	// Start CI fix loop if auto-fix is enabled, or CI watcher if watch-only.
 	// CI watching requires providers to implement ciwatch.StatusFetcher.
-	// Once GitHub/GitLab providers implement FetchCIStatus, wire:
-	//   watcher := ciwatch.New(fetcher, prID, interval)
-	//   go watcher.Start(lifecycleCtx)
-	if s := c.getEffectiveSettings(); s.Workflow.CI.WatchEnabled && prID != "" {
-		slog.Debug("CI watching enabled but not yet implemented for this provider", "pr_id", prID)
+	if s := c.getEffectiveSettings(); prID != "" && s.Workflow.CI.WatchEnabled {
+		if s.Workflow.CI.AutoFix {
+			//nolint:contextcheck // intentionally uses lifecycle context for background CI fix loop
+			go c.startCIFixLoop(lifecycleCtx)
+		} else {
+			slog.Debug("CI watching enabled but auto-fix disabled", "pr_id", prID)
+		}
 	}
 
 	// Trigger async memory indexing for submitted task.

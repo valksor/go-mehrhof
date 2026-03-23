@@ -13,6 +13,8 @@ import (
 
 // Review begins the review phase.
 // When fix=true, immediately submits a new implement job to auto-fix issues.
+//
+//nolint:contextcheck // goroutines intentionally use lifecycleCtx to outlive the RPC request context
 func (c *Conductor) Review(ctx context.Context, fix bool) error {
 	c.mu.Lock()
 
@@ -113,6 +115,26 @@ Commit your fixes with meaningful commit messages.`
 		// Watch job completion using lifecycle context
 		// (not request ctx which may be cancelled when handler returns)
 		go c.watchJob(lifecycleCtx, job.ID, EventImplementDone) //nolint:contextcheck // intentionally uses lifecycle context
+	}
+
+	// Run consensus review if configured (non-blocking, results logged).
+	if cfg := c.getConsensusConfig(); cfg != nil && cfg.Enabled && len(cfg.Agents) > 0 {
+		go func() { //nolint:contextcheck // intentionally uses lifecycle context that outlives the request
+			reviewPrompt := "Review the code changes for correctness, error handling, and code quality. Report each finding with file path, line number, and description."
+
+			consensusFindings, err := c.runConsensusReview(lifecycleCtx, reviewPrompt)
+			if err != nil {
+				slog.Warn("consensus review failed", "error", err)
+
+				return
+			}
+
+			c.emit(ConductorEvent{
+				Type:    "consensus_review_complete",
+				State:   c.machine.State(),
+				Message: fmt.Sprintf("Consensus review found %d findings", len(consensusFindings)),
+			})
+		}()
 	}
 
 	// Start quality gate in background so result is ready for Submit()

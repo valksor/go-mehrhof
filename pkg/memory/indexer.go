@@ -20,6 +20,11 @@ type Indexer struct {
 	scorer     *SignificanceScorer // optional; nil disables the significance gate
 }
 
+// Store returns the underlying VectorStore.
+func (idx *Indexer) Store() *VectorStore {
+	return idx.store
+}
+
 // NewIndexer creates an Indexer for the given project directory.
 // The significance gate is enabled automatically using the store's embedder.
 func NewIndexer(store *VectorStore, projectDir string) *Indexer {

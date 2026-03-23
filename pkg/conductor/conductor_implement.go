@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/valksor/kvelmo/pkg/eventlog"
 	"github.com/valksor/kvelmo/pkg/worker"
 )
 
@@ -86,13 +87,28 @@ func (c *Conductor) Implement(ctx context.Context) (string, error) {
 		c.logVerbosef("Skipping planning phase — using task description as specification")
 	}
 
+	// Run pre-phase guardrails (release lock during execution).
+	c.mu.Unlock()
+	if err := c.runPreGuardrails(ctx, "implement"); err != nil {
+		c.mu.Lock()
+		// Rollback state transition.
+		_ = c.machine.Dispatch(ctx, EventError)
+		c.emitEnrichedError(err, "implement")
+
+		return "", err
+	}
+	c.mu.Lock()
+
 	c.setupCanaryHarness()
+	// Start watching spec files for mid-execution edits.
+	c.specWatcher = newSpecWatcher(c.workUnit.Specifications)
+
 	prompt := c.applyStrategy("implement", c.buildImplementPrompt())
 	implJobType := worker.JobTypeImplement
 	if c.dryRun {
 		implJobType = worker.JobTypeDryRun
 	}
-	opts := c.buildJobOptions()
+	opts := c.buildJobOptionsForPhase("implement")
 	job, err := c.pool.SubmitWithOptions(implJobType, c.getWorkDir(), prompt, opts)
 	if err != nil {
 		// Rollback state
@@ -110,6 +126,8 @@ func (c *Conductor) Implement(ctx context.Context) (string, error) {
 	c.saveJobSession(job.ID, "implementing", "")
 	c.persistState()
 
+	c.phaseStartedAt = time.Now()
+	c.emitEventLog(eventlog.Entry{Type: eventlog.EventPhaseStarted, Phase: "implement"})
 	c.emit(ConductorEvent{
 		Type:    "implementing_started",
 		State:   c.machine.State(),
@@ -179,7 +197,7 @@ func (c *Conductor) Optimize(ctx context.Context) (string, error) {
 		optJobType = worker.JobTypeDryRun
 	}
 	prompt := c.applyStrategy("optimize", c.buildOptimizePrompt())
-	opts := c.buildJobOptions()
+	opts := c.buildJobOptionsForPhase("optimize")
 	job, err := c.pool.SubmitWithOptions(optJobType, c.getWorkDir(), prompt, opts)
 	if err != nil {
 		// Rollback state
@@ -197,6 +215,8 @@ func (c *Conductor) Optimize(ctx context.Context) (string, error) {
 	c.saveJobSession(job.ID, "optimizing", "")
 	c.persistState()
 
+	c.phaseStartedAt = time.Now()
+	c.emitEventLog(eventlog.Entry{Type: eventlog.EventPhaseStarted, Phase: "optimize"})
 	c.emit(ConductorEvent{
 		Type:    "optimizing_started",
 		State:   c.machine.State(),
@@ -266,7 +286,7 @@ func (c *Conductor) Simplify(ctx context.Context) (string, error) {
 		simJobType = worker.JobTypeDryRun
 	}
 	prompt := c.applyStrategy("simplify", c.buildSimplifyPrompt())
-	opts := c.buildJobOptions()
+	opts := c.buildJobOptionsForPhase("simplify")
 	job, err := c.pool.SubmitWithOptions(simJobType, c.getWorkDir(), prompt, opts)
 	if err != nil {
 		// Rollback state
@@ -284,6 +304,8 @@ func (c *Conductor) Simplify(ctx context.Context) (string, error) {
 	c.saveJobSession(job.ID, "simplifying", "")
 	c.persistState()
 
+	c.phaseStartedAt = time.Now()
+	c.emitEventLog(eventlog.Entry{Type: eventlog.EventPhaseStarted, Phase: "simplify"})
 	c.emit(ConductorEvent{
 		Type:    "simplifying_started",
 		State:   c.machine.State(),

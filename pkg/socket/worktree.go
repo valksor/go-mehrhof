@@ -280,6 +280,12 @@ func (w *WorktreeSocket) registerHandlers() {
 
 	// Workflow hooks
 	w.server.Handle("hooks.list", w.handleHooksList)
+
+	// Code graph
+	w.server.Handle("graph.index", w.handleGraphIndex)
+	w.server.Handle("graph.query", w.handleGraphQuery)
+	w.server.Handle("graph.callers", w.handleGraphCallers)
+	w.server.Handle("graph.stats", w.handleGraphStats)
 }
 
 // injectSeqAndBuffer assigns a sequence number to a JSON event, stores it in the
@@ -413,6 +419,14 @@ func (w *WorktreeSocket) handleStatus(ctx context.Context, req *Request) (*Respo
 
 		if fc := w.conductor.LastFailureClass(); fc != "" {
 			result.LastFailureClass = string(fc)
+		}
+
+		if wu := w.conductor.WorkUnit(); wu != nil && len(wu.PhaseMetrics) > 0 {
+			result.PhaseMetrics = wu.PhaseMetrics
+		}
+
+		if rs := w.conductor.RecoveryState(); rs != "" {
+			result.NeedsRecovery = rs
 		}
 	}
 
@@ -1816,14 +1830,16 @@ const (
 )
 
 type StatusResult struct {
-	State            TaskState `json:"state"`
-	Path             string    `json:"path"`
-	Task             *TaskInfo `json:"task,omitempty"`
-	PendingPromptID  string    `json:"pending_prompt_id,omitempty"`
-	ActiveJobID      string    `json:"active_job_id,omitempty"`
-	QueueDepth       int       `json:"queue_depth,omitempty"`
-	LastError        string    `json:"last_error,omitempty"`
-	LastFailureClass string    `json:"last_failure_class,omitempty"`
+	State            TaskState                          `json:"state"`
+	Path             string                             `json:"path"`
+	Task             *TaskInfo                          `json:"task,omitempty"`
+	PendingPromptID  string                             `json:"pending_prompt_id,omitempty"`
+	ActiveJobID      string                             `json:"active_job_id,omitempty"`
+	QueueDepth       int                                `json:"queue_depth,omitempty"`
+	LastError        string                             `json:"last_error,omitempty"`
+	LastFailureClass string                             `json:"last_failure_class,omitempty"`
+	PhaseMetrics     map[string]*conductor.PhaseMetrics `json:"phase_metrics,omitempty"`
+	NeedsRecovery    string                             `json:"needs_recovery,omitempty"` // Interrupted phase name if recovery needed
 }
 
 type TaskInfo struct {

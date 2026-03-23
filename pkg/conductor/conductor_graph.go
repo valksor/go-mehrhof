@@ -39,7 +39,8 @@ func (c *Conductor) watchGraph(ctx context.Context, sched *graph.Scheduler, comp
 	// starting this goroutine, matching the pattern used by watchJob callers.
 	// Load cached partial results and build job opts under lock.
 	c.mu.RLock()
-	opts := c.buildGraphJobOpts()
+	phase := phaseFromEvent(completionEvent)
+	opts := c.buildGraphJobOptsForPhase(phase)
 	opts.ResumeFrom = c.loadPartialResults(completionEvent)
 	c.mu.RUnlock()
 
@@ -76,6 +77,14 @@ func (c *Conductor) watchGraph(ctx context.Context, sched *graph.Scheduler, comp
 				NodeID:  string(evt.NodeID),
 				Message: "Node completed: " + evt.NodeLabel,
 			})
+			// Check for mid-execution spec changes between graph nodes.
+			if c.specWatcher != nil && c.specWatcher.Check() {
+				c.emit(ConductorEvent{
+					Type:    "spec_changed",
+					Message: "Specification modified during execution — agent will adapt",
+				})
+				c.specWatcher.Reset()
+			}
 
 		case graph.EventNodeFailed:
 			c.emit(ConductorEvent{
@@ -205,6 +214,16 @@ func (c *Conductor) handleGraphCompletion(ctx context.Context, sched *graph.Sche
 		return // Re-submitted; skip normal completion path
 	}
 
+	// Router-based adaptive phase progression: evaluate output and decide next action.
+	// This runs AFTER strategy evaluation completes, wrapping the normal advance path.
+	if c.router != nil {
+		phase := phaseFromEvent(completionEvent)
+		decision := c.router.Route(ctx, phase, combinedOutput, 0)
+		if c.applyRouteDecision(ctx, decision, completionEvent) {
+			return // Router handled it (retry/skip/rollback)
+		}
+	}
+
 	c.mu.Lock()
 
 	// Mark implementation as done for guard checks (matches watchJob)
@@ -214,6 +233,9 @@ func (c *Conductor) handleGraphCompletion(ctx context.Context, sched *graph.Sche
 
 	// Clear stale PriorStableState on successful completion (matches watchJob)
 	c.machine.ClearPriorStableState()
+
+	// Record per-phase execution metrics from graph scheduler.
+	c.recordPhaseMetricsFromGraph(completionEvent, sched)
 
 	// Dispatch completion event.
 	_ = c.machine.Dispatch(ctx, completionEvent)
@@ -247,6 +269,16 @@ func (c *Conductor) handleGraphCompletion(ctx context.Context, sched *graph.Sche
 	}
 
 	c.maybeAutoAdvance(ctx, completionEvent)
+}
+
+// buildGraphJobOptsForPhase creates graph.JobOpts with per-phase agent override.
+func (c *Conductor) buildGraphJobOptsForPhase(phase string) graph.JobOpts {
+	opts := c.buildGraphJobOpts()
+	if agentName := c.resolveAgent(phase); agentName != "" {
+		opts.Metadata["agent_override"] = agentName
+	}
+
+	return opts
 }
 
 // buildGraphJobOpts creates graph.JobOpts from conductor state.
@@ -458,6 +490,19 @@ func buildPhaseGraph(jobType worker.JobType, label, prompt, workDir string) *gra
 	return graph.SingleNode(graph.NodeID(string(jobType)), label, jobType, prompt)
 }
 
+// resolveAgent returns the agent name for a given phase.
+// Checks per-phase overrides in settings, then returns empty (use default worker).
+// Must be called with c.mu held (at least RLock).
+func (c *Conductor) resolveAgent(phase string) string {
+	if s := c.getEffectiveSettings(); s != nil {
+		if agent, ok := s.Agent.PhaseAgent[phase]; ok && agent != "" {
+			return agent
+		}
+	}
+
+	return ""
+}
+
 // resolveStrategy returns the strategy for a given phase.
 // Checks per-phase overrides first, then conductor default, then global default.
 // Must be called with c.mu held (at least RLock).
@@ -492,7 +537,8 @@ func (c *Conductor) applyStrategy(phase, prompt string) string {
 	profiles := DefaultContextProfiles()
 	if profile, ok := profiles[phase]; ok {
 		var metrics ContextMetrics
-		phaseContext, metrics = BuildPhaseContext(profile, c.workUnit, c.varPool)
+		deps := c.buildContextDeps()
+		phaseContext, metrics = BuildPhaseContext(profile, c.workUnit, c.varPool, deps)
 
 		// Emit context metrics as an event (non-blocking, best-effort).
 		if metricsData, err := json.Marshal(metrics); err == nil {

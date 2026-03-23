@@ -25,6 +25,21 @@ type Scratchpad struct {
 	Thoughts []Thought `json:"thoughts"`
 }
 
+// BuildScratchpadFromFile reads a recording file and builds a scratchpad.
+func BuildScratchpadFromFile(path string) (*Scratchpad, error) {
+	records, err := ReadAll(path)
+	if err != nil {
+		return nil, fmt.Errorf("read recording: %w", err)
+	}
+	if len(records) == 0 {
+		return &Scratchpad{}, nil
+	}
+	// Use the first record's job ID.
+	jobID := records[0].JobID
+
+	return BuildScratchpad(jobID, "", records), nil
+}
+
 // BuildScratchpad parses raw recording records into a structured scratchpad.
 func BuildScratchpad(jobID, phase string, records []Record) *Scratchpad {
 	pad := &Scratchpad{

@@ -49,6 +49,9 @@ func (c *Conductor) Finish(ctx context.Context, opts FinishOptions) (*FinishResu
 		return nil, fmt.Errorf("cannot finish: task is %s (expected submitted). Use --force to override", c.machine.State())
 	}
 
+	// Extract and store learnings from this task before cleanup.
+	c.extractLearnings(ctx)
+
 	if c.git == nil {
 		return nil, errors.New("git not available")
 	}

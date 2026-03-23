@@ -4,6 +4,7 @@ package ciwatch
 import (
 	"context"
 	"log/slog"
+	"strings"
 	"sync"
 	"time"
 )
@@ -25,6 +26,38 @@ type Check struct {
 // StatusFetcher retrieves CI status from a provider.
 type StatusFetcher interface {
 	FetchCIStatus(ctx context.Context, prID string) (*Status, error)
+}
+
+// LogsFetcher retrieves CI failure logs from a provider.
+// Providers that support log extraction should implement this interface
+// in addition to StatusFetcher.
+type LogsFetcher interface {
+	FetchCILogs(ctx context.Context, prID string) (string, error)
+}
+
+// FailedChecksSummary builds a human-readable summary of failed checks from a Status.
+// Used as fallback when the provider does not implement LogsFetcher.
+func FailedChecksSummary(s *Status) string {
+	if s == nil {
+		return ""
+	}
+
+	var parts []string
+	for _, check := range s.Checks {
+		if check.Status == "failure" {
+			entry := "- " + check.Name + " (FAILED)"
+			if check.URL != "" {
+				entry += " " + check.URL
+			}
+			parts = append(parts, entry)
+		}
+	}
+
+	if len(parts) == 0 {
+		return "CI failed but no individual check failures were detected."
+	}
+
+	return "Failed CI checks:\n" + strings.Join(parts, "\n")
 }
 
 // Watcher polls CI status for a single PR and emits updates.

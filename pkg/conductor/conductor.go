@@ -17,6 +17,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/valksor/kvelmo/pkg/agent/strategy"
+	"github.com/valksor/kvelmo/pkg/eventlog"
 	"github.com/valksor/kvelmo/pkg/git"
 	"github.com/valksor/kvelmo/pkg/graph"
 	"github.com/valksor/kvelmo/pkg/memory"
@@ -56,6 +57,8 @@ type Conductor struct {
 	workUnit        *WorkUnit
 	activeJobID     string           // ID of currently running job (for cancellation)
 	activeScheduler *graph.Scheduler // Currently running graph scheduler (for node approvals)
+	phaseStartedAt  time.Time        // When the current phase started executing
+	specWatcher     *specWatcher     // Watches spec files for mid-execution changes
 
 	// Task queue (pending tasks to auto-start after current finishes)
 	taskQueue []*QueuedTask
@@ -97,6 +100,13 @@ type Conductor struct {
 
 	// Canary harness for credential sandboxing (nil when disabled)
 	canaryHarness *security.CanaryHarness
+
+	// Event log for orchestration state auditing (optional).
+	eventLog *eventlog.Log
+
+	// router evaluates phase output after completion and decides the next action
+	// (advance, retry, skip, or rollback). Initialized with DefaultRouter.
+	router PhaseRouter
 
 	// lastFailureClass records the classification of the most recent phase failure.
 	lastFailureClass FailureClass
@@ -348,6 +358,7 @@ func New(opts ...Option) (*Conductor, error) {
 		phasePolicies:   defaultPhasePolicies(),
 		retryCount:      make(map[string]int),
 		dryRun:          options.DryRun,
+		router:          NewDefaultRouter(),
 	}
 	c.cachedSettings.Store(effectiveSettings) // Cache pre-loaded settings (atomic)
 	c.loadPhasePoliciesFromSettings()
@@ -769,6 +780,7 @@ func NewConductor(cfg ConductorConfig) *Conductor {
 		maxIterations:   3,
 		phasePolicies:   defaultPhasePolicies(),
 		retryCount:      make(map[string]int),
+		router:          NewDefaultRouter(),
 	}
 
 	// Set worktree path - prefer explicit config, fallback to repo path

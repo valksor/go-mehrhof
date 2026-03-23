@@ -14,6 +14,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/valksor/kvelmo/pkg/findings"
+	"github.com/valksor/kvelmo/pkg/quality"
 	"github.com/valksor/kvelmo/pkg/settings"
 )
 
@@ -46,8 +48,73 @@ func (c *Conductor) runQualityGate(ctx context.Context) error {
 		slog.Warn("quality gate: unrecognised project type, skipping language checks", "dir", workDir)
 	}
 
+	// Run slop detection on changed files (language-agnostic).
+	if err := c.qualityGateSlop(ctx, workDir); err != nil {
+		return err
+	}
+
+	// Run structured quality gates (QualityRunner) with hold-the-line filtering.
+	if err := c.runStructuredQualityGates(ctx, workDir); err != nil {
+		return err
+	}
+
 	// External review tool runs for all project types if installed and configured.
 	return c.qualityGateExternalReview(ctx, workDir)
+}
+
+// runStructuredQualityGates runs the QualityRunner (if configured) and applies
+// hold-the-line filtering to only gate on findings introduced by the agent.
+func (c *Conductor) runStructuredQualityGates(ctx context.Context, workDir string) error {
+	c.mu.RLock()
+	runner := c.qualityRunner
+	c.mu.RUnlock()
+
+	if runner == nil {
+		return nil
+	}
+
+	passed, findingMessages, err := runner.RunGates(ctx, workDir)
+	if err != nil {
+		return fmt.Errorf("quality runner: %w", err)
+	}
+
+	if passed || len(findingMessages) == 0 {
+		return nil
+	}
+
+	// Convert string findings to structured findings for hold-the-line classification.
+	structured := messagesToFindings(findingMessages)
+	filtered := c.classifyFindings(ctx, structured)
+
+	if len(filtered) == 0 {
+		slog.Info("quality gate: all findings are pre-existing, passing")
+
+		return nil
+	}
+
+	var msgs []string
+	for _, f := range filtered {
+		msgs = append(msgs, f.Message)
+	}
+
+	return fmt.Errorf("quality gate failed with %d finding(s):\n%s", len(filtered), strings.Join(msgs, "\n"))
+}
+
+// messagesToFindings converts plain string finding messages to Finding structs.
+// These lack file/line information, so they will be classified as OriginUnknown
+// by hold-the-line (and thus still gate).
+func messagesToFindings(messages []string) []findings.Finding {
+	result := make([]findings.Finding, len(messages))
+	for i, msg := range messages {
+		result[i] = findings.Finding{
+			Message:  msg,
+			Severity: findings.SeverityHigh,
+			Category: findings.CategoryQuality,
+			Source:   "quality_runner",
+		}
+	}
+
+	return result
 }
 
 // runQualityGateAsync runs the quality gate in a background goroutine
@@ -256,6 +323,47 @@ func (c *Conductor) qualityGateExternalReview(ctx context.Context, workDir strin
 	slog.Debug("quality gate: external review passed", "command", command)
 
 	return nil
+}
+
+// qualityGateSlop runs the slop detector on changed files to catch
+// low-quality AI-generated code patterns.
+func (c *Conductor) qualityGateSlop(ctx context.Context, workDir string) error {
+	slopCtx, cancel := context.WithTimeout(ctx, 60*time.Second) //nolint:mnd // matches qualityCtx timeout
+	defer cancel()
+
+	checker := quality.NewSlopChecker()
+
+	ff, err := checker.Check(slopCtx, workDir)
+	if err != nil {
+		slog.Warn("quality gate: slop detection failed", "err", err)
+
+		return nil // non-fatal; don't block on detection failures
+	}
+
+	if len(ff) == 0 {
+		return nil
+	}
+
+	// Classify findings via hold-the-line to only gate on new slop.
+	filtered := c.classifyFindings(ctx, ff)
+	if len(filtered) == 0 {
+		slog.Info("quality gate: all slop findings are pre-existing, passing")
+
+		return nil
+	}
+
+	var msgs []string
+	for _, f := range filtered {
+		if f.File != "" {
+			msgs = append(msgs, fmt.Sprintf("  %s:%d: [%s] %s", f.File, f.Line, f.Rule, f.Message))
+		} else {
+			msgs = append(msgs, fmt.Sprintf("  [%s] %s", f.Rule, f.Message))
+		}
+	}
+
+	slog.Warn("quality gate: slop detected", "count", len(filtered))
+
+	return fmt.Errorf("slop detection found %d issue(s):\n%s", len(filtered), strings.Join(msgs, "\n"))
 }
 
 // qualityCtx returns a context with the standard 60-second quality-gate timeout.

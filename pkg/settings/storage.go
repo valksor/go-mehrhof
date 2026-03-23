@@ -293,6 +293,9 @@ func Merge(dst, src *Settings) {
 	if src.Workflow.ExternalReview.Command != "" {
 		dst.Workflow.ExternalReview.Command = src.Workflow.ExternalReview.Command
 	}
+	if src.Workflow.HoldTheLine != nil {
+		dst.Workflow.HoldTheLine = src.Workflow.HoldTheLine
+	}
 
 	// Policy settings
 	if len(src.Workflow.Policy.RequiredPhases) > 0 {
@@ -320,6 +323,16 @@ func Merge(dst, src *Settings) {
 	}
 	if len(src.Workflow.Policy.DocRequirements) > 0 {
 		dst.Workflow.Policy.DocRequirements = src.Workflow.Policy.DocRequirements
+	}
+
+	// Phase guardrails
+	if len(src.Workflow.PhaseGuardrails) > 0 {
+		if dst.Workflow.PhaseGuardrails == nil {
+			dst.Workflow.PhaseGuardrails = make(map[string]GuardrailConfig)
+		}
+		for k, v := range src.Workflow.PhaseGuardrails {
+			dst.Workflow.PhaseGuardrails[k] = v
+		}
 	}
 
 	// Workflow hooks

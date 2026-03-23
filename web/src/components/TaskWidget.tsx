@@ -55,7 +55,7 @@ function errorBannerClass(failureClass?: FailureClass): string {
 }
 
 export function TaskWidget({ embedded = false }: TaskWidgetProps) {
-  const { task, state, start, quickStart, queueTask, loading, error, connected, connecting, undo, reset, phaseError } = useProjectStore()
+  const { task, state, start, quickStart, queueTask, loading, error, connected, connecting, undo, reset, retry, phaseError, needsRecovery, ciFixStatus } = useProjectStore()
   const [inputMode, setInputMode] = useState<'quick' | 'file' | 'url'>('quick')
   const [taskDescription, setTaskDescription] = useState('')
   const [urlInput, setUrlInput] = useState('')
@@ -313,6 +313,39 @@ export function TaskWidget({ embedded = false }: TaskWidgetProps) {
       )}
       {error && (
         <p className={`text-sm px-3 py-2 rounded-lg border mt-3 ${errorBannerClass(phaseError?.class)}`}>{error}</p>
+      )}
+
+      {/* Recovery banner when task was interrupted */}
+      {needsRecovery && (
+        <div className="alert alert-warning text-sm mt-3">
+          <svg aria-hidden="true" className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+          </svg>
+          <span>Task was interrupted during <strong>{needsRecovery}</strong>.</span>
+          <button className="btn btn-warning btn-xs" onClick={() => retry()} disabled={loading}>
+            Retry
+          </button>
+        </div>
+      )}
+
+      {/* CI fix loop status */}
+      {ciFixStatus?.active && (
+        <div className="mt-2">
+          <span className="badge badge-info badge-sm gap-1">
+            <span className="loading loading-spinner loading-xs" />
+            CI Fix: attempt {ciFixStatus.attempt ?? '?'}/{ciFixStatus.maxAttempts ?? '?'}
+          </span>
+        </div>
+      )}
+      {ciFixStatus && !ciFixStatus.active && ciFixStatus.result === 'success' && (
+        <div className="mt-2">
+          <span className="badge badge-success badge-sm">CI Fix: passed</span>
+        </div>
+      )}
+      {ciFixStatus && !ciFixStatus.active && ciFixStatus.result === 'failed' && (
+        <div className="mt-2">
+          <span className="badge badge-error badge-sm">CI Fix: failed</span>
+        </div>
       )}
 
       {/* Recovery hints when task has failed */}

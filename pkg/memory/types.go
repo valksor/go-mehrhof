@@ -41,6 +41,12 @@ type Document struct {
 	// AccessTimes stores individual access timestamps for ACT-R activation scoring.
 	// Capped at maxAccessTimes entries to bound memory usage.
 	AccessTimes []time.Time `json:"access_times,omitempty"`
+	// Importance is a user/LLM-assigned score (0.0-1.0) indicating how significant
+	// this document is. Higher importance boosts search ranking.
+	Importance float64 `json:"importance,omitempty"`
+	// Category labels this document for named-block retrieval (e.g. "requirements",
+	// "decisions", "feedback", "learnings").
+	Category string `json:"category,omitempty"`
 }
 
 // SearchResult pairs a document with its similarity score.

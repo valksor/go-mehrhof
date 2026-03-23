@@ -10,6 +10,7 @@ import { ErrorBoundary } from './ErrorBoundary'
 import { PanelLayout } from './PanelLayout'
 import { TaskWidget } from './TaskWidget'
 import { CheckpointsWidget } from './CheckpointsWidget'
+import { PhaseMetricsWidget } from './PhaseMetricsWidget'
 import { ChecklistWidget } from './ChecklistWidget'
 import { ReviewHistoryWidget } from './ReviewHistoryWidget'
 import { FileChangesWidget } from './FileChangesWidget'
@@ -241,6 +242,15 @@ export function ProjectView() {
         defaultCollapsed={widgetStates.checkpoints?.collapsed}
       >
         <CheckpointsWidget embedded />
+      </Widget>
+
+      <Widget
+        id="phase-metrics"
+        title="Phase Metrics"
+        icon={<CheckpointsIcon />}
+        defaultCollapsed={true}
+      >
+        <PhaseMetricsWidget embedded />
       </Widget>
 
       {/* Review History widget — defaultCollapsed, not in layout store */}
