@@ -39,16 +39,15 @@ func (c *Conductor) classifyFindings(ctx context.Context, input []findings.Findi
 
 	diffHunks := convertHunks(rawHunks)
 	classified := findings.ClassifyByDiff(input, diffHunks)
+	introduced := findings.FilterIntroduced(classified)
 
-	total := len(classified)
-	introduced := len(findings.FilterIntroduced(classified))
 	slog.Info("hold-the-line: classified findings",
-		"total", total,
-		"introduced", introduced,
-		"pre_existing", total-introduced,
+		"total", len(classified),
+		"introduced", len(introduced),
+		"pre_existing", len(classified)-len(introduced),
 	)
 
-	return findings.FilterIntroduced(classified)
+	return introduced
 }
 
 // holdTheLineEnabled checks settings. Defaults to true when not explicitly set.

@@ -197,7 +197,7 @@ export interface SpecChangedEvent extends BaseEvent {
 
 /** CI fix loop events. */
 export interface CIFixEvent extends BaseEvent {
-  type: 'ci_fix_watching' | 'ci_fix_success' | 'ci_fix_failed'
+  type: 'ci_fix_watching' | 'ci_fix_success' | 'ci_fix_exhausted' | 'ci_fix_attempt_failed' | 'ci_fix_started'
   message?: string
   data?: { attempt?: number; max_attempts?: number }
 }

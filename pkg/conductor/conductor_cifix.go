@@ -82,10 +82,13 @@ func (c *Conductor) startCIFixLoop(ctx context.Context) {
 	for attempt := 1; attempt <= maxAttempts; attempt++ {
 		slog.Info("cifix: watching CI status", "pr_id", prID, "attempt", attempt, "max", maxAttempts)
 
-		c.emit(ConductorEvent{
-			Type:    "ci_fix_watching",
-			Message: fmt.Sprintf("Watching CI status (attempt %d/%d)", attempt, maxAttempts),
-		})
+		if data, err := json.Marshal(map[string]int{"attempt": attempt, "max_attempts": maxAttempts}); err == nil {
+			c.emit(ConductorEvent{
+				Type:    "ci_fix_watching",
+				Message: fmt.Sprintf("Watching CI status (attempt %d/%d)", attempt, maxAttempts),
+				Data:    data,
+			})
+		}
 
 		// Create a watcher and wait for terminal state
 		watcher := ciwatch.New(fetcher, prID, pollInterval)

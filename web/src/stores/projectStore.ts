@@ -467,15 +467,21 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
           set({ ciFixStatus: { active: false, result: 'success' } })
           get().appendOutput(msg.message || 'CI fix: pipeline passed')
           sendNotification('CI Fix Success', 'Pipeline passed after fix')
-        } else if (msg.type === 'ci_fix_failed') {
+        } else if (msg.type === 'ci_fix_exhausted') {
           set({ ciFixStatus: { active: false, result: 'failed' } })
-          get().appendOutput(msg.message || 'CI fix: pipeline failed')
-          sendNotification('CI Fix Failed', 'Pipeline still failing after fix attempts')
+          get().appendOutput(msg.message || 'CI fix: all attempts exhausted')
+          sendNotification('CI Fix Failed', 'Pipeline still failing after all fix attempts')
+        } else if (msg.type === 'ci_fix_attempt_failed') {
+          get().appendOutput(msg.message || 'CI fix: attempt failed, retrying...')
+        } else if (msg.type === 'ci_fix_started') {
+          get().appendOutput(msg.message || 'CI fix: starting fix job...')
         } else if (msg.type === 'consensus_review_complete') {
           get().appendOutput(msg.message || 'Consensus review complete')
           debouncedRefresh()
         } else if (msg.type === 'router_decision') {
-          get().appendOutput(msg.message || 'Router decision made')
+          const rd = msg as { data?: { action?: string; reason?: string; attempt?: number; max_retries?: number } }
+          const detail = rd.data ? `Router: ${rd.data.action ?? 'advance'}${rd.data.reason ? ` — ${rd.data.reason}` : ''}` : (msg.message || 'Router decision made')
+          get().appendOutput(detail)
         }
       })
 

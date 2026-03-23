@@ -63,10 +63,9 @@ func (c *Conductor) ResumeFromCheckpoint(ctx context.Context, sha string) error 
 		}
 	}
 
-	// Re-dispatch the phase so the agent actually runs with the restored context.
-	c.mu.Lock()
-	c.dispatchAutoAdvance(ctx, targetPhase)
-	c.mu.Unlock()
+	// Re-dispatch the phase without holding the lock.
+	// dispatchAutoAdvance calls Implement/Simplify/etc which acquire c.mu.Lock internally.
+	go c.dispatchAutoAdvance(ctx, targetPhase)
 
 	return nil
 }
