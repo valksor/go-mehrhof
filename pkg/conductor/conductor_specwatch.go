@@ -3,25 +3,25 @@ package conductor
 import (
 	"log/slog"
 	"os"
+	"sync"
 	"sync/atomic"
 	"time"
 )
 
 // specWatcher tracks specification file modification times to detect
 // mid-execution changes. Uses polling (no fsnotify dependency) at
-// graph node boundaries.
+// graph node boundaries. Safe for concurrent use.
 type specWatcher struct {
-	files     map[string]time.Time // path → last known mod time
-	changed   atomic.Bool
-	lastCheck time.Time
+	mu      sync.Mutex
+	files   map[string]time.Time // path → last known mod time
+	changed atomic.Bool
 }
 
 // newSpecWatcher creates a watcher for the given spec file paths.
 // Records initial modification times as baseline.
 func newSpecWatcher(paths []string) *specWatcher {
 	sw := &specWatcher{
-		files:     make(map[string]time.Time, len(paths)),
-		lastCheck: time.Now(),
+		files: make(map[string]time.Time, len(paths)),
 	}
 	for _, path := range paths {
 		if info, err := os.Stat(path); err == nil {
@@ -35,7 +35,14 @@ func newSpecWatcher(paths []string) *specWatcher {
 // Check polls all tracked files for modifications since the last check.
 // Returns true if any spec was modified.
 func (sw *specWatcher) Check() bool {
-	if sw == nil || len(sw.files) == 0 {
+	if sw == nil {
+		return false
+	}
+
+	sw.mu.Lock()
+	defer sw.mu.Unlock()
+
+	if len(sw.files) == 0 {
 		return false
 	}
 
@@ -50,8 +57,6 @@ func (sw *specWatcher) Check() bool {
 			slog.Info("specification modified during execution", "path", path)
 		}
 	}
-
-	sw.lastCheck = time.Now()
 
 	return sw.changed.Load()
 }

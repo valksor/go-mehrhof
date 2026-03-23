@@ -275,6 +275,11 @@ func (c *Conductor) attemptCIFix(ctx context.Context, ciLogs string, attempt int
 	c.persistState()
 	c.mu.Unlock()
 
+	// Guard against pushing after conductor shutdown.
+	if c.closed.Load() {
+		return errors.New("conductor closed, skipping push")
+	}
+
 	// Push to origin
 	if err := repo.Push(ctx, "origin", branch); err != nil {
 		return fmt.Errorf("push CI fix: %w", err)

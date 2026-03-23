@@ -50,15 +50,23 @@ func (c *Conductor) ResumeFromCheckpoint(ctx context.Context, sha string) error 
 		"recording", recordingPath,
 	)
 
-	// Build prior context from the recording if available.
-	var priorContext string
+	// Build prior context from the recording and inject into varpool
+	// so applyStrategy picks it up in the next phase prompt.
 	if recordingPath != "" {
-		priorContext = buildPriorContext(recordingPath, targetPhase)
+		if priorContext := buildPriorContext(recordingPath, targetPhase); priorContext != "" {
+			c.mu.Lock()
+			if c.varPool != nil {
+				c.varPool.SetScoped("sys", "prior_context", priorContext, "resume")
+			}
+			c.mu.Unlock()
+			slog.Info("injected prior agent context into varpool", "phase", targetPhase, "context_len", len(priorContext))
+		}
 	}
 
-	if priorContext != "" {
-		slog.Info("injected prior agent context", "phase", targetPhase, "context_len", len(priorContext))
-	}
+	// Re-dispatch the phase so the agent actually runs with the restored context.
+	c.mu.Lock()
+	c.dispatchAutoAdvance(ctx, targetPhase)
+	c.mu.Unlock()
 
 	return nil
 }

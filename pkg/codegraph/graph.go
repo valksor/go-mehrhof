@@ -205,7 +205,7 @@ func (g *Graph) IndexDirectory(ctx context.Context, dir string) error {
 		if err := g.IndexFile(ctx, path); err != nil {
 			slog.Debug("skipping file", "path", path, "error", err)
 
-			return nil //nolint:nilerr // continue indexing despite individual file parse errors
+			return nil
 		}
 		indexed++
 

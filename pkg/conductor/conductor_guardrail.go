@@ -13,7 +13,7 @@ import (
 // runPreGuardrails executes pre-phase guardrails configured for the given phase.
 // Returns an error if any guardrail produces a High or Critical severity finding,
 // which should block the phase from proceeding.
-// Caller must hold c.mu.
+// Safe to call without c.mu held — acquires RLock internally to snapshot state.
 func (c *Conductor) runPreGuardrails(ctx context.Context, phase string) error {
 	s := c.getEffectiveSettings()
 	if s == nil {
@@ -25,12 +25,15 @@ func (c *Conductor) runPreGuardrails(ctx context.Context, phase string) error {
 		return nil
 	}
 
+	// Snapshot work unit data under RLock to avoid races.
+	c.mu.RLock()
 	var specs []string
 	if c.workUnit != nil {
-		specs = c.workUnit.Specifications
+		specs = make([]string, len(c.workUnit.Specifications))
+		copy(specs, c.workUnit.Specifications)
 	}
-
 	workDir := c.getWorkDir()
+	c.mu.RUnlock()
 	allFindings := executeGuardrails(ctx, cfg.Pre, phase, workDir, specs)
 
 	if len(allFindings) == 0 {
