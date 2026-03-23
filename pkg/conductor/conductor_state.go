@@ -200,7 +200,47 @@ func (c *Conductor) LoadState(ctx context.Context) error {
 
 	slog.Info("task state restored", "task_id", taskID, "state", state)
 
+	// Check for interrupted phase and log a warning.
+	if isActivePhaseState(state) {
+		slog.Warn("task was interrupted mid-phase", "task_id", taskID, "state", state,
+			"hint", "run 'kvelmo retry' to resume or 'kvelmo reset' to start over")
+	}
+
 	return nil
+}
+
+// NeedsRecovery returns true if the current state indicates the task was
+// interrupted during an active phase (planning, implementing, etc.).
+func (c *Conductor) NeedsRecovery() bool {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	if c.workUnit == nil {
+		return false
+	}
+	return isActivePhaseState(c.machine.State())
+}
+
+// RecoveryState returns the interrupted phase name, or empty string if no recovery needed.
+func (c *Conductor) RecoveryState() string {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	if c.workUnit == nil {
+		return ""
+	}
+	state := c.machine.State()
+	if isActivePhaseState(state) {
+		return string(state)
+	}
+	return ""
+}
+
+// isActivePhaseState returns true for states that represent mid-execution phases.
+func isActivePhaseState(s State) bool {
+	switch s {
+	case StatePlanning, StateImplementing, StateSimplifying, StateOptimizing, StateReviewing:
+		return true
+	}
+	return false
 }
 
 // workUnitToTaskState converts a WorkUnit + state to the on-disk TaskState struct.

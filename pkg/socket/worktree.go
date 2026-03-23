@@ -418,6 +418,10 @@ func (w *WorktreeSocket) handleStatus(ctx context.Context, req *Request) (*Respo
 		if wu := w.conductor.WorkUnit(); wu != nil && len(wu.PhaseMetrics) > 0 {
 			result.PhaseMetrics = wu.PhaseMetrics
 		}
+
+		if rs := w.conductor.RecoveryState(); rs != "" {
+			result.NeedsRecovery = rs
+		}
 	}
 
 	return NewResultResponse(req.ID, result)
@@ -1829,6 +1833,7 @@ type StatusResult struct {
 	LastError        string                             `json:"last_error,omitempty"`
 	LastFailureClass string                             `json:"last_failure_class,omitempty"`
 	PhaseMetrics     map[string]*conductor.PhaseMetrics `json:"phase_metrics,omitempty"`
+	NeedsRecovery    string                             `json:"needs_recovery,omitempty"` // Interrupted phase name if recovery needed
 }
 
 type TaskInfo struct {
