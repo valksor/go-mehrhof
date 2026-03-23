@@ -414,6 +414,10 @@ func (w *WorktreeSocket) handleStatus(ctx context.Context, req *Request) (*Respo
 		if fc := w.conductor.LastFailureClass(); fc != "" {
 			result.LastFailureClass = string(fc)
 		}
+
+		if wu := w.conductor.WorkUnit(); wu != nil && len(wu.PhaseMetrics) > 0 {
+			result.PhaseMetrics = wu.PhaseMetrics
+		}
 	}
 
 	return NewResultResponse(req.ID, result)
@@ -1816,14 +1820,15 @@ const (
 )
 
 type StatusResult struct {
-	State            TaskState `json:"state"`
-	Path             string    `json:"path"`
-	Task             *TaskInfo `json:"task,omitempty"`
-	PendingPromptID  string    `json:"pending_prompt_id,omitempty"`
-	ActiveJobID      string    `json:"active_job_id,omitempty"`
-	QueueDepth       int       `json:"queue_depth,omitempty"`
-	LastError        string    `json:"last_error,omitempty"`
-	LastFailureClass string    `json:"last_failure_class,omitempty"`
+	State            TaskState                          `json:"state"`
+	Path             string                             `json:"path"`
+	Task             *TaskInfo                          `json:"task,omitempty"`
+	PendingPromptID  string                             `json:"pending_prompt_id,omitempty"`
+	ActiveJobID      string                             `json:"active_job_id,omitempty"`
+	QueueDepth       int                                `json:"queue_depth,omitempty"`
+	LastError        string                             `json:"last_error,omitempty"`
+	LastFailureClass string                             `json:"last_failure_class,omitempty"`
+	PhaseMetrics     map[string]*conductor.PhaseMetrics `json:"phase_metrics,omitempty"`
 }
 
 type TaskInfo struct {

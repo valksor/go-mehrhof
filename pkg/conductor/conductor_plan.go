@@ -103,6 +103,7 @@ func (c *Conductor) Plan(ctx context.Context) (string, error) {
 	c.workUnit.UpdatedAt = time.Now()
 	c.persistState()
 
+	c.phaseStartedAt = time.Now()
 	c.emit(ConductorEvent{
 		Type:    "planning_started",
 		State:   c.machine.State(),

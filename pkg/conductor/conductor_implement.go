@@ -110,6 +110,7 @@ func (c *Conductor) Implement(ctx context.Context) (string, error) {
 	c.saveJobSession(job.ID, "implementing", "")
 	c.persistState()
 
+	c.phaseStartedAt = time.Now()
 	c.emit(ConductorEvent{
 		Type:    "implementing_started",
 		State:   c.machine.State(),
@@ -197,6 +198,7 @@ func (c *Conductor) Optimize(ctx context.Context) (string, error) {
 	c.saveJobSession(job.ID, "optimizing", "")
 	c.persistState()
 
+	c.phaseStartedAt = time.Now()
 	c.emit(ConductorEvent{
 		Type:    "optimizing_started",
 		State:   c.machine.State(),
@@ -284,6 +286,7 @@ func (c *Conductor) Simplify(ctx context.Context) (string, error) {
 	c.saveJobSession(job.ID, "simplifying", "")
 	c.persistState()
 
+	c.phaseStartedAt = time.Now()
 	c.emit(ConductorEvent{
 		Type:    "simplifying_started",
 		State:   c.machine.State(),

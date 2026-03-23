@@ -216,6 +216,9 @@ func (c *Conductor) handleGraphCompletion(ctx context.Context, sched *graph.Sche
 	// Clear stale PriorStableState on successful completion (matches watchJob)
 	c.machine.ClearPriorStableState()
 
+	// Record per-phase execution metrics from graph scheduler.
+	c.recordPhaseMetricsFromGraph(completionEvent, sched)
+
 	// Dispatch completion event.
 	_ = c.machine.Dispatch(ctx, completionEvent)
 	c.persistState()

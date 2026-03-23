@@ -56,6 +56,7 @@ type Conductor struct {
 	workUnit        *WorkUnit
 	activeJobID     string           // ID of currently running job (for cancellation)
 	activeScheduler *graph.Scheduler // Currently running graph scheduler (for node approvals)
+	phaseStartedAt  time.Time        // When the current phase started executing
 
 	// Task queue (pending tasks to auto-start after current finishes)
 	taskQueue []*QueuedTask
