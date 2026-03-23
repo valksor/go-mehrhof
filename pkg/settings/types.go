@@ -48,6 +48,14 @@ type AgentSettings struct {
 	Strategy      string            `yaml:"strategy,omitempty" json:"strategy,omitempty" schema:"label=Default Strategy;desc=Agent reasoning strategy (direct = pass-through, iterative = self-review loop);options=direct|iterative;default=direct"`
 	PhaseStrategy map[string]string `yaml:"phase_strategy,omitempty" json:"phase_strategy,omitempty" schema:"label=Per-Phase Strategy;desc=Override strategy per phase (e.g. plan: iterative);type=keyvalue;advanced"`
 	PhaseAgent    map[string]string `yaml:"phase_agent,omitempty" json:"phase_agent,omitempty" schema:"label=Per-Phase Agent;desc=Override agent per phase (e.g. plan: gemini, implement: claude);type=keyvalue;advanced"`
+	Consensus     *ConsensusConfig  `yaml:"consensus,omitempty" json:"consensus,omitempty"`
+}
+
+// ConsensusConfig configures multi-agent consensus review.
+type ConsensusConfig struct {
+	Enabled      bool     `yaml:"enabled,omitempty" json:"enabled,omitempty" schema:"label=Enable Consensus;desc=Run reviews with multiple agents and merge findings;default=false"`
+	Agents       []string `yaml:"agents,omitempty" json:"agents,omitempty" schema:"label=Consensus Agents;desc=Agent names to use for consensus review;type=tags"`
+	MinAgreement int      `yaml:"min_agreement,omitempty" json:"min_agreement,omitempty" schema:"label=Min Agreement;desc=Minimum number of agents that must detect a finding;default=1;min=1"`
 }
 
 // CustomAgent defines a user-created agent that wraps a base agent.

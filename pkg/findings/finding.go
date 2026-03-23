@@ -63,6 +63,7 @@ type Finding struct {
 	Evidence    string   `json:"evidence,omitempty"`
 	Source      string   `json:"source"`
 	Origin      Origin   `json:"origin,omitempty"`
+	DetectedBy  []string `json:"detected_by,omitempty"` // Agent names that detected this finding
 }
 
 // CountBySeverity returns the number of findings at each severity level.
