@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/valksor/kvelmo/pkg/eventlog"
 	"github.com/valksor/kvelmo/pkg/worker"
 )
 
@@ -126,6 +127,7 @@ func (c *Conductor) Implement(ctx context.Context) (string, error) {
 	c.persistState()
 
 	c.phaseStartedAt = time.Now()
+	c.emitEventLog(eventlog.Entry{Type: eventlog.EventPhaseStarted, Phase: "implement"})
 	c.emit(ConductorEvent{
 		Type:    "implementing_started",
 		State:   c.machine.State(),
@@ -214,6 +216,7 @@ func (c *Conductor) Optimize(ctx context.Context) (string, error) {
 	c.persistState()
 
 	c.phaseStartedAt = time.Now()
+	c.emitEventLog(eventlog.Entry{Type: eventlog.EventPhaseStarted, Phase: "optimize"})
 	c.emit(ConductorEvent{
 		Type:    "optimizing_started",
 		State:   c.machine.State(),
@@ -302,6 +305,7 @@ func (c *Conductor) Simplify(ctx context.Context) (string, error) {
 	c.persistState()
 
 	c.phaseStartedAt = time.Now()
+	c.emitEventLog(eventlog.Entry{Type: eventlog.EventPhaseStarted, Phase: "simplify"})
 	c.emit(ConductorEvent{
 		Type:    "simplifying_started",
 		State:   c.machine.State(),

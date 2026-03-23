@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/valksor/kvelmo/pkg/eventlog"
 	"github.com/valksor/kvelmo/pkg/graph"
 	"github.com/valksor/kvelmo/pkg/storage"
 	"github.com/valksor/kvelmo/pkg/worker"
@@ -116,6 +117,7 @@ func (c *Conductor) Plan(ctx context.Context) (string, error) {
 	c.persistState()
 
 	c.phaseStartedAt = time.Now()
+	c.emitEventLog(eventlog.Entry{Type: eventlog.EventPhaseStarted, Phase: "plan"})
 	c.emit(ConductorEvent{
 		Type:    "planning_started",
 		State:   c.machine.State(),

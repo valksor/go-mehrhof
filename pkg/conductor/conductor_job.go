@@ -11,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/valksor/kvelmo/pkg/eventlog"
 	"github.com/valksor/kvelmo/pkg/git"
 	"github.com/valksor/kvelmo/pkg/graph"
 	"github.com/valksor/kvelmo/pkg/memory"
@@ -68,6 +69,16 @@ func (c *Conductor) recordPhaseMetrics(completionEvent Event, jobID string) {
 	}
 
 	c.workUnit.PhaseMetrics[phase] = pm
+
+	// Emit event log entry for phase completion.
+	c.emitEventLog(eventlog.Entry{
+		Type:  eventlog.EventPhaseCompleted,
+		Phase: phase,
+		Data: map[string]any{
+			"duration_ms": pm.Duration.Milliseconds(),
+			"agent":       pm.Agent,
+		},
+	})
 }
 
 // recordPhaseMetricsFromGraph records metrics for graph-based phase execution.

@@ -17,6 +17,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/valksor/kvelmo/pkg/agent/strategy"
+	"github.com/valksor/kvelmo/pkg/eventlog"
 	"github.com/valksor/kvelmo/pkg/git"
 	"github.com/valksor/kvelmo/pkg/graph"
 	"github.com/valksor/kvelmo/pkg/memory"
@@ -99,6 +100,9 @@ type Conductor struct {
 
 	// Canary harness for credential sandboxing (nil when disabled)
 	canaryHarness *security.CanaryHarness
+
+	// Event log for orchestration state auditing (optional).
+	eventLog *eventlog.Log
 
 	// router evaluates phase output after completion and decides the next action
 	// (advance, retry, skip, or rollback). Initialized with DefaultRouter.

@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/valksor/kvelmo/pkg/agent/strategy"
+	"github.com/valksor/kvelmo/pkg/eventlog"
 	"github.com/valksor/kvelmo/pkg/memory"
 	"github.com/valksor/kvelmo/pkg/storage"
 )
@@ -52,6 +53,24 @@ func (c *Conductor) SetMetricsRecorder(m MetricsRecorder) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	c.metricsRecorder = m
+}
+
+// SetEventLog configures the event log for orchestration state auditing.
+func (c *Conductor) SetEventLog(log *eventlog.Log) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.eventLog = log
+}
+
+// emitEventLog appends an entry to the event log if configured.
+// Non-blocking: logs on error but never blocks the caller.
+func (c *Conductor) emitEventLog(entry eventlog.Entry) {
+	if c.eventLog == nil {
+		return
+	}
+	if err := c.eventLog.Append(entry); err != nil {
+		slog.Warn("event log append failed", "type", entry.Type, "error", err)
+	}
 }
 
 // SetMemoryIndexer configures the memory indexer used to index task artefacts
