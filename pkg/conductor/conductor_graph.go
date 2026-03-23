@@ -77,6 +77,14 @@ func (c *Conductor) watchGraph(ctx context.Context, sched *graph.Scheduler, comp
 				NodeID:  string(evt.NodeID),
 				Message: "Node completed: " + evt.NodeLabel,
 			})
+			// Check for mid-execution spec changes between graph nodes.
+			if c.specWatcher != nil && c.specWatcher.Check() {
+				c.emit(ConductorEvent{
+					Type:    "spec_changed",
+					Message: "Specification modified during execution — agent will adapt",
+				})
+				c.specWatcher.Reset()
+			}
 
 		case graph.EventNodeFailed:
 			c.emit(ConductorEvent{
@@ -204,6 +212,16 @@ func (c *Conductor) handleGraphCompletion(ctx context.Context, sched *graph.Sche
 
 	if combinedOutput != "" && c.evaluateAndMaybeIterate(ctx, completionEvent, combinedOutput) {
 		return // Re-submitted; skip normal completion path
+	}
+
+	// Router-based adaptive phase progression: evaluate output and decide next action.
+	// This runs AFTER strategy evaluation completes, wrapping the normal advance path.
+	if c.router != nil {
+		phase := phaseFromEvent(completionEvent)
+		decision := c.router.Route(ctx, phase, combinedOutput, 0)
+		if c.applyRouteDecision(ctx, decision, completionEvent) {
+			return // Router handled it (retry/skip/rollback)
+		}
 	}
 
 	c.mu.Lock()

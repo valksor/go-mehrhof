@@ -99,6 +99,9 @@ func (c *Conductor) Implement(ctx context.Context) (string, error) {
 	c.mu.Lock()
 
 	c.setupCanaryHarness()
+	// Start watching spec files for mid-execution edits.
+	c.specWatcher = newSpecWatcher(c.workUnit.Specifications)
+
 	prompt := c.applyStrategy("implement", c.buildImplementPrompt())
 	implJobType := worker.JobTypeImplement
 	if c.dryRun {
