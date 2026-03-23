@@ -68,6 +68,18 @@ func (c *Conductor) Plan(ctx context.Context) (string, error) {
 		return "", wrapped
 	}
 
+	// Run pre-phase guardrails (release lock during execution).
+	c.mu.Unlock()
+	if err := c.runPreGuardrails(ctx, "plan"); err != nil {
+		c.mu.Lock()
+		// Rollback state transition.
+		_ = c.machine.Dispatch(ctx, EventError)
+		c.emitEnrichedError(err, "plan")
+
+		return "", err
+	}
+	c.mu.Lock()
+
 	// Load existing specs so re-planning iterates rather than restarts from scratch
 	var existingSpecs string
 	if c.store != nil {

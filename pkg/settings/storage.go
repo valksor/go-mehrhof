@@ -325,6 +325,16 @@ func Merge(dst, src *Settings) {
 		dst.Workflow.Policy.DocRequirements = src.Workflow.Policy.DocRequirements
 	}
 
+	// Phase guardrails
+	if len(src.Workflow.PhaseGuardrails) > 0 {
+		if dst.Workflow.PhaseGuardrails == nil {
+			dst.Workflow.PhaseGuardrails = make(map[string]GuardrailConfig)
+		}
+		for k, v := range src.Workflow.PhaseGuardrails {
+			dst.Workflow.PhaseGuardrails[k] = v
+		}
+	}
+
 	// Workflow hooks
 	if len(src.Workflow.Hooks) > 0 {
 		if dst.Workflow.Hooks == nil {

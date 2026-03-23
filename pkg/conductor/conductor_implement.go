@@ -86,6 +86,18 @@ func (c *Conductor) Implement(ctx context.Context) (string, error) {
 		c.logVerbosef("Skipping planning phase — using task description as specification")
 	}
 
+	// Run pre-phase guardrails (release lock during execution).
+	c.mu.Unlock()
+	if err := c.runPreGuardrails(ctx, "implement"); err != nil {
+		c.mu.Lock()
+		// Rollback state transition.
+		_ = c.machine.Dispatch(ctx, EventError)
+		c.emitEnrichedError(err, "implement")
+
+		return "", err
+	}
+	c.mu.Lock()
+
 	c.setupCanaryHarness()
 	prompt := c.applyStrategy("implement", c.buildImplementPrompt())
 	implJobType := worker.JobTypeImplement
