@@ -158,6 +158,9 @@ type WorkUnit struct {
 	// PhaseMetrics tracks per-phase execution metrics (duration, agent used).
 	// Populated on phase completion.
 	PhaseMetrics map[string]*PhaseMetrics `json:"phase_metrics,omitempty"`
+	// RouteHistory tracks routing decisions made after each phase completion.
+	// Useful for debugging adaptive phase progression.
+	RouteHistory []RouteDecision `json:"route_history,omitempty"`
 }
 
 // PhaseMetrics captures execution metrics for a single phase.
@@ -165,10 +168,12 @@ type PhaseMetrics struct {
 	Agent    string        `json:"agent,omitempty"`
 	Duration time.Duration `json:"duration"`
 	// Token fields are populated when agents report usage data.
-	InputTokens  int64   `json:"input_tokens,omitempty"`
-	OutputTokens int64   `json:"output_tokens,omitempty"`
-	TotalTokens  int64   `json:"total_tokens,omitempty"`
-	EstCostUSD   float64 `json:"est_cost_usd,omitempty"`
+	InputTokens   int64   `json:"input_tokens,omitempty"`
+	OutputTokens  int64   `json:"output_tokens,omitempty"`
+	TotalTokens   int64   `json:"total_tokens,omitempty"`
+	EstCostUSD    float64 `json:"est_cost_usd,omitempty"`
+	RecordingPath string  `json:"recording_path,omitempty"` // Path to agent recording file for this phase
+	CheckpointSHA string  `json:"checkpoint_sha,omitempty"` // Git checkpoint SHA after this phase
 }
 
 // Source represents where the task came from.

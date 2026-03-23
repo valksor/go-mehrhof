@@ -56,7 +56,15 @@ func (c *Conductor) recordPhaseMetrics(completionEvent Event, jobID string) {
 					}
 				}
 			}
+			if recPath, ok := job.Metadata["recording_path"].(string); ok {
+				pm.RecordingPath = recPath
+			}
 		}
+	}
+
+	// Capture latest checkpoint SHA if available.
+	if len(c.workUnit.Checkpoints) > 0 {
+		pm.CheckpointSHA = c.workUnit.Checkpoints[len(c.workUnit.Checkpoints)-1]
 	}
 
 	c.workUnit.PhaseMetrics[phase] = pm
@@ -84,6 +92,11 @@ func (c *Conductor) recordPhaseMetricsFromGraph(completionEvent Event, _ *graph.
 	// Resolve agent name from settings.
 	if agentName := c.resolveAgent(phase); agentName != "" {
 		pm.Agent = agentName
+	}
+
+	// Capture latest checkpoint SHA if available.
+	if len(c.workUnit.Checkpoints) > 0 {
+		pm.CheckpointSHA = c.workUnit.Checkpoints[len(c.workUnit.Checkpoints)-1]
 	}
 
 	c.workUnit.PhaseMetrics[phase] = pm
@@ -242,6 +255,16 @@ func (c *Conductor) watchJob(ctx context.Context, jobID string, completionEvent 
 
 				if jobOutput != "" && c.evaluateAndMaybeIterate(ctx, completionEvent, jobOutput) {
 					return // Re-submitted; skip normal completion path
+				}
+
+				// Router-based adaptive phase progression: evaluate output and decide next action.
+				// This runs AFTER strategy evaluation completes, wrapping the normal advance path.
+				if c.router != nil {
+					phase := phaseFromEvent(completionEvent)
+					decision := c.router.Route(ctx, phase, jobOutput, 0)
+					if c.applyRouteDecision(ctx, decision, completionEvent) {
+						return // Router handled it (retry/skip/rollback)
+					}
 				}
 
 				c.mu.Lock()

@@ -340,6 +340,13 @@ func (p *Pool) executeWithAgent(ctx context.Context, job *Job, w *Worker) {
 			rec = r
 			defer func() { _ = rec.Close() }()
 			_ = rec.RecordInbound(job.Prompt)
+			// Store recording path in job metadata for phase metrics.
+			p.mu.Lock()
+			if job.Metadata == nil {
+				job.Metadata = make(map[string]any)
+			}
+			job.Metadata["recording_path"] = rec.Path()
+			p.mu.Unlock()
 		} else {
 			slog.Warn("failed to create recorder", "error", recErr, "job_id", job.ID)
 		}
