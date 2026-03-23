@@ -519,7 +519,8 @@ func (c *Conductor) applyStrategy(phase, prompt string) string {
 	profiles := DefaultContextProfiles()
 	if profile, ok := profiles[phase]; ok {
 		var metrics ContextMetrics
-		phaseContext, metrics = BuildPhaseContext(profile, c.workUnit, c.varPool)
+		deps := c.buildContextDeps()
+		phaseContext, metrics = BuildPhaseContext(profile, c.workUnit, c.varPool, deps)
 
 		// Emit context metrics as an event (non-blocking, best-effort).
 		if metricsData, err := json.Marshal(metrics); err == nil {
