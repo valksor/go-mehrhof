@@ -190,8 +190,10 @@ func (vs *VectorStore) Search(ctx context.Context, query string, opts SearchOpti
 		}
 		cosineSim := cosineSimilarity(queryEmb, doc.Embedding)
 		activation := activationScore(doc, now)
-		// Weighted: 70% similarity, 30% activation
-		finalScore := 0.7*float64(cosineSim) + 0.3*activation
+		importance := doc.Importance // 0.0-1.0 (0 when unset)
+		// Weighted: 60% similarity, 25% activation, 15% importance.
+		// When importance is 0 (unset), effectively 60% similarity + 25% activation.
+		finalScore := 0.6*float64(cosineSim) + 0.25*activation + 0.15*importance
 
 		if opts.MinScore > 0 && float32(finalScore) < opts.MinScore {
 			continue
@@ -246,6 +248,32 @@ func (vs *VectorStore) Search(ctx context.Context, query string, opts SearchOpti
 	}
 
 	return results, nil
+}
+
+// SearchByCategory returns all documents matching a category, sorted by importance then recency.
+func (vs *VectorStore) SearchByCategory(category string, limit int) []*Document {
+	vs.mu.RLock()
+	defer vs.mu.RUnlock()
+
+	var matches []*Document
+	for _, doc := range vs.documents {
+		if doc.Category == category {
+			matches = append(matches, doc)
+		}
+	}
+
+	slices.SortFunc(matches, func(a, b *Document) int {
+		// Higher importance first, then newer first.
+		if a.Importance != b.Importance {
+			return cmp.Compare(b.Importance, a.Importance)
+		}
+		return b.CreatedAt.Compare(a.CreatedAt)
+	})
+
+	if limit > 0 && limit < len(matches) {
+		matches = matches[:limit]
+	}
+	return matches
 }
 
 // activationScore computes an ACT-R-inspired activation value.
