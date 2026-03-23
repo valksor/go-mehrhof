@@ -267,12 +267,14 @@ func (vs *VectorStore) SearchByCategory(category string, limit int) []*Document 
 		if a.Importance != b.Importance {
 			return cmp.Compare(b.Importance, a.Importance)
 		}
+
 		return b.CreatedAt.Compare(a.CreatedAt)
 	})
 
 	if limit > 0 && limit < len(matches) {
 		matches = matches[:limit]
 	}
+
 	return matches
 }
 

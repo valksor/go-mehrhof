@@ -280,6 +280,12 @@ func (w *WorktreeSocket) registerHandlers() {
 
 	// Workflow hooks
 	w.server.Handle("hooks.list", w.handleHooksList)
+
+	// Code graph
+	w.server.Handle("graph.index", w.handleGraphIndex)
+	w.server.Handle("graph.query", w.handleGraphQuery)
+	w.server.Handle("graph.callers", w.handleGraphCallers)
+	w.server.Handle("graph.stats", w.handleGraphStats)
 }
 
 // injectSeqAndBuffer assigns a sequence number to a JSON event, stores it in the

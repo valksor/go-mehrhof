@@ -28,6 +28,7 @@ func newSpecWatcher(paths []string) *specWatcher {
 			sw.files[path] = info.ModTime()
 		}
 	}
+
 	return sw
 }
 
@@ -51,6 +52,7 @@ func (sw *specWatcher) Check() bool {
 	}
 
 	sw.lastCheck = time.Now()
+
 	return sw.changed.Load()
 }
 
@@ -59,6 +61,7 @@ func (sw *specWatcher) Changed() bool {
 	if sw == nil {
 		return false
 	}
+
 	return sw.changed.Load()
 }
 
