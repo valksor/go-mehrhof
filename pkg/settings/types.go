@@ -276,11 +276,14 @@ type WorkflowSettings struct {
 	PhasePolicies        map[string]string    `yaml:"phase_policies,omitempty" json:"phase_policies,omitempty" schema:"label=Phase Policies;desc=Per-phase failure policy overrides: fail, retry, or skip (e.g., simplify: skip)"`
 	CI                   CISettings           `yaml:"ci,omitempty" json:"ci,omitempty"`
 	Hooks                HooksSettings        `yaml:"hooks,omitempty" json:"hooks,omitempty"`
+	HoldTheLine          *bool                `yaml:"hold_the_line,omitempty" json:"hold_the_line,omitempty" schema:"label=Hold the Line;desc=Only gate on findings in lines changed by the agent, ignoring pre-existing tech debt;default=true"`
 }
 
 // SecuritySettings configures agent security controls.
 type SecuritySettings struct {
-	CanaryEnabled bool `yaml:"canary_enabled,omitempty" json:"canary_enabled,omitempty" schema:"label=Canary Sandboxing;desc=Seed fake credentials in agent HOME to detect unauthorized file access;default=false"`
+	CanaryEnabled    bool     `yaml:"canary_enabled,omitempty" json:"canary_enabled,omitempty" schema:"label=Canary Sandboxing;desc=Seed fake credentials in agent HOME to detect unauthorized file access;default=false"`
+	RedactionEnabled *bool    `yaml:"redaction_enabled,omitempty" json:"redaction_enabled,omitempty" schema:"label=Secret Redaction;desc=Automatically redact secrets from content sent to AI agents;default=true"`
+	RedactionExtra   []string `yaml:"redaction_extra,omitempty" json:"redaction_extra,omitempty" schema:"label=Extra Redaction Patterns;desc=Additional regex patterns to redact;type=tags;advanced"`
 }
 
 // WatchdogSettings configures the memory leak watchdog.
