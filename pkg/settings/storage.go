@@ -293,6 +293,9 @@ func Merge(dst, src *Settings) {
 	if src.Workflow.ExternalReview.Command != "" {
 		dst.Workflow.ExternalReview.Command = src.Workflow.ExternalReview.Command
 	}
+	if src.Workflow.HoldTheLine != nil {
+		dst.Workflow.HoldTheLine = src.Workflow.HoldTheLine
+	}
 
 	// Policy settings
 	if len(src.Workflow.Policy.RequiredPhases) > 0 {

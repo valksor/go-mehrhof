@@ -144,6 +144,10 @@ func getSettingFromConfig(key string, s *Settings) (any, bool) {
 		if s.Workflow.UseWorktreeIsolation != nil {
 			return *s.Workflow.UseWorktreeIsolation, true
 		}
+	case "workflow.hold_the_line":
+		if s.Workflow.HoldTheLine != nil {
+			return *s.Workflow.HoldTheLine, true
+		}
 	case "git.branch_pattern":
 		if s.Git.BranchPattern != "" {
 			return s.Git.BranchPattern, true

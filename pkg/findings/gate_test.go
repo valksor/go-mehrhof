@@ -141,3 +141,34 @@ func TestEvaluateMultipleGates(t *testing.T) {
 		t.Errorf("expected 2 blockers, got %d", len(blockers))
 	}
 }
+
+func TestHoldTheLineFiltersPreExisting(t *testing.T) {
+	allFindings := []Finding{
+		{Severity: SeverityCritical, Message: "introduced", Origin: OriginIntroduced},
+		{Severity: SeverityCritical, Message: "legacy", Origin: OriginPreExisting},
+		{Severity: SeverityCritical, Message: "unknown loc", Origin: OriginUnknown},
+	}
+	gate := HoldTheLine{Inner: AnySeverity{SeverityCritical}}
+	blockers := gate.Evaluate(allFindings)
+	// Should only block on introduced + unknown, not pre-existing
+	if len(blockers) != 2 {
+		t.Fatalf("expected 2 blockers, got %d", len(blockers))
+	}
+	if blockers[0].Finding.Message != "introduced" {
+		t.Errorf("blockers[0] = %q, want %q", blockers[0].Finding.Message, "introduced")
+	}
+	if blockers[1].Finding.Message != "unknown loc" {
+		t.Errorf("blockers[1] = %q, want %q", blockers[1].Finding.Message, "unknown loc")
+	}
+}
+
+func TestHoldTheLineNoBlockers(t *testing.T) {
+	allFindings := []Finding{
+		{Severity: SeverityCritical, Message: "old", Origin: OriginPreExisting},
+	}
+	gate := HoldTheLine{Inner: AnySeverity{SeverityCritical}}
+	blockers := gate.Evaluate(allFindings)
+	if len(blockers) != 0 {
+		t.Errorf("expected 0 blockers, got %d", len(blockers))
+	}
+}

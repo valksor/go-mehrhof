@@ -87,6 +87,17 @@ func (m MinScore) Evaluate(findings []Finding) []Blocker {
 	}}
 }
 
+// HoldTheLine wraps an inner gate rule and filters findings to only those
+// introduced by the current change before evaluating. Pre-existing findings
+// are excluded so legacy tech debt does not block agent work.
+type HoldTheLine struct {
+	Inner GateRule
+}
+
+func (h HoldTheLine) Evaluate(findings []Finding) []Blocker {
+	return h.Inner.Evaluate(FilterIntroduced(findings))
+}
+
 // Score computes a weighted quality score (0-100) from findings.
 func Score(findings []Finding) float64 {
 	score := 100.0

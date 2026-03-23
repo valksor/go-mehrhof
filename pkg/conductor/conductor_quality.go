@@ -14,6 +14,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/valksor/kvelmo/pkg/findings"
 	"github.com/valksor/kvelmo/pkg/settings"
 )
 
@@ -46,8 +47,68 @@ func (c *Conductor) runQualityGate(ctx context.Context) error {
 		slog.Warn("quality gate: unrecognised project type, skipping language checks", "dir", workDir)
 	}
 
+	// Run structured quality gates (QualityRunner) with hold-the-line filtering.
+	if err := c.runStructuredQualityGates(ctx, workDir); err != nil {
+		return err
+	}
+
 	// External review tool runs for all project types if installed and configured.
 	return c.qualityGateExternalReview(ctx, workDir)
+}
+
+// runStructuredQualityGates runs the QualityRunner (if configured) and applies
+// hold-the-line filtering to only gate on findings introduced by the agent.
+func (c *Conductor) runStructuredQualityGates(ctx context.Context, workDir string) error {
+	c.mu.RLock()
+	runner := c.qualityRunner
+	c.mu.RUnlock()
+
+	if runner == nil {
+		return nil
+	}
+
+	passed, findingMessages, err := runner.RunGates(ctx, workDir)
+	if err != nil {
+		return fmt.Errorf("quality runner: %w", err)
+	}
+
+	if passed || len(findingMessages) == 0 {
+		return nil
+	}
+
+	// Convert string findings to structured findings for hold-the-line classification.
+	structured := messagesToFindings(findingMessages)
+	filtered := c.classifyFindings(ctx, structured)
+
+	if len(filtered) == 0 {
+		slog.Info("quality gate: all findings are pre-existing, passing")
+
+		return nil
+	}
+
+	var msgs []string
+	for _, f := range filtered {
+		msgs = append(msgs, f.Message)
+	}
+
+	return fmt.Errorf("quality gate failed with %d finding(s):\n%s", len(filtered), strings.Join(msgs, "\n"))
+}
+
+// messagesToFindings converts plain string finding messages to Finding structs.
+// These lack file/line information, so they will be classified as OriginUnknown
+// by hold-the-line (and thus still gate).
+func messagesToFindings(messages []string) []findings.Finding {
+	result := make([]findings.Finding, len(messages))
+	for i, msg := range messages {
+		result[i] = findings.Finding{
+			Message:  msg,
+			Severity: findings.SeverityHigh,
+			Category: findings.CategoryQuality,
+			Source:   "quality_runner",
+		}
+	}
+
+	return result
 }
 
 // runQualityGateAsync runs the quality gate in a background goroutine
