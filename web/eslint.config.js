@@ -4,7 +4,7 @@ import jsxA11y from 'eslint-plugin-jsx-a11y'
 import reactHooks from 'eslint-plugin-react-hooks'
 
 export default tseslint.config(
-  { ignores: ['dist', 'coverage', 'node_modules', 'src/types/socket.ts'] },
+  { ignores: ['dist', 'coverage', 'node_modules', 'src/types/socket.ts', 'src/types/conductor.ts'] },
   ...tseslint.configs.recommended,
   jsxA11y.flatConfigs.recommended,
   {

@@ -189,6 +189,33 @@ export interface CanaryViolationEvent extends BaseEvent {
   message?: string
 }
 
+/** Spec changed. */
+export interface SpecChangedEvent extends BaseEvent {
+  type: 'spec_changed'
+  message?: string
+}
+
+/** CI fix loop events. */
+export interface CIFixEvent extends BaseEvent {
+  type: 'ci_fix_watching' | 'ci_fix_success' | 'ci_fix_failed'
+  message?: string
+  data?: { attempt?: number; max_attempts?: number }
+}
+
+/** Consensus review complete. */
+export interface ConsensusReviewCompleteEvent extends BaseEvent {
+  type: 'consensus_review_complete'
+  message?: string
+  data?: unknown
+}
+
+/** Router decision. */
+export interface RouterDecisionEvent extends BaseEvent {
+  type: 'router_decision'
+  message?: string
+  data?: { action?: string; reason?: string; target_phase?: string; attempt?: number; max_retries?: number }
+}
+
 /** Union of all worktree (conductor) events. */
 export type WorktreeEvent =
   | StateChangedEvent
@@ -212,6 +239,10 @@ export type WorktreeEvent =
   | ApprovalEvent
   | HookErrorEvent
   | CanaryViolationEvent
+  | SpecChangedEvent
+  | CIFixEvent
+  | ConsensusReviewCompleteEvent
+  | RouterDecisionEvent
 
 /** All worktree event type strings. */
 export type WorktreeEventType = WorktreeEvent['type']

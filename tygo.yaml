@@ -15,3 +15,13 @@ packages:
       - "memory.go"
       - "chat.go"
       - "protocol.go"
+  - path: "github.com/valksor/kvelmo/pkg/conductor"
+    output_path: "web/src/types/conductor.ts"
+    type_mappings:
+      time.Time: "string"
+      time.Duration: "number"
+      json.RawMessage: "unknown"
+    # Only export types needed by the web frontend
+    include_files:
+      - "state.go"
+      - "router.go"
