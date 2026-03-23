@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/valksor/kvelmo/pkg/findings"
+	"github.com/valksor/kvelmo/pkg/quality"
 	"github.com/valksor/kvelmo/pkg/settings"
 )
 
@@ -45,6 +46,11 @@ func (c *Conductor) runQualityGate(ctx context.Context) error {
 		}
 	} else {
 		slog.Warn("quality gate: unrecognised project type, skipping language checks", "dir", workDir)
+	}
+
+	// Run slop detection on changed files (language-agnostic).
+	if err := c.qualityGateSlop(ctx, workDir); err != nil {
+		return err
 	}
 
 	// Run structured quality gates (QualityRunner) with hold-the-line filtering.
@@ -317,6 +323,47 @@ func (c *Conductor) qualityGateExternalReview(ctx context.Context, workDir strin
 	slog.Debug("quality gate: external review passed", "command", command)
 
 	return nil
+}
+
+// qualityGateSlop runs the slop detector on changed files to catch
+// low-quality AI-generated code patterns.
+func (c *Conductor) qualityGateSlop(ctx context.Context, workDir string) error {
+	slopCtx, cancel := context.WithTimeout(ctx, 60*time.Second) //nolint:mnd // matches qualityCtx timeout
+	defer cancel()
+
+	checker := quality.NewSlopChecker()
+
+	ff, err := checker.Check(slopCtx, workDir)
+	if err != nil {
+		slog.Warn("quality gate: slop detection failed", "err", err)
+
+		return nil // non-fatal; don't block on detection failures
+	}
+
+	if len(ff) == 0 {
+		return nil
+	}
+
+	// Classify findings via hold-the-line to only gate on new slop.
+	filtered := c.classifyFindings(ctx, ff)
+	if len(filtered) == 0 {
+		slog.Info("quality gate: all slop findings are pre-existing, passing")
+
+		return nil
+	}
+
+	var msgs []string
+	for _, f := range filtered {
+		if f.File != "" {
+			msgs = append(msgs, fmt.Sprintf("  %s:%d: [%s] %s", f.File, f.Line, f.Rule, f.Message))
+		} else {
+			msgs = append(msgs, fmt.Sprintf("  [%s] %s", f.Rule, f.Message))
+		}
+	}
+
+	slog.Warn("quality gate: slop detected", "count", len(filtered))
+
+	return fmt.Errorf("slop detection found %d issue(s):\n%s", len(filtered), strings.Join(msgs, "\n"))
 }
 
 // qualityCtx returns a context with the standard 60-second quality-gate timeout.
