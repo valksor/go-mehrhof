@@ -71,6 +71,7 @@ type JobOptions struct {
 	WorkDir     string
 	Environment map[string]string
 	Metadata    map[string]any
+	Agent       string // Override agent for this job (e.g. "claude", "codex", custom agent name)
 }
 
 // Event represents a streaming event from a job.

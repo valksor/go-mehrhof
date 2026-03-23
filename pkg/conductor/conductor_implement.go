@@ -92,7 +92,7 @@ func (c *Conductor) Implement(ctx context.Context) (string, error) {
 	if c.dryRun {
 		implJobType = worker.JobTypeDryRun
 	}
-	opts := c.buildJobOptions()
+	opts := c.buildJobOptionsForPhase("implement")
 	job, err := c.pool.SubmitWithOptions(implJobType, c.getWorkDir(), prompt, opts)
 	if err != nil {
 		// Rollback state
@@ -179,7 +179,7 @@ func (c *Conductor) Optimize(ctx context.Context) (string, error) {
 		optJobType = worker.JobTypeDryRun
 	}
 	prompt := c.applyStrategy("optimize", c.buildOptimizePrompt())
-	opts := c.buildJobOptions()
+	opts := c.buildJobOptionsForPhase("optimize")
 	job, err := c.pool.SubmitWithOptions(optJobType, c.getWorkDir(), prompt, opts)
 	if err != nil {
 		// Rollback state
@@ -266,7 +266,7 @@ func (c *Conductor) Simplify(ctx context.Context) (string, error) {
 		simJobType = worker.JobTypeDryRun
 	}
 	prompt := c.applyStrategy("simplify", c.buildSimplifyPrompt())
-	opts := c.buildJobOptions()
+	opts := c.buildJobOptionsForPhase("simplify")
 	job, err := c.pool.SubmitWithOptions(simJobType, c.getWorkDir(), prompt, opts)
 	if err != nil {
 		// Rollback state

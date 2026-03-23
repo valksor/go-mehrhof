@@ -47,6 +47,7 @@ type AgentSettings struct {
 	Allowed       []string          `yaml:"allowed,omitempty" json:"allowed,omitempty" schema:"label=Allowed Agents;desc=Agents permitted for this project;type=multiselect;options=claude|codex"`
 	Strategy      string            `yaml:"strategy,omitempty" json:"strategy,omitempty" schema:"label=Default Strategy;desc=Agent reasoning strategy (direct = pass-through, iterative = self-review loop);options=direct|iterative;default=direct"`
 	PhaseStrategy map[string]string `yaml:"phase_strategy,omitempty" json:"phase_strategy,omitempty" schema:"label=Per-Phase Strategy;desc=Override strategy per phase (e.g. plan: iterative);type=keyvalue;advanced"`
+	PhaseAgent    map[string]string `yaml:"phase_agent,omitempty" json:"phase_agent,omitempty" schema:"label=Per-Phase Agent;desc=Override agent per phase (e.g. plan: gemini, implement: claude);type=keyvalue;advanced"`
 }
 
 // CustomAgent defines a user-created agent that wraps a base agent.

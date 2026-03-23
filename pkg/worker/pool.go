@@ -153,10 +153,27 @@ func (p *Pool) assignJob(job *Job) {
 
 	p.mu.Lock()
 
-	// Find an available worker with a connected agent
+	// Determine preferred agent name from job metadata.
+	var preferredAgent string
+	if job.Metadata != nil {
+		if v, ok := job.Metadata["agent_override"].(string); ok {
+			preferredAgent = v
+		}
+	}
+
+	// Find an available worker with a connected agent.
+	// When a preferred agent is specified, try matching workers first.
+	var fallback *Worker
 	for _, w := range p.workers {
 		if w.Status == StatusAvailable {
 			if w.Agent != nil && w.Agent.Connected() {
+				if preferredAgent != "" && w.AgentName != preferredAgent {
+					if fallback == nil {
+						fallback = w
+					}
+
+					continue
+				}
 				// Agent-based worker
 				jobCtx, jobCancel := context.WithCancel(p.ctx)
 				w.Status = StatusWorking
@@ -201,6 +218,34 @@ func (p *Pool) assignJob(job *Job) {
 
 				return
 			}
+		}
+	}
+
+	// No exact agent match found — use fallback worker if available.
+	if fallback != nil {
+		w := fallback
+		if w.Agent != nil && w.Agent.Connected() {
+			jobCtx, jobCancel := context.WithCancel(p.ctx)
+			w.Status = StatusWorking
+			w.CurrentJob = job.ID
+			job.Status = JobStatusInProgress
+			job.WorkerID = w.ID
+			now := time.Now()
+			job.StartedAt = &now
+			p.jobCancels[job.ID] = jobCancel
+			p.mu.Unlock()
+
+			slog.Info("preferred agent not available, using fallback", "preferred", preferredAgent, "fallback", w.AgentName)
+			p.emitEvent(job.ID, Event{
+				Type:    "job_started",
+				JobID:   job.ID,
+				Content: fmt.Sprintf("Job assigned to worker %s (%s, preferred %s unavailable)", w.ID, w.AgentName, preferredAgent),
+			})
+
+			p.wg.Add(1)
+			go p.executeWithAgent(jobCtx, job, w)
+
+			return
 		}
 	}
 
@@ -529,6 +574,12 @@ func (p *Pool) SubmitWithOptions(jobType JobType, worktreeID, prompt string, opt
 		job.WorkDir = opts.WorkDir
 		job.Environment = opts.Environment
 		job.Metadata = opts.Metadata
+		if opts.Agent != "" {
+			if job.Metadata == nil {
+				job.Metadata = make(map[string]any)
+			}
+			job.Metadata["agent_override"] = opts.Agent
+		}
 	}
 
 	p.mu.Lock()

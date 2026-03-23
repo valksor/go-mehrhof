@@ -39,7 +39,8 @@ func (c *Conductor) watchGraph(ctx context.Context, sched *graph.Scheduler, comp
 	// starting this goroutine, matching the pattern used by watchJob callers.
 	// Load cached partial results and build job opts under lock.
 	c.mu.RLock()
-	opts := c.buildGraphJobOpts()
+	phase := phaseFromEvent(completionEvent)
+	opts := c.buildGraphJobOptsForPhase(phase)
 	opts.ResumeFrom = c.loadPartialResults(completionEvent)
 	c.mu.RUnlock()
 
@@ -249,6 +250,16 @@ func (c *Conductor) handleGraphCompletion(ctx context.Context, sched *graph.Sche
 	c.maybeAutoAdvance(ctx, completionEvent)
 }
 
+// buildGraphJobOptsForPhase creates graph.JobOpts with per-phase agent override.
+func (c *Conductor) buildGraphJobOptsForPhase(phase string) graph.JobOpts {
+	opts := c.buildGraphJobOpts()
+	if agentName := c.resolveAgent(phase); agentName != "" {
+		opts.Metadata["agent_override"] = agentName
+	}
+
+	return opts
+}
+
 // buildGraphJobOpts creates graph.JobOpts from conductor state.
 // Must be called with c.mu held or from a safe context.
 func (c *Conductor) buildGraphJobOpts() graph.JobOpts {
@@ -456,6 +467,19 @@ func buildPhaseGraph(jobType worker.JobType, label, prompt, workDir string) *gra
 	}
 
 	return graph.SingleNode(graph.NodeID(string(jobType)), label, jobType, prompt)
+}
+
+// resolveAgent returns the agent name for a given phase.
+// Checks per-phase overrides in settings, then returns empty (use default worker).
+// Must be called with c.mu held (at least RLock).
+func (c *Conductor) resolveAgent(phase string) string {
+	if s := c.getEffectiveSettings(); s != nil {
+		if agent, ok := s.Agent.PhaseAgent[phase]; ok && agent != "" {
+			return agent
+		}
+	}
+
+	return ""
 }
 
 // resolveStrategy returns the strategy for a given phase.

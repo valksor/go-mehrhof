@@ -509,6 +509,16 @@ func (c *Conductor) shouldPostTicketComment() bool {
 // buildJobOptions creates JobOptions with execution context for multi-project support.
 // This ensures jobs carry full context (WorkDir, metadata) so any worker can execute them.
 // If canary sandboxing is enabled, injects fake HOME environment variables.
+// buildJobOptionsForPhase creates JobOptions with the per-phase agent override set.
+func (c *Conductor) buildJobOptionsForPhase(phase string) *worker.JobOptions {
+	opts := c.buildJobOptions()
+	if agentName := c.resolveAgent(phase); agentName != "" {
+		opts.Agent = agentName
+	}
+
+	return opts
+}
+
 func (c *Conductor) buildJobOptions() *worker.JobOptions {
 	opts := &worker.JobOptions{
 		WorkDir:  c.getWorkDir(), // Use isolated worktree if available
