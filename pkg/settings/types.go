@@ -250,6 +250,8 @@ type RetrySettings struct {
 type CISettings struct {
 	WatchEnabled    bool `yaml:"watch_enabled,omitempty" json:"watch_enabled,omitempty" schema:"label=Watch CI;desc=Poll CI status after PR submission;default=false"`
 	PollIntervalSec int  `yaml:"poll_interval_sec,omitempty" json:"poll_interval_sec,omitempty" schema:"label=Poll Interval (sec);desc=Seconds between CI status polls;default=30;min=10;max=300;advanced"`
+	AutoFix         bool `yaml:"auto_fix,omitempty" json:"auto_fix,omitempty" schema:"label=Auto Fix CI;desc=Automatically attempt to fix CI failures after PR submission;default=false"`
+	MaxFixAttempts  int  `yaml:"max_fix_attempts,omitempty" json:"max_fix_attempts,omitempty" schema:"label=Max Fix Attempts;desc=Maximum CI fix attempts before giving up;default=3;min=1;max=10;advanced"`
 }
 
 // TransitionHook is a shell command that runs before a workflow transition.
