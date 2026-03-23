@@ -29,7 +29,15 @@ func DeduplicateFindings(groups map[string][]Finding) []Finding {
 	byKey := make(map[string][]*merged)
 	var order []string
 
-	for agentName, agentFindings := range groups {
+	// Sort agent names for deterministic processing order.
+	agentNames := make([]string, 0, len(groups))
+	for name := range groups {
+		agentNames = append(agentNames, name)
+	}
+	slices.Sort(agentNames)
+
+	for _, agentName := range agentNames {
+		agentFindings := groups[agentName]
 		for _, f := range agentFindings {
 			key := dedupKey(f)
 

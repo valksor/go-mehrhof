@@ -2,6 +2,7 @@ package security
 
 import (
 	"fmt"
+	"log/slog"
 	"regexp"
 )
 
@@ -31,6 +32,8 @@ func NewRedactor(extraPatterns []string) *Redactor {
 	for i, extra := range extraPatterns {
 		compiled, err := regexp.Compile(extra)
 		if err != nil {
+			slog.Warn("invalid redaction pattern ignored", "pattern", extra, "error", err)
+
 			continue
 		}
 
