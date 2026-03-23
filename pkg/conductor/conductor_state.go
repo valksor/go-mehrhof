@@ -217,6 +217,7 @@ func (c *Conductor) NeedsRecovery() bool {
 	if c.workUnit == nil {
 		return false
 	}
+
 	return isActivePhaseState(c.machine.State())
 }
 
@@ -231,6 +232,7 @@ func (c *Conductor) RecoveryState() string {
 	if isActivePhaseState(state) {
 		return string(state)
 	}
+
 	return ""
 }
 
@@ -239,7 +241,11 @@ func isActivePhaseState(s State) bool {
 	switch s {
 	case StatePlanning, StateImplementing, StateSimplifying, StateOptimizing, StateReviewing:
 		return true
+	case StateNone, StateLoaded, StatePlanned, StateImplemented, StateSubmitted,
+		StateFailed, StateWaiting, StatePaused:
+		return false
 	}
+
 	return false
 }
 

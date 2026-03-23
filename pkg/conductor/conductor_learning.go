@@ -13,7 +13,7 @@ import (
 // extractLearnings generates a summary of learnings from the completed task
 // and stores them in the memory store for future task context.
 // Must be called with c.mu held.
-func (c *Conductor) extractLearnings() {
+func (c *Conductor) extractLearnings(ctx context.Context) {
 	if c.workUnit == nil || c.memoryIndexer == nil {
 		return
 	}
@@ -25,17 +25,17 @@ func (c *Conductor) extractLearnings() {
 
 	// Build a summary of what happened during this task.
 	var parts []string
-	parts = append(parts, fmt.Sprintf("Task: %s", c.workUnit.Title))
+	parts = append(parts, "Task: "+c.workUnit.Title)
 
 	if c.workUnit.Source != nil {
-		parts = append(parts, fmt.Sprintf("Source: %s", c.workUnit.Source.Reference))
+		parts = append(parts, "Source: "+c.workUnit.Source.Reference)
 	}
 
 	// Summarize phase metrics.
 	for phase, pm := range c.workUnit.PhaseMetrics {
 		detail := fmt.Sprintf("Phase %s: duration=%s", phase, pm.Duration)
 		if pm.Agent != "" {
-			detail += fmt.Sprintf(", agent=%s", pm.Agent)
+			detail += ", agent=" + pm.Agent
 		}
 		parts = append(parts, detail)
 	}
@@ -68,7 +68,7 @@ func (c *Conductor) extractLearnings() {
 		CreatedAt:  time.Now(),
 	}
 
-	if err := store.Store(context.Background(), doc); err != nil {
+	if err := store.Store(ctx, doc); err != nil {
 		slog.Warn("failed to store task learning", "task_id", c.workUnit.ID, "error", err)
 	} else {
 		slog.Info("task learning stored", "task_id", c.workUnit.ID, "doc_id", doc.ID)
