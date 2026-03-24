@@ -43,12 +43,17 @@ type TUISettings struct {
 
 // AgentSettings configures AI agent behavior.
 type AgentSettings struct {
-	Default       string            `yaml:"default,omitempty" json:"default,omitempty" schema:"label=Default Agent;desc=Agent used when none specified;options=claude|codex"`
-	Allowed       []string          `yaml:"allowed,omitempty" json:"allowed,omitempty" schema:"label=Allowed Agents;desc=Agents permitted for this project;type=multiselect;options=claude|codex"`
+	Default       string            `yaml:"default,omitempty" json:"default,omitempty" schema:"label=Default Agent;desc=Agent used when none specified;options=claude|codex|openai|anthropic|ollama"`
+	Allowed       []string          `yaml:"allowed,omitempty" json:"allowed,omitempty" schema:"label=Allowed Agents;desc=Agents permitted for this project;type=multiselect;options=claude|codex|openai|anthropic|ollama"`
 	Strategy      string            `yaml:"strategy,omitempty" json:"strategy,omitempty" schema:"label=Default Strategy;desc=Agent reasoning strategy (direct = pass-through, iterative = self-review loop);options=direct|iterative;default=direct"`
 	PhaseStrategy map[string]string `yaml:"phase_strategy,omitempty" json:"phase_strategy,omitempty" schema:"label=Per-Phase Strategy;desc=Override strategy per phase (e.g. plan: iterative);type=keyvalue;advanced"`
 	PhaseAgent    map[string]string `yaml:"phase_agent,omitempty" json:"phase_agent,omitempty" schema:"label=Per-Phase Agent;desc=Override agent per phase (e.g. plan: gemini, implement: claude);type=keyvalue;advanced"`
 	Consensus     *ConsensusConfig  `yaml:"consensus,omitempty" json:"consensus,omitempty"`
+
+	// API agent settings
+	OpenAI    OpenAIAgentConfig    `yaml:"openai,omitempty" json:"openai,omitempty"`
+	Anthropic AnthropicAgentConfig `yaml:"anthropic,omitempty" json:"anthropic,omitempty"`
+	Ollama    OllamaAgentConfig    `yaml:"ollama,omitempty" json:"ollama,omitempty"`
 }
 
 // ConsensusConfig configures multi-agent consensus review.
@@ -62,10 +67,30 @@ type ConsensusConfig struct {
 // Custom agents are stored in settings.yaml under custom_agents map.
 // They automatically appear in agent selection dropdowns in the UI.
 type CustomAgent struct {
-	Extends     string            `yaml:"extends" json:"extends" schema:"label=Base Agent;desc=Agent to wrap;options=claude|codex;required"`
+	Extends     string            `yaml:"extends" json:"extends" schema:"label=Base Agent;desc=Agent to wrap;options=claude|codex|openai|anthropic|ollama;required"`
 	Description string            `yaml:"description,omitempty" json:"description,omitempty" schema:"label=Description;desc=Human-readable description"`
 	Args        []string          `yaml:"args,omitempty" json:"args,omitempty" schema:"label=CLI Arguments;desc=Additional arguments passed to agent;type=tags"`
 	Env         map[string]string `yaml:"env,omitempty" json:"env,omitempty" schema:"label=Environment;desc=Environment variables for this agent;type=keyvalue"`
+}
+
+// OpenAIAgentConfig configures the OpenAI API agent.
+type OpenAIAgentConfig struct {
+	APIKey  string `yaml:"-" json:"api_key,omitempty" schema:"label=API Key;desc=OpenAI API key;sensitive;env=OPENAI_API_KEY;helpUrl=https://platform.openai.com/api-keys"`
+	BaseURL string `yaml:"base_url,omitempty" json:"base_url,omitempty" schema:"label=Base URL;desc=API base URL (for proxies or Azure OpenAI);default=https://api.openai.com;placeholder=https://api.openai.com"`
+	Model   string `yaml:"model,omitempty" json:"model,omitempty" schema:"label=Model;desc=Model name;default=gpt-4o;placeholder=gpt-4o"`
+}
+
+// AnthropicAgentConfig configures the Anthropic API agent.
+type AnthropicAgentConfig struct {
+	APIKey  string `yaml:"-" json:"api_key,omitempty" schema:"label=API Key;desc=Anthropic API key;sensitive;env=ANTHROPIC_API_KEY;helpUrl=https://console.anthropic.com/settings/keys"`
+	BaseURL string `yaml:"base_url,omitempty" json:"base_url,omitempty" schema:"label=Base URL;desc=API base URL;default=https://api.anthropic.com;placeholder=https://api.anthropic.com"`
+	Model   string `yaml:"model,omitempty" json:"model,omitempty" schema:"label=Model;desc=Model name;default=claude-sonnet-4-20250514;placeholder=claude-sonnet-4-20250514"`
+}
+
+// OllamaAgentConfig configures the Ollama agent.
+type OllamaAgentConfig struct {
+	BaseURL string `yaml:"base_url,omitempty" json:"base_url,omitempty" schema:"label=Base URL;desc=Ollama server URL;default=http://localhost:11434;placeholder=http://localhost:11434"`
+	Model   string `yaml:"model,omitempty" json:"model,omitempty" schema:"label=Model;desc=Model name (must support tool calling);default=llama3.1;placeholder=llama3.1"`
 }
 
 // ProviderSettings configures task providers (GitHub, GitLab, etc.).
