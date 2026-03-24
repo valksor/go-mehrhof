@@ -216,7 +216,7 @@ Before deleting any logic flagged as "dead code," verify whether it is truly unu
 Commands in `cmd/kvelmo/commands/`. Entry point: `serve` (global socket + web server, port 6337).
 
 **Workflow progression:**
-- `start` - Load task and initialize worktree (accepts positional text arg; `--skip` for phase skipping)
+- `start` - Load task and initialize worktree (accepts positional text arg; `--skip` for phase skipping; `--file`/`--symbol`/`--commit` for context attachment)
 - `plan` - Have agent write specification
 - `implement` - Have agent write code
 - `simplify` - Optional code cleanup pass
@@ -224,7 +224,7 @@ Commands in `cmd/kvelmo/commands/`. Entry point: `serve` (global socket + web se
 - `review` - Enter human review mode
 - `submit` - Create pull request (`--dry-run` to preview, `--section` for custom sections)
 - `finish` - Cleanup after PR merge
-- `quick` - Quick-fix mode: load, implement, submit in one step (accepts positional text arg; `--skip`)
+- `quick` - Quick-fix mode: load, implement, submit in one step (accepts positional text arg; `--skip`; `--file`/`--symbol`/`--commit`)
 
 **Workflow control:**
 - `undo`/`redo` - Navigate checkpoints

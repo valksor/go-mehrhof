@@ -10,6 +10,7 @@ import (
 	"os"
 	"os/exec"
 	"os/signal"
+	"path/filepath"
 	"strings"
 	"syscall"
 	"time"
@@ -22,6 +23,7 @@ import (
 	"github.com/valksor/kvelmo/pkg/agent/codex"
 	"github.com/valksor/kvelmo/pkg/agent/ollama"
 	"github.com/valksor/kvelmo/pkg/agent/openai"
+	"github.com/valksor/kvelmo/pkg/conductor"
 	"github.com/valksor/kvelmo/pkg/meta"
 	"github.com/valksor/kvelmo/pkg/settings"
 	"github.com/valksor/kvelmo/pkg/socket"
@@ -29,13 +31,16 @@ import (
 )
 
 var (
-	startForeground bool
-	startVerbose    bool
-	startFrom       string
-	startText       string
-	startAuto       bool
-	startJSON       bool
-	startSkip       []string
+	startForeground    bool
+	startVerbose       bool
+	startFrom          string
+	startText          string
+	startAuto          bool
+	startJSON          bool
+	startSkip          []string
+	startContextFiles  []string
+	startContextSymbol []string
+	startContextCommit []string
 )
 
 var StartCmd = &cobra.Command{
@@ -55,10 +60,18 @@ Use --text to create a task from inline description:
   kvelmo start --text "Fix login button alignment"  Load from inline text
   echo "Fix X" | kvelmo start --text -              Load from stdin
 
+Attach context references so the agent gets precise code pointers:
+  kvelmo start --file src/handler.go "fix the nil check"
+  kvelmo start --file pkg/auth.go:40-60 --symbol Middleware "refactor auth"
+  kvelmo start --commit abc123 "revert the regression from this commit"
+
+Multiple context flags can be combined. File refs support line ranges (file.go:42 or file.go:40-60).
+
 Examples:
   kvelmo start                              # Just start sockets
   kvelmo start --from github:org/repo#42    # Start and load task
   kvelmo start --text "Fix typo in README"  # Start and load inline task
+  kvelmo start --file main.go "fix build"   # Start with file context
   kvelmo plan                               # Then run planning`,
 	RunE: runStart,
 }
@@ -71,6 +84,9 @@ func init() {
 	StartCmd.Flags().BoolVar(&startAuto, "auto", false, "Auto-advance through plan → implement → review")
 	StartCmd.Flags().StringSliceVar(&startSkip, "skip", nil, "Phases to skip during auto-advance (e.g., --skip simplify,optimize)")
 	StartCmd.Flags().BoolVar(&startJSON, "json", false, "Output result as JSON")
+	StartCmd.Flags().StringSliceVar(&startContextFiles, "file", nil, "Attach file context (e.g., --file src/main.go --file pkg/handler.go:40-60)")
+	StartCmd.Flags().StringSliceVar(&startContextSymbol, "symbol", nil, "Attach symbol context (e.g., --symbol HandleRequest)")
+	StartCmd.Flags().StringSliceVar(&startContextCommit, "commit", nil, "Attach commit context (e.g., --commit abc123)")
 }
 
 func runStart(_ *cobra.Command, args []string) error {
@@ -423,12 +439,79 @@ func loadTaskViaRPC(socketPath, source string) error {
 		params["skip_phases"] = startSkip
 	}
 
+	// Build and validate context items from CLI flags
+	contextItems := buildContextItems()
+	if err := validateContextItems(contextItems); err != nil {
+		return err
+	}
+	if len(contextItems) > 0 {
+		params["context_items"] = contextItems
+	}
+
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
 	_, err = client.Call(ctx, "start", params)
 	if err != nil {
 		return fmt.Errorf("call start: %w", err)
+	}
+
+	return nil
+}
+
+// buildContextItems constructs ContextItems from CLI flags.
+func buildContextItems() []conductor.ContextItem {
+	return buildContextItemsFromFlags(startContextFiles, startContextSymbol, startContextCommit)
+}
+
+// buildContextItemsFromFlags constructs ContextItems from file/symbol/commit flag slices.
+// Shared by start and quick commands to avoid divergence.
+func buildContextItemsFromFlags(files, symbols, commits []string) []conductor.ContextItem {
+	var items []conductor.ContextItem
+	for _, f := range files {
+		items = append(items, conductor.ContextItem{Type: conductor.ContextTypeFile, Ref: f})
+	}
+	for _, s := range symbols {
+		items = append(items, conductor.ContextItem{Type: conductor.ContextTypeSymbol, Ref: s})
+	}
+	for _, c := range commits {
+		items = append(items, conductor.ContextItem{Type: conductor.ContextTypeCommit, Ref: c})
+	}
+
+	return items
+}
+
+// validateContextItems performs fast-fail validation on context items before sending to RPC.
+// Checks that file references exist and are not path traversal attempts.
+func validateContextItems(items []conductor.ContextItem) error {
+	cwd, err := os.Getwd()
+	if err != nil {
+		return fmt.Errorf("get working directory: %w", err)
+	}
+
+	for _, item := range items {
+		if item.Type != conductor.ContextTypeFile {
+			continue
+		}
+		// Parse file:line ref to get just the path (reuse server-side parser for consistency)
+		ref, _ := conductor.ParseFileRef(item.Ref)
+
+		// Reject absolute paths
+		if filepath.IsAbs(ref) {
+			return fmt.Errorf("--file %q: absolute paths not allowed", item.Ref)
+		}
+
+		// Check containment
+		resolved := filepath.Clean(filepath.Join(cwd, ref))
+		cleanCwd := filepath.Clean(cwd)
+		if resolved != cleanCwd && !strings.HasPrefix(resolved, cleanCwd+string(filepath.Separator)) {
+			return fmt.Errorf("--file %q: path escapes working directory", item.Ref)
+		}
+
+		// Check existence
+		if _, err := os.Stat(resolved); err != nil {
+			return fmt.Errorf("--file %q: %w", item.Ref, err)
+		}
 	}
 
 	return nil

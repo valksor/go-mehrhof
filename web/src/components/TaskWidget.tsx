@@ -1,7 +1,27 @@
-import { useState, useMemo, useRef } from 'react'
+import { useState, useMemo, useRef, useCallback, useEffect } from 'react'
 import { useProjectStore } from '../stores/projectStore'
 import { FilePicker } from './FilePicker'
 import type { FailureClass } from '../lib/events'
+
+interface ContextRef {
+  type: string
+  ref: string
+  label: string
+}
+
+interface FileEntry {
+  rel_path: string
+  is_dir: boolean
+}
+
+function contextIcon(type: string) {
+  switch (type) {
+    case 'file': return '📄'
+    case 'symbol': return '🔗'
+    case 'commit': return '📌'
+    default: return '@'
+  }
+}
 
 type DetectedProvider = { name: string; icon: string; example: string } | null
 
@@ -67,6 +87,117 @@ export function TaskWidget({ embedded = false }: TaskWidgetProps) {
   const [newTag, setNewTag] = useState('')
   const detectedProvider = useMemo(() => detectProvider(urlInput), [urlInput])
 
+  // Context items (@-mentions)
+  // Prefix conventions: @ = file, @@ = symbol, @# = commit
+  const [contextItems, setContextItems] = useState<ContextRef[]>([])
+  const [atQuery, setAtQuery] = useState('')
+  const [atMode, setAtMode] = useState<'file' | 'symbol' | 'commit' | null>(null)
+  const [atResults, setAtResults] = useState<Array<{ label: string; value: string }>>([])
+  const [atIndex, setAtIndex] = useState(0)
+  const [showAtMenu, setShowAtMenu] = useState(false)
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
+
+  const searchContext = useCallback(async (mode: 'file' | 'symbol' | 'commit', query: string) => {
+    const client = useProjectStore.getState().client
+    if (!client || !connected || query.length < 1) {
+      setAtResults([])
+      return
+    }
+    try {
+      if (mode === 'file') {
+        const result = await client.call<{ entries: FileEntry[] }>('files.search', { query, max_results: 8 })
+        setAtResults((result.entries || []).map(e => ({ label: `${e.is_dir ? '📁' : '📄'} ${e.rel_path}`, value: e.rel_path })))
+      } else if (mode === 'symbol') {
+        const result = await client.call<{ content: string; label: string }>('context.resolve', { type: 'symbol', ref: query })
+        // Parse symbol results into individual lines
+        const lines = result.content.split('\n').filter(Boolean).slice(0, 8)
+        setAtResults(lines.map(line => {
+          // Extract symbol name from format "kind Name (file:line, package pkg)"
+          const match = line.replace(/^- /, '').match(/^\S+\s+(\S+)/)
+          const symbolName = match ? match[1] : query
+          return { label: `🔗 ${line.replace(/^- /, '')}`, value: symbolName }
+        }))
+      } else if (mode === 'commit') {
+        const result = await client.call<{ commits: Array<{ sha: string; message: string }> }>('git.log', { count: 10 })
+        const commits = result.commits || []
+        setAtResults(commits.filter(c => c.sha.startsWith(query) || c.message.toLowerCase().includes(query.toLowerCase()))
+          .slice(0, 8).map(c => ({ label: `📌 ${c.sha.slice(0, 8)} ${c.message}`, value: c.sha })))
+      }
+      setAtIndex(0)
+    } catch {
+      if (mode === 'commit') {
+        // Fallback: try context.resolve directly for single commit
+        try {
+          const client = useProjectStore.getState().client
+          if (client && query.length >= 4) {
+            await client.call<{ content: string }>('context.resolve', { type: 'commit', ref: query })
+            setAtResults([{ label: `📌 ${query}`, value: query }])
+          }
+        } catch { /* no results */ }
+      }
+      setAtResults([])
+    }
+  }, [connected])
+
+  useEffect(() => {
+    if (!showAtMenu || !atQuery || !atMode) return
+    const timer = setTimeout(() => searchContext(atMode, atQuery), 150)
+    return () => clearTimeout(timer)
+  }, [atQuery, atMode, showAtMenu, searchContext])
+
+  const handleDescriptionChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const value = e.target.value
+    setTaskDescription(value)
+
+    const cursorPos = e.target.selectionStart
+    const textBeforeCursor = value.slice(0, cursorPos)
+
+    // Detect @-mention mode: @@ = symbol, @# = commit, @ = file
+    const symbolMatch = textBeforeCursor.match(/@@(\S*)$/)
+    const commitMatch = textBeforeCursor.match(/@#(\S*)$/)
+    const fileMatch = textBeforeCursor.match(/@(\S*)$/)
+
+    if (symbolMatch) {
+      setShowAtMenu(true)
+      setAtMode('symbol')
+      setAtQuery(symbolMatch[1])
+    } else if (commitMatch) {
+      setShowAtMenu(true)
+      setAtMode('commit')
+      setAtQuery(commitMatch[1])
+    } else if (fileMatch && !fileMatch[1].startsWith('@') && !fileMatch[1].startsWith('#')) {
+      setShowAtMenu(true)
+      setAtMode('file')
+      setAtQuery(fileMatch[1])
+    } else {
+      setShowAtMenu(false)
+      setAtMode(null)
+      setAtQuery('')
+    }
+  }
+
+  const insertContextRef = (item: { label: string; value: string }) => {
+    const cursorPos = textareaRef.current?.selectionStart || taskDescription.length
+    const textBefore = taskDescription.slice(0, cursorPos)
+    const textAfter = taskDescription.slice(cursorPos)
+    // Remove the @-trigger text
+    const triggerMatch = textBefore.match(/@@?\S*$|@#\S*$/)
+    if (triggerMatch) {
+      const triggerPos = cursorPos - triggerMatch[0].length
+      setTaskDescription(taskDescription.slice(0, triggerPos) + textAfter)
+    }
+    const type = atMode || 'file'
+    setContextItems(prev => [...prev, { type, ref: item.value, label: item.value }])
+    setShowAtMenu(false)
+    setAtMode(null)
+    setAtQuery('')
+    textareaRef.current?.focus()
+  }
+
+  const removeContextItem = (index: number) => {
+    setContextItems(prev => prev.filter((_, i) => i !== index))
+  }
+
   // When a task is active, queue instead of start
   const hasActiveTask = task && state !== 'none'
 
@@ -83,8 +214,14 @@ export function TaskWidget({ embedded = false }: TaskWidgetProps) {
   const handleQuickLoad = () => {
     if (taskDescription.trim()) {
       const source = `empty:${taskDescription.trim()}`
-      loadOrQueue(source, taskDescription.trim())
+      if (contextItems.length > 0) {
+        // Use start directly to pass context items
+        start(source, quickMode, contextItems)
+      } else {
+        loadOrQueue(source, taskDescription.trim())
+      }
       setTaskDescription('')
+      setContextItems([])
     }
   }
 
@@ -150,17 +287,57 @@ export function TaskWidget({ embedded = false }: TaskWidgetProps) {
       {/* Quick Task tab */}
       {inputMode === 'quick' && (
         <div className="space-y-2">
-          <textarea
-            value={taskDescription}
-            onChange={e => setTaskDescription(e.target.value)}
-            onKeyDown={handleQuickKeyDown}
-            placeholder="Describe what you want to work on..."
-            className="textarea textarea-bordered w-full text-sm resize-none"
-            rows={3}
-            disabled={loading}
-          />
+          <div className="relative">
+            <textarea
+              ref={textareaRef}
+              value={taskDescription}
+              onChange={handleDescriptionChange}
+              onKeyDown={(e) => {
+                if (showAtMenu && atResults.length > 0) {
+                  if (e.key === 'ArrowDown') { e.preventDefault(); setAtIndex(i => Math.min(i + 1, atResults.length - 1)) }
+                  else if (e.key === 'ArrowUp') { e.preventDefault(); setAtIndex(i => Math.max(i - 1, 0)) }
+                  else if (e.key === 'Enter' || e.key === 'Tab') { e.preventDefault(); insertContextRef(atResults[atIndex]) }
+                  else if (e.key === 'Escape') { setShowAtMenu(false) }
+                  return
+                }
+                handleQuickKeyDown(e)
+              }}
+              placeholder="Describe what you want to work on... (@ file, @@ symbol, @# commit)"
+              className="textarea textarea-bordered w-full text-sm resize-none"
+              rows={3}
+              disabled={loading}
+            />
+            {showAtMenu && atResults.length > 0 && (
+              <div className="absolute z-50 left-0 right-0 mt-1 bg-base-100 border border-base-300 rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                {atMode && (
+                  <div className="px-3 py-1 text-xs text-base-content/40 border-b border-base-300">
+                    {atMode === 'file' ? 'Files' : atMode === 'symbol' ? 'Symbols' : 'Commits'}
+                  </div>
+                )}
+                {atResults.map((item, i) => (
+                  <button
+                    key={`${item.value}-${i}`}
+                    className={`w-full text-left px-3 py-1.5 text-sm font-mono truncate hover:bg-base-200 ${i === atIndex ? 'bg-base-200' : ''}`}
+                    onMouseDown={(e) => { e.preventDefault(); insertContextRef(item) }}
+                  >
+                    {item.label}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+          {contextItems.length > 0 && (
+            <div className="flex flex-wrap gap-1">
+              {contextItems.map((ci, i) => (
+                <span key={`${ci.type}-${ci.ref}`} className="badge badge-sm badge-outline gap-1">
+                  {contextIcon(ci.type)} {ci.label || ci.ref}
+                  <button className="cursor-pointer hover:text-error" onClick={() => removeContextItem(i)} aria-label={`Remove ${ci.ref}`}>&times;</button>
+                </span>
+              ))}
+            </div>
+          )}
           <div className="flex justify-between items-center">
-            <span className="text-xs text-base-content/50">Ctrl+Enter to load</span>
+            <span className="text-xs text-base-content/50">Ctrl+Enter to load · @ file · @@ symbol · @# commit</span>
             <button
               onClick={handleQuickLoad}
               disabled={loading || !taskDescription.trim() || !connected}
@@ -348,6 +525,15 @@ export function TaskWidget({ embedded = false }: TaskWidgetProps) {
         )}
       </div>
 
+      {task.contextItems && task.contextItems.length > 0 && (
+        <div className="flex flex-wrap gap-1 mt-2">
+          {task.contextItems.map(ci => (
+            <span key={`${ci.type}-${ci.ref}`} className="badge badge-sm badge-info badge-outline gap-1">
+              {contextIcon(ci.type)} {ci.label || ci.ref}
+            </span>
+          ))}
+        </div>
+      )}
       {task.description && (
         <p className="text-sm text-base-content/80 leading-relaxed mt-3 line-clamp-3">{task.description}</p>
       )}

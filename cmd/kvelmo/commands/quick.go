@@ -11,14 +11,18 @@ import (
 	"time"
 
 	"github.com/spf13/cobra"
+	"github.com/valksor/kvelmo/pkg/conductor"
 	"github.com/valksor/kvelmo/pkg/meta"
 	"github.com/valksor/kvelmo/pkg/socket"
 )
 
 var (
-	quickSource string
-	quickText   string
-	quickSkip   []string
+	quickSource        string
+	quickText          string
+	quickSkip          []string
+	quickContextFiles  []string
+	quickContextSymbol []string
+	quickContextCommit []string
 )
 
 var QuickCmd = &cobra.Command{
@@ -37,6 +41,9 @@ func init() {
 	QuickCmd.Flags().StringVar(&quickSource, "from", "", "Task source")
 	QuickCmd.Flags().StringVar(&quickText, "text", "", "Inline task description")
 	QuickCmd.Flags().StringSliceVar(&quickSkip, "skip", nil, "Additional phases to skip (e.g., --skip simplify,optimize)")
+	QuickCmd.Flags().StringSliceVar(&quickContextFiles, "file", nil, "Attach file context (e.g., --file src/main.go)")
+	QuickCmd.Flags().StringSliceVar(&quickContextSymbol, "symbol", nil, "Attach symbol context (e.g., --symbol HandleRequest)")
+	QuickCmd.Flags().StringSliceVar(&quickContextCommit, "commit", nil, "Attach commit context (e.g., --commit abc123)")
 }
 
 func runQuick(_ *cobra.Command, args []string) error {
@@ -84,6 +91,15 @@ func runQuick(_ *cobra.Command, args []string) error {
 		"skip_phases":  append([]string{"plan"}, quickSkip...),
 	}
 
+	// Build and validate context items
+	items := buildQuickContextItems()
+	if err := validateContextItems(items); err != nil {
+		return err
+	}
+	if len(items) > 0 {
+		params["context_items"] = items
+	}
+
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
@@ -107,4 +123,8 @@ func runQuick(_ *cobra.Command, args []string) error {
 	fmt.Printf("Use '%s watch' to monitor progress.\n", meta.Name)
 
 	return nil
+}
+
+func buildQuickContextItems() []conductor.ContextItem {
+	return buildContextItemsFromFlags(quickContextFiles, quickContextSymbol, quickContextCommit)
 }

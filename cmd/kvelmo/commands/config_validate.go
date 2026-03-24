@@ -189,6 +189,12 @@ func runConfigValidate(_ *cobra.Command, _ []string) error {
 			displayName = "Claude Auth"
 		case "codex":
 			displayName = "Codex CLI"
+		case "openai":
+			displayName = "OpenAI API"
+		case "anthropic":
+			displayName = "Anthropic API"
+		case "ollama":
+			displayName = "Ollama"
 		}
 
 		fmt.Printf("  %-14s %s %s%s\n", displayName+":", symbol, c.Status, detail)

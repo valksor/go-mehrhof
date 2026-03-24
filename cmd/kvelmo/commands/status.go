@@ -96,6 +96,16 @@ func runStatus(cmd *cobra.Command, args []string) error {
 	if result.Task != nil {
 		fmt.Printf("Task:  %s - %s\n", result.Task.ID, result.Task.Title)
 		fmt.Printf("Source: %s\n", result.Task.Source)
+		if len(result.Task.ContextItems) > 0 {
+			fmt.Printf("Context: %d item(s)\n", len(result.Task.ContextItems))
+			for _, ci := range result.Task.ContextItems {
+				label := ci.Label
+				if label == "" {
+					label = ci.Ref
+				}
+				fmt.Printf("  @%s %s\n", ci.Type, label)
+			}
+		}
 	}
 
 	if result.ActiveJobID != "" {

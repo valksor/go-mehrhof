@@ -23,6 +23,12 @@ type TaskState =
   | 'waiting'
   | 'paused'
 
+interface ContextItem {
+  type: string
+  ref: string
+  label: string
+}
+
 interface Task {
   id: string
   title: string
@@ -31,6 +37,7 @@ interface Task {
   description?: string
   branch?: string
   worktreePath?: string
+  contextItems?: ContextItem[]
 }
 
 interface Checkpoint {
@@ -242,7 +249,7 @@ interface ProjectState {
   disconnect: () => void
 
   // Task actions
-  start: (source: string) => Promise<void>
+  start: (source: string, autoAdvance?: boolean, contextItems?: ContextItem[]) => Promise<void>
   quickStart: (source: string) => Promise<void>
   plan: () => Promise<void>
   implement: () => Promise<void>
@@ -656,7 +663,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
     })
   },
 
-  start: async (source: string, autoAdvance: boolean = false) => {
+  start: async (source: string, autoAdvance: boolean = false, contextItems?: ContextItem[]) => {
     const client = get().client
     if (!client) return
 
@@ -664,7 +671,11 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
     get().appendOutput(`Loading task from ${source}...${autoAdvance ? ' (auto-advance enabled)' : ''}`)
 
     try {
-      const result = await client.call<{ status: string; state: TaskState }>('start', { source, auto_advance: autoAdvance })
+      const params: Record<string, unknown> = { source, auto_advance: autoAdvance }
+      if (contextItems && contextItems.length > 0) {
+        params.context_items = contextItems
+      }
+      const result = await client.call<{ status: string; state: TaskState }>('start', params)
       set({ state: result.state, loading: false })
       await get().refreshStatus()
     } catch (err) {
@@ -1444,6 +1455,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
           source: string
           branch?: string
           worktree_path?: string
+          context_items?: Array<{ type: string; ref: string; label: string }>
         }
         phase_metrics?: Record<string, PhaseMetrics>
         needs_recovery?: string
@@ -1465,7 +1477,12 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
             state: result.state,
             source: result.task.source,
             branch: result.task.branch,
-            worktreePath: result.task.worktree_path
+            worktreePath: result.task.worktree_path,
+            contextItems: result.task.context_items?.map((ci: { type: string; ref: string; label: string }) => ({
+              type: ci.type,
+              ref: ci.ref,
+              label: ci.label,
+            }))
           }
         })
       }

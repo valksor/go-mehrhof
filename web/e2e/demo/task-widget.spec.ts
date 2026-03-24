@@ -77,9 +77,15 @@ test.describe('TaskWidget in demo mode', () => {
     await expect(page.getByText('Not connected')).toBeVisible()
   })
 
-  test('shows Ctrl+Enter hint', async ({ page }) => {
+  test('shows context hint with @-mention syntax', async ({ page }) => {
     await page.goto('/?demo')
 
-    await expect(page.getByText('Ctrl+Enter to load')).toBeVisible()
+    await expect(page.getByText(/@ file.*@@ symbol.*@# commit/)).toBeVisible()
+  })
+
+  test('textarea placeholder mentions @-mention', async ({ page }) => {
+    await page.goto('/?demo')
+
+    await expect(page.getByPlaceholder(/@ file.*@@ symbol.*@# commit/)).toBeVisible()
   })
 })
