@@ -257,14 +257,23 @@ type ExternalReviewConfig struct {
 
 // PolicySettings configures workflow enforcement guardrails.
 type PolicySettings struct {
-	RequiredPhases       []string         `yaml:"required_phases,omitempty" json:"required_phases,omitempty" schema:"label=Required Phases;desc=Workflow phases that cannot be skipped (e.g. review, simplify);type=tags"`
-	SensitivePaths       []string         `yaml:"sensitive_paths,omitempty" json:"sensitive_paths,omitempty" schema:"label=Sensitive Paths;desc=Glob patterns for files requiring mandatory review (e.g. pkg/auth/*);type=tags"`
-	MinSpecSections      int              `yaml:"min_spec_sections,omitempty" json:"min_spec_sections,omitempty" schema:"label=Min Specifications;desc=Minimum specification files required before implementation;default=0;min=0;max=10"`
-	RequireSecurityScan  bool             `yaml:"require_security_scan,omitempty" json:"require_security_scan,omitempty" schema:"label=Require Security Scan;desc=Block submission when security findings exist;default=false"`
-	ApprovalRequired     map[string]bool  `yaml:"approval_required,omitempty" json:"approval_required,omitempty" schema:"label=Approval Required;desc=Transitions requiring explicit human approval (e.g. submit: true);type=keyvalue"`
-	ReviewChecklist      []string         `yaml:"review_checklist,omitempty" json:"review_checklist,omitempty" schema:"label=Review Checklist;desc=Items that must be checked before submit completes (e.g. security, performance);type=tags"`
-	RequireSignedCommits bool             `yaml:"require_signed_commits,omitempty" json:"require_signed_commits,omitempty" schema:"label=Require Signed Commits;desc=Block workflow if GPG commit signing is not enabled;default=false"`
-	DocRequirements      []DocRequirement `yaml:"doc_requirements,omitempty" json:"doc_requirements,omitempty"`
+	RequiredPhases       []string                    `yaml:"required_phases,omitempty" json:"required_phases,omitempty" schema:"label=Required Phases;desc=Workflow phases that cannot be skipped (e.g. review, simplify);type=tags"`
+	SensitivePaths       []string                    `yaml:"sensitive_paths,omitempty" json:"sensitive_paths,omitempty" schema:"label=Sensitive Paths;desc=Glob patterns for files requiring mandatory review (e.g. pkg/auth/*);type=tags"`
+	MinSpecSections      int                         `yaml:"min_spec_sections,omitempty" json:"min_spec_sections,omitempty" schema:"label=Min Specifications;desc=Minimum specification files required before implementation;default=0;min=0;max=10"`
+	RequireSecurityScan  bool                        `yaml:"require_security_scan,omitempty" json:"require_security_scan,omitempty" schema:"label=Require Security Scan;desc=Block submission when security findings exist;default=false"`
+	ApprovalRequired     map[string]bool             `yaml:"approval_required,omitempty" json:"approval_required,omitempty" schema:"label=Approval Required;desc=Transitions requiring explicit human approval (e.g. submit: true);type=keyvalue"`
+	ReviewChecklist      []string                    `yaml:"review_checklist,omitempty" json:"review_checklist,omitempty" schema:"label=Review Checklist;desc=Items that must be checked before submit completes (e.g. security, performance);type=tags"`
+	RequireSignedCommits bool                        `yaml:"require_signed_commits,omitempty" json:"require_signed_commits,omitempty" schema:"label=Require Signed Commits;desc=Block workflow if GPG commit signing is not enabled;default=false"`
+	DocRequirements      []DocRequirement            `yaml:"doc_requirements,omitempty" json:"doc_requirements,omitempty"`
+	RiskBasedApproval    *RiskBasedApprovalSettings  `yaml:"risk_based_approval,omitempty" json:"risk_based_approval,omitempty"`
+}
+
+// RiskBasedApprovalSettings configures automatic approval based on risk scoring.
+// When enabled, low-risk changes are auto-approved and high-risk changes require review.
+type RiskBasedApprovalSettings struct {
+	Enabled              bool    `yaml:"enabled,omitempty" json:"enabled,omitempty" schema:"label=Risk-Based Approval;desc=Auto-approve low-risk changes, require review for high-risk;default=false"`
+	AutoApproveThreshold float64 `yaml:"auto_approve_threshold,omitempty" json:"auto_approve_threshold,omitempty" schema:"label=Auto-Approve Threshold;desc=Risk score below which changes are auto-approved;default=0.3;min=0;max=1"`
+	HighRiskThreshold    float64 `yaml:"high_risk_threshold,omitempty" json:"high_risk_threshold,omitempty" schema:"label=High Risk Threshold;desc=Risk score above which extra review is required;default=0.7;min=0;max=1"`
 }
 
 // DocRequirement defines a rule: when files matching Trigger change, files matching Requires must also change.

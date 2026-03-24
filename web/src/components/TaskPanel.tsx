@@ -7,6 +7,7 @@ interface TaskPanelProps {
 
 export function TaskPanel({ data }: TaskPanelProps) {
   const task = useProjectStore((state) => state.task)
+  const riskScore = useProjectStore((state) => state.riskScore)
   const taskData = data?.task as typeof task
 
   // Use data from props if available, otherwise from store
@@ -35,7 +36,17 @@ export function TaskPanel({ data }: TaskPanelProps) {
         <div className="flex items-start gap-3">
           <SourceBadge type={sourceType} />
           <div className="flex-1 min-w-0">
-            <h2 className="text-lg font-semibold truncate">{displayTask.title}</h2>
+            <div className="flex items-center gap-2">
+              <h2 className="text-lg font-semibold truncate">{displayTask.title}</h2>
+              {riskScore && riskScore.level === 'high' && (
+                <span className="badge badge-error badge-sm gap-1 shrink-0">
+                  <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                  </svg>
+                  High Risk
+                </span>
+              )}
+            </div>
             <p className="text-xs text-base-content/60 font-mono">{displayTask.id}</p>
           </div>
         </div>

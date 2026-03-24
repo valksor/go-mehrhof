@@ -36,6 +36,7 @@ type WorktreeState struct {
 	Workers          []WorkerInfo
 	JobID            string
 	LastFailureClass string // failure classification: hard_stop, recoverable, degraded, skippable
+	RiskLevel        string // "low", "medium", "high", or "" if not evaluated
 }
 
 // Model is the root bubbletea model.
@@ -290,6 +291,15 @@ func (m *Model) handleSocketEvent(msg socketEventMsg) (tea.Model, tea.Cmd) {
 			}
 		case "phase_failure_classified":
 			m.worktrees[i].LastFailureClass = string(msg.event.FailureClass)
+		case "risk_evaluated":
+			if msg.event.Data != nil {
+				var riskData struct {
+					Level string `json:"level"`
+				}
+				if err := json.Unmarshal(msg.event.Data, &riskData); err == nil && riskData.Level != "" {
+					m.worktrees[i].RiskLevel = riskData.Level
+				}
+			}
 		}
 
 		break

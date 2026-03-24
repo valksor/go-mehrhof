@@ -98,6 +98,9 @@ func (m *Model) renderStatusBar() string {
 	if state == "failed" && wt.LastFailureClass != "" {
 		text += " [" + wt.LastFailureClass + "]"
 	}
+	if wt.RiskLevel != "" {
+		text += " [risk:" + wt.RiskLevel + "]"
+	}
 	if m.dryRun {
 		text += " [DRY RUN]"
 	}
