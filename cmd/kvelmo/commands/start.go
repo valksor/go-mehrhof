@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log/slog"
 	"os"
 	"os/exec"
 	"os/signal"
@@ -15,9 +16,14 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/valksor/kvelmo/pkg/agent"
+	"github.com/valksor/kvelmo/pkg/agent/anthropic"
+	"github.com/valksor/kvelmo/pkg/agent/apiagent"
 	"github.com/valksor/kvelmo/pkg/agent/claude"
 	"github.com/valksor/kvelmo/pkg/agent/codex"
+	"github.com/valksor/kvelmo/pkg/agent/ollama"
+	"github.com/valksor/kvelmo/pkg/agent/openai"
 	"github.com/valksor/kvelmo/pkg/meta"
+	"github.com/valksor/kvelmo/pkg/settings"
 	"github.com/valksor/kvelmo/pkg/socket"
 	"github.com/valksor/kvelmo/pkg/worker"
 )
@@ -266,10 +272,42 @@ func runInForeground(cwd, globalPath, wtPath string) error {
 	// Use KvelmoPermissionHandler to allow Write/Edit/Bash for planning/implementation
 	registry := agent.NewRegistry()
 	if err := claude.RegisterWithPermissionHandler(registry, agent.KvelmoPermissionHandler); err != nil {
-		return fmt.Errorf("register claude agent: %w", err)
+		slog.Debug("claude agent not available", "error", err)
 	}
 	if err := codex.RegisterWithPermissionHandler(registry, agent.KvelmoPermissionHandler); err != nil {
-		return fmt.Errorf("register codex agent: %w", err)
+		slog.Debug("codex agent not available", "error", err)
+	}
+
+	// Load settings and register API agents
+	effective, _, _, _ := settings.LoadEffective(cwd) //nolint:dogsled // Only need effective settings
+	if effective != nil {
+		apiCfg := apiagent.DefaultAPIConfig()
+
+		cfg := effective.Agent.OpenAI
+		if err := registry.Register(openai.New(
+			openai.Config{APIKey: cfg.APIKey, BaseURL: cfg.BaseURL, Model: cfg.Model}, apiCfg,
+		)); err != nil {
+			slog.Debug("openai agent registration failed", "error", err)
+		}
+
+		acfg := effective.Agent.Anthropic
+		if err := registry.Register(anthropic.New(
+			anthropic.Config{APIKey: acfg.APIKey, BaseURL: acfg.BaseURL, Model: acfg.Model}, apiCfg,
+		)); err != nil {
+			slog.Debug("anthropic agent registration failed", "error", err)
+		}
+
+		ocfg := effective.Agent.Ollama
+		if err := registry.Register(ollama.New(
+			ollama.Config{BaseURL: ocfg.BaseURL, Model: ocfg.Model}, apiCfg,
+		)); err != nil {
+			slog.Debug("ollama agent registration failed", "error", err)
+		}
+	}
+	if effective != nil && effective.Agent.Default != "" {
+		if setErr := registry.SetDefault(effective.Agent.Default); setErr != nil {
+			slog.Warn("agent.default setting invalid", "agent", effective.Agent.Default, "error", setErr)
+		}
 	}
 
 	poolCfg := worker.DefaultPoolConfig()
@@ -301,9 +339,13 @@ func runInForeground(cwd, globalPath, wtPath string) error {
 		return errors.New("worktree socket failed to start")
 	}
 
-	// Add agent worker in background (connecting to Claude/Codex CLI can be slow)
+	// Add agent worker in background
+	defaultAgent := ""
+	if effective != nil {
+		defaultAgent = effective.Agent.Default
+	}
 	go func() {
-		if _, err := pool.AddAgentWorker(ctx, "", true); err != nil {
+		if _, err := pool.AddAgentWorker(ctx, defaultAgent, true); err != nil {
 			fmt.Printf("Warning: Failed to add agent worker: %v\n", err)
 			fmt.Println("Jobs will run in simulation mode.")
 			_ = pool.AddDefaultWorker("")

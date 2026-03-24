@@ -115,7 +115,7 @@ func runConfigValidate(_ *cobra.Command, _ []string) error {
 
 	// Check agent default is valid if settings loaded.
 	if effective != nil && effective.Agent.Default != "" {
-		allowed := []string{"claude", "codex"}
+		allowed := []string{"claude", "codex", "openai", "anthropic", "ollama"}
 		valid := false
 		for _, a := range allowed {
 			if effective.Agent.Default == a {
@@ -136,7 +136,7 @@ func runConfigValidate(_ *cobra.Command, _ []string) error {
 				Name:   "agent.default",
 				Status: "error",
 				Detail: fmt.Sprintf("unknown agent %q", effective.Agent.Default),
-				Fix:    "Set agent.default to 'claude' or 'codex'",
+				Fix:    "Set agent.default to 'claude', 'codex', 'openai', 'anthropic', or 'ollama'",
 			})
 		}
 	}

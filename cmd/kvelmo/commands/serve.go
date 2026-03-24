@@ -17,8 +17,12 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/valksor/kvelmo/pkg/activitylog"
 	"github.com/valksor/kvelmo/pkg/agent"
+	"github.com/valksor/kvelmo/pkg/agent/anthropic"
+	"github.com/valksor/kvelmo/pkg/agent/apiagent"
 	"github.com/valksor/kvelmo/pkg/agent/claude"
 	"github.com/valksor/kvelmo/pkg/agent/codex"
+	"github.com/valksor/kvelmo/pkg/agent/ollama"
+	"github.com/valksor/kvelmo/pkg/agent/openai"
 	"github.com/valksor/kvelmo/pkg/catalog"
 	"github.com/valksor/kvelmo/pkg/meta"
 	"github.com/valksor/kvelmo/pkg/metrics"
@@ -146,6 +150,32 @@ func runServe(cmd *cobra.Command, args []string) error {
 
 		// Apply agent.default from settings
 		effective, _, _, _ := settings.LoadEffective("")
+
+		// Register API-based agents from settings
+		if effective != nil {
+			apiCfg := apiagent.DefaultAPIConfig()
+
+			cfg := effective.Agent.OpenAI
+			if err := registry.Register(openai.New(
+				openai.Config{APIKey: cfg.APIKey, BaseURL: cfg.BaseURL, Model: cfg.Model}, apiCfg,
+			)); err != nil {
+				slog.Debug("openai agent registration failed", "error", err)
+			}
+
+			acfg := effective.Agent.Anthropic
+			if err := registry.Register(anthropic.New(
+				anthropic.Config{APIKey: acfg.APIKey, BaseURL: acfg.BaseURL, Model: acfg.Model}, apiCfg,
+			)); err != nil {
+				slog.Debug("anthropic agent registration failed", "error", err)
+			}
+
+			ocfg := effective.Agent.Ollama
+			if err := registry.Register(ollama.New(
+				ollama.Config{BaseURL: ocfg.BaseURL, Model: ocfg.Model}, apiCfg,
+			)); err != nil {
+				slog.Debug("ollama agent registration failed", "error", err)
+			}
+		}
 		if effective != nil && effective.Agent.Default != "" {
 			if setErr := registry.SetDefault(effective.Agent.Default); setErr != nil {
 				slog.Warn("agent.default setting invalid", "agent", effective.Agent.Default, "error", setErr)
@@ -194,9 +224,16 @@ func runServe(cmd *cobra.Command, args []string) error {
 
 		// Connect agent worker in background so the web server is available immediately.
 		// Jobs run in simulation mode until the agent is ready.
+		// Use the configured default agent (if set) instead of auto-detecting.
+		defaultAgent := ""
+		if effective != nil {
+			defaultAgent = effective.Agent.Default
+		}
 		go func() {
-			_, err := pool.AddAgentWorker(ctx, "", true)
+			slog.Info("adding agent worker", "agent", defaultAgent, "registered", registry.List())
+			_, err := pool.AddAgentWorker(ctx, defaultAgent, true)
 			if err != nil {
+				slog.Error("failed to add agent worker", "agent", defaultAgent, "error", err)
 				fmt.Printf("Warning: Failed to add agent worker: %v\n", err)
 				fmt.Println("Jobs will run in simulation mode until a worker is connected.")
 				_ = pool.AddDefaultWorker("")

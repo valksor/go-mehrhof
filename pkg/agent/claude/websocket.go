@@ -339,6 +339,7 @@ func (w *WebSocketConnection) buildArgs() []string {
 		"--print",
 		"--output-format", "stream-json",
 		"--input-format", "stream-json",
+		"--permission-mode", "bypassPermissions", // kvelmo manages permissions via KvelmoPermissionHandler
 	}
 	slog.Info("claude websocket buildArgs", "args", args)
 

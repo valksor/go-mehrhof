@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/http"
+	"os"
 	"os/exec"
 	"strings"
 	"time"
@@ -122,7 +124,43 @@ func RunPreflight() *PreflightResult {
 		})
 	}
 
-	result.AgentAvailable = claudeOK || codexOK
+	// Check API agents (only report if configured — skip unconfigured to avoid noise)
+	apiAgentAvailable := false
+	for _, check := range []struct {
+		name   string
+		envVar string
+	}{
+		{"openai", "OPENAI_API_KEY"},
+		{"anthropic", "ANTHROPIC_API_KEY"},
+	} {
+		if os.Getenv(check.envVar) != "" {
+			result.Checks = append(result.Checks, CheckResult{
+				Name:   check.name,
+				Status: CheckPassed,
+				Detail: "API key configured",
+			})
+			apiAgentAvailable = true
+		}
+	}
+
+	// Check Ollama (no API key needed, just check reachability)
+	if ollamaErr := checkOllamaAvailable(); ollamaErr == nil {
+		result.Checks = append(result.Checks, CheckResult{
+			Name:   "ollama",
+			Status: CheckPassed,
+			Detail: "server reachable",
+		})
+		apiAgentAvailable = true
+	} else {
+		result.Checks = append(result.Checks, CheckResult{
+			Name:   "ollama",
+			Status: CheckWarning,
+			Detail: "server not reachable",
+			Fix:    "Install and start Ollama: https://ollama.com",
+		})
+	}
+
+	result.AgentAvailable = claudeOK || codexOK || apiAgentAvailable
 	result.SimulationMode = !result.AgentAvailable
 
 	return result
@@ -154,6 +192,29 @@ func PrintPreflight(r *PreflightResult) {
 		}
 	}
 	fmt.Println()
+}
+
+// checkOllamaAvailable checks if the Ollama server is reachable.
+func checkOllamaAvailable() error {
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, "http://localhost:11434/api/tags", nil)
+	if err != nil {
+		return err
+	}
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close() //nolint:errcheck // Read-only availability check
+
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("ollama returned status %d", resp.StatusCode)
+	}
+
+	return nil
 }
 
 // checkClaudeAuth verifies Claude CLI authentication by running a quick check.
