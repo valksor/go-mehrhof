@@ -165,6 +165,8 @@ type WorkUnit struct {
 	// RouteHistory tracks routing decisions made after each phase completion.
 	// Useful for debugging adaptive phase progression.
 	RouteHistory []RouteDecision `json:"route_history,omitempty"`
+	// Forks holds active conversation forks for parallel approaches.
+	Forks []ForkInfo `json:"forks,omitempty"`
 }
 
 // CheckpointMeta stores rich metadata for a single checkpoint.

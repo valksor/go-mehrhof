@@ -211,6 +211,9 @@ func init() {
 	// Project command discovery
 	rootCmd.AddCommand(commands.DiscoverCmd)
 
+	// Conversation forking
+	rootCmd.AddCommand(commands.ForkCmd)
+
 	// Raw JSON-RPC access
 	rootCmd.AddCommand(commands.RPCCmd)
 

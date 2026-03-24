@@ -38,6 +38,7 @@ type WorktreeState struct {
 	LastFailureClass string // failure classification: hard_stop, recoverable, degraded, skippable
 	AutoFixAttempt   int    // current auto-fix attempt (0 = inactive)
 	AutoFixMax       int    // max auto-fix attempts
+	ActiveForks      int    // number of active conversation forks
 
 	// Progress estimation during active phases.
 	ProgressActive     bool
