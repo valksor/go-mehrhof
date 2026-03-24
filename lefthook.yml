@@ -51,5 +51,6 @@ pre-commit:
 
 post-checkout:
   commands:
+    # Best-effort: removes write permissions on Unix-like systems only
     lock-prototype:
       run: chmod -R a-w prototype/ 2>/dev/null || true

@@ -70,6 +70,10 @@ make help               # List all available targets
 # Cleanup
 make clean              # Remove all build artifacts
 make tidy               # Clean and tidy dependencies
+
+# Prototype Management
+make prototype-lock     # Lock prototype directory (read-only)
+make prototype-unlock   # Unlock prototype directory
 ```
 
 ## Frontend
@@ -117,7 +121,7 @@ Each transition creates a git checkpoint. `undo`/`redo` navigate between checkpo
 |---------|---------|
 | `socket/` | Unix domain socket servers (global + per-worktree) |
 | `conductor/` | Task state machine and lifecycle transitions |
-| `agent/` | AI agent interface (claude, codex, custom); includes permission, recorder, and strategy sub-packages |
+| `agent/` | AI agent interface (claude, codex, custom); sub-packages: `permission` (tool approval), `recorder` (session recording), `strategy` (reasoning strategies) |
 | `worker/` | Concurrent job execution pool |
 | `provider/` | Task sources (github, gitlab, linear, wrike, jira, azuredevops, file) |
 | `storage/` | Persistence for tasks, plans, reviews, chat |
@@ -138,24 +142,25 @@ Each transition creates a git checkpoint. `undo`/`redo` navigate between checkpo
 | `changeset/` | Internal changeset tracking |
 | `ciwatch/` | CI pipeline status monitoring |
 | `cli/` | CLI framework utilities and output helpers |
+| `codegraph/` | Code symbol and relationship indexing (SQLite-backed) |
 | `configcheck/` | Configuration drift detection |
 | `discovery/` | Project command scanning (Makefile, package.json, Taskfile) |
-| `filter/` | Filtering utilities |
+| `eventlog/` | Append-only JSONL event log for task lifecycle replay |
+| `filter/` | Generic type-safe in-memory filtering with predicates (not yet wired) |
 | `findings/` | Unified finding model with gate rules and phase-aware quality profiles |
 | `graph/` | Dependency graph scheduling for parallel sub-tasks within phases |
-| `log/` | Structured logging (slog wrappers) |
 | `meta/` | Build metadata (version, commit, docs URL) |
 | `notify/` | Webhook notifications (Slack, generic) |
 | `onboarding/` | User onboarding workflows |
-| `page/` | Pagination utilities |
+| `page/` | Pagination primitives (not yet wired) |
 | `policy/` | Workflow policy checking and validation |
 | `quality/` | Code quality gate execution |
 | `ratelimit/` | Rate limiting utilities |
 | `report/` | Compliance report generation |
 | `retry/` | Retry logic with exponential backoff |
-| `search/` | File and content search utilities |
+| `search/` | Hybrid fuzzy + exact text search with RRF scoring (not yet wired) |
 | `testutil/` | Test helpers and fixtures |
-| `timeline/` | Event timeline utilities |
+| `timeline/` | Activity timeline service over activitylog (not yet wired) |
 | `trace/` | Distributed tracing |
 | `tui/` | Terminal UI (Bubbletea-based dashboard) |
 | `varpool/` | Variable pool for inter-node context sharing during graph execution |
@@ -202,31 +207,35 @@ When running `make quality`, `make test`, or `make ci`:
 - If `make test` has 3 failing tests and you wrote 1, fix all 3.
 - Run the quality/test command again after fixing to confirm zero errors remain.
 
+### Dead Code vs Unimplemented Code
+
+Before deleting any logic flagged as "dead code," verify whether it is truly unused or simply not yet implemented. Reviewers and automated tools may mark code as dead when the actual issue is missing implementation, not unnecessary code. If the code is scaffolding for a planned feature, implement it — don't delete it.
+
 ## CLI Commands
 
 Commands in `cmd/kvelmo/commands/`. Entry point: `serve` (global socket + web server, port 6337).
 
 **Workflow progression:**
-- `start` - Load task and initialize worktree
+- `start` - Load task and initialize worktree (accepts positional text arg; `--skip` for phase skipping)
 - `plan` - Have agent write specification
 - `implement` - Have agent write code
 - `simplify` - Optional code cleanup pass
 - `optimize` - Quality improvements
 - `review` - Enter human review mode
-- `submit` - Create pull request
+- `submit` - Create pull request (`--dry-run` to preview, `--section` for custom sections)
 - `finish` - Cleanup after PR merge
-- `quick` - Quick-fix mode: load, implement, submit in one step
+- `quick` - Quick-fix mode: load, implement, submit in one step (accepts positional text arg; `--skip`)
 
 **Workflow control:**
 - `undo`/`redo` - Navigate checkpoints
-- `status` - Show current state
+- `status` - Show current state (`--all` for multi-project, `--blocked`/`--failed` to filter)
 - `watch` - Stream progress
 - `retry` - Re-run failed phases (phase commands accept `--wait` flag to block until completion)
 - `stop`/`abort`/`reset` - Interrupt operations
 - `abandon` - Abandon current task
 - `delete` - Delete task permanently
 - `update` - Refresh task from source
-- `autostart` - Auto-start task phases on load
+- `checklist` - Manage review checklist items (check, uncheck, list)
 
 **Governance & quality:**
 - `approve` - Approve workflow transitions
@@ -247,6 +256,7 @@ Commands in `cmd/kvelmo/commands/`. Entry point: `serve` (global socket + web se
 - `memory` - View/manage context store
 - `logs` - View operation logs
 - `prompt` - Shell prompt integration (PS1)
+- `recap` - Summarize current task state for resuming work
 - `explain` - Ask agent to explain last action
 - `diagnose` - System diagnostics
 - `show` - Display specification, plan, or review content
@@ -265,8 +275,8 @@ Commands in `cmd/kvelmo/commands/`. Entry point: `serve` (global socket + web se
 - `serve` - Start global socket + web server
 - `shutdown` - Gracefully stop the server
 - `cleanup` - Remove stale socket files
-- `login` - Authenticate with task providers (subcommands: `github login`, `gitlab login`, etc.)
-- `test-provider` - Test a provider connection (verify token and reachability)
+- `github`/`gitlab`/`linear`/`wrike`/`jira`/`azuredevops` - Provider commands (each has `login` subcommand)
+- `config test-provider` - Test a provider connection (verify token and reachability)
 
 **Data & reporting:**
 - `export` - Export task history and metrics (JSON/CSV)

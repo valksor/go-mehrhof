@@ -22,8 +22,14 @@ Critically — can you use kvelmo to achieve these goals:
 
 For each goal, assess:
 - **Status**: fully / partially / not at all
-- **What exists**: current kvelmo features that help
-- **Gap**: what's missing
+- **Surface check** — for every feature that supports this goal, verify it exists on ALL applicable surfaces:
+  - [ ] **CLI** (`cmd/kvelmo/commands/`) — command exists and is wired to socket RPC
+  - [ ] **Web UI** (`web/src/`) — component/widget/panel exists and is wired to a Zustand store
+  - [ ] **TUI** (`pkg/tui/`) — view/panel exists (if the feature is status/monitoring/dashboard related)
+  - [ ] **Socket RPC** (`pkg/socket/`) — method registered and called by both CLI and web UI
+  - A feature that exists only in Go backend with no CLI/web/TUI surface is **not implemented** from the user's perspective. Mark it "not at all" or "partially" accordingly.
+- **What exists**: current kvelmo features that help — **list which surfaces have coverage** (e.g., "CLI only", "CLI + web", "Go backend only")
+- **Gap**: what's missing — **explicitly note missing surfaces** (e.g., "no web UI component", "no TUI panel")
 - **Recommendation**: what to build (Fibonacci effort: 1, 2, 3, 5, 8, 13)
 
 ### Goal 1: Clear agent interface
@@ -86,8 +92,48 @@ The 14 goals above are a starting point, not a ceiling. Investigate deeper acros
 6. **Workflow completeness**: Is there a clear path from prototype to production?
 7. **Integration gaps**: What agent infrastructure does kvelmo need to connect to?
 8. **Data ownership & portability**: Can agent code be used outside kvelmo?
+9. **Surface parity**: For every feature found in Phase 1, is it accessible from CLI, web UI, and TUI (where applicable)? A Go function without a CLI command or web button is invisible to the user. List every feature that exists on one surface but not the others — these are gaps even if the Go backend is fully implemented.
 
 Report all gaps found—whether 3 or 30. Each gap should include severity and a recommended fix.
+
+---
+
+## Phase 3: Implementation Planning
+
+Do NOT stop at analysis. The purpose of this command is to produce an actionable plan for closing the gaps found above.
+
+### Step 1: Prioritize
+
+From all gaps discovered (Phase 1 goals, Phase 2 critical audit), create a single prioritized list sorted by:
+1. **Impact** — how many goals does this unblock or improve?
+2. **Effort** — lower effort first within same impact tier
+3. **Dependencies** — what must be built before what?
+
+Group into tiers:
+- **Quick wins** (effort 1-3): Can be implemented immediately
+- **Medium** (effort 5): Meaningful work, clear scope
+- **Large** (effort 8-13): Needs design decisions, may span multiple packages
+
+### Step 2: Plan Each Gap
+
+For each gap (starting from highest priority), produce a concrete implementation plan:
+- **What to build**: One-sentence description
+- **Files to create/modify**: Specific paths following the project's package structure
+- **Wiring**: Full-stack wiring per Critical Rule 4 (Go package → socket RPC → CLI command → web store → web component → route)
+- **Test strategy**: What to test and how
+- **Risks/dependencies**: What could block this or what must exist first
+- **Surface checklist**: Before marking any gap as "planned," confirm the plan covers:
+  - [ ] CLI command (or explicit reason why not)
+  - [ ] Web UI component + Zustand store wiring (or explicit reason why not)
+  - [ ] TUI view (for status/monitoring/dashboard features, or explicit reason why not)
+  - [ ] Socket RPC method connecting backend to all surfaces
+  - **Plans missing surfaces are incomplete. Do not proceed to Step 3 with incomplete plans.**
+
+### Step 3: Enter Plan Mode
+
+After producing the implementation plan, enter plan mode (`/plan`) to align with the user on which gaps to tackle first. Do not implement without user approval.
+
+The goal is a ready-to-execute plan, not a report that ends with "analysis complete."
 
 ---
 
@@ -135,5 +181,6 @@ All personas share these 10 core systems. When recommending features, these must
    - **Web UI component** (widget, panel, or page)
    - **Route + navigation** wiring in web frontend
    - **CLI command** in `cmd/kvelmo/commands/` (if user-facing)
+   - **TUI view** in `pkg/tui/` (for status, monitoring, and dashboard features)
    - A feature without both CLI and web UI is not complete (per CLAUDE.md parity rule). If a feature is backend-only by nature, explicitly note why.
 5. **Name by function, not domain** — packages, RPC methods, CLI commands, and frontend components must be named for what they DO, not which persona inspired them. Litmus test: "Would a user from a DIFFERENT persona find this name sensible?" Domain-specific terminology belongs in help text and documentation, NOT in code identifiers.

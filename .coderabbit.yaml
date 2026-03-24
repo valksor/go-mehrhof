@@ -26,6 +26,7 @@ reviews:
         - Files should stay under 500 lines. Split by feature/responsibility.
         - `//nolint:lintername // justification` is acceptable and required by project policy. Do not flag these as code smells if they include a justification.
         - No backwards compatibility needed — no external consumers. Old code is deleted entirely. Do NOT suggest deprecation warnings, compatibility shims, or tombstone comments.
+        - **Dead code vs unimplemented code**: Do NOT flag code as "dead" or suggest deleting it just because nothing calls it yet. Code may be scaffolding for features not yet wired up. Only flag code as dead if you can confirm it was previously used and is now unreachable — not simply because it lacks callers today.
         - Target platform is Linux/macOS only. Windows builds are not needed. Desktop app on Windows uses Tauri + WSL (Go always runs on Linux). Do not suggest Windows-specific changes or build constraints.
 
     - path: "pkg/socket/**"
