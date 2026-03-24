@@ -280,6 +280,7 @@ func (g *GlobalSocket) registerHandlers() {
 	g.server.Handle("memory.search", g.handleMemorySearch)
 	g.server.Handle("memory.stats", g.handleMemoryStats)
 	g.server.Handle("memory.clear", g.handleMemoryClear)
+	g.server.Handle("memory.outcomes", g.handleMemoryOutcomes)
 
 	// Agent status
 	g.server.Handle("agent.status", g.handleAgentStatus)

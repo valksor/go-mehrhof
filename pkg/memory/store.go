@@ -194,6 +194,8 @@ func (vs *VectorStore) Search(ctx context.Context, query string, opts SearchOpti
 		// Weighted: 60% similarity, 25% activation, 15% importance.
 		// When importance is 0 (unset), effectively 60% similarity + 25% activation.
 		finalScore := 0.6*float64(cosineSim) + 0.25*activation + 0.15*importance
+		// Apply outcome boost: successful tasks get +0.1, failed get -0.05.
+		finalScore += OutcomeScoreBoost(doc.Outcome)
 
 		if opts.MinScore > 0 && float32(finalScore) < opts.MinScore {
 			continue

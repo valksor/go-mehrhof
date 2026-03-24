@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/valksor/kvelmo/pkg/memory"
+	"github.com/valksor/kvelmo/pkg/settings"
 )
 
 // extractLearnings generates a summary of learnings from the completed task
@@ -87,5 +88,69 @@ func (c *Conductor) extractLearnings(ctx context.Context) {
 		slog.Warn("failed to store task learning", "task_id", taskID, "error", err)
 	} else {
 		slog.Info("task learning stored", "task_id", taskID, "doc_id", doc.ID)
+	}
+}
+
+// linkTaskOutcome determines the outcome of the current task and links it to
+// all memory documents for that task. Must be called with c.mu held — the
+// caller's lock is temporarily released for I/O.
+func (c *Conductor) linkTaskOutcome(ctx context.Context) {
+	if c.workUnit == nil || c.memoryIndexer == nil {
+		return
+	}
+
+	// Check if outcome linking is enabled in settings.
+	if s := c.getEffectiveSettings(); s != nil {
+		if !settings.BoolValue(s.Storage.OutcomeLinking, true) {
+			return
+		}
+	}
+
+	store := c.memoryIndexer.Store()
+	if store == nil {
+		return
+	}
+
+	// Snapshot data under the lock.
+	taskID := c.workUnit.ID
+	qualityPassed := c.workUnit.QualityGatePassed
+	prID := c.workUnit.PRID
+	cancelledBy := c.workUnit.CancelledBy
+
+	// Determine outcome from task state.
+	outcome := memory.DocumentOutcome{}
+
+	// Success: quality gate passed and not cancelled.
+	if qualityPassed != nil && *qualityPassed && cancelledBy == "" {
+		outcome.Success = true
+	}
+
+	// CI passed first try: quality gate passed without prior failure.
+	if qualityPassed != nil && *qualityPassed {
+		outcome.CIPassedFirstTry = true
+	}
+
+	// PR was created (merged status determined later at finish).
+	if prID != "" {
+		// Check PR status if providers available.
+		if c.providers != nil && c.workUnit.Source != nil {
+			pr, err := c.providers.GetPRStatus(ctx, c.workUnit.Source.Reference)
+			if err == nil && pr.Merged {
+				outcome.PRMerged = true
+			}
+		}
+	}
+
+	// Human changes: review was done and checklist items were checked.
+	if len(c.workUnit.ChecklistChecked) > 0 {
+		outcome.HumanChangesNeeded = true
+	}
+
+	// Release lock before I/O.
+	c.mu.Unlock()
+	defer c.mu.Lock()
+
+	if err := store.LinkOutcome(ctx, taskID, outcome); err != nil {
+		slog.Warn("failed to link task outcome to memory", "task_id", taskID, "error", err)
 	}
 }

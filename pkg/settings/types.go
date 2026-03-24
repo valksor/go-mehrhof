@@ -219,6 +219,7 @@ type WorkerSettings struct {
 // StorageSettings configures where specs, plans, reviews, and chat are stored.
 type StorageSettings struct {
 	SaveInProject  *bool                  `yaml:"save_in_project,omitempty" json:"save_in_project,omitempty" schema:"label=Save in Project;desc=Store specs/plans/chat in .valksor/ instead of home (~/.valksor/kvelmo/);default=false"`
+	OutcomeLinking *bool                  `yaml:"outcome_linking,omitempty" json:"outcome_linking,omitempty" schema:"label=Outcome Linking;desc=Link task outcomes to memory documents for smarter retrieval;default=true"`
 	SpecOutputPath string                 `yaml:"spec_output_path,omitempty" json:"spec_output_path,omitempty" schema:"label=Spec Output Path;desc=Write specs to this repo path. Variables: {key}, {slug}. Example: docs/specs/{key}.md;advanced"`
 	PlanOutputPath string                 `yaml:"plan_output_path,omitempty" json:"plan_output_path,omitempty" schema:"label=Plan Output Path;desc=Write plans to this repo path. Variables: {key}, {slug}. Example: docs/plans/{key}.md;advanced"`
 	CommitSpecs    *bool                  `yaml:"commit_specs,omitempty" json:"commit_specs,omitempty" schema:"label=Commit Specs to Git;desc=Auto-commit specs and plans to git when written to repo output paths;default=false;advanced"`

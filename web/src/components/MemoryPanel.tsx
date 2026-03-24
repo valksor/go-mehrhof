@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from 'react'
-import { useGlobalStore, type MemoryResult } from '../stores/globalStore'
+import { useGlobalStore, type MemoryResult, type DocumentOutcome } from '../stores/globalStore'
 import { AccessibleModal } from './ui/AccessibleModal'
 
 interface MemoryPanelProps {
@@ -21,6 +21,29 @@ const TYPE_COLORS: Record<string, string> = {
   plan: 'badge-accent',
   note: 'badge-info',
   snippet: 'badge-warning',
+}
+
+function OutcomeBadges({ outcome }: { outcome?: DocumentOutcome }) {
+  if (!outcome) return null
+
+  return (
+    <div className="flex items-center gap-1 flex-wrap">
+      {outcome.success ? (
+        <span className="badge badge-xs badge-success" title="Task succeeded">pass</span>
+      ) : (
+        <span className="badge badge-xs badge-error" title="Task failed">fail</span>
+      )}
+      {outcome.pr_merged && (
+        <span className="badge badge-xs badge-info" title="PR was merged">merged</span>
+      )}
+      {outcome.ci_passed_first_try && (
+        <span className="badge badge-xs badge-success badge-outline" title="CI passed on first try">CI ok</span>
+      )}
+      {outcome.human_changes_needed && (
+        <span className="badge badge-xs badge-warning" title="Required human changes">human edit</span>
+      )}
+    </div>
+  )
 }
 
 export function MemoryPanel({ isOpen, onClose }: MemoryPanelProps) {
@@ -210,6 +233,7 @@ export function MemoryPanel({ isOpen, onClose }: MemoryPanelProps) {
                           task: {r.task_id.slice(0, 8)}
                         </span>
                       )}
+                      <OutcomeBadges outcome={r.outcome} />
                     </div>
                     <div className="flex items-center gap-2 flex-shrink-0">
                       <span
