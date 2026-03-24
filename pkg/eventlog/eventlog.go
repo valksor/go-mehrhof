@@ -7,6 +7,7 @@ import (
 	"bufio"
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"sync"
@@ -112,7 +113,9 @@ func ReadAll(dir string) ([]Entry, error) {
 	for scanner.Scan() {
 		var entry Entry
 		if err := json.Unmarshal(scanner.Bytes(), &entry); err != nil {
-			continue // Skip malformed entries
+			slog.Debug("skipping malformed event log entry", "error", err)
+
+			continue
 		}
 
 		entries = append(entries, entry)

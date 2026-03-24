@@ -402,3 +402,90 @@ func TestDiffFiles(t *testing.T) {
 		t.Errorf("DiffFiles()[0] = %s, want test.txt", files[0])
 	}
 }
+
+func TestCommitsSince(t *testing.T) {
+	dir, cleanup := setupTestRepo(t)
+	defer cleanup()
+
+	repo, _ := Open(dir)
+	ctx := context.Background()
+
+	// Get initial commit as base ref
+	initialSHA, _ := repo.CurrentCommit(ctx)
+
+	// Create two more commits
+	_ = os.WriteFile(filepath.Join(dir, "a.txt"), []byte("a"), 0o644)
+	_ = repo.StageAll(ctx)
+	_, _ = repo.Commit(ctx, "add file a")
+
+	_ = os.WriteFile(filepath.Join(dir, "b.txt"), []byte("b"), 0o644)
+	_ = repo.StageAll(ctx)
+	_, _ = repo.Commit(ctx, "add file b")
+
+	entries, err := repo.CommitsSince(ctx, initialSHA)
+	if err != nil {
+		t.Fatalf("CommitsSince() error = %v", err)
+	}
+
+	if len(entries) != 2 {
+		t.Fatalf("CommitsSince() returned %d entries, want 2", len(entries))
+	}
+
+	// Most recent first
+	if entries[0].Message != "add file b" {
+		t.Errorf("entries[0].Message = %q, want %q", entries[0].Message, "add file b")
+	}
+	if entries[1].Message != "add file a" {
+		t.Errorf("entries[1].Message = %q, want %q", entries[1].Message, "add file a")
+	}
+}
+
+func TestCommitsSince_NoNewCommits(t *testing.T) {
+	dir, cleanup := setupTestRepo(t)
+	defer cleanup()
+
+	repo, _ := Open(dir)
+	ctx := context.Background()
+
+	headSHA, _ := repo.CurrentCommit(ctx)
+	entries, err := repo.CommitsSince(ctx, headSHA)
+	if err != nil {
+		t.Fatalf("CommitsSince() error = %v", err)
+	}
+
+	if len(entries) != 0 {
+		t.Errorf("CommitsSince() returned %d entries, want 0", len(entries))
+	}
+}
+
+func TestStageFiles(t *testing.T) {
+	dir, cleanup := setupTestRepo(t)
+	defer cleanup()
+
+	repo, _ := Open(dir)
+	ctx := context.Background()
+
+	// Create two files but only stage one
+	_ = os.WriteFile(filepath.Join(dir, "staged.txt"), []byte("staged"), 0o644)
+	_ = os.WriteFile(filepath.Join(dir, "unstaged.txt"), []byte("unstaged"), 0o644)
+
+	err := repo.StageFiles(ctx, filepath.Join(dir, "staged.txt"))
+	if err != nil {
+		t.Fatalf("StageFiles() error = %v", err)
+	}
+
+	// Commit only staged file
+	sha, err := repo.Commit(ctx, "add staged file")
+	if err != nil {
+		t.Fatalf("Commit() error = %v", err)
+	}
+	if sha == "" {
+		t.Error("Commit() returned empty SHA")
+	}
+
+	// Unstaged file should still show as untracked
+	has, _ := repo.HasUncommittedChanges(ctx)
+	if !has {
+		t.Error("expected uncommitted changes (unstaged.txt), got none")
+	}
+}

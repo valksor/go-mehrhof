@@ -8,6 +8,8 @@ import (
 )
 
 func TestNodeIsSubTask(t *testing.T) {
+	t.Parallel()
+
 	normal := &Node{ID: "a", Label: "normal"}
 	if normal.IsSubTask() {
 		t.Error("normal node should not be a sub-task")
@@ -28,6 +30,8 @@ func TestNodeIsSubTask(t *testing.T) {
 }
 
 func TestSubTaskConfig(t *testing.T) {
+	t.Parallel()
+
 	cfg := SubTaskConfig{
 		Title:       "Add authentication",
 		Description: "Implement OAuth2",
@@ -48,6 +52,8 @@ func TestSubTaskConfig(t *testing.T) {
 }
 
 func TestSubTaskExecutor_NotConfigured(t *testing.T) {
+	t.Parallel()
+
 	g := New()
 	_ = g.AddNode(&Node{
 		ID:    "st",
@@ -76,6 +82,8 @@ func TestSubTaskExecutor_NotConfigured(t *testing.T) {
 }
 
 func TestSubTaskExecutor_Success(t *testing.T) {
+	t.Parallel()
+
 	g := New()
 	_ = g.AddNode(&Node{
 		ID:    "st",
@@ -116,6 +124,8 @@ func TestSubTaskExecutor_Success(t *testing.T) {
 }
 
 func TestSubTaskExecutor_Failure(t *testing.T) {
+	t.Parallel()
+
 	g := New()
 	_ = g.AddNode(&Node{
 		ID:    "st",

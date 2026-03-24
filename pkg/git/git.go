@@ -196,6 +196,13 @@ func (r *Repository) StageAll(ctx context.Context) error {
 	return err
 }
 
+// StageFiles stages specific files for commit.
+func (r *Repository) StageFiles(ctx context.Context, paths ...string) error {
+	args := append([]string{"add", "--"}, paths...)
+
+	return r.runRetryable(ctx, args...)
+}
+
 // ValidateCommitMessage checks if a commit message subject line matches the required pattern.
 // Returns nil if pattern is empty (no validation) or if the message matches.
 func ValidateCommitMessage(message, pattern string) error {
@@ -363,13 +370,11 @@ func (r *Repository) CommitsBehind(ctx context.Context, ref string) (int, error)
 	return count, nil
 }
 
-func (r *Repository) Log(ctx context.Context, n int) ([]LogEntry, error) {
-	format := "%H|%s|%an|%ai"
-	out, err := r.run(ctx, "log", fmt.Sprintf("-n%d", n), "--format="+format)
-	if err != nil {
-		return nil, err
-	}
+// logFormat is the git log format used by Log, CommitsSince, and CommitInfo.
+const logFormat = "%H|%s|%an|%ai"
 
+// parseLogOutput parses git log output produced with logFormat into LogEntry slices.
+func parseLogOutput(out string) []LogEntry {
 	var entries []LogEntry
 	for _, line := range strings.Split(out, "\n") {
 		if line == "" {
@@ -387,13 +392,32 @@ func (r *Repository) Log(ctx context.Context, n int) ([]LogEntry, error) {
 		})
 	}
 
-	return entries, nil
+	return entries
+}
+
+func (r *Repository) Log(ctx context.Context, n int) ([]LogEntry, error) {
+	out, err := r.run(ctx, "log", fmt.Sprintf("-n%d", n), "--format="+logFormat)
+	if err != nil {
+		return nil, err
+	}
+
+	return parseLogOutput(out), nil
+}
+
+// CommitsSince returns log entries for all commits between sinceRef (exclusive)
+// and HEAD (inclusive). Useful for inspecting agent commits since the last checkpoint.
+func (r *Repository) CommitsSince(ctx context.Context, sinceRef string) ([]LogEntry, error) {
+	out, err := r.run(ctx, "log", "--format="+logFormat, sinceRef+"..HEAD")
+	if err != nil {
+		return nil, err
+	}
+
+	return parseLogOutput(out), nil
 }
 
 // CommitInfo returns metadata for a single commit SHA.
 func (r *Repository) CommitInfo(ctx context.Context, sha string) (LogEntry, error) {
-	format := "%H|%s|%an|%ai"
-	out, err := r.run(ctx, "log", "-1", "--format="+format, sha)
+	out, err := r.run(ctx, "log", "-1", "--format="+logFormat, sha)
 	if err != nil {
 		return LogEntry{}, fmt.Errorf("commit %s not found: %w", sha, err)
 	}

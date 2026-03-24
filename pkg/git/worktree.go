@@ -68,6 +68,13 @@ func (r *Repository) AddWorktree(ctx context.Context, path, branch string, creat
 	return err
 }
 
+// PruneWorktrees removes stale worktree refs whose directories no longer exist.
+func (r *Repository) PruneWorktrees(ctx context.Context) error {
+	_, err := r.run(ctx, "worktree", "prune")
+
+	return err
+}
+
 func (r *Repository) RemoveWorktree(ctx context.Context, path string, force bool) error {
 	args := []string{"worktree", "remove"}
 	if force {

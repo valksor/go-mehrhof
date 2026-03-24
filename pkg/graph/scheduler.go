@@ -346,6 +346,7 @@ func (s *Scheduler) dispatchNode(ctx context.Context, id NodeID, node *Node, opt
 		s.handleNodeFailure(ctx, id, node, err, opts)
 
 		// Check if fail-branch or skipped dependencies unlock new nodes.
+		// Goroutine avoids recursive s.mu acquisition from enqueueReady.
 		s.nodeWg.Add(1)
 
 		go func() {
@@ -809,6 +810,7 @@ func (s *Scheduler) waitForApproval(ctx context.Context, id NodeID, node *Node, 
 		case <-ctx.Done():
 			_ = s.state.Transition(id, StateRunning)
 			s.handleNodeFailure(ctx, id, node, ctx.Err(), opts)
+			s.emitProgress()
 		}
 	}()
 }

@@ -52,11 +52,17 @@ func parseUnifiedDiffHunks(diffOutput string) map[string][][2]int {
 			continue
 		}
 
-		start, _ := strconv.Atoi(matches[1])
+		start, err := strconv.Atoi(matches[1])
+		if err != nil {
+			continue
+		}
 
 		count := 1
 		if matches[2] != "" {
-			count, _ = strconv.Atoi(matches[2])
+			count, err = strconv.Atoi(matches[2])
+			if err != nil {
+				continue
+			}
 		}
 
 		// A count of 0 means pure deletion — no new lines to flag.

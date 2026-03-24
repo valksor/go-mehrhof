@@ -57,10 +57,18 @@ func TestQuery(t *testing.T) {
 	}
 
 	now := time.Now()
-	_ = log.Append(Entry{Timestamp: now.Add(-2 * time.Hour), Type: EventPhaseStarted, Phase: "plan"})
-	_ = log.Append(Entry{Timestamp: now.Add(-1 * time.Hour), Type: EventPhaseCompleted, Phase: "plan"})
-	_ = log.Append(Entry{Timestamp: now, Type: EventPhaseStarted, Phase: "implement"})
-	_ = log.Close()
+	if err := log.Append(Entry{Timestamp: now.Add(-2 * time.Hour), Type: EventPhaseStarted, Phase: "plan"}); err != nil {
+		t.Fatal(err)
+	}
+	if err := log.Append(Entry{Timestamp: now.Add(-1 * time.Hour), Type: EventPhaseCompleted, Phase: "plan"}); err != nil {
+		t.Fatal(err)
+	}
+	if err := log.Append(Entry{Timestamp: now, Type: EventPhaseStarted, Phase: "implement"}); err != nil {
+		t.Fatal(err)
+	}
+	if err := log.Close(); err != nil {
+		t.Fatal(err)
+	}
 
 	// Query by type.
 	results, err := Query(dir, QueryOptions{Type: EventPhaseStarted})

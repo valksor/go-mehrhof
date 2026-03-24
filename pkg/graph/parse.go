@@ -3,6 +3,7 @@ package graph
 import (
 	"errors"
 	"fmt"
+	"log/slog"
 	"os"
 	"strings"
 	"time"
@@ -166,6 +167,8 @@ func resolveJobType(s string) worker.JobType {
 	case "dry_run", "dryrun":
 		return worker.JobTypeDryRun
 	default:
+		slog.Warn("unknown job type in graph definition, using as-is", "job_type", s)
+
 		return worker.JobType(s)
 	}
 }
