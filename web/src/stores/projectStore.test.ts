@@ -792,6 +792,8 @@ describe('projectStore', () => {
         reviewers: [],
         labels: [],
         delete_branch: false,
+        dry_run: false,
+        sections: undefined,
       })
       expect(useProjectStore.getState().state).toBe('submitted')
       expect(useProjectStore.getState().loading).toBe(false)
@@ -819,6 +821,8 @@ describe('projectStore', () => {
         reviewers: ['alice'],
         labels: ['bug'],
         delete_branch: true,
+        dry_run: false,
+        sections: undefined,
       })
     })
 

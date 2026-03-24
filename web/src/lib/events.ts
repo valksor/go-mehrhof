@@ -209,6 +209,13 @@ export interface ConsensusReviewCompleteEvent extends BaseEvent {
   data?: unknown
 }
 
+/** Spec alignment check events. */
+export interface SpecAlignmentEvent extends BaseEvent {
+  type: 'spec_alignment_started' | 'spec_alignment_complete'
+  message?: string
+  job_id?: string
+}
+
 /** Router decision. */
 export interface RouterDecisionEvent extends BaseEvent {
   type: 'router_decision'
@@ -243,6 +250,7 @@ export type WorktreeEvent =
   | CIFixEvent
   | ConsensusReviewCompleteEvent
   | RouterDecisionEvent
+  | SpecAlignmentEvent
 
 /** All worktree event type strings. */
 export type WorktreeEventType = WorktreeEvent['type']

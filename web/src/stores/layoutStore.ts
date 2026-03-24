@@ -36,7 +36,7 @@ export interface WidgetState {
 }
 
 // Tab configuration
-export type TabType = 'file' | 'spec' | 'agent' | 'output' | 'chat' | 'diff' | 'screenshots' | 'jobs' | 'files' | 'browser' | 'task' | 'review' | 'filechanges'
+export type TabType = 'file' | 'spec' | 'agent' | 'output' | 'chat' | 'diff' | 'screenshots' | 'jobs' | 'files' | 'browser' | 'task' | 'review' | 'filechanges' | 'submit-preview'
 
 export interface Tab {
   id: string
@@ -293,7 +293,7 @@ function setupReactiveTabsSubscription() {
     if (taskState === prevTaskState) return
     prevTaskState = taskState
 
-    const { openTab, setActiveTab, closeTab, tabs } = useLayoutStore.getState()
+    const { closeTab, tabs } = useLayoutStore.getState()
 
     // Only suppress reactive tabs in simple mode AFTER hydration.
     // Before hydration, fall through to developer behavior (the default).
@@ -302,12 +302,12 @@ function setupReactiveTabsSubscription() {
     // Close stale workflow tabs when state regresses (re-entry from submitted/implemented).
     // This prevents old review/diff tabs from lingering while re-planning.
     const staleTabTypes: Record<string, string[]> = {
-      loaded: ['spec', 'diff', 'filechanges', 'review'],
-      planning: ['diff', 'filechanges', 'review'],
-      planned: ['diff', 'filechanges', 'review'],
-      implementing: ['review'],
-      simplifying: ['review'],
-      optimizing: ['review'],
+      loaded: ['spec', 'diff', 'filechanges', 'review', 'submit-preview'],
+      planning: ['diff', 'filechanges', 'review', 'submit-preview'],
+      planned: ['diff', 'filechanges', 'review', 'submit-preview'],
+      implementing: ['review', 'submit-preview'],
+      simplifying: ['review', 'submit-preview'],
+      optimizing: ['review', 'submit-preview'],
     }
     const typesToClose = staleTabTypes[taskState as string]
     if (typesToClose) {
@@ -318,91 +318,69 @@ function setupReactiveTabsSubscription() {
       }
     }
 
-    switch (taskState) {
-      case 'loaded':
-        // Open Task tab when task is loaded
-        if (task) {
-          openTab({
-            id: 'task-view',
-            type: 'task',
-            title: task.title || 'Task',
-            data: { task },
-            closeable: true,
-          })
-          setActiveTab('task-view')
-        }
-        break
-
-      case 'planned':
-        // Open Spec tab when planning completes — loads content from show.spec RPC
-        openTab({
-          id: 'spec-view',
-          type: 'spec',
-          title: 'Specification',
-          data: { mode: 'spec' },
-          closeable: true,
-        })
-        setActiveTab('spec-view')
-        break
-
-      case 'implemented':
-        // Open diff tabs or file changes list based on file count
-        if (fileChanges.length > 0 && fileChanges.length <= 3) {
-          // Open all diff tabs first, then focus the first one
-          const firstTabId = `diff-${fileChanges[0].path}`
-          for (const fc of fileChanges) {
-            const fileName = fc.path.split('/').pop() || fc.path
-            openTab({
-              id: `diff-${fc.path}`,
-              type: 'diff',
-              title: fileName,
-              data: { path: fc.path, status: fc.status },
-              closeable: true,
-            })
-          }
-          // Focus first tab after all tabs are opened
-          setActiveTab(firstTabId)
-        } else if (fileChanges.length > 3) {
-          // Open file changes list tab
-          openTab({
-            id: 'filechanges-view',
-            type: 'filechanges',
-            title: `${fileChanges.length} Files Changed`,
-            data: { fileChanges },
-            closeable: true,
-          })
-          setActiveTab('filechanges-view')
-        }
-        break
-
-      case 'submitted':
-        // Open Review tab after submission
-        if (reviews.length > 0) {
-          openTab({
-            id: 'review-view',
-            type: 'review',
-            title: 'Review',
-            data: { reviews },
-            closeable: true,
-          })
-          setActiveTab('review-view')
-        }
-        break
-
-      case 'failed': {
-        // Focus Chat tab on failure so user sees error
-        const chatTab = tabs.find(t => t.type === 'chat')
-        if (chatTab) {
-          setActiveTab(chatTab.id)
-        }
-        break
-      }
-    }
+    openWorkflowTabsForState(taskState, task, fileChanges, reviews, true)
   })
 }
 
 // Initialize subscription
 setupReactiveTabsSubscription()
+
+/**
+ * Open workflow-related tabs based on the current task state.
+ * Shared by setupReactiveTabsSubscription and handleViewModeChange.
+ *
+ * @param alwaysFocus - When true, always focus the opened tab (reactive subscription).
+ *                      When false, only focus if no workflow tabs exist yet (mode switch).
+ */
+function openWorkflowTabsForState(
+  taskState: TaskState,
+  task: ReturnType<typeof useProjectStore.getState>['task'],
+  fileChanges: ReturnType<typeof useProjectStore.getState>['fileChanges'],
+  reviews: ReturnType<typeof useProjectStore.getState>['reviews'],
+  alwaysFocus: boolean,
+) {
+  const { openTab, setActiveTab, tabs } = useLayoutStore.getState()
+  const shouldFocus = alwaysFocus || tabs.every(t => t.type === 'chat')
+
+  switch (taskState) {
+    case 'loaded':
+      if (task) {
+        openTab({ id: 'task-view', type: 'task', title: task.title || 'Task', data: { task }, closeable: true })
+        if (shouldFocus) setActiveTab('task-view')
+      }
+      break
+    case 'planned':
+      openTab({ id: 'spec-view', type: 'spec', title: 'Specification', data: { mode: 'spec' }, closeable: true })
+      if (shouldFocus) setActiveTab('spec-view')
+      break
+    case 'implemented':
+      if (fileChanges.length > 0 && fileChanges.length <= 3) {
+        const firstTabId = `diff-${fileChanges[0].path}`
+        for (const fc of fileChanges) {
+          const fileName = fc.path.split('/').pop() || fc.path
+          openTab({ id: `diff-${fc.path}`, type: 'diff', title: fileName, data: { path: fc.path, status: fc.status }, closeable: true })
+        }
+        if (shouldFocus) setActiveTab(firstTabId)
+      } else if (fileChanges.length > 3) {
+        openTab({ id: 'filechanges-view', type: 'filechanges', title: `${fileChanges.length} Files Changed`, data: { fileChanges }, closeable: true })
+        if (shouldFocus) setActiveTab('filechanges-view')
+      }
+      break
+    case 'submitted':
+      if (reviews.length > 0) {
+        openTab({ id: 'review-view', type: 'review', title: 'Review', data: { reviews }, closeable: true })
+        if (shouldFocus) setActiveTab('review-view')
+      }
+      break
+    case 'failed': {
+      const chatTab = tabs.find(t => t.type === 'chat')
+      if (chatTab) {
+        setActiveTab(chatTab.id)
+      }
+      break
+    }
+  }
+}
 
 // Subscribe to viewModeStore: on simple->developer switch, re-evaluate tabs
 let unsubscribeViewMode: (() => void) | null = null
@@ -411,52 +389,8 @@ function handleViewModeChange(state: { mode: string }, prev: { mode: string }) {
   if (prev.mode === 'simple' && state.mode === 'developer') {
     // Reset tracker so reactive tabs fire on next state change
     prevTaskState = null
-    // Re-read current taskState and trigger tab opening
     const { state: taskState, task, fileChanges, reviews } = useProjectStore.getState()
-    const { openTab, tabs } = useLayoutStore.getState()
-    // Only auto-focus if user hasn't opened any workflow tabs yet
-    // (DEFAULT_TABS always includes the non-closeable chat tab, so length > 0)
-    const noWorkflowTabs = tabs.every(t => t.type === 'chat')
-
-    switch (taskState) {
-      case 'loaded':
-        if (task) {
-          openTab({ id: 'task-view', type: 'task', title: task.title || 'Task', data: { task }, closeable: true })
-          if (noWorkflowTabs) useLayoutStore.getState().setActiveTab('task-view')
-        }
-        break
-      case 'planned':
-        openTab({ id: 'spec-view', type: 'spec', title: 'Specification', data: { mode: 'spec' }, closeable: true })
-        if (noWorkflowTabs) useLayoutStore.getState().setActiveTab('spec-view')
-        break
-      case 'implemented':
-        if (fileChanges.length > 0 && fileChanges.length <= 3) {
-          const firstTabId = `diff-${fileChanges[0].path}`
-          for (const fc of fileChanges) {
-            const fileName = fc.path.split('/').pop() || fc.path
-            openTab({ id: `diff-${fc.path}`, type: 'diff', title: fileName, data: { path: fc.path, status: fc.status }, closeable: true })
-          }
-          if (noWorkflowTabs) useLayoutStore.getState().setActiveTab(firstTabId)
-        } else if (fileChanges.length > 3) {
-          openTab({ id: 'filechanges-view', type: 'filechanges', title: `${fileChanges.length} Files Changed`, data: { fileChanges }, closeable: true })
-          if (noWorkflowTabs) useLayoutStore.getState().setActiveTab('filechanges-view')
-        }
-        break
-      case 'submitted':
-        if (reviews.length > 0) {
-          openTab({ id: 'review-view', type: 'review', title: 'Review', data: { reviews }, closeable: true })
-          if (noWorkflowTabs) useLayoutStore.getState().setActiveTab('review-view')
-        }
-        break
-      case 'failed': {
-        const chatTab = tabs.find(t => t.type === 'chat')
-        if (chatTab) {
-          useLayoutStore.getState().setActiveTab(chatTab.id)
-        }
-        break
-      }
-    }
-
+    openWorkflowTabsForState(taskState, task, fileChanges, reviews, false)
     prevTaskState = taskState
   }
 }

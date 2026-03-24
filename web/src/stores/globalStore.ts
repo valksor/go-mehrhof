@@ -154,7 +154,7 @@ interface GlobalState {
 
   // Tasks
   loadActiveTasks: () => Promise<void>
-  batchAction: (action: string, stateFilter?: string) => Promise<{ total: number; succeeded: number }>
+  batchAction: (action: string, filters?: { state?: string; tag?: string; match?: string }) => Promise<{ total: number; succeeded: number; results: Array<{ path: string; state: string; success: boolean; error?: string }> }>
 
   // Memory
   searchMemory: (query: string, limit?: number) => Promise<MemoryResult[]>
@@ -564,22 +564,25 @@ export const useGlobalStore = create<GlobalState>()(
         }
       },
 
-      batchAction: async (action: string, stateFilter?: string) => {
+      batchAction: async (action: string, filters?: { state?: string; tag?: string; match?: string }) => {
         const client = get().client
-        if (!client) return { total: 0, succeeded: 0 }
+        if (!client) return { total: 0, succeeded: 0, results: [] as Array<{ path: string; state: string; success: boolean; error?: string }> }
 
         const params: Record<string, unknown> = { action }
-        if (stateFilter) {
-          params.filter = { state: stateFilter }
+        if (filters) {
+          const filter = Object.fromEntries(Object.entries(filters).filter(([, v]) => v))
+          if (Object.keys(filter).length > 0) {
+            params.filter = filter
+          }
         }
 
-        const result = await client.call<{ total: number; results: Array<{ success: boolean }> }>('tasks.batch', params)
+        const result = await client.call<{ total: number; results: Array<{ path: string; state: string; success: boolean; error?: string }> }>('tasks.batch', params)
         const succeeded = result.results?.filter(r => r.success).length ?? 0
 
         // Refresh task list after batch action
         await get().loadActiveTasks()
 
-        return { total: result.total, succeeded }
+        return { total: result.total, succeeded, results: result.results ?? [] }
       },
 
       searchMemory: async (query: string, limit: number = 10): Promise<MemoryResult[]> => {

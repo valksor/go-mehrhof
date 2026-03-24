@@ -100,6 +100,18 @@ interface SubmitOptions {
   reviewers?: string[]
   labels?: string[]
   delete_branch?: boolean
+  dry_run?: boolean
+  sections?: Record<string, string>
+}
+
+interface SubmitPreview {
+  title: string
+  body: string
+  branch: string
+  base_branch: string
+  diff_stat?: string
+  checkpoints: number
+  specifications: number
 }
 
 export interface QueuedTask {
@@ -141,6 +153,20 @@ interface RefreshResult {
 interface UpdateResult {
   changed: boolean
   specification_generated: boolean
+}
+
+export interface RecapData {
+  state: TaskState
+  path: string
+  task: { id: string; title: string; source: string; branch?: string } | null
+  last_checkpoint: { sha: string; message: string; timestamp: string } | null
+  checkpoint_count: number
+  files_changed: FileChange[] | undefined
+  phase_metrics: Record<string, PhaseMetrics> | null
+  tags: string[]
+  last_activity: string
+  next_action: string
+  last_error: string
 }
 
 interface ProjectState {
@@ -191,12 +217,22 @@ interface ProjectState {
   // Recovery state: interrupted phase name if recovery is needed
   needsRecovery: string | null
 
+  // Skip phases: phases that will be skipped during auto-advance
+  skipPhases: string[]
+
+  // Tags
+  tags: string[]
+
   // CI fix loop status
   ciFixStatus: { active: boolean; attempt?: number; maxAttempts?: number; result?: 'success' | 'failed' } | null
 
   // Dry-run mode
   dryRunMode: boolean
   toggleDryRun: () => void
+
+  // PR body override (set from PRPreviewPanel editing)
+  prBodyOverride: string | null
+  setPrBodyOverride: (body: string | null) => void
 
   // Connection
   connect: (worktreeId: string) => Promise<void>
@@ -230,6 +266,11 @@ interface ProjectState {
   loadQueue: () => Promise<void>
   reorderQueue: (id: string, position: number) => Promise<void>
 
+  // Tags
+  loadTags: () => Promise<void>
+  addTag: (tag: string) => Promise<void>
+  removeTag: (tag: string) => Promise<void>
+
   // Quality gate
   respondToPrompt: (promptId: string, answer: boolean) => Promise<void>
 
@@ -237,6 +278,7 @@ interface ProjectState {
   undo: (steps?: number) => Promise<void>
   redo: (steps?: number) => Promise<void>
   goToCheckpoint: (sha: string) => Promise<void>
+  previewCheckpoint: (sha: string) => Promise<{ diff: string; stat: string } | null>
 
   // Git operations
   refreshGitStatus: () => Promise<void>
@@ -264,6 +306,10 @@ interface ProjectState {
 
   // Status refresh
   refreshStatus: () => Promise<void>
+
+  // Recap (resume context)
+  recap: RecapData | null
+  loadRecap: () => Promise<void>
 }
 
 export const useProjectStore = create<ProjectState>((set, get) => ({
@@ -275,6 +321,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
   worktreeId: null,
   client: null,
   unsubscribeSocket: null,
+  recap: null,
 
   task: null,
   state: 'none',
@@ -293,10 +340,17 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
   phaseError: null,
   phaseMetrics: null,
   needsRecovery: null,
+  skipPhases: [],
+  tags: [],
   ciFixStatus: null,
   dryRunMode: false,
   toggleDryRun: () => {
     set(s => ({ dryRunMode: !s.dryRunMode }))
+  },
+
+  prBodyOverride: null,
+  setPrBodyOverride: (body: string | null) => {
+    set({ prBodyOverride: body })
   },
 
   connect: async (worktreeId: string) => {
@@ -478,6 +532,11 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
         } else if (msg.type === 'consensus_review_complete') {
           get().appendOutput(msg.message || 'Consensus review complete')
           debouncedRefresh()
+        } else if (msg.type === 'spec_alignment_started') {
+          get().appendOutput(msg.message || 'Spec alignment check started')
+        } else if (msg.type === 'spec_alignment_complete') {
+          get().appendOutput(msg.message || 'Spec alignment check complete')
+          debouncedRefresh()
         } else if (msg.type === 'router_decision') {
           const rd = msg as { data?: { action?: string; reason?: string; attempt?: number; max_retries?: number } }
           const detail = rd.data ? `Router: ${rd.data.action ?? 'advance'}${rd.data.reason ? ` — ${rd.data.reason}` : ''}` : (msg.message || 'Router decision made')
@@ -565,7 +624,10 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
       qualityPrompt: null,
       phaseMetrics: null,
       needsRecovery: null,
+      skipPhases: [],
+      tags: [],
       ciFixStatus: null,
+      recap: null,
     })
   },
 
@@ -595,8 +657,8 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
     try {
       const result = await client.call<{ status: string; state: TaskState }>('start', {
         source,
-        auto: true,
-        skip_plan: true,
+        auto_advance: true,
+        skip_phases: ['plan'],
       })
       set({ state: result.state, loading: false })
       get().appendOutput('Quick fix started — will auto-advance through implement and submit.')
@@ -696,19 +758,39 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
     if (!client) return
 
     set({ loading: true, error: null })
-    get().appendOutput('Submitting...')
+    get().appendOutput(options?.dry_run ? 'Generating PR preview...' : 'Submitting...')
 
     try {
-      const result = await client.call<{ status: string; state: TaskState }>('submit', {
+      const result = await client.call<{ status: string; state: TaskState; preview?: SubmitPreview }>('submit', {
         title: options?.title,
         body: options?.body,
         draft: options?.draft ?? false,
         reviewers: options?.reviewers ?? [],
         labels: options?.labels ?? [],
-        delete_branch: options?.delete_branch ?? false
+        delete_branch: options?.delete_branch ?? false,
+        dry_run: options?.dry_run ?? false,
+        sections: options?.sections,
       })
-      set({ state: result.state, loading: false })
-      get().appendOutput('Task submitted!')
+      if (options?.dry_run && result.preview) {
+        set({ loading: false })
+        get().appendOutput(`PR preview ready: ${result.preview.title}`)
+        // Lazy import to avoid circular dependency (layoutStore imports projectStore)
+        const { useLayoutStore } = await import('./layoutStore')
+        const { openTab, setActiveTab, closeTab } = useLayoutStore.getState()
+        // Close existing preview tab to ensure fresh data (openTab skips data update for existing IDs)
+        closeTab('submit-preview')
+        openTab({
+          id: 'submit-preview',
+          type: 'submit-preview',
+          title: 'PR Preview',
+          data: { preview: result.preview },
+          closeable: true,
+        })
+        setActiveTab('submit-preview')
+      } else {
+        set({ state: result.state, loading: false })
+        get().appendOutput('Task submitted!')
+      }
     } catch (err) {
       set({ loading: false, error: err instanceof Error ? err.message : 'Submit failed' })
     }
@@ -1026,6 +1108,42 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
     }
   },
 
+  loadTags: async () => {
+    const client = get().client
+    if (!client) return
+
+    try {
+      const result = await client.call<{ tags: string[] }>('task.tag', { action: 'list' })
+      set({ tags: result.tags || [] })
+    } catch {
+      // Tags may not be available (no active task)
+    }
+  },
+
+  addTag: async (tag: string) => {
+    const client = get().client
+    if (!client) return
+
+    try {
+      const result = await client.call<{ tags: string[] }>('task.tag', { action: 'add', tags: [tag] })
+      set({ tags: result.tags || [] })
+    } catch (err) {
+      set({ error: err instanceof Error ? err.message : 'Failed to add tag' })
+    }
+  },
+
+  removeTag: async (tag: string) => {
+    const client = get().client
+    if (!client) return
+
+    try {
+      const result = await client.call<{ tags: string[] }>('task.tag', { action: 'remove', tags: [tag] })
+      set({ tags: result.tags || [] })
+    } catch (err) {
+      set({ error: err instanceof Error ? err.message : 'Failed to remove tag' })
+    }
+  },
+
   undo: async (steps: number = 1) => {
     const client = get().client
     if (!client) return
@@ -1072,6 +1190,17 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
       set({ loading: false })
     } catch (err) {
       set({ loading: false, error: err instanceof Error ? err.message : 'Checkpoint navigation failed' })
+    }
+  },
+
+  previewCheckpoint: async (sha: string) => {
+    const client = get().client
+    if (!client) return null
+
+    try {
+      return await client.call<{ diff: string; stat: string }>('checkpoint.preview', { sha })
+    } catch {
+      return null
     }
   },
 
@@ -1261,12 +1390,14 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
         }
         phase_metrics?: Record<string, PhaseMetrics>
         needs_recovery?: string
+        skip_phases?: string[]
       }>('status', {})
 
       set({
         state: result.state,
         phaseMetrics: result.phase_metrics ?? null,
         needsRecovery: result.needs_recovery ?? null,
+        skipPhases: result.skip_phases ?? [],
       })
 
       if (result.task) {
@@ -1313,9 +1444,24 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
 
         // Review history
         get().loadReviews(),
+
+        // Tags
+        get().loadTags(),
       ])
     } catch (err) {
       set({ error: err instanceof Error ? err.message : 'Status refresh failed' })
+    }
+  },
+
+  loadRecap: async () => {
+    const client = get().client
+    if (!client) return
+
+    try {
+      const result = await client.call<RecapData>('recap', {})
+      set({ recap: result })
+    } catch {
+      // Recap may not be available
     }
   }
 }))
