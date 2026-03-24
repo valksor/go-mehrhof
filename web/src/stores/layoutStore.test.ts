@@ -1,10 +1,27 @@
-import { describe, it, expect, beforeEach } from 'vitest'
+import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { useLayoutStore, type Tab } from './layoutStore'
+import { useProjectStore } from './projectStore'
+import { useViewModeStore } from './viewModeStore'
+
+const projectStoreBaseState = {
+  task: null,
+  state: 'none',
+  fileChanges: [],
+  reviews: [],
+}
+
+function setProjectWorkflowState(overrides: Record<string, unknown>) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- test helper: partial state overrides bypass strict store types
+  useProjectStore.setState({ ...projectStoreBaseState, ...overrides } as any)
+}
 
 describe('layoutStore', () => {
   beforeEach(() => {
     // Reset to default state
     useLayoutStore.getState().resetLayout()
+    useProjectStore.setState(projectStoreBaseState as any) // eslint-disable-line @typescript-eslint/no-explicit-any
+    useViewModeStore.setState({ mode: 'developer', isFirstVisit: false })
+    vi.clearAllMocks()
   })
 
   describe('initial state', () => {
@@ -395,6 +412,122 @@ describe('layoutStore', () => {
       // Should activate the tab before 'a' or the one after
       expect(useLayoutStore.getState().activeTabId).not.toBe('a')
       expect(useLayoutStore.getState().tabs).toHaveLength(3)
+    })
+  })
+
+  describe('reactive workflow tabs', () => {
+    it('opens a task tab when the project enters the loaded state', () => {
+      setProjectWorkflowState({ state: 'none' })
+
+      setProjectWorkflowState({
+        state: 'loaded',
+        task: { id: 'task-1', title: 'Ship it', state: 'loaded', source: 'file' },
+      })
+
+      expect(useLayoutStore.getState().tabs).toContainEqual(
+        expect.objectContaining({ id: 'task-view', type: 'task', title: 'Ship it' })
+      )
+      expect(useLayoutStore.getState().activeTabId).toBe('task-view')
+    })
+
+    it('opens diff tabs and focuses the first file when implementation touches a few files', () => {
+      setProjectWorkflowState({ state: 'none' })
+
+      setProjectWorkflowState({
+        state: 'implemented',
+        fileChanges: [
+          { path: 'pkg/one.go', status: 'modified' },
+          { path: 'pkg/two.go', status: 'added' },
+        ],
+      })
+
+      const { tabs, activeTabId } = useLayoutStore.getState()
+      expect(tabs).toContainEqual(expect.objectContaining({ id: 'diff-pkg/one.go', type: 'diff', title: 'one.go' }))
+      expect(tabs).toContainEqual(expect.objectContaining({ id: 'diff-pkg/two.go', type: 'diff', title: 'two.go' }))
+      expect(activeTabId).toBe('diff-pkg/one.go')
+    })
+
+    it('opens a file changes summary tab when implementation touches many files', () => {
+      setProjectWorkflowState({ state: 'none' })
+
+      setProjectWorkflowState({
+        state: 'implemented',
+        fileChanges: [
+          { path: 'a.ts', status: 'modified' },
+          { path: 'b.ts', status: 'modified' },
+          { path: 'c.ts', status: 'modified' },
+          { path: 'd.ts', status: 'modified' },
+        ],
+      })
+
+      expect(useLayoutStore.getState().tabs).toContainEqual(
+        expect.objectContaining({ id: 'filechanges-view', type: 'filechanges', title: '4 Files Changed' })
+      )
+      expect(useLayoutStore.getState().activeTabId).toBe('filechanges-view')
+    })
+
+    it('opens a review tab on submitted state and returns focus to chat on failure', () => {
+      setProjectWorkflowState({ state: 'none' })
+
+      setProjectWorkflowState({
+        state: 'submitted',
+        reviews: [{ number: 1, timestamp: '2026-03-25T00:00:00Z', approved: true, message: 'Looks good' }],
+      })
+
+      expect(useLayoutStore.getState().activeTabId).toBe('review-view')
+
+      setProjectWorkflowState({ state: 'failed' })
+
+      expect(useLayoutStore.getState().activeTabId).toBe('chat-default')
+    })
+
+    it('suppresses reactive workflow tabs in simple mode after hydration', () => {
+      useViewModeStore.setState({ mode: 'simple', isFirstVisit: false })
+      setProjectWorkflowState({ state: 'none' })
+
+      setProjectWorkflowState({
+        state: 'planned',
+        task: { id: 'task-2', title: 'Spec first', state: 'planned', source: 'file' },
+      })
+
+      expect(useLayoutStore.getState().tabs).toEqual([
+        expect.objectContaining({ id: 'chat-default', type: 'chat' }),
+      ])
+      expect(useLayoutStore.getState().activeTabId).toBe('chat-default')
+    })
+
+    it('re-evaluates workflow tabs when switching from simple to developer mode', () => {
+      useViewModeStore.setState({ mode: 'simple', isFirstVisit: false })
+      setProjectWorkflowState({
+        state: 'planned',
+        task: { id: 'task-3', title: 'Plan task', state: 'planned', source: 'file' },
+      })
+      expect(useLayoutStore.getState().tabs).toHaveLength(1)
+
+      useViewModeStore.getState().setMode('developer')
+
+      expect(useLayoutStore.getState().tabs).toContainEqual(
+        expect.objectContaining({ id: 'spec-view', type: 'spec', title: 'Specification' })
+      )
+      expect(useLayoutStore.getState().activeTabId).toBe('spec-view')
+    })
+
+    it('closes stale workflow tabs when the task state regresses', () => {
+      setProjectWorkflowState({
+        state: 'submitted',
+        reviews: [{ number: 2, timestamp: '2026-03-25T00:00:00Z', approved: false, message: 'Needs work' }],
+      })
+      expect(useLayoutStore.getState().tabs).toContainEqual(expect.objectContaining({ id: 'review-view', type: 'review' }))
+
+      setProjectWorkflowState({
+        state: 'loaded',
+        task: { id: 'task-4', title: 'Retry task', state: 'loaded', source: 'file' },
+      })
+
+      const tabIds = useLayoutStore.getState().tabs.map(tab => tab.id)
+      expect(tabIds).toContain('task-view')
+      expect(tabIds).not.toContain('review-view')
+      expect(useLayoutStore.getState().activeTabId).toBe('task-view')
     })
   })
 })

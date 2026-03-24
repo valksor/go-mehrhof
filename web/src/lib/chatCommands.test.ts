@@ -2,6 +2,9 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { parseCommand, getAvailableCommands, COMMANDS, MODAL_COMMANDS } from './chatCommands'
 
 // Mock stores so getState() returns controllable values
+const mockSendMessage = vi.fn()
+const mockClientCall = vi.fn()
+
 const mockProjectState: Record<string, unknown> = {
   state: 'none',
   checkpoints: [],
@@ -27,7 +30,7 @@ vi.mock('../stores/projectStore', () => ({
 }))
 
 vi.mock('../stores/chatStore', () => ({
-  useChatStore: { getState: () => ({ sendMessage: vi.fn() }) },
+  useChatStore: { getState: () => ({ sendMessage: mockSendMessage }) },
 }))
 
 function setState(overrides: Record<string, unknown>) {
@@ -36,6 +39,7 @@ function setState(overrides: Record<string, unknown>) {
 
 beforeEach(() => {
   vi.clearAllMocks()
+  mockClientCall.mockReset()
   setState({
     state: 'none',
     checkpoints: [],
@@ -265,6 +269,90 @@ describe('getAvailableCommands', () => {
 // ---------------------------------------------------------------------------
 
 describe('command execution', () => {
+  it('/plan starts planning', async () => {
+    const plan = COMMANDS.find(c => c.name === '/plan')!
+
+    await expect(plan.execute('')).resolves.toBe('Planning started.')
+    expect(mockProjectState.plan).toHaveBeenCalledOnce()
+  })
+
+  it('/plan! starts re-planning', async () => {
+    const replan = COMMANDS.find(c => c.name === '/plan!')!
+
+    await expect(replan.execute('')).resolves.toBe('Re-planning started.')
+    expect(mockProjectState.plan).toHaveBeenCalledOnce()
+  })
+
+  it('/implement starts implementation', async () => {
+    const implement = COMMANDS.find(c => c.name === '/implement')!
+
+    await expect(implement.execute('')).resolves.toBe('Implementation started.')
+    expect(mockProjectState.implement).toHaveBeenCalledOnce()
+  })
+
+  it('/implement! starts re-implementation', async () => {
+    const reimplement = COMMANDS.find(c => c.name === '/implement!')!
+
+    await expect(reimplement.execute('')).resolves.toBe('Re-implementation started.')
+    expect(mockProjectState.implement).toHaveBeenCalledOnce()
+  })
+
+  it('/simplify starts simplification', async () => {
+    const simplify = COMMANDS.find(c => c.name === '/simplify')!
+
+    await expect(simplify.execute('')).resolves.toBe('Simplification started.')
+    expect(mockProjectState.simplify).toHaveBeenCalledOnce()
+  })
+
+  it('/optimize starts optimization', async () => {
+    const optimize = COMMANDS.find(c => c.name === '/optimize')!
+
+    await expect(optimize.execute('')).resolves.toBe('Optimization started.')
+    expect(mockProjectState.optimize).toHaveBeenCalledOnce()
+  })
+
+  it('/review starts review with approve=true', async () => {
+    const review = COMMANDS.find(c => c.name === '/review')!
+
+    await expect(review.execute('')).resolves.toBe('Review started.')
+    expect(mockProjectState.review).toHaveBeenCalledWith({ approve: true })
+  })
+
+  it('/review fix starts review with fix=true', async () => {
+    const reviewFix = COMMANDS.find(c => c.name === '/review fix')!
+
+    await expect(reviewFix.execute('')).resolves.toBe('Review with fixes started.')
+    expect(mockProjectState.review).toHaveBeenCalledWith({ fix: true })
+  })
+
+  it('/undo restores the previous checkpoint', async () => {
+    const undo = COMMANDS.find(c => c.name === '/undo')!
+
+    await expect(undo.execute('')).resolves.toBe('Undone to previous checkpoint.')
+    expect(mockProjectState.undo).toHaveBeenCalledOnce()
+  })
+
+  it('/redo restores the next checkpoint', async () => {
+    const redo = COMMANDS.find(c => c.name === '/redo')!
+
+    await expect(redo.execute('')).resolves.toBe('Redone to next checkpoint.')
+    expect(mockProjectState.redo).toHaveBeenCalledOnce()
+  })
+
+  it('/stop stops the current operation', async () => {
+    const stop = COMMANDS.find(c => c.name === '/stop')!
+
+    await expect(stop.execute('')).resolves.toBe('Operation stopped.')
+    expect(mockProjectState.stop).toHaveBeenCalledOnce()
+  })
+
+  it('/abort aborts the current operation', async () => {
+    const abort = COMMANDS.find(c => c.name === '/abort')!
+
+    await expect(abort.execute('')).resolves.toBe('Operation aborted.')
+    expect(mockProjectState.abort).toHaveBeenCalledOnce()
+  })
+
   it('/status returns current state', async () => {
     const status = COMMANDS.find(c => c.name === '/status')!
     setState({ state: 'none' })
@@ -286,6 +374,49 @@ describe('command execution', () => {
     expect(mockProjectState.quickStart).toHaveBeenCalledWith('github:owner/repo#1')
   })
 
+  it('/update returns generated-specification message when content changes and regenerates', async () => {
+    const update = COMMANDS.find(c => c.name === '/update')!
+    vi.mocked(mockProjectState.update as () => Promise<unknown>).mockResolvedValue({ changed: true, specification_generated: true })
+
+    await expect(update.execute('')).resolves.toBe('Task updated from source — new specification generated.')
+  })
+
+  it('/update returns content-updated message when content changes without new specification', async () => {
+    const update = COMMANDS.find(c => c.name === '/update')!
+    vi.mocked(mockProjectState.update as () => Promise<unknown>).mockResolvedValue({ changed: true, specification_generated: false })
+
+    await expect(update.execute('')).resolves.toBe('Task content updated from source.')
+  })
+
+  it('/update returns already-up-to-date message when nothing changed', async () => {
+    const update = COMMANDS.find(c => c.name === '/update')!
+    vi.mocked(mockProjectState.update as () => Promise<unknown>).mockResolvedValue({ changed: false, specification_generated: false })
+
+    await expect(update.execute('')).resolves.toBe('Task is already up to date.')
+  })
+
+  it('/explain sends a follow-up chat message with the active worktree id', async () => {
+    const explain = COMMANDS.find(c => c.name === '/explain')!
+    setState({ worktreeId: 'wt-123' })
+
+    await expect(explain.execute('')).resolves.toBe('')
+    expect(mockSendMessage).toHaveBeenCalledWith(
+      'Explain what you did in the last action, why you made those choices, and any assumptions or constraints you encountered.',
+      'wt-123'
+    )
+  })
+
+  it('/explain sends undefined worktree id when there is no active worktree id', async () => {
+    const explain = COMMANDS.find(c => c.name === '/explain')!
+    setState({ worktreeId: null })
+
+    await explain.execute('')
+    expect(mockSendMessage).toHaveBeenCalledWith(
+      'Explain what you did in the last action, why you made those choices, and any assumptions or constraints you encountered.',
+      undefined
+    )
+  })
+
   it('/tag add returns usage when no args', async () => {
     const tagAdd = COMMANDS.find(c => c.name === '/tag add')!
     setState({ state: 'loaded' })
@@ -296,5 +427,58 @@ describe('command execution', () => {
     const tagAdd = COMMANDS.find(c => c.name === '/tag add')!
     setState({ state: 'loaded', client: null })
     expect(await tagAdd.execute('urgent')).toBe('Not connected.')
+  })
+
+  it('/tag add calls the RPC client when connected', async () => {
+    const tagAdd = COMMANDS.find(c => c.name === '/tag add')!
+    setState({ client: { call: mockClientCall } })
+
+    await expect(tagAdd.execute('urgent')).resolves.toBe('Tag "urgent" added.')
+    expect(mockClientCall).toHaveBeenCalledWith('task.tag', { action: 'add', tag: 'urgent' })
+  })
+
+  it('/tag remove returns usage when no args', async () => {
+    const tagRemove = COMMANDS.find(c => c.name === '/tag remove')!
+
+    await expect(tagRemove.execute('')).resolves.toBe('Usage: /tag remove <name>')
+  })
+
+  it('/tag remove returns not connected when no client', async () => {
+    const tagRemove = COMMANDS.find(c => c.name === '/tag remove')!
+    setState({ client: null })
+
+    await expect(tagRemove.execute('urgent')).resolves.toBe('Not connected.')
+  })
+
+  it('/tag remove calls the RPC client when connected', async () => {
+    const tagRemove = COMMANDS.find(c => c.name === '/tag remove')!
+    setState({ client: { call: mockClientCall } })
+
+    await expect(tagRemove.execute('urgent')).resolves.toBe('Tag "urgent" removed.')
+    expect(mockClientCall).toHaveBeenCalledWith('task.tag', { action: 'remove', tag: 'urgent' })
+  })
+
+  it('/tags returns not connected when no client', async () => {
+    const tags = COMMANDS.find(c => c.name === '/tags')!
+    setState({ client: null })
+
+    await expect(tags.execute('')).resolves.toBe('Not connected.')
+  })
+
+  it('/tags returns a comma-separated tag list when tags exist', async () => {
+    const tags = COMMANDS.find(c => c.name === '/tags')!
+    mockClientCall.mockResolvedValue({ tags: ['urgent', 'frontend'] })
+    setState({ client: { call: mockClientCall } })
+
+    await expect(tags.execute('')).resolves.toBe('Tags: urgent, frontend')
+    expect(mockClientCall).toHaveBeenCalledWith('task.tag', { action: 'list' })
+  })
+
+  it('/tags returns no-tags message when the list is empty', async () => {
+    const tags = COMMANDS.find(c => c.name === '/tags')!
+    mockClientCall.mockResolvedValue({ tags: [] })
+    setState({ client: { call: mockClientCall } })
+
+    await expect(tags.execute('')).resolves.toBe('No tags.')
   })
 })
