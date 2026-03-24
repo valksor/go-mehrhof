@@ -263,6 +263,8 @@ Commands in `cmd/kvelmo/commands/`. Entry point: `serve` (global socket + web se
 - `diff` - Show file changes from agent work
 - `list` - List tasks (active, history, queue)
 - `jobs` - View job queue and status
+- `codegraph` - Code symbol graph (stats, index, search, callers, deps)
+- `eventlog` - View task lifecycle events (phase transitions, checkpoints)
 - `tui` - Terminal UI dashboard (Bubbletea)
 - `rpc` - Raw JSON-RPC calls to sockets
 
@@ -302,6 +304,7 @@ Commands in `cmd/kvelmo/commands/`. Entry point: `serve` (global socket + web se
 - `tutorial` - Interactive walkthrough
 - `pipe` - One-shot agent prompt (stdin/stdout, no server required)
 - `remote` - Remote PR operations (approve, merge)
+- `discover` - List available project commands (Makefile, package.json, Taskfile)
 
 ## Code Style
 

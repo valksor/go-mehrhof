@@ -263,6 +263,7 @@ Commands in `cmd/kvelmo/commands/`. Entry point: `serve` (global socket + web se
 - `diff` - Show file changes from agent work
 - `list` - List tasks (active, history, queue)
 - `jobs` - View job queue and status
+- `codegraph` - Code symbol graph (stats, index, search, callers, deps)
 - `tui` - Terminal UI dashboard (Bubbletea)
 - `rpc` - Raw JSON-RPC calls to sockets
 
