@@ -21,7 +21,10 @@ packages:
       time.Time: "string"
       time.Duration: "number"
       json.RawMessage: "unknown"
+      conductor.ContextResolver: "unknown"
+      ContextResolver: "unknown"
     # Only export types needed by the web frontend
     include_files:
+      - "context.go"
       - "state.go"
       - "router.go"
