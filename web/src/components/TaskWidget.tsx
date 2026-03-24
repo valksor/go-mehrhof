@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useRef } from 'react'
 import { useProjectStore } from '../stores/projectStore'
 import { FilePicker } from './FilePicker'
 import type { FailureClass } from '../lib/events'
@@ -55,13 +55,16 @@ function errorBannerClass(failureClass?: FailureClass): string {
 }
 
 export function TaskWidget({ embedded = false }: TaskWidgetProps) {
-  const { task, state, start, quickStart, queueTask, loading, error, connected, connecting, undo, reset, retry, phaseError, needsRecovery, ciFixStatus } = useProjectStore()
+  const { task, state, start, quickStart, queueTask, loading, error, connected, connecting, undo, reset, retry, phaseError, needsRecovery, ciFixStatus, tags, addTag, removeTag } = useProjectStore()
   const [inputMode, setInputMode] = useState<'quick' | 'file' | 'url'>('quick')
   const [taskDescription, setTaskDescription] = useState('')
   const [urlInput, setUrlInput] = useState('')
   const [selectedFile, setSelectedFile] = useState('')
   const [showFilePicker, setShowFilePicker] = useState(false)
   const [quickMode, setQuickMode] = useState(false)
+  const [showTagInput, setShowTagInput] = useState(false)
+  const tagCancelledRef = useRef(false)
+  const [newTag, setNewTag] = useState('')
   const detectedProvider = useMemo(() => detectProvider(urlInput), [urlInput])
 
   // When a task is active, queue instead of start
@@ -291,6 +294,60 @@ export function TaskWidget({ embedded = false }: TaskWidgetProps) {
         </span>
       </div>
 
+      {/* Tags */}
+      <div className="flex flex-wrap items-center gap-1 mt-2">
+        {tags.map(tag => (
+          <span key={tag} className="badge badge-sm badge-outline gap-1">
+            {tag}
+            <button
+              className="cursor-pointer hover:text-error"
+              onClick={() => removeTag(tag)}
+              aria-label={`Remove tag ${tag}`}
+            >
+              &times;
+            </button>
+          </span>
+        ))}
+        {showTagInput ? (
+          <input
+            type="text"
+            value={newTag}
+            onChange={e => setNewTag(e.target.value)}
+            onKeyDown={e => {
+              if (e.key === 'Enter' && newTag.trim()) {
+                addTag(newTag.trim())
+                setNewTag('')
+                setShowTagInput(false)
+              }
+              if (e.key === 'Escape') {
+                tagCancelledRef.current = true
+                setNewTag('')
+                setShowTagInput(false)
+              }
+            }}
+            onBlur={() => {
+              if (newTag.trim() && !tagCancelledRef.current) {
+                addTag(newTag.trim())
+              }
+              tagCancelledRef.current = false
+              setNewTag('')
+              setShowTagInput(false)
+            }}
+            placeholder="tag"
+            className="input input-xs input-bordered w-20"
+            ref={(el) => el?.focus()}
+          />
+        ) : (
+          <button
+            className="badge badge-sm badge-ghost cursor-pointer hover:badge-outline"
+            onClick={() => setShowTagInput(true)}
+            aria-label="Add tag"
+          >
+            +
+          </button>
+        )}
+      </div>
+
       {task.description && (
         <p className="text-sm text-base-content/80 leading-relaxed mt-3 line-clamp-3">{task.description}</p>
       )}
@@ -322,7 +379,7 @@ export function TaskWidget({ embedded = false }: TaskWidgetProps) {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
           </svg>
           <span>Task was interrupted during <strong>{needsRecovery}</strong>.</span>
-          <button className="btn btn-warning btn-xs" onClick={() => retry()} disabled={loading}>
+          <button className="btn btn-warning btn-xs" onClick={() => void retry()} disabled={loading}>
             Retry
           </button>
         </div>

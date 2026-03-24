@@ -9,6 +9,7 @@ export function ViewModeToggle() {
         className={`btn btn-sm join-item ${mode === 'simple' ? 'btn-active btn-primary' : ''}`}
         onClick={() => setMode('simple')}
         title="Simple mode — streamlined interface"
+        aria-pressed={mode === 'simple'}
       >
         Simple
       </button>
@@ -16,6 +17,7 @@ export function ViewModeToggle() {
         className={`btn btn-sm join-item ${mode === 'developer' ? 'btn-active btn-primary' : ''}`}
         onClick={() => setMode('developer')}
         title="Developer mode — full control"
+        aria-pressed={mode === 'developer'}
       >
         Developer
       </button>

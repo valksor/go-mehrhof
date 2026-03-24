@@ -187,6 +187,7 @@ export function ProviderTestButtons() {
               placeholder={`Paste your ${activeProvider.label} API token`}
               className="input input-bordered input-sm flex-1"
               autoComplete="off"
+              aria-label={`${activeProvider.label} API token`}
             />
             <button
               onClick={() => handleLogin(activeProvider.name)}

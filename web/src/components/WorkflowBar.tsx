@@ -1,9 +1,12 @@
 import { useState, useCallback, useEffect } from 'react'
 import { useShallow } from 'zustand/react/shallow'
 import { useProjectStore } from '../stores/projectStore'
+import { useChatStore } from '../stores/chatStore'
 import { useLayoutStore } from '../stores/layoutStore'
 import { ConfirmModal } from './ui/ConfirmModal'
 import type { FailureClass } from '../lib/events'
+
+const EXPLAIN_PROMPT = 'Explain what you did in the last action, why you made those choices, and any assumptions or constraints you encountered.'
 
 interface WorkflowStep {
   id: string
@@ -28,7 +31,7 @@ const HINTS: Record<string, string> = {
   simplifying: 'Simplification in progress...',
   optimizing: 'Optimization in progress...',
   reviewing: 'Review in progress...',
-  submitted: 'PR submitted — waiting for merge.',
+  submitted: 'PR submitted. Check CI status, merge when ready, then click Finish to clean up.',
   failed: 'Last action failed. Check errors or Undo.',
   waiting: 'Waiting for input.',
   paused: 'Task paused.',
@@ -61,7 +64,7 @@ export function WorkflowBar() {
     state, plan, implement, review, submit, finish,
     stop, undo, redo, abandon, approveTransition, retry,
     loading, checkpoints, redoStack, approveRemote, mergeRemote, refresh, error,
-    phaseError, dryRunMode, toggleDryRun,
+    phaseError, dryRunMode, toggleDryRun, skipPhases,
   } = useProjectStore(useShallow(s => ({
     state: s.state,
     plan: s.plan,
@@ -85,6 +88,7 @@ export function WorkflowBar() {
     phaseError: s.phaseError,
     dryRunMode: s.dryRunMode,
     toggleDryRun: s.toggleDryRun,
+    skipPhases: s.skipPhases,
   })))
 
   const [showSubmitModal, setShowSubmitModal] = useState(false)
@@ -134,8 +138,10 @@ export function WorkflowBar() {
 
   const handleSubmit = async () => {
     setShowSubmitModal(false)
-    await submit({ delete_branch: submitDeleteBranch })
+    const override = useProjectStore.getState().prBodyOverride
+    await submit({ delete_branch: submitDeleteBranch, ...(override ? { body: override } : {}) })
     setSubmitDeleteBranch(false)
+    useProjectStore.getState().setPrBodyOverride(null)
   }
 
   const handleFinish = async () => {
@@ -219,10 +225,12 @@ export function WorkflowBar() {
               labelClass += ' text-base-content/30'
             }
 
+            const isSkipped = skipPhases.includes(step.id)
+
             const stepContent = (
               <div className="flex items-center gap-1">
-                <div className={dotClass} />
-                <span className={labelClass}>{step.label}</span>
+                <div className={isSkipped ? 'w-2 h-2 rounded-full flex-shrink-0 bg-base-300 opacity-30' : dotClass} />
+                <span className={isSkipped ? 'text-[10px] sm:text-xs text-base-content/20 line-through' : labelClass}>{step.label}</span>
               </div>
             )
 
@@ -365,6 +373,19 @@ export function WorkflowBar() {
           </div>
         )}
 
+        {/* Explain — ask agent what it did last */}
+        <button
+          onClick={() => useChatStore.getState().sendMessage(EXPLAIN_PROMPT)}
+          disabled={loading}
+          className="btn btn-ghost btn-xs btn-square"
+          aria-label="Explain last action"
+          title="Explain last action"
+        >
+          <svg aria-hidden="true" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01" />
+          </svg>
+        </button>
+
         {/* Abandon (danger zone — small icon) */}
         <button
           onClick={() => setShowAbandonModal(true)}
@@ -376,6 +397,13 @@ export function WorkflowBar() {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
           </svg>
         </button>
+
+        {/* Skip phases indicator */}
+        {skipPhases.length > 0 && (
+          <span className="text-[10px] text-base-content/40 ml-1" title={`Skipping: ${skipPhases.join(', ')}`}>
+            skip: {skipPhases.join(', ')}
+          </span>
+        )}
 
         {/* Loading spinner */}
         {loading && (
@@ -402,6 +430,12 @@ export function WorkflowBar() {
           />
           <span className="text-sm">Delete branch after submitting</span>
         </label>
+        <button
+          onClick={() => { setShowSubmitModal(false); submit({ dry_run: true }) }}
+          className="btn btn-sm btn-ghost btn-block mt-1"
+        >
+          Preview PR (dry-run)
+        </button>
       </ConfirmModal>
 
       <ConfirmModal

@@ -262,7 +262,9 @@ describe('RecordingsPanel', () => {
     const recButton = await findByText('rec-001.jsonl')
 
     mockCall.mockResolvedValueOnce(sampleViewResult)
-    await act(async () => { recButton.closest('button')!.click() })
+    const btn1 = recButton.closest('button')
+    expect(btn1).not.toBeNull()
+    await act(async () => { btn1!.click() })
 
     await waitFor(() => {
       expect(mockCall).toHaveBeenCalledWith('recordings.view', {
@@ -279,7 +281,9 @@ describe('RecordingsPanel', () => {
 
     const recButton = await findByText('rec-001.jsonl')
     mockCall.mockResolvedValueOnce(sampleViewResult)
-    await act(async () => { recButton.closest('button')!.click() })
+    const btn2 = recButton.closest('button')
+    expect(btn2).not.toBeNull()
+    await act(async () => { btn2!.click() })
 
     expect(await findByText('Hello agent')).toBeInTheDocument()
   })
