@@ -52,6 +52,9 @@ func (c *Conductor) Finish(ctx context.Context, opts FinishOptions) (*FinishResu
 	// Extract and store learnings from this task before cleanup.
 	c.extractLearnings(ctx)
 
+	// Link outcome data to memory documents for this task.
+	c.linkTaskOutcome(ctx)
+
 	if c.git == nil {
 		return nil, errors.New("git not available")
 	}

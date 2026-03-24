@@ -47,6 +47,13 @@ export interface Job {
   result?: Record<string, unknown>
 }
 
+export interface DocumentOutcome {
+  success: boolean
+  pr_merged: boolean
+  ci_passed_first_try: boolean
+  human_changes_needed: boolean
+}
+
 export interface MemoryResult {
   id: string
   type: string
@@ -54,6 +61,7 @@ export interface MemoryResult {
   score: number
   task_id: string
   created_at: string
+  outcome?: DocumentOutcome
 }
 
 export interface TimedSnapshot {
