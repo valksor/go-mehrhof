@@ -316,12 +316,13 @@ func (c *Conductor) CreateCheckpoint(ctx context.Context, message string) (strin
 		return "", errors.New("no task loaded")
 	}
 
-	sha, err := c.git.Commit(ctx, message)
+	sha, err := c.git.Commit(ctx, c.formatCheckpointMessage(message))
 	if err != nil {
 		return "", fmt.Errorf("create checkpoint: %w", err)
 	}
 
 	c.workUnit.Checkpoints = append(c.workUnit.Checkpoints, sha)
+	c.recordCheckpointMeta(sha, message, string(c.machine.State()))
 	c.workUnit.RedoStack = nil // Clear redo stack on new checkpoint
 	c.workUnit.UpdatedAt = time.Now()
 	c.persistState()

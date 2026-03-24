@@ -129,11 +129,13 @@ func (c *Conductor) archiveTask(finalState string) {
 	archived := storage.ArchivedTask{
 		ID:          c.workUnit.ID,
 		Title:       c.workUnit.Title,
+		Description: c.workUnit.Description,
 		Branch:      c.workUnit.Branch,
 		Source:      source,
 		FinalState:  finalState,
 		StartedAt:   c.workUnit.CreatedAt,
 		CompletedAt: time.Now(),
+		Tags:        c.workUnit.Tags,
 	}
 
 	if err := c.store.ArchiveTask(archived); err != nil {
@@ -280,6 +282,7 @@ func workUnitToTaskState(state State, wu *WorkUnit, history []HistoryEntry) *sto
 		WorktreePath:      wu.WorktreePath,
 		Specifications:    wu.Specifications,
 		Checkpoints:       wu.Checkpoints,
+		CheckpointMeta:    convertCheckpointMetaToStorage(wu.CheckpointMeta),
 		RedoStack:         wu.RedoStack,
 		Jobs:              wu.Jobs,
 		Metadata:          wu.Metadata,
@@ -358,6 +361,7 @@ func taskStateToWorkUnit(ts *storage.TaskState) (State, *WorkUnit, []HistoryEntr
 		WorktreePath:      ts.WorktreePath,
 		Specifications:    ts.Specifications,
 		Checkpoints:       ts.Checkpoints,
+		CheckpointMeta:    convertCheckpointMetaFromStorage(ts.CheckpointMeta),
 		RedoStack:         ts.RedoStack,
 		Jobs:              ts.Jobs,
 		Metadata:          ts.Metadata,
@@ -427,4 +431,38 @@ func taskStateToWorkUnit(ts *storage.TaskState) (State, *WorkUnit, []HistoryEntr
 	}
 
 	return State(ts.State), wu, history
+}
+
+// convertCheckpointMetaToStorage converts conductor CheckpointMeta to storage format.
+func convertCheckpointMetaToStorage(meta map[string]CheckpointMeta) map[string]storage.TaskCheckpointMeta {
+	if len(meta) == 0 {
+		return nil
+	}
+	result := make(map[string]storage.TaskCheckpointMeta, len(meta))
+	for sha, m := range meta {
+		result[sha] = storage.TaskCheckpointMeta{
+			Message:   m.Message,
+			State:     m.State,
+			CreatedAt: m.CreatedAt,
+		}
+	}
+
+	return result
+}
+
+// convertCheckpointMetaFromStorage converts storage CheckpointMeta to conductor format.
+func convertCheckpointMetaFromStorage(meta map[string]storage.TaskCheckpointMeta) map[string]CheckpointMeta {
+	if len(meta) == 0 {
+		return nil
+	}
+	result := make(map[string]CheckpointMeta, len(meta))
+	for sha, m := range meta {
+		result[sha] = CheckpointMeta{
+			Message:   m.Message,
+			State:     m.State,
+			CreatedAt: m.CreatedAt,
+		}
+	}
+
+	return result
 }

@@ -332,11 +332,8 @@ func (c *Conductor) maybeAutoAdvance(ctx context.Context, completedEvent Event) 
 		return
 	}
 
-	// Load skip phases from settings.
-	var skipPhases []string
-	if s := c.getEffectiveSettings(); s != nil {
-		skipPhases = s.Workflow.SkipPhases
-	}
+	// Load skip phases from settings + runtime overrides.
+	skipPhases := c.SkipPhases()
 
 	// Determine the next phase based on completed event and skip list.
 	// The full auto-advance chain is: plan → implement → simplify → optimize → review.
@@ -436,9 +433,36 @@ Please implement the code following the plan. Create all necessary files and mak
 Commit your changes with meaningful commit messages.
 `, header, wu.Title, wu.Description, hierarchySection, specs, browserToolsSection())
 
+	prompt += c.buildProjectCommandsSection()
 	prompt += c.buildGitConventionInstructions()
 
 	return prompt
+}
+
+// buildProjectCommandsSection returns a prompt section listing discovered project
+// commands (Makefile targets, npm/bun scripts, etc.) so the agent knows what tools
+// are available. Returns an empty string when no commands were discovered.
+func (c *Conductor) buildProjectCommandsSection() string {
+	if c.varPool == nil {
+		return ""
+	}
+	v, ok := c.varPool.Get("project_commands")
+	if !ok {
+		return ""
+	}
+	cmds, _ := v.Value.(string)
+	if cmds == "" {
+		return ""
+	}
+
+	return fmt.Sprintf(`
+## Available Project Commands
+
+The following commands are available in this project:
+%s
+
+Use these commands for building, testing, and other project operations.
+`, cmds)
 }
 
 // browserToolsSection returns guidance for using browser automation tools.

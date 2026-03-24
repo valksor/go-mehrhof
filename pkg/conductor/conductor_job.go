@@ -179,6 +179,7 @@ func (c *Conductor) watchJob(ctx context.Context, jobID string, completionEvent 
 				if hasChanges, _ := repo.HasUncommittedChanges(ctx); hasChanges {
 					if sha, commitErr := repo.Commit(ctx, c.formatCheckpointMessage(fmt.Sprintf("pre-%s checkpoint", completionEvent))); commitErr == nil {
 						c.workUnit.Checkpoints = append(c.workUnit.Checkpoints, sha)
+						c.recordCheckpointMeta(sha, fmt.Sprintf("pre-%s checkpoint", completionEvent), string(c.machine.State()))
 						slog.Info("pre-job checkpoint created", "sha", sha, "event", completionEvent)
 					}
 				}
@@ -203,12 +204,20 @@ func (c *Conductor) watchJob(ctx context.Context, jobID string, completionEvent 
 				indexer    *memory.Indexer
 			)
 			if c.workUnit != nil {
+				// Capture pre-job checkpoint ref and validation params under lock
+				var preJobCheckpoint string
+				if len(c.workUnit.Checkpoints) > 0 {
+					preJobCheckpoint = c.workUnit.Checkpoints[len(c.workUnit.Checkpoints)-1]
+				}
+				commitValParams := c.prepareCommitValidation(preJobCheckpoint)
+
 				// For planning jobs, detect newly written specification files
 				// and optionally copy to the repo
 				if completionEvent == EventPlanDone {
 					c.detectSpecificationFiles()
 					c.copySpecsToRepo()
 					c.copyPlanToRepo()
+					c.commitRepoSpecs(ctx)
 				}
 
 				// Create checkpoint after job completion
@@ -224,6 +233,7 @@ func (c *Conductor) watchJob(ctx context.Context, jobID string, completionEvent 
 						sha, commitErr := repo.Commit(ctx, c.formatCheckpointMessage(fmt.Sprintf("%s complete", completionEvent)))
 						if commitErr == nil {
 							c.workUnit.Checkpoints = append(c.workUnit.Checkpoints, sha)
+							c.recordCheckpointMeta(sha, fmt.Sprintf("%s complete", completionEvent), string(c.machine.State()))
 							slog.Info("checkpoint created", "sha", sha, "event", completionEvent)
 						} else {
 							slog.Warn("checkpoint: commit failed", "error", commitErr, "workDir", workDir)
@@ -242,6 +252,7 @@ func (c *Conductor) watchJob(ctx context.Context, jobID string, completionEvent 
 							}
 							if isNew {
 								c.workUnit.Checkpoints = append(c.workUnit.Checkpoints, headSHA)
+								c.recordCheckpointMeta(headSHA, fmt.Sprintf("%s complete (agent commit)", completionEvent), string(c.machine.State()))
 								slog.Info("checkpoint captured (agent commit)", "sha", headSHA, "event", completionEvent)
 							} else {
 								slog.Debug("checkpoint: no new commits", "event", completionEvent)
@@ -263,6 +274,9 @@ func (c *Conductor) watchJob(ctx context.Context, jobID string, completionEvent 
 				c.checkCanaryViolations(jobOutput)
 
 				c.mu.Unlock()
+
+				// Validate agent commits without holding the lock (runs git subprocess)
+				c.validateAgentCommits(ctx, commitValParams)
 
 				if jobOutput != "" && c.evaluateAndMaybeIterate(ctx, completionEvent, jobOutput) {
 					return // Re-submitted; skip normal completion path
@@ -474,16 +488,61 @@ func (c *Conductor) formatCheckpointMessage(message string) string {
 	s := c.getEffectiveSettings()
 	prefix := s.Git.CheckpointPrefix
 	if prefix == "" {
-		return "kvelmo: " + message
-	}
-	// Interpolate {key} variable
-	if c.workUnit != nil && c.workUnit.ExternalID != "" {
-		prefix = strings.ReplaceAll(prefix, "{key}", c.workUnit.ExternalID)
+		prefix = "kvelmo:"
 	} else {
-		prefix = strings.ReplaceAll(prefix, "{key}", "kvelmo")
+		// Interpolate {key} variable
+		if c.workUnit != nil && c.workUnit.ExternalID != "" {
+			prefix = strings.ReplaceAll(prefix, "{key}", c.workUnit.ExternalID)
+		} else {
+			prefix = strings.ReplaceAll(prefix, "{key}", "kvelmo")
+		}
+	}
+
+	// Inject current phase into checkpoint message
+	phase := stateToPhase(c.machine.State())
+	if phase != "" {
+		return fmt.Sprintf("%s [%s] %s", prefix, phase, message)
 	}
 
 	return prefix + " " + message
+}
+
+// stateToPhase maps conductor states to human-readable phase labels.
+func stateToPhase(state State) string {
+	switch state {
+	case StatePlanning, StatePlanned:
+		return "plan"
+	case StateImplementing, StateImplemented:
+		return "implement"
+	case StateSimplifying:
+		return "simplify"
+	case StateOptimizing:
+		return "optimize"
+	case StateReviewing:
+		return "review"
+	case StateSubmitted:
+		return "submit"
+	case StateNone, StateLoaded, StateFailed, StateWaiting, StatePaused:
+		return ""
+	}
+
+	return ""
+}
+
+// recordCheckpointMeta stores rich metadata for a checkpoint SHA.
+// Caller must hold c.mu.
+func (c *Conductor) recordCheckpointMeta(sha, message, state string) {
+	if c.workUnit == nil {
+		return
+	}
+	if c.workUnit.CheckpointMeta == nil {
+		c.workUnit.CheckpointMeta = make(map[string]CheckpointMeta)
+	}
+	c.workUnit.CheckpointMeta[sha] = CheckpointMeta{
+		Message:   message,
+		State:     state,
+		CreatedAt: time.Now(),
+	}
 }
 
 func (c *Conductor) interpolatedCommitPrefix() string {
@@ -556,6 +615,102 @@ func (c *Conductor) buildGitConventionInstructions() string {
 	}
 
 	return "\n\n## Git Conventions\n\n" + strings.Join(instructions, "\n") + "\n"
+}
+
+// commitValidationParams holds the data needed to validate agent commits,
+// extracted from conductor state under the lock so the git subprocess can
+// run without holding c.mu.
+type commitValidationParams struct {
+	pattern        string
+	workDir        string
+	lastCheckpoint string
+	cpPrefix       string
+}
+
+// prepareCommitValidation extracts commit validation parameters from conductor state.
+// Must be called with c.mu held. Returns nil if validation is not configured.
+func (c *Conductor) prepareCommitValidation(lastCheckpoint string) *commitValidationParams {
+	if lastCheckpoint == "" {
+		return nil
+	}
+
+	settings := c.getEffectiveSettings()
+	pattern := settings.Git.CommitPattern
+	if pattern == "" {
+		return nil
+	}
+
+	// Interpolate checkpoint prefix the same way formatCheckpointMessage does,
+	// so HasPrefix matches the actual commit messages kvelmo creates.
+	cpPrefix := settings.Git.CheckpointPrefix
+	if cpPrefix == "" {
+		cpPrefix = "kvelmo:"
+	}
+	if c.workUnit != nil && c.workUnit.ExternalID != "" {
+		cpPrefix = strings.ReplaceAll(cpPrefix, "{key}", c.workUnit.ExternalID)
+	} else {
+		cpPrefix = strings.ReplaceAll(cpPrefix, "{key}", "kvelmo")
+	}
+
+	return &commitValidationParams{
+		pattern:        pattern,
+		workDir:        c.getWorkDir(),
+		lastCheckpoint: lastCheckpoint,
+		cpPrefix:       cpPrefix,
+	}
+}
+
+// validateAgentCommits checks commits made by the agent against CommitPattern.
+// Emits a degraded warning if any agent commits don't match the configured pattern.
+// Safe to call without c.mu held — runs git subprocess without holding the lock.
+func (c *Conductor) validateAgentCommits(ctx context.Context, params *commitValidationParams) {
+	if params == nil {
+		return
+	}
+
+	repo, err := git.Open(params.workDir)
+	if err != nil {
+		slog.Debug("commit validation: could not open repo", "error", err)
+
+		return
+	}
+
+	commits, err := repo.CommitsSince(ctx, params.lastCheckpoint)
+	if err != nil {
+		slog.Debug("commit validation: could not list commits", "error", err)
+
+		return
+	}
+
+	var invalid []string
+	for _, entry := range commits {
+		// Skip kvelmo's own checkpoint commits
+		if strings.HasPrefix(entry.Message, params.cpPrefix) {
+			continue
+		}
+		if err := git.ValidateCommitMessage(entry.Message, params.pattern); err != nil {
+			shortSHA := entry.SHA
+			if len(shortSHA) > 8 {
+				shortSHA = shortSHA[:8]
+			}
+			invalid = append(invalid, fmt.Sprintf("%s: %s", shortSHA, entry.Message))
+		}
+	}
+
+	if len(invalid) == 0 {
+		return
+	}
+
+	msg := fmt.Sprintf("%d commit(s) do not match pattern %s: %s",
+		len(invalid), params.pattern, strings.Join(invalid, "; "))
+	slog.Warn("commit validation", "violations", len(invalid), "pattern", params.pattern)
+
+	c.emit(ConductorEvent{
+		Type:           "commit_validation_warning",
+		Message:        msg,
+		FailureClass:   FailureClassDegraded,
+		FailureMessage: msg,
+	})
 }
 
 // slugify converts a string to a URL-safe slug.
@@ -801,4 +956,79 @@ func (c *Conductor) copyPlanToRepo() {
 	} else {
 		slog.Info("plan copied to repo", "path", fullPath)
 	}
+}
+
+// commitRepoSpecs commits spec and plan files that were copied to the repo.
+// Must be called after copySpecsToRepo/copyPlanToRepo and with c.mu held.
+func (c *Conductor) commitRepoSpecs(ctx context.Context) {
+	settings := c.getEffectiveSettings()
+	if settings.Storage.CommitSpecs == nil || !*settings.Storage.CommitSpecs {
+		return
+	}
+	if settings.Storage.SpecOutputPath == "" && settings.Storage.PlanOutputPath == "" {
+		return
+	}
+
+	workDir := c.getWorkDir()
+	repo, err := git.Open(workDir)
+	if err != nil {
+		return
+	}
+
+	// Stage only spec/plan output files
+	key := ""
+	slug := ""
+	if c.workUnit != nil {
+		if c.workUnit.ExternalID != "" {
+			key = c.workUnit.ExternalID
+		}
+		slug = slugify(c.workUnit.Title)
+	}
+
+	var filesToStage []string
+	for _, outputPath := range []string{settings.Storage.SpecOutputPath, settings.Storage.PlanOutputPath} {
+		if outputPath == "" {
+			continue
+		}
+		resolved := outputPath
+		resolved = strings.ReplaceAll(resolved, "{key}", key)
+		resolved = strings.ReplaceAll(resolved, "{slug}", slug)
+		fullPath := filepath.Join(workDir, resolved)
+		if _, err := os.Stat(fullPath); err == nil {
+			filesToStage = append(filesToStage, fullPath)
+		} else {
+			slog.Warn("spec commit: output file not found", "path", fullPath)
+		}
+	}
+
+	if len(filesToStage) == 0 {
+		return
+	}
+
+	if err := repo.StageFiles(ctx, filesToStage...); err != nil {
+		slog.Warn("spec stage failed", "error", err)
+
+		return
+	}
+
+	hasChanges, _ := repo.HasUncommittedChanges(ctx)
+	if !hasChanges {
+		return
+	}
+
+	label := "specification"
+	if key != "" {
+		label += " for " + key
+	}
+	commitMsg := c.formatCheckpointMessage("Add " + label)
+
+	sha, err := repo.Commit(ctx, commitMsg)
+	if err != nil {
+		slog.Warn("spec commit failed", "error", err)
+
+		return
+	}
+
+	c.workUnit.Checkpoints = append(c.workUnit.Checkpoints, sha)
+	slog.Info("spec committed to repo", "sha", sha)
 }

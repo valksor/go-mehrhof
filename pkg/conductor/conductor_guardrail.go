@@ -80,7 +80,8 @@ func (c *Conductor) runPostGuardrails(ctx context.Context, phase string) []findi
 
 	var specs []string
 	if c.workUnit != nil {
-		specs = c.workUnit.Specifications
+		specs = make([]string, len(c.workUnit.Specifications))
+		copy(specs, c.workUnit.Specifications)
 	}
 
 	workDir := c.getWorkDir()

@@ -108,18 +108,20 @@ func (c *Conductor) applyRouteDecision(ctx context.Context, decision RouteDecisi
 
 	case RouteSkip:
 		slog.Info("router: skipping next phase",
-			"phase", phase, "reason", decision.Reason)
+			"phase", phase, "target", decision.TargetPhase, "reason", decision.Reason)
 
 		c.emit(ConductorEvent{
 			Type:    "route_skip",
 			Phase:   phase,
-			Message: fmt.Sprintf("Router skipping after %s: %s", phase, decision.Reason),
+			Message: fmt.Sprintf("Router skipping %s after %s: %s", decision.TargetPhase, phase, decision.Reason),
 		})
 
 		// Dispatch completion event to advance past this phase.
 		c.mu.Lock()
 		c.machine.ClearPriorStableState()
-		_ = c.machine.Dispatch(ctx, completionEvent)
+		if err := c.machine.Dispatch(ctx, completionEvent); err != nil {
+			slog.Warn("router: skip dispatch failed", "event", completionEvent, "error", err)
+		}
 		c.persistState()
 		c.mu.Unlock()
 
@@ -148,7 +150,9 @@ func (c *Conductor) applyRouteDecision(ctx context.Context, decision RouteDecisi
 		// Dispatch error to leave the current in-progress state, then
 		// re-submit the target phase.
 		c.mu.Lock()
-		_ = c.machine.Dispatch(ctx, EventError)
+		if err := c.machine.Dispatch(ctx, EventError); err != nil {
+			slog.Warn("router: rollback dispatch failed", "error", err)
+		}
 		c.persistState()
 		c.mu.Unlock()
 

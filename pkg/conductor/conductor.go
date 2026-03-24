@@ -11,6 +11,7 @@ import (
 	"log/slog"
 	"os"
 	"path/filepath"
+	"slices"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -76,6 +77,9 @@ type Conductor struct {
 	// autoAdvance triggers automatic progression through phases when jobs complete.
 	// When true, plan_done → implement, implement_done → review.
 	autoAdvance bool
+
+	// runtimeSkipPhases holds per-invocation phase names to skip (merged with config).
+	runtimeSkipPhases []string
 
 	// Configuration
 	opts Options
@@ -492,6 +496,32 @@ func (c *Conductor) AutoAdvance() bool {
 	defer c.mu.RUnlock()
 
 	return c.autoAdvance
+}
+
+// SetSkipPhases sets per-invocation phases to skip during auto-advance.
+// These are merged with config-level SkipPhases.
+func (c *Conductor) SetSkipPhases(phases []string) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.runtimeSkipPhases = phases
+}
+
+// SkipPhases returns the effective skip phases (runtime + config merged).
+func (c *Conductor) SkipPhases() []string {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+
+	var merged []string
+	if s := c.getEffectiveSettings(); s != nil {
+		merged = append(merged, s.Workflow.SkipPhases...)
+	}
+	for _, p := range c.runtimeSkipPhases {
+		if !slices.Contains(merged, p) {
+			merged = append(merged, p)
+		}
+	}
+
+	return merged
 }
 
 // getWorkDir returns the effective working directory for operations.

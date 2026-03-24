@@ -274,7 +274,7 @@ func ClassifyError(err error, phase string) FailureClass {
 
 	// Degraded: optional subsystem failure
 	degradedPatterns := []string{
-		"memory indexer", "quality check unavailable", "optional",
+		"memory indexer", "quality check unavailable", "optional subsystem",
 	}
 	for _, p := range degradedPatterns {
 		if strings.Contains(errStr, p) {

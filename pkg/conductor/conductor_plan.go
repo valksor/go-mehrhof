@@ -289,6 +289,8 @@ Your new specification should either refine the existing one or address gaps/fee
 `, existingSpecs)
 	}
 
+	projectCmds := c.buildProjectCommandsSection()
+
 	switch complexity { //nolint:exhaustive // ComplexitySimple is the only special case
 	case ComplexitySimple:
 		return fmt.Sprintf(
@@ -301,8 +303,9 @@ Your new specification should either refine the existing one or address gaps/fee
 				"2. Files to create/modify\n"+
 				"3. Key changes needed\n\n"+
 				"%s"+
+				"%s"+
 				"%s",
-			fileWriteInstruction, wu.Title, wu.Description, hierarchySection, existingSpecsSection, browserToolsSection(), specReminder)
+			fileWriteInstruction, wu.Title, wu.Description, hierarchySection, existingSpecsSection, browserToolsSection(), projectCmds, specReminder)
 
 	default: // ComplexityMedium, ComplexityComplex
 		return fmt.Sprintf(
@@ -323,8 +326,9 @@ Your new specification should either refine the existing one or address gaps/fee
 				"4. **Testing Strategy**: What to test and how\n"+
 				"5. **Risks & Mitigations**: Potential issues and how to address them\n\n"+
 				"%s"+
+				"%s"+
 				"%s",
-			fileWriteInstruction, wu.Title, wu.Description, hierarchySection, existingSpecsSection, browserToolsSection(), specReminder)
+			fileWriteInstruction, wu.Title, wu.Description, hierarchySection, existingSpecsSection, browserToolsSection(), projectCmds, specReminder)
 	}
 }
 

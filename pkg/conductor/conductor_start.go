@@ -112,7 +112,6 @@ func (c *Conductor) Start(ctx context.Context, sourceRef string) error {
 		baseBranch, baseErr := c.getBaseBranch(ctx)
 		if baseErr != nil {
 			slog.Warn("could not detect base branch, new branches will fork from HEAD", "error", baseErr)
-			c.logVerbosef("Warning: could not detect base branch, new branches will fork from HEAD")
 		}
 
 		useWorktree := settings.BoolValue(effectiveSettings.Workflow.UseWorktreeIsolation, true)

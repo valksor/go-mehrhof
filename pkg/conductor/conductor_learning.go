@@ -73,7 +73,7 @@ func (c *Conductor) extractLearnings(ctx context.Context) {
 	}
 
 	doc := &memory.Document{
-		ID:         fmt.Sprintf("learning-%s-%d", taskID, time.Now().Unix()),
+		ID:         fmt.Sprintf("learning-%s-%d", taskID, time.Now().UnixNano()),
 		TaskID:     taskID,
 		Type:       memory.TypeSolution,
 		Content:    strings.Join(parts, "\n"),

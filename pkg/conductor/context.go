@@ -48,13 +48,11 @@ func DefaultContextProfiles() map[string]PhaseContextProfile {
 		"plan": {
 			IncludeTask:      true,
 			IncludeHierarchy: true,
-			IncludeMemory:    true,
 			MaxTokenBudget:   8000,
 		},
 		"implement": {
 			IncludeTaskSummary: true,
 			IncludeSpecs:       true,
-			IncludeMemory:      true,
 			MaxTokenBudget:     12000,
 		},
 		"simplify": {
@@ -165,14 +163,14 @@ func BuildPhaseContext(profile PhaseContextProfile, wu *WorkUnit, pool *varpool.
 
 	// Diff
 	if profile.IncludeDiff && pool != nil {
-		if diff := pool.GetScopedString("sys", "last_diff"); diff != "" {
+		if diff := pool.GetScopedString(varpool.ScopeSystem, "last_diff"); diff != "" {
 			addSection("Current Changes", diff)
 		}
 	}
 
 	// Findings
 	if profile.IncludeFindings && pool != nil {
-		if findings := pool.GetScopedString("sys", "last_findings"); findings != "" {
+		if findings := pool.GetScopedString(varpool.ScopeSystem, "last_findings"); findings != "" {
 			addSection("Quality Findings", findings)
 		}
 	}

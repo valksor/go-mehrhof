@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/valksor/kvelmo/pkg/agent/strategy"
+	"github.com/valksor/kvelmo/pkg/discovery"
 	"github.com/valksor/kvelmo/pkg/git"
 	"github.com/valksor/kvelmo/pkg/graph"
 	"github.com/valksor/kvelmo/pkg/memory"
@@ -189,11 +190,19 @@ func (c *Conductor) handleGraphCompletion(ctx context.Context, sched *graph.Sche
 	// Success — clear cached partial results since they are no longer needed.
 	c.clearPartialResults(completionEvent)
 
+	// Capture pre-completion checkpoint ref and validation params under lock
+	var preJobCheckpoint string
+	if len(c.workUnit.Checkpoints) > 0 {
+		preJobCheckpoint = c.workUnit.Checkpoints[len(c.workUnit.Checkpoints)-1]
+	}
+	commitValParams := c.prepareCommitValidation(preJobCheckpoint)
+
 	// Success path — same as watchJob completion.
 	if completionEvent == EventPlanDone {
 		c.detectSpecificationFiles()
 		c.copySpecsToRepo()
 		c.copyPlanToRepo()
+		c.commitRepoSpecs(ctx)
 	}
 
 	// Create completion checkpoint.
@@ -209,6 +218,9 @@ func (c *Conductor) handleGraphCompletion(ctx context.Context, sched *graph.Sche
 		combinedOutput = sb.String()
 	}
 	c.mu.Unlock()
+
+	// Validate agent commits without holding the lock (runs git subprocess)
+	c.validateAgentCommits(ctx, commitValParams)
 
 	if combinedOutput != "" && c.evaluateAndMaybeIterate(ctx, completionEvent, combinedOutput) {
 		return // Re-submitted; skip normal completion path
@@ -582,6 +594,14 @@ func (c *Conductor) populateStandardVars() {
 
 	if c.workUnit.Branch != "" {
 		c.varPool.SetScoped(varpool.ScopeSystem, "branch", c.workUnit.Branch, "conductor")
+	}
+
+	// Scan the project directory for available commands (Makefile targets, npm/bun
+	// scripts, Taskfile tasks, bin/ executables) so agents know what tools are available.
+	if tools := discovery.DiscoverTools(c.getWorkDir()); len(tools) > 0 {
+		c.varPool.SetScoped(varpool.ScopeSystem, "project_commands", strings.Join(tools, "\n"), "conductor")
+	} else {
+		c.varPool.SetScoped(varpool.ScopeSystem, "project_commands", "", "conductor")
 	}
 }
 

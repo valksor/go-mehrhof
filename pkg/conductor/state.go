@@ -155,12 +155,23 @@ type WorkUnit struct {
 	HasImplemented bool      `json:"has_implemented,omitempty"`
 	CreatedAt      time.Time `json:"created_at"`
 	UpdatedAt      time.Time `json:"updated_at"`
+	// CheckpointMeta stores rich metadata for each checkpoint SHA.
+	// Keyed by commit SHA. Persisted to task.yaml so metadata survives restarts.
+	CheckpointMeta map[string]CheckpointMeta `json:"checkpoint_meta,omitempty"`
 	// PhaseMetrics tracks per-phase execution metrics (duration, agent used).
 	// Populated on phase completion.
 	PhaseMetrics map[string]*PhaseMetrics `json:"phase_metrics,omitempty"`
 	// RouteHistory tracks routing decisions made after each phase completion.
 	// Useful for debugging adaptive phase progression.
 	RouteHistory []RouteDecision `json:"route_history,omitempty"`
+}
+
+// CheckpointMeta stores rich metadata for a single checkpoint.
+// Persisted alongside bare SHA lists so checkpoint context survives socket restarts.
+type CheckpointMeta struct {
+	Message   string    `json:"message" yaml:"message"`
+	State     string    `json:"state" yaml:"state"`
+	CreatedAt time.Time `json:"created_at" yaml:"created_at"`
 }
 
 // PhaseMetrics captures execution metrics for a single phase.
