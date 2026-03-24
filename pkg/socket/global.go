@@ -207,6 +207,9 @@ func (g *GlobalSocket) registerHandlers() {
 	g.server.Handle("projects.register", g.handleRegisterProject)
 	g.server.Handle("projects.unregister", g.handleUnregisterProject)
 
+	// Worktree management
+	g.server.Handle("worktrees.create", g.handleWorktreeCreate)
+
 	// Worker management
 	g.server.Handle("workers.list", g.handleListWorkers)
 	g.server.Handle("workers.add", g.handleAddWorker)
@@ -334,7 +337,11 @@ func (g *GlobalSocket) registerHandlers() {
 // --- Ping ---
 
 func (g *GlobalSocket) handlePing(ctx context.Context, req *Request) (*Response, error) {
-	return NewResultResponse(req.ID, map[string]string{"status": "ok"})
+	return NewResultResponse(req.ID, map[string]string{
+		"status":  "ok",
+		"version": meta.Version,
+		"commit":  meta.Commit,
+	})
 }
 
 // --- System Info ---
@@ -846,6 +853,31 @@ func (g *GlobalSocket) handleUnregisterProject(ctx context.Context, req *Request
 	g.saveProjectsToFile()
 
 	return NewResultResponse(req.ID, map[string]bool{"ok": true})
+}
+
+// --- Worktree Handlers ---
+
+func (g *GlobalSocket) handleWorktreeCreate(ctx context.Context, req *Request) (*Response, error) {
+	var params struct {
+		Path string `json:"path"`
+	}
+	if err := json.Unmarshal(req.Params, &params); err != nil {
+		return NewErrorResponse(req.ID, ErrCodeInvalidParams, err.Error()), nil
+	}
+	if params.Path == "" {
+		return NewErrorResponse(req.ID, ErrCodeInvalidParams, "path is required"), nil
+	}
+
+	_, err := g.GetOrCreateWorktreeSocket(params.Path) //nolint:contextcheck // provider clients are long-lived; request context must not cancel them
+	if err != nil {
+		return NewErrorResponse(req.ID, -32000, err.Error()), nil
+	}
+
+	socketPath := WorktreeSocketPath(params.Path)
+
+	return NewResultResponse(req.ID, map[string]string{
+		"socket_path": socketPath,
+	})
 }
 
 // --- Worker Handlers ---
@@ -2339,6 +2371,19 @@ func (g *GlobalSocket) broadcastTaskStateChanged(projectPath string, state strin
 			"path":  projectPath,
 			"state": state,
 		},
+	}
+	data, err := json.Marshal(notification)
+	if err != nil {
+		return
+	}
+	g.server.Broadcast(append(data, '\n'))
+}
+
+// BroadcastWorkerChanged notifies all connected clients that the worker pool has changed.
+func (g *GlobalSocket) BroadcastWorkerChanged() {
+	notification := map[string]any{
+		"jsonrpc": JSONRPCVersion,
+		"method":  "worker_changed",
 	}
 	data, err := json.Marshal(notification)
 	if err != nil {

@@ -2,6 +2,7 @@ package commands
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -114,7 +115,16 @@ func runServe(cmd *cobra.Command, args []string) error {
 	// Try to acquire lock - if we get it, we're the primary instance
 	release, err := socket.AcquireGlobalLock(lockPath)
 	if err != nil {
-		// Another instance has the lock
+		// Another instance has the lock — check if it's an older version
+		if err := replaceOlderSocket(ctx, globalPath); err != nil {
+			slog.Debug("version check on running socket", "error", err)
+		}
+
+		// Re-try lock after potential replacement
+		release, err = socket.AcquireGlobalLock(lockPath)
+	}
+	if err != nil {
+		// Still can't get lock — run as secondary
 		if serveVerbose {
 			fmt.Println("Global socket already running (another instance)")
 		}
@@ -165,18 +175,7 @@ func runServe(cmd *cobra.Command, args []string) error {
 			}
 		}()
 
-		// Add a default worker with auto-detected agent (actually connects to Claude/Codex CLI)
-		// The default worker cannot be removed
-		// Empty string for agent name triggers auto-detection (claude > codex > error)
-		_, err := pool.AddAgentWorker(ctx, "", true)
-		if err != nil {
-			fmt.Printf("Warning: Failed to add agent worker: %v\n", err)
-			fmt.Println("Jobs will run in simulation mode until a worker is connected.")
-			// Fall back to default worker (simulation mode)
-			_ = pool.AddDefaultWorker("")
-		}
-
-		// Create global socket with pool
+		// Create global socket with pool (before agent connection so the web server is available immediately)
 		globalSocket = socket.NewGlobalSocketWithPool(globalPath, pool)
 		poolCleaned = true // Pool is now managed by globalSocket
 
@@ -192,6 +191,19 @@ func runServe(cmd *cobra.Command, args []string) error {
 			fmt.Printf("[timing] global socket start: %v\n", time.Since(phaseStart))
 			phaseStart = time.Now()
 		}
+
+		// Connect agent worker in background so the web server is available immediately.
+		// Jobs run in simulation mode until the agent is ready.
+		go func() {
+			_, err := pool.AddAgentWorker(ctx, "", true)
+			if err != nil {
+				fmt.Printf("Warning: Failed to add agent worker: %v\n", err)
+				fmt.Println("Jobs will run in simulation mode until a worker is connected.")
+				_ = pool.AddDefaultWorker("")
+			}
+			// Notify connected clients that workers changed
+			globalSocket.BroadcastWorkerChanged()
+		}()
 
 		// Pre-warm memory adapter in background so the server accepts connections
 		// immediately. Cybertron model download completes asynchronously before
@@ -394,4 +406,74 @@ func fileExists(path string) bool {
 	_, err := os.Stat(path)
 
 	return err == nil
+}
+
+// replaceOlderSocket pings the running global socket and shuts it down if its
+// version/commit differs from the current binary. This ensures that after an
+// update the new binary always takes over as primary.
+func replaceOlderSocket(ctx context.Context, globalPath string) error {
+	if !socket.SocketExists(globalPath) {
+		return fmt.Errorf("no socket at %s", globalPath)
+	}
+
+	client, err := socket.NewClient(globalPath, socket.WithTimeout(2*time.Second))
+	if err != nil {
+		return fmt.Errorf("connect to running socket: %w", err)
+	}
+
+	pingCtx, cancel := context.WithTimeout(ctx, 2*time.Second)
+	defer cancel()
+
+	resp, err := client.Call(pingCtx, "ping", nil)
+	_ = client.Close()
+	if err != nil {
+		return fmt.Errorf("ping running socket: %w", err)
+	}
+
+	var info struct {
+		Version string `json:"version"`
+		Commit  string `json:"commit"`
+	}
+	if resp.Result != nil {
+		if err := json.Unmarshal(resp.Result, &info); err != nil {
+			slog.Debug("failed to parse ping response, skipping replacement", "error", err)
+
+			return nil
+		}
+	}
+
+	// Same build — nothing to replace
+	if info.Version == meta.Version && info.Commit == meta.Commit {
+		return nil
+	}
+
+	fmt.Printf("Replacing older socket (running %s/%s, current %s/%s)\n",
+		info.Version, info.Commit, meta.Version, meta.Commit)
+
+	// Send graceful shutdown
+	shutClient, err := socket.NewClient(globalPath, socket.WithTimeout(2*time.Second))
+	if err != nil {
+		// Can't connect — remove stale socket file
+		_ = os.Remove(globalPath)
+
+		return nil
+	}
+	shutCtx, shutCancel := context.WithTimeout(ctx, 2*time.Second)
+	defer shutCancel()
+	_, _ = shutClient.Call(shutCtx, "shutdown", nil)
+	_ = shutClient.Close()
+
+	// Wait for socket file to disappear
+	deadline := time.Now().Add(5 * time.Second)
+	for time.Now().Before(deadline) {
+		if !socket.SocketExists(globalPath) {
+			return nil
+		}
+		time.Sleep(100 * time.Millisecond)
+	}
+
+	// Force remove if still present
+	_ = os.Remove(globalPath)
+
+	return nil
 }
