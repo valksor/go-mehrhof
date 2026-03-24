@@ -269,10 +269,7 @@ mod tests {
 
     #[test]
     fn test_windows_to_wsl_path_trailing_backslash() {
-        assert_eq!(
-            windows_to_wsl_path(r"C:\Users\foo\"),
-            "/mnt/c/Users/foo/"
-        );
+        assert_eq!(windows_to_wsl_path(r"C:\Users\foo\"), "/mnt/c/Users/foo/");
     }
 
     #[test]

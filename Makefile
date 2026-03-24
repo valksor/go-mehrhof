@@ -24,7 +24,7 @@ all: build
 # Quality & Testing
 # ──────────────────────────────────────────────────────────────────────────────
 
-## Full-stack quality checks (Go fmt/vet/lint + frontend lint/typecheck)
+## Full-stack quality checks (Go fmt/vet/lint + frontend lint/typecheck + Tauri fmt/clippy)
 quality:
 	go fmt ./...
 	@command -v goimports >/dev/null && find . -name '*.go' -not -path './.claude/*' -not -path './prototype/*' -not -path './vendor/*' -exec goimports -w {} + || true
@@ -38,11 +38,13 @@ quality:
 	fi
 	golangci-lint run ./... --fix
 	cd web && bun install --frozen-lockfile && bun run lint && bun run typecheck
+	cd web/src-tauri && cargo fmt --check && cargo clippy -- -D warnings
 
-## Full-stack tests (Go + frontend unit tests)
+## Full-stack tests (Go + frontend + Tauri unit tests)
 test: quality
 	go test -p 4 ./pkg/... ./cmd/...
 	cd web && bun run test:run
+	cd web/src-tauri && cargo test --lib
 
 ## Go tests with coverage report
 test-cover:
@@ -235,8 +237,8 @@ help:
 	@echo "  make web-dev        Frontend dev server with hot reload"
 	@echo ""
 	@echo "Quality & Testing:"
-	@echo "  make quality        Full-stack: Go fmt/vet/lint + frontend lint/typecheck"
-	@echo "  make test           Full-stack: Go tests + frontend unit tests"
+	@echo "  make quality        Full-stack: Go fmt/vet/lint + frontend lint/typecheck + Tauri fmt/clippy"
+	@echo "  make test           Full-stack: Go tests + frontend unit tests + Tauri tests"
 	@echo "  make test-e2e       E2E tests (SUITE=provider|gitlab|workflow|cli|all)"
 	@echo "  make test-cover     Go tests with coverage report"
 	@echo "  make test-race      Go tests with race detector"

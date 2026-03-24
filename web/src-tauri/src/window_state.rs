@@ -151,7 +151,8 @@ mod tests {
 
     #[test]
     fn test_deserialize_with_extra_fields() {
-        let json = r#"{"x":10,"y":20,"width":800,"height":600,"is_maximized":false,"new_field":"hello"}"#;
+        let json =
+            r#"{"x":10,"y":20,"width":800,"height":600,"is_maximized":false,"new_field":"hello"}"#;
         let state: WindowState = serde_json::from_str(json).unwrap();
         assert_eq!(state.x, 10);
         assert_eq!(state.width, 800);
