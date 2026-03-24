@@ -23,20 +23,20 @@ export default defineConfig({
         baseURL: 'http://localhost:5173',
       },
     },
-    // Integration tests - requires real backend with Claude
+    // Integration tests - requires real backend + agent (Ollama or Claude)
     {
       name: 'integration',
       testDir: './e2e/integration',
-      // Run serially - tests may share state
+      // Run serially - tests share fixture state
       fullyParallel: false,
-      // Longer timeouts for real Claude calls
-      timeout: 300_000, // 5 minutes per test
+      // Long timeouts for real agent calls (plan + implement can take 5+ min each)
+      timeout: 1_800_000, // 30 minutes per test
       use: {
         ...devices['Desktop Chrome'],
         // Integration tests hit the real backend (port 6337)
         baseURL: 'http://localhost:6337',
-        // Longer action timeout for Claude responses
-        actionTimeout: 180_000, // 3 minutes
+        // Longer action timeout for agent responses
+        actionTimeout: 600_000, // 10 minutes
       },
     },
   ],

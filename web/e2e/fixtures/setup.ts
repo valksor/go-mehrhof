@@ -78,6 +78,24 @@ export function createTestFixture(): TestFixture {
   const taskPath = join(repoPath, 'task.md')
   cpSync(join(fixturesDir, 'task.md'), taskPath)
 
+  // Create .valksor directory with agent config
+  // Agent configurable via KVELMO_E2E_AGENT (default: ollama)
+  const agentName = process.env.KVELMO_E2E_AGENT || 'ollama'
+  const valksorDir = join(repoPath, '.valksor')
+  mkdirSync(valksorDir, { recursive: true })
+  writeFileSync(join(valksorDir, 'kvelmo.yaml'), [
+    'agent:',
+    `  default: ${agentName}`,
+    '  ollama:',
+    '    model: llama3.1',
+    'storage:',
+    '  save_in_project: true',
+    'workflow:',
+    '  external_review:',
+    '    mode: never',
+    '',
+  ].join('\n'))
+
   // Initial commit
   execFileSync('git', ['add', '-A'], { cwd: repoPath, stdio: 'pipe' })
   execFileSync('git', ['commit', '-m', 'Initial commit'], { cwd: repoPath, stdio: 'pipe' })
@@ -172,6 +190,18 @@ function cleanupOrphanedTaskState(): void {
 export function isClaudeAvailable(): boolean {
   try {
     execFileSync('claude', ['--version'], { stdio: 'pipe' })
+    return true
+  } catch {
+    return false
+  }
+}
+
+/**
+ * Checks if Ollama server is reachable at localhost:11434
+ */
+export function isOllamaAvailable(): boolean {
+  try {
+    execFileSync('curl', ['-sf', 'http://localhost:11434/api/tags'], { stdio: 'pipe', timeout: 5000 })
     return true
   } catch {
     return false

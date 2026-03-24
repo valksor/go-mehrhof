@@ -7,6 +7,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -17,26 +18,26 @@ import (
 	"time"
 
 	"github.com/google/go-github/v67/github"
-	"github.com/valksor/kvelmo/pkg/agent/claude"
 	"github.com/valksor/kvelmo/pkg/socket"
 	"golang.org/x/oauth2"
 )
 
 // TestCLIFullCycle tests the complete kvelmo workflow via CLI.
-// Uses real Claude binary and real GitHub API.
+// Uses local Ollama server (llama3.1) and real GitHub API.
 //
 // Run with:
 //
-//	E2E_GITHUB_REPO=ozo2003/e2e-test \
-//	GITHUB_TOKEN=github_pat_... \
-//	go test -tags=e2e -v -timeout=30m ./test/e2e/... -run TestCLIFullCycle
+//	KVELMO_E2E_TOKEN=github_pat_... \
+//	go test -tags=e2e -v -timeout=30m ./e2e/... -run TestCLIFullCycle
 func TestCLIFullCycle(t *testing.T) {
 	if testing.Short() {
 		t.Skip("Skipping full cycle test in short mode")
 	}
 
-	// 1. Check prerequisites
-	checkClaudeAvailable(t)
+	// 1. Check prerequisites (Ollama check only when using Ollama agent)
+	if os.Getenv("KVELMO_E2E_AGENT") == "" || os.Getenv("KVELMO_E2E_AGENT") == "ollama" {
+		checkOllamaAvailable(t)
+	}
 	token, repo := getE2EConfig(t)
 	parts := strings.SplitN(repo, "/", 2)
 	owner, repoName := parts[0], parts[1]
@@ -79,7 +80,20 @@ func TestCLIFullCycle(t *testing.T) {
 		t.Logf("Closed issue #%d", issueNum)
 	})
 
-	// 4. Setup work directory (clone repo)
+	// 4. Setup isolated HOME with agent config + work directory
+	// Always use isolated HOME to avoid conflicting with real kvelmo sockets.
+	// For Claude/Codex, copy auth config from real HOME so CLI agents can authenticate.
+	testHome := setupTestHome(t)
+	realHome, _ := os.UserHomeDir()
+	// Copy Claude auth config if it exists (needed for Claude CLI agent)
+	claudeDir := filepath.Join(realHome, ".claude")
+	if _, err := os.Stat(claudeDir); err == nil {
+		destClaude := filepath.Join(testHome, ".claude")
+		if cpErr := copyDir(claudeDir, destClaude); cpErr != nil {
+			t.Logf("Warning: could not copy .claude config: %v", cpErr)
+		}
+	}
+	t.Setenv("HOME", testHome)
 	workDir := setupWorkDir(t, token, owner, repoName)
 
 	// 5. Start kvelmo socket in background
@@ -90,19 +104,25 @@ func TestCLIFullCycle(t *testing.T) {
 	// Wait for socket to be ready
 	waitForSocket(t, workDir)
 
-	// Test infrastructure commands early
+	// Test infrastructure commands early (before task loads)
 	t.Log("Testing infrastructure commands...")
 	runKvelmo(t, kvelmoPath, workDir, "config", "show")
+	runKvelmo(t, kvelmoPath, workDir, "config", "path")
+	runKvelmo(t, kvelmoPath, workDir, "config", "validate")
 	runKvelmo(t, kvelmoPath, workDir, "diagnose")
+	runKvelmo(t, kvelmoPath, workDir, "strategy")
+	runKvelmo(t, kvelmoPath, workDir, "discover")
 
 	// 6. Wait for task to be loaded (start command loads it asynchronously while holding lock)
 	// Use waitForState with timeout since the conductor holds a lock during GitHub fetch
 	waitForState(t, kvelmoPath, workDir, "loaded", 60*time.Second)
 	t.Log("Task loaded successfully")
 
-	// Test status (human-readable) and list commands
+	// Test status variants and listing commands
 	runKvelmo(t, kvelmoPath, workDir, "status")
+	runKvelmo(t, kvelmoPath, workDir, "status", "--json")
 	runKvelmo(t, kvelmoPath, workDir, "list")
+	tryRunKvelmo(t, kvelmoPath, workDir, "hooks")
 
 	// Get branch name for cleanup
 	statusOutput := runKvelmoCapture(t, kvelmoPath, workDir, "status", "--json")
@@ -115,26 +135,48 @@ func TestCLIFullCycle(t *testing.T) {
 	}
 
 	// 7. Run planning phase
-	t.Log("Step 2: Running planning phase with Claude...")
+	t.Log("Step 2: Running planning phase...")
 	runKvelmo(t, kvelmoPath, workDir, "plan")
-	waitForState(t, kvelmoPath, workDir, "planned", 5*time.Minute)
+	waitForState(t, kvelmoPath, workDir, "planned", 10*time.Minute)
 	t.Log("Planning completed")
 
-	// Verify checkpoints work
+	// Verify checkpoints, spec content, and agent logs
 	runKvelmo(t, kvelmoPath, workDir, "checkpoints")
+	runKvelmo(t, kvelmoPath, workDir, "show", "spec")
+	runKvelmo(t, kvelmoPath, workDir, "eventlog")
+	tryRunKvelmo(t, kvelmoPath, workDir, "logs")
 
 	// 8. Run implementation phase
-	t.Log("Step 3: Running implementation phase with Claude...")
+	t.Log("Step 3: Running implementation phase...")
 	runKvelmo(t, kvelmoPath, workDir, "implement")
-	waitForState(t, kvelmoPath, workDir, "implemented", 8*time.Minute)
+	waitForState(t, kvelmoPath, workDir, "implemented", 10*time.Minute)
 	t.Log("Implementation completed")
 
-	// Test git commands after implementation
-	t.Log("Testing git and file commands...")
+	// Test context and inspection commands after implementation
+	t.Log("Testing context and inspection commands...")
 	runKvelmo(t, kvelmoPath, workDir, "git", "status")
 	runKvelmo(t, kvelmoPath, workDir, "git", "log")
 	runKvelmo(t, kvelmoPath, workDir, "files", "list", ".")
+	runKvelmo(t, kvelmoPath, workDir, "diff")
 	runKvelmo(t, kvelmoPath, workDir, "jobs", "list")
+	runKvelmo(t, kvelmoPath, workDir, "workers", "list")
+	runKvelmo(t, kvelmoPath, workDir, "workers", "stats")
+	runKvelmo(t, kvelmoPath, workDir, "agent")
+	runKvelmo(t, kvelmoPath, workDir, "recap")
+	runKvelmo(t, kvelmoPath, workDir, "activity")
+	runKvelmo(t, kvelmoPath, workDir, "eventlog")
+	tryRunKvelmo(t, kvelmoPath, workDir, "stats")
+	tryRunKvelmo(t, kvelmoPath, workDir, "memory", "stats")
+	tryRunKvelmo(t, kvelmoPath, workDir, "policy")
+	tryRunKvelmo(t, kvelmoPath, workDir, "audit")
+	tryRunKvelmo(t, kvelmoPath, workDir, "security", "scan")
+	tryRunKvelmo(t, kvelmoPath, workDir, "codegraph", "stats")
+
+	// Test task organization commands
+	t.Log("Testing task organization...")
+	runKvelmo(t, kvelmoPath, workDir, "tag", "add", "e2e-test")
+	runKvelmo(t, kvelmoPath, workDir, "tag", "list")
+	runKvelmo(t, kvelmoPath, workDir, "checklist", "list")
 
 	// 9. Run simplify pass (optional but test it)
 	t.Log("Step 4: Running simplify pass...")
@@ -165,9 +207,13 @@ func TestCLIFullCycle(t *testing.T) {
 	t.Log("Step 7: Running quality check...")
 	runKvelmo(t, kvelmoPath, workDir, "quality")
 
-	// 13. Review and submit
+	// 13. Review, export, and submit
 	t.Log("Step 8: Reviewing and submitting...")
 	runKvelmo(t, kvelmoPath, workDir, "review", "--approve")
+	runKvelmo(t, kvelmoPath, workDir, "show", "review")
+	runKvelmo(t, kvelmoPath, workDir, "checklist", "list")
+	runKvelmo(t, kvelmoPath, workDir, "export", "--format", "json")
+	tryRunKvelmo(t, kvelmoPath, workDir, "submit", "--dry-run")
 	runKvelmo(t, kvelmoPath, workDir, "submit")
 
 	submitState := getKvelmoState(t, kvelmoPath, workDir)
@@ -197,11 +243,25 @@ func TestCLIFullCycle(t *testing.T) {
 	runKvelmo(t, kvelmoPath, workDir, "refresh")
 	runKvelmo(t, kvelmoPath, workDir, "finish")
 
-	// 16. Verify final state
+	// 16. Test backup before final verification
+	t.Log("Step 11: Testing backup...")
+	backupPath := filepath.Join(workDir, "e2e-backup.tar.gz")
+	tryRunKvelmo(t, kvelmoPath, workDir, "backup", "--output", backupPath)
+
+	// 17. Verify final state
 	finalState := getKvelmoState(t, kvelmoPath, workDir)
 	if finalState != "none" {
 		t.Fatalf("Expected final state 'none', got '%s'", finalState)
 	}
+
+	// Post-workflow: test commands that work without an active task
+	t.Log("Step 12: Testing post-workflow commands...")
+	runKvelmo(t, kvelmoPath, workDir, "status")
+	runKvelmo(t, kvelmoPath, workDir, "list")
+	tryRunKvelmo(t, kvelmoPath, workDir, "cleanup")
+	tryRunKvelmo(t, kvelmoPath, workDir, "projects")
+	tryRunKvelmo(t, kvelmoPath, workDir, "access", "list")
+
 	t.Log("Workflow completed successfully!")
 
 	// Branch was deleted by finish, clear for cleanup
@@ -209,12 +269,61 @@ func TestCLIFullCycle(t *testing.T) {
 	createdPRNum = 0
 }
 
-// checkClaudeAvailable verifies Claude CLI is installed.
-func checkClaudeAvailable(t *testing.T) {
+// TestCLIPipe tests the pipe command (one-shot agent, no server required).
+func TestCLIPipe(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping pipe test in short mode")
+	}
+
+	e2eAgent := os.Getenv("KVELMO_E2E_AGENT")
+	if e2eAgent == "" {
+		e2eAgent = "ollama"
+	}
+	if e2eAgent == "ollama" {
+		checkOllamaAvailable(t)
+	}
+
+	kvelmoPath := buildKvelmo(t)
+	workDir := t.TempDir()
+
+	// Initialize a git repo so pipe has context
+	runGitCmd(t, workDir, "init")
+	runGitCmd(t, workDir, "config", "user.email", "test@e2e.local")
+	runGitCmd(t, workDir, "config", "user.name", "E2E Test")
+	if err := os.WriteFile(filepath.Join(workDir, "hello.txt"), []byte("hello"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	runGitCmd(t, workDir, "add", "-A")
+	runGitCmd(t, workDir, "commit", "-m", "init")
+
+	// Pipe sends a one-shot prompt to the agent
+	output := runKvelmoCapture(t, kvelmoPath, workDir, "pipe", "What files are in this directory? Just list them.")
+	if output == "" {
+		t.Fatal("pipe returned empty output")
+	}
+	t.Logf("Pipe output: %s", output[:min(len(output), 200)])
+}
+
+// checkOllamaAvailable verifies Ollama server is reachable.
+func checkOllamaAvailable(t *testing.T) {
 	t.Helper()
-	claudeAgent := claude.New()
-	if err := claudeAgent.Available(); err != nil {
-		t.Skipf("Claude CLI not available: %v", err)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, "http://localhost:11434/api/tags", nil)
+	if err != nil {
+		t.Skipf("Ollama not available: %v", err)
+	}
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		t.Skipf("Ollama server not reachable at localhost:11434: %v", err)
+	}
+	defer resp.Body.Close() //nolint:errcheck // Availability check
+
+	if resp.StatusCode != http.StatusOK {
+		t.Skipf("Ollama server returned status %d", resp.StatusCode)
 	}
 }
 
@@ -224,7 +333,7 @@ func getE2EConfig(t *testing.T) (token, repo string) {
 
 	repo = os.Getenv("E2E_GITHUB_REPO")
 	if repo == "" {
-		t.Skip("E2E_GITHUB_REPO not set")
+		repo = "ozo2003/e2e-test" // Default test repo; override with E2E_GITHUB_REPO
 	}
 
 	parts := strings.SplitN(repo, "/", 2)
@@ -232,12 +341,12 @@ func getE2EConfig(t *testing.T) (token, repo string) {
 		t.Fatalf("E2E_GITHUB_REPO must be in owner/repo format, got: %s", repo)
 	}
 
-	token = os.Getenv("GITHUB_TOKEN")
+	token = os.Getenv("KVELMO_E2E_TOKEN")
 	if token == "" {
-		token = os.Getenv("E2E_GITHUB_TOKEN")
+		token = os.Getenv("GITHUB_TOKEN") // Fallback
 	}
 	if token == "" {
-		t.Skip("GITHUB_TOKEN or E2E_GITHUB_TOKEN not set")
+		t.Skip("KVELMO_E2E_TOKEN not set (set a GitHub PAT with repo scope)")
 	}
 
 	return token, repo
@@ -296,27 +405,32 @@ func findProjectRoot(t *testing.T) string {
 	}
 }
 
-// createTestIssue creates a simple test issue.
-// Uses a unique timestamp-based filename to avoid conflicts with previous test runs.
+// createTestIssue creates a realistic test issue with multiple files and code to simplify/optimize.
+// Uses a unique timestamp suffix to avoid conflicts between test runs.
 func createTestIssue(t *testing.T, client *github.Client, owner, repo string) int {
 	t.Helper()
 
 	timestamp := time.Now().Unix()
-	filename := fmt.Sprintf("test-output-%d.txt", timestamp)
-	title := fmt.Sprintf("E2E CLI Test %d", timestamp)
+	title := fmt.Sprintf("Add string utility module (%d)", timestamp)
 	body := fmt.Sprintf(`## Description
 
-Create a simple test file with timestamp %d.
+Add a string utility module at src/strings_%d.ts with helper functions for common string operations.
 
 ## Acceptance Criteria
 
-- [ ] Create a file called %s
-- [ ] The file should contain "Test completed at timestamp %d"
+- [ ] Create src/strings_%d.ts with these exported functions:
+  - truncate(str, maxLen, suffix?) — truncate string to maxLen, append suffix (default "...")
+  - slugify(str) — convert to URL-friendly slug (lowercase, hyphens, strip special chars)
+  - capitalize(str) — capitalize first letter of each word
+  - countWords(str) — count words in a string
+- [ ] Create src/strings_%d.test.ts with tests for each function (at least 2 test cases per function)
+- [ ] Each function should handle edge cases: empty string, null/undefined input, single character
 
 ## Implementation Notes
 
-This is a minimal task for E2E testing. Create the file with the exact specified filename and content.
-The unique filename ensures this test doesn't conflict with previous test runs.`, timestamp, filename, timestamp)
+Use verbose, unoptimized implementations on purpose (e.g., multiple passes over the string,
+redundant checks, nested conditionals). This gives the simplify and optimize phases real work to do.
+Write tests using simple assert-style checks (no test framework needed).`, timestamp, timestamp, timestamp)
 
 	issue, _, err := client.Issues.Create(context.Background(), owner, repo, &github.IssueRequest{
 		Title: &title,
@@ -327,6 +441,48 @@ The unique filename ensures this test doesn't conflict with previous test runs.`
 	}
 
 	return issue.GetNumber()
+}
+
+// setupTestHome creates an isolated HOME directory with global kvelmo config for Ollama.
+// Returns the path. kvelmo's serve.go reads global config from ~/.valksor/kvelmo/kvelmo.yaml,
+// so we need the agent config at the global level (not just project level).
+func setupTestHome(t *testing.T) string {
+	t.Helper()
+
+	homeDir, err := os.MkdirTemp("", "kvelmo-e2e-home-*")
+	if err != nil {
+		t.Fatalf("MkdirTemp home: %v", err)
+	}
+
+	t.Cleanup(func() {
+		if os.Getenv("E2E_SKIP_CLEANUP") == "" {
+			os.RemoveAll(homeDir)
+		}
+	})
+
+	// Create global kvelmo config directory
+	configDir := filepath.Join(homeDir, ".valksor", "kvelmo")
+	if err := os.MkdirAll(configDir, 0o755); err != nil {
+		t.Fatalf("Create global config dir: %v", err)
+	}
+
+	// Agent is configurable via KVELMO_E2E_AGENT (default: ollama)
+	agentName := os.Getenv("KVELMO_E2E_AGENT")
+	if agentName == "" {
+		agentName = "ollama"
+	}
+	t.Logf("Using agent: %s", agentName)
+
+	globalConfig := fmt.Sprintf(`agent:
+  default: %s
+  ollama:
+    model: llama3.1
+`, agentName)
+	if err := os.WriteFile(filepath.Join(configDir, "kvelmo.yaml"), []byte(globalConfig), 0o644); err != nil {
+		t.Fatalf("Write global kvelmo.yaml: %v", err)
+	}
+
+	return homeDir
 }
 
 // setupWorkDir clones the repo to a temp directory.
@@ -372,14 +528,21 @@ func setupWorkDir(t *testing.T, token, owner, repo string) string {
 		t.Fatalf("Write .env file: %v", err)
 	}
 
-	// Write kvelmo.yaml with save_in_project=true to isolate state per test
-	// Also set external review mode to "never" to avoid interactive prompts in quality gate
-	settingsContent := `storage:
+	// Write kvelmo.yaml: isolate state, configure agent, disable interactive prompts
+	e2eAgent := os.Getenv("KVELMO_E2E_AGENT")
+	if e2eAgent == "" {
+		e2eAgent = "ollama"
+	}
+	settingsContent := fmt.Sprintf(`storage:
   save_in_project: true
+agent:
+  default: %s
+  ollama:
+    model: llama3.1
 workflow:
   external_review:
     mode: never
-`
+`, e2eAgent)
 	if err := os.WriteFile(filepath.Join(valksorDir, "kvelmo.yaml"), []byte(settingsContent), 0o644); err != nil {
 		t.Fatalf("Write kvelmo.yaml: %v", err)
 	}
@@ -516,6 +679,31 @@ func runGitCmd(t *testing.T, dir string, args ...string) string {
 	return strings.TrimSpace(string(out))
 }
 
+// tryRunKvelmo runs kvelmo but only logs on failure (for commands that may legitimately fail
+// when there's no data, e.g., logs before chat, memory before indexing).
+func tryRunKvelmo(t *testing.T, kvelmoPath, workDir string, args ...string) {
+	t.Helper()
+
+	cmd := exec.Command(kvelmoPath, args...)
+	cmd.Dir = workDir
+
+	var stdout, stderr bytes.Buffer
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+
+	t.Logf("Running (best-effort): kvelmo %s", strings.Join(args, " "))
+
+	if err := cmd.Run(); err != nil {
+		t.Logf("kvelmo %v returned error (non-fatal): %v — %s", args, err, stderr.String())
+
+		return
+	}
+
+	if stdout.Len() > 0 {
+		t.Logf("stdout: %s", stdout.String())
+	}
+}
+
 // runKvelmo runs kvelmo and checks for errors.
 func runKvelmo(t *testing.T, kvelmoPath, workDir string, args ...string) {
 	t.Helper()
@@ -619,4 +807,35 @@ func waitForState(t *testing.T, kvelmoPath, workDir string, expected string, tim
 	}
 
 	t.Fatalf("Timeout waiting for state %s (current: %s)", expected, getKvelmoState(t, kvelmoPath, workDir))
+}
+
+// copyDir recursively copies a directory, preserving file permissions.
+func copyDir(src, dst string) error {
+	return filepath.WalkDir(src, func(path string, d os.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+
+		rel, err := filepath.Rel(src, path)
+		if err != nil {
+			return err
+		}
+		target := filepath.Join(dst, rel)
+
+		info, err := d.Info()
+		if err != nil {
+			return err
+		}
+
+		if d.IsDir() {
+			return os.MkdirAll(target, info.Mode().Perm())
+		}
+
+		data, err := os.ReadFile(path)
+		if err != nil {
+			return err
+		}
+
+		return os.WriteFile(target, data, info.Mode().Perm())
+	})
 }
