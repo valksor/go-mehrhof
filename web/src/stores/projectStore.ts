@@ -88,6 +88,15 @@ export interface ForkInfo {
   created_at: string
 }
 
+export interface CacheStats {
+  enabled: boolean
+  entries: number
+  hits: number
+  misses: number
+  hit_rate: number
+  tokens_saved: number
+}
+
 export interface Review {
   number: number
   timestamp: string
@@ -251,16 +260,14 @@ interface ProjectState {
   // CI fix loop status
   ciFixStatus: { active: boolean; attempt?: number; maxAttempts?: number; result?: 'success' | 'failed' } | null
 
-<<<<<<< HEAD
   // Quality gate auto-fix loop status
   autoFixStatus: { active: boolean; attempt?: number; maxAttempts?: number; result?: 'success' | 'failed' } | null
 
   // Phase progress estimation (from progress.get RPC)
   phaseProgress: { percent: number; eta: number; calibrated: boolean } | null
-=======
+
   // Conversation forks
   forks: ForkInfo[]
->>>>>>> worktree-agent-ae28b83e
 
   // Dry-run mode
   dryRunMode: boolean
@@ -348,6 +355,11 @@ interface ProjectState {
   // Recap (resume context)
   recap: RecapData | null
   loadRecap: () => Promise<void>
+
+  // Response cache stats
+  cacheStats: CacheStats | null
+  loadCacheStats: () => Promise<void>
+  clearCache: () => Promise<void>
 }
 
 export const useProjectStore = create<ProjectState>((set, get) => ({
@@ -383,12 +395,10 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
   pendingNodeApprovals: [],
   riskScore: null,
   ciFixStatus: null,
-<<<<<<< HEAD
   autoFixStatus: null,
   phaseProgress: null,
-=======
   forks: [],
->>>>>>> worktree-agent-ae28b83e
+  cacheStats: null,
   dryRunMode: false,
   toggleDryRun: () => {
     set(s => ({ dryRunMode: !s.dryRunMode }))
@@ -744,11 +754,8 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
       tags: [],
       pendingNodeApprovals: [],
       ciFixStatus: null,
-<<<<<<< HEAD
       autoFixStatus: null,
-=======
       forks: [],
->>>>>>> worktree-agent-ae28b83e
       recap: null,
     })
   },
@@ -1650,6 +1657,30 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
       set({ riskScore: result })
     } catch {
       // Risk evaluation may not be available
+    }
+  },
+
+  loadCacheStats: async () => {
+    const client = get().client
+    if (!client) return
+
+    try {
+      const result = await client.call<CacheStats>('cache.stats', {})
+      set({ cacheStats: result })
+    } catch {
+      // Cache stats may not be available
+    }
+  },
+
+  clearCache: async () => {
+    const client = get().client
+    if (!client) return
+
+    try {
+      await client.call('cache.clear', {})
+      set({ cacheStats: { enabled: true, entries: 0, hits: 0, misses: 0, hit_rate: 0, tokens_saved: 0 } })
+    } catch {
+      // Ignore clear failures
     }
   }
 }))

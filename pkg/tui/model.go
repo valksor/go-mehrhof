@@ -310,6 +310,8 @@ func (m *Model) handleSocketEvent(msg socketEventMsg) (tea.Model, tea.Cmd) {
 			}
 		case "adversarial_review_started", "adversarial_review_complete", "adversarial_review_blocked":
 			m.worktrees[i].Output = append(m.worktrees[i].Output, msg.event.Message)
+		case "cache_hit":
+			m.worktrees[i].Output = append(m.worktrees[i].Output, msg.event.Message+" [cached]")
 			if m.active == i {
 				m.syncViewport()
 			}

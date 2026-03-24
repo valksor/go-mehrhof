@@ -4,6 +4,8 @@ import { StatsWidget } from './StatsWidget'
 
 const mockLoadMetrics = vi.fn()
 const mockLoadActiveTasks = vi.fn()
+const mockLoadCacheStats = vi.fn()
+const mockClearCache = vi.fn()
 
 let mockState = {
   connected: true,
@@ -15,14 +17,27 @@ let mockState = {
   loadActiveTasks: mockLoadActiveTasks,
 }
 
+let mockProjectState = {
+  connected: false,
+  cacheStats: null as { enabled: boolean; entries: number; hits: number; misses: number; hit_rate: number; tokens_saved: number } | null,
+  loadCacheStats: mockLoadCacheStats,
+  clearCache: mockClearCache,
+}
+
 vi.mock('../stores/globalStore', () => ({
   useGlobalStore: (selector: (s: typeof mockState) => unknown) => selector(mockState),
+}))
+
+vi.mock('../stores/projectStore', () => ({
+  useProjectStore: (selector: (s: typeof mockProjectState) => unknown) => selector(mockProjectState),
 }))
 
 describe('StatsWidget', () => {
   beforeEach(() => {
     mockLoadMetrics.mockClear()
     mockLoadActiveTasks.mockClear()
+    mockLoadCacheStats.mockClear()
+    mockClearCache.mockClear()
     mockState = {
       connected: true,
       metrics: null,
@@ -31,6 +46,12 @@ describe('StatsWidget', () => {
       workerStats: null,
       loadMetrics: mockLoadMetrics,
       loadActiveTasks: mockLoadActiveTasks,
+    }
+    mockProjectState = {
+      connected: false,
+      cacheStats: null,
+      loadCacheStats: mockLoadCacheStats,
+      clearCache: mockClearCache,
     }
   })
 
@@ -169,5 +190,43 @@ describe('StatsWidget', () => {
     mockState.activeTasks = [{ state: 'implementing' }]
     const { getByText } = render(<StatsWidget />)
     expect(getByText('1 implementing').className).toContain('badge-warning')
+  })
+
+  it('shows cache stats when enabled', () => {
+    mockProjectState.connected = true
+    mockProjectState.cacheStats = {
+      enabled: true,
+      entries: 42,
+      hits: 10,
+      misses: 5,
+      hit_rate: 0.6667,
+      tokens_saved: 1234,
+    }
+    const { getByText } = render(<StatsWidget />)
+    expect(getByText('Response Cache')).toBeInTheDocument()
+    expect(getByText('42')).toBeInTheDocument()
+    expect(getByText('10 / 5')).toBeInTheDocument()
+    expect(getByText('66.7%')).toBeInTheDocument()
+    expect(getByText('1,234')).toBeInTheDocument()
+  })
+
+  it('does not show cache stats when disabled', () => {
+    mockProjectState.cacheStats = { enabled: false, entries: 0, hits: 0, misses: 0, hit_rate: 0, tokens_saved: 0 }
+    const { queryByText } = render(<StatsWidget />)
+    expect(queryByText('Response Cache')).not.toBeInTheDocument()
+  })
+
+  it('shows Clear button when cache has entries', () => {
+    mockProjectState.connected = true
+    mockProjectState.cacheStats = {
+      enabled: true,
+      entries: 5,
+      hits: 1,
+      misses: 1,
+      hit_rate: 0.5,
+      tokens_saved: 100,
+    }
+    const { getByText } = render(<StatsWidget />)
+    expect(getByText('Clear')).toBeInTheDocument()
   })
 })

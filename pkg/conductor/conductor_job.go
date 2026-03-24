@@ -283,10 +283,18 @@ func (c *Conductor) watchJob(ctx context.Context, jobID string, completionEvent 
 				// Evaluate output via strategy before dispatching completion.
 				// If the strategy requests iteration, re-submit and skip normal completion.
 				var jobOutput string
+				var jobPrompt string
 				if c.pool != nil {
 					if job := c.pool.GetJob(jobID); job != nil {
 						jobOutput = job.Result
+						jobPrompt = job.Prompt
 					}
+				}
+
+				// Store successful response in cache for future deduplication.
+				if jobOutput != "" && jobPrompt != "" {
+					phase := phaseFromEvent(completionEvent)
+					c.storeResponseCache(jobPrompt, jobOutput, phase)
 				}
 
 				// Check canary violations using job output
