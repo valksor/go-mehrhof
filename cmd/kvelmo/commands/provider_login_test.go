@@ -6,6 +6,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/valksor/kvelmo/pkg/provider"
 	"github.com/valksor/kvelmo/pkg/settings"
 )
 
@@ -74,7 +75,7 @@ func TestDetectExistingToken_NotFound(t *testing.T) {
 }
 
 func TestPrintTokenHelp(t *testing.T) {
-	cfg := ProviderLoginConfig{
+	cfg := provider.LoginConfig{
 		Name:        "TestProvider",
 		EnvVar:      "TEST_TOKEN",
 		HelpURL:     "https://example.com/tokens",
@@ -99,7 +100,7 @@ func TestPrintTokenHelp(t *testing.T) {
 }
 
 func TestPrintTokenHelp_NoOptionalFields(t *testing.T) {
-	cfg := ProviderLoginConfig{
+	cfg := provider.LoginConfig{
 		Name:    "Minimal",
 		EnvVar:  "MIN_TOKEN",
 		HelpURL: "https://example.com",

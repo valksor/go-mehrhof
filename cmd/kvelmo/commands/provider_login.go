@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -14,55 +15,13 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/valksor/kvelmo/pkg/meta"
+	"github.com/valksor/kvelmo/pkg/provider"
 	"github.com/valksor/kvelmo/pkg/settings"
 	"golang.org/x/term"
 )
 
-// ProviderLoginConfig holds configuration for a provider's login command.
-type ProviderLoginConfig struct {
-	Name        string // Display name (e.g., "GitHub")
-	EnvVar      string // Environment variable name (e.g., "GITHUB_TOKEN")
-	HelpURL     string // URL for getting a token
-	HelpSteps   string // Navigation steps to get a token
-	Scopes      string // Required permissions/scopes
-	TokenPrefix string // Optional: expected token prefix (informational only)
-}
-
-// providerLoginConfigs maps provider names to their login configuration.
-var providerLoginConfigs = map[string]ProviderLoginConfig{
-	"github": {
-		Name:        "GitHub",
-		EnvVar:      "GITHUB_TOKEN",
-		HelpURL:     "https://github.com/settings/tokens",
-		HelpSteps:   "Settings -> Developer settings -> Personal access tokens -> Tokens (classic)",
-		Scopes:      "repo, read:user (or Fine-grained with repository access)",
-		TokenPrefix: "ghp_",
-	},
-	"gitlab": {
-		Name:        "GitLab",
-		EnvVar:      "GITLAB_TOKEN",
-		HelpURL:     "https://gitlab.com/-/user_settings/personal_access_tokens",
-		HelpSteps:   "Preferences -> Access Tokens -> Add new token",
-		Scopes:      "api, read_user, read_repository",
-		TokenPrefix: "glpat-",
-	},
-	"linear": {
-		Name:        "Linear",
-		EnvVar:      "LINEAR_TOKEN",
-		HelpURL:     "https://linear.app/settings/api",
-		HelpSteps:   "Settings -> API -> Personal API keys -> Create key",
-		Scopes:      "Workspace access",
-		TokenPrefix: "lin_api_",
-	},
-	"wrike": {
-		Name:        "Wrike",
-		EnvVar:      "WRIKE_TOKEN",
-		HelpURL:     "https://www.wrike.com/frontend/apps/index.html#/api",
-		HelpSteps:   "Apps & Integrations -> API -> Permanent access tokens",
-		Scopes:      "Default (read/write access)",
-		TokenPrefix: "",
-	},
-}
+// providerLoginConfigs is the canonical provider login configuration from pkg/provider.
+var providerLoginConfigs = provider.LoginConfigs
 
 // tokenSource represents where a token value was found.
 type tokenSource struct {
@@ -185,7 +144,7 @@ func confirmOverride(cmd *cobra.Command) bool {
 }
 
 // printTokenHelp displays formatted guidance for getting a token.
-func printTokenHelp(w io.Writer, cfg ProviderLoginConfig) {
+func printTokenHelp(w io.Writer, cfg provider.LoginConfig) {
 	_, _ = fmt.Fprintln(w)
 	_, _ = fmt.Fprintf(w, "%s Token Setup\n", cfg.Name)
 	_, _ = fmt.Fprintln(w, "--------------------------------------------------")
@@ -258,7 +217,9 @@ func runProviderLogin(providerName string) func(*cobra.Command, []string) error 
 
 		// Validate token with API call
 		_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Validating token...")
-		if err := testProviderToken(providerName, token); err != nil {
+		if err := testProviderToken(providerName, token); errors.Is(err, errValidationSkipped) {
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), " skipped (requires org context)\n")
+		} else if err != nil {
 			_, _ = fmt.Fprintf(cmd.OutOrStdout(), " ✗\n")
 			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "Warning: Token validation failed: %v\n", err)
 			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "The token will be saved but may not work.\n")
@@ -315,6 +276,8 @@ Get your token at: %s`, cfg.Name, meta.Name, cfg.HelpURL),
 	return providerCmd
 }
 
+var errValidationSkipped = errors.New("validation skipped")
+
 // testProviderToken validates a token by making a simple API call.
 func testProviderToken(provider, token string) error {
 	ctx := context.Background()
@@ -355,6 +318,12 @@ func testProviderToken(provider, token string) error {
 		}
 		req.Header.Set("Authorization", "Bearer "+token)
 
+	case "jira":
+		return errValidationSkipped // Jira Cloud uses Basic auth with email:token; cannot validate token alone
+
+	case "azuredevops":
+		return errValidationSkipped // Azure DevOps requires org/project context for validation
+
 	default:
 		return nil // Unknown provider, skip validation
 	}
@@ -394,8 +363,10 @@ func testProviderToken(provider, token string) error {
 
 // Provider commands exported for registration in main.go.
 var (
-	GitHubCmd = createProviderCommand("github")
-	GitLabCmd = createProviderCommand("gitlab")
-	LinearCmd = createProviderCommand("linear")
-	WrikeCmd  = createProviderCommand("wrike")
+	GitHubCmd      = createProviderCommand("github")
+	GitLabCmd      = createProviderCommand("gitlab")
+	LinearCmd      = createProviderCommand("linear")
+	WrikeCmd       = createProviderCommand("wrike")
+	JiraCmd        = createProviderCommand("jira")
+	AzureDevOpsCmd = createProviderCommand("azuredevops")
 )
