@@ -320,6 +320,10 @@ func (w *WorktreeSocket) registerHandlers() {
 	// Discovery
 	w.server.Handle("discovery.scan", w.handleDiscoveryScan)
 
+	// Risk evaluation
+	w.server.Handle("risk.evaluate", w.handleRiskEvaluate)
+	w.server.Handle("risk.history", w.handleRiskHistory)
+
 	// Event log
 	w.server.Handle("eventlog.query", w.handleEventlogQuery)
 

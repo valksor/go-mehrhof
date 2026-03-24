@@ -11,6 +11,8 @@ export function ReviewPanel({ data }: ReviewPanelProps) {
   const pendingNodeApprovals = useProjectStore((state) => state.pendingNodeApprovals)
   const approveNode = useProjectStore((state) => state.approveNode)
   const rejectNode = useProjectStore((state) => state.rejectNode)
+  const riskScore = useProjectStore((state) => state.riskScore)
+  const evaluateRisk = useProjectStore((state) => state.evaluateRisk)
   const [selectedReview, setSelectedReview] = useState<ReviewDetail | null>(null)
   const [selectedSummary, setSelectedSummary] = useState<Review | null>(null)
   const [loading, setLoading] = useState(false)
@@ -90,6 +92,9 @@ export function ReviewPanel({ data }: ReviewPanelProps) {
             </p>
           </div>
         </div>
+
+        {/* Risk Gauge */}
+        <RiskGauge score={riskScore} onEvaluate={evaluateRisk} />
 
         {/* Summary Message - uses selected review */}
         <div className="bg-base-200 rounded-lg p-4">
@@ -294,6 +299,81 @@ function StatusBadge({ approved }: { approved: boolean }) {
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
       </svg>
       Changes Requested
+    </div>
+  )
+}
+
+function RiskGauge({ score, onEvaluate }: {
+  score: { score: number; factors: Record<string, number>; level: string } | null
+  onEvaluate: () => Promise<void>
+}) {
+  const [loading, setLoading] = useState(false)
+
+  const handleEvaluate = async () => {
+    setLoading(true)
+    try {
+      await onEvaluate()
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  if (!score) {
+    return (
+      <div className="bg-base-200 rounded-lg p-3 flex items-center justify-between">
+        <span className="text-sm text-base-content/60">Risk not evaluated</span>
+        <button
+          className="btn btn-xs btn-ghost"
+          onClick={handleEvaluate}
+          disabled={loading}
+        >
+          {loading ? <span className="loading loading-spinner loading-xs" /> : 'Evaluate'}
+        </button>
+      </div>
+    )
+  }
+
+  const levelColors: Record<string, string> = {
+    low: 'text-success',
+    medium: 'text-warning',
+    high: 'text-error',
+  }
+  const barColors: Record<string, string> = {
+    low: 'bg-success',
+    medium: 'bg-warning',
+    high: 'bg-error',
+  }
+
+  return (
+    <div className="bg-base-200 rounded-lg p-3 space-y-2">
+      <div className="flex items-center justify-between">
+        <h3 className="text-sm font-medium text-base-content/70">Risk Score</h3>
+        <div className="flex items-center gap-2">
+          <span className={`text-sm font-semibold ${levelColors[score.level] || ''}`}>
+            {score.score.toFixed(2)} ({score.level})
+          </span>
+          <button
+            className="btn btn-xs btn-ghost"
+            onClick={handleEvaluate}
+            disabled={loading}
+          >
+            {loading ? <span className="loading loading-spinner loading-xs" /> : 'Re-evaluate'}
+          </button>
+        </div>
+      </div>
+      <div className="w-full bg-base-300 rounded-full h-2">
+        <div
+          className={`h-2 rounded-full transition-all ${barColors[score.level] || 'bg-info'}`}
+          style={{ width: `${Math.min(score.score * 100, 100)}%` }}
+        />
+      </div>
+      {Object.keys(score.factors).length > 0 && (
+        <div className="grid grid-cols-2 gap-1 text-xs text-base-content/50">
+          {Object.entries(score.factors).map(([factor, value]) => (
+            <span key={factor}>{factor.replace(/_/g, ' ')}: {(value as number).toFixed(2)}</span>
+          ))}
+        </div>
+      )}
     </div>
   )
 }

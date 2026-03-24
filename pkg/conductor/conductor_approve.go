@@ -1,14 +1,18 @@
 package conductor
 
 import (
+	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"log/slog"
 	"os"
 	"os/user"
 	"slices"
 	"time"
 
 	"github.com/valksor/kvelmo/pkg/graph"
+	"github.com/valksor/kvelmo/pkg/riskeval"
 )
 
 // approverIdentity returns a best-effort user identity string for audit purposes.
@@ -28,9 +32,50 @@ func approverIdentity(configuredIdentity string) string {
 }
 
 // checkApproval verifies that the given event has been approved when required by policy.
+// When risk-based approval is enabled, low-risk changes are auto-approved and high-risk
+// changes require review regardless of explicit approval settings.
 // Must be called with c.mu held (read or write).
 func (c *Conductor) checkApproval(event Event) error {
 	s := c.getEffectiveSettings()
+
+	// Risk-based approval: evaluate risk and decide automatically.
+	rba := s.Workflow.Policy.RiskBasedApproval
+	if rba != nil && rba.Enabled && s.Workflow.Policy.ApprovalRequired[string(event)] {
+		score := c.evaluateRisk()
+		c.emitRiskEvaluated(score)
+
+		autoThreshold := rba.AutoApproveThreshold
+		if autoThreshold == 0 {
+			autoThreshold = riskeval.DefaultLowThreshold
+		}
+		highThreshold := rba.HighRiskThreshold
+		if highThreshold == 0 {
+			highThreshold = riskeval.DefaultHighThreshold
+		}
+
+		if score.Score < autoThreshold {
+			slog.Info("risk-based auto-approval",
+				"event", event, "score", score.Score, "level", score.Level)
+			return nil
+		}
+
+		if score.Score >= highThreshold {
+			// High risk: always require explicit approval, no bypass.
+			record, ok := c.workUnit.Approvals[string(event)]
+			if !ok || record.ApprovedAt.IsZero() {
+				c.emit(ConductorEvent{
+					Type:    "approval_required",
+					State:   c.machine.State(),
+					Message: fmt.Sprintf("High-risk change (score=%.2f): approval required for %s", score.Score, event),
+				})
+				return fmt.Errorf("cannot %s: high-risk change (score=%.2f) requires explicit approval. Run: kvelmo approve %s", event, score.Score, event)
+			}
+			return nil
+		}
+
+		// Between thresholds: fall through to normal approval check.
+	}
+
 	if !s.Workflow.Policy.ApprovalRequired[string(event)] {
 		return nil
 	}
@@ -47,6 +92,84 @@ func (c *Conductor) checkApproval(event Event) error {
 	}
 
 	return nil
+}
+
+// evaluateRisk computes the risk score for the current work unit.
+// Must be called with c.mu held (read or write).
+func (c *Conductor) evaluateRisk() riskeval.RiskScore {
+	s := c.getEffectiveSettings()
+
+	input := riskeval.Input{
+		SensitivePaths: s.Workflow.Policy.SensitivePaths,
+	}
+
+	// Gather diff stats from git if available.
+	if c.git != nil {
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+
+		stat, err := c.git.DiffNumStatAgainst(ctx, "")
+		if err == nil {
+			input.DiffLinesAdded = stat.Added
+			input.DiffLinesRemoved = stat.Removed
+			input.FilesChanged = stat.Files
+			input.TotalFilesChanged = len(stat.Files)
+
+			// Count test files.
+			for _, f := range stat.Files {
+				if isTestFile(f) {
+					input.TestFilesChanged++
+				}
+			}
+		} else {
+			slog.Debug("risk evaluation: failed to get diff stats", "error", err)
+		}
+	}
+
+	return riskeval.Evaluate(input)
+}
+
+// EvaluateRisk computes the risk score for the current work unit (exported for RPC).
+func (c *Conductor) EvaluateRisk() riskeval.RiskScore {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+
+	if c.workUnit == nil {
+		return riskeval.RiskScore{Level: riskeval.LevelLow}
+	}
+
+	return c.evaluateRisk()
+}
+
+// emitRiskEvaluated emits a risk_evaluated event with score and factors.
+func (c *Conductor) emitRiskEvaluated(score riskeval.RiskScore) {
+	data, err := json.Marshal(score)
+	if err != nil {
+		slog.Warn("failed to marshal risk score", "error", err)
+		return
+	}
+
+	c.emit(ConductorEvent{
+		Type:    "risk_evaluated",
+		State:   c.machine.State(),
+		Message: fmt.Sprintf("Risk evaluated: %.2f (%s)", score.Score, score.Level),
+		Data:    data,
+	})
+}
+
+// isTestFile returns true if the file path looks like a test file.
+func isTestFile(path string) bool {
+	// Go test files
+	if len(path) > 8 && path[len(path)-8:] == "_test.go" {
+		return true
+	}
+	// JS/TS test files
+	for _, suffix := range []string{".test.ts", ".test.tsx", ".test.js", ".test.jsx", ".spec.ts", ".spec.tsx", ".spec.js", ".spec.jsx"} {
+		if len(path) > len(suffix) && path[len(path)-len(suffix):] == suffix {
+			return true
+		}
+	}
+	return false
 }
 
 // Approve marks a transition event as approved by a human.

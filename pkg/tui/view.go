@@ -105,6 +105,9 @@ func (m *Model) renderStatusBar() string {
 	if wt.ActiveForks > 0 {
 		text += fmt.Sprintf(" [%d fork(s)]", wt.ActiveForks)
 	}
+	if wt.RiskLevel != "" {
+		text += " [risk:" + wt.RiskLevel + "]"
+	}
 	if m.dryRun {
 		text += " [DRY RUN]"
 	}

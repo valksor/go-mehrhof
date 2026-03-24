@@ -62,6 +62,13 @@ func (c *Conductor) SetEventLog(log *eventlog.Log) {
 	c.eventLog = log
 }
 
+// EventLog returns the configured event log, or nil if not set.
+func (c *Conductor) EventLog() *eventlog.Log {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	return c.eventLog
+}
+
 // emitEventLog appends an entry to the event log if configured.
 // Non-blocking: logs on error but never blocks the caller.
 func (c *Conductor) emitEventLog(entry eventlog.Entry) {

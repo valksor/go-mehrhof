@@ -39,6 +39,7 @@ type WorktreeState struct {
 	AutoFixAttempt   int    // current auto-fix attempt (0 = inactive)
 	AutoFixMax       int    // max auto-fix attempts
 	ActiveForks      int    // number of active conversation forks
+	RiskLevel        string // "low", "medium", "high", or "" if not evaluated
 
 	// Progress estimation during active phases.
 	ProgressActive     bool
@@ -345,6 +346,15 @@ func (m *Model) handleSocketEvent(msg socketEventMsg) (tea.Model, tea.Cmd) {
 			m.worktrees[i].Output = append(m.worktrees[i].Output, msg.event.Message)
 			if m.active == i {
 				m.syncViewport()
+			}
+		case "risk_evaluated":
+			if msg.event.Data != nil {
+				var riskData struct {
+					Level string `json:"level"`
+				}
+				if err := json.Unmarshal(msg.event.Data, &riskData); err == nil && riskData.Level != "" {
+					m.worktrees[i].RiskLevel = riskData.Level
+				}
 			}
 		}
 

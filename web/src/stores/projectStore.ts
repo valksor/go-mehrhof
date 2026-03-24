@@ -244,6 +244,10 @@ interface ProjectState {
   // Pending graph node approvals (set by node_approval_required events)
   pendingNodeApprovals: { nodeId: string; message: string }[]
 
+  // Risk evaluation
+  riskScore: { score: number; factors: Record<string, number>; level: string } | null
+  evaluateRisk: () => Promise<void>
+
   // CI fix loop status
   ciFixStatus: { active: boolean; attempt?: number; maxAttempts?: number; result?: 'success' | 'failed' } | null
 
@@ -377,6 +381,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
   skipPhases: [],
   tags: [],
   pendingNodeApprovals: [],
+  riskScore: null,
   ciFixStatus: null,
 <<<<<<< HEAD
   autoFixStatus: null,
@@ -640,6 +645,16 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
             set(s => ({
               pendingNodeApprovals: s.pendingNodeApprovals.filter(n => n.nodeId !== nodeMsg.node_id),
             }))
+          }
+        } else if (msg.type === 'risk_evaluated') {
+          try {
+            const riskData = typeof msg.data === 'string' ? JSON.parse(msg.data) : msg.data
+            if (riskData && typeof riskData.score === 'number') {
+              set({ riskScore: riskData as { score: number; factors: Record<string, number>; level: string } })
+              get().appendOutput(`Risk evaluated: ${riskData.score.toFixed(2)} (${riskData.level})`)
+            }
+          } catch {
+            // Ignore parse errors for risk data
           }
         }
       })
@@ -1623,6 +1638,18 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
       set({ recap: result })
     } catch {
       // Recap may not be available
+    }
+  },
+
+  evaluateRisk: async () => {
+    const client = get().client
+    if (!client) return
+
+    try {
+      const result = await client.call<{ score: number; factors: Record<string, number>; level: string }>('risk.evaluate', {})
+      set({ riskScore: result })
+    } catch {
+      // Risk evaluation may not be available
     }
   }
 }))
