@@ -211,6 +211,12 @@ func init() {
 	// Project command discovery
 	rootCmd.AddCommand(commands.DiscoverCmd)
 
+	// Conversation forking
+	rootCmd.AddCommand(commands.ForkCmd)
+
+	// Cross-repo task groups
+	rootCmd.AddCommand(commands.GroupCmd)
+
 	// Raw JSON-RPC access
 	rootCmd.AddCommand(commands.RPCCmd)
 

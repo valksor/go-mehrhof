@@ -1,6 +1,7 @@
 package tui
 
 import (
+	"fmt"
 	"path/filepath"
 	"strings"
 
@@ -98,11 +99,25 @@ func (m *Model) renderStatusBar() string {
 	if state == "failed" && wt.LastFailureClass != "" {
 		text += " [" + wt.LastFailureClass + "]"
 	}
+	if wt.AutoFixAttempt > 0 {
+		text += fmt.Sprintf(" [AUTO-FIX %d/%d]", wt.AutoFixAttempt, wt.AutoFixMax)
+	}
+	if wt.ActiveForks > 0 {
+		text += fmt.Sprintf(" [%d fork(s)]", wt.ActiveForks)
+	}
+	if wt.RiskLevel != "" {
+		text += " [risk:" + wt.RiskLevel + "]"
+	}
 	if m.dryRun {
 		text += " [DRY RUN]"
 	}
 	if workerName != "" {
 		text += " · " + workerName
+	}
+
+	// Show progress bar during active phases.
+	if wt.ProgressActive {
+		text += " " + renderProgressBar(wt.ProgressPercent, wt.ProgressETASeconds, wt.ProgressCalibrated)
 	}
 
 	return style.Render(text)
@@ -215,6 +230,78 @@ func (m *Model) renderHelp() string {
 	}
 
 	return b.String()
+}
+
+// classificationPrefix returns a TUI prefix for quality gate output lines
+// that contain a failure classification tag like {flaky} or {genuine}.
+func classificationPrefix(line string) string {
+	switch {
+	case strings.Contains(line, "{flaky}"):
+		return "[FLAKY] " + strings.ReplaceAll(line, "{flaky}", "")
+	case strings.Contains(line, "{genuine}"):
+		return "[GENUINE] " + strings.ReplaceAll(line, "{genuine}", "")
+	case strings.Contains(line, "{intermittent}"):
+		return "[INTERMITTENT] " + strings.ReplaceAll(line, "{intermittent}", "")
+	default:
+		return line
+	}
+}
+
+// annotateOutputLines applies classification prefixes to quality gate output.
+func annotateOutputLines(lines []string) []string {
+	result := make([]string, len(lines))
+	for i, line := range lines {
+		result[i] = classificationPrefix(line)
+	}
+
+	return result
+}
+
+// renderProgressBar returns a compact progress bar like "[████████░░] 72% ~1m30s".
+func renderProgressBar(percent float64, etaSeconds int, calibrated bool) string {
+	const barWidth = 10
+	filled := int(percent / 100 * float64(barWidth))
+	if filled > barWidth {
+		filled = barWidth
+	}
+	if filled < 0 {
+		filled = 0
+	}
+
+	bar := strings.Repeat("\u2588", filled) + strings.Repeat("\u2591", barWidth-filled)
+	result := fmt.Sprintf("[%s] %d%%", bar, int(percent))
+
+	if calibrated && etaSeconds >= 0 {
+		result += " ~" + formatETASeconds(etaSeconds)
+	}
+
+	return result
+}
+
+// formatETASeconds formats seconds into a human-readable duration string.
+func formatETASeconds(seconds int) string {
+	if seconds <= 0 {
+		return "0s"
+	}
+	if seconds < 60 {
+		return fmt.Sprintf("%ds", seconds)
+	}
+	mins := seconds / 60
+	secs := seconds % 60
+	if mins < 60 {
+		if secs > 0 {
+			return fmt.Sprintf("%dm%ds", mins, secs)
+		}
+
+		return fmt.Sprintf("%dm", mins)
+	}
+	hrs := mins / 60
+	remainMins := mins % 60
+	if remainMins > 0 {
+		return fmt.Sprintf("%dh%dm", hrs, remainMins)
+	}
+
+	return fmt.Sprintf("%dh", hrs)
 }
 
 // padRight pads or truncates s to exactly n runes.

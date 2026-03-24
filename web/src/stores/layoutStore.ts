@@ -36,7 +36,7 @@ export interface WidgetState {
 }
 
 // Tab configuration
-export type TabType = 'file' | 'spec' | 'agent' | 'output' | 'chat' | 'diff' | 'screenshots' | 'jobs' | 'files' | 'browser' | 'task' | 'review' | 'filechanges' | 'submit-preview'
+export type TabType = 'file' | 'spec' | 'agent' | 'output' | 'chat' | 'diff' | 'screenshots' | 'jobs' | 'files' | 'browser' | 'task' | 'review' | 'filechanges' | 'submit-preview' | 'fork'
 
 export interface Tab {
   id: string

@@ -137,6 +137,29 @@ Commit your fixes with meaningful commit messages.`
 		}()
 	}
 
+	// Run adversarial review if configured (non-blocking, results stored).
+	if cfg := c.getAdversarialConfig(); cfg != nil && cfg.Enabled && len(cfg.Personas) > 0 {
+		go func() { //nolint:contextcheck // intentionally uses lifecycle context that outlives the request
+			adversarialFindings, err := c.runAdversarialReview(lifecycleCtx)
+			if err != nil {
+				slog.Warn("adversarial review failed", "error", err)
+				return
+			}
+
+			c.mu.Lock()
+			c.adversarialFindings = adversarialFindings
+			c.mu.Unlock()
+
+			if cfg.BlockOnFindings && len(adversarialFindings) > 0 {
+				c.emit(ConductorEvent{
+					Type:    "adversarial_review_blocked",
+					State:   c.machine.State(),
+					Message: fmt.Sprintf("Adversarial review found %d findings that require attention", len(adversarialFindings)),
+				})
+			}
+		}()
+	}
+
 	// Run spec alignment check in background if specifications exist.
 	// Compares the diff against the spec to detect drift or missing items.
 	go c.runSpecAlignmentCheckAsync(lifecycleCtx, workDir, pool)

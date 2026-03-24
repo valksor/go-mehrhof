@@ -77,6 +77,26 @@ export interface FilesEntry {
   modified?: string
 }
 
+export interface ForkInfo {
+  id: string
+  label: string
+  branch: string
+  worktree_dir: string
+  checkpoint_sha: string
+  state: string
+  tokens_used?: number
+  created_at: string
+}
+
+export interface CacheStats {
+  enabled: boolean
+  entries: number
+  hits: number
+  misses: number
+  hit_rate: number
+  tokens_saved: number
+}
+
 export interface Review {
   number: number
   timestamp: string
@@ -233,8 +253,21 @@ interface ProjectState {
   // Pending graph node approvals (set by node_approval_required events)
   pendingNodeApprovals: { nodeId: string; message: string }[]
 
+  // Risk evaluation
+  riskScore: { score: number; factors: Record<string, number>; level: string } | null
+  evaluateRisk: () => Promise<void>
+
   // CI fix loop status
   ciFixStatus: { active: boolean; attempt?: number; maxAttempts?: number; result?: 'success' | 'failed' } | null
+
+  // Quality gate auto-fix loop status
+  autoFixStatus: { active: boolean; attempt?: number; maxAttempts?: number; result?: 'success' | 'failed' } | null
+
+  // Phase progress estimation (from progress.get RPC)
+  phaseProgress: { percent: number; eta: number; calibrated: boolean } | null
+
+  // Conversation forks
+  forks: ForkInfo[]
 
   // Dry-run mode
   dryRunMode: boolean
@@ -322,6 +355,11 @@ interface ProjectState {
   // Recap (resume context)
   recap: RecapData | null
   loadRecap: () => Promise<void>
+
+  // Response cache stats
+  cacheStats: CacheStats | null
+  loadCacheStats: () => Promise<void>
+  clearCache: () => Promise<void>
 }
 
 export const useProjectStore = create<ProjectState>((set, get) => ({
@@ -355,7 +393,12 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
   skipPhases: [],
   tags: [],
   pendingNodeApprovals: [],
+  riskScore: null,
   ciFixStatus: null,
+  autoFixStatus: null,
+  phaseProgress: null,
+  forks: [],
+  cacheStats: null,
   dryRunMode: false,
   toggleDryRun: () => {
     set(s => ({ dryRunMode: !s.dryRunMode }))
@@ -422,6 +465,20 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
       const debouncedRefresh = debounce(() => get().refreshStatus(), 300)
       const debouncedLoadQueue = debounce(() => get().loadQueue(), 500)
 
+      // Progress estimation polling (3s interval, only during active phases)
+      const ACTIVE_PHASES = new Set(['planning', 'implementing', 'simplifying', 'optimizing'])
+      const progressInterval = setInterval(async () => {
+        if (!ACTIVE_PHASES.has(get().state)) return
+        try {
+          const progress = await client.call<{ active: boolean; percent?: number; eta_seconds?: number; calibrated?: boolean }>('progress.get', {})
+          if (progress.active) {
+            set({ phaseProgress: { percent: progress.percent ?? 0, eta: progress.eta_seconds ?? -1, calibrated: progress.calibrated ?? false } })
+          }
+        } catch {
+          // Ignore polling errors
+        }
+      }, 3000)
+
       // Handle streaming events
       const unsubscribe = client.subscribe((data: unknown) => {
         // Dispatch to typed event emitter so typed handlers receive events
@@ -452,9 +509,13 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
           return
         } else if (msg.type === 'state_changed') {
           const newState = msg.state || 'none'
+          const ACTIVE = new Set(['planning', 'implementing', 'simplifying', 'optimizing'])
           const updates: Partial<ProjectState> = { state: newState }
           if (newState !== 'failed') {
             updates.phaseError = null
+          }
+          if (!ACTIVE.has(newState)) {
+            updates.phaseProgress = null
           }
           set(updates)
           get().appendOutput(`State: ${msg.state}`)
@@ -509,6 +570,13 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
           if (data?.prompt_id) {
             set({ qualityPrompt: { id: data.prompt_id, question: data.question ?? 'Quality gate question' } })
           }
+        } else if (msg.type === 'worktree_provisioned') {
+          const provData = (msg as { data?: { files_copied?: string[]; symlinks_created?: string[]; commands_run?: string[] } }).data
+          const parts: string[] = []
+          if (provData?.files_copied?.length) parts.push(`${provData.files_copied.length} files copied`)
+          if (provData?.symlinks_created?.length) parts.push(`${provData.symlinks_created.length} symlinks`)
+          if (provData?.commands_run?.length) parts.push(`${provData.commands_run.length} commands`)
+          get().appendOutput(`Worktree provisioned: ${parts.join(', ')}`)
         } else if (msg.type === 'warning') {
           get().appendOutput(`\u26a0 ${msg.message || 'Warning'}`)
         } else if (msg.type === 'error') {
@@ -542,6 +610,22 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
           get().appendOutput(msg.message || 'CI fix: attempt failed, retrying...')
         } else if (msg.type === 'ci_fix_started') {
           get().appendOutput(msg.message || 'CI fix: starting fix job...')
+        } else if (msg.type === 'autofix_attempt') {
+          const afMsg = msg as { data?: { attempt?: number; max_attempts?: number } }
+          set({ autoFixStatus: { active: true, attempt: afMsg.data?.attempt, maxAttempts: afMsg.data?.max_attempts } })
+          get().appendOutput(msg.message || 'Auto-fix: attempting quality gate fix...')
+        } else if (msg.type === 'autofix_success') {
+          set({ autoFixStatus: { active: false, result: 'success' } })
+          get().appendOutput(msg.message || 'Auto-fix: quality gate passed')
+          sendNotification('Auto-Fix Success', 'Quality gate passed after fix')
+        } else if (msg.type === 'autofix_exhausted') {
+          set({ autoFixStatus: { active: false, result: 'failed' } })
+          get().appendOutput(msg.message || 'Auto-fix: all attempts exhausted')
+          sendNotification('Auto-Fix Failed', 'Quality gate still failing after all fix attempts')
+        } else if (msg.type === 'autofix_job_failed') {
+          get().appendOutput(msg.message || 'Auto-fix: fix job failed, retrying...')
+        } else if (msg.type === 'autofix_started') {
+          get().appendOutput(msg.message || 'Auto-fix: starting fix job...')
         } else if (msg.type === 'consensus_review_complete') {
           get().appendOutput(msg.message || 'Consensus review complete')
           debouncedRefresh()
@@ -572,6 +656,16 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
               pendingNodeApprovals: s.pendingNodeApprovals.filter(n => n.nodeId !== nodeMsg.node_id),
             }))
           }
+        } else if (msg.type === 'risk_evaluated') {
+          try {
+            const riskData = typeof msg.data === 'string' ? JSON.parse(msg.data) : msg.data
+            if (riskData && typeof riskData.score === 'number') {
+              set({ riskScore: riskData as { score: number; factors: Record<string, number>; level: string } })
+              get().appendOutput(`Risk evaluated: ${riskData.score.toFixed(2)} (${riskData.level})`)
+            }
+          } catch {
+            // Ignore parse errors for risk data
+          }
         }
       })
 
@@ -593,6 +687,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
         unsubscribeSocket: () => {
           debouncedRefresh.cancel()
           debouncedLoadQueue.cancel()
+          clearInterval(progressInterval)
           unsubscribe()
           worktreeEvents.clear()
         }
@@ -659,6 +754,8 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
       tags: [],
       pendingNodeApprovals: [],
       ciFixStatus: null,
+      autoFixStatus: null,
+      forks: [],
       recap: null,
     })
   },
@@ -1521,6 +1618,18 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
 
         // Tags
         get().loadTags(),
+
+        // Progress estimation (only when a phase is active)
+        (['planning', 'implementing', 'simplifying', 'optimizing'].includes(result.state)
+          ? client.call<{ active: boolean; percent?: number; eta_seconds?: number; calibrated?: boolean }>('progress.get', {}).then(progress => {
+              if (progress.active) {
+                set({ phaseProgress: { percent: progress.percent ?? 0, eta: progress.eta_seconds ?? -1, calibrated: progress.calibrated ?? false } })
+              } else {
+                set({ phaseProgress: null })
+              }
+            }).catch(() => { set({ phaseProgress: null }) })
+          : Promise.resolve(set({ phaseProgress: null }))
+        ),
       ])
     } catch (err) {
       set({ error: err instanceof Error ? err.message : 'Status refresh failed' })
@@ -1536,6 +1645,42 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
       set({ recap: result })
     } catch {
       // Recap may not be available
+    }
+  },
+
+  evaluateRisk: async () => {
+    const client = get().client
+    if (!client) return
+
+    try {
+      const result = await client.call<{ score: number; factors: Record<string, number>; level: string }>('risk.evaluate', {})
+      set({ riskScore: result })
+    } catch {
+      // Risk evaluation may not be available
+    }
+  },
+
+  loadCacheStats: async () => {
+    const client = get().client
+    if (!client) return
+
+    try {
+      const result = await client.call<CacheStats>('cache.stats', {})
+      set({ cacheStats: result })
+    } catch {
+      // Cache stats may not be available
+    }
+  },
+
+  clearCache: async () => {
+    const client = get().client
+    if (!client) return
+
+    try {
+      await client.call('cache.clear', {})
+      set({ cacheStats: { enabled: true, entries: 0, hits: 0, misses: 0, hit_rate: 0, tokens_saved: 0 } })
+    } catch {
+      // Ignore clear failures
     }
   }
 }))

@@ -77,11 +77,12 @@ type memorySearchResult struct {
 }
 
 type memoryHit struct {
-	ID      string  `json:"id"`
-	TaskID  string  `json:"task_id"`
-	Type    string  `json:"type"`
-	Content string  `json:"content"`
-	Score   float32 `json:"score"`
+	ID      string                  `json:"id"`
+	TaskID  string                  `json:"task_id"`
+	Type    string                  `json:"type"`
+	Content string                  `json:"content"`
+	Score   float32                 `json:"score"`
+	Outcome *memory.DocumentOutcome `json:"outcome,omitempty"`
 }
 
 func (g *GlobalSocket) handleMemorySearch(ctx context.Context, req *Request) (*Response, error) {
@@ -126,6 +127,7 @@ func (g *GlobalSocket) handleMemorySearch(ctx context.Context, req *Request) (*R
 			Type:    string(r.Document.Type),
 			Content: r.Document.Content,
 			Score:   r.Score,
+			Outcome: r.Document.Outcome,
 		}
 	}
 
@@ -162,6 +164,60 @@ func (g *GlobalSocket) handleMemoryStats(ctx context.Context, req *Request) (*Re
 	}
 
 	return NewResultResponse(req.ID, resp)
+}
+
+// --- memory.outcomes ---
+
+type memoryOutcomesParams struct {
+	TaskID string `json:"task_id"`
+}
+
+type memoryOutcomeDoc struct {
+	ID      string                  `json:"id"`
+	TaskID  string                  `json:"task_id"`
+	Type    string                  `json:"type"`
+	Content string                  `json:"content"`
+	Outcome *memory.DocumentOutcome `json:"outcome,omitempty"`
+}
+
+type memoryOutcomesResult struct {
+	Documents []memoryOutcomeDoc `json:"documents"`
+	Total     int                `json:"total"`
+}
+
+func (g *GlobalSocket) handleMemoryOutcomes(ctx context.Context, req *Request) (*Response, error) {
+	adapter, err := getMemoryAdapter(ctx)
+	if err != nil {
+		return NewErrorResponse(req.ID, -32603, fmt.Sprintf("memory unavailable: %s", err)), nil
+	}
+
+	var params memoryOutcomesParams
+	if req.Params != nil {
+		if err := json.Unmarshal(req.Params, &params); err != nil {
+			return NewErrorResponse(req.ID, ErrCodeInvalidParams, err.Error()), nil
+		}
+	}
+
+	if params.TaskID == "" {
+		return NewErrorResponse(req.ID, ErrCodeInvalidParams, "task_id is required"), nil
+	}
+
+	docs := adapter.Store().GetDocumentsForTask(ctx, params.TaskID)
+	result := memoryOutcomesResult{
+		Documents: make([]memoryOutcomeDoc, len(docs)),
+		Total:     len(docs),
+	}
+	for i, doc := range docs {
+		result.Documents[i] = memoryOutcomeDoc{
+			ID:      doc.ID,
+			TaskID:  doc.TaskID,
+			Type:    string(doc.Type),
+			Content: doc.Content,
+			Outcome: doc.Outcome,
+		}
+	}
+
+	return NewResultResponse(req.ID, result)
 }
 
 // --- memory.clear ---

@@ -47,6 +47,9 @@ type Document struct {
 	// Category labels this document for named-block retrieval (e.g. "requirements",
 	// "decisions", "feedback", "learnings").
 	Category string `json:"category,omitempty"`
+	// Outcome tracks the result of the task that produced this document.
+	// Set by LinkOutcome when a task finishes. Nil until outcome is known.
+	Outcome *DocumentOutcome `json:"outcome,omitempty"`
 }
 
 // SearchResult pairs a document with its similarity score.

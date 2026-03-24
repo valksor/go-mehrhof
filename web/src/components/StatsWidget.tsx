@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 import { useGlobalStore } from '../stores/globalStore'
+import { useProjectStore } from '../stores/projectStore'
 
 export function StatsWidget() {
   const connected = useGlobalStore(s => s.connected)
@@ -10,11 +11,21 @@ export function StatsWidget() {
   const loadMetrics = useGlobalStore(s => s.loadMetrics)
   const loadActiveTasks = useGlobalStore(s => s.loadActiveTasks)
 
+  const projectConnected = useProjectStore(s => s.connected)
+  const cacheStats = useProjectStore(s => s.cacheStats)
+  const loadCacheStats = useProjectStore(s => s.loadCacheStats)
+  const clearCache = useProjectStore(s => s.clearCache)
+
   useEffect(() => {
     if (!connected) return
     loadMetrics()
     loadActiveTasks()
   }, [connected, loadMetrics, loadActiveTasks])
+
+  useEffect(() => {
+    if (!projectConnected) return
+    loadCacheStats()
+  }, [projectConnected, loadCacheStats])
 
   // Compute tasks by state
   const tasksByState: Record<string, number> = {}
@@ -40,6 +51,7 @@ export function StatsWidget() {
   const handleRefresh = () => {
     loadMetrics()
     loadActiveTasks()
+    loadCacheStats()
   }
 
   return (
@@ -85,6 +97,47 @@ export function StatsWidget() {
           </span>
         </div>
       </div>
+
+      {/* Response cache stats */}
+      {cacheStats?.enabled && (
+        <div className="mt-3 pt-3 border-t border-base-300">
+          <div className="flex items-center justify-between">
+            <span className="text-xs opacity-60">Response Cache</span>
+            {cacheStats.entries > 0 && (
+              <button
+                className="btn btn-xs btn-ghost opacity-60"
+                onClick={clearCache}
+              >
+                Clear
+              </button>
+            )}
+          </div>
+          <div className="grid grid-cols-2 gap-2 text-sm mt-1">
+            <div>
+              <span className="opacity-60">Hit Rate</span>
+              <span className="block font-mono">
+                {cacheStats.hits + cacheStats.misses > 0
+                  ? `${(cacheStats.hit_rate * 100).toFixed(1)}%`
+                  : '--'}
+              </span>
+            </div>
+            <div>
+              <span className="opacity-60">Entries</span>
+              <span className="block font-mono">{cacheStats.entries}</span>
+            </div>
+            <div>
+              <span className="opacity-60">Hits / Misses</span>
+              <span className="block font-mono">{cacheStats.hits} / {cacheStats.misses}</span>
+            </div>
+            <div>
+              <span className="opacity-60">Tokens Saved</span>
+              <span className="block font-mono">
+                {cacheStats.tokens_saved > 0 ? cacheStats.tokens_saved.toLocaleString() : '0'}
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Tasks by state breakdown */}
       {totalActive > 0 && (

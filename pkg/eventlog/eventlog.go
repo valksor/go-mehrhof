@@ -28,6 +28,7 @@ const (
 	EventGuardrailChecked  EventType = "guardrail_checked"
 	EventTaskLoaded        EventType = "task_loaded"
 	EventTaskFinished      EventType = "task_finished"
+	EventRiskEvaluated     EventType = "risk_evaluated"
 )
 
 // Entry is a single event in the log.
@@ -81,6 +82,28 @@ func (l *Log) Append(entry Entry) error {
 	}
 
 	return nil
+}
+
+// Query reads all entries matching the given event type, returning the last limit entries.
+func (l *Log) Query(eventType string, limit int) ([]Entry, error) {
+	all, err := ReadAll(l.dir)
+	if err != nil {
+		return nil, err
+	}
+
+	var results []Entry
+	for _, e := range all {
+		if string(e.Type) == eventType {
+			results = append(results, e)
+		}
+	}
+
+	// Return only the last `limit` entries.
+	if limit > 0 && len(results) > limit {
+		results = results[len(results)-limit:]
+	}
+
+	return results, nil
 }
 
 // Close closes the log file.

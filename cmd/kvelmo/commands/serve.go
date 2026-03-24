@@ -28,8 +28,10 @@ import (
 	"github.com/valksor/kvelmo/pkg/meta"
 	"github.com/valksor/kvelmo/pkg/metrics"
 	"github.com/valksor/kvelmo/pkg/notify"
+	"github.com/valksor/kvelmo/pkg/paths"
 	"github.com/valksor/kvelmo/pkg/settings"
 	"github.com/valksor/kvelmo/pkg/socket"
+	"github.com/valksor/kvelmo/pkg/taskgroup"
 	"github.com/valksor/kvelmo/pkg/web"
 	"github.com/valksor/kvelmo/pkg/worker"
 )
@@ -275,6 +277,10 @@ func runServe(cmd *cobra.Command, args []string) error {
 
 		// Initialize catalog (always available)
 		socket.SetCatalog(catalog.New(""))
+
+		// Initialize task group coordinator
+		groupStore := taskgroup.NewStore(filepath.Join(paths.BaseDir(), "groups"))
+		socket.SetTaskGroupCoordinator(taskgroup.NewCoordinator(groupStore))
 
 		// Start activity log if enabled
 		if cfg.Storage.ActivityLog.Enabled {

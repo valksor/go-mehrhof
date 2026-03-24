@@ -21,6 +21,7 @@ import (
 	"github.com/valksor/kvelmo/pkg/git"
 	"github.com/valksor/kvelmo/pkg/memory"
 	"github.com/valksor/kvelmo/pkg/provider"
+	"github.com/valksor/kvelmo/pkg/provision"
 	"github.com/valksor/kvelmo/pkg/screenshot"
 	"github.com/valksor/kvelmo/pkg/settings"
 	"github.com/valksor/kvelmo/pkg/storage"
@@ -140,6 +141,11 @@ func NewWorktreeSocket(cfg WorktreeConfig) (*WorktreeSocket, error) {
 				"phase", phase, "strategy", name,
 				"available", strategy.List())
 		}
+	}
+
+	// Wire task group checker for cross-repo synchronized submit.
+	if tgc := GetTaskGroupCoordinator(); tgc != nil {
+		cond.SetTaskGroupChecker(tgc)
 	}
 
 	// Initialize screenshot store in .mehrhof directory
@@ -299,6 +305,9 @@ func (w *WorktreeSocket) registerHandlers() {
 	// CI status
 	w.server.Handle("ci.status", w.handleCIStatus)
 
+	// Auto-fix status
+	w.server.Handle("autofix.status", w.handleAutoFixStatus)
+
 	// Workflow hooks
 	w.server.Handle("hooks.list", w.handleHooksList)
 
@@ -309,11 +318,38 @@ func (w *WorktreeSocket) registerHandlers() {
 	w.server.Handle("codegraph.callers", w.handleCodegraphCallers)
 	w.server.Handle("codegraph.deps", w.handleCodegraphDeps)
 
+	// Adversarial review
+	w.server.Handle("adversarial.run", w.handleAdversarialRun)
+	w.server.Handle("adversarial.results", w.handleAdversarialResults)
+
 	// Discovery
 	w.server.Handle("discovery.scan", w.handleDiscoveryScan)
 
+	// Risk evaluation
+	w.server.Handle("risk.evaluate", w.handleRiskEvaluate)
+	w.server.Handle("risk.history", w.handleRiskHistory)
+
 	// Event log
 	w.server.Handle("eventlog.query", w.handleEventlogQuery)
+
+	// Failure classification
+	w.server.Handle("failclass.stats", w.handleFailclassStats)
+
+	// Progress estimation
+	w.server.Handle("progress.get", w.handleProgressGet)
+
+	// Conversation forking
+	w.server.Handle("fork.create", w.handleForkCreate)
+	w.server.Handle("fork.list", w.handleForkList)
+	w.server.Handle("fork.compare", w.handleForkCompare)
+	w.server.Handle("fork.select", w.handleForkSelect)
+
+	// Provisioning
+	w.server.Handle("provision.preview", w.handleProvisionPreview)
+
+	// Response cache
+	w.server.Handle("cache.stats", w.handleCacheStats)
+	w.server.Handle("cache.clear", w.handleCacheClear)
 }
 
 // injectSeqAndBuffer assigns a sequence number to a JSON event, stores it in the
@@ -2033,6 +2069,29 @@ func (w *WorktreeSocket) emitEvent(eventType string, data any) {
 	w.streamsMu.RUnlock()
 }
 
+// --- Progress Estimation ---
+
+func (w *WorktreeSocket) handleProgressGet(_ context.Context, req *Request) (*Response, error) {
+	if resp := w.noConductor(req.ID); resp != nil {
+		return resp, nil
+	}
+
+	estimate := w.conductor.GetProgressEstimate()
+	if estimate == nil {
+		return NewResultResponse(req.ID, map[string]any{
+			"active": false,
+		})
+	}
+
+	return NewResultResponse(req.ID, map[string]any{
+		"active":      true,
+		"percent":     estimate.Percent,
+		"eta_seconds": estimate.ETASeconds,
+		"signals":     estimate.Signals,
+		"calibrated":  estimate.Calibrated,
+	})
+}
+
 // --- Lifecycle ---
 
 func (w *WorktreeSocket) Start(ctx context.Context) error {
@@ -2177,6 +2236,38 @@ func (w *WorktreeSocket) handleContextResolve(ctx context.Context, req *Request)
 	})
 	if err != nil {
 		return NewErrorResponse(req.ID, -32603, "encode result: "+err.Error()), nil //nolint:nilerr // JSON-RPC error
+	}
+
+	return resp, nil
+}
+
+// handleProvisionPreview returns what would be provisioned without executing.
+func (w *WorktreeSocket) handleProvisionPreview(_ context.Context, req *Request) (*Response, error) {
+	cfg, _, _, err := settings.LoadEffective(w.path)
+	if err != nil {
+		cfg = settings.DefaultSettings()
+	}
+
+	if !settings.BoolValue(cfg.Git.Provision.Enabled, true) {
+		return NewResultResponse(req.ID, map[string]string{"status": "disabled"})
+	}
+
+	defaults := provision.DefaultOptions(w.path)
+	userOpts := provision.Options{
+		CopyPatterns:    cfg.Git.Provision.CopyPatterns,
+		SymlinkPatterns: cfg.Git.Provision.SymlinkPatterns,
+		SetupCommands:   cfg.Git.Provision.SetupCommands,
+	}
+	merged := provision.MergeOptions(defaults, userOpts)
+
+	result, previewErr := provision.Preview(w.path, merged)
+	if previewErr != nil {
+		return NewErrorResponse(req.ID, -32603, previewErr.Error()), nil
+	}
+
+	resp, respErr := NewResultResponse(req.ID, result)
+	if respErr != nil {
+		return NewErrorResponse(req.ID, -32603, "encode result: "+respErr.Error()), nil //nolint:nilerr // JSON-RPC error
 	}
 
 	return resp, nil

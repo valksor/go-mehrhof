@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/valksor/kvelmo/pkg/memory"
+	"github.com/valksor/kvelmo/pkg/settings"
 )
 
 // extractLearnings generates a summary of learnings from the completed task
@@ -87,5 +88,74 @@ func (c *Conductor) extractLearnings(ctx context.Context) {
 		slog.Warn("failed to store task learning", "task_id", taskID, "error", err)
 	} else {
 		slog.Info("task learning stored", "task_id", taskID, "doc_id", doc.ID)
+	}
+}
+
+// linkTaskOutcome determines the outcome of the current task and links it to
+// all memory documents for that task. Must be called with c.mu held — the
+// caller's lock is temporarily released for I/O.
+func (c *Conductor) linkTaskOutcome(ctx context.Context) {
+	if c.workUnit == nil || c.memoryIndexer == nil {
+		return
+	}
+
+	// Check if outcome linking is enabled in settings.
+	if s := c.getEffectiveSettings(); s != nil {
+		if !settings.BoolValue(s.Storage.OutcomeLinking, true) {
+			return
+		}
+	}
+
+	store := c.memoryIndexer.Store()
+	if store == nil {
+		return
+	}
+
+	// Snapshot data under the lock.
+	taskID := c.workUnit.ID
+	qualityPassed := c.workUnit.QualityGatePassed
+	prID := c.workUnit.PRID
+	cancelledBy := c.workUnit.CancelledBy
+	checklistChecked := len(c.workUnit.ChecklistChecked) > 0
+
+	// Snapshot provider-related fields for PR status check after unlock.
+	var sourceRef string
+	providers := c.providers
+	if c.workUnit.Source != nil {
+		sourceRef = c.workUnit.Source.Reference
+	}
+
+	// Determine outcome from task state.
+	outcome := memory.DocumentOutcome{}
+
+	// Success: quality gate passed and not cancelled.
+	if qualityPassed != nil && *qualityPassed && cancelledBy == "" {
+		outcome.Success = true
+	}
+
+	// CI passed first try: quality gate passed without prior failure.
+	if qualityPassed != nil && *qualityPassed {
+		outcome.CIPassedFirstTry = true
+	}
+
+	// Human changes: review was done and checklist items were checked.
+	if checklistChecked {
+		outcome.HumanChangesNeeded = true
+	}
+
+	// Release lock before I/O (PR status check + store write).
+	c.mu.Unlock()
+	defer c.mu.Lock()
+
+	// PR was created — check merged status via provider (network I/O).
+	if prID != "" && providers != nil && sourceRef != "" {
+		pr, err := providers.GetPRStatus(ctx, sourceRef)
+		if err == nil && pr.Merged {
+			outcome.PRMerged = true
+		}
+	}
+
+	if err := store.LinkOutcome(ctx, taskID, outcome); err != nil {
+		slog.Warn("failed to link task outcome to memory", "task_id", taskID, "error", err)
 	}
 }

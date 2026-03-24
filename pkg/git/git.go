@@ -151,6 +151,14 @@ func (r *Repository) Checkout(ctx context.Context, name string) error {
 	return r.SwitchBranch(ctx, name)
 }
 
+// Merge merges the given branch into the current branch using --no-ff.
+func (r *Repository) Merge(ctx context.Context, branch, message string) error {
+	args := []string{"merge", "--no-ff", "-m", message, branch}
+	_, err := r.run(ctx, args...)
+
+	return err
+}
+
 func (r *Repository) DeleteBranch(ctx context.Context, name string) error {
 	slog.Debug("git: deleting branch", "name", name)
 	_, err := r.run(ctx, "branch", "-D", name)
@@ -467,6 +475,57 @@ func (r *Repository) DiffFiles(ctx context.Context) ([]string, error) {
 	}
 
 	return strings.Split(out, "\n"), nil
+}
+
+// DiffNumStat holds line-level diff statistics.
+type DiffNumStat struct {
+	Added   int
+	Removed int
+	Files   []string
+}
+
+// DiffNumStatAgainst returns line-level diff stats against a reference commit.
+// If ref is empty, diffs against HEAD.
+func (r *Repository) DiffNumStatAgainst(ctx context.Context, ref string) (DiffNumStat, error) {
+	args := []string{"diff", "--numstat"}
+	if ref != "" {
+		args = []string{"diff", ref, "--numstat"}
+	}
+
+	out, err := r.run(ctx, args...)
+	if err != nil {
+		return DiffNumStat{}, err
+	}
+
+	return parseNumStat(out), nil
+}
+
+func parseNumStat(out string) DiffNumStat {
+	var result DiffNumStat
+	for _, line := range strings.Split(out, "\n") {
+		if line == "" {
+			continue
+		}
+		fields := strings.Fields(line)
+		if len(fields) < 3 {
+			continue
+		}
+		// Binary files show "-" for added/removed
+		if fields[0] == "-" || fields[1] == "-" {
+			result.Files = append(result.Files, fields[2])
+			continue
+		}
+		added := 0
+		removed := 0
+		if _, err := fmt.Sscanf(fields[0], "%d", &added); err == nil {
+			result.Added += added
+		}
+		if _, err := fmt.Sscanf(fields[1], "%d", &removed); err == nil {
+			result.Removed += removed
+		}
+		result.Files = append(result.Files, fields[2])
+	}
+	return result
 }
 
 type LogEntry struct {

@@ -43,12 +43,13 @@ type TUISettings struct {
 
 // AgentSettings configures AI agent behavior.
 type AgentSettings struct {
-	Default       string            `yaml:"default,omitempty" json:"default,omitempty" schema:"label=Default Agent;desc=Agent used when none specified;options=claude|codex|openai|anthropic|ollama"`
-	Allowed       []string          `yaml:"allowed,omitempty" json:"allowed,omitempty" schema:"label=Allowed Agents;desc=Agents permitted for this project;type=multiselect;options=claude|codex|openai|anthropic|ollama"`
-	Strategy      string            `yaml:"strategy,omitempty" json:"strategy,omitempty" schema:"label=Default Strategy;desc=Agent reasoning strategy (direct = pass-through, iterative = self-review loop);options=direct|iterative;default=direct"`
-	PhaseStrategy map[string]string `yaml:"phase_strategy,omitempty" json:"phase_strategy,omitempty" schema:"label=Per-Phase Strategy;desc=Override strategy per phase (e.g. plan: iterative);type=keyvalue;advanced"`
-	PhaseAgent    map[string]string `yaml:"phase_agent,omitempty" json:"phase_agent,omitempty" schema:"label=Per-Phase Agent;desc=Override agent per phase (e.g. plan: gemini, implement: claude);type=keyvalue;advanced"`
-	Consensus     *ConsensusConfig  `yaml:"consensus,omitempty" json:"consensus,omitempty"`
+	Default       string                 `yaml:"default,omitempty" json:"default,omitempty" schema:"label=Default Agent;desc=Agent used when none specified;options=claude|codex|openai|anthropic|ollama"`
+	Allowed       []string               `yaml:"allowed,omitempty" json:"allowed,omitempty" schema:"label=Allowed Agents;desc=Agents permitted for this project;type=multiselect;options=claude|codex|openai|anthropic|ollama"`
+	Strategy      string                 `yaml:"strategy,omitempty" json:"strategy,omitempty" schema:"label=Default Strategy;desc=Agent reasoning strategy (direct = pass-through, iterative = self-review loop);options=direct|iterative;default=direct"`
+	PhaseStrategy map[string]string      `yaml:"phase_strategy,omitempty" json:"phase_strategy,omitempty" schema:"label=Per-Phase Strategy;desc=Override strategy per phase (e.g. plan: iterative);type=keyvalue;advanced"`
+	PhaseAgent    map[string]string      `yaml:"phase_agent,omitempty" json:"phase_agent,omitempty" schema:"label=Per-Phase Agent;desc=Override agent per phase (e.g. plan: gemini, implement: claude);type=keyvalue;advanced"`
+	Consensus     *ConsensusConfig       `yaml:"consensus,omitempty" json:"consensus,omitempty"`
+	ResponseCache *ResponseCacheSettings `yaml:"response_cache,omitempty" json:"response_cache,omitempty"`
 
 	// API agent settings
 	OpenAI    OpenAIAgentConfig    `yaml:"openai,omitempty" json:"openai,omitempty"`
@@ -61,6 +62,13 @@ type ConsensusConfig struct {
 	Enabled      bool     `yaml:"enabled,omitempty" json:"enabled,omitempty" schema:"label=Enable Consensus;desc=Run reviews with multiple agents and merge findings;default=false"`
 	Agents       []string `yaml:"agents,omitempty" json:"agents,omitempty" schema:"label=Consensus Agents;desc=Agent names to use for consensus review;type=tags"`
 	MinAgreement int      `yaml:"min_agreement,omitempty" json:"min_agreement,omitempty" schema:"label=Min Agreement;desc=Minimum number of agents that must detect a finding;default=1;min=1"`
+}
+
+// ResponseCacheSettings configures the semantic response cache for agent prompts.
+type ResponseCacheSettings struct {
+	Enabled    bool `yaml:"enabled,omitempty" json:"enabled,omitempty" schema:"label=Response Cache;desc=Cache agent responses to avoid redundant calls for identical prompts;default=false"`
+	MaxEntries int  `yaml:"max_entries,omitempty" json:"max_entries,omitempty" schema:"label=Max Entries;desc=Maximum cached responses;default=1000;min=10;max=10000;advanced"`
+	TTLHours   int  `yaml:"ttl_hours,omitempty" json:"ttl_hours,omitempty" schema:"label=TTL Hours;desc=Cache entry time-to-live in hours;default=168;min=1;max=720;advanced"`
 }
 
 // CustomAgent defines a user-created agent that wraps a base agent.
@@ -182,24 +190,33 @@ type JiraConfig struct {
 // GitSettings configures git behavior for the workflow.
 // Pointer bools allow project-level false to override global-level true.
 type GitSettings struct {
-	BaseBranch              string      `yaml:"base_branch,omitempty" json:"base_branch,omitempty" schema:"label=Base Branch;desc=Default branch for PRs (auto-detected from git remote if empty);placeholder=auto-detect"`
-	BranchPattern           string      `yaml:"branch_pattern,omitempty" json:"branch_pattern,omitempty" schema:"label=Branch Pattern;desc=Pattern for branch names. Variables: {key}, {type}, {slug};default=feature/{key}--{slug}"`
-	CommitPrefix            string      `yaml:"commit_prefix,omitempty" json:"commit_prefix,omitempty" schema:"label=Commit Prefix;desc=Pattern for commit messages. Variables: {key};default=[{key}]"`
-	CommitPattern           string      `yaml:"commit_pattern,omitempty" json:"commit_pattern,omitempty" schema:"label=Commit Pattern;desc=Regex to validate commit messages. Leave empty to skip validation;placeholder=^(feat|fix|chore)\\(.*\\):.*;advanced"`
-	PRTitlePattern          string      `yaml:"pr_title_pattern,omitempty" json:"pr_title_pattern,omitempty" schema:"label=PR Title Pattern;desc=Template for PR titles. Variables: {title}, {key}, {type}, {slug};default=[{key}] {title}"`
-	PRRequiredSections      []string    `yaml:"pr_required_sections,omitempty" json:"pr_required_sections,omitempty" schema:"label=PR Required Sections;desc=PR template section keywords that must be filled before submission (e.g. summary, test plan);type=tags;advanced"`
-	BranchValidationPattern string      `yaml:"branch_validation_pattern,omitempty" json:"branch_validation_pattern,omitempty" schema:"label=Branch Validation;desc=Regex to validate generated branch names. Leave empty to skip validation;advanced"`
-	CreateBranch            *bool       `yaml:"create_branch,omitempty" json:"create_branch,omitempty" schema:"label=Create Branch;desc=Automatically create a branch when starting a task. If the branch already exists, switches to it;default=true"`
-	AutoCommit              *bool       `yaml:"auto_commit,omitempty" json:"auto_commit,omitempty" schema:"label=Auto Commit;desc=Automatically commit after implementation;default=true"`
-	SignCommits             *bool       `yaml:"sign_commits,omitempty" json:"sign_commits,omitempty" schema:"label=Sign Commits;desc=GPG sign commits;showWhen=git.auto_commit:true"`
-	AllowPRComment          *bool       `yaml:"allow_pr_comment,omitempty" json:"allow_pr_comment,omitempty" schema:"label=Allow PR Comments;desc=Post status comments on pull requests after submit"`
-	PRCustomSections        []PRSection `yaml:"pr_custom_sections,omitempty" json:"pr_custom_sections,omitempty" schema:"label=Custom PR Sections;desc=Additional sections to include in auto-generated PR body;advanced"`
+	BaseBranch              string            `yaml:"base_branch,omitempty" json:"base_branch,omitempty" schema:"label=Base Branch;desc=Default branch for PRs (auto-detected from git remote if empty);placeholder=auto-detect"`
+	BranchPattern           string            `yaml:"branch_pattern,omitempty" json:"branch_pattern,omitempty" schema:"label=Branch Pattern;desc=Pattern for branch names. Variables: {key}, {type}, {slug};default=feature/{key}--{slug}"`
+	CommitPrefix            string            `yaml:"commit_prefix,omitempty" json:"commit_prefix,omitempty" schema:"label=Commit Prefix;desc=Pattern for commit messages. Variables: {key};default=[{key}]"`
+	CommitPattern           string            `yaml:"commit_pattern,omitempty" json:"commit_pattern,omitempty" schema:"label=Commit Pattern;desc=Regex to validate commit messages. Leave empty to skip validation;placeholder=^(feat|fix|chore)\\(.*\\):.*;advanced"`
+	PRTitlePattern          string            `yaml:"pr_title_pattern,omitempty" json:"pr_title_pattern,omitempty" schema:"label=PR Title Pattern;desc=Template for PR titles. Variables: {title}, {key}, {type}, {slug};default=[{key}] {title}"`
+	PRRequiredSections      []string          `yaml:"pr_required_sections,omitempty" json:"pr_required_sections,omitempty" schema:"label=PR Required Sections;desc=PR template section keywords that must be filled before submission (e.g. summary, test plan);type=tags;advanced"`
+	BranchValidationPattern string            `yaml:"branch_validation_pattern,omitempty" json:"branch_validation_pattern,omitempty" schema:"label=Branch Validation;desc=Regex to validate generated branch names. Leave empty to skip validation;advanced"`
+	CreateBranch            *bool             `yaml:"create_branch,omitempty" json:"create_branch,omitempty" schema:"label=Create Branch;desc=Automatically create a branch when starting a task. If the branch already exists, switches to it;default=true"`
+	AutoCommit              *bool             `yaml:"auto_commit,omitempty" json:"auto_commit,omitempty" schema:"label=Auto Commit;desc=Automatically commit after implementation;default=true"`
+	SignCommits             *bool             `yaml:"sign_commits,omitempty" json:"sign_commits,omitempty" schema:"label=Sign Commits;desc=GPG sign commits;showWhen=git.auto_commit:true"`
+	AllowPRComment          *bool             `yaml:"allow_pr_comment,omitempty" json:"allow_pr_comment,omitempty" schema:"label=Allow PR Comments;desc=Post status comments on pull requests after submit"`
+	PRCustomSections        []PRSection       `yaml:"pr_custom_sections,omitempty" json:"pr_custom_sections,omitempty" schema:"label=Custom PR Sections;desc=Additional sections to include in auto-generated PR body;advanced"`
+	Provision               ProvisionSettings `yaml:"provision,omitempty" json:"provision,omitempty"`
 }
 
 // PRSection defines a custom section to include in auto-generated PR descriptions.
 type PRSection struct {
 	Title   string `yaml:"title" json:"title" schema:"label=Section Title;required"`
 	Content string `yaml:"content,omitempty" json:"content,omitempty" schema:"label=Default Content;desc=Default content or instructions for this section"`
+}
+
+// ProvisionSettings configures automatic worktree provisioning.
+type ProvisionSettings struct {
+	Enabled         *bool    `yaml:"enabled,omitempty" json:"enabled,omitempty" schema:"label=Provision Worktrees;desc=Auto-copy configs and symlink dependencies when creating worktrees;default=true"`
+	CopyPatterns    []string `yaml:"copy_patterns,omitempty" json:"copy_patterns,omitempty" schema:"label=Copy Patterns;desc=Glob patterns for files to copy into worktree;type=tags"`
+	SymlinkPatterns []string `yaml:"symlink_patterns,omitempty" json:"symlink_patterns,omitempty" schema:"label=Symlink Patterns;desc=Directory names to symlink from source;type=tags"`
+	SetupCommands   []string `yaml:"setup_commands,omitempty" json:"setup_commands,omitempty" schema:"label=Setup Commands;desc=Shell commands to run in worktree after provisioning;type=tags;advanced"`
 }
 
 // WorkerSettings configures the worker pool.
@@ -210,6 +227,7 @@ type WorkerSettings struct {
 // StorageSettings configures where specs, plans, reviews, and chat are stored.
 type StorageSettings struct {
 	SaveInProject  *bool                  `yaml:"save_in_project,omitempty" json:"save_in_project,omitempty" schema:"label=Save in Project;desc=Store specs/plans/chat in .valksor/ instead of home (~/.valksor/kvelmo/);default=false"`
+	OutcomeLinking *bool                  `yaml:"outcome_linking,omitempty" json:"outcome_linking,omitempty" schema:"label=Outcome Linking;desc=Link task outcomes to memory documents for smarter retrieval;default=true"`
 	SpecOutputPath string                 `yaml:"spec_output_path,omitempty" json:"spec_output_path,omitempty" schema:"label=Spec Output Path;desc=Write specs to this repo path. Variables: {key}, {slug}. Example: docs/specs/{key}.md;advanced"`
 	PlanOutputPath string                 `yaml:"plan_output_path,omitempty" json:"plan_output_path,omitempty" schema:"label=Plan Output Path;desc=Write plans to this repo path. Variables: {key}, {slug}. Example: docs/plans/{key}.md;advanced"`
 	CommitSpecs    *bool                  `yaml:"commit_specs,omitempty" json:"commit_specs,omitempty" schema:"label=Commit Specs to Git;desc=Auto-commit specs and plans to git when written to repo output paths;default=false;advanced"`
@@ -257,14 +275,23 @@ type ExternalReviewConfig struct {
 
 // PolicySettings configures workflow enforcement guardrails.
 type PolicySettings struct {
-	RequiredPhases       []string         `yaml:"required_phases,omitempty" json:"required_phases,omitempty" schema:"label=Required Phases;desc=Workflow phases that cannot be skipped (e.g. review, simplify);type=tags"`
-	SensitivePaths       []string         `yaml:"sensitive_paths,omitempty" json:"sensitive_paths,omitempty" schema:"label=Sensitive Paths;desc=Glob patterns for files requiring mandatory review (e.g. pkg/auth/*);type=tags"`
-	MinSpecSections      int              `yaml:"min_spec_sections,omitempty" json:"min_spec_sections,omitempty" schema:"label=Min Specifications;desc=Minimum specification files required before implementation;default=0;min=0;max=10"`
-	RequireSecurityScan  bool             `yaml:"require_security_scan,omitempty" json:"require_security_scan,omitempty" schema:"label=Require Security Scan;desc=Block submission when security findings exist;default=false"`
-	ApprovalRequired     map[string]bool  `yaml:"approval_required,omitempty" json:"approval_required,omitempty" schema:"label=Approval Required;desc=Transitions requiring explicit human approval (e.g. submit: true);type=keyvalue"`
-	ReviewChecklist      []string         `yaml:"review_checklist,omitempty" json:"review_checklist,omitempty" schema:"label=Review Checklist;desc=Items that must be checked before submit completes (e.g. security, performance);type=tags"`
-	RequireSignedCommits bool             `yaml:"require_signed_commits,omitempty" json:"require_signed_commits,omitempty" schema:"label=Require Signed Commits;desc=Block workflow if GPG commit signing is not enabled;default=false"`
-	DocRequirements      []DocRequirement `yaml:"doc_requirements,omitempty" json:"doc_requirements,omitempty"`
+	RequiredPhases       []string                   `yaml:"required_phases,omitempty" json:"required_phases,omitempty" schema:"label=Required Phases;desc=Workflow phases that cannot be skipped (e.g. review, simplify);type=tags"`
+	SensitivePaths       []string                   `yaml:"sensitive_paths,omitempty" json:"sensitive_paths,omitempty" schema:"label=Sensitive Paths;desc=Glob patterns for files requiring mandatory review (e.g. pkg/auth/*);type=tags"`
+	MinSpecSections      int                        `yaml:"min_spec_sections,omitempty" json:"min_spec_sections,omitempty" schema:"label=Min Specifications;desc=Minimum specification files required before implementation;default=0;min=0;max=10"`
+	RequireSecurityScan  bool                       `yaml:"require_security_scan,omitempty" json:"require_security_scan,omitempty" schema:"label=Require Security Scan;desc=Block submission when security findings exist;default=false"`
+	ApprovalRequired     map[string]bool            `yaml:"approval_required,omitempty" json:"approval_required,omitempty" schema:"label=Approval Required;desc=Transitions requiring explicit human approval (e.g. submit: true);type=keyvalue"`
+	ReviewChecklist      []string                   `yaml:"review_checklist,omitempty" json:"review_checklist,omitempty" schema:"label=Review Checklist;desc=Items that must be checked before submit completes (e.g. security, performance);type=tags"`
+	RequireSignedCommits bool                       `yaml:"require_signed_commits,omitempty" json:"require_signed_commits,omitempty" schema:"label=Require Signed Commits;desc=Block workflow if GPG commit signing is not enabled;default=false"`
+	DocRequirements      []DocRequirement           `yaml:"doc_requirements,omitempty" json:"doc_requirements,omitempty"`
+	RiskBasedApproval    *RiskBasedApprovalSettings `yaml:"risk_based_approval,omitempty" json:"risk_based_approval,omitempty"`
+}
+
+// RiskBasedApprovalSettings configures automatic approval based on risk scoring.
+// When enabled, low-risk changes are auto-approved and high-risk changes require review.
+type RiskBasedApprovalSettings struct {
+	Enabled              bool    `yaml:"enabled,omitempty" json:"enabled,omitempty" schema:"label=Risk-Based Approval;desc=Auto-approve low-risk changes, require review for high-risk;default=false"`
+	AutoApproveThreshold float64 `yaml:"auto_approve_threshold,omitempty" json:"auto_approve_threshold,omitempty" schema:"label=Auto-Approve Threshold;desc=Risk score below which changes are auto-approved;default=0.3;min=0;max=1"`
+	HighRiskThreshold    float64 `yaml:"high_risk_threshold,omitempty" json:"high_risk_threshold,omitempty" schema:"label=High Risk Threshold;desc=Risk score above which extra review is required;default=0.7;min=0;max=1"`
 }
 
 // DocRequirement defines a rule: when files matching Trigger change, files matching Requires must also change.
@@ -302,23 +329,65 @@ type HooksSettings map[string][]TransitionHook
 // WorkflowSettings contains per-project workflow options.
 // These are intentionally project-scoped and not meaningful at global level.
 type WorkflowSettings struct {
-	UseWorktreeIsolation *bool                      `yaml:"use_worktree_isolation,omitempty" json:"use_worktree_isolation,omitempty" schema:"label=Use Worktree Isolation;desc=Create an isolated git worktree for each task, enabling parallel work without conflicts;default=true"`
-	AutoAdvance          *bool                      `yaml:"auto_advance,omitempty" json:"auto_advance,omitempty" schema:"label=Auto Advance;desc=Automatically progress through plan, implement, and review phases;default=false"`
-	SkipPhases           []string                   `yaml:"skip_phases,omitempty" json:"skip_phases,omitempty" schema:"label=Skip Phases;desc=Phases to skip by default when auto-advancing (simplify, optimize, plan);type=tags"`
-	ExternalReview       ExternalReviewConfig       `yaml:"external_review,omitempty" json:"external_review,omitempty" schema:"label=External Review;desc=External CLI review tool integration"`
-	Policy               PolicySettings             `yaml:"policy,omitempty" json:"policy,omitempty"`
-	Retry                RetrySettings              `yaml:"retry,omitempty" json:"retry,omitempty"`
-	PhasePolicies        map[string]string          `yaml:"phase_policies,omitempty" json:"phase_policies,omitempty" schema:"label=Phase Policies;desc=Per-phase failure policy overrides: fail, retry, or skip (e.g., simplify: skip)"`
-	CI                   CISettings                 `yaml:"ci,omitempty" json:"ci,omitempty"`
-	Hooks                HooksSettings              `yaml:"hooks,omitempty" json:"hooks,omitempty"`
-	HoldTheLine          *bool                      `yaml:"hold_the_line,omitempty" json:"hold_the_line,omitempty" schema:"label=Hold the Line;desc=Only gate on findings in lines changed by the agent, ignoring pre-existing tech debt;default=true"`
-	PhaseGuardrails      map[string]GuardrailConfig `yaml:"phase_guardrails,omitempty" json:"phase_guardrails,omitempty" schema:"label=Phase Guardrails;desc=Pre/post validation checks per phase;type=json;advanced"`
+	UseWorktreeIsolation  *bool                         `yaml:"use_worktree_isolation,omitempty" json:"use_worktree_isolation,omitempty" schema:"label=Use Worktree Isolation;desc=Create an isolated git worktree for each task, enabling parallel work without conflicts;default=true"`
+	AutoAdvance           *bool                         `yaml:"auto_advance,omitempty" json:"auto_advance,omitempty" schema:"label=Auto Advance;desc=Automatically progress through plan, implement, and review phases;default=false"`
+	SkipPhases            []string                      `yaml:"skip_phases,omitempty" json:"skip_phases,omitempty" schema:"label=Skip Phases;desc=Phases to skip by default when auto-advancing (simplify, optimize, plan);type=tags"`
+	ExternalReview        ExternalReviewConfig          `yaml:"external_review,omitempty" json:"external_review,omitempty" schema:"label=External Review;desc=External CLI review tool integration"`
+	Policy                PolicySettings                `yaml:"policy,omitempty" json:"policy,omitempty"`
+	Retry                 RetrySettings                 `yaml:"retry,omitempty" json:"retry,omitempty"`
+	PhasePolicies         map[string]string             `yaml:"phase_policies,omitempty" json:"phase_policies,omitempty" schema:"label=Phase Policies;desc=Per-phase failure policy overrides: fail, retry, or skip (e.g., simplify: skip)"`
+	CI                    CISettings                    `yaml:"ci,omitempty" json:"ci,omitempty"`
+	Hooks                 HooksSettings                 `yaml:"hooks,omitempty" json:"hooks,omitempty"`
+	HoldTheLine           *bool                         `yaml:"hold_the_line,omitempty" json:"hold_the_line,omitempty" schema:"label=Hold the Line;desc=Only gate on findings in lines changed by the agent, ignoring pre-existing tech debt;default=true"`
+	FailureClassification FailureClassificationSettings `yaml:"failure_classification,omitempty" json:"failure_classification,omitempty"`
+	AutoFix               AutoFixSettings               `yaml:"auto_fix,omitempty" json:"auto_fix,omitempty"`
+	ProgressEstimation    *bool                         `yaml:"progress_estimation,omitempty" json:"progress_estimation,omitempty" schema:"label=Progress Estimation;desc=Show estimated progress and ETA during active phases;default=true"`
+	PhaseGuardrails       map[string]GuardrailConfig    `yaml:"phase_guardrails,omitempty" json:"phase_guardrails,omitempty" schema:"label=Phase Guardrails;desc=Pre/post validation checks per phase;type=json;advanced"`
+	AdversarialReview     *AdversarialReviewSettings    `yaml:"adversarial_review,omitempty" json:"adversarial_review,omitempty"`
+	Forking               *ForkingSettings              `yaml:"forking,omitempty" json:"forking,omitempty"`
+	TaskGroups            *TaskGroupSettings            `yaml:"task_groups,omitempty" json:"task_groups,omitempty"`
+}
+
+// AdversarialReviewSettings configures persona-based adversarial code review.
+type AdversarialReviewSettings struct {
+	Enabled         bool     `yaml:"enabled,omitempty" json:"enabled,omitempty" schema:"label=Adversarial Review;desc=Run persona-based adversarial reviews during review phase;default=false"`
+	Personas        []string `yaml:"personas,omitempty" json:"personas,omitempty" schema:"label=Personas;desc=Review personas to use (security, performance, maintainability);type=tags;default=security,performance"`
+	Agent           string   `yaml:"agent,omitempty" json:"agent,omitempty" schema:"label=Review Agent;desc=Agent to use for adversarial reviews (empty = default review agent)"`
+	BlockOnFindings bool     `yaml:"block_on_findings,omitempty" json:"block_on_findings,omitempty" schema:"label=Block on Findings;desc=Block review phase if adversarial review finds issues;default=false"`
+}
+
+// ForkingSettings configures conversation forking for parallel alternatives.
+type ForkingSettings struct {
+	Enabled  bool `yaml:"enabled,omitempty" json:"enabled,omitempty" schema:"label=Forking;desc=Allow forking tasks into parallel alternative approaches;default=false"`
+	MaxForks int  `yaml:"max_forks,omitempty" json:"max_forks,omitempty" schema:"label=Max Forks;desc=Maximum number of parallel forks per task;default=3;min=1;max=10"`
+}
+
+// TaskGroupSettings configures cross-repo task group coordination.
+type TaskGroupSettings struct {
+	Enabled    bool `yaml:"enabled,omitempty" json:"enabled,omitempty" schema:"label=Task Groups;desc=Enable cross-repo task group coordination;default=false"`
+	SyncSubmit bool `yaml:"sync_submit,omitempty" json:"sync_submit,omitempty" schema:"label=Sync Submit;desc=All group members must be ready before any can submit;default=true"`
 }
 
 // GuardrailConfig defines pre and post guardrails for a workflow phase.
 type GuardrailConfig struct {
 	Pre  []string `yaml:"pre,omitempty" json:"pre,omitempty"`
 	Post []string `yaml:"post,omitempty" json:"post,omitempty"`
+}
+
+// FailureClassificationSettings configures failure pattern detection.
+type FailureClassificationSettings struct {
+	Enabled       bool `yaml:"enabled,omitempty" json:"enabled,omitempty" schema:"label=Failure Classification;desc=Classify quality gate findings as flaky or genuine based on error patterns;default=false"`
+	FlakyRetries  int  `yaml:"flaky_retries,omitempty" json:"flaky_retries,omitempty" schema:"label=Flaky Retries;desc=Number of retries for findings classified as flaky;default=1;min=0;max=5"`
+	HistoryWindow int  `yaml:"history_window,omitempty" json:"history_window,omitempty" schema:"label=History Window;desc=Number of recent runs to check for flaky patterns;default=10;min=5;max=100;advanced"`
+}
+
+// AutoFixSettings configures automatic quality gate fix attempts.
+// When enabled, quality gate failures are fed back to the agent for correction
+// in a bounded retry loop, similar to the CI auto-fix loop.
+type AutoFixSettings struct {
+	Enabled     bool     `yaml:"enabled,omitempty" json:"enabled,omitempty" schema:"label=Auto Fix Quality;desc=Automatically feed quality gate errors back to the agent for correction;default=false"`
+	MaxAttempts int      `yaml:"max_attempts,omitempty" json:"max_attempts,omitempty" schema:"label=Max Attempts;desc=Maximum auto-fix attempts before giving up;default=3;min=1;max=10"`
+	Phases      []string `yaml:"phases,omitempty" json:"phases,omitempty" schema:"label=Phases;desc=Phases that trigger auto-fix on quality gate failure;type=tags;default=implement,simplify,optimize"`
 }
 
 // SecuritySettings configures agent security controls.

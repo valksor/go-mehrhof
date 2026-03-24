@@ -20,10 +20,14 @@ import (
 	"github.com/google/uuid"
 	"github.com/valksor/kvelmo/pkg/agent/strategy"
 	"github.com/valksor/kvelmo/pkg/eventlog"
+	"github.com/valksor/kvelmo/pkg/failclass"
+	"github.com/valksor/kvelmo/pkg/findings"
 	"github.com/valksor/kvelmo/pkg/git"
 	"github.com/valksor/kvelmo/pkg/graph"
 	"github.com/valksor/kvelmo/pkg/memory"
+	"github.com/valksor/kvelmo/pkg/progress"
 	"github.com/valksor/kvelmo/pkg/provider"
+	"github.com/valksor/kvelmo/pkg/respcache"
 	"github.com/valksor/kvelmo/pkg/security"
 	"github.com/valksor/kvelmo/pkg/settings"
 	"github.com/valksor/kvelmo/pkg/storage"
@@ -116,6 +120,10 @@ type Conductor struct {
 	// lastFailureClass records the classification of the most recent phase failure.
 	lastFailureClass FailureClass
 
+	// Auto-fix loop state: tracks the current attempt and last error.
+	autoFixAttempt int
+	autoFixLastErr string
+
 	// dryRun simulates phases without agent execution.
 	dryRun bool
 
@@ -134,10 +142,29 @@ type Conductor struct {
 	phasePolicies map[string]PhasePolicy
 	retryCount    map[string]int // phase → current retry count
 
+	// Progress estimation for active phases.
+	progressEstimator  *progress.Estimator
+	progressCalibrator *progress.Calibrator
+
+	// Response cache for avoiding redundant agent calls on identical prompts.
+	responseCache *respcache.Cache
+
+	// failclassHistory persists failure classification history across quality gate runs
+	// within the same session, so that IsFlaky can detect recurring patterns.
+	failclassHistory *failclass.History
+
 	// Cached settings (loaded once, reused across phases).
 	// Uses atomic.Pointer for lock-free access to avoid deadlock when called
 	// from methods that already hold c.mu.
 	cachedSettings atomic.Pointer[settings.Settings]
+
+	// adversarialFindings stores the most recent adversarial review results.
+	adversarialFindings []findings.Finding
+
+	// taskGroupChecker is called during submit to verify cross-repo group readiness.
+	// When non-nil and sync_submit is enabled, it blocks submit until all group
+	// members reach the reviewing state. Set via SetTaskGroupChecker.
+	taskGroupChecker TaskGroupChecker
 }
 
 // ConductorEvent represents an event emitted by the conductor.
@@ -345,29 +372,31 @@ func New(opts ...Option) (*Conductor, error) {
 	lifecycleCtx, lifecycleCancel := context.WithCancel(context.Background())
 
 	c := &Conductor{
-		machine:         machine,
-		worktree:        workDir,
-		pool:            options.Pool,
-		providers:       providers,
-		globalPath:      options.GlobalPath,
-		lifecycleCtx:    lifecycleCtx,
-		lifecycleCancel: lifecycleCancel,
-		events:          make(chan ConductorEvent, 100),
-		pendingPrompts:  make(map[string]chan bool),
-		opts:            options,
-		stdout:          options.Stdout,
-		stderr:          options.Stderr,
-		varPool:         varpool.New(),
-		iterationCount:  make(map[string]int),
-		maxIterations:   3,
-		phasePolicies:   defaultPhasePolicies(),
-		retryCount:      make(map[string]int),
-		dryRun:          options.DryRun,
-		router:          NewDefaultRouter(),
+		machine:            machine,
+		worktree:           workDir,
+		pool:               options.Pool,
+		providers:          providers,
+		globalPath:         options.GlobalPath,
+		lifecycleCtx:       lifecycleCtx,
+		lifecycleCancel:    lifecycleCancel,
+		events:             make(chan ConductorEvent, 100),
+		pendingPrompts:     make(map[string]chan bool),
+		opts:               options,
+		stdout:             options.Stdout,
+		stderr:             options.Stderr,
+		varPool:            varpool.New(),
+		iterationCount:     make(map[string]int),
+		maxIterations:      3,
+		phasePolicies:      defaultPhasePolicies(),
+		retryCount:         make(map[string]int),
+		dryRun:             options.DryRun,
+		router:             NewDefaultRouter(),
+		progressCalibrator: progress.NewCalibrator(),
 	}
 	c.cachedSettings.Store(effectiveSettings) // Cache pre-loaded settings (atomic)
 	c.loadPhasePoliciesFromSettings()
 	c.loadStrategiesFromSettings()
+	c.initResponseCache(effectiveSettings)
 
 	// Subscribe to state machine changes
 	machine.AddListener(c.onStateChanged)
@@ -752,6 +781,33 @@ func (c *Conductor) SetDryRun(v bool) {
 	c.dryRun = v
 }
 
+// AutoFixStatus returns the current state of the quality gate auto-fix loop.
+type AutoFixStatus struct {
+	Active      bool   `json:"active"`
+	Attempt     int    `json:"attempt"`
+	MaxAttempts int    `json:"max_attempts"`
+	LastError   string `json:"last_error,omitempty"`
+}
+
+// GetAutoFixStatus returns the current auto-fix loop state.
+func (c *Conductor) GetAutoFixStatus() AutoFixStatus {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+
+	s := c.getEffectiveSettings()
+	maxAttempts := 3
+	if s != nil && s.Workflow.AutoFix.MaxAttempts > 0 {
+		maxAttempts = s.Workflow.AutoFix.MaxAttempts
+	}
+
+	return AutoFixStatus{
+		Active:      c.autoFixAttempt > 0,
+		Attempt:     c.autoFixAttempt,
+		MaxAttempts: maxAttempts,
+		LastError:   c.autoFixLastErr,
+	}
+}
+
 // LastFailureClass returns the classification of the most recent phase failure.
 func (c *Conductor) LastFailureClass() FailureClass {
 	c.mu.RLock()
@@ -827,22 +883,23 @@ func NewConductor(cfg ConductorConfig) *Conductor {
 	lifecycleCtx, lifecycleCancel := context.WithCancel(context.Background())
 
 	c := &Conductor{
-		machine:         machine,
-		git:             cfg.Repo,
-		pool:            cfg.Pool,
-		providers:       providers,
-		lifecycleCtx:    lifecycleCtx,
-		lifecycleCancel: lifecycleCancel,
-		events:          make(chan ConductorEvent, 100),
-		pendingPrompts:  make(map[string]chan bool),
-		stdout:          os.Stdout,
-		stderr:          os.Stderr,
-		varPool:         varpool.New(),
-		iterationCount:  make(map[string]int),
-		maxIterations:   3,
-		phasePolicies:   defaultPhasePolicies(),
-		retryCount:      make(map[string]int),
-		router:          NewDefaultRouter(),
+		machine:            machine,
+		git:                cfg.Repo,
+		pool:               cfg.Pool,
+		providers:          providers,
+		lifecycleCtx:       lifecycleCtx,
+		lifecycleCancel:    lifecycleCancel,
+		events:             make(chan ConductorEvent, 100),
+		pendingPrompts:     make(map[string]chan bool),
+		stdout:             os.Stdout,
+		stderr:             os.Stderr,
+		varPool:            varpool.New(),
+		iterationCount:     make(map[string]int),
+		maxIterations:      3,
+		phasePolicies:      defaultPhasePolicies(),
+		retryCount:         make(map[string]int),
+		router:             NewDefaultRouter(),
+		progressCalibrator: progress.NewCalibrator(),
 	}
 
 	// Set worktree path - prefer explicit config, fallback to repo path
