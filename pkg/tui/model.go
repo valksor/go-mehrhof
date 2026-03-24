@@ -36,6 +36,8 @@ type WorktreeState struct {
 	Workers          []WorkerInfo
 	JobID            string
 	LastFailureClass string // failure classification: hard_stop, recoverable, degraded, skippable
+	AutoFixAttempt   int    // current auto-fix attempt (0 = inactive)
+	AutoFixMax       int    // max auto-fix attempts
 }
 
 // Model is the root bubbletea model.
@@ -290,6 +292,21 @@ func (m *Model) handleSocketEvent(msg socketEventMsg) (tea.Model, tea.Cmd) {
 			}
 		case "phase_failure_classified":
 			m.worktrees[i].LastFailureClass = string(msg.event.FailureClass)
+		case "autofix_attempt":
+			m.worktrees[i].Output = append(m.worktrees[i].Output, msg.event.Message)
+			if m.active == i {
+				m.syncViewport()
+			}
+			// Parse attempt/max from the event data if available
+			m.worktrees[i].AutoFixAttempt = parseAutoFixAttempt(msg.event.Data)
+			m.worktrees[i].AutoFixMax = parseAutoFixMax(msg.event.Data)
+		case "autofix_success", "autofix_exhausted":
+			m.worktrees[i].Output = append(m.worktrees[i].Output, msg.event.Message)
+			if m.active == i {
+				m.syncViewport()
+			}
+			m.worktrees[i].AutoFixAttempt = 0
+			m.worktrees[i].AutoFixMax = 0
 		}
 
 		break
@@ -477,4 +494,28 @@ func (m *Model) sendWorkflowCmd(method string) tea.Cmd {
 
 		return nil
 	}
+}
+
+// parseAutoFixAttempt extracts the "attempt" field from event data JSON.
+func parseAutoFixAttempt(data json.RawMessage) int {
+	var d struct {
+		Attempt int `json:"attempt"`
+	}
+	if err := json.Unmarshal(data, &d); err != nil {
+		return 0
+	}
+
+	return d.Attempt
+}
+
+// parseAutoFixMax extracts the "max_attempts" field from event data JSON.
+func parseAutoFixMax(data json.RawMessage) int {
+	var d struct {
+		MaxAttempts int `json:"max_attempts"`
+	}
+	if err := json.Unmarshal(data, &d); err != nil {
+		return 0
+	}
+
+	return d.MaxAttempts
 }

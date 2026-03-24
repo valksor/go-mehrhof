@@ -22,7 +22,30 @@ import (
 // runQualityGate checks code quality before submission.
 // Detects project type and runs language-specific checks, then runs
 // the external review tool if installed and configured.
+// If auto-fix is enabled and the current phase matches, quality gate
+// failures are fed back to the agent for bounded retry.
 func (c *Conductor) runQualityGate(ctx context.Context) error {
+	err := c.runQualityGateChecks(ctx)
+	if err == nil {
+		return nil
+	}
+
+	// Check if auto-fix should handle this failure
+	if c.shouldAutoFix() {
+		slog.Info("quality gate: auto-fix enabled, attempting automatic fix", "error", err)
+
+		if fixErr := c.runQualityAutoFix(ctx, err); fixErr == nil {
+			return nil
+		} else {
+			return fixErr
+		}
+	}
+
+	return err
+}
+
+// runQualityGateChecks runs the actual quality gate checks without auto-fix logic.
+func (c *Conductor) runQualityGateChecks(ctx context.Context) error {
 	workDir := c.getWorkDir()
 
 	// Language-specific checks are mutually exclusive by project type.

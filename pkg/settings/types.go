@@ -314,12 +314,22 @@ type WorkflowSettings struct {
 	Hooks                HooksSettings              `yaml:"hooks,omitempty" json:"hooks,omitempty"`
 	HoldTheLine          *bool                      `yaml:"hold_the_line,omitempty" json:"hold_the_line,omitempty" schema:"label=Hold the Line;desc=Only gate on findings in lines changed by the agent, ignoring pre-existing tech debt;default=true"`
 	PhaseGuardrails      map[string]GuardrailConfig `yaml:"phase_guardrails,omitempty" json:"phase_guardrails,omitempty" schema:"label=Phase Guardrails;desc=Pre/post validation checks per phase;type=json;advanced"`
+	AutoFix              AutoFixSettings            `yaml:"auto_fix,omitempty" json:"auto_fix,omitempty"`
 }
 
 // GuardrailConfig defines pre and post guardrails for a workflow phase.
 type GuardrailConfig struct {
 	Pre  []string `yaml:"pre,omitempty" json:"pre,omitempty"`
 	Post []string `yaml:"post,omitempty" json:"post,omitempty"`
+}
+
+// AutoFixSettings configures automatic quality gate fix attempts.
+// When enabled, quality gate failures are fed back to the agent for correction
+// in a bounded retry loop, similar to the CI auto-fix loop.
+type AutoFixSettings struct {
+	Enabled     bool     `yaml:"enabled,omitempty" json:"enabled,omitempty" schema:"label=Auto Fix Quality;desc=Automatically feed quality gate errors back to the agent for correction;default=false"`
+	MaxAttempts int      `yaml:"max_attempts,omitempty" json:"max_attempts,omitempty" schema:"label=Max Attempts;desc=Maximum auto-fix attempts before giving up;default=3;min=1;max=10"`
+	Phases      []string `yaml:"phases,omitempty" json:"phases,omitempty" schema:"label=Phases;desc=Phases that trigger auto-fix on quality gate failure;type=tags;default=implement,simplify,optimize"`
 }
 
 // SecuritySettings configures agent security controls.

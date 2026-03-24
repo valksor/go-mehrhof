@@ -64,7 +64,7 @@ export function WorkflowBar() {
     state, plan, implement, review, submit, finish,
     stop, undo, redo, abandon, approveTransition, retry,
     loading, checkpoints, redoStack, approveRemote, mergeRemote, refresh, error,
-    phaseError, dryRunMode, toggleDryRun, skipPhases,
+    phaseError, dryRunMode, toggleDryRun, skipPhases, autoFixStatus,
   } = useProjectStore(useShallow(s => ({
     state: s.state,
     plan: s.plan,
@@ -89,6 +89,7 @@ export function WorkflowBar() {
     dryRunMode: s.dryRunMode,
     toggleDryRun: s.toggleDryRun,
     skipPhases: s.skipPhases,
+    autoFixStatus: s.autoFixStatus,
   })))
 
   const [showSubmitModal, setShowSubmitModal] = useState(false)
@@ -227,10 +228,17 @@ export function WorkflowBar() {
 
             const isSkipped = skipPhases.includes(step.id)
 
+            const showAutoFix = isCurrent && autoFixStatus?.active
+
             const stepContent = (
               <div className="flex items-center gap-1">
                 <div className={isSkipped ? 'w-2 h-2 rounded-full flex-shrink-0 bg-base-300 opacity-30' : dotClass} />
                 <span className={isSkipped ? 'text-[10px] sm:text-xs text-base-content/20 line-through' : labelClass}>{step.label}</span>
+                {showAutoFix && (
+                  <span className="badge badge-xs badge-warning animate-pulse" title={`Auto-fix attempt ${autoFixStatus.attempt ?? '?'}/${autoFixStatus.maxAttempts ?? '?'}`}>
+                    fix {autoFixStatus.attempt}/{autoFixStatus.maxAttempts}
+                  </span>
+                )}
               </div>
             )
 

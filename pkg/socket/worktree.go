@@ -299,6 +299,9 @@ func (w *WorktreeSocket) registerHandlers() {
 	// CI status
 	w.server.Handle("ci.status", w.handleCIStatus)
 
+	// Auto-fix status
+	w.server.Handle("autofix.status", w.handleAutoFixStatus)
+
 	// Workflow hooks
 	w.server.Handle("hooks.list", w.handleHooksList)
 

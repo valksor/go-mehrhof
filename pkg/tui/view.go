@@ -1,6 +1,7 @@
 package tui
 
 import (
+	"fmt"
 	"path/filepath"
 	"strings"
 
@@ -97,6 +98,9 @@ func (m *Model) renderStatusBar() string {
 	text := "kvelmo · " + base + " · " + state
 	if state == "failed" && wt.LastFailureClass != "" {
 		text += " [" + wt.LastFailureClass + "]"
+	}
+	if wt.AutoFixAttempt > 0 {
+		text += fmt.Sprintf(" [AUTO-FIX %d/%d]", wt.AutoFixAttempt, wt.AutoFixMax)
 	}
 	if m.dryRun {
 		text += " [DRY RUN]"
