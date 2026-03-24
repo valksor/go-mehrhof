@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"log/slog"
 	"os"
 	"os/signal"
 	"strings"
@@ -13,8 +14,12 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/valksor/kvelmo/pkg/agent"
+	"github.com/valksor/kvelmo/pkg/agent/anthropic"
+	"github.com/valksor/kvelmo/pkg/agent/apiagent"
 	"github.com/valksor/kvelmo/pkg/agent/claude"
 	"github.com/valksor/kvelmo/pkg/agent/codex"
+	"github.com/valksor/kvelmo/pkg/agent/ollama"
+	"github.com/valksor/kvelmo/pkg/agent/openai"
 	"github.com/valksor/kvelmo/pkg/meta"
 	"github.com/valksor/kvelmo/pkg/settings"
 )
@@ -78,14 +83,38 @@ func runPipe(cmd *cobra.Command, args []string) error {
 		agentName = effective.Agent.Default
 	}
 
-	// Build registry with built-in agents.
-	// Use KvelmoPermissionHandler to allow Write/Edit/Bash for planning/implementation
+	// Build registry with all available agents.
+	// Use KvelmoPermissionHandler to allow Write/Edit/Bash for planning/implementation.
 	reg := agent.NewRegistry()
 	if err := claude.RegisterWithPermissionHandler(reg, agent.KvelmoPermissionHandler); err != nil {
-		return fmt.Errorf("register claude agent: %w", err)
+		slog.Debug("claude agent not available", "error", err)
 	}
 	if err := codex.RegisterWithPermissionHandler(reg, agent.KvelmoPermissionHandler); err != nil {
-		return fmt.Errorf("register codex agent: %w", err)
+		slog.Debug("codex agent not available", "error", err)
+	}
+
+	// Register API-based agents from settings.
+	apiCfg := apiagent.DefaultAPIConfig()
+
+	oaiCfg := effective.Agent.OpenAI
+	if err := reg.Register(openai.New(
+		openai.Config{APIKey: oaiCfg.APIKey, BaseURL: oaiCfg.BaseURL, Model: oaiCfg.Model}, apiCfg,
+	)); err != nil {
+		slog.Debug("openai agent registration failed", "error", err)
+	}
+
+	antCfg := effective.Agent.Anthropic
+	if err := reg.Register(anthropic.New(
+		anthropic.Config{APIKey: antCfg.APIKey, BaseURL: antCfg.BaseURL, Model: antCfg.Model}, apiCfg,
+	)); err != nil {
+		slog.Debug("anthropic agent registration failed", "error", err)
+	}
+
+	olCfg := effective.Agent.Ollama
+	if err := reg.Register(ollama.New(
+		ollama.Config{BaseURL: olCfg.BaseURL, Model: olCfg.Model}, apiCfg,
+	)); err != nil {
+		slog.Debug("ollama agent registration failed", "error", err)
 	}
 
 	// Resolve the agent instance.
