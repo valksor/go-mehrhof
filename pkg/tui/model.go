@@ -290,6 +290,11 @@ func (m *Model) handleSocketEvent(msg socketEventMsg) (tea.Model, tea.Cmd) {
 			}
 		case "phase_failure_classified":
 			m.worktrees[i].LastFailureClass = string(msg.event.FailureClass)
+		case "worktree_provisioned":
+			m.worktrees[i].Output = append(m.worktrees[i].Output, msg.event.Message)
+			if m.active == i {
+				m.syncViewport()
+			}
 		}
 
 		break

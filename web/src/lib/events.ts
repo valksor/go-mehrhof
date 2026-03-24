@@ -189,6 +189,17 @@ export interface CanaryViolationEvent extends BaseEvent {
   message?: string
 }
 
+/** Worktree provisioned. */
+export interface WorktreeProvisionedEvent extends BaseEvent {
+  type: 'worktree_provisioned'
+  message?: string
+  data?: {
+    files_copied?: string[]
+    symlinks_created?: string[]
+    commands_run?: string[]
+  }
+}
+
 /** Spec changed. */
 export interface SpecChangedEvent extends BaseEvent {
   type: 'spec_changed'
@@ -246,6 +257,7 @@ export type WorktreeEvent =
   | ApprovalEvent
   | HookErrorEvent
   | CanaryViolationEvent
+  | WorktreeProvisionedEvent
   | SpecChangedEvent
   | CIFixEvent
   | ConsensusReviewCompleteEvent

@@ -21,6 +21,7 @@ import (
 	"github.com/valksor/kvelmo/pkg/git"
 	"github.com/valksor/kvelmo/pkg/memory"
 	"github.com/valksor/kvelmo/pkg/provider"
+	"github.com/valksor/kvelmo/pkg/provision"
 	"github.com/valksor/kvelmo/pkg/screenshot"
 	"github.com/valksor/kvelmo/pkg/settings"
 	"github.com/valksor/kvelmo/pkg/storage"
@@ -314,6 +315,9 @@ func (w *WorktreeSocket) registerHandlers() {
 
 	// Event log
 	w.server.Handle("eventlog.query", w.handleEventlogQuery)
+
+	// Provisioning
+	w.server.Handle("provision.preview", w.handleProvisionPreview)
 }
 
 // injectSeqAndBuffer assigns a sequence number to a JSON event, stores it in the
@@ -2177,6 +2181,38 @@ func (w *WorktreeSocket) handleContextResolve(ctx context.Context, req *Request)
 	})
 	if err != nil {
 		return NewErrorResponse(req.ID, -32603, "encode result: "+err.Error()), nil //nolint:nilerr // JSON-RPC error
+	}
+
+	return resp, nil
+}
+
+// handleProvisionPreview returns what would be provisioned without executing.
+func (w *WorktreeSocket) handleProvisionPreview(_ context.Context, req *Request) (*Response, error) {
+	cfg, _, _, err := settings.LoadEffective(w.path)
+	if err != nil {
+		cfg = settings.DefaultSettings()
+	}
+
+	if !settings.BoolValue(cfg.Git.Provision.Enabled, true) {
+		return NewResultResponse(req.ID, map[string]string{"status": "disabled"})
+	}
+
+	defaults := provision.DefaultOptions(w.path)
+	userOpts := provision.Options{
+		CopyPatterns:    cfg.Git.Provision.CopyPatterns,
+		SymlinkPatterns: cfg.Git.Provision.SymlinkPatterns,
+		SetupCommands:   cfg.Git.Provision.SetupCommands,
+	}
+	merged := provision.MergeOptions(defaults, userOpts)
+
+	result, previewErr := provision.Preview(w.path, merged)
+	if previewErr != nil {
+		return NewErrorResponse(req.ID, -32603, previewErr.Error()), nil
+	}
+
+	resp, respErr := NewResultResponse(req.ID, result)
+	if respErr != nil {
+		return NewErrorResponse(req.ID, -32603, "encode result: "+respErr.Error()), nil //nolint:nilerr // JSON-RPC error
 	}
 
 	return resp, nil

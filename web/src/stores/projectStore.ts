@@ -509,6 +509,13 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
           if (data?.prompt_id) {
             set({ qualityPrompt: { id: data.prompt_id, question: data.question ?? 'Quality gate question' } })
           }
+        } else if (msg.type === 'worktree_provisioned') {
+          const provData = (msg as { data?: { files_copied?: string[]; symlinks_created?: string[]; commands_run?: string[] } }).data
+          const parts: string[] = []
+          if (provData?.files_copied?.length) parts.push(`${provData.files_copied.length} files copied`)
+          if (provData?.symlinks_created?.length) parts.push(`${provData.symlinks_created.length} symlinks`)
+          if (provData?.commands_run?.length) parts.push(`${provData.commands_run.length} commands`)
+          get().appendOutput(`Worktree provisioned: ${parts.join(', ')}`)
         } else if (msg.type === 'warning') {
           get().appendOutput(`\u26a0 ${msg.message || 'Warning'}`)
         } else if (msg.type === 'error') {
