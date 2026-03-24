@@ -52,6 +52,7 @@ const (
 
 // Finding is the unified result type for quality, policy, and security checks.
 type Finding struct {
+<<<<<<< HEAD
 	ID             string   `json:"id"`
 	Severity       Severity `json:"severity"`
 	Category       Category `json:"category"`
@@ -65,6 +66,21 @@ type Finding struct {
 	Origin         Origin   `json:"origin,omitempty"`
 	Classification string   `json:"classification,omitempty"` // "flaky", "genuine", "intermittent", ""
 	DetectedBy     []string `json:"detected_by,omitempty"`    // Agent names that detected this finding
+=======
+	ID              string   `json:"id"`
+	Severity        Severity `json:"severity"`
+	Category        Category `json:"category"`
+	Rule            string   `json:"rule"`
+	File            string   `json:"file,omitempty"`
+	Line            int      `json:"line,omitempty"`
+	Message         string   `json:"message"`
+	Remediation     string   `json:"remediation,omitempty"`
+	Evidence        string   `json:"evidence,omitempty"`
+	Source          string   `json:"source"`
+	Origin          Origin   `json:"origin,omitempty"`
+	DetectedBy      []string `json:"detected_by,omitempty"`      // Agent names that detected this finding
+	ReviewerPersona string   `json:"reviewer_persona,omitempty"` // Adversarial reviewer persona that found this
+>>>>>>> worktree-agent-aa10428a
 }
 
 // CountBySeverity returns the number of findings at each severity level.

@@ -302,6 +302,7 @@ type HooksSettings map[string][]TransitionHook
 // WorkflowSettings contains per-project workflow options.
 // These are intentionally project-scoped and not meaningful at global level.
 type WorkflowSettings struct {
+<<<<<<< HEAD
 	UseWorktreeIsolation  *bool                         `yaml:"use_worktree_isolation,omitempty" json:"use_worktree_isolation,omitempty" schema:"label=Use Worktree Isolation;desc=Create an isolated git worktree for each task, enabling parallel work without conflicts;default=true"`
 	AutoAdvance           *bool                         `yaml:"auto_advance,omitempty" json:"auto_advance,omitempty" schema:"label=Auto Advance;desc=Automatically progress through plan, implement, and review phases;default=false"`
 	SkipPhases            []string                      `yaml:"skip_phases,omitempty" json:"skip_phases,omitempty" schema:"label=Skip Phases;desc=Phases to skip by default when auto-advancing (simplify, optimize, plan);type=tags"`
@@ -316,6 +317,28 @@ type WorkflowSettings struct {
 	AutoFix               AutoFixSettings               `yaml:"auto_fix,omitempty" json:"auto_fix,omitempty"`
 	ProgressEstimation    *bool                         `yaml:"progress_estimation,omitempty" json:"progress_estimation,omitempty" schema:"label=Progress Estimation;desc=Show estimated progress and ETA during active phases;default=true"`
 	PhaseGuardrails       map[string]GuardrailConfig    `yaml:"phase_guardrails,omitempty" json:"phase_guardrails,omitempty" schema:"label=Phase Guardrails;desc=Pre/post validation checks per phase;type=json;advanced"`
+=======
+	UseWorktreeIsolation *bool                      `yaml:"use_worktree_isolation,omitempty" json:"use_worktree_isolation,omitempty" schema:"label=Use Worktree Isolation;desc=Create an isolated git worktree for each task, enabling parallel work without conflicts;default=true"`
+	AutoAdvance          *bool                      `yaml:"auto_advance,omitempty" json:"auto_advance,omitempty" schema:"label=Auto Advance;desc=Automatically progress through plan, implement, and review phases;default=false"`
+	SkipPhases           []string                   `yaml:"skip_phases,omitempty" json:"skip_phases,omitempty" schema:"label=Skip Phases;desc=Phases to skip by default when auto-advancing (simplify, optimize, plan);type=tags"`
+	ExternalReview       ExternalReviewConfig       `yaml:"external_review,omitempty" json:"external_review,omitempty" schema:"label=External Review;desc=External CLI review tool integration"`
+	Policy               PolicySettings             `yaml:"policy,omitempty" json:"policy,omitempty"`
+	Retry                RetrySettings              `yaml:"retry,omitempty" json:"retry,omitempty"`
+	PhasePolicies        map[string]string          `yaml:"phase_policies,omitempty" json:"phase_policies,omitempty" schema:"label=Phase Policies;desc=Per-phase failure policy overrides: fail, retry, or skip (e.g., simplify: skip)"`
+	CI                   CISettings                 `yaml:"ci,omitempty" json:"ci,omitempty"`
+	Hooks                HooksSettings              `yaml:"hooks,omitempty" json:"hooks,omitempty"`
+	HoldTheLine          *bool                      `yaml:"hold_the_line,omitempty" json:"hold_the_line,omitempty" schema:"label=Hold the Line;desc=Only gate on findings in lines changed by the agent, ignoring pre-existing tech debt;default=true"`
+	PhaseGuardrails      map[string]GuardrailConfig `yaml:"phase_guardrails,omitempty" json:"phase_guardrails,omitempty" schema:"label=Phase Guardrails;desc=Pre/post validation checks per phase;type=json;advanced"`
+	AdversarialReview    *AdversarialReviewSettings `yaml:"adversarial_review,omitempty" json:"adversarial_review,omitempty"`
+}
+
+// AdversarialReviewSettings configures persona-based adversarial code review.
+type AdversarialReviewSettings struct {
+	Enabled         bool     `yaml:"enabled,omitempty" json:"enabled,omitempty" schema:"label=Adversarial Review;desc=Run persona-based adversarial reviews during review phase;default=false"`
+	Personas        []string `yaml:"personas,omitempty" json:"personas,omitempty" schema:"label=Personas;desc=Review personas to use (security, performance, maintainability);type=tags;default=security,performance"`
+	Agent           string   `yaml:"agent,omitempty" json:"agent,omitempty" schema:"label=Review Agent;desc=Agent to use for adversarial reviews (empty = default review agent)"`
+	BlockOnFindings bool     `yaml:"block_on_findings,omitempty" json:"block_on_findings,omitempty" schema:"label=Block on Findings;desc=Block review phase if adversarial review finds issues;default=false"`
+>>>>>>> worktree-agent-aa10428a
 }
 
 // GuardrailConfig defines pre and post guardrails for a workflow phase.

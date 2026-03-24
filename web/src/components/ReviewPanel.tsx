@@ -110,16 +110,7 @@ export function ReviewPanel({ data }: ReviewPanelProps) {
             <span className="loading loading-spinner loading-md"></span>
           </div>
         ) : selectedReview?.findings && selectedReview.findings.length > 0 ? (
-          <div className="space-y-2">
-            <h3 className="text-sm font-medium text-base-content/70">
-              Findings ({selectedReview.findings.length})
-            </h3>
-            <div className="space-y-2">
-              {selectedReview.findings.map((finding, index) => (
-                <FindingItem key={index} finding={finding} index={index} />
-              ))}
-            </div>
-          </div>
+          <FindingsSection findings={selectedReview.findings} />
         ) : !error ? (
           <div className="bg-success/10 border border-success/20 rounded-lg p-4 text-center">
             <svg className="w-8 h-8 mx-auto mb-2 text-success" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -192,6 +183,95 @@ export function ReviewPanel({ data }: ReviewPanelProps) {
           </div>
         )}
       </div>
+    </div>
+  )
+}
+
+const personaIcons: Record<string, { icon: string; label: string }> = {
+  security: { icon: 'M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z', label: 'Security' },
+  performance: { icon: 'M13 10V3L4 14h7v7l9-11h-7z', label: 'Performance' },
+  maintainability: { icon: 'M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z M15 12a3 3 0 11-6 0 3 3 0 016 0z', label: 'Maintainability' },
+}
+
+/** Groups findings by reviewer_persona and renders each group with an icon header. */
+function FindingsSection({ findings }: { findings: string[] }) {
+  // Try to detect persona-tagged findings (format: "[persona] rest of finding")
+  const personaGroups = new Map<string, { findings: string[]; indices: number[] }>()
+  const ungrouped: { finding: string; index: number }[] = []
+
+  findings.forEach((finding, index) => {
+    const personaMatch = finding.match(/^\[(@?)(security|performance|maintainability)\]\s*/i)
+    if (personaMatch) {
+      const persona = personaMatch[2].toLowerCase()
+      const rest = finding.slice(personaMatch[0].length)
+      const group = personaGroups.get(persona) ?? { findings: [], indices: [] }
+      group.findings.push(rest)
+      group.indices.push(index)
+      personaGroups.set(persona, group)
+    } else {
+      ungrouped.push({ finding, index })
+    }
+  })
+
+  // If no persona grouping detected, render flat list as before.
+  if (personaGroups.size === 0) {
+    return (
+      <div className="space-y-2">
+        <h3 className="text-sm font-medium text-base-content/70">
+          Findings ({findings.length})
+        </h3>
+        <div className="space-y-2">
+          {findings.map((finding, index) => (
+            <FindingItem key={index} finding={finding} index={index} />
+          ))}
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="space-y-4">
+      <h3 className="text-sm font-medium text-base-content/70">
+        Findings ({findings.length})
+      </h3>
+
+      {/* Persona-grouped findings */}
+      {Array.from(personaGroups.entries()).map(([persona, group]) => {
+        const config = personaIcons[persona]
+        return (
+          <div key={persona} className="space-y-2">
+            <div className="flex items-center gap-2">
+              {config && (
+                <svg className="w-4 h-4 text-base-content/60" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d={config.icon} />
+                </svg>
+              )}
+              <span className="text-xs font-semibold uppercase tracking-wider text-base-content/60">
+                {config?.label ?? persona} ({group.findings.length})
+              </span>
+            </div>
+            <div className="space-y-2 ml-6">
+              {group.findings.map((finding, i) => (
+                <FindingItem key={group.indices[i]} finding={finding} index={group.indices[i]} />
+              ))}
+            </div>
+          </div>
+        )
+      })}
+
+      {/* Ungrouped findings */}
+      {ungrouped.length > 0 && (
+        <div className="space-y-2">
+          <span className="text-xs font-semibold uppercase tracking-wider text-base-content/60">
+            General ({ungrouped.length})
+          </span>
+          <div className="space-y-2">
+            {ungrouped.map(({ finding, index }) => (
+              <FindingItem key={index} finding={finding} index={index} />
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   )
 }
