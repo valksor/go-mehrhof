@@ -45,6 +45,7 @@ type WebSocketConnection struct {
 	config    Config
 	port      int
 	sessionID string
+	done      chan struct{} // closed when Connect's context is canceled; signals shutdown to read loop
 
 	server   *http.Server
 	listener net.Listener
@@ -179,6 +180,12 @@ func NewWebSocketConnection(cfg Config) *WebSocketConnection {
 
 // Connect starts the WebSocket server and launches Claude CLI.
 func (w *WebSocketConnection) Connect(ctx context.Context) error {
+	w.done = make(chan struct{})
+	go func() {
+		<-ctx.Done()
+		close(w.done)
+	}()
+
 	// Create listener
 	addr := fmt.Sprintf("127.0.0.1:%d", w.port)
 	listener, err := net.Listen("tcp", addr) //nolint:noctx // Context cancellation handled via server shutdown
@@ -379,8 +386,9 @@ func (w *WebSocketConnection) handleConnection(rw http.ResponseWriter, r *http.R
 	for {
 		_, data, err := conn.ReadMessage()
 		if err != nil {
-			// Normal close during shutdown — not an error
-			if websocket.IsCloseError(err, websocket.CloseNormalClosure, websocket.CloseGoingAway) ||
+			// Shutdown in progress — context canceled or explicit Close
+			if w.closed.Load() || isClosed(w.done) ||
+				websocket.IsCloseError(err, websocket.CloseNormalClosure, websocket.CloseGoingAway) ||
 				strings.Contains(err.Error(), "use of closed") {
 				slog.Debug("claude websocket: connection closed", "error", err)
 			} else {
@@ -721,4 +729,14 @@ func (w *WebSocketConnection) Close() error {
 	})
 
 	return nil
+}
+
+// isClosed reports whether ch has been closed (non-blocking).
+func isClosed(ch chan struct{}) bool {
+	select {
+	case <-ch:
+		return true
+	default:
+		return false
+	}
 }

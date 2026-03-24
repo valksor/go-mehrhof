@@ -2,9 +2,7 @@ package socket
 
 import (
 	"context"
-	"fmt"
 	"os"
-	"strings"
 
 	"github.com/valksor/kvelmo/pkg/agent"
 	"github.com/valksor/kvelmo/pkg/settings"
@@ -78,10 +76,6 @@ func (g *GlobalSocket) handleDiagnose(_ context.Context, req *Request) (*Respons
 			Name:       p.name,
 			Configured: configured,
 		})
-
-		if !configured {
-			issues = append(issues, fmt.Sprintf("Set %s or run 'kvelmo provider login %s'", p.envVar, strings.ToLower(p.name)))
-		}
 	}
 
 	return NewResultResponse(req.ID, diagnoseResponse{

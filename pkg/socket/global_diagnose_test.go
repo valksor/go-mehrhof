@@ -87,11 +87,11 @@ func TestGlobalHandleDiagnose_ChecksHaveNameAndStatus(t *testing.T) {
 	}
 }
 
-func TestGlobalHandleDiagnose_IssuesCollectedFromProviders(t *testing.T) {
+func TestGlobalHandleDiagnose_UnconfiguredProvidersAreNotIssues(t *testing.T) {
 	ctx := context.Background()
 	g := newTestGlobalSocket(t)
 
-	// Clear env vars to ensure unconfigured providers generate issues
+	// Clear env vars to ensure providers are unconfigured
 	for _, envVar := range []string{"GITHUB_TOKEN", "GITLAB_TOKEN", "LINEAR_TOKEN", "WRIKE_TOKEN"} {
 		t.Setenv(envVar, "")
 	}
@@ -109,13 +109,7 @@ func TestGlobalHandleDiagnose_IssuesCollectedFromProviders(t *testing.T) {
 		t.Fatalf("unmarshal: %v", err)
 	}
 
-	// With no tokens set, we should have at least some issues from unconfigured providers
-	// (unless settings env map overrides them, but in a temp test context that's unlikely)
-	// We verify the structure rather than exact counts since env varies
-	if result.Issues == nil {
-		// nil is acceptable when all tokens are set via env map
-		return
-	}
+	// Unconfigured provider tokens should not generate issues — they are optional
 	for _, issue := range result.Issues {
 		if issue == "" {
 			t.Error("issue string should not be empty")

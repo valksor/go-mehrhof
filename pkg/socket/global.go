@@ -358,19 +358,16 @@ func (g *GlobalSocket) handleDocsURL(ctx context.Context, req *Request) (*Respon
 func (g *GlobalSocket) handleAgentStatus(_ context.Context, req *Request) (*Response, error) {
 	result := agent.RunPreflight() //nolint:contextcheck // RunPreflight manages its own timeouts internally
 
-	// Also check if pool has real agent workers
+	// If pool has a worker with a connected agent, that's a stronger availability signal
 	if g.pool != nil {
-		workers := g.pool.ListWorkers()
-		hasRealAgent := false
-		for _, w := range workers {
+		for _, w := range g.pool.ListWorkers() {
 			if w.Agent != nil && w.Agent.Connected() {
-				hasRealAgent = true
+				result.SimulationMode = false
+				result.AgentAvailable = true
 
 				break
 			}
 		}
-		result.SimulationMode = !hasRealAgent
-		result.AgentAvailable = hasRealAgent
 	}
 
 	return NewResultResponse(req.ID, result)
@@ -606,7 +603,7 @@ func (g *GlobalSocket) handleConfigValidate(_ context.Context, req *Request) (*R
 
 	// Check agent default is valid if settings loaded.
 	if effective.Agent.Default != "" {
-		allowed := []string{"claude", "codex"}
+		allowed := []string{"claude", "codex", "openai", "anthropic", "ollama"}
 		valid := false
 		for _, a := range allowed {
 			if effective.Agent.Default == a {
@@ -626,7 +623,7 @@ func (g *GlobalSocket) handleConfigValidate(_ context.Context, req *Request) (*R
 				Name:   "agent.default",
 				Status: "error",
 				Detail: fmt.Sprintf("unknown agent %q", effective.Agent.Default),
-				Fix:    "Set agent.default to 'claude' or 'codex'",
+				Fix:    "Set agent.default to 'claude', 'codex', 'openai', 'anthropic', or 'ollama'",
 			})
 		}
 	}

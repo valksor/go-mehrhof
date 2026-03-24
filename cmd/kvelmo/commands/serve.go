@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net"
+	"net/http"
 	"os"
 	"os/exec"
 	"os/signal"
@@ -326,7 +327,7 @@ func runServe(cmd *cobra.Command, args []string) error {
 	// Start web server
 	go func() {
 		fmt.Printf("\n  %s running at %s\n\n", meta.Name, webServer.URL())
-		if err := webServer.Start(); err != nil {
+		if err := webServer.Start(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			fmt.Printf("Web server error: %v\n", err)
 		}
 	}()
@@ -343,15 +344,15 @@ func runServe(cmd *cobra.Command, args []string) error {
 	// Cancel context to stop all components
 	cancel()
 
-	// Graceful shutdown
+	// Graceful shutdown — stop socket and web server concurrently
 	shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer shutdownCancel()
-
-	_ = webServer.Shutdown(shutdownCtx)
 
 	if globalSocket != nil {
 		_ = globalSocket.Stop()
 	}
+
+	_ = webServer.Shutdown(shutdownCtx)
 
 	fmt.Println("Goodbye.")
 
