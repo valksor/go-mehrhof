@@ -146,6 +146,7 @@ type WorkUnit struct {
 	CancelledAt      time.Time                 `json:"cancelled_at,omitempty"`
 	Approvals        map[string]ApprovalRecord `json:"approvals,omitempty"`         // Event -> approval record
 	ChecklistChecked []string                  `json:"checklist_checked,omitempty"` // Checked review items
+	ContextItems     []ContextItem             `json:"context_items,omitempty"`     // Attached context references (resolved at dispatch)
 	Tags             []string                  `json:"tags,omitempty"`
 	Priority         int                       `json:"priority,omitempty"`
 	DependsOn        []string                  `json:"depends_on,omitempty"`

@@ -98,7 +98,7 @@ func (c *Conductor) Plan(ctx context.Context) (string, error) {
 		false,
 	)
 	prompt := c.buildPlanPromptForComplexity(complexity, existingSpecs)
-	prompt = c.applyStrategy("plan", prompt)
+	prompt = c.applyStrategy(ctx, "plan", prompt)
 
 	c.setupCanaryHarness()
 

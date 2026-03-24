@@ -62,6 +62,18 @@ func NewSanitizer(tokens []string) *Sanitizer {
 			name:    "JWT Token",
 			pattern: regexp.MustCompile(`eyJ[A-Za-z0-9_-]*\.eyJ[A-Za-z0-9_-]*\.[A-Za-z0-9_-]*`),
 		},
+		{
+			name:    "Anthropic API Key",
+			pattern: regexp.MustCompile(`sk-ant-[A-Za-z0-9_-]{20,}`),
+		},
+		{
+			name:    "OpenAI API Key",
+			pattern: regexp.MustCompile(`sk-[A-Za-z0-9_-]{20,}`),
+		},
+		{
+			name:    "Generic Secret Assignment",
+			pattern: regexp.MustCompile(`(?i)(?:secret|password|token|credential)['\"]?\s*[:=]\s*['\"]?([A-Za-z0-9_\-/.+=]{16,})['\"]?`),
+		},
 	}
 
 	return s
@@ -113,12 +125,18 @@ func CollectSensitiveValues(s *settings.Settings) []string {
 	add(s.Providers.Wrike.Token)
 	add(s.Providers.Linear.Token)
 
+	// API agent keys from settings.
+	add(s.Agent.OpenAI.APIKey)
+	add(s.Agent.Anthropic.APIKey)
+
 	// Tokens from environment variables (may differ from settings).
 	envVars := []string{
 		"GITHUB_TOKEN",
 		"GITLAB_TOKEN",
 		"WRIKE_TOKEN",
 		"LINEAR_TOKEN",
+		"OPENAI_API_KEY",
+		"ANTHROPIC_API_KEY",
 	}
 	for _, env := range envVars {
 		add(os.Getenv(env))

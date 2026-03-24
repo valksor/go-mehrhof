@@ -260,6 +260,9 @@ func (w *WorktreeSocket) registerHandlers() {
 	// Review
 	w.server.Handle("review.view", w.handleReviewView)
 
+	// Context resolution (@-mentions)
+	w.server.Handle("context.resolve", w.handleContextResolve)
+
 	// Quality gate user prompts
 	w.server.Handle("quality.respond", w.handleQualityRespond)
 
@@ -423,6 +426,7 @@ func (w *WorktreeSocket) handleStatus(ctx context.Context, req *Request) (*Respo
 				Source:       sourceRef,
 				Branch:       wu.Branch,
 				WorktreePath: wu.WorktreePath,
+				ContextItems: wu.ContextItems,
 			}
 		}
 
@@ -492,6 +496,7 @@ func (w *WorktreeSocket) handleRecap(ctx context.Context, req *Request) (*Respon
 			Source:       sourceRef,
 			Branch:       wu.Branch,
 			WorktreePath: wu.WorktreePath,
+			ContextItems: wu.ContextItems,
 		}
 
 		result.CheckpointCount = len(wu.Checkpoints)
@@ -658,10 +663,11 @@ func (w *WorktreeSocket) handleShowSpec(_ context.Context, req *Request) (*Respo
 // --- Task Lifecycle Handlers ---
 
 type StartParams struct {
-	Source               string   `json:"source"` // e.g., "github:owner/repo#123"
-	UseWorktreeIsolation bool     `json:"use_worktree_isolation,omitempty"`
-	AutoAdvance          bool     `json:"auto_advance,omitempty"` // Auto-progress through plan → implement → review
-	SkipPhases           []string `json:"skip_phases,omitempty"`  // Per-invocation phases to skip (e.g., ["simplify", "optimize"])
+	Source               string                  `json:"source"` // e.g., "github:owner/repo#123"
+	UseWorktreeIsolation bool                    `json:"use_worktree_isolation,omitempty"`
+	AutoAdvance          bool                    `json:"auto_advance,omitempty"`  // Auto-progress through plan → implement → review
+	SkipPhases           []string                `json:"skip_phases,omitempty"`   // Per-invocation phases to skip (e.g., ["simplify", "optimize"])
+	ContextItems         []conductor.ContextItem `json:"context_items,omitempty"` // Attached context references (@-mentions)
 }
 
 func (w *WorktreeSocket) handleStart(ctx context.Context, req *Request) (*Response, error) {
@@ -690,6 +696,11 @@ func (w *WorktreeSocket) handleStart(ctx context.Context, req *Request) (*Respon
 	// Set per-invocation skip phases
 	if len(params.SkipPhases) > 0 {
 		w.conductor.SetSkipPhases(params.SkipPhases)
+	}
+
+	// Attach context items (@-mentions) to the work unit
+	if len(params.ContextItems) > 0 {
+		w.conductor.SetContextItems(params.ContextItems)
 	}
 
 	// Worktree isolation is handled inside conductor.Start(). Log if active.
@@ -2106,11 +2117,12 @@ type StatusResult struct {
 }
 
 type TaskInfo struct {
-	ID           string `json:"id"`
-	Title        string `json:"title"`
-	Source       string `json:"source"`
-	Branch       string `json:"branch,omitempty"`
-	WorktreePath string `json:"worktree_path,omitempty"`
+	ID           string                  `json:"id"`
+	Title        string                  `json:"title"`
+	Source       string                  `json:"source"`
+	Branch       string                  `json:"branch,omitempty"`
+	WorktreePath string                  `json:"worktree_path,omitempty"`
+	ContextItems []conductor.ContextItem `json:"context_items,omitempty"`
 }
 
 // RecapResult is returned by the recap RPC method.
@@ -2127,4 +2139,45 @@ type RecapResult struct {
 	LastActivity    string                             `json:"last_activity,omitempty"` // Human-readable time since last checkpoint
 	NextAction      string                             `json:"next_action"`             // Suggested next step
 	LastError       string                             `json:"last_error,omitempty"`
+}
+
+// handleContextResolve resolves a context reference to its content.
+// Used by the web UI for @-mention preview and validation.
+func (w *WorktreeSocket) handleContextResolve(ctx context.Context, req *Request) (*Response, error) {
+	var params struct {
+		Type string `json:"type"` // "file", "symbol", "commit", "branch", "terminal", "url"
+		Ref  string `json:"ref"`  // Reference to resolve
+	}
+	if err := json.Unmarshal(req.Params, &params); err != nil {
+		return NewErrorResponse(req.ID, -32602, "invalid params"), nil //nolint:nilerr // JSON-RPC error response
+	}
+	if params.Type == "" || params.Ref == "" {
+		return NewErrorResponse(req.ID, -32602, "type and ref are required"), nil
+	}
+
+	resolver := &conductor.ContextResolver{
+		WorktreeRoot: w.path,
+		Repo:         w.repo,
+		Graph:        w.codegraphInst, // may be nil — symbol resolution falls back to grep
+	}
+
+	item := conductor.ContextItem{
+		Type: conductor.ContextType(params.Type),
+		Ref:  params.Ref,
+	}
+
+	resolved, err := resolver.Resolve(ctx, item)
+	if err != nil {
+		return NewErrorResponse(req.ID, -32603, err.Error()), nil
+	}
+
+	resp, err := NewResultResponse(req.ID, map[string]string{
+		"label":   resolved.Label,
+		"content": resolved.Content,
+	})
+	if err != nil {
+		return NewErrorResponse(req.ID, -32603, "encode result: "+err.Error()), nil //nolint:nilerr // JSON-RPC error
+	}
+
+	return resp, nil
 }

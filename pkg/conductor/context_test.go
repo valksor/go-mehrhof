@@ -1,6 +1,7 @@
 package conductor
 
 import (
+	"context"
 	"strings"
 	"testing"
 
@@ -15,9 +16,9 @@ func TestBuildPhaseContext_PlanProfile(t *testing.T) {
 	pool := varpool.New()
 
 	profile := DefaultContextProfiles()["plan"]
-	ctx, metrics := BuildPhaseContext(profile, wu, pool)
+	result, metrics := BuildPhaseContext(context.Background(), profile, wu, pool)
 
-	if ctx == "" {
+	if result == "" {
 		t.Fatal("expected non-empty context for plan phase")
 	}
 	if len(metrics.SectionsIncluded) == 0 {
@@ -37,9 +38,9 @@ func TestBuildPhaseContext_ImplementProfile(t *testing.T) {
 	pool := varpool.New()
 
 	profile := DefaultContextProfiles()["implement"]
-	ctx, metrics := BuildPhaseContext(profile, wu, pool)
+	result, metrics := BuildPhaseContext(context.Background(), profile, wu, pool)
 
-	if ctx == "" {
+	if result == "" {
 		t.Fatal("expected non-empty context")
 	}
 	// Should include task summary and specs
@@ -57,8 +58,8 @@ func TestBuildPhaseContext_ImplementProfile(t *testing.T) {
 func TestBuildPhaseContext_NilWorkUnit(t *testing.T) {
 	pool := varpool.New()
 	profile := DefaultContextProfiles()["plan"]
-	ctx, _ := BuildPhaseContext(profile, nil, pool)
-	if ctx != "" {
+	result, _ := BuildPhaseContext(context.Background(), profile, nil, pool)
+	if result != "" {
 		t.Error("expected empty context for nil work unit")
 	}
 }
@@ -70,9 +71,9 @@ func TestBuildPhaseContext_SimplifyWithDiff(t *testing.T) {
 	pool.SetScoped("sys", "last_findings", "lint: unused variable", "test")
 
 	profile := DefaultContextProfiles()["simplify"]
-	ctx, metrics := BuildPhaseContext(profile, wu, pool)
+	result, metrics := BuildPhaseContext(context.Background(), profile, wu, pool)
 
-	if ctx == "" {
+	if result == "" {
 		t.Fatal("expected context with diff and findings")
 	}
 	if len(metrics.SectionsIncluded) != 2 {
@@ -97,8 +98,8 @@ func TestBuildPhaseContext_NilPool(t *testing.T) {
 	}
 	profile := DefaultContextProfiles()["simplify"]
 	// Simplify only wants diff+findings which come from pool; with nil pool should be empty
-	ctx, _ := BuildPhaseContext(profile, wu, nil)
-	if ctx != "" {
+	result, _ := BuildPhaseContext(context.Background(), profile, wu, nil)
+	if result != "" {
 		t.Error("expected empty context when pool is nil and profile only uses pool-sourced data")
 	}
 }
@@ -118,7 +119,7 @@ func TestBuildPhaseContext_BudgetExceeded(t *testing.T) {
 		MaxTokenBudget: 300, // Only enough for ~1200 chars
 	}
 
-	_, metrics := BuildPhaseContext(profile, wu, pool)
+	_, metrics := BuildPhaseContext(context.Background(), profile, wu, pool)
 
 	// Task section should fit, diff should be excluded
 	if len(metrics.SectionsExcluded) == 0 {

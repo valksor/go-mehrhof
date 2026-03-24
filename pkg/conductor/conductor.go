@@ -12,6 +12,7 @@ import (
 	"os"
 	"path/filepath"
 	"slices"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -440,6 +441,14 @@ func (c *Conductor) WorkUnit() *WorkUnit {
 	return c.workUnit
 }
 
+// Repo returns the git repository for the conductor's worktree.
+func (c *Conductor) Repo() *git.Repository {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+
+	return c.git
+}
+
 // GetWorkUnit returns the current work unit.
 func (c *Conductor) GetWorkUnit() *WorkUnit {
 	c.mu.RLock()
@@ -504,6 +513,29 @@ func (c *Conductor) SetSkipPhases(phases []string) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	c.runtimeSkipPhases = phases
+}
+
+// SetContextItems attaches context references to the current work unit.
+// Items are lightweight references resolved at dispatch time, not persisted content.
+func (c *Conductor) SetContextItems(items []ContextItem) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	if c.workUnit != nil {
+		c.workUnit.ContextItems = items
+		c.persistState()
+
+		// Emit event so TUI and web UI see the attached context
+		if len(items) > 0 {
+			var refs []string
+			for _, item := range items {
+				refs = append(refs, fmt.Sprintf("@%s %s", item.Type, item.Ref))
+			}
+			go c.emit(ConductorEvent{
+				Type:    "context_attached",
+				Message: "Context attached: " + strings.Join(refs, ", "),
+			})
+		}
+	}
 }
 
 // SkipPhases returns the effective skip phases (runtime + config merged).

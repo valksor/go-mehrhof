@@ -1,23 +1,47 @@
 package conductor
 
 import (
+	"context"
 	"fmt"
+	"log/slog"
 	"strings"
 
 	"github.com/valksor/kvelmo/pkg/storage"
 	"github.com/valksor/kvelmo/pkg/varpool"
 )
 
+// ContextType identifies what kind of reference a ContextItem holds.
+type ContextType string
+
+const (
+	ContextTypeFile     ContextType = "file"     // File path (relative to worktree root)
+	ContextTypeSymbol   ContextType = "symbol"   // Code symbol (class, function, method)
+	ContextTypeCommit   ContextType = "commit"   // Git commit SHA or ref
+	ContextTypeBranch   ContextType = "branch"   // Git branch name
+	ContextTypeTerminal ContextType = "terminal" // Terminal output snippet
+	ContextTypeURL      ContextType = "url"      // External documentation URL
+)
+
+// ContextItem is a lightweight reference to contextual information attached to a task.
+// Only Type, Ref, and Label are persisted in WorkUnit. Content is resolved
+// ephemerally at dispatch time via BuildPhaseContext and never serialized to task.yaml.
+type ContextItem struct {
+	Type  ContextType `json:"type" yaml:"type"`
+	Ref   string      `json:"ref" yaml:"ref"`     // e.g. "pkg/agent/agent.go:42", "abc123", "main"
+	Label string      `json:"label" yaml:"label"` // Human-readable display name
+}
+
 // PhaseContextProfile defines what categories of information to include for a phase.
 type PhaseContextProfile struct {
-	IncludeTask        bool // full title + description
-	IncludeTaskSummary bool // title + truncated description (first 500 chars)
-	IncludeSpecs       bool // specification files
-	IncludeDiff        bool // current git diff
-	IncludeFindings    bool // quality gate findings
-	IncludeHierarchy   bool // parent/sibling tasks
-	IncludeMemory      bool // vector store retrieval (TODO: wire to memory.Store.Query)
-	MaxTokenBudget     int  // soft cap for context assembly (0 = unlimited)
+	IncludeTask         bool // full title + description
+	IncludeTaskSummary  bool // title + truncated description (first 500 chars)
+	IncludeSpecs        bool // specification files
+	IncludeDiff         bool // current git diff
+	IncludeFindings     bool // quality gate findings
+	IncludeHierarchy    bool // parent/sibling tasks
+	IncludeMemory       bool // vector store retrieval (TODO: wire to memory.Store.Query)
+	IncludeContextItems bool // user-attached context references (@-mentions)
+	MaxTokenBudget      int  // soft cap for context assembly (0 = unlimited)
 }
 
 // ContextMetrics tracks what was included/excluded during context assembly.
@@ -39,6 +63,16 @@ func (c *Conductor) buildContextDeps() ContextDeps {
 		}
 	}
 
+	// Attach resolver for context items if we have a worktree
+	if c.worktree != "" {
+		deps.Resolver = &ContextResolver{
+			WorktreeRoot: c.worktree,
+			Repo:         c.git,
+			// Graph is nil — symbol resolution uses grep fallback.
+			// Wire codegraph.Graph here when available on Conductor.
+		}
+	}
+
 	return deps
 }
 
@@ -46,14 +80,16 @@ func (c *Conductor) buildContextDeps() ContextDeps {
 func DefaultContextProfiles() map[string]PhaseContextProfile {
 	return map[string]PhaseContextProfile{
 		"plan": {
-			IncludeTask:      true,
-			IncludeHierarchy: true,
-			MaxTokenBudget:   8000,
+			IncludeTask:         true,
+			IncludeHierarchy:    true,
+			IncludeContextItems: true,
+			MaxTokenBudget:      8000,
 		},
 		"implement": {
-			IncludeTaskSummary: true,
-			IncludeSpecs:       true,
-			MaxTokenBudget:     12000,
+			IncludeTaskSummary:  true,
+			IncludeSpecs:        true,
+			IncludeContextItems: true,
+			MaxTokenBudget:      12000,
 		},
 		"simplify": {
 			IncludeDiff:     true,
@@ -78,12 +114,13 @@ func DefaultContextProfiles() map[string]PhaseContextProfile {
 // ContextDeps provides optional dependencies for context assembly.
 // Fields are nil-safe — missing deps cause the corresponding section to be skipped.
 type ContextDeps struct {
-	SpecContent string // Pre-gathered specification content (from storage.GatherSpecificationsContent)
+	SpecContent string           // Pre-gathered specification content (from storage.GatherSpecificationsContent)
+	Resolver    *ContextResolver // Resolves ContextItems to content (nil = skip context items)
 }
 
 // BuildPhaseContext assembles context for a phase based on its profile.
 // Returns the context string and metrics about what was included.
-func BuildPhaseContext(profile PhaseContextProfile, wu *WorkUnit, pool *varpool.Pool, deps ...ContextDeps) (string, ContextMetrics) {
+func BuildPhaseContext(ctx context.Context, profile PhaseContextProfile, wu *WorkUnit, pool *varpool.Pool, deps ...ContextDeps) (string, ContextMetrics) {
 	var dep ContextDeps
 	if len(deps) > 0 {
 		dep = deps[0]
@@ -172,6 +209,22 @@ func BuildPhaseContext(profile PhaseContextProfile, wu *WorkUnit, pool *varpool.
 	if profile.IncludeFindings && pool != nil {
 		if findings := pool.GetScopedString(varpool.ScopeSystem, "last_findings"); findings != "" {
 			addSection("Quality Findings", findings)
+		}
+	}
+
+	// User-attached context items (@-mentions)
+	if profile.IncludeContextItems && len(wu.ContextItems) > 0 {
+		if dep.Resolver != nil {
+			resolved, errs := dep.Resolver.ResolveAll(ctx, wu.ContextItems)
+			for _, err := range errs {
+				slog.Warn("context item resolution failed", "error", err)
+			}
+			for _, rc := range resolved {
+				addSection("Context: "+rc.Label, rc.Content)
+			}
+		} else {
+			slog.Warn("context items attached but no resolver available — items will not be included in prompt",
+				"count", len(wu.ContextItems))
 		}
 	}
 

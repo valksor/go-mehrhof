@@ -103,7 +103,7 @@ func (c *Conductor) Implement(ctx context.Context) (string, error) {
 	// Start watching spec files for mid-execution edits.
 	c.specWatcher = newSpecWatcher(c.workUnit.Specifications)
 
-	prompt := c.applyStrategy("implement", c.buildImplementPrompt())
+	prompt := c.applyStrategy(ctx, "implement", c.buildImplementPrompt())
 	implJobType := worker.JobTypeImplement
 	if c.dryRun {
 		implJobType = worker.JobTypeDryRun
@@ -196,7 +196,7 @@ func (c *Conductor) Optimize(ctx context.Context) (string, error) {
 	if c.dryRun {
 		optJobType = worker.JobTypeDryRun
 	}
-	prompt := c.applyStrategy("optimize", c.buildOptimizePrompt())
+	prompt := c.applyStrategy(ctx, "optimize", c.buildOptimizePrompt())
 	opts := c.buildJobOptionsForPhase("optimize")
 	job, err := c.pool.SubmitWithOptions(optJobType, c.getWorkDir(), prompt, opts)
 	if err != nil {
@@ -285,7 +285,7 @@ func (c *Conductor) Simplify(ctx context.Context) (string, error) {
 	if c.dryRun {
 		simJobType = worker.JobTypeDryRun
 	}
-	prompt := c.applyStrategy("simplify", c.buildSimplifyPrompt())
+	prompt := c.applyStrategy(ctx, "simplify", c.buildSimplifyPrompt())
 	opts := c.buildJobOptionsForPhase("simplify")
 	job, err := c.pool.SubmitWithOptions(simJobType, c.getWorkDir(), prompt, opts)
 	if err != nil {

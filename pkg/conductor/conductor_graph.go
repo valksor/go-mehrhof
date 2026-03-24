@@ -534,7 +534,7 @@ func (c *Conductor) resolveStrategy(phase string) strategy.Strategy {
 // applyStrategy wraps a raw prompt with the phase strategy and phase-aware context.
 // It also builds phase-aware context using the context profile for the phase
 // and emits context_metrics as a ConductorEvent.
-func (c *Conductor) applyStrategy(phase, prompt string) string {
+func (c *Conductor) applyStrategy(ctx context.Context, phase, prompt string) string {
 	s := c.resolveStrategy(phase)
 
 	vars := make(map[string]string)
@@ -550,7 +550,7 @@ func (c *Conductor) applyStrategy(phase, prompt string) string {
 	if profile, ok := profiles[phase]; ok {
 		var metrics ContextMetrics
 		deps := c.buildContextDeps()
-		phaseContext, metrics = BuildPhaseContext(profile, c.workUnit, c.varPool, deps)
+		phaseContext, metrics = BuildPhaseContext(ctx, profile, c.workUnit, c.varPool, deps)
 
 		// Emit context metrics as an event (non-blocking, best-effort).
 		if metricsData, err := json.Marshal(metrics); err == nil {
