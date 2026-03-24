@@ -84,8 +84,8 @@ test.describe('Tab management in demo mode', () => {
     await page.getByRole('button', { name: 'Add new tab' }).click()
     await expect(page.getByRole('menu', { name: 'Tab types' })).toBeVisible()
 
-    // Click outside the menu
-    await page.locator('main').click({ position: { x: 10, y: 10 } })
+    // Dismiss menu via Escape key (more reliable than positional click)
+    await page.keyboard.press('Escape')
 
     await expect(page.getByRole('menu', { name: 'Tab types' })).not.toBeVisible()
   })

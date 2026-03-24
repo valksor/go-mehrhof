@@ -67,7 +67,7 @@ test.describe('TaskWidget in demo mode', () => {
     await page.goto('/?demo')
 
     await expect(page.getByText('Quick Fix')).toBeVisible()
-    await expect(page.getByRole('checkbox')).toBeVisible()
+    await expect(page.getByRole('checkbox', { name: /quick fix/i })).toBeVisible()
   })
 
   test('shows connection status', async ({ page }) => {

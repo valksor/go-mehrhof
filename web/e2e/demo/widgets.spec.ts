@@ -70,18 +70,24 @@ test.describe('Widget empty states', () => {
   test('file changes widget shows empty state', async ({ page }) => {
     await page.goto('/?demo')
 
-    await expect(page.getByText('No changes yet')).toBeVisible()
+    const leftSidebar = page.getByRole('complementary', { name: 'Left sidebar' })
+    const filesWidget = leftSidebar.locator('[data-widget-id="files"]')
+    await expect(filesWidget.getByText('No changes yet')).toBeVisible()
   })
 
   test('checkpoints widget shows empty state', async ({ page }) => {
     await page.goto('/?demo')
 
-    await expect(page.getByText('No checkpoints yet')).toBeVisible()
+    const rightSidebar = page.getByRole('complementary', { name: 'Right sidebar' })
+    const checkpointsWidget = rightSidebar.locator('[data-widget-id="checkpoints"]')
+    await expect(checkpointsWidget.getByText('No checkpoints yet')).toBeVisible()
   })
 
   test('agents widget shows no workers', async ({ page }) => {
     await page.goto('/?demo')
 
-    await expect(page.getByText('No workers running')).toBeVisible()
+    const rightSidebar = page.getByRole('complementary', { name: 'Right sidebar' })
+    const agentsWidget = rightSidebar.locator('[data-widget-id="agents"]')
+    await expect(agentsWidget.getByText('No workers running')).toBeVisible()
   })
 })
