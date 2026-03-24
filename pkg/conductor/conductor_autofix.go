@@ -186,6 +186,22 @@ func (c *Conductor) waitForAutoFixJob(ctx context.Context, pool *worker.Pool, jo
 	}
 }
 
+// stateToPhase maps an in-progress state to the phase name used in configuration.
+func stateToPhase(s State) string {
+	switch s {
+	case StatePlanning:
+		return "plan"
+	case StateImplementing:
+		return "implement"
+	case StateSimplifying:
+		return "simplify"
+	case StateOptimizing:
+		return "optimize"
+	default:
+		return ""
+	}
+}
+
 // shouldAutoFix checks whether the auto-fix loop should run for the current
 // phase and settings configuration. Must be called without c.mu held.
 func (c *Conductor) shouldAutoFix() bool {

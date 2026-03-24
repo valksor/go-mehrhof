@@ -297,6 +297,7 @@ func formatETASeconds(seconds int) string {
 
 	return fmt.Sprintf("%dh", hrs)
 }
+
 // padRight pads or truncates s to exactly n runes.
 func padRight(s string, n int) string {
 	runes := []rune(s)
