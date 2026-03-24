@@ -42,8 +42,10 @@ var forkSelectCmd = &cobra.Command{
 	RunE:  runForkSelect,
 }
 
-var forkListJSON bool
-var forkCompareJSON bool
+var (
+	forkListJSON    bool
+	forkCompareJSON bool
+)
 
 func init() {
 	ForkCmd.AddCommand(forkCreateCmd)
@@ -192,7 +194,15 @@ func runForkSelect(_ *cobra.Command, args []string) error {
 		return fmt.Errorf("fork.select: %s", resp.Error.Message)
 	}
 
-	fmt.Printf("Fork %s selected and merged successfully.\n", forkID)
+	// Try to extract label from the response for a friendlier message.
+	var result struct {
+		Label string `json:"label"`
+	}
+	if err := json.Unmarshal(resp.Result, &result); err == nil && result.Label != "" {
+		fmt.Printf("Fork '%s' (%s) selected and merged successfully.\n", result.Label, forkID)
+	} else {
+		fmt.Printf("Fork %s selected and merged successfully.\n", forkID)
+	}
 
 	return nil
 }

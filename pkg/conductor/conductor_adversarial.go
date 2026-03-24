@@ -131,7 +131,14 @@ func (c *Conductor) runAdversarialReview(ctx context.Context) ([]findings.Findin
 	}
 
 	if len(groups) == 0 {
-		return nil, errors.New("all adversarial personas failed")
+		slog.Warn("adversarial review: all personas failed, returning degraded (empty) result")
+
+		c.emit(ConductorEvent{
+			Type:    "adversarial_review_degraded",
+			Message: "All adversarial personas failed — review incomplete",
+		})
+
+		return nil, nil
 	}
 
 	merged := findings.DeduplicateFindings(groups)

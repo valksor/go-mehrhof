@@ -60,11 +60,11 @@ func (c *Conductor) recordProgressCalibration(phase string) {
 }
 
 // SignalProgress records an agent activity event for progress tracking.
-// Safe to call without holding c.mu.
 func (c *Conductor) SignalProgress() {
-	// Read estimator without lock — field is only modified under c.mu
-	// but reads from a stable pointer are safe for signaling.
+	c.mu.RLock()
 	est := c.progressEstimator
+	c.mu.RUnlock()
+
 	if est != nil {
 		est.Signal()
 	}

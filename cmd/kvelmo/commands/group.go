@@ -51,7 +51,8 @@ var groupStatusCmd = &cobra.Command{
 
 var groupSubmitCmd = &cobra.Command{
 	Use:   "submit <group-id>",
-	Short: "Submit all tasks in a group",
+	Short: "Mark group as submitted",
+	Long:  "Mark group as submitted. Does not create PRs — use 'kvelmo submit' in each project.",
 	Args:  cobra.ExactArgs(1),
 	RunE:  runGroupSubmit,
 }
@@ -63,6 +64,8 @@ var groupRemoveCmd = &cobra.Command{
 	RunE:  runGroupRemove,
 }
 
+var groupAddState string
+
 func init() {
 	GroupCmd.AddCommand(groupCreateCmd)
 	GroupCmd.AddCommand(groupAddCmd)
@@ -70,6 +73,8 @@ func init() {
 	GroupCmd.AddCommand(groupStatusCmd)
 	GroupCmd.AddCommand(groupSubmitCmd)
 	GroupCmd.AddCommand(groupRemoveCmd)
+
+	groupAddCmd.Flags().StringVar(&groupAddState, "state", "loaded", "Initial state to record for the task")
 }
 
 func groupClient() (*socket.Client, error) {
@@ -125,7 +130,7 @@ func runGroupAdd(_ *cobra.Command, args []string) error {
 		"id":          args[0],
 		"task_id":     args[1],
 		"project_dir": cwd,
-		"state":       "loaded",
+		"state":       groupAddState,
 	})
 	if err != nil {
 		return fmt.Errorf("taskgroup.add: %w", err)
@@ -134,6 +139,7 @@ func runGroupAdd(_ *cobra.Command, args []string) error {
 		return fmt.Errorf("taskgroup.add: %s", resp.Error.Message)
 	}
 	fmt.Printf("Added task %s to group %s\n", args[1], args[0])
+	fmt.Printf("Note: task state recorded as %q. Use 'kvelmo group status' to verify.\n", groupAddState)
 	return nil
 }
 

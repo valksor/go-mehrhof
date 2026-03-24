@@ -13,6 +13,7 @@ import (
 
 	"github.com/valksor/kvelmo/pkg/graph"
 	"github.com/valksor/kvelmo/pkg/riskeval"
+	"github.com/valksor/kvelmo/pkg/settings"
 )
 
 // approverIdentity returns a best-effort user identity string for audit purposes.
@@ -34,14 +35,16 @@ func approverIdentity(configuredIdentity string) string {
 // checkApproval verifies that the given event has been approved when required by policy.
 // When risk-based approval is enabled, low-risk changes are auto-approved and high-risk
 // changes require review regardless of explicit approval settings.
-// Must be called with c.mu held (read or write).
+// Must be called with c.mu held (read or write). The lock is temporarily released
+// during risk evaluation to avoid blocking on git subprocess I/O.
 func (c *Conductor) checkApproval(event Event) error {
 	s := c.getEffectiveSettings()
 
 	// Risk-based approval: evaluate risk and decide automatically.
 	rba := s.Workflow.Policy.RiskBasedApproval
 	if rba != nil && rba.Enabled && s.Workflow.Policy.ApprovalRequired[string(event)] {
-		score := c.evaluateRisk()
+		// Release lock before git I/O — evaluateRiskUnlocked performs subprocess calls.
+		score := c.evaluateRiskUnlocked(s)
 		c.emitRiskEvaluated(score)
 
 		autoThreshold := rba.AutoApproveThreshold
@@ -94,21 +97,25 @@ func (c *Conductor) checkApproval(event Event) error {
 	return nil
 }
 
-// evaluateRisk computes the risk score for the current work unit.
-// Must be called with c.mu held (read or write).
-func (c *Conductor) evaluateRisk() riskeval.RiskScore {
-	s := c.getEffectiveSettings()
+// evaluateRiskUnlocked computes the risk score without requiring c.mu to be held.
+// It snapshots the git handle from the caller-provided settings or conductor fields,
+// then performs blocking git I/O outside the lock.
+func (c *Conductor) evaluateRiskUnlocked(s *settings.Settings) riskeval.RiskScore {
+	// Snapshot the git handle under lock.
+	c.mu.RLock()
+	repo := c.git
+	c.mu.RUnlock()
 
 	input := riskeval.Input{
 		SensitivePaths: s.Workflow.Policy.SensitivePaths,
 	}
 
-	// Gather diff stats from git if available.
-	if c.git != nil {
+	// Gather diff stats from git if available — this runs a subprocess.
+	if repo != nil {
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
 
-		stat, err := c.git.DiffNumStatAgainst(ctx, "")
+		stat, err := repo.DiffNumStatAgainst(ctx, "")
 		if err == nil {
 			input.DiffLinesAdded = stat.Added
 			input.DiffLinesRemoved = stat.Removed
@@ -132,13 +139,14 @@ func (c *Conductor) evaluateRisk() riskeval.RiskScore {
 // EvaluateRisk computes the risk score for the current work unit (exported for RPC).
 func (c *Conductor) EvaluateRisk() riskeval.RiskScore {
 	c.mu.RLock()
-	defer c.mu.RUnlock()
-
 	if c.workUnit == nil {
+		c.mu.RUnlock()
 		return riskeval.RiskScore{Level: riskeval.LevelLow}
 	}
+	s := c.getEffectiveSettings()
+	c.mu.RUnlock()
 
-	return c.evaluateRisk()
+	return c.evaluateRiskUnlocked(s)
 }
 
 // emitRiskEvaluated emits a risk_evaluated event with score and factors.

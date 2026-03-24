@@ -162,6 +162,8 @@ func subscribeWorktree(ctx context.Context, dir string, ch chan<- tea.Msg) tea.C
 
 // startProgressPolling launches a goroutine that periodically calls progress.get
 // on the worktree socket and sends progressMsg updates to the fan-in channel.
+// Skips polling when the worktree is in a terminal or inactive state to avoid
+// unnecessary socket calls.
 func startProgressPolling(ctx context.Context, dir string, ch chan<- tea.Msg) {
 	go func() {
 		ticker := time.NewTicker(3 * time.Second)
@@ -176,6 +178,21 @@ func startProgressPolling(ctx context.Context, dir string, ch chan<- tea.Msg) {
 				client, err := socket.NewClient(socketPath, socket.WithTimeout(2*time.Second))
 				if err != nil {
 					continue
+				}
+
+				// Check worktree state first — skip progress polling for inactive states.
+				stateResp, stateErr := client.Call(ctx, "status.get", nil)
+				if stateErr == nil && stateResp.Result != nil {
+					var status struct {
+						State string `json:"state"`
+					}
+					if json.Unmarshal(stateResp.Result, &status) == nil {
+						switch status.State {
+						case "none", "loaded", "failed", "submitted":
+							_ = client.Close()
+							continue
+						}
+					}
 				}
 
 				resp, callErr := client.Call(ctx, "progress.get", nil)

@@ -10,6 +10,7 @@ import (
 	"encoding/hex"
 	"log/slog"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/google/uuid"
@@ -39,13 +40,16 @@ type Stats struct {
 // It uses exact SHA-256 hash matching for reliability and TTL-based
 // expiration to prevent stale entries from being served.
 type Cache struct {
-	mu          sync.RWMutex
-	entries     map[string]*Entry // keyed by prompt hash
-	maxEntries  int
-	ttl         time.Duration
-	hits        int
-	misses      int
-	tokensSaved int64
+	mu         sync.RWMutex
+	entries    map[string]*Entry // keyed by prompt hash
+	maxEntries int
+	ttl        time.Duration
+
+	// Atomic counters allow Get to use RLock for the map lookup and
+	// update stats without upgrading to a full write lock.
+	hits        atomic.Int64
+	misses      atomic.Int64
+	tokensSaved atomic.Int64
 }
 
 // New creates a Cache with the given configuration.
@@ -68,37 +72,45 @@ func New(maxEntries int, ttl time.Duration) *Cache {
 
 // Get checks for a cached response matching the given prompt.
 // Returns (response, true) on a cache hit, ("", false) on a miss.
-// Expired entries are removed and treated as misses.
+// Expired entries are lazily removed on the next Put or evict cycle.
 func (c *Cache) Get(prompt string) (string, bool) {
 	hash := hashPrompt(prompt)
 
-	c.mu.Lock()
-	defer c.mu.Unlock()
-
+	c.mu.RLock()
 	entry, ok := c.entries[hash]
 	if !ok {
-		c.misses++
+		c.mu.RUnlock()
+		c.misses.Add(1)
 
 		return "", false
 	}
 
 	// Check TTL expiration.
 	if time.Since(entry.CreatedAt) > c.ttl {
+		c.mu.RUnlock()
+		// Remove expired entry under write lock.
+		c.mu.Lock()
 		delete(c.entries, hash)
-		c.misses++
+		c.mu.Unlock()
+		c.misses.Add(1)
 		slog.Debug("cache entry expired", "hash", hash[:12], "age", time.Since(entry.CreatedAt))
 
 		return "", false
 	}
 
+	// HitCount is informational and tolerates benign races under RLock.
 	entry.HitCount++
-	c.hits++
+	response := entry.Response
+	phase := entry.Phase
+	c.mu.RUnlock()
+
+	c.hits.Add(1)
 	// Estimate tokens saved (~4 chars per token).
-	c.tokensSaved += int64(len(entry.Response)) / 4
+	c.tokensSaved.Add(int64(len(response)) / 4)
 
-	slog.Debug("cache hit", "hash", hash[:12], "phase", entry.Phase, "hit_count", entry.HitCount)
+	slog.Debug("cache hit", "hash", hash[:12], "phase", phase, "hit_count", entry.HitCount)
 
-	return entry.Response, true
+	return response, true
 }
 
 // Put stores a prompt-response pair in the cache.
@@ -137,33 +149,38 @@ func (c *Cache) Put(prompt, response, phase string) {
 
 // Stats returns cache performance statistics.
 func (c *Cache) Stats() Stats {
-	c.mu.RLock()
-	defer c.mu.RUnlock()
+	hits := c.hits.Load()
+	misses := c.misses.Load()
+	tokensSaved := c.tokensSaved.Load()
 
-	total := c.hits + c.misses
+	total := hits + misses
 	var hitRate float64
 	if total > 0 {
-		hitRate = float64(c.hits) / float64(total)
+		hitRate = float64(hits) / float64(total)
 	}
 
+	c.mu.RLock()
+	entries := len(c.entries)
+	c.mu.RUnlock()
+
 	return Stats{
-		Entries:     len(c.entries),
-		Hits:        c.hits,
-		Misses:      c.misses,
+		Entries:     entries,
+		Hits:        int(hits),
+		Misses:      int(misses),
 		HitRate:     hitRate,
-		TokensSaved: c.tokensSaved,
+		TokensSaved: tokensSaved,
 	}
 }
 
 // Clear removes all cached entries and resets statistics.
 func (c *Cache) Clear() {
 	c.mu.Lock()
-	defer c.mu.Unlock()
-
 	c.entries = make(map[string]*Entry)
-	c.hits = 0
-	c.misses = 0
-	c.tokensSaved = 0
+	c.mu.Unlock()
+
+	c.hits.Store(0)
+	c.misses.Store(0)
+	c.tokensSaved.Store(0)
 
 	slog.Debug("cache cleared")
 }

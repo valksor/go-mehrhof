@@ -116,6 +116,14 @@ func (c *Conductor) linkTaskOutcome(ctx context.Context) {
 	qualityPassed := c.workUnit.QualityGatePassed
 	prID := c.workUnit.PRID
 	cancelledBy := c.workUnit.CancelledBy
+	checklistChecked := len(c.workUnit.ChecklistChecked) > 0
+
+	// Snapshot provider-related fields for PR status check after unlock.
+	var sourceRef string
+	providers := c.providers
+	if c.workUnit.Source != nil {
+		sourceRef = c.workUnit.Source.Reference
+	}
 
 	// Determine outcome from task state.
 	outcome := memory.DocumentOutcome{}
@@ -130,25 +138,22 @@ func (c *Conductor) linkTaskOutcome(ctx context.Context) {
 		outcome.CIPassedFirstTry = true
 	}
 
-	// PR was created (merged status determined later at finish).
-	if prID != "" {
-		// Check PR status if providers available.
-		if c.providers != nil && c.workUnit.Source != nil {
-			pr, err := c.providers.GetPRStatus(ctx, c.workUnit.Source.Reference)
-			if err == nil && pr.Merged {
-				outcome.PRMerged = true
-			}
-		}
-	}
-
 	// Human changes: review was done and checklist items were checked.
-	if len(c.workUnit.ChecklistChecked) > 0 {
+	if checklistChecked {
 		outcome.HumanChangesNeeded = true
 	}
 
-	// Release lock before I/O.
+	// Release lock before I/O (PR status check + store write).
 	c.mu.Unlock()
 	defer c.mu.Lock()
+
+	// PR was created — check merged status via provider (network I/O).
+	if prID != "" && providers != nil && sourceRef != "" {
+		pr, err := providers.GetPRStatus(ctx, sourceRef)
+		if err == nil && pr.Merged {
+			outcome.PRMerged = true
+		}
+	}
 
 	if err := store.LinkOutcome(ctx, taskID, outcome); err != nil {
 		slog.Warn("failed to link task outcome to memory", "task_id", taskID, "error", err)

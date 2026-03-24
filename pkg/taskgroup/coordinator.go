@@ -70,13 +70,14 @@ func (c *Coordinator) GetGroup(id string) (*Group, error) {
 	return g, nil
 }
 
-// ListGroups returns all groups.
-func (c *Coordinator) ListGroups() []*Group {
+// ListGroups returns shallow copies of all groups so callers cannot mutate
+// the coordinator's internal state.
+func (c *Coordinator) ListGroups() []Group {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
-	result := make([]*Group, 0, len(c.groups))
+	result := make([]Group, 0, len(c.groups))
 	for _, g := range c.groups {
-		result = append(result, g)
+		result = append(result, *g)
 	}
 	return result
 }
@@ -109,7 +110,10 @@ func (c *Coordinator) UpdateTaskState(taskID, state string) {
 	for _, g := range c.groups {
 		if g.ContainsTask(taskID) {
 			g.UpdateTaskState(taskID, state)
-			_ = c.store.Save(g) // best-effort persist
+			if err := c.store.Save(g); err != nil {
+				slog.Warn("failed to persist task state update",
+					"task_id", taskID, "group_id", g.ID, "state", state, "error", err)
+			}
 			return
 		}
 	}

@@ -20,12 +20,12 @@ type RiskScore struct {
 
 // Input provides the data needed for risk evaluation.
 type Input struct {
-	DiffLinesAdded   int
-	DiffLinesRemoved int
-	FilesChanged     []string
-	SensitivePaths   []string // Glob patterns from policy settings
-	SecurityFindings int
-	TestFilesChanged int
+	DiffLinesAdded    int
+	DiffLinesRemoved  int
+	FilesChanged      []string
+	SensitivePaths    []string // Glob patterns from policy settings
+	SecurityFindings  int
+	TestFilesChanged  int
 	TotalFilesChanged int
 }
 

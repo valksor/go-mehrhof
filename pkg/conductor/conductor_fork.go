@@ -154,8 +154,11 @@ func (c *Conductor) SelectFork(ctx context.Context, forkID string) error {
 		return fmt.Errorf("select fork: merge: %w", err)
 	}
 
-	// Clean up all fork worktrees and branches
+	// Clean up all fork worktrees and branches except the winner (already merged).
 	for _, fork := range wu.Forks {
+		if fork.ID == forkID {
+			continue
+		}
 		if removeErr := repo.RemoveWorktree(ctx, fork.WorktreeDir, true); removeErr != nil {
 			slog.Warn("failed to remove fork worktree", "fork_id", fork.ID, "error", removeErr)
 		}

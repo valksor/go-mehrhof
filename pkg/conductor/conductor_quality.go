@@ -144,7 +144,15 @@ func (c *Conductor) applyFailureClassification(_ context.Context, filtered []fin
 		window = 10
 	}
 
-	history := failclass.NewHistory(window)
+	// Lazily initialize the persistent history so IsFlaky can detect recurring patterns
+	// across quality gate runs within the same session.
+	c.mu.Lock()
+	if c.failclassHistory == nil {
+		c.failclassHistory = failclass.NewHistory(window)
+	}
+	history := c.failclassHistory
+	c.mu.Unlock()
+
 	classifier := failclass.New(history)
 	classified := classifier.Classify(filtered)
 

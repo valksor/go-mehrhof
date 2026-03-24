@@ -43,11 +43,11 @@ type TUISettings struct {
 
 // AgentSettings configures AI agent behavior.
 type AgentSettings struct {
-	Default       string            `yaml:"default,omitempty" json:"default,omitempty" schema:"label=Default Agent;desc=Agent used when none specified;options=claude|codex|openai|anthropic|ollama"`
-	Allowed       []string          `yaml:"allowed,omitempty" json:"allowed,omitempty" schema:"label=Allowed Agents;desc=Agents permitted for this project;type=multiselect;options=claude|codex|openai|anthropic|ollama"`
-	Strategy      string            `yaml:"strategy,omitempty" json:"strategy,omitempty" schema:"label=Default Strategy;desc=Agent reasoning strategy (direct = pass-through, iterative = self-review loop);options=direct|iterative;default=direct"`
-	PhaseStrategy map[string]string `yaml:"phase_strategy,omitempty" json:"phase_strategy,omitempty" schema:"label=Per-Phase Strategy;desc=Override strategy per phase (e.g. plan: iterative);type=keyvalue;advanced"`
-	PhaseAgent    map[string]string `yaml:"phase_agent,omitempty" json:"phase_agent,omitempty" schema:"label=Per-Phase Agent;desc=Override agent per phase (e.g. plan: gemini, implement: claude);type=keyvalue;advanced"`
+	Default       string                 `yaml:"default,omitempty" json:"default,omitempty" schema:"label=Default Agent;desc=Agent used when none specified;options=claude|codex|openai|anthropic|ollama"`
+	Allowed       []string               `yaml:"allowed,omitempty" json:"allowed,omitempty" schema:"label=Allowed Agents;desc=Agents permitted for this project;type=multiselect;options=claude|codex|openai|anthropic|ollama"`
+	Strategy      string                 `yaml:"strategy,omitempty" json:"strategy,omitempty" schema:"label=Default Strategy;desc=Agent reasoning strategy (direct = pass-through, iterative = self-review loop);options=direct|iterative;default=direct"`
+	PhaseStrategy map[string]string      `yaml:"phase_strategy,omitempty" json:"phase_strategy,omitempty" schema:"label=Per-Phase Strategy;desc=Override strategy per phase (e.g. plan: iterative);type=keyvalue;advanced"`
+	PhaseAgent    map[string]string      `yaml:"phase_agent,omitempty" json:"phase_agent,omitempty" schema:"label=Per-Phase Agent;desc=Override agent per phase (e.g. plan: gemini, implement: claude);type=keyvalue;advanced"`
 	Consensus     *ConsensusConfig       `yaml:"consensus,omitempty" json:"consensus,omitempty"`
 	ResponseCache *ResponseCacheSettings `yaml:"response_cache,omitempty" json:"response_cache,omitempty"`
 
@@ -190,19 +190,19 @@ type JiraConfig struct {
 // GitSettings configures git behavior for the workflow.
 // Pointer bools allow project-level false to override global-level true.
 type GitSettings struct {
-	BaseBranch              string      `yaml:"base_branch,omitempty" json:"base_branch,omitempty" schema:"label=Base Branch;desc=Default branch for PRs (auto-detected from git remote if empty);placeholder=auto-detect"`
-	BranchPattern           string      `yaml:"branch_pattern,omitempty" json:"branch_pattern,omitempty" schema:"label=Branch Pattern;desc=Pattern for branch names. Variables: {key}, {type}, {slug};default=feature/{key}--{slug}"`
-	CommitPrefix            string      `yaml:"commit_prefix,omitempty" json:"commit_prefix,omitempty" schema:"label=Commit Prefix;desc=Pattern for commit messages. Variables: {key};default=[{key}]"`
-	CommitPattern           string      `yaml:"commit_pattern,omitempty" json:"commit_pattern,omitempty" schema:"label=Commit Pattern;desc=Regex to validate commit messages. Leave empty to skip validation;placeholder=^(feat|fix|chore)\\(.*\\):.*;advanced"`
-	PRTitlePattern          string      `yaml:"pr_title_pattern,omitempty" json:"pr_title_pattern,omitempty" schema:"label=PR Title Pattern;desc=Template for PR titles. Variables: {title}, {key}, {type}, {slug};default=[{key}] {title}"`
-	PRRequiredSections      []string    `yaml:"pr_required_sections,omitempty" json:"pr_required_sections,omitempty" schema:"label=PR Required Sections;desc=PR template section keywords that must be filled before submission (e.g. summary, test plan);type=tags;advanced"`
-	BranchValidationPattern string      `yaml:"branch_validation_pattern,omitempty" json:"branch_validation_pattern,omitempty" schema:"label=Branch Validation;desc=Regex to validate generated branch names. Leave empty to skip validation;advanced"`
-	CreateBranch            *bool       `yaml:"create_branch,omitempty" json:"create_branch,omitempty" schema:"label=Create Branch;desc=Automatically create a branch when starting a task. If the branch already exists, switches to it;default=true"`
-	AutoCommit              *bool       `yaml:"auto_commit,omitempty" json:"auto_commit,omitempty" schema:"label=Auto Commit;desc=Automatically commit after implementation;default=true"`
-	SignCommits             *bool       `yaml:"sign_commits,omitempty" json:"sign_commits,omitempty" schema:"label=Sign Commits;desc=GPG sign commits;showWhen=git.auto_commit:true"`
-	AllowPRComment          *bool       `yaml:"allow_pr_comment,omitempty" json:"allow_pr_comment,omitempty" schema:"label=Allow PR Comments;desc=Post status comments on pull requests after submit"`
-	PRCustomSections        []PRSection         `yaml:"pr_custom_sections,omitempty" json:"pr_custom_sections,omitempty" schema:"label=Custom PR Sections;desc=Additional sections to include in auto-generated PR body;advanced"`
-	Provision               ProvisionSettings   `yaml:"provision,omitempty" json:"provision,omitempty"`
+	BaseBranch              string            `yaml:"base_branch,omitempty" json:"base_branch,omitempty" schema:"label=Base Branch;desc=Default branch for PRs (auto-detected from git remote if empty);placeholder=auto-detect"`
+	BranchPattern           string            `yaml:"branch_pattern,omitempty" json:"branch_pattern,omitempty" schema:"label=Branch Pattern;desc=Pattern for branch names. Variables: {key}, {type}, {slug};default=feature/{key}--{slug}"`
+	CommitPrefix            string            `yaml:"commit_prefix,omitempty" json:"commit_prefix,omitempty" schema:"label=Commit Prefix;desc=Pattern for commit messages. Variables: {key};default=[{key}]"`
+	CommitPattern           string            `yaml:"commit_pattern,omitempty" json:"commit_pattern,omitempty" schema:"label=Commit Pattern;desc=Regex to validate commit messages. Leave empty to skip validation;placeholder=^(feat|fix|chore)\\(.*\\):.*;advanced"`
+	PRTitlePattern          string            `yaml:"pr_title_pattern,omitempty" json:"pr_title_pattern,omitempty" schema:"label=PR Title Pattern;desc=Template for PR titles. Variables: {title}, {key}, {type}, {slug};default=[{key}] {title}"`
+	PRRequiredSections      []string          `yaml:"pr_required_sections,omitempty" json:"pr_required_sections,omitempty" schema:"label=PR Required Sections;desc=PR template section keywords that must be filled before submission (e.g. summary, test plan);type=tags;advanced"`
+	BranchValidationPattern string            `yaml:"branch_validation_pattern,omitempty" json:"branch_validation_pattern,omitempty" schema:"label=Branch Validation;desc=Regex to validate generated branch names. Leave empty to skip validation;advanced"`
+	CreateBranch            *bool             `yaml:"create_branch,omitempty" json:"create_branch,omitempty" schema:"label=Create Branch;desc=Automatically create a branch when starting a task. If the branch already exists, switches to it;default=true"`
+	AutoCommit              *bool             `yaml:"auto_commit,omitempty" json:"auto_commit,omitempty" schema:"label=Auto Commit;desc=Automatically commit after implementation;default=true"`
+	SignCommits             *bool             `yaml:"sign_commits,omitempty" json:"sign_commits,omitempty" schema:"label=Sign Commits;desc=GPG sign commits;showWhen=git.auto_commit:true"`
+	AllowPRComment          *bool             `yaml:"allow_pr_comment,omitempty" json:"allow_pr_comment,omitempty" schema:"label=Allow PR Comments;desc=Post status comments on pull requests after submit"`
+	PRCustomSections        []PRSection       `yaml:"pr_custom_sections,omitempty" json:"pr_custom_sections,omitempty" schema:"label=Custom PR Sections;desc=Additional sections to include in auto-generated PR body;advanced"`
+	Provision               ProvisionSettings `yaml:"provision,omitempty" json:"provision,omitempty"`
 }
 
 // PRSection defines a custom section to include in auto-generated PR descriptions.
@@ -275,15 +275,15 @@ type ExternalReviewConfig struct {
 
 // PolicySettings configures workflow enforcement guardrails.
 type PolicySettings struct {
-	RequiredPhases       []string                    `yaml:"required_phases,omitempty" json:"required_phases,omitempty" schema:"label=Required Phases;desc=Workflow phases that cannot be skipped (e.g. review, simplify);type=tags"`
-	SensitivePaths       []string                    `yaml:"sensitive_paths,omitempty" json:"sensitive_paths,omitempty" schema:"label=Sensitive Paths;desc=Glob patterns for files requiring mandatory review (e.g. pkg/auth/*);type=tags"`
-	MinSpecSections      int                         `yaml:"min_spec_sections,omitempty" json:"min_spec_sections,omitempty" schema:"label=Min Specifications;desc=Minimum specification files required before implementation;default=0;min=0;max=10"`
-	RequireSecurityScan  bool                        `yaml:"require_security_scan,omitempty" json:"require_security_scan,omitempty" schema:"label=Require Security Scan;desc=Block submission when security findings exist;default=false"`
-	ApprovalRequired     map[string]bool             `yaml:"approval_required,omitempty" json:"approval_required,omitempty" schema:"label=Approval Required;desc=Transitions requiring explicit human approval (e.g. submit: true);type=keyvalue"`
-	ReviewChecklist      []string                    `yaml:"review_checklist,omitempty" json:"review_checklist,omitempty" schema:"label=Review Checklist;desc=Items that must be checked before submit completes (e.g. security, performance);type=tags"`
-	RequireSignedCommits bool                        `yaml:"require_signed_commits,omitempty" json:"require_signed_commits,omitempty" schema:"label=Require Signed Commits;desc=Block workflow if GPG commit signing is not enabled;default=false"`
-	DocRequirements      []DocRequirement            `yaml:"doc_requirements,omitempty" json:"doc_requirements,omitempty"`
-	RiskBasedApproval    *RiskBasedApprovalSettings  `yaml:"risk_based_approval,omitempty" json:"risk_based_approval,omitempty"`
+	RequiredPhases       []string                   `yaml:"required_phases,omitempty" json:"required_phases,omitempty" schema:"label=Required Phases;desc=Workflow phases that cannot be skipped (e.g. review, simplify);type=tags"`
+	SensitivePaths       []string                   `yaml:"sensitive_paths,omitempty" json:"sensitive_paths,omitempty" schema:"label=Sensitive Paths;desc=Glob patterns for files requiring mandatory review (e.g. pkg/auth/*);type=tags"`
+	MinSpecSections      int                        `yaml:"min_spec_sections,omitempty" json:"min_spec_sections,omitempty" schema:"label=Min Specifications;desc=Minimum specification files required before implementation;default=0;min=0;max=10"`
+	RequireSecurityScan  bool                       `yaml:"require_security_scan,omitempty" json:"require_security_scan,omitempty" schema:"label=Require Security Scan;desc=Block submission when security findings exist;default=false"`
+	ApprovalRequired     map[string]bool            `yaml:"approval_required,omitempty" json:"approval_required,omitempty" schema:"label=Approval Required;desc=Transitions requiring explicit human approval (e.g. submit: true);type=keyvalue"`
+	ReviewChecklist      []string                   `yaml:"review_checklist,omitempty" json:"review_checklist,omitempty" schema:"label=Review Checklist;desc=Items that must be checked before submit completes (e.g. security, performance);type=tags"`
+	RequireSignedCommits bool                       `yaml:"require_signed_commits,omitempty" json:"require_signed_commits,omitempty" schema:"label=Require Signed Commits;desc=Block workflow if GPG commit signing is not enabled;default=false"`
+	DocRequirements      []DocRequirement           `yaml:"doc_requirements,omitempty" json:"doc_requirements,omitempty"`
+	RiskBasedApproval    *RiskBasedApprovalSettings `yaml:"risk_based_approval,omitempty" json:"risk_based_approval,omitempty"`
 }
 
 // RiskBasedApprovalSettings configures automatic approval based on risk scoring.

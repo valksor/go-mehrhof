@@ -20,6 +20,7 @@ func NewStore(dir string) *Store {
 }
 
 // Save persists a group to a JSON file named by its ID.
+// Uses write-to-temp + rename for atomic updates on POSIX systems.
 func (s *Store) Save(g *Group) error {
 	if err := os.MkdirAll(s.dir, 0o755); err != nil {
 		return fmt.Errorf("save group: create dir: %w", err)
@@ -28,9 +29,27 @@ func (s *Store) Save(g *Group) error {
 	if err != nil {
 		return fmt.Errorf("save group: marshal: %w", err)
 	}
-	path := filepath.Join(s.dir, g.ID+".json")
-	if err := os.WriteFile(path, data, 0o644); err != nil {
-		return fmt.Errorf("save group: write: %w", err)
+	finalPath := filepath.Join(s.dir, g.ID+".json")
+
+	// Write to a temp file in the same directory, then rename atomically.
+	tmp, err := os.CreateTemp(s.dir, g.ID+".tmp-*.json")
+	if err != nil {
+		return fmt.Errorf("save group: create temp: %w", err)
+	}
+	tmpPath := tmp.Name()
+
+	if _, err := tmp.Write(data); err != nil {
+		tmp.Close()
+		os.Remove(tmpPath)
+		return fmt.Errorf("save group: write temp: %w", err)
+	}
+	if err := tmp.Close(); err != nil {
+		os.Remove(tmpPath)
+		return fmt.Errorf("save group: close temp: %w", err)
+	}
+	if err := os.Rename(tmpPath, finalPath); err != nil {
+		os.Remove(tmpPath)
+		return fmt.Errorf("save group: rename: %w", err)
 	}
 	return nil
 }

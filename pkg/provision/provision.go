@@ -5,6 +5,7 @@
 package provision
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"log/slog"
@@ -12,6 +13,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"time"
 )
 
 // Options configures worktree provisioning.
@@ -101,16 +103,19 @@ func Provision(srcDir, worktreeDir string, opts Options) (*Result, error) {
 		result.SymlinksCreated = append(result.SymlinksCreated, name)
 	}
 
-	// Run setup commands.
+	// Run setup commands with a 5-minute timeout per command.
 	for _, cmd := range opts.SetupCommands {
 		if strings.TrimSpace(cmd) == "" {
 			continue
 		}
 
-		c := exec.Command("sh", "-c", cmd)
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
+		c := exec.CommandContext(ctx, "sh", "-c", cmd)
 		c.Dir = worktreeDir
 
-		if out, err := c.CombinedOutput(); err != nil {
+		out, err := c.CombinedOutput()
+		cancel()
+		if err != nil {
 			return result, fmt.Errorf("provision: command %q failed: %w\n%s", cmd, err, string(out))
 		}
 

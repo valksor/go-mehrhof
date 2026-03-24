@@ -20,13 +20,14 @@ import (
 	"github.com/google/uuid"
 	"github.com/valksor/kvelmo/pkg/agent/strategy"
 	"github.com/valksor/kvelmo/pkg/eventlog"
+	"github.com/valksor/kvelmo/pkg/failclass"
 	"github.com/valksor/kvelmo/pkg/findings"
-	"github.com/valksor/kvelmo/pkg/respcache"
 	"github.com/valksor/kvelmo/pkg/git"
 	"github.com/valksor/kvelmo/pkg/graph"
 	"github.com/valksor/kvelmo/pkg/memory"
 	"github.com/valksor/kvelmo/pkg/progress"
 	"github.com/valksor/kvelmo/pkg/provider"
+	"github.com/valksor/kvelmo/pkg/respcache"
 	"github.com/valksor/kvelmo/pkg/security"
 	"github.com/valksor/kvelmo/pkg/settings"
 	"github.com/valksor/kvelmo/pkg/storage"
@@ -147,6 +148,10 @@ type Conductor struct {
 
 	// Response cache for avoiding redundant agent calls on identical prompts.
 	responseCache *respcache.Cache
+
+	// failclassHistory persists failure classification history across quality gate runs
+	// within the same session, so that IsFlaky can detect recurring patterns.
+	failclassHistory *failclass.History
 
 	// Cached settings (loaded once, reused across phases).
 	// Uses atomic.Pointer for lock-free access to avoid deadlock when called
