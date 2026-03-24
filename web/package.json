@@ -55,7 +55,6 @@
     "eslint": "^10.1.0",
     "eslint-plugin-jsx-a11y": "^6.10.2",
     "eslint-plugin-react-hooks": "^7.0.1",
-    "fake-indexeddb": "^6.2.5",
     "globals": "^17.4.0",
     "happy-dom": "^20.8.7",
     "tailwindcss": "^4.2.2",

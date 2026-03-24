@@ -4,7 +4,6 @@ import { SocketClient } from '../lib/socket'
 import { debounce } from '../lib/debounce'
 import { reconnectDelay } from '../lib/reconnect'
 import { storeName } from '../meta'
-import { cacheGlobalState, getCachedGlobalState } from '../lib/offline-store'
 import type {
   WorktreeInfo,
   WorkerInfo,
@@ -119,9 +118,6 @@ interface GlobalState {
   // Jobs
   jobs: Job[]
 
-  // Offline cache
-  isStale: boolean
-
   // Connection
   connect: () => Promise<void>
   disconnect: () => void
@@ -191,8 +187,6 @@ export const useGlobalStore = create<GlobalState>()(
       loading: false,
       error: null,
       activeTasks: [],
-      isStale: false,
-
       connect: async () => {
         if (get().connected || get().connecting) return
 
@@ -251,8 +245,9 @@ export const useGlobalStore = create<GlobalState>()(
           // Clean up previous subscription if any (defensive - shouldn't happen with new client)
           get().unsubscribeSocket?.()
 
-          // Create debounced task loader to prevent RPC flood on rapid state changes
+          // Create debounced loaders to prevent RPC flood on rapid state changes
           const debouncedLoadTasks = debounce(() => get().loadActiveTasks(), 500)
+          const debouncedLoadWorkers = debounce(() => get().loadWorkers(), 500)
 
           // Subscribe to server-pushed notifications (e.g., task_state_changed)
           const unsubscribe = client.subscribe((msg: unknown) => {
@@ -260,6 +255,8 @@ export const useGlobalStore = create<GlobalState>()(
             if (notification.method === 'task_state_changed') {
               // Debounced refresh to prevent cascade on rapid updates
               debouncedLoadTasks()
+            } else if (notification.method === 'worker_changed') {
+              debouncedLoadWorkers()
             }
           })
 
@@ -271,6 +268,7 @@ export const useGlobalStore = create<GlobalState>()(
             error: null,
             unsubscribeSocket: () => {
               debouncedLoadTasks.cancel()
+              debouncedLoadWorkers.cancel()
               unsubscribe()
             }
           })
@@ -326,10 +324,7 @@ export const useGlobalStore = create<GlobalState>()(
           const result = await client.call<{ projects: WorktreeInfo[] }>('projects.list')
           const projects = result.projects || []
 
-          set({ projects, loading: false, isStale: false })
-
-          // Update offline cache with fresh data (non-blocking)
-          cacheGlobalState({ projects, activeTasks: get().activeTasks })
+          set({ projects, loading: false })
         } catch (err) {
           set({
             error: err instanceof Error ? err.message : 'Failed to load projects',
@@ -556,9 +551,6 @@ export const useGlobalStore = create<GlobalState>()(
         try {
           const result = await client.call<{ tasks: TaskListSummary[] }>('tasks.list')
           set({ activeTasks: result.tasks || [] })
-
-          // Update offline cache (non-blocking)
-          cacheGlobalState({ projects: get().projects, activeTasks: result.tasks || [] })
         } catch (err) {
           console.warn('Failed to load active tasks:', err)
         }
@@ -655,19 +647,3 @@ export const useGlobalStore = create<GlobalState>()(
   )
 )
 
-// Hydrate from offline cache on startup (non-blocking).
-// This populates the store with cached data before the socket connects,
-// so the UI renders instantly on reconnect instead of showing a blank state.
-getCachedGlobalState<{ projects: WorktreeInfo[]; activeTasks: TaskListSummary[] }>().then(cached => {
-  if (cached) {
-    const state = useGlobalStore.getState()
-    // Only hydrate if the store hasn't already been populated by a live connection
-    if (!state.connected && state.projects.length === 0) {
-      useGlobalStore.setState({
-        projects: cached.data.projects ?? [],
-        activeTasks: cached.data.activeTasks ?? [],
-        isStale: cached.stale,
-      })
-    }
-  }
-})
