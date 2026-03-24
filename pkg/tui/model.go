@@ -321,7 +321,8 @@ func (m *Model) activeWorktree() *WorktreeState {
 // syncViewport rebuilds the viewport content from the active worktree output.
 func (m *Model) syncViewport() {
 	if wt := m.activeWorktree(); wt != nil {
-		m.output.SetContent(strings.Join(wt.Output, "\n"))
+		annotated := annotateOutputLines(wt.Output)
+		m.output.SetContent(strings.Join(annotated, "\n"))
 		m.output.GotoBottom()
 	}
 }
