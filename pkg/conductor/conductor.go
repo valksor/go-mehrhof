@@ -155,6 +155,11 @@ type Conductor struct {
 
 	// adversarialFindings stores the most recent adversarial review results.
 	adversarialFindings []findings.Finding
+
+	// taskGroupChecker is called during submit to verify cross-repo group readiness.
+	// When non-nil and sync_submit is enabled, it blocks submit until all group
+	// members reach the reviewing state. Set via SetTaskGroupChecker.
+	taskGroupChecker TaskGroupChecker
 }
 
 // ConductorEvent represents an event emitted by the conductor.

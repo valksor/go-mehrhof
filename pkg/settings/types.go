@@ -345,6 +345,7 @@ type WorkflowSettings struct {
 	PhaseGuardrails       map[string]GuardrailConfig    `yaml:"phase_guardrails,omitempty" json:"phase_guardrails,omitempty" schema:"label=Phase Guardrails;desc=Pre/post validation checks per phase;type=json;advanced"`
 	AdversarialReview     *AdversarialReviewSettings    `yaml:"adversarial_review,omitempty" json:"adversarial_review,omitempty"`
 	Forking               *ForkingSettings              `yaml:"forking,omitempty" json:"forking,omitempty"`
+	TaskGroups            *TaskGroupSettings            `yaml:"task_groups,omitempty" json:"task_groups,omitempty"`
 }
 
 // AdversarialReviewSettings configures persona-based adversarial code review.
@@ -359,6 +360,12 @@ type AdversarialReviewSettings struct {
 type ForkingSettings struct {
 	Enabled  bool `yaml:"enabled,omitempty" json:"enabled,omitempty" schema:"label=Forking;desc=Allow forking tasks into parallel alternative approaches;default=false"`
 	MaxForks int  `yaml:"max_forks,omitempty" json:"max_forks,omitempty" schema:"label=Max Forks;desc=Maximum number of parallel forks per task;default=3;min=1;max=10"`
+}
+
+// TaskGroupSettings configures cross-repo task group coordination.
+type TaskGroupSettings struct {
+	Enabled    bool `yaml:"enabled,omitempty" json:"enabled,omitempty" schema:"label=Task Groups;desc=Enable cross-repo task group coordination;default=false"`
+	SyncSubmit bool `yaml:"sync_submit,omitempty" json:"sync_submit,omitempty" schema:"label=Sync Submit;desc=All group members must be ready before any can submit;default=true"`
 }
 
 // GuardrailConfig defines pre and post guardrails for a workflow phase.

@@ -333,6 +333,14 @@ func (g *GlobalSocket) registerHandlers() {
 	g.server.Handle("access.token.list", g.handleAccessTokenList)
 	g.server.Handle("access.token.create", g.handleAccessTokenCreate)
 	g.server.Handle("access.token.revoke", g.handleAccessTokenRevoke)
+
+	// Task groups (cross-repo coordination)
+	g.server.Handle("taskgroup.create", g.handleTaskGroupCreate)
+	g.server.Handle("taskgroup.list", g.handleTaskGroupList)
+	g.server.Handle("taskgroup.status", g.handleTaskGroupStatus)
+	g.server.Handle("taskgroup.add", g.handleTaskGroupAdd)
+	g.server.Handle("taskgroup.submit", g.handleTaskGroupSubmit)
+	g.server.Handle("taskgroup.remove", g.handleTaskGroupRemove)
 }
 
 // --- Ping ---

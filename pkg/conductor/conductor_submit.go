@@ -95,6 +95,22 @@ func (c *Conductor) Submit(ctx context.Context, deleteBranch bool) error {
 		}
 	}
 
+	// Check task group readiness (cross-repo synchronized submit)
+	if c.taskGroupChecker != nil {
+		syncSubmit := true
+		if tg := settings.Workflow.TaskGroups; tg != nil {
+			syncSubmit = tg.SyncSubmit
+		}
+		taskID := c.workUnit.ID
+		c.mu.Unlock()
+		ok, groupErr := c.taskGroupChecker.CanSubmit(taskID, syncSubmit)
+		c.mu.Lock()
+		if !ok {
+			c.mu.Unlock()
+			return groupErr
+		}
+	}
+
 	// Check approval requirement
 	if err := c.checkApproval(EventSubmit); err != nil {
 		c.mu.Unlock()

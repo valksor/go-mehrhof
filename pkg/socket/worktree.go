@@ -143,6 +143,11 @@ func NewWorktreeSocket(cfg WorktreeConfig) (*WorktreeSocket, error) {
 		}
 	}
 
+	// Wire task group checker for cross-repo synchronized submit.
+	if tgc := GetTaskGroupCoordinator(); tgc != nil {
+		cond.SetTaskGroupChecker(tgc)
+	}
+
 	// Initialize screenshot store in .mehrhof directory
 	mehrhofPath := filepath.Join(cfg.WorktreePath, ".mehrhof")
 

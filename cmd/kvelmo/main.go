@@ -214,6 +214,9 @@ func init() {
 	// Conversation forking
 	rootCmd.AddCommand(commands.ForkCmd)
 
+	// Cross-repo task groups
+	rootCmd.AddCommand(commands.GroupCmd)
+
 	// Raw JSON-RPC access
 	rootCmd.AddCommand(commands.RPCCmd)
 
