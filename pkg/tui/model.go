@@ -283,6 +283,11 @@ func (m *Model) handleSocketEvent(msg socketEventMsg) (tea.Model, tea.Cmd) {
 			if m.active == i {
 				m.syncViewport()
 			}
+		case "cache_hit":
+			m.worktrees[i].Output = append(m.worktrees[i].Output, msg.event.Message+" [cached]")
+			if m.active == i {
+				m.syncViewport()
+			}
 		case "state_changed":
 			m.worktrees[i].State = string(msg.event.State)
 			if string(msg.event.State) != "failed" {

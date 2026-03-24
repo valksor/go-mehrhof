@@ -77,6 +77,15 @@ export interface FilesEntry {
   modified?: string
 }
 
+export interface CacheStats {
+  enabled: boolean
+  entries: number
+  hits: number
+  misses: number
+  hit_rate: number
+  tokens_saved: number
+}
+
 export interface Review {
   number: number
   timestamp: string
@@ -322,6 +331,11 @@ interface ProjectState {
   // Recap (resume context)
   recap: RecapData | null
   loadRecap: () => Promise<void>
+
+  // Response cache stats
+  cacheStats: CacheStats | null
+  loadCacheStats: () => Promise<void>
+  clearCache: () => Promise<void>
 }
 
 export const useProjectStore = create<ProjectState>((set, get) => ({
@@ -356,6 +370,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
   tags: [],
   pendingNodeApprovals: [],
   ciFixStatus: null,
+  cacheStats: null,
   dryRunMode: false,
   toggleDryRun: () => {
     set(s => ({ dryRunMode: !s.dryRunMode }))
@@ -1536,6 +1551,30 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
       set({ recap: result })
     } catch {
       // Recap may not be available
+    }
+  },
+
+  loadCacheStats: async () => {
+    const client = get().client
+    if (!client) return
+
+    try {
+      const result = await client.call<CacheStats>('cache.stats', {})
+      set({ cacheStats: result })
+    } catch {
+      // Cache stats may not be available
+    }
+  },
+
+  clearCache: async () => {
+    const client = get().client
+    if (!client) return
+
+    try {
+      await client.call('cache.clear', {})
+      set({ cacheStats: { enabled: true, entries: 0, hits: 0, misses: 0, hit_rate: 0, tokens_saved: 0 } })
+    } catch {
+      // Ignore clear failures
     }
   }
 }))

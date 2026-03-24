@@ -20,6 +20,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/valksor/kvelmo/pkg/agent/strategy"
 	"github.com/valksor/kvelmo/pkg/eventlog"
+	"github.com/valksor/kvelmo/pkg/respcache"
 	"github.com/valksor/kvelmo/pkg/git"
 	"github.com/valksor/kvelmo/pkg/graph"
 	"github.com/valksor/kvelmo/pkg/memory"
@@ -133,6 +134,9 @@ type Conductor struct {
 	// Inspired by Dify/RAGFlow per-node error strategies.
 	phasePolicies map[string]PhasePolicy
 	retryCount    map[string]int // phase → current retry count
+
+	// Response cache for avoiding redundant agent calls on identical prompts.
+	responseCache *respcache.Cache
 
 	// Cached settings (loaded once, reused across phases).
 	// Uses atomic.Pointer for lock-free access to avoid deadlock when called
@@ -368,6 +372,7 @@ func New(opts ...Option) (*Conductor, error) {
 	c.cachedSettings.Store(effectiveSettings) // Cache pre-loaded settings (atomic)
 	c.loadPhasePoliciesFromSettings()
 	c.loadStrategiesFromSettings()
+	c.initResponseCache(effectiveSettings)
 
 	// Subscribe to state machine changes
 	machine.AddListener(c.onStateChanged)

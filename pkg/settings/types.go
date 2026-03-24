@@ -48,7 +48,8 @@ type AgentSettings struct {
 	Strategy      string            `yaml:"strategy,omitempty" json:"strategy,omitempty" schema:"label=Default Strategy;desc=Agent reasoning strategy (direct = pass-through, iterative = self-review loop);options=direct|iterative;default=direct"`
 	PhaseStrategy map[string]string `yaml:"phase_strategy,omitempty" json:"phase_strategy,omitempty" schema:"label=Per-Phase Strategy;desc=Override strategy per phase (e.g. plan: iterative);type=keyvalue;advanced"`
 	PhaseAgent    map[string]string `yaml:"phase_agent,omitempty" json:"phase_agent,omitempty" schema:"label=Per-Phase Agent;desc=Override agent per phase (e.g. plan: gemini, implement: claude);type=keyvalue;advanced"`
-	Consensus     *ConsensusConfig  `yaml:"consensus,omitempty" json:"consensus,omitempty"`
+	Consensus     *ConsensusConfig       `yaml:"consensus,omitempty" json:"consensus,omitempty"`
+	ResponseCache *ResponseCacheSettings `yaml:"response_cache,omitempty" json:"response_cache,omitempty"`
 
 	// API agent settings
 	OpenAI    OpenAIAgentConfig    `yaml:"openai,omitempty" json:"openai,omitempty"`
@@ -61,6 +62,13 @@ type ConsensusConfig struct {
 	Enabled      bool     `yaml:"enabled,omitempty" json:"enabled,omitempty" schema:"label=Enable Consensus;desc=Run reviews with multiple agents and merge findings;default=false"`
 	Agents       []string `yaml:"agents,omitempty" json:"agents,omitempty" schema:"label=Consensus Agents;desc=Agent names to use for consensus review;type=tags"`
 	MinAgreement int      `yaml:"min_agreement,omitempty" json:"min_agreement,omitempty" schema:"label=Min Agreement;desc=Minimum number of agents that must detect a finding;default=1;min=1"`
+}
+
+// ResponseCacheSettings configures the semantic response cache for agent prompts.
+type ResponseCacheSettings struct {
+	Enabled    bool `yaml:"enabled,omitempty" json:"enabled,omitempty" schema:"label=Response Cache;desc=Cache agent responses to avoid redundant calls for identical prompts;default=false"`
+	MaxEntries int  `yaml:"max_entries,omitempty" json:"max_entries,omitempty" schema:"label=Max Entries;desc=Maximum cached responses;default=1000;min=10;max=10000;advanced"`
+	TTLHours   int  `yaml:"ttl_hours,omitempty" json:"ttl_hours,omitempty" schema:"label=TTL Hours;desc=Cache entry time-to-live in hours;default=168;min=1;max=720;advanced"`
 }
 
 // CustomAgent defines a user-created agent that wraps a base agent.
