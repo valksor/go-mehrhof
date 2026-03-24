@@ -236,6 +236,9 @@ interface ProjectState {
   // CI fix loop status
   ciFixStatus: { active: boolean; attempt?: number; maxAttempts?: number; result?: 'success' | 'failed' } | null
 
+  // Quality gate auto-fix loop status
+  autoFixStatus: { active: boolean; attempt?: number; maxAttempts?: number; result?: 'success' | 'failed' } | null
+
   // Dry-run mode
   dryRunMode: boolean
   toggleDryRun: () => void
@@ -356,6 +359,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
   tags: [],
   pendingNodeApprovals: [],
   ciFixStatus: null,
+  autoFixStatus: null,
   dryRunMode: false,
   toggleDryRun: () => {
     set(s => ({ dryRunMode: !s.dryRunMode }))
@@ -542,6 +546,22 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
           get().appendOutput(msg.message || 'CI fix: attempt failed, retrying...')
         } else if (msg.type === 'ci_fix_started') {
           get().appendOutput(msg.message || 'CI fix: starting fix job...')
+        } else if (msg.type === 'autofix_attempt') {
+          const afMsg = msg as { data?: { attempt?: number; max_attempts?: number } }
+          set({ autoFixStatus: { active: true, attempt: afMsg.data?.attempt, maxAttempts: afMsg.data?.max_attempts } })
+          get().appendOutput(msg.message || 'Auto-fix: attempting quality gate fix...')
+        } else if (msg.type === 'autofix_success') {
+          set({ autoFixStatus: { active: false, result: 'success' } })
+          get().appendOutput(msg.message || 'Auto-fix: quality gate passed')
+          sendNotification('Auto-Fix Success', 'Quality gate passed after fix')
+        } else if (msg.type === 'autofix_exhausted') {
+          set({ autoFixStatus: { active: false, result: 'failed' } })
+          get().appendOutput(msg.message || 'Auto-fix: all attempts exhausted')
+          sendNotification('Auto-Fix Failed', 'Quality gate still failing after all fix attempts')
+        } else if (msg.type === 'autofix_job_failed') {
+          get().appendOutput(msg.message || 'Auto-fix: fix job failed, retrying...')
+        } else if (msg.type === 'autofix_started') {
+          get().appendOutput(msg.message || 'Auto-fix: starting fix job...')
         } else if (msg.type === 'consensus_review_complete') {
           get().appendOutput(msg.message || 'Consensus review complete')
           debouncedRefresh()
@@ -659,6 +679,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
       tags: [],
       pendingNodeApprovals: [],
       ciFixStatus: null,
+      autoFixStatus: null,
       recap: null,
     })
   },

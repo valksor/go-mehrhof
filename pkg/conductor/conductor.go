@@ -116,6 +116,10 @@ type Conductor struct {
 	// lastFailureClass records the classification of the most recent phase failure.
 	lastFailureClass FailureClass
 
+	// Auto-fix loop state: tracks the current attempt and last error.
+	autoFixAttempt int
+	autoFixLastErr string
+
 	// dryRun simulates phases without agent execution.
 	dryRun bool
 
@@ -750,6 +754,33 @@ func (c *Conductor) SetDryRun(v bool) {
 	defer c.mu.Unlock()
 
 	c.dryRun = v
+}
+
+// AutoFixStatus returns the current state of the quality gate auto-fix loop.
+type AutoFixStatus struct {
+	Active      bool   `json:"active"`
+	Attempt     int    `json:"attempt"`
+	MaxAttempts int    `json:"max_attempts"`
+	LastError   string `json:"last_error,omitempty"`
+}
+
+// GetAutoFixStatus returns the current auto-fix loop state.
+func (c *Conductor) GetAutoFixStatus() AutoFixStatus {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+
+	s := c.getEffectiveSettings()
+	maxAttempts := 3
+	if s != nil && s.Workflow.AutoFix.MaxAttempts > 0 {
+		maxAttempts = s.Workflow.AutoFix.MaxAttempts
+	}
+
+	return AutoFixStatus{
+		Active:      c.autoFixAttempt > 0,
+		Attempt:     c.autoFixAttempt,
+		MaxAttempts: maxAttempts,
+		LastError:   c.autoFixLastErr,
+	}
 }
 
 // LastFailureClass returns the classification of the most recent phase failure.
