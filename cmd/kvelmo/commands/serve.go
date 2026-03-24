@@ -205,8 +205,8 @@ func runServe(cmd *cobra.Command, args []string) error {
 		metricsPersister.Load()
 		go metricsPersister.Start(ctx)
 
-		// Load settings for optional features
-		cfg, _, _, _ := settings.LoadEffective("")
+		// Reuse effective settings loaded earlier
+		cfg := effective
 
 		// Start notification engine if enabled
 		if cfg.Notify.Enabled != nil && *cfg.Notify.Enabled && len(cfg.Notify.Webhooks) > 0 {

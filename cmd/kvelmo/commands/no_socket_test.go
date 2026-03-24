@@ -33,6 +33,9 @@ func noSocketGlobalTest(t *testing.T, name string, fn func(*cobra.Command, []str
 
 func TestWorktreeCommandsNoSocket(t *testing.T) {
 	noSocketWorktreeTest(t, "abandon", runAbandon, AbandonCmd)
+	// abort and reset have confirmation prompts; set --force to bypass in tests
+	AbortCmd.Flags().Set("force", "true")                        //nolint:errcheck // test setup
+	t.Cleanup(func() { AbortCmd.Flags().Set("force", "false") }) //nolint:errcheck // test cleanup
 	noSocketWorktreeTest(t, "abort", runAbort, AbortCmd)
 	noSocketWorktreeTest(t, "plan", runPlan, PlanCmd)
 	noSocketWorktreeTest(t, "implement", runImplement, ImplementCmd)
@@ -40,6 +43,8 @@ func TestWorktreeCommandsNoSocket(t *testing.T) {
 	noSocketWorktreeTest(t, "submit", runSubmit, SubmitCmd)
 	noSocketWorktreeTest(t, "undo", runUndo, UndoCmd)
 	noSocketWorktreeTest(t, "redo", runRedo, RedoCmd)
+	ResetCmd.Flags().Set("force", "true")                        //nolint:errcheck // test setup
+	t.Cleanup(func() { ResetCmd.Flags().Set("force", "false") }) //nolint:errcheck // test cleanup
 	noSocketWorktreeTest(t, "reset", runReset, ResetCmd)
 	noSocketWorktreeTest(t, "simplify", runSimplify, SimplifyCmd)
 	noSocketWorktreeTest(t, "update", runUpdate, UpdateCmd)

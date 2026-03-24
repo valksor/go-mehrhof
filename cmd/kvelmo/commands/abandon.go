@@ -24,7 +24,11 @@ func init() {
 func runAbandon(cmd *cobra.Command, args []string) error {
 	keepBranch, _ := cmd.Flags().GetBool("keep-branch")
 
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	base := cmd.Context()
+	if base == nil {
+		base = context.Background()
+	}
+	ctx, cancel := context.WithTimeout(base, 30*time.Second)
 	defer cancel()
 
 	_, err := callWorktree(ctx, "abandon", map[string]any{

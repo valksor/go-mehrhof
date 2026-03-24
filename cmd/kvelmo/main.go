@@ -124,6 +124,8 @@ func init() {
 	rootCmd.AddCommand(commands.GitLabCmd)
 	rootCmd.AddCommand(commands.LinearCmd)
 	rootCmd.AddCommand(commands.WrikeCmd)
+	rootCmd.AddCommand(commands.JiraCmd)
+	rootCmd.AddCommand(commands.AzureDevOpsCmd)
 
 	// Remote operations (approve/merge PR)
 	rootCmd.AddCommand(commands.RemoteCmd)
@@ -196,6 +198,12 @@ func init() {
 
 	// Quick-fix workflow
 	rootCmd.AddCommand(commands.QuickCmd)
+
+	// Task recap (resume context)
+	rootCmd.AddCommand(commands.RecapCmd)
+
+	// Code graph
+	rootCmd.AddCommand(commands.CodegraphCmd)
 
 	// Raw JSON-RPC access
 	rootCmd.AddCommand(commands.RPCCmd)

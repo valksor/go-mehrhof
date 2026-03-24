@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/spf13/cobra"
@@ -28,6 +29,8 @@ func init() {
 	SubmitCmd.Flags().StringSlice("labels", nil, "Add labels")
 	SubmitCmd.Flags().Bool("delete-branch", false, "Delete local branch after successful submission")
 	SubmitCmd.Flags().Bool("skip-review", false, "Skip review gate and submit directly")
+	SubmitCmd.Flags().Bool("dry-run", false, "Preview the PR without creating it")
+	SubmitCmd.Flags().StringSlice("section", nil, "Add custom PR section (format: \"Header=Content\")")
 	SubmitCmd.Flags().Bool("json", false, "Output result as JSON")
 }
 
@@ -52,6 +55,19 @@ func runSubmit(cmd *cobra.Command, args []string) error {
 	labels, _ := cmd.Flags().GetStringSlice("labels")
 	deleteBranch, _ := cmd.Flags().GetBool("delete-branch")
 	skipReview, _ := cmd.Flags().GetBool("skip-review")
+	dryRun, _ := cmd.Flags().GetBool("dry-run")
+	sectionFlags, _ := cmd.Flags().GetStringSlice("section")
+
+	// Parse --section flags into map
+	sections := make(map[string]string)
+	for _, s := range sectionFlags {
+		parts := strings.SplitN(s, "=", 2)
+		if len(parts) == 2 {
+			sections[parts[0]] = parts[1]
+		} else {
+			fmt.Fprintf(os.Stderr, "Warning: ignoring malformed --section %q (expected format: Header=Content)\n", s)
+		}
+	}
 
 	params := map[string]any{
 		"title":         title,
@@ -61,6 +77,10 @@ func runSubmit(cmd *cobra.Command, args []string) error {
 		"labels":        labels,
 		"delete_branch": deleteBranch,
 		"skip_review":   skipReview,
+		"dry_run":       dryRun,
+	}
+	if len(sections) > 0 {
+		params["sections"] = sections
 	}
 
 	// Use 2 minute timeout for submit since it involves git push + PR creation
@@ -80,16 +100,49 @@ func runSubmit(cmd *cobra.Command, args []string) error {
 	}
 
 	var result map[string]any
-	if err := json.Unmarshal(resp.Result, &result); err == nil {
-		if url, ok := result["url"].(string); ok && url != "" {
-			prTitle, _ := result["title"].(string)
-			fmt.Printf("PR created: %s\n", url)
-			if prTitle != "" {
-				fmt.Printf("Title: %s\n", prTitle)
-			}
+	if err := json.Unmarshal(resp.Result, &result); err != nil {
+		fmt.Printf("Submitted: %s\n", string(resp.Result))
 
-			return nil
+		return nil
+	}
+
+	// Handle dry-run preview output
+	if dryRun {
+		if preview, ok := result["preview"].(map[string]any); ok {
+			fmt.Println("=== PR Preview (dry-run) ===")
+			fmt.Println()
+			if t, ok := preview["title"].(string); ok {
+				fmt.Printf("Title: %s\n", t)
+			}
+			if branch, ok := preview["branch"].(string); ok {
+				fmt.Printf("Branch: %s\n", branch)
+			}
+			if base, ok := preview["base_branch"].(string); ok && base != "" {
+				fmt.Printf("Base: %s\n", base)
+			}
+			fmt.Println()
+			if b, ok := preview["body"].(string); ok {
+				fmt.Println(b)
+			}
+		} else {
+			fmt.Println("Dry-run complete (no preview available)")
 		}
+
+		return nil
+	}
+
+	if url, ok := result["url"].(string); ok && url != "" {
+		prTitle, _ := result["title"].(string)
+		fmt.Printf("PR created: %s\n", url)
+		if prTitle != "" {
+			fmt.Printf("Title: %s\n", prTitle)
+		}
+		fmt.Println("\nNext steps:")
+		fmt.Println("  1. Wait for CI checks to pass")
+		fmt.Println("  2. Merge the PR when ready")
+		fmt.Println("  3. Run 'kvelmo finish' to clean up the worktree")
+
+		return nil
 	}
 
 	// Fallback: print raw response

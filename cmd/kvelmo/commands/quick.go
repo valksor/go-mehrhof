@@ -18,10 +18,11 @@ import (
 var (
 	quickSource string
 	quickText   string
+	quickSkip   []string
 )
 
 var QuickCmd = &cobra.Command{
-	Use:   "quick",
+	Use:   "quick [description]",
 	Short: "Quick-fix workflow: load, implement, and submit in one step",
 	Long: `Start a task in quick mode, skipping planning and review phases.
 Useful for trivial fixes where the full lifecycle is overkill.
@@ -35,15 +36,20 @@ Useful for trivial fixes where the full lifecycle is overkill.
 func init() {
 	QuickCmd.Flags().StringVar(&quickSource, "from", "", "Task source")
 	QuickCmd.Flags().StringVar(&quickText, "text", "", "Inline task description")
+	QuickCmd.Flags().StringSliceVar(&quickSkip, "skip", nil, "Additional phases to skip (e.g., --skip simplify,optimize)")
 }
 
-func runQuick(_ *cobra.Command, _ []string) error {
+func runQuick(_ *cobra.Command, args []string) error {
 	if quickText == "-" {
 		data, err := io.ReadAll(os.Stdin)
 		if err != nil {
 			return fmt.Errorf("read stdin: %w", err)
 		}
 		quickText = strings.TrimSpace(string(data))
+	}
+	// Accept positional arg as inline text: kvelmo quick "fix the typo"
+	if quickText == "" && quickSource == "" && len(args) > 0 {
+		quickText = strings.Join(args, " ")
 	}
 	if quickText != "" && quickSource != "" {
 		return errors.New("--text and --from are mutually exclusive")
@@ -52,7 +58,7 @@ func runQuick(_ *cobra.Command, _ []string) error {
 		quickSource = "empty:" + quickText
 	}
 	if quickSource == "" {
-		return errors.New("one of --from or --text is required")
+		return errors.New("one of --from or --text is required, or pass description as argument")
 	}
 
 	cwd, err := os.Getwd()
@@ -73,9 +79,9 @@ func runQuick(_ *cobra.Command, _ []string) error {
 	defer func() { _ = client.Close() }()
 
 	params := map[string]any{
-		"source":    quickSource,
-		"auto":      true,
-		"skip_plan": true,
+		"source":       quickSource,
+		"auto_advance": true,
+		"skip_phases":  append([]string{"plan"}, quickSkip...),
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)

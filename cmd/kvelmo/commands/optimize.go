@@ -69,9 +69,8 @@ func runOptimize(cmd *cobra.Command, args []string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	var params map[string]any
-	if optimizeDryRun {
-		params = map[string]any{"dry_run": true}
+	params := map[string]any{
+		"dry_run": optimizeDryRun,
 	}
 
 	resp, err := client.Call(ctx, "optimize", params)

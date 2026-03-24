@@ -48,14 +48,15 @@ type Model struct {
 	chatInput textinput.Model // bubbles text input for chat
 	msgs      chan tea.Msg    // fan-in channel from all socket connections
 	//nolint:containedctx // Model owns its shutdown context for goroutine lifecycle management
-	ctx      context.Context
-	cancel   context.CancelFunc
-	width    int
-	height   int
-	ready    bool
-	showHelp bool
-	dryRun   bool
-	err      error
+	ctx       context.Context
+	cancel    context.CancelFunc
+	width     int
+	height    int
+	ready     bool
+	showHelp  bool
+	dryRun    bool
+	startMode bool // when true, Enter sends task start instead of chat message
+	err       error
 }
 
 // NewModel constructs a new TUI model with the given cwd and layout.
@@ -118,6 +119,12 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case socketEventMsg:
 		return m.handleSocketEvent(msg)
 
+	case specResultMsg:
+		m.output.SetContent(msg.content)
+		m.output.GotoTop()
+
+		return m, nil
+
 	case errMsg:
 		m.err = msg.err
 
@@ -160,6 +167,12 @@ func (m *Model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		text := m.chatInput.Value()
 		if text != "" {
 			m.chatInput.SetValue("")
+			if m.startMode {
+				m.startMode = false
+				m.chatInput.Placeholder = "Chat with agent..."
+
+				return m, m.sendStartTask(text)
+			}
 
 			return m, m.sendChatMessage(text)
 		}
@@ -179,6 +192,43 @@ func (m *Model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	case "s":
 		if !m.chatInput.Focused() {
 			return m, m.sendWorkflowCmd("stop")
+		}
+
+	case "u":
+		if !m.chatInput.Focused() {
+			return m, m.sendWorkflowCmd("undo")
+		}
+
+	case "r":
+		if !m.chatInput.Focused() {
+			return m, m.sendWorkflowCmd("redo")
+		}
+
+	case "v":
+		if !m.chatInput.Focused() {
+			return m, m.fetchSpec()
+		}
+
+	case "t":
+		if !m.chatInput.Focused() {
+			m.startMode = !m.startMode
+			if m.startMode {
+				m.chatInput.Placeholder = "Enter task description..."
+			} else {
+				m.chatInput.Placeholder = "Chat with agent..."
+			}
+
+			return m, nil
+		}
+
+	case "R":
+		if !m.chatInput.Focused() {
+			return m, m.sendWorkflowCmd("review")
+		}
+
+	case "S":
+		if !m.chatInput.Focused() {
+			return m, m.sendWorkflowCmd("submit")
 		}
 
 	case "d":
@@ -309,12 +359,93 @@ func (m *Model) sendChatMessage(text string) tea.Cmd {
 		}
 		defer func() { _ = client.Close() }()
 
-		params, _ := json.Marshal(map[string]string{"message": text})
+		params, err := json.Marshal(map[string]string{"message": text})
+		if err != nil {
+			return errMsg{err: fmt.Errorf("marshal params: %w", err)}
+		}
 		if _, err := client.Call(m.ctx, "chat.send", json.RawMessage(params)); err != nil {
 			return errMsg{err: fmt.Errorf("chat.send: %w", err)}
 		}
 
 		return nil
+	}
+}
+
+// sendStartTask returns a tea.Cmd that starts a new task with the given description.
+func (m *Model) sendStartTask(description string) tea.Cmd {
+	wt := m.activeWorktree()
+	if wt == nil {
+		return nil
+	}
+	dir := wt.Dir
+
+	return func() tea.Msg {
+		socketPath := socket.WorktreeSocketPath(dir)
+		client, err := socket.NewClient(socketPath, socket.WithTimeout(5*time.Second))
+		if err != nil {
+			return errMsg{err: fmt.Errorf("start: %w", err)}
+		}
+		defer func() { _ = client.Close() }()
+
+		params, err := json.Marshal(map[string]string{"source": description})
+		if err != nil {
+			return errMsg{err: fmt.Errorf("marshal params: %w", err)}
+		}
+		if _, err := client.Call(m.ctx, "start", json.RawMessage(params)); err != nil {
+			return errMsg{err: fmt.Errorf("start: %w", err)}
+		}
+
+		return nil
+	}
+}
+
+// specResultMsg carries the spec content fetched from the worktree socket.
+type specResultMsg struct {
+	content string
+}
+
+// fetchSpec returns a tea.Cmd that fetches the current specification and displays it in the viewport.
+func (m *Model) fetchSpec() tea.Cmd {
+	wt := m.activeWorktree()
+	if wt == nil {
+		return nil
+	}
+	dir := wt.Dir
+
+	return func() tea.Msg {
+		socketPath := socket.WorktreeSocketPath(dir)
+		client, err := socket.NewClient(socketPath, socket.WithTimeout(5*time.Second))
+		if err != nil {
+			return errMsg{err: fmt.Errorf("show.spec: %w", err)}
+		}
+		defer func() { _ = client.Close() }()
+
+		resp, err := client.Call(m.ctx, "show.spec", nil)
+		if err != nil {
+			return errMsg{err: fmt.Errorf("show.spec: %w", err)}
+		}
+
+		var result struct {
+			Specifications []struct {
+				Content string `json:"content"`
+			} `json:"specifications"`
+		}
+		if err := json.Unmarshal(resp.Result, &result); err != nil {
+			return errMsg{err: fmt.Errorf("parse spec: %w", err)}
+		}
+
+		var content string
+		for _, spec := range result.Specifications {
+			if content != "" {
+				content += "\n---\n\n"
+			}
+			content += spec.Content
+		}
+		if content == "" {
+			content = "No specification available."
+		}
+
+		return specResultMsg{content: content}
 	}
 }
 

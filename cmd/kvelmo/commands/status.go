@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/spf13/cobra"
@@ -19,6 +20,8 @@ var (
 	statusJSON    bool
 	statusAll     bool
 	statusFull    bool
+	statusBlocked bool
+	statusFailed  bool
 )
 
 var StatusCmd = &cobra.Command{
@@ -35,10 +38,16 @@ func init() {
 	StatusCmd.Flags().BoolVar(&statusJSON, "json", false, "Output raw JSON response")
 	StatusCmd.Flags().BoolVarP(&statusAll, "all", "a", false, "Show status of all active projects")
 	StatusCmd.Flags().BoolVar(&statusFull, "full", false, "Show extended status including checkpoints")
+	StatusCmd.Flags().BoolVar(&statusBlocked, "blocked", false, "Show only tasks needing attention (failed, waiting for prompt)")
+	StatusCmd.Flags().BoolVar(&statusFailed, "failed", false, "Show only failed tasks")
 }
 
 func runStatus(cmd *cobra.Command, args []string) error {
-	if statusAll {
+	if statusFailed && statusBlocked {
+		return errors.New("--failed and --blocked are mutually exclusive")
+	}
+
+	if statusAll || statusBlocked || statusFailed {
 		return showAllStatus()
 	}
 
@@ -116,6 +125,10 @@ func runStatus(cmd *cobra.Command, args []string) error {
 		}
 	}
 
+	if len(result.SkipPhases) > 0 {
+		fmt.Printf("Skip:  %s\n", strings.Join(result.SkipPhases, ", "))
+	}
+
 	if result.PendingPromptID != "" {
 		fmt.Printf("\n! Quality gate waiting for your input.\n")
 		fmt.Printf("  Run: kvelmo quality respond --prompt-id %s [--yes|--no]\n", result.PendingPromptID)
@@ -167,22 +180,35 @@ func showAllStatus() error {
 		return fmt.Errorf("parse tasks list: %w", err)
 	}
 
-	// Filter to only active tasks (state != "none") unless --verbose
+	// Filter tasks based on flags
 	active := make([]socket.TaskListSummary, 0, len(result.Tasks))
 	for _, t := range result.Tasks {
-		if statusVerbose || (t.State != "" && t.State != "none") {
-			active = append(active, t)
+		if !statusVerbose && (t.State == "" || t.State == "none") {
+			continue
 		}
+		if statusFailed && t.State != "failed" {
+			continue
+		}
+		if statusBlocked && !isBlockedTask(t) {
+			continue
+		}
+		active = append(active, t)
 	}
 
 	if len(active) == 0 {
-		fmt.Println("No active tasks across projects")
+		if statusFailed {
+			fmt.Println("No failed tasks")
+		} else if statusBlocked {
+			fmt.Println("No blocked tasks")
+		} else {
+			fmt.Println("No active tasks across projects")
+		}
 
 		return nil
 	}
 
-	fmt.Printf("%-40s  %-14s  %s\n", "PROJECT", "STATE", "TASK")
-	fmt.Printf("%-40s  %-14s  %s\n", "----------------------------------------", "--------------", "----")
+	fmt.Printf("%-40s  %-14s  %-6s  %s\n", "PROJECT", "STATE", "FLAG", "TASK")
+	fmt.Printf("%-40s  %-14s  %-6s  %s\n", "----------------------------------------", "--------------", "------", "----")
 	for _, t := range active {
 		taskDisplay := t.TaskTitle
 		if taskDisplay == "" {
@@ -202,10 +228,45 @@ func showAllStatus() error {
 			path = "..." + path[len(path)-37:]
 		}
 
-		fmt.Printf("%-40s  %-14s  %s%s\n", path, t.State, taskDisplay, source)
+		flag := statusFlag(t)
+
+		fmt.Printf("%-40s  %-14s  %-6s  %s%s\n", path, t.State, flag, taskDisplay, source)
 	}
 
 	return nil
+}
+
+// isBlockedTask returns true if the task needs user attention.
+func isBlockedTask(t socket.TaskListSummary) bool {
+	if t.State == "failed" {
+		return true
+	}
+	if t.PendingPromptID != "" {
+		return true
+	}
+	if t.LastFailureClass == "hard_stop" {
+		return true
+	}
+
+	return false
+}
+
+// statusFlag returns a short indicator for task health.
+func statusFlag(t socket.TaskListSummary) string {
+	if t.State == "failed" {
+		return "FAIL"
+	}
+	if t.PendingPromptID != "" {
+		return "PROMPT"
+	}
+	if t.LastFailureClass == "hard_stop" {
+		return "BLOCK"
+	}
+	if t.LastError != "" {
+		return "WARN"
+	}
+
+	return ""
 }
 
 func capitalize(s string) string {

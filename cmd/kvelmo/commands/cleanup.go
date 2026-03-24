@@ -1,12 +1,14 @@
 package commands
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"path/filepath"
 	"time"
 
 	"github.com/spf13/cobra"
+	"github.com/valksor/kvelmo/pkg/git"
 	"github.com/valksor/kvelmo/pkg/meta"
 	"github.com/valksor/kvelmo/pkg/socket"
 )
@@ -25,6 +27,7 @@ Use --force to skip confirmation prompts.`,
 func init() {
 	CleanupCmd.Flags().BoolP("force", "f", false, "Skip confirmation prompts")
 	CleanupCmd.Flags().Bool("dry-run", false, "Show what would be removed without deleting")
+	CleanupCmd.Flags().Bool("git", false, "Also detect orphaned git worktrees")
 }
 
 func runCleanup(cmd *cobra.Command, args []string) error {
@@ -58,25 +61,63 @@ func runCleanup(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	if len(staleFiles) == 0 {
-		fmt.Println("No stale sockets found.")
+	// Check for orphaned git worktrees
+	cleanupGit, _ := cmd.Flags().GetBool("git")
+	var orphanedWorktrees []string
+	var gitRepo *git.Repository
+	if cleanupGit {
+		cwd, cwdErr := os.Getwd()
+		if cwdErr != nil {
+			fmt.Fprintf(os.Stderr, "Warning: could not determine working directory: %v\n", cwdErr)
+		} else if repo, openErr := git.Open(cwd); openErr != nil {
+			fmt.Fprintf(os.Stderr, "Warning: could not open git repository: %v\n", openErr)
+		} else {
+			gitRepo = repo
+			worktrees, listErr := repo.ListWorktrees(context.Background())
+			if listErr != nil {
+				fmt.Fprintf(os.Stderr, "Warning: could not list worktrees: %v\n", listErr)
+			} else {
+				for _, wt := range worktrees {
+					if wt.Bare || wt.Path == cwd {
+						continue
+					}
+					// Check if the worktree directory still exists
+					if _, statErr := os.Stat(wt.Path); os.IsNotExist(statErr) {
+						orphanedWorktrees = append(orphanedWorktrees, wt.Path)
+					}
+				}
+			}
+		}
+	}
+
+	if len(staleFiles) == 0 && len(orphanedWorktrees) == 0 {
+		fmt.Println("No stale sockets or orphaned worktrees found.")
 
 		return nil
 	}
 
-	fmt.Printf("Found %d stale socket(s):\n", len(staleFiles))
-	for _, f := range staleFiles {
-		fmt.Printf("  • %s\n", f)
+	if len(staleFiles) > 0 {
+		fmt.Printf("Found %d stale socket(s):\n", len(staleFiles))
+		for _, f := range staleFiles {
+			fmt.Printf("  • %s\n", f)
+		}
+	}
+
+	if len(orphanedWorktrees) > 0 {
+		fmt.Printf("Found %d orphaned git worktree(s):\n", len(orphanedWorktrees))
+		for _, wt := range orphanedWorktrees {
+			fmt.Printf("  • %s\n", wt)
+		}
 	}
 
 	if cleanupDry {
-		fmt.Println("\n(dry-run: no files removed)")
+		fmt.Println("\n(dry-run: nothing removed)")
 
 		return nil
 	}
 
 	if !cleanupForce {
-		fmt.Print("\nRemove these files? [y/N]: ")
+		fmt.Print("\nClean up? [y/N]: ")
 		var response string
 		_, _ = fmt.Scanln(&response) // EOF or error treated as decline
 		if response != "y" && response != "Y" {
@@ -96,8 +137,20 @@ func runCleanup(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	fmt.Printf("\nRemoved %d file(s).\n", removed)
-	fmt.Printf("Run '%s serve' to start fresh.\n", meta.Name)
+	// Prune orphaned worktree refs
+	if len(orphanedWorktrees) > 0 && gitRepo != nil {
+		if pruneErr := gitRepo.PruneWorktrees(context.Background()); pruneErr != nil {
+			fmt.Printf("  ✗ Failed to prune worktrees: %v\n", pruneErr)
+		} else {
+			fmt.Printf("  ✓ Pruned %d orphaned worktree ref(s)\n", len(orphanedWorktrees))
+			removed += len(orphanedWorktrees)
+		}
+	}
+
+	fmt.Printf("\nCleaned up %d item(s).\n", removed)
+	if len(staleFiles) > 0 {
+		fmt.Printf("Run '%s serve' to start fresh.\n", meta.Name)
+	}
 
 	return nil
 }

@@ -7,8 +7,8 @@ import (
 func TestStartCommand(t *testing.T) {
 	cmd := StartCmd
 
-	if cmd.Use != "start" {
-		t.Errorf("Use = %s, want start", cmd.Use)
+	if cmd.Use != "start [description]" {
+		t.Errorf("Use = %s, want start [description]", cmd.Use)
 	}
 
 	// Check --verbose flag exists

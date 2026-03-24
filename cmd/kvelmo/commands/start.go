@@ -29,10 +29,11 @@ var (
 	startText       string
 	startAuto       bool
 	startJSON       bool
+	startSkip       []string
 )
 
 var StartCmd = &cobra.Command{
-	Use:   "start",
+	Use:   "start [description]",
 	Short: "Start a task in " + meta.Name,
 	Long: `Start kvelmo sockets (in background) and optionally load a task.
 
@@ -62,16 +63,21 @@ func init() {
 	StartCmd.Flags().StringVar(&startFrom, "from", "", "Task source (file:path, github:owner/repo#123, or URL)")
 	StartCmd.Flags().StringVar(&startText, "text", "", "Inline task description (creates task without external source)")
 	StartCmd.Flags().BoolVar(&startAuto, "auto", false, "Auto-advance through plan → implement → review")
+	StartCmd.Flags().StringSliceVar(&startSkip, "skip", nil, "Phases to skip during auto-advance (e.g., --skip simplify,optimize)")
 	StartCmd.Flags().BoolVar(&startJSON, "json", false, "Output result as JSON")
 }
 
-func runStart(_ *cobra.Command, _ []string) error {
+func runStart(_ *cobra.Command, args []string) error {
 	if startText == "-" {
 		data, err := io.ReadAll(os.Stdin)
 		if err != nil {
 			return fmt.Errorf("read stdin: %w", err)
 		}
 		startText = strings.TrimSpace(string(data))
+	}
+	// Accept positional arg as inline text: kvelmo start "fix the bug"
+	if startText == "" && startFrom == "" && len(args) > 0 {
+		startText = strings.Join(args, " ")
 	}
 	if startText != "" && startFrom != "" {
 		return errors.New("--text and --from are mutually exclusive")
@@ -370,6 +376,9 @@ func loadTaskViaRPC(socketPath, source string) error {
 	params := map[string]any{
 		"source":       source,
 		"auto_advance": startAuto,
+	}
+	if len(startSkip) > 0 {
+		params["skip_phases"] = startSkip
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
