@@ -205,6 +205,12 @@ func init() {
 	// Code graph
 	rootCmd.AddCommand(commands.CodegraphCmd)
 
+	// Lifecycle event log
+	rootCmd.AddCommand(commands.EventlogCmd)
+
+	// Project command discovery
+	rootCmd.AddCommand(commands.DiscoverCmd)
+
 	// Raw JSON-RPC access
 	rootCmd.AddCommand(commands.RPCCmd)
 

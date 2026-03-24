@@ -73,6 +73,8 @@
     - [stats](/cli/stats.md)
     - [diff](/cli/diff.md)
     - [logs](/cli/logs.md)
+    - [eventlog](/cli/eventlog.md)
+    - [recap](/cli/recap.md)
     - [--wait flag](/cli/wait.md)
     - [watch](/cli/watch.md)
     - [tui](/cli/tui.md)
@@ -111,6 +113,7 @@
     - [rpc](/cli/rpc.md)
     - [pipe](/cli/pipe.md)
     - [codegraph](/cli/codegraph.md)
+    - [discover](/cli/discover.md)
   - Infrastructure
     - [access](/cli/access.md)
     - [backup](/cli/backup.md)

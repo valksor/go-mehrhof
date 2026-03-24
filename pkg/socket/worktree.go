@@ -17,6 +17,7 @@ import (
 	"github.com/valksor/kvelmo/pkg/agent/strategy"
 	"github.com/valksor/kvelmo/pkg/codegraph"
 	"github.com/valksor/kvelmo/pkg/conductor"
+	"github.com/valksor/kvelmo/pkg/eventlog"
 	"github.com/valksor/kvelmo/pkg/git"
 	"github.com/valksor/kvelmo/pkg/memory"
 	"github.com/valksor/kvelmo/pkg/provider"
@@ -99,6 +100,15 @@ func NewWorktreeSocket(cfg WorktreeConfig) (*WorktreeSocket, error) {
 	// Wire storage.Store so specs/reviews/sessions are persisted via pkg/storage.
 	store := storage.NewStore(cfg.WorktreePath, settings.BoolValue(effective.Storage.SaveInProject, false))
 	cond.SetStore(store)
+
+	// Wire event log for lifecycle auditing.
+	eventLogDir := filepath.Join(cfg.WorktreePath, ".kvelmo")
+	evLog, evErr := eventlog.New(eventLogDir)
+	if evErr != nil {
+		slog.Debug("event log not available", "path", eventLogDir, "error", evErr)
+	} else {
+		cond.SetEventLog(evLog)
+	}
 
 	// Restore prior task state if a task.yaml exists from a previous session.
 	_ = cond.LoadState(context.Background())
@@ -295,6 +305,12 @@ func (w *WorktreeSocket) registerHandlers() {
 	w.server.Handle("codegraph.search", w.handleCodegraphSearch)
 	w.server.Handle("codegraph.callers", w.handleCodegraphCallers)
 	w.server.Handle("codegraph.deps", w.handleCodegraphDeps)
+
+	// Discovery
+	w.server.Handle("discovery.scan", w.handleDiscoveryScan)
+
+	// Event log
+	w.server.Handle("eventlog.query", w.handleEventlogQuery)
 }
 
 // injectSeqAndBuffer assigns a sequence number to a JSON event, stores it in the
