@@ -69,6 +69,7 @@ export function GlobalView() {
   const [searchQuery, setSearchQuery] = useState('')
   const [batchRunning, setBatchRunning] = useState(false)
   const [batchStateFilter, setBatchStateFilter] = useState('')
+  const [batchTagFilter, setBatchTagFilter] = useState('')
   const [silentMode, setSilentMode] = useState(false)
   const { mode } = useViewModeStore()
   const isSimple = mode === 'simple'
@@ -82,11 +83,19 @@ export function GlobalView() {
   const hasActiveProjects = activeTasks.some(t => t.state !== 'none')
 
   const handleBatchAction = useCallback(async (action: string) => {
-    const filterDesc = batchStateFilter ? ` (state: ${batchStateFilter})` : ' (all active)'
+    const filters = {
+      state: batchStateFilter || undefined,
+      tag: batchTagFilter || undefined,
+    }
+    const parts = [
+      batchStateFilter && `state: ${batchStateFilter}`,
+      batchTagFilter && `tag: ${batchTagFilter}`,
+    ].filter(Boolean)
+    const filterDesc = parts.length > 0 ? ` (${parts.join(', ')})` : ' (all active)'
     if (!window.confirm(`Run "${action}" on projects${filterDesc}?`)) return
     setBatchRunning(true)
     try {
-      const result = await batchAction(action, batchStateFilter || undefined)
+      const result = await batchAction(action, filters)
       if (result) {
         window.alert(`Batch ${action}: ${result.succeeded}/${result.total} succeeded`)
       }
@@ -95,7 +104,7 @@ export function GlobalView() {
     } finally {
       setBatchRunning(false)
     }
-  }, [batchAction, batchStateFilter])
+  }, [batchAction, batchStateFilter, batchTagFilter])
 
   const toggleSilentMode = useCallback(async () => {
     const client = useGlobalStore.getState().client
@@ -204,10 +213,21 @@ export function GlobalView() {
                     <option value="planned">Planned</option>
                     <option value="implemented">Implemented</option>
                     <option value="reviewing">Reviewing</option>
+                    <option value="paused">Paused</option>
                     <option value="failed">Failed</option>
                   </select>
                 </li>
-                {['plan', 'implement', 'review', 'submit', 'abort'].map(action => (
+                <li className="px-2 pb-2">
+                  <input
+                    type="text"
+                    className="input input-xs input-bordered w-full"
+                    placeholder="Filter by tag..."
+                    value={batchTagFilter}
+                    onChange={e => setBatchTagFilter(e.target.value)}
+                    aria-label="Filter by tag"
+                  />
+                </li>
+                {['plan', 'implement', 'review', 'submit', 'stop', 'abort', 'reset', 'pause', 'resume'].map(action => (
                   <li key={action}>
                     <button
                       onClick={() => handleBatchAction(action)}

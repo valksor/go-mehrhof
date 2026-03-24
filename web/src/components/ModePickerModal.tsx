@@ -10,7 +10,7 @@ export function ModePickerModal() {
   }
 
   // Escape defaults to simple mode so users are never stuck.
-  // Store setters are stable references, so the empty dep array is safe.
+  // getState() is stable, so empty deps are safe.
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
       if (e.key === 'Escape') {

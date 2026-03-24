@@ -17,6 +17,7 @@ interface ActivityEntry {
   user_id?: string
   task_id?: string
   agent_model?: string
+  description?: string  // Present in timeline mode
 }
 
 interface AuditTask {
@@ -25,8 +26,14 @@ interface AuditTask {
   state: string
 }
 
-type ViewMode = 'activity' | 'audit'
+type ViewMode = 'activity' | 'timeline' | 'audit'
 type TimeRange = '1h' | '6h' | '24h' | '7d'
+
+const VIEW_MODE_TITLES: Record<ViewMode, string> = {
+  activity: 'Activity Log',
+  timeline: 'Timeline',
+  audit: 'Compliance Audit',
+}
 
 const TIME_RANGE_LABELS: Record<TimeRange, string> = {
   '1h': 'Last hour',
@@ -83,9 +90,10 @@ export function ActivityPanel({ isOpen, onClose }: ActivityPanelProps) {
         setEntries(filtered)
         setCount(filtered.length)
       } else {
+        const isTimeline = viewMode === 'timeline'
         const result = await client.call<{ entries: ActivityEntry[]; count: number; enabled: boolean }>(
           'activity.query',
-          { since: timeRange, limit: 100 }
+          { since: timeRange, limit: 100, timeline: isTimeline }
         )
         let filtered = result.entries || []
 
@@ -93,8 +101,11 @@ export function ActivityPanel({ isOpen, onClose }: ActivityPanelProps) {
           filtered = filtered.filter(e => e.error !== '')
         }
         if (methodFilter.trim()) {
-          const search = methodFilter.trim().toLowerCase()
-          filtered = filtered.filter(e => e.method.toLowerCase().includes(search))
+          const filterText = methodFilter.trim().toLowerCase()
+          filtered = filtered.filter(e =>
+            e.method.toLowerCase().includes(filterText) ||
+            (isTimeline && e.description?.toLowerCase().includes(filterText))
+          )
         }
 
         setEntries(filtered)
@@ -159,7 +170,7 @@ export function ActivityPanel({ isOpen, onClose }: ActivityPanelProps) {
   }
 
   return (
-    <AccessibleModal isOpen={isOpen} onClose={onClose} title={viewMode === 'audit' ? 'Compliance Audit' : 'Activity Log'} size="4xl">
+    <AccessibleModal isOpen={isOpen} onClose={onClose} title={VIEW_MODE_TITLES[viewMode]} size="4xl">
       <div className="max-h-[70vh] flex flex-col">
         {/* View mode toggle */}
         <div role="tablist" className="tabs tabs-boxed mb-4 w-fit">
@@ -170,6 +181,14 @@ export function ActivityPanel({ isOpen, onClose }: ActivityPanelProps) {
             onClick={() => setViewMode('activity')}
           >
             Activity
+          </button>
+          <button
+            role="tab"
+            aria-selected={viewMode === 'timeline'}
+            className={`tab tab-sm ${viewMode === 'timeline' ? 'tab-active' : ''}`}
+            onClick={() => setViewMode('timeline')}
+          >
+            Timeline
           </button>
           <button
             role="tab"
@@ -293,7 +312,7 @@ export function ActivityPanel({ isOpen, onClose }: ActivityPanelProps) {
                     <tr>
                       <th>Time</th>
                       {viewMode === 'audit' && <th>User</th>}
-                      <th>Method</th>
+                      <th>{viewMode === 'timeline' ? 'Event' : 'Method'}</th>
                       <th className="text-right">Duration</th>
                       <th>Status</th>
                     </tr>
@@ -311,8 +330,10 @@ export function ActivityPanel({ isOpen, onClose }: ActivityPanelProps) {
                               {entry.user_id || '-'}
                             </td>
                           )}
-                          <td className="font-mono text-xs">
-                            {entry.method}
+                          <td className={`text-xs ${viewMode === 'timeline' ? '' : 'font-mono'}`}>
+                            {viewMode === 'timeline'
+                              ? entry.description || entry.method
+                              : entry.method}
                           </td>
                           <td className="text-right text-xs whitespace-nowrap">
                             {formatDuration(entry.duration_ms)}

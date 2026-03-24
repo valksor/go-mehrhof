@@ -85,6 +85,12 @@ export function ActiveTasksWidget({ onSelectProject }: ActiveTasksWidgetProps) {
                   </div>
                 </div>
                 <div className="flex items-center gap-1 flex-shrink-0">
+                  {task.pending_prompt_id && (
+                    <span className="badge badge-xs badge-accent" title="Waiting for input">prompt</span>
+                  )}
+                  {task.last_failure_class === 'hard_stop' && (
+                    <span className="badge badge-xs badge-error" title={task.last_error || 'Blocked'}>blocked</span>
+                  )}
                   {task.queue_count != null && task.queue_count > 0 && (
                     <span className="badge badge-xs badge-outline">+{task.queue_count}</span>
                   )}

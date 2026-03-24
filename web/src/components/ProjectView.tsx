@@ -10,6 +10,7 @@ import { ErrorBoundary } from './ErrorBoundary'
 import { PanelLayout } from './PanelLayout'
 import { TaskWidget } from './TaskWidget'
 import { CheckpointsWidget } from './CheckpointsWidget'
+import { RecapWidget } from './RecapWidget'
 import { PhaseMetricsWidget } from './PhaseMetricsWidget'
 import { ChecklistWidget } from './ChecklistWidget'
 import { ReviewHistoryWidget } from './ReviewHistoryWidget'
@@ -28,6 +29,7 @@ const LogsPanel = lazy(() => import('./LogsPanel').then(m => ({ default: m.LogsP
 const CIStatusPanel = lazy(() => import('./CIStatusPanel').then(m => ({ default: m.CIStatusPanel })))
 const PolicyPanel = lazy(() => import('./PolicyPanel').then(m => ({ default: m.PolicyPanel })))
 const HooksPanel = lazy(() => import('./HooksPanel').then(m => ({ default: m.HooksPanel })))
+const CodegraphPanel = lazy(() => import('./CodegraphPanel').then(m => ({ default: m.CodegraphPanel })))
 
 function ReviewIcon() {
   return (
@@ -76,6 +78,7 @@ export function ProjectView() {
   const [showCIStatus, setShowCIStatus] = useState(false)
   const [showPolicy, setShowPolicy] = useState(false)
   const [showHooks, setShowHooks] = useState(false)
+  const [showCodegraph, setShowCodegraph] = useState(false)
   const docsData = useDocsURL()
   const debugEnabled = useDebugStore(s => s.enabled)
   useKeyboardShortcuts() // Register keyboard shortcuts (overlay rendered in App.tsx)
@@ -173,6 +176,16 @@ export function ProjectView() {
               </svg>
             </button>
             <button
+              onClick={() => setShowCodegraph(true)}
+              className="btn btn-ghost btn-xs sm:btn-sm btn-circle hidden sm:inline-flex"
+              aria-label="Code Graph"
+              title="Code Graph"
+            >
+              <svg aria-hidden="true" className="w-4 h-4 sm:w-5 sm:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4" />
+              </svg>
+            </button>
+            <button
               onClick={() => setShowHooks(true)}
               className="btn btn-ghost btn-xs sm:btn-sm btn-circle hidden sm:inline-flex"
               aria-label="Workflow Hooks"
@@ -233,6 +246,7 @@ export function ProjectView() {
   // Right panel content
   const rightContent = (
     <ErrorBoundary>
+      <RecapWidget />
       <AgentPanel />
 
       <Widget
@@ -334,6 +348,12 @@ export function ProjectView() {
           <HooksPanel
             isOpen={showHooks}
             onClose={() => setShowHooks(false)}
+          />
+        )}
+        {showCodegraph && (
+          <CodegraphPanel
+            isOpen={showCodegraph}
+            onClose={() => setShowCodegraph(false)}
           />
         )}
       </Suspense>

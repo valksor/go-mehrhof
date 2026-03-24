@@ -1,4 +1,4 @@
-import { lazy, Suspense, useState, useEffect } from 'react'
+import { lazy, Suspense, useState, useEffect, useMemo } from 'react'
 import { DiffMethod } from 'react-diff-viewer-continued'
 import { useProjectStore } from '../stores/projectStore'
 import { useThemeStore } from '../stores/themeStore'
@@ -40,11 +40,11 @@ export function SimpleReviewSummary({ onReview, onRequestChanges, loading }: Sim
     return () => { cancelled = true }
   }, [expandedFile, getGitDiff])
 
-  const counts = {
+  const counts = useMemo(() => ({
     added: fileChanges.filter((f) => f.status === 'added').length,
     modified: fileChanges.filter((f) => f.status === 'modified').length,
     deleted: fileChanges.filter((f) => f.status === 'deleted').length,
-  }
+  }), [fileChanges])
 
   const fileDiff = expandedFile && fullDiff ? parseDiffForFile(fullDiff, expandedFile) : null
 

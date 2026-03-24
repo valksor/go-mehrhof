@@ -233,6 +233,11 @@ export function ChatWidget({ embedded = false, onModalCommand }: ChatWidgetProps
           setInput('')
         } catch (err) {
           console.error('Failed to start task from URL:', err)
+          addMessage({
+            role: 'system',
+            content: `Failed to start task: ${err instanceof Error ? err.message : 'Unknown error'}`,
+            status: 'error',
+          })
         }
         return
       }

@@ -14,6 +14,7 @@ import { JobsPanel } from './JobsPanel'
 import { FileBrowserWidget } from './FileBrowserWidget'
 import { TaskPanel } from './TaskPanel'
 import { FileChangesPanel } from './FileChangesPanel'
+import { PRPreviewPanel } from './PRPreviewPanel'
 
 // Lazy-loaded heavy tab panels
 const ChatWidget = lazy(() => import('./ChatWidget').then(m => ({ default: m.ChatWidget })))
@@ -58,6 +59,7 @@ export function TabPanel({ className = '' }: TabPanelProps) {
       {activeTab.type === 'task' && <TaskContent data={activeTab.data} />}
       {activeTab.type === 'review' && <ReviewContent data={activeTab.data} />}
       {activeTab.type === 'filechanges' && <FileChangesContent data={activeTab.data} />}
+      {activeTab.type === 'submit-preview' && <PRPreviewPanel data={activeTab.data} />}
     </div>
   )
 }

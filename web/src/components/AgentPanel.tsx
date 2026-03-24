@@ -69,7 +69,11 @@ export function AgentPanel() {
     fetchWorkers()
     fetchStrategies()
     const interval = setInterval(fetchWorkers, 3000)
-    return () => clearInterval(interval)
+    const strategyInterval = setInterval(fetchStrategies, 30000)
+    return () => {
+      clearInterval(interval)
+      clearInterval(strategyInterval)
+    }
   }, [connected, fetchWorkers, fetchStrategies])
 
   const handleAddWorker = async () => {

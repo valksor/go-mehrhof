@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { useProjectStore } from '../stores/projectStore'
 import { EmptyState } from './EmptyState'
 
@@ -17,32 +18,15 @@ export function CheckpointsWidget({ embedded = false }: CheckpointsWidgetProps) 
           ) : (
             <>
               {/* Checkpoint Timeline */}
-              <div className="space-y-2 mb-4 max-h-[200px] overflow-auto">
+              <div className="space-y-2 mb-4 max-h-[300px] overflow-auto">
                 {checkpoints.map((cp, i) => (
-                  <button
+                  <CheckpointEntry
                     key={cp.sha}
-                    onClick={() => goToCheckpoint(cp.sha)}
-                    disabled={loading}
-                    aria-label={`Go to checkpoint ${checkpoints.length - i}: ${cp.message || cp.sha.slice(0, 8)}`}
-                    className="w-full text-left p-3 rounded-lg bg-base-300 hover:bg-base-100 border border-transparent hover:border-primary/30 transition-all duration-150 disabled:opacity-50 group"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center text-primary text-xs font-semibold">
-                        {checkpoints.length - i}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="font-mono text-sm text-base-content/80 group-hover:text-base-content transition-colors">
-                          {cp.sha.slice(0, 8)}
-                        </div>
-                        {cp.message && (
-                          <div className="text-xs text-base-content/60 truncate">{cp.message}</div>
-                        )}
-                      </div>
-                      <svg aria-hidden="true" className="w-4 h-4 text-base-content/40 group-hover:text-primary transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                      </svg>
-                    </div>
-                  </button>
+                    checkpoint={cp}
+                    index={checkpoints.length - i}
+                    loading={loading}
+                    onGoTo={() => goToCheckpoint(cp.sha)}
+                  />
                 ))}
               </div>
 
@@ -92,5 +76,77 @@ export function CheckpointsWidget({ embedded = false }: CheckpointsWidgetProps) 
         </div>
       </div>
     </section>
+  )
+}
+
+function CheckpointEntry({ checkpoint, index, loading, onGoTo }: {
+  checkpoint: { sha: string; message: string; timestamp: string; state?: string }
+  index: number
+  loading: boolean
+  onGoTo: () => void
+}) {
+  const [previewDiff, setPreviewDiff] = useState<string | null>(null)
+  const [previewLoading, setPreviewLoading] = useState(false)
+  const previewCheckpoint = useProjectStore(s => s.previewCheckpoint)
+
+  const handlePreview = async (e: React.MouseEvent) => {
+    e.stopPropagation()
+    if (previewDiff !== null) {
+      setPreviewDiff(null)
+      return
+    }
+    setPreviewLoading(true)
+    const result = await previewCheckpoint(checkpoint.sha)
+    setPreviewDiff(result?.diff || 'No differences')
+    setPreviewLoading(false)
+  }
+
+  return (
+    <div className="rounded-lg bg-base-300 border border-transparent hover:border-primary/30 transition-all duration-150">
+      <div className="flex items-center gap-3 p-3">
+        <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center text-primary text-xs font-semibold">
+          {index}
+        </div>
+        <button
+          onClick={onGoTo}
+          disabled={loading}
+          aria-label={`Go to checkpoint ${index}: ${checkpoint.message || checkpoint.sha.slice(0, 8)}`}
+          className="flex-1 min-w-0 text-left group"
+        >
+          <div className="font-mono text-sm text-base-content/80 group-hover:text-base-content transition-colors">
+            {checkpoint.sha.slice(0, 8)}
+            {checkpoint.state && (
+              <span className="ml-2 badge badge-xs badge-ghost">{checkpoint.state}</span>
+            )}
+          </div>
+          {checkpoint.message && (
+            <div className="text-xs text-base-content/60 truncate">{checkpoint.message}</div>
+          )}
+        </button>
+        <button
+          onClick={handlePreview}
+          disabled={previewLoading}
+          className="btn btn-ghost btn-xs"
+          title="Preview diff"
+          aria-label="Preview diff"
+        >
+          {previewLoading ? (
+            <span className="loading loading-spinner loading-xs" />
+          ) : (
+            <svg aria-hidden="true" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+            </svg>
+          )}
+        </button>
+      </div>
+      {previewDiff !== null && (
+        <div className="border-t border-base-200 px-3 pb-3">
+          <pre className="text-xs font-mono whitespace-pre-wrap max-h-48 overflow-auto mt-2 text-base-content/70">
+            {previewDiff}
+          </pre>
+        </div>
+      )}
+    </div>
   )
 }

@@ -58,6 +58,7 @@ export function TabBar({ className = '' }: TabBarProps) {
       task: 'Task',
       review: 'Review',
       filechanges: 'File Changes',
+      'submit-preview': 'PR Preview',
     }
     openTab({
       id: newId,
@@ -244,6 +245,12 @@ function TabIcon({ type }: { type: Tab['type'] }) {
       return (
         <svg aria-hidden="true" className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16m-7 6h7" />
+        </svg>
+      )
+    case 'submit-preview':
+      return (
+        <svg aria-hidden="true" className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4M16 17H4m0 0l4 4m-4-4l4-4" />
         </svg>
       )
     case 'output':

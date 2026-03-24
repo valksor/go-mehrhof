@@ -14,7 +14,7 @@ interface FileChangesWidgetProps {
 }
 
 export function FileChangesWidget({ embedded = false }: FileChangesWidgetProps) {
-  const { fileChanges } = useProjectStore()
+  const { fileChanges, gitStatus } = useProjectStore()
   const { openTab } = useLayoutStore()
 
   const statusConfig = {
@@ -22,6 +22,17 @@ export function FileChangesWidget({ embedded = false }: FileChangesWidgetProps) 
     modified: { color: 'text-warning', bg: 'bg-warning/20', icon: '~' },
     deleted: { color: 'text-error', bg: 'bg-error/20', icon: '-' }
   }
+
+  // Compute status counts from file changes
+  const statusCounts = (fileChanges as FileChange[] | null)?.reduce(
+    (acc, f) => {
+      if (f.status === 'added') acc.added++
+      else if (f.status === 'modified') acc.modified++
+      else if (f.status === 'deleted') acc.deleted++
+      return acc
+    },
+    { added: 0, modified: 0, deleted: 0 }
+  ) ?? { added: 0, modified: 0, deleted: 0 }
 
   const handleFileClick = (file: FileChange) => {
     openTab({
@@ -33,8 +44,32 @@ export function FileChangesWidget({ embedded = false }: FileChangesWidgetProps) 
     })
   }
 
+  const hasStatusCounts = statusCounts.added > 0 || statusCounts.modified > 0 || statusCounts.deleted > 0
+
   const content = (
     <div>
+          {hasStatusCounts && (
+            <div className="flex gap-2 text-xs flex-wrap mb-2 px-1">
+              {gitStatus?.branch && (
+                <span className="badge badge-sm badge-outline font-mono">{gitStatus.branch}</span>
+              )}
+              {statusCounts.added > 0 && (
+                <span className="badge badge-sm badge-success badge-outline">
+                  {statusCounts.added} added
+                </span>
+              )}
+              {statusCounts.modified > 0 && (
+                <span className="badge badge-sm badge-warning badge-outline">
+                  {statusCounts.modified} modified
+                </span>
+              )}
+              {statusCounts.deleted > 0 && (
+                <span className="badge badge-sm badge-error badge-outline">
+                  {statusCounts.deleted} deleted
+                </span>
+              )}
+            </div>
+          )}
           {!fileChanges || fileChanges.length === 0 ? (
             <EmptyState title="No changes yet" description="File changes will appear here during implementation" icon="📄" />
           ) : (

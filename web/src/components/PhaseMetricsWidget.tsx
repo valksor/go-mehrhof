@@ -18,6 +18,7 @@ function formatDuration(ns: number): string {
 
 /** Format USD cost. */
 function formatCost(usd: number): string {
+  if (usd === 0) return '$0.00'
   if (usd < 0.01) return '<$0.01'
   return `$${usd.toFixed(2)}`
 }

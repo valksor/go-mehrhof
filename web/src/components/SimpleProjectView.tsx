@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { useProjectStore } from '../stores/projectStore'
+import type { SpecEntry } from '../stores/projectStore'
 import { useGlobalStore } from '../stores/globalStore'
 import { ViewModeToggle } from './ViewModeToggle'
 import { ThemeToggle } from './ThemeToggle'
@@ -49,6 +50,19 @@ export function SimpleProjectView() {
   const chatRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
   const listFiles = useProjectStore((s) => s.listFiles)
+
+  const loadSpec = useProjectStore((s) => s.loadSpec)
+  const [specs, setSpecs] = useState<SpecEntry[]>([])
+  const [showSpec, setShowSpec] = useState(false)
+  const specLoadedForState = useRef('')
+
+  // Auto-load specs when plan is ready
+  useEffect(() => {
+    if ((state === 'planned' || state === 'implemented') && specLoadedForState.current !== state) {
+      specLoadedForState.current = state
+      loadSpec().then(setSpecs)
+    }
+  }, [state, loadSpec])
 
   const projectName = selectedProject?.path?.split('/').pop() ?? 'Project'
   const isActive = ACTIVE_STATES.has(state)
@@ -239,16 +253,41 @@ export function SimpleProjectView() {
             </div>
           )}
 
-          {/* Planned: build */}
+          {/* Planned: show spec + build */}
           {state === 'planned' && (
-            <div className="text-center">
-              <button
-                onClick={() => implement()}
-                disabled={loading}
-                className="btn btn-primary btn-lg"
-              >
-                {loading ? <span className="loading loading-spinner loading-sm"></span> : 'Build'}
-              </button>
+            <div className="space-y-4">
+              {specs.length > 0 && (
+                <div className="border border-base-300 rounded-lg overflow-hidden">
+                  <button
+                    onClick={() => setShowSpec(!showSpec)}
+                    className="w-full flex items-center justify-between px-4 py-2.5 bg-base-200 hover:bg-base-300 transition-colors text-sm font-medium"
+                  >
+                    <span>View Plan</span>
+                    <svg className={`w-4 h-4 transition-transform ${showSpec ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </button>
+                  {showSpec && (
+                    <div className="px-4 py-3 max-h-80 overflow-y-auto">
+                      {specs.map((spec) => (
+                        <div key={spec.path}>
+                          <div className="text-xs text-base-content/50 mb-1 font-mono">{spec.path}</div>
+                          <pre className="text-sm whitespace-pre-wrap text-base-content/80">{spec.content}</pre>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+              <div className="text-center">
+                <button
+                  onClick={() => implement()}
+                  disabled={loading}
+                  className="btn btn-primary btn-lg"
+                >
+                  {loading ? <span className="loading loading-spinner loading-sm"></span> : 'Build'}
+                </button>
+              </div>
             </div>
           )}
 
