@@ -1,10 +1,12 @@
-# kvelmo wait
+# `--wait` flag reference
 
 Block until the current job completes or fails.
 
 ## Description
 
 The `wait` functionality is provided via the `--wait` / `-w` flag on workflow commands (`plan`, `implement`, `simplify`, `optimize`, `review`, `explain`). When enabled, the command connects to the worktree socket's event stream and blocks until the job completes or fails, streaming output in real time.
+
+This page documents a shared flag reference, not a standalone `kvelmo wait` command.
 
 Press Ctrl+C to detach without stopping the running job.
 

@@ -75,6 +75,31 @@ The sidebar provides access to additional features:
 | **Browser**     | Browser automation controls |
 | **Settings**    | Configuration               |
 
+## Where Features Live in the UI
+
+Not every web-documented capability appears as a permanent top-level tab. Depending on the feature, you may find it in one of these places:
+
+| UI location | Typical features |
+|-------------|------------------|
+| **GlobalView** | Project picker, worker overview, cross-project status |
+| **ProjectView actions** | Plan, Implement, Review, Submit, quick task actions |
+| **Persistent tabs/panels** | Chat, Output, Files, Browser, Screenshots, Jobs, Review, Submit preview |
+| **Dialogs and drawers** | Settings, provider tokens, backup/restore, exports, reports |
+| **Contextual widgets** | Activity, logs, memory, recordings, code graph, policy, CI |
+
+When a feature page says it is available in the Web UI, that may mean it is available through a modal, drawer, or contextual panel rather than a dedicated always-visible tab.
+
+## CLI and Web Parity
+
+Most workflow, governance, observability, and provider-management features are available through CLI, RPC, and often the Web UI. Some features are intentionally CLI-only because they are shell-native or system-facing, such as:
+
+- daemon lifecycle commands like `serve` and `shutdown`
+- shell integration such as `completion` and `prompt`
+- raw transport/debug utilities like `rpc`
+- terminal-only experiences like `tui` and `pipe`
+
+Treat those as deliberate parity boundaries rather than missing web features.
+
 ## Undo and Redo
 
 Every workflow step creates a git checkpoint. Use the **Checkpoints** panel to:
@@ -84,6 +109,6 @@ Every workflow step creates a git checkpoint. Use the **Checkpoints** panel to:
 
 ## Also Available via CLI
 
-Prefer the command line? All Web UI functionality is available via CLI commands.
+Prefer the command line? Core Web UI workflows are available via CLI commands, and some shell-native capabilities remain CLI-only by design.
 
 See [CLI Reference](/cli/index.md) for the full command list.

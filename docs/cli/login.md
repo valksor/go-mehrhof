@@ -1,11 +1,20 @@
-# Provider Login
+# Provider Login Subcommands
 
 Authenticate with task providers by saving API tokens to `.env` files.
+
+This page documents a shared **provider-scoped subcommand family**, not a top-level `kvelmo login` command.
 
 ## Usage
 
 ```bash
 kvelmo <provider> login [flags]
+```
+
+Examples of the actual command shape:
+
+```bash
+kvelmo github login
+kvelmo gitlab login
 ```
 
 Supported providers: `github`, `gitlab`, `linear`, `wrike`, `jira`, `azuredevops`
@@ -124,5 +133,6 @@ Provider tokens can also be configured in the Settings modal under the Providers
 ## Related
 
 - [config](/cli/config.md) — Manage non-sensitive configuration
+- [test-provider](/cli/test-provider.md) — Verify provider connectivity after saving a token
 - [start](/cli/start.md) — Start working on a task
 - [Providers](/providers/index.md) — Provider documentation

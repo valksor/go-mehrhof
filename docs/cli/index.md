@@ -17,6 +17,16 @@ All commands support these global flags:
 | `--help`, `-h` | Show help for a command  |
 | `--version`    | Show version information |
 
+## Reference Taxonomy
+
+The CLI docs include three kinds of reference pages:
+
+- **Commands** — runnable entries such as `kvelmo plan` or `kvelmo status`
+- **Nested command families** — provider-scoped or grouped commands such as `kvelmo github login`
+- **Flags and behavioral references** — shared options such as [`--wait`](/cli/wait.md)
+
+Use the tables below as a command map, not as a guarantee that every page is a top-level `kvelmo <name>` command.
+
 ## Command Categories
 
 ### Workflow Commands
@@ -83,14 +93,26 @@ Commands for managing the kvelmo system:
 
 ### Authentication Commands
 
-Commands for authenticating with providers:
+Nested provider commands for authenticating with task providers:
 
-| Command                       | Description              |
+| Nested command                | Description              |
 |-------------------------------|--------------------------|
 | [github login](/cli/login.md) | Authenticate with GitHub |
 | [gitlab login](/cli/login.md) | Authenticate with GitLab |
 | [linear login](/cli/login.md) | Authenticate with Linear |
 | [wrike login](/cli/login.md)  | Authenticate with Wrike  |
+| [jira login](/cli/login.md)   | Authenticate with Jira   |
+| [azuredevops login](/cli/login.md) | Authenticate with Azure DevOps |
+
+### Shared References
+
+Behavior references shared by multiple commands:
+
+| Reference                    | Description                                    |
+|-----------------------------|------------------------------------------------|
+| [--wait flag](/cli/wait.md) | Block on supported phase commands until completion |
+| [Provider login](/cli/login.md) | Shared reference for provider-scoped `login` subcommands |
+| [test-provider](/cli/test-provider.md) | Provider connectivity check command |
 
 ### Utility Commands
 

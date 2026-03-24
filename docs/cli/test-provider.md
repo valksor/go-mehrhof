@@ -1,11 +1,11 @@
-# kvelmo config test-provider
+# kvelmo test-provider
 
 Test a provider connection to verify it is configured and reachable.
 
 ## Usage
 
 ```bash
-kvelmo config test-provider <provider>
+kvelmo test-provider <provider>
 ```
 
 ## Description
@@ -25,7 +25,7 @@ The command connects to the global socket and calls `providers.test` with the sp
 ### Test GitHub connection
 
 ```bash
-kvelmo config test-provider github
+kvelmo test-provider github
 ```
 
 Output on success:
@@ -43,19 +43,23 @@ github: failed
 ### Test GitLab connection
 
 ```bash
-kvelmo config test-provider gitlab
+kvelmo test-provider gitlab
 ```
 
 ### Test Linear connection
 
 ```bash
-kvelmo config test-provider linear
+kvelmo test-provider linear
 ```
 
 ## Prerequisites
 
 - The global socket must be running (`kvelmo serve`)
 - The provider must have a token configured (see [login](/cli/login.md))
+
+## Taxonomy Note
+
+`test-provider` is a standalone command that takes a provider name as an argument. It is related to provider configuration, but it is not a `config` subcommand.
 
 ## Web UI
 

@@ -75,7 +75,6 @@
     - [logs](/cli/logs.md)
     - [eventlog](/cli/eventlog.md)
     - [recap](/cli/recap.md)
-    - [--wait flag](/cli/wait.md)
     - [watch](/cli/watch.md)
     - [tui](/cli/tui.md)
   - Task Organization
@@ -114,6 +113,10 @@
     - [pipe](/cli/pipe.md)
     - [codegraph](/cli/codegraph.md)
     - [discover](/cli/discover.md)
+  - Shared References
+    - [Provider login subcommands](/cli/login.md)
+    - [test-provider](/cli/test-provider.md)
+    - [--wait flag](/cli/wait.md)
   - Infrastructure
     - [access](/cli/access.md)
     - [backup](/cli/backup.md)
@@ -125,8 +128,6 @@
     - [notify](/cli/notify.md)
     - [hooks](/cli/hooks.md)
     - [ci](/cli/ci.md)
-    - [login](/cli/login.md)
-    - [test-provider](/cli/test-provider.md)
     - [tutorial](/cli/tutorial.md)
 
 - Concepts
