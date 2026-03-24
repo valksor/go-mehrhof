@@ -86,12 +86,21 @@ func (r *ContextResolver) containedPath(ref string) (string, error) {
 		return "", errors.New("worktree root not set")
 	}
 
+	root, err := filepath.Abs(r.WorktreeRoot)
+	if err != nil {
+		return "", fmt.Errorf("resolve worktree root: %w", err)
+	}
+	root = filepath.Clean(root)
+	if evaledRoot, evalErr := filepath.EvalSymlinks(root); evalErr == nil {
+		root = evaledRoot
+	}
+
 	// Reject absolute paths outright
 	if filepath.IsAbs(ref) {
 		return "", fmt.Errorf("absolute paths not allowed: %q", ref)
 	}
 
-	resolved := filepath.Clean(filepath.Join(r.WorktreeRoot, ref))
+	resolved := filepath.Clean(filepath.Join(root, ref))
 
 	// Eval symlinks to prevent symlink-based escapes
 	evaled, err := filepath.EvalSymlinks(resolved)
@@ -103,7 +112,6 @@ func (r *ContextResolver) containedPath(ref string) (string, error) {
 		evaled = resolved
 	}
 
-	root := filepath.Clean(r.WorktreeRoot)
 	if evaled != root && !strings.HasPrefix(evaled, root+string(filepath.Separator)) {
 		return "", fmt.Errorf("path %q escapes worktree", ref)
 	}

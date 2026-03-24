@@ -54,8 +54,8 @@ type ContextMetrics struct {
 
 // buildContextDeps assembles optional dependencies for context assembly.
 // Must be called with c.mu held (at least RLock).
-func (c *Conductor) buildContextDeps() ContextDeps {
-	var deps ContextDeps
+func (c *Conductor) buildContextDeps() contextDeps {
+	var deps contextDeps
 	if c.workUnit != nil && c.store != nil && len(c.workUnit.Specifications) > 0 {
 		specStore := storage.NewSpecStore(c.store)
 		if content, err := specStore.GatherSpecificationsContent(c.workUnit.ID); err == nil && content != "" {
@@ -111,17 +111,17 @@ func DefaultContextProfiles() map[string]PhaseContextProfile {
 	}
 }
 
-// ContextDeps provides optional dependencies for context assembly.
+// contextDeps provides optional dependencies for context assembly.
 // Fields are nil-safe — missing deps cause the corresponding section to be skipped.
-type ContextDeps struct {
+type contextDeps struct {
 	SpecContent string           // Pre-gathered specification content (from storage.GatherSpecificationsContent)
 	Resolver    *ContextResolver // Resolves ContextItems to content (nil = skip context items)
 }
 
 // BuildPhaseContext assembles context for a phase based on its profile.
 // Returns the context string and metrics about what was included.
-func BuildPhaseContext(ctx context.Context, profile PhaseContextProfile, wu *WorkUnit, pool *varpool.Pool, deps ...ContextDeps) (string, ContextMetrics) {
-	var dep ContextDeps
+func BuildPhaseContext(ctx context.Context, profile PhaseContextProfile, wu *WorkUnit, pool *varpool.Pool, deps ...contextDeps) (string, ContextMetrics) {
+	var dep contextDeps
 	if len(deps) > 0 {
 		dep = deps[0]
 	}

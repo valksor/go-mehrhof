@@ -34,8 +34,15 @@ func TestContainedPath_Valid(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	if path != testFile {
-		t.Errorf("expected %q, got %q", testFile, path)
+	wantPath, err := filepath.EvalSymlinks(testFile)
+	if err != nil {
+		wantPath, err = filepath.Abs(testFile)
+		if err != nil {
+			t.Fatalf("resolve expected path: %v", err)
+		}
+	}
+	if path != wantPath {
+		t.Errorf("expected %q, got %q", wantPath, path)
 	}
 }
 
@@ -357,7 +364,7 @@ func TestBuildPhaseContext_WithContextItems(t *testing.T) {
 	}
 
 	resolver := &ContextResolver{WorktreeRoot: dir}
-	deps := ContextDeps{Resolver: resolver}
+	deps := contextDeps{Resolver: resolver}
 
 	result, metrics := BuildPhaseContext(context.Background(), profile, wu, pool, deps)
 
