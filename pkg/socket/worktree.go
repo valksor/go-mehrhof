@@ -314,6 +314,9 @@ func (w *WorktreeSocket) registerHandlers() {
 
 	// Event log
 	w.server.Handle("eventlog.query", w.handleEventlogQuery)
+
+	// Failure classification
+	w.server.Handle("failclass.stats", w.handleFailclassStats)
 }
 
 // injectSeqAndBuffer assigns a sequence number to a JSON event, stores it in the

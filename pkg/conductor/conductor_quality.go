@@ -14,6 +14,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/valksor/kvelmo/pkg/failclass"
 	"github.com/valksor/kvelmo/pkg/findings"
 	"github.com/valksor/kvelmo/pkg/quality"
 	"github.com/valksor/kvelmo/pkg/settings"
@@ -92,12 +93,62 @@ func (c *Conductor) runStructuredQualityGates(ctx context.Context, workDir strin
 		return nil
 	}
 
+	// Apply failure classification if enabled.
+	filtered = c.applyFailureClassification(ctx, filtered)
+	if filtered == nil {
+		return nil
+	}
+
 	var msgs []string
 	for _, f := range filtered {
 		msgs = append(msgs, f.Message)
 	}
 
 	return fmt.Errorf("quality gate failed with %d finding(s):\n%s", len(filtered), strings.Join(msgs, "\n"))
+}
+
+// applyFailureClassification runs failure pattern classification on findings
+// when enabled in settings. If only flaky findings remain, it returns nil
+// (passing the gate). Otherwise it returns the genuine/intermittent findings.
+func (c *Conductor) applyFailureClassification(_ context.Context, filtered []findings.Finding) []findings.Finding {
+	effectiveSettings := c.getEffectiveSettings()
+	if effectiveSettings == nil || !effectiveSettings.Workflow.FailureClassification.Enabled {
+		return filtered
+	}
+
+	window := effectiveSettings.Workflow.FailureClassification.HistoryWindow
+	if window == 0 {
+		window = 10
+	}
+
+	history := failclass.NewHistory(window)
+	classifier := failclass.New(history)
+	classified := classifier.Classify(filtered)
+
+	stats := classifier.Stats(classified)
+	slog.Info("quality gate: failure classification",
+		"total", stats.Total,
+		"flaky", stats.Flaky,
+		"genuine", stats.Genuine,
+		"intermittent", stats.Intermittent,
+	)
+
+	// If all findings are flaky, pass the gate.
+	if stats.Genuine == 0 && stats.Intermittent == 0 {
+		slog.Info("quality gate: all findings classified as flaky, passing")
+
+		return nil
+	}
+
+	// Return only genuine and intermittent findings.
+	var genuine []findings.Finding
+	for _, f := range classified {
+		if f.Classification != string(failclass.ClassFlaky) {
+			genuine = append(genuine, f)
+		}
+	}
+
+	return genuine
 }
 
 // messagesToFindings converts plain string finding messages to Finding structs.

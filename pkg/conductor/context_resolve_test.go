@@ -28,14 +28,19 @@ func TestContainedPath_Valid(t *testing.T) {
 	r := &ContextResolver{WorktreeRoot: dir}
 
 	// Create a test file
-	testFile := writeTestFile(t, dir, "src/main.go", "package main")
+	writeTestFile(t, dir, "src/main.go", "package main")
 
 	path, err := r.containedPath("src/main.go")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	if path != testFile {
-		t.Errorf("expected %q, got %q", testFile, path)
+
+	// Resolve symlinks on expected path to match containedPath behavior
+	// (macOS /var → /private/var).
+	wantDir, _ := filepath.EvalSymlinks(dir)
+	wantPath := filepath.Join(wantDir, "src/main.go")
+	if path != wantPath {
+		t.Errorf("expected %q, got %q", wantPath, path)
 	}
 }
 

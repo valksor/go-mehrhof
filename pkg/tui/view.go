@@ -217,6 +217,31 @@ func (m *Model) renderHelp() string {
 	return b.String()
 }
 
+// classificationPrefix returns a TUI prefix for quality gate output lines
+// that contain a failure classification tag like {flaky} or {genuine}.
+func classificationPrefix(line string) string {
+	switch {
+	case strings.Contains(line, "{flaky}"):
+		return "[FLAKY] " + strings.ReplaceAll(line, "{flaky}", "")
+	case strings.Contains(line, "{genuine}"):
+		return "[GENUINE] " + strings.ReplaceAll(line, "{genuine}", "")
+	case strings.Contains(line, "{intermittent}"):
+		return "[INTERMITTENT] " + strings.ReplaceAll(line, "{intermittent}", "")
+	default:
+		return line
+	}
+}
+
+// annotateOutputLines applies classification prefixes to quality gate output.
+func annotateOutputLines(lines []string) []string {
+	result := make([]string, len(lines))
+	for i, line := range lines {
+		result[i] = classificationPrefix(line)
+	}
+
+	return result
+}
+
 // padRight pads or truncates s to exactly n runes.
 func padRight(s string, n int) string {
 	runes := []rune(s)

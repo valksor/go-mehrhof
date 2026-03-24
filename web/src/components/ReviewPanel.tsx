@@ -224,6 +224,11 @@ function FindingItem({ finding, index }: { finding: string; index: number }) {
   const severity = severityMatch ? severityMatch[1].toLowerCase() : 'info'
   const message = severityMatch ? finding.slice(severityMatch[0].length).trim() : finding
 
+  // Try to parse classification from finding (e.g., "{flaky}" or "{genuine}")
+  const classMatch = message.match(/\{(flaky|genuine|intermittent)\}/i)
+  const classification = classMatch ? classMatch[1].toLowerCase() : null
+  const cleanMessage = classMatch ? message.replace(classMatch[0], '').trim() : message
+
   const severityConfig: Record<string, { color: string; bg: string }> = {
     critical: { color: 'text-error', bg: 'bg-error/10' },
     high: { color: 'text-error', bg: 'bg-error/10' },
@@ -242,8 +247,25 @@ function FindingItem({ finding, index }: { finding: string; index: number }) {
           {severity}
         </span>
         <span className="text-xs text-base-content/50">#{index + 1}</span>
+        {classification && <ClassificationBadge classification={classification} />}
       </div>
-      <p className="text-sm mt-1">{message}</p>
+      <p className="text-sm mt-1">{cleanMessage}</p>
     </div>
+  )
+}
+
+function ClassificationBadge({ classification }: { classification: string }) {
+  const config: Record<string, string> = {
+    flaky: 'badge-warning',
+    genuine: 'badge-error',
+    intermittent: 'badge-accent',
+  }
+
+  const badgeClass = config[classification] || 'badge-ghost'
+
+  return (
+    <span className={`badge badge-xs ${badgeClass}`}>
+      {classification}
+    </span>
   )
 }
