@@ -41,3 +41,7 @@ web/src/types/conductor.ts
 pkg/web/static/dist/
 web/src-tauri/lcov.info
 .superpowers/
+
+.env
+
+.junie/memory/
