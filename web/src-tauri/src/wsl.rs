@@ -237,4 +237,51 @@ mod tests {
             "/mnt/c/Users/foo/bar"
         );
     }
+
+    #[test]
+    fn test_windows_to_wsl_path_unicode() {
+        assert_eq!(
+            windows_to_wsl_path(r"C:\Users\用户\ドキュメント"),
+            "/mnt/c/Users/用户/ドキュメント"
+        );
+    }
+
+    #[test]
+    fn test_windows_to_wsl_path_very_long() {
+        let long_segment = "a".repeat(200);
+        let input = format!(r"C:\{}\{}", long_segment, long_segment);
+        let expected = format!("/mnt/c/{}/{}", long_segment, long_segment);
+        assert_eq!(windows_to_wsl_path(&input), expected);
+    }
+
+    #[test]
+    fn test_windows_to_wsl_path_drive_letter_only() {
+        assert_eq!(windows_to_wsl_path("C:"), "/mnt/c/");
+    }
+
+    #[test]
+    fn test_windows_to_wsl_path_double_backslash() {
+        assert_eq!(
+            windows_to_wsl_path(r"C:\\Users\\test"),
+            "/mnt/c//Users//test"
+        );
+    }
+
+    #[test]
+    fn test_windows_to_wsl_path_trailing_backslash() {
+        assert_eq!(
+            windows_to_wsl_path(r"C:\Users\foo\"),
+            "/mnt/c/Users/foo/"
+        );
+    }
+
+    #[test]
+    fn test_windows_to_wsl_path_forward_slash_no_drive() {
+        assert_eq!(windows_to_wsl_path("/usr/local/bin"), "/usr/local/bin");
+    }
+
+    #[test]
+    fn test_windows_to_wsl_path_single_char_not_drive() {
+        assert_eq!(windows_to_wsl_path("X"), "X");
+    }
 }

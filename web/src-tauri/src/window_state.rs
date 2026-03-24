@@ -148,4 +148,98 @@ mod tests {
         let result: Result<WindowState, _> = serde_json::from_str(&content);
         assert!(result.is_err());
     }
+
+    #[test]
+    fn test_deserialize_with_extra_fields() {
+        let json = r#"{"x":10,"y":20,"width":800,"height":600,"is_maximized":false,"new_field":"hello"}"#;
+        let state: WindowState = serde_json::from_str(json).unwrap();
+        assert_eq!(state.x, 10);
+        assert_eq!(state.width, 800);
+    }
+
+    #[test]
+    fn test_deserialize_missing_field_fails() {
+        let json = r#"{"x":10,"y":20,"width":800}"#;
+        let result: Result<WindowState, _> = serde_json::from_str(json);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_zero_size_window() {
+        let state = WindowState {
+            x: 0,
+            y: 0,
+            width: 0,
+            height: 0,
+            is_maximized: false,
+        };
+        let json = serde_json::to_string(&state).unwrap();
+        let restored: WindowState = serde_json::from_str(&json).unwrap();
+        assert_eq!(restored.width, 0);
+        assert_eq!(restored.height, 0);
+    }
+
+    #[test]
+    fn test_very_large_dimensions() {
+        let state = WindowState {
+            x: i32::MAX,
+            y: i32::MIN,
+            width: u32::MAX,
+            height: u32::MAX,
+            is_maximized: true,
+        };
+        let json = serde_json::to_string(&state).unwrap();
+        let restored: WindowState = serde_json::from_str(&json).unwrap();
+        assert_eq!(restored.x, i32::MAX);
+        assert_eq!(restored.y, i32::MIN);
+        assert_eq!(restored.width, u32::MAX);
+    }
+
+    #[test]
+    fn test_file_io_roundtrip() {
+        let temp_dir = TempDir::new().unwrap();
+        let path = temp_dir.path().join("state.json");
+
+        let state = WindowState {
+            x: 50,
+            y: 75,
+            width: 1024,
+            height: 768,
+            is_maximized: true,
+        };
+        let content = serde_json::to_string_pretty(&state).unwrap();
+        fs::write(&path, &content).unwrap();
+
+        let loaded_content = fs::read_to_string(&path).unwrap();
+        let loaded: WindowState = serde_json::from_str(&loaded_content).unwrap();
+        assert_eq!(loaded.x, 50);
+        assert_eq!(loaded.y, 75);
+        assert_eq!(loaded.width, 1024);
+        assert_eq!(loaded.height, 768);
+        assert!(loaded.is_maximized);
+    }
+
+    #[test]
+    fn test_load_nonexistent_file_returns_error() {
+        let result = fs::read_to_string("/tmp/definitely_does_not_exist_kvelmo_test.json");
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_load_empty_file_fails_parse() {
+        let temp_dir = TempDir::new().unwrap();
+        let path = temp_dir.path().join("empty.json");
+        fs::write(&path, "").unwrap();
+
+        let content = fs::read_to_string(&path).unwrap();
+        let result: Result<WindowState, _> = serde_json::from_str(&content);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_deserialize_null_values_fails() {
+        let json = r#"{"x":null,"y":0,"width":800,"height":600,"is_maximized":false}"#;
+        let result: Result<WindowState, _> = serde_json::from_str(json);
+        assert!(result.is_err());
+    }
 }

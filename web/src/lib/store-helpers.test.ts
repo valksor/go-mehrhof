@@ -13,7 +13,10 @@ describe('asyncAction', () => {
     const set = vi.fn()
     await asyncAction(set, async () => {})
     const errorCalls = set.mock.calls.filter(
-      ([arg]: [Record<string, unknown>]) => 'error' in arg && arg.error !== null
+      (args: unknown[]) => {
+        const arg = args[0] as Record<string, unknown>
+        return 'error' in arg && arg.error !== null
+      }
     )
     expect(errorCalls).toHaveLength(0)
   })

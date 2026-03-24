@@ -255,4 +255,55 @@ mod tests {
         // Should extract first port found
         assert_eq!(extract_port("localhost:3000 localhost:4000"), Some(3000));
     }
+
+    #[test]
+    fn test_extract_port_boundary_min() {
+        assert_eq!(extract_port("localhost:0"), Some(0));
+    }
+
+    #[test]
+    fn test_extract_port_boundary_max() {
+        assert_eq!(extract_port("localhost:65535"), Some(65535));
+    }
+
+    #[test]
+    fn test_extract_port_overflow() {
+        // 99999 exceeds u16::MAX (65535)
+        assert_eq!(extract_port("localhost:99999"), None);
+    }
+
+    #[test]
+    fn test_extract_port_way_over_u16() {
+        assert_eq!(extract_port("localhost:100000"), None);
+    }
+
+    #[test]
+    fn test_extract_port_empty_string() {
+        assert_eq!(extract_port(""), None);
+    }
+
+    #[test]
+    fn test_extract_port_colon_no_number() {
+        assert_eq!(extract_port("localhost:"), None);
+    }
+
+    #[test]
+    fn test_extract_port_multiple_colons() {
+        assert_eq!(extract_port("12:34:56 localhost:8080"), Some(8080));
+    }
+
+    #[test]
+    fn test_extract_port_unicode_surrounding() {
+        assert_eq!(extract_port("サーバー localhost:9090 開始"), Some(9090));
+    }
+
+    #[test]
+    fn test_extract_port_only_whitespace() {
+        assert_eq!(extract_port("   "), None);
+    }
+
+    #[test]
+    fn test_extract_port_port_one() {
+        assert_eq!(extract_port("localhost:1"), Some(1));
+    }
 }
