@@ -349,4 +349,52 @@ describe('layoutStore', () => {
       )
     })
   })
+
+  describe('modalCommand', () => {
+    it('starts with null modalCommand', () => {
+      expect(useLayoutStore.getState().modalCommand).toBeNull()
+    })
+
+    it('setModalCommand sets the command', () => {
+      useLayoutStore.getState().setModalCommand('submit')
+      expect(useLayoutStore.getState().modalCommand).toBe('submit')
+    })
+
+    it('setModalCommand can clear with null', () => {
+      useLayoutStore.getState().setModalCommand('finish')
+      useLayoutStore.getState().setModalCommand(null)
+      expect(useLayoutStore.getState().modalCommand).toBeNull()
+    })
+
+    it('setModalCommand supports all modal types', () => {
+      for (const modal of ['submit', 'finish', 'abandon', 'delete'] as const) {
+        useLayoutStore.getState().setModalCommand(modal)
+        expect(useLayoutStore.getState().modalCommand).toBe(modal)
+      }
+    })
+  })
+
+  describe('edge cases', () => {
+    it('moveWidget to same panel preserves widget', () => {
+      useLayoutStore.getState().moveWidget('task', 'left')
+      // task is removed and re-added, so order may shift but content is the same
+      expect(useLayoutStore.getState().panels.left).toContain('task')
+    })
+
+    it('multiple tabs can be opened and navigated', () => {
+      useLayoutStore.getState().openTab({ id: 'a', type: 'file', title: 'A', closeable: true })
+      useLayoutStore.getState().openTab({ id: 'b', type: 'diff', title: 'B', closeable: true })
+      useLayoutStore.getState().openTab({ id: 'c', type: 'agent', title: 'C', closeable: true })
+      expect(useLayoutStore.getState().tabs).toHaveLength(4) // default + 3
+      expect(useLayoutStore.getState().activeTabId).toBe('c')
+
+      useLayoutStore.getState().setActiveTab('a')
+      expect(useLayoutStore.getState().activeTabId).toBe('a')
+
+      useLayoutStore.getState().closeTab('a')
+      // Should activate the tab before 'a' or the one after
+      expect(useLayoutStore.getState().activeTabId).not.toBe('a')
+      expect(useLayoutStore.getState().tabs).toHaveLength(3)
+    })
+  })
 })

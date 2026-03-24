@@ -273,6 +273,164 @@ describe('globalStore', () => {
     })
   })
 
+  describe('selectNextProject', () => {
+    it('selects first project when none selected', () => {
+      const projects = [
+        createMockProject({ id: 'p1' }),
+        createMockProject({ id: 'p2', path: '/b' }),
+      ]
+      useGlobalStore.setState({ projects, selectedProject: null })
+      useGlobalStore.getState().selectNextProject()
+      expect(useGlobalStore.getState().selectedProjectId).toBe('p1')
+    })
+
+    it('advances to next project', () => {
+      const projects = [
+        createMockProject({ id: 'p1' }),
+        createMockProject({ id: 'p2', path: '/b' }),
+        createMockProject({ id: 'p3', path: '/c' }),
+      ]
+      useGlobalStore.setState({ projects, selectedProject: projects[0], selectedProjectId: 'p1' })
+      useGlobalStore.getState().selectNextProject()
+      expect(useGlobalStore.getState().selectedProjectId).toBe('p2')
+    })
+
+    it('stays at last project when already at end', () => {
+      const projects = [
+        createMockProject({ id: 'p1' }),
+        createMockProject({ id: 'p2', path: '/b' }),
+      ]
+      useGlobalStore.setState({ projects, selectedProject: projects[1], selectedProjectId: 'p2' })
+      useGlobalStore.getState().selectNextProject()
+      expect(useGlobalStore.getState().selectedProjectId).toBe('p2')
+    })
+
+    it('does nothing when projects list is empty', () => {
+      useGlobalStore.getState().selectNextProject()
+      expect(useGlobalStore.getState().selectedProject).toBeNull()
+    })
+  })
+
+  describe('selectPrevProject', () => {
+    it('selects last project when none selected', () => {
+      const projects = [
+        createMockProject({ id: 'p1' }),
+        createMockProject({ id: 'p2', path: '/b' }),
+      ]
+      useGlobalStore.setState({ projects, selectedProject: null })
+      useGlobalStore.getState().selectPrevProject()
+      // When no project is selected, currentIdx defaults to projects.length, so prevIdx = length - 1
+      expect(useGlobalStore.getState().selectedProjectId).toBe('p2')
+    })
+
+    it('moves to previous project', () => {
+      const projects = [
+        createMockProject({ id: 'p1' }),
+        createMockProject({ id: 'p2', path: '/b' }),
+        createMockProject({ id: 'p3', path: '/c' }),
+      ]
+      useGlobalStore.setState({ projects, selectedProject: projects[2], selectedProjectId: 'p3' })
+      useGlobalStore.getState().selectPrevProject()
+      expect(useGlobalStore.getState().selectedProjectId).toBe('p2')
+    })
+
+    it('stays at first project when already at beginning', () => {
+      const projects = [
+        createMockProject({ id: 'p1' }),
+        createMockProject({ id: 'p2', path: '/b' }),
+      ]
+      useGlobalStore.setState({ projects, selectedProject: projects[0], selectedProjectId: 'p1' })
+      useGlobalStore.getState().selectPrevProject()
+      expect(useGlobalStore.getState().selectedProjectId).toBe('p1')
+    })
+
+    it('does nothing when projects list is empty', () => {
+      useGlobalStore.getState().selectPrevProject()
+      expect(useGlobalStore.getState().selectedProject).toBeNull()
+    })
+  })
+
+  // ---------------------------------------------------------------------------
+  // loadMetrics / loadMetricsHistory / loadHealth / batchAction
+  // ---------------------------------------------------------------------------
+
+  describe('loadMetrics', () => {
+    it('sets metrics on success', async () => {
+      const metrics = { jobs_submitted: 10, jobs_completed: 8, rpc_requests: 100 }
+      const client = makeMockClient(() => metrics)
+      injectClient(client)
+      await useGlobalStore.getState().loadMetrics()
+      expect(useGlobalStore.getState().metrics).toEqual(metrics)
+    })
+
+    it('does nothing when no client', async () => {
+      await useGlobalStore.getState().loadMetrics()
+      // No error, just silent
+    })
+
+    it('silently ignores errors', async () => {
+      const client = makeMockClient()
+      client.call.mockRejectedValueOnce(new Error('metrics unavailable'))
+      injectClient(client)
+      await expect(useGlobalStore.getState().loadMetrics()).resolves.not.toThrow()
+    })
+  })
+
+  describe('loadHealth', () => {
+    it('sets worktreeHealth on success', async () => {
+      const worktrees = [{ id: 'wt1', path: '/a', state: 'none', healthy: true }]
+      const client = makeMockClient(() => ({ worktrees }))
+      injectClient(client)
+      await useGlobalStore.getState().loadHealth()
+      expect(useGlobalStore.getState().worktreeHealth).toEqual(worktrees)
+    })
+
+    it('defaults to empty array when key missing', async () => {
+      const client = makeMockClient(() => ({}))
+      injectClient(client)
+      await useGlobalStore.getState().loadHealth()
+      expect(useGlobalStore.getState().worktreeHealth).toEqual([])
+    })
+
+    it('does nothing when no client', async () => {
+      const before = useGlobalStore.getState().worktreeHealth
+      await useGlobalStore.getState().loadHealth()
+      expect(useGlobalStore.getState().worktreeHealth).toEqual(before)
+    })
+  })
+
+  describe('batchAction', () => {
+    it('calls tasks.batch with action', async () => {
+      const client = makeMockClient((method) => {
+        if (method === 'tasks.batch') return { total: 2, results: [{ path: '/a', state: 'none', success: true }] }
+        return { tasks: [] }
+      })
+      injectClient(client)
+      const result = await useGlobalStore.getState().batchAction('abort')
+      expect(client.call).toHaveBeenCalledWith('tasks.batch', { action: 'abort' })
+      expect(result.total).toBe(2)
+      expect(result.succeeded).toBe(1)
+    })
+
+    it('includes non-empty filters', async () => {
+      const client = makeMockClient((method) => {
+        if (method === 'tasks.batch') return { total: 0, results: [] }
+        return { tasks: [] }
+      })
+      injectClient(client)
+      await useGlobalStore.getState().batchAction('stop', { state: 'implementing', tag: 'urgent' })
+      expect(client.call).toHaveBeenCalledWith('tasks.batch', {
+        action: 'stop',
+        filter: { state: 'implementing', tag: 'urgent' },
+      })
+    })
+
+    it('returns empty results when no client', async () => {
+      const result = await useGlobalStore.getState().batchAction('stop')
+      expect(result).toEqual({ total: 0, succeeded: 0, results: [] })
+    })
+  })
+
   // ---------------------------------------------------------------------------
   // Helpers for async method tests
   // ---------------------------------------------------------------------------

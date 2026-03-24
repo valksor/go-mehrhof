@@ -279,3 +279,148 @@ describe('parseScreenshotRefs', () => {
     expect(result).toEqual(['fake'])
   })
 })
+
+// ---------------------------------------------------------------------------
+// Async actions with mock client
+// ---------------------------------------------------------------------------
+
+const makeMockClient = (callImpl?: (method: string, params?: unknown) => unknown) => ({
+  call: vi.fn().mockImplementation((method: string, params?: unknown) =>
+    Promise.resolve(callImpl ? callImpl(method, params) : {})
+  ),
+  subscribe: vi.fn(),
+  connect: vi.fn().mockResolvedValue(undefined),
+  close: vi.fn(),
+  setOnDisconnect: vi.fn(),
+})
+
+describe('load', () => {
+  beforeEach(() => {
+    useScreenshotStore.setState({ screenshots: [], loading: false, error: null })
+  })
+
+  it('returns immediately when client is null', async () => {
+    await useScreenshotStore.getState().load(null)
+    expect(useScreenshotStore.getState().loading).toBe(false)
+    expect(useScreenshotStore.getState().screenshots).toEqual([])
+  })
+
+  it('sets screenshots on success', async () => {
+    const screenshots = [createMockScreenshot({ id: 'ss-loaded' })]
+    const client = makeMockClient(() => ({ screenshots }))
+    await useScreenshotStore.getState().load(client as never)
+    expect(useScreenshotStore.getState().screenshots).toEqual(screenshots)
+    expect(useScreenshotStore.getState().loading).toBe(false)
+  })
+
+  it('defaults to empty when response has no screenshots key', async () => {
+    const client = makeMockClient(() => ({}))
+    await useScreenshotStore.getState().load(client as never)
+    expect(useScreenshotStore.getState().screenshots).toEqual([])
+  })
+
+  it('sets error on failure', async () => {
+    const client = makeMockClient()
+    client.call.mockRejectedValueOnce(new Error('network error'))
+    await useScreenshotStore.getState().load(client as never)
+    expect(useScreenshotStore.getState().error).toBe('network error')
+    expect(useScreenshotStore.getState().loading).toBe(false)
+  })
+
+  it('uses fallback error message for non-Error throws', async () => {
+    const client = makeMockClient()
+    client.call.mockRejectedValueOnce('unexpected')
+    await useScreenshotStore.getState().load(client as never)
+    expect(useScreenshotStore.getState().error).toBe('Failed to load screenshots')
+  })
+})
+
+describe('captureScreenshot', () => {
+  beforeEach(() => {
+    useScreenshotStore.setState({ loading: false, error: null })
+  })
+
+  it('does nothing when client is null', async () => {
+    await useScreenshotStore.getState().captureScreenshot(null)
+    expect(useScreenshotStore.getState().loading).toBe(false)
+  })
+
+  it('calls screenshots.capture with source and step', async () => {
+    const client = makeMockClient()
+    await useScreenshotStore.getState().captureScreenshot(client as never, 'agent', 'implement')
+    expect(client.call).toHaveBeenCalledWith('screenshots.capture', { source: 'agent', step: 'implement' })
+  })
+
+  it('defaults source to user', async () => {
+    const client = makeMockClient()
+    await useScreenshotStore.getState().captureScreenshot(client as never)
+    expect(client.call).toHaveBeenCalledWith('screenshots.capture', { source: 'user', step: undefined })
+  })
+
+  it('sets loading false after success', async () => {
+    const client = makeMockClient()
+    await useScreenshotStore.getState().captureScreenshot(client as never)
+    expect(useScreenshotStore.getState().loading).toBe(false)
+  })
+
+  it('sets error on failure', async () => {
+    const client = makeMockClient()
+    client.call.mockRejectedValueOnce(new Error('capture failed'))
+    await useScreenshotStore.getState().captureScreenshot(client as never)
+    expect(useScreenshotStore.getState().error).toBe('capture failed')
+    expect(useScreenshotStore.getState().loading).toBe(false)
+  })
+})
+
+describe('deleteScreenshot', () => {
+  it('does nothing when client is null', async () => {
+    useScreenshotStore.setState({ error: null })
+    await useScreenshotStore.getState().deleteScreenshot('ss-1', null)
+    expect(useScreenshotStore.getState().error).toBeNull()
+  })
+
+  it('calls screenshots.delete with id', async () => {
+    const client = makeMockClient()
+    await useScreenshotStore.getState().deleteScreenshot('ss-1', client as never)
+    expect(client.call).toHaveBeenCalledWith('screenshots.delete', { screenshot_id: 'ss-1' })
+  })
+
+  it('sets error on failure', async () => {
+    useScreenshotStore.setState({ error: null })
+    const client = makeMockClient()
+    client.call.mockRejectedValueOnce(new Error('not found'))
+    await useScreenshotStore.getState().deleteScreenshot('ss-1', client as never)
+    expect(useScreenshotStore.getState().error).toBe('not found')
+  })
+})
+
+describe('getScreenshot', () => {
+  beforeEach(() => {
+    useScreenshotStore.setState({ screenshotData: {} })
+  })
+
+  it('returns cached data if present', async () => {
+    useScreenshotStore.setState({ screenshotData: { 'ss-1': 'data:image/png;base64,abc' } })
+    const result = await useScreenshotStore.getState().getScreenshot('ss-1', null)
+    expect(result).toBe('data:image/png;base64,abc')
+  })
+
+  it('returns null when client is null and no cache', async () => {
+    const result = await useScreenshotStore.getState().getScreenshot('ss-1', null)
+    expect(result).toBeNull()
+  })
+
+  it('fetches, builds data URL, and caches on success', async () => {
+    const client = makeMockClient(() => ({ data: 'AAAA', format: 'png' }))
+    const result = await useScreenshotStore.getState().getScreenshot('ss-1', client as never)
+    expect(result).toBe('data:image/png;base64,AAAA')
+    expect(useScreenshotStore.getState().screenshotData['ss-1']).toBe('data:image/png;base64,AAAA')
+  })
+
+  it('returns null on error', async () => {
+    const client = makeMockClient()
+    client.call.mockRejectedValueOnce(new Error('fetch failed'))
+    const result = await useScreenshotStore.getState().getScreenshot('ss-1', client as never)
+    expect(result).toBeNull()
+  })
+})

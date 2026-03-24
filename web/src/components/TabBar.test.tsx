@@ -1,6 +1,10 @@
-import { render } from '@testing-library/react'
-import { describe, it, expect, vi } from 'vitest'
+import { render, fireEvent } from '@testing-library/react'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { TabBar } from './TabBar'
+
+const mockSetActiveTab = vi.fn()
+const mockCloseTab = vi.fn()
+const mockOpenTab = vi.fn()
 
 vi.mock('../stores/layoutStore', () => ({
   useLayoutStore: () => ({
@@ -9,13 +13,17 @@ vi.mock('../stores/layoutStore', () => ({
       { id: 'tab-2', type: 'spec', title: 'Spec', closeable: false },
     ],
     activeTabId: 'tab-1',
-    setActiveTab: vi.fn(),
-    closeTab: vi.fn(),
-    openTab: vi.fn(),
+    setActiveTab: mockSetActiveTab,
+    closeTab: mockCloseTab,
+    openTab: mockOpenTab,
   }),
 }))
 
-describe('TabBar', () => {
+beforeEach(() => {
+  vi.clearAllMocks()
+})
+
+describe('TabBar accessibility', () => {
   it('has role="tablist" on the tab container', () => {
     const { getByRole } = render(<TabBar />)
     expect(getByRole('tablist')).toBeInTheDocument()
@@ -50,12 +58,71 @@ describe('TabBar', () => {
   it('tab SVG icons are aria-hidden', () => {
     const { getAllByRole } = render(<TabBar />)
     const tabs = getAllByRole('tab')
-    // Each tab should contain an svg — verify no svg has a non-hidden role
     tabs.forEach((tab: HTMLElement) => {
       const svgs = tab.querySelectorAll('svg')
       svgs.forEach((svg: SVGSVGElement) => {
         expect(svg).toHaveAttribute('aria-hidden', 'true')
       })
     })
+  })
+})
+
+describe('TabBar interactions', () => {
+  it('clicking a tab calls setActiveTab', () => {
+    const { getAllByRole } = render(<TabBar />)
+    const tabs = getAllByRole('tab')
+    fireEvent.click(tabs[1])
+    expect(mockSetActiveTab).toHaveBeenCalledWith('tab-2')
+  })
+
+  it('clicking close button calls closeTab', () => {
+    const { getAllByRole } = render(<TabBar />)
+    const tabs = getAllByRole('tab')
+    // First tab is closeable — find the close button inside it
+    const closeButton = tabs[0].querySelector('button')
+    expect(closeButton).toBeInTheDocument()
+    fireEvent.click(closeButton!)
+    expect(mockCloseTab).toHaveBeenCalledWith('tab-1')
+  })
+
+  it('non-closeable tab has no close button', () => {
+    const { getAllByRole } = render(<TabBar />)
+    const tabs = getAllByRole('tab')
+    // tab-2 has closeable: false — should have no nested button
+    const buttons = tabs[1].querySelectorAll('button')
+    expect(buttons.length).toBe(0)
+  })
+
+  it('clicking add-tab button toggles dropdown', () => {
+    const { getByRole } = render(<TabBar />)
+    const addBtn = getByRole('button', { name: /add new tab/i })
+    fireEvent.click(addBtn)
+    expect(addBtn).toHaveAttribute('aria-expanded', 'true')
+  })
+
+  it('selecting from add-tab dropdown calls openTab', () => {
+    const { getByRole, getAllByRole } = render(<TabBar />)
+    const addBtn = getByRole('button', { name: /add new tab/i })
+    fireEvent.click(addBtn)
+    // Click a menu item — use role="menuitem" to avoid matching tab labels
+    const menuItems = getAllByRole('menuitem')
+    expect(menuItems.length).toBeGreaterThan(0)
+    fireEvent.click(menuItems[0]) // First option (Chat)
+    expect(mockOpenTab).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: 'chat',
+        title: 'Chat',
+        closeable: true,
+      })
+    )
+  })
+
+  it('arrow keys navigate between tabs', () => {
+    const { getAllByRole } = render(<TabBar />)
+    const tabs = getAllByRole('tab')
+    tabs[0].focus()
+    fireEvent.keyDown(tabs[0], { key: 'ArrowRight' })
+    // The second tab should now be focused
+    expect(document.activeElement).toBe(tabs[1])
   })
 })
