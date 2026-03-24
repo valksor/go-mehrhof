@@ -341,6 +341,11 @@ func (m *Model) handleSocketEvent(msg socketEventMsg) (tea.Model, tea.Cmd) {
 			}
 			m.worktrees[i].AutoFixAttempt = 0
 			m.worktrees[i].AutoFixMax = 0
+		case "worktree_provisioned":
+			m.worktrees[i].Output = append(m.worktrees[i].Output, msg.event.Message)
+			if m.active == i {
+				m.syncViewport()
+			}
 		}
 
 		break

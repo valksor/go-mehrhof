@@ -193,13 +193,22 @@ type GitSettings struct {
 	AutoCommit              *bool       `yaml:"auto_commit,omitempty" json:"auto_commit,omitempty" schema:"label=Auto Commit;desc=Automatically commit after implementation;default=true"`
 	SignCommits             *bool       `yaml:"sign_commits,omitempty" json:"sign_commits,omitempty" schema:"label=Sign Commits;desc=GPG sign commits;showWhen=git.auto_commit:true"`
 	AllowPRComment          *bool       `yaml:"allow_pr_comment,omitempty" json:"allow_pr_comment,omitempty" schema:"label=Allow PR Comments;desc=Post status comments on pull requests after submit"`
-	PRCustomSections        []PRSection `yaml:"pr_custom_sections,omitempty" json:"pr_custom_sections,omitempty" schema:"label=Custom PR Sections;desc=Additional sections to include in auto-generated PR body;advanced"`
+	PRCustomSections        []PRSection         `yaml:"pr_custom_sections,omitempty" json:"pr_custom_sections,omitempty" schema:"label=Custom PR Sections;desc=Additional sections to include in auto-generated PR body;advanced"`
+	Provision               ProvisionSettings   `yaml:"provision,omitempty" json:"provision,omitempty"`
 }
 
 // PRSection defines a custom section to include in auto-generated PR descriptions.
 type PRSection struct {
 	Title   string `yaml:"title" json:"title" schema:"label=Section Title;required"`
 	Content string `yaml:"content,omitempty" json:"content,omitempty" schema:"label=Default Content;desc=Default content or instructions for this section"`
+}
+
+// ProvisionSettings configures automatic worktree provisioning.
+type ProvisionSettings struct {
+	Enabled         *bool    `yaml:"enabled,omitempty" json:"enabled,omitempty" schema:"label=Provision Worktrees;desc=Auto-copy configs and symlink dependencies when creating worktrees;default=true"`
+	CopyPatterns    []string `yaml:"copy_patterns,omitempty" json:"copy_patterns,omitempty" schema:"label=Copy Patterns;desc=Glob patterns for files to copy into worktree;type=tags"`
+	SymlinkPatterns []string `yaml:"symlink_patterns,omitempty" json:"symlink_patterns,omitempty" schema:"label=Symlink Patterns;desc=Directory names to symlink from source;type=tags"`
+	SetupCommands   []string `yaml:"setup_commands,omitempty" json:"setup_commands,omitempty" schema:"label=Setup Commands;desc=Shell commands to run in worktree after provisioning;type=tags;advanced"`
 }
 
 // WorkerSettings configures the worker pool.

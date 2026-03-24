@@ -2,6 +2,7 @@ package conductor
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log/slog"
 	"path/filepath"
@@ -10,6 +11,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/valksor/kvelmo/pkg/provider"
+	"github.com/valksor/kvelmo/pkg/provision"
 	"github.com/valksor/kvelmo/pkg/settings"
 )
 
@@ -133,6 +135,11 @@ func (c *Conductor) Start(ctx context.Context, sourceRef string) error {
 			}
 		}
 
+		// Provision worktree with config files and dependency symlinks.
+		if useWorktree && c.workUnit.WorktreePath != "" {
+			c.provisionWorktree(effectiveSettings, c.git.Path(), c.workUnit.WorktreePath)
+		}
+
 		// Fallback: just create/switch branch on the main repo
 		if !useWorktree {
 			if c.git.BranchExists(ctx, branchName) {
@@ -173,4 +180,46 @@ func (c *Conductor) Start(ctx context.Context, sourceRef string) error {
 	})
 
 	return nil
+}
+
+// provisionWorktree copies config files and creates dependency symlinks into
+// the newly created worktree. Settings overrides are merged with auto-detected
+// defaults. The result is emitted as a "worktree_provisioned" event.
+func (c *Conductor) provisionWorktree(cfg *settings.Settings, srcDir, worktreeDir string) {
+	if !settings.BoolValue(cfg.Git.Provision.Enabled, true) {
+		return
+	}
+
+	defaults := provision.DefaultOptions(srcDir)
+	userOpts := provision.Options{
+		CopyPatterns:    cfg.Git.Provision.CopyPatterns,
+		SymlinkPatterns: cfg.Git.Provision.SymlinkPatterns,
+		SetupCommands:   cfg.Git.Provision.SetupCommands,
+	}
+	merged := provision.MergeOptions(defaults, userOpts)
+
+	result, err := provision.Provision(srcDir, worktreeDir, merged)
+	if err != nil {
+		slog.Warn("worktree provisioning failed", "error", err)
+		c.emit(ConductorEvent{
+			Type:    "warning",
+			Message: fmt.Sprintf("Worktree provisioning partially failed: %v", err),
+		})
+
+		return
+	}
+
+	if result.Empty() {
+		return
+	}
+
+	data, _ := json.Marshal(result)
+	c.logVerbosef("Provisioned worktree: %d files copied, %d symlinks created, %d commands run",
+		len(result.FilesCopied), len(result.SymlinksCreated), len(result.CommandsRun))
+
+	c.emit(ConductorEvent{
+		Type:    "worktree_provisioned",
+		Message: fmt.Sprintf("Worktree provisioned: %d files, %d symlinks", len(result.FilesCopied), len(result.SymlinksCreated)),
+		Data:    data,
+	})
 }
