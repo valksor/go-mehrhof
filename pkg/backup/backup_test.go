@@ -361,3 +361,240 @@ func listArchiveEntries(t *testing.T, archivePath string) []string {
 
 	return names
 }
+
+// createTestArchive builds a tar.gz archive at archivePath containing the given entries.
+// Each entry key is the file path and value is the content.
+func createTestArchive(t *testing.T, archivePath string, entries map[string]string) {
+	t.Helper()
+
+	f, err := os.Create(archivePath)
+	if err != nil {
+		t.Fatalf("Failed to create archive file: %v", err)
+	}
+	defer func() { _ = f.Close() }()
+
+	gzw := gzip.NewWriter(f)
+	defer func() { _ = gzw.Close() }()
+
+	tw := tar.NewWriter(gzw)
+	defer func() { _ = tw.Close() }()
+
+	for name, content := range entries {
+		hdr := &tar.Header{
+			Name:     name,
+			Mode:     0o644,
+			Size:     int64(len(content)),
+			Typeflag: tar.TypeReg,
+		}
+		if err := tw.WriteHeader(hdr); err != nil {
+			t.Fatalf("Failed to write header for %s: %v", name, err)
+		}
+		if _, err := tw.Write([]byte(content)); err != nil {
+			t.Fatalf("Failed to write content for %s: %v", name, err)
+		}
+	}
+}
+
+func TestRestoreRoundTrip(t *testing.T) {
+	srcDir := t.TempDir()
+
+	files := map[string]string{
+		"config.yaml": "key: value\n",
+		"data.json":   `{"hello": "world"}`,
+	}
+	for name, content := range files {
+		if err := os.WriteFile(filepath.Join(srcDir, name), []byte(content), 0o644); err != nil {
+			t.Fatalf("Failed to create test file %s: %v", name, err)
+		}
+	}
+
+	archiveDir := t.TempDir()
+	archivePath := filepath.Join(archiveDir, "backup.tar.gz")
+
+	_, err := Create(srcDir, archivePath)
+	if err != nil {
+		t.Fatalf("Create() failed: %v", err)
+	}
+
+	restoreDir := t.TempDir()
+
+	result, err := Restore(archivePath, restoreDir)
+	if err != nil {
+		t.Fatalf("Restore() failed: %v", err)
+	}
+
+	if result.Files != len(files) {
+		t.Errorf("Restore result Files = %d, want %d", result.Files, len(files))
+	}
+
+	for name, wantContent := range files {
+		data, err := os.ReadFile(filepath.Join(restoreDir, name))
+		if err != nil {
+			t.Errorf("Failed to read restored file %s: %v", name, err)
+
+			continue
+		}
+		if string(data) != wantContent {
+			t.Errorf("Restored file %s content = %q, want %q", name, string(data), wantContent)
+		}
+	}
+}
+
+func TestRestorePathTraversal(t *testing.T) {
+	archiveDir := t.TempDir()
+	archivePath := filepath.Join(archiveDir, "malicious.tar.gz")
+
+	// Build an archive with a path traversal entry
+	f, err := os.Create(archivePath)
+	if err != nil {
+		t.Fatalf("Failed to create archive: %v", err)
+	}
+
+	gzw := gzip.NewWriter(f)
+	tw := tar.NewWriter(gzw)
+
+	hdr := &tar.Header{
+		Name:     "../evil.txt",
+		Mode:     0o644,
+		Size:     int64(len("malicious")),
+		Typeflag: tar.TypeReg,
+	}
+	if err := tw.WriteHeader(hdr); err != nil {
+		t.Fatalf("Failed to write header: %v", err)
+	}
+	if _, err := tw.Write([]byte("malicious")); err != nil {
+		t.Fatalf("Failed to write content: %v", err)
+	}
+
+	_ = tw.Close()
+	_ = gzw.Close()
+	_ = f.Close()
+
+	restoreDir := t.TempDir()
+
+	_, err = Restore(archivePath, restoreDir)
+	if err == nil {
+		t.Fatal("Restore() should return an error for path traversal")
+	}
+	if !strings.Contains(err.Error(), "unsafe path") {
+		t.Errorf("Error message %q should contain 'unsafe path'", err.Error())
+	}
+}
+
+func TestRestoreNonexistentArchive(t *testing.T) {
+	restoreDir := t.TempDir()
+
+	_, err := Restore(filepath.Join(restoreDir, "nonexistent.tar.gz"), restoreDir)
+	if err == nil {
+		t.Fatal("Restore() with nonexistent archive should return an error")
+	}
+}
+
+func TestRestoreSkipsTransientFiles(t *testing.T) {
+	archiveDir := t.TempDir()
+	archivePath := filepath.Join(archiveDir, "transient.tar.gz")
+
+	createTestArchive(t, archivePath, map[string]string{
+		"config.yaml": "key: value",
+		"server.sock": "",
+		"db.lock":     "",
+	})
+
+	restoreDir := t.TempDir()
+
+	result, err := Restore(archivePath, restoreDir)
+	if err != nil {
+		t.Fatalf("Restore() failed: %v", err)
+	}
+
+	if result.Files != 1 {
+		t.Errorf("Restore result Files = %d, want 1", result.Files)
+	}
+	if result.Skipped < 2 {
+		t.Errorf("Restore result Skipped = %d, want >= 2", result.Skipped)
+	}
+
+	// Verify transient files were not restored
+	for _, name := range []string{"server.sock", "db.lock"} {
+		if _, err := os.Stat(filepath.Join(restoreDir, name)); err == nil {
+			t.Errorf("Transient file %s should not have been restored", name)
+		}
+	}
+}
+
+func TestRestoreFilePermission(t *testing.T) {
+	tests := []struct {
+		name string
+		want os.FileMode
+	}{
+		{".env", 0o600},
+		{"config.yaml", 0o644},
+		{"path/to/.env", 0o600},
+		{"main.go", 0o644},
+		{"secrets.env", 0o600},
+		{"data/settings.json", 0o644},
+	}
+
+	for _, tt := range tests {
+		got := restoreFilePermission(tt.name)
+		if got != tt.want {
+			t.Errorf("restoreFilePermission(%q) = %04o, want %04o", tt.name, got, tt.want)
+		}
+	}
+}
+
+func TestRestoreWithSubdirectories(t *testing.T) {
+	srcDir := t.TempDir()
+
+	// Create nested directory structure
+	subDir := filepath.Join(srcDir, "nested", "deep")
+	if err := os.MkdirAll(subDir, 0o755); err != nil {
+		t.Fatalf("Failed to create nested dirs: %v", err)
+	}
+
+	files := map[string]string{
+		"root.txt":              "root content",
+		"nested/mid.txt":        "mid content",
+		"nested/deep/inner.txt": "inner content",
+	}
+	for name, content := range files {
+		if err := os.WriteFile(filepath.Join(srcDir, name), []byte(content), 0o644); err != nil {
+			t.Fatalf("Failed to create %s: %v", name, err)
+		}
+	}
+
+	archiveDir := t.TempDir()
+	archivePath := filepath.Join(archiveDir, "nested-backup.tar.gz")
+
+	_, err := Create(srcDir, archivePath)
+	if err != nil {
+		t.Fatalf("Create() failed: %v", err)
+	}
+
+	restoreDir := t.TempDir()
+
+	result, err := Restore(archivePath, restoreDir)
+	if err != nil {
+		t.Fatalf("Restore() failed: %v", err)
+	}
+
+	if result.Files != len(files) {
+		t.Errorf("Restore result Files = %d, want %d", result.Files, len(files))
+	}
+	if result.Dirs == 0 {
+		t.Error("Restore result Dirs = 0, want > 0 for nested directories")
+	}
+
+	// Verify all files were restored with correct content
+	for name, wantContent := range files {
+		data, err := os.ReadFile(filepath.Join(restoreDir, name))
+		if err != nil {
+			t.Errorf("Failed to read restored file %s: %v", name, err)
+
+			continue
+		}
+		if string(data) != wantContent {
+			t.Errorf("Restored file %s content = %q, want %q", name, string(data), wantContent)
+		}
+	}
+}
