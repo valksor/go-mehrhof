@@ -110,10 +110,16 @@ func (r *Reflective) RunLoop(ctx context.Context, exec ExecFunc, input Input, em
 func truncateForReflection(s string) string {
 	const maxLen = 4000
 	if len(s) <= maxLen {
+		return s // Fast path: byte length within limit guarantees rune count is too.
+	}
+
+	// Truncate at rune boundary to avoid splitting multi-byte UTF-8 characters.
+	runes := []rune(s)
+	if len(runes) <= maxLen {
 		return s
 	}
 
-	return s[:maxLen] + "\n\n[truncated for review]"
+	return string(runes[:maxLen]) + "\n\n[truncated for review]"
 }
 
 // hasActionableItems checks if reflection output suggests changes are needed.
@@ -122,19 +128,27 @@ func truncateForReflection(s string) string {
 func hasActionableItems(reflection string) bool {
 	lower := strings.ToLower(reflection)
 
-	// Check for action words first — presence of issues overrides generic approval.
+	// Action phrases — presence of issues overrides generic approval.
 	actionPhrases := []string{
-		"should", "could", "fix", "bug", "missing", "incorrect",
-		"improve", "change", "update", "error", "issue",
+		"should add", "should fix", "should be", "could improve", "could be",
+		"fix", "bug", "missing", "incorrect",
+		"improve", "needs to change", "update", "error handling", "issue",
 	}
 
+	hasAction := false
 	for _, phrase := range actionPhrases {
 		if strings.Contains(lower, phrase) {
-			return true
+			hasAction = true
+
+			break
 		}
 	}
 
-	// If the reflection says everything is fine and no action words, skip corrections.
+	if hasAction {
+		return true
+	}
+
+	// If no action words found, check if explicitly approved.
 	noActionPhrases := []string{
 		"looks good", "no issues", "nothing to fix", "no changes needed",
 		"everything is correct", "no bugs found", "all good",

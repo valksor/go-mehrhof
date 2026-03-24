@@ -132,7 +132,7 @@ func TestTruncateForReflection(t *testing.T) {
 	}
 
 	result := truncateForReflection(string(long))
-	if len(result) > 4100 { // 4000 + suffix
+	if len(result) > 4024 { // 4000 + 24 bytes for "\n\n[truncated for review]"
 		t.Errorf("expected truncated output, got length %d", len(result))
 	}
 }

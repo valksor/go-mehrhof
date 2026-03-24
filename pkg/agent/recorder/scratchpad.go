@@ -137,12 +137,14 @@ func extractContent(raw json.RawMessage) string {
 		}
 	}
 
-	// Truncate raw JSON as fallback.
-	if len(raw) > 200 {
-		return string(raw[:200]) + "..."
+	// Truncate raw JSON as fallback (rune-safe to avoid splitting UTF-8).
+	sr := string(raw)
+	runes := []rune(sr)
+	if len(runes) > 200 {
+		return string(runes[:200]) + "..."
 	}
 
-	return string(raw)
+	return sr
 }
 
 func extractField(raw json.RawMessage, field string) string {
@@ -165,10 +167,12 @@ func extractField(raw json.RawMessage, field string) string {
 		return s
 	}
 
-	// Non-string field: return raw JSON.
-	if len(val) > 200 {
-		return string(val[:200]) + "..."
+	// Non-string field: return raw JSON (rune-safe to avoid splitting UTF-8).
+	sv := string(val)
+	runes := []rune(sv)
+	if len(runes) > 200 {
+		return string(runes[:200]) + "..."
 	}
 
-	return string(val)
+	return sv
 }
