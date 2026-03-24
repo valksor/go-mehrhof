@@ -320,6 +320,9 @@ func (w *WorktreeSocket) registerHandlers() {
 
 	// Failure classification
 	w.server.Handle("failclass.stats", w.handleFailclassStats)
+
+	// Progress estimation
+	w.server.Handle("progress.get", w.handleProgressGet)
 }
 
 // injectSeqAndBuffer assigns a sequence number to a JSON event, stores it in the
@@ -2037,6 +2040,29 @@ func (w *WorktreeSocket) emitEvent(eventType string, data any) {
 		}
 	}
 	w.streamsMu.RUnlock()
+}
+
+// --- Progress Estimation ---
+
+func (w *WorktreeSocket) handleProgressGet(_ context.Context, req *Request) (*Response, error) {
+	if resp := w.noConductor(req.ID); resp != nil {
+		return resp, nil
+	}
+
+	estimate := w.conductor.GetProgressEstimate()
+	if estimate == nil {
+		return NewResultResponse(req.ID, map[string]any{
+			"active": false,
+		})
+	}
+
+	return NewResultResponse(req.ID, map[string]any{
+		"active":      true,
+		"percent":     estimate.Percent,
+		"eta_seconds": estimate.ETASeconds,
+		"signals":     estimate.Signals,
+		"calibrated":  estimate.Calibrated,
+	})
 }
 
 // --- Lifecycle ---

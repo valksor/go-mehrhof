@@ -28,6 +28,15 @@ type disconnectedMsg struct {
 	err         error
 }
 
+// progressMsg carries a progress update for a worktree.
+type progressMsg struct {
+	worktreeDir string
+	percent     float64
+	etaSeconds  int
+	calibrated  bool
+	active      bool
+}
+
 // errMsg carries a fatal error.
 type errMsg struct {
 	err error

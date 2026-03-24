@@ -38,6 +38,12 @@ type WorktreeState struct {
 	LastFailureClass string // failure classification: hard_stop, recoverable, degraded, skippable
 	AutoFixAttempt   int    // current auto-fix attempt (0 = inactive)
 	AutoFixMax       int    // max auto-fix attempts
+
+	// Progress estimation during active phases.
+	ProgressActive     bool
+	ProgressPercent    float64
+	ProgressETASeconds int
+	ProgressCalibrated bool
 }
 
 // Model is the root bubbletea model.
@@ -124,6 +130,20 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case specResultMsg:
 		m.output.SetContent(msg.content)
 		m.output.GotoTop()
+
+		return m, nil
+
+	case progressMsg:
+		for i, wt := range m.worktrees {
+			if wt.Dir == msg.worktreeDir {
+				m.worktrees[i].ProgressActive = msg.active
+				m.worktrees[i].ProgressPercent = msg.percent
+				m.worktrees[i].ProgressETASeconds = msg.etaSeconds
+				m.worktrees[i].ProgressCalibrated = msg.calibrated
+
+				break
+			}
+		}
 
 		return m, nil
 
@@ -266,6 +286,7 @@ func (m *Model) handleWorktreeList(msg worktreeListMsg) (tea.Model, tea.Cmd) {
 		if !m.hasWorktree(dir) {
 			m.worktrees = append(m.worktrees, WorktreeState{Dir: dir})
 			cmds = append(cmds, subscribeWorktree(m.ctx, dir, m.msgs))
+			startProgressPolling(m.ctx, dir, m.msgs)
 		}
 	}
 	cmds = append(cmds, waitForMsg(m.ctx, m.msgs))
@@ -289,6 +310,13 @@ func (m *Model) handleSocketEvent(msg socketEventMsg) (tea.Model, tea.Cmd) {
 			m.worktrees[i].State = string(msg.event.State)
 			if string(msg.event.State) != "failed" {
 				m.worktrees[i].LastFailureClass = ""
+			}
+			// Clear progress when leaving active phases.
+			switch string(msg.event.State) {
+			case "planning", "implementing", "simplifying", "optimizing":
+				// Keep progress active — polling will update it.
+			default:
+				m.worktrees[i].ProgressActive = false
 			}
 		case "phase_failure_classified":
 			m.worktrees[i].LastFailureClass = string(msg.event.FailureClass)
