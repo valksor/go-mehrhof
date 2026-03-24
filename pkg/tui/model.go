@@ -36,6 +36,7 @@ type WorktreeState struct {
 	Workers          []WorkerInfo
 	JobID            string
 	LastFailureClass string // failure classification: hard_stop, recoverable, degraded, skippable
+	ActiveForks      int    // number of active conversation forks
 }
 
 // Model is the root bubbletea model.

@@ -104,11 +104,18 @@ func (r *ContextResolver) containedPath(ref string) (string, error) {
 	}
 
 	root := filepath.Clean(r.WorktreeRoot)
+	// Also eval symlinks on root so comparisons work on platforms where
+	// temp dirs are symlinks (e.g. macOS /var → /private/var).
+	if evaledRoot, evalErr := filepath.EvalSymlinks(root); evalErr == nil {
+		root = evaledRoot
+	}
 	if evaled != root && !strings.HasPrefix(evaled, root+string(filepath.Separator)) {
 		return "", fmt.Errorf("path %q escapes worktree", ref)
 	}
 
-	return evaled, nil
+	// Return the lexical path (not symlink-evaluated) so callers get predictable paths.
+	// The security check above already verified containment using the resolved form.
+	return resolved, nil
 }
 
 // resolveFile reads a file (or file:line range) from the worktree.

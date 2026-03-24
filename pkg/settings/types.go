@@ -314,6 +314,13 @@ type WorkflowSettings struct {
 	Hooks                HooksSettings              `yaml:"hooks,omitempty" json:"hooks,omitempty"`
 	HoldTheLine          *bool                      `yaml:"hold_the_line,omitempty" json:"hold_the_line,omitempty" schema:"label=Hold the Line;desc=Only gate on findings in lines changed by the agent, ignoring pre-existing tech debt;default=true"`
 	PhaseGuardrails      map[string]GuardrailConfig `yaml:"phase_guardrails,omitempty" json:"phase_guardrails,omitempty" schema:"label=Phase Guardrails;desc=Pre/post validation checks per phase;type=json;advanced"`
+	Forking              *ForkingSettings           `yaml:"forking,omitempty" json:"forking,omitempty"`
+}
+
+// ForkingSettings configures conversation forking for parallel alternatives.
+type ForkingSettings struct {
+	Enabled  bool `yaml:"enabled,omitempty" json:"enabled,omitempty" schema:"label=Forking;desc=Allow forking tasks into parallel alternative approaches;default=false"`
+	MaxForks int  `yaml:"max_forks,omitempty" json:"max_forks,omitempty" schema:"label=Max Forks;desc=Maximum number of parallel forks per task;default=3;min=1;max=10"`
 }
 
 // GuardrailConfig defines pre and post guardrails for a workflow phase.

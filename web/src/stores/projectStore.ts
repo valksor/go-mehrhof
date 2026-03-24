@@ -77,6 +77,17 @@ export interface FilesEntry {
   modified?: string
 }
 
+export interface ForkInfo {
+  id: string
+  label: string
+  branch: string
+  worktree_dir: string
+  checkpoint_sha: string
+  state: string
+  tokens_used?: number
+  created_at: string
+}
+
 export interface Review {
   number: number
   timestamp: string
@@ -236,6 +247,9 @@ interface ProjectState {
   // CI fix loop status
   ciFixStatus: { active: boolean; attempt?: number; maxAttempts?: number; result?: 'success' | 'failed' } | null
 
+  // Conversation forks
+  forks: ForkInfo[]
+
   // Dry-run mode
   dryRunMode: boolean
   toggleDryRun: () => void
@@ -356,6 +370,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
   tags: [],
   pendingNodeApprovals: [],
   ciFixStatus: null,
+  forks: [],
   dryRunMode: false,
   toggleDryRun: () => {
     set(s => ({ dryRunMode: !s.dryRunMode }))
@@ -659,6 +674,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
       tags: [],
       pendingNodeApprovals: [],
       ciFixStatus: null,
+      forks: [],
       recap: null,
     })
   },

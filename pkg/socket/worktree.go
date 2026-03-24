@@ -314,6 +314,12 @@ func (w *WorktreeSocket) registerHandlers() {
 
 	// Event log
 	w.server.Handle("eventlog.query", w.handleEventlogQuery)
+
+	// Conversation forking
+	w.server.Handle("fork.create", w.handleForkCreate)
+	w.server.Handle("fork.list", w.handleForkList)
+	w.server.Handle("fork.compare", w.handleForkCompare)
+	w.server.Handle("fork.select", w.handleForkSelect)
 }
 
 // injectSeqAndBuffer assigns a sequence number to a JSON event, stores it in the

@@ -1,6 +1,7 @@
 package tui
 
 import (
+	"fmt"
 	"path/filepath"
 	"strings"
 
@@ -97,6 +98,9 @@ func (m *Model) renderStatusBar() string {
 	text := "kvelmo · " + base + " · " + state
 	if state == "failed" && wt.LastFailureClass != "" {
 		text += " [" + wt.LastFailureClass + "]"
+	}
+	if wt.ActiveForks > 0 {
+		text += fmt.Sprintf(" [%d fork(s)]", wt.ActiveForks)
 	}
 	if m.dryRun {
 		text += " [DRY RUN]"

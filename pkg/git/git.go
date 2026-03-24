@@ -151,6 +151,14 @@ func (r *Repository) Checkout(ctx context.Context, name string) error {
 	return r.SwitchBranch(ctx, name)
 }
 
+// Merge merges the given branch into the current branch using --no-ff.
+func (r *Repository) Merge(ctx context.Context, branch, message string) error {
+	args := []string{"merge", "--no-ff", "-m", message, branch}
+	_, err := r.run(ctx, args...)
+
+	return err
+}
+
 func (r *Repository) DeleteBranch(ctx context.Context, name string) error {
 	slog.Debug("git: deleting branch", "name", name)
 	_, err := r.run(ctx, "branch", "-D", name)
