@@ -8,7 +8,7 @@ Authenticate with task providers by saving API tokens to `.env` files.
 kvelmo <provider> login [flags]
 ```
 
-Supported providers: `github`, `gitlab`, `linear`, `wrike`
+Supported providers: `github`, `gitlab`, `linear`, `wrike`, `jira`, `azuredevops`
 
 ## Description
 
@@ -77,6 +77,18 @@ kvelmo linear login
 kvelmo wrike login
 ```
 
+### Jira Login
+
+```bash
+kvelmo jira login
+```
+
+### Azure DevOps Login
+
+```bash
+kvelmo azuredevops login
+```
+
 ### Project-Specific Token
 
 ```bash
@@ -96,12 +108,14 @@ Override? [y/N]:
 
 ## Required Scopes
 
-| Provider | Scopes                                                       |
-|----------|--------------------------------------------------------------|
-| GitHub   | `repo`, `read:user` (or Fine-grained with repository access) |
-| GitLab   | `api`, `read_user`, `read_repository`                        |
-| Linear   | Workspace access                                             |
-| Wrike    | Default (read/write access)                                  |
+| Provider       | Scopes                                                       |
+|----------------|--------------------------------------------------------------|
+| GitHub         | `repo`, `read:user` (or Fine-grained with repository access) |
+| GitLab         | `api`, `read_user`, `read_repository`                        |
+| Linear         | Workspace access                                             |
+| Wrike          | Default (read/write access)                                  |
+| Jira           | Read/write project access                                    |
+| Azure DevOps   | Work Items (Read & Write), Code (Read & Write)              |
 
 ## Web UI
 

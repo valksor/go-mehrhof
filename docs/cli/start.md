@@ -5,7 +5,7 @@ Start kvelmo sockets for the current directory.
 ## Usage
 
 ```bash
-kvelmo start
+kvelmo start [description]
 ```
 
 ## Options
@@ -17,7 +17,10 @@ kvelmo start
 | `--from` | | Task source (`file:path`, `github:owner/repo#123`, or URL) |
 | `--text` | | Inline task description (creates task without external source) |
 | `--auto` | | Auto-advance through plan, implement, and review |
+| `--skip` | | Phases to skip during auto-advance (comma-separated, e.g. `--skip simplify,optimize`) |
 | `--json` | | Output result as JSON |
+
+A description can also be passed as a positional argument instead of using `--text`.
 
 ## Provider Formats
 
@@ -53,6 +56,12 @@ echo "Fix X" | kvelmo start --text -
 
 # Auto-advance through plan, implement, review
 kvelmo start --from file:task.md --auto
+
+# Positional arg as inline text (shorthand for --text)
+kvelmo start "Fix login button alignment"
+
+# Auto-advance but skip simplify and optimize phases
+kvelmo start --from file:task.md --auto --skip simplify,optimize
 ```
 
 ## What Happens

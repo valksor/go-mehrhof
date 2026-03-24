@@ -19,6 +19,8 @@ kvelmo submit
 | `--labels` | | Add labels (comma-separated) |
 | `--delete-branch` | | Delete local branch after successful submission |
 | `--skip-review` | | Skip review gate and submit directly |
+| `--dry-run` | | Preview the PR without creating it |
+| `--section` | | Add custom PR section (format: `"Header=Content"`, repeatable) |
 | `--json` | | Output result as JSON |
 
 ## Prerequisites
@@ -34,6 +36,15 @@ kvelmo submit
 ```bash
 # Submit PR
 kvelmo submit
+
+# Preview PR without creating it
+kvelmo submit --dry-run
+
+# Submit with custom section
+kvelmo submit --section "Test Plan=Manually tested login flow"
+
+# Submit as draft with reviewers
+kvelmo submit --draft --reviewers alice,bob
 ```
 
 ## What Happens

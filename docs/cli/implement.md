@@ -12,7 +12,7 @@ kvelmo implement
 
 | Flag | Short | Description |
 |------|-------|-------------|
-| `--force` | | Re-run implementation even if already implemented |
+| `--dry-run` | | Simulate without executing agent |
 | `--wait` | `-w` | Wait for job to complete, streaming output |
 | `--json` | | Output result as JSON |
 

@@ -8,11 +8,15 @@ Open the Activity panel from the sidebar. It loads as a modal overlay.
 
 ## View Modes
 
-Toggle between two tabs at the top:
+Toggle between three tabs at the top:
 
 ### Activity
 
 Shows all JSON-RPC calls made to kvelmo sockets. Each entry displays timestamp, method name, duration, and success/error status.
+
+### Timeline
+
+Human-readable activity feed showing what happened in plain language (e.g., "Agent started planning", "PR submitted") instead of raw RPC method names. Results are ordered newest-first.
 
 ### Audit
 

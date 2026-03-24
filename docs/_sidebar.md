@@ -33,6 +33,7 @@
   - [CI Status](/web-ui/ci.md)
   - [Policy](/web-ui/policy.md)
   - [Hooks](/web-ui/hooks.md)
+  - [Code Graph](/web-ui/codegraph.md)
   - [Access Tokens](/web-ui/access.md)
   - [Logs](/web-ui/logs.md)
   - [Diagnose](/web-ui/diagnose.md)
@@ -59,6 +60,7 @@
     - [abandon](/cli/abandon.md)
   - Governance
     - [approve](/cli/approve.md)
+    - [checklist](/cli/checklist.md)
     - [audit](/cli/audit.md)
     - [policy](/cli/policy.md)
     - [quality](/cli/quality.md)
@@ -108,6 +110,7 @@
     - [recordings](/cli/recordings.md)
     - [rpc](/cli/rpc.md)
     - [pipe](/cli/pipe.md)
+    - [codegraph](/cli/codegraph.md)
   - Infrastructure
     - [access](/cli/access.md)
     - [backup](/cli/backup.md)

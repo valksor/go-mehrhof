@@ -5,14 +5,18 @@ Quick-fix workflow: load, implement, and submit in one step.
 ## Usage
 
 ```bash
-kvelmo quick --from <source>
+kvelmo quick [description]
 ```
 
 ## Options
 
 | Flag | Description |
 |------|-------------|
-| `--from` | Task source (required) |
+| `--from` | Task source |
+| `--text` | Inline task description |
+| `--skip` | Additional phases to skip (comma-separated, e.g. `--skip simplify,optimize`) |
+
+A description can also be passed as a positional argument.
 
 ## Examples
 
@@ -22,6 +26,12 @@ kvelmo quick --from github:owner/repo#123
 
 # Quick fix from file
 kvelmo quick --from file:task.md
+
+# Quick fix with inline text (positional arg)
+kvelmo quick "Fix typo in README"
+
+# Quick fix skipping simplify and optimize
+kvelmo quick --from file:task.md --skip simplify,optimize
 ```
 
 ## What It Does

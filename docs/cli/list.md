@@ -67,8 +67,8 @@ Tasks:
 # List all active tasks
 kvelmo list
 
-# JSON output
-kvelmo list --json
+# JSON output for history
+kvelmo list history --json
 
 # Browse task history
 kvelmo list history

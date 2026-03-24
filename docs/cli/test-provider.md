@@ -1,11 +1,11 @@
-# kvelmo test-provider
+# kvelmo config test-provider
 
 Test a provider connection to verify it is configured and reachable.
 
 ## Usage
 
 ```bash
-kvelmo test-provider <provider>
+kvelmo config test-provider <provider>
 ```
 
 ## Description
@@ -25,7 +25,7 @@ The command connects to the global socket and calls `providers.test` with the sp
 ### Test GitHub connection
 
 ```bash
-kvelmo test-provider github
+kvelmo config test-provider github
 ```
 
 Output on success:
@@ -43,13 +43,13 @@ github: failed
 ### Test GitLab connection
 
 ```bash
-kvelmo test-provider gitlab
+kvelmo config test-provider gitlab
 ```
 
 ### Test Linear connection
 
 ```bash
-kvelmo test-provider linear
+kvelmo config test-provider linear
 ```
 
 ## Prerequisites
