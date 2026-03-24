@@ -766,15 +766,7 @@ func (p *Pool) AddAgentWorker(ctx context.Context, agentName string, isDefault b
 
 	// Validate against allowed agents whitelist
 	if agentName != "" && len(p.allowedAgents) > 0 {
-		allowed := false
-		for _, a := range p.allowedAgents {
-			if a == agentName {
-				allowed = true
-
-				break
-			}
-		}
-		if !allowed {
+		if !slices.Contains(p.allowedAgents, agentName) {
 			return nil, fmt.Errorf("agent %q is not in the allowed list (allowed: %v)", agentName, p.allowedAgents)
 		}
 	}

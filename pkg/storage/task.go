@@ -27,6 +27,7 @@ type TaskState struct {
 	WorktreePath      string                        `yaml:"worktree_path,omitempty"`
 	Specifications    []string                      `yaml:"specifications,omitempty"`
 	Checkpoints       []string                      `yaml:"checkpoints,omitempty"`
+	CheckpointMeta    map[string]TaskCheckpointMeta `yaml:"checkpoint_meta,omitempty"`
 	RedoStack         []string                      `yaml:"redo_stack,omitempty"`
 	Jobs              []string                      `yaml:"jobs,omitempty"`
 	Metadata          map[string]string             `yaml:"metadata,omitempty"`
@@ -48,6 +49,13 @@ type TaskState struct {
 	History     []TaskHistoryEntry `yaml:"history,omitempty"`
 	CreatedAt   time.Time          `yaml:"created_at"`
 	UpdatedAt   time.Time          `yaml:"updated_at"`
+}
+
+// TaskCheckpointMeta mirrors conductor.CheckpointMeta without an import cycle.
+type TaskCheckpointMeta struct {
+	Message   string    `yaml:"message"`
+	State     string    `yaml:"state"`
+	CreatedAt time.Time `yaml:"created_at"`
 }
 
 // TaskApprovalRecord mirrors conductor.ApprovalRecord without an import cycle.

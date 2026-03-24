@@ -251,18 +251,19 @@ func (vs *VectorStore) Search(ctx context.Context, query string, opts SearchOpti
 }
 
 // SearchByCategory returns all documents matching a category, sorted by importance then recency.
-func (vs *VectorStore) SearchByCategory(category string, limit int) []*Document {
+// Returns value copies so callers cannot mutate store internals.
+func (vs *VectorStore) SearchByCategory(category string, limit int) []Document {
 	vs.mu.RLock()
 	defer vs.mu.RUnlock()
 
-	var matches []*Document
+	var matches []Document
 	for _, doc := range vs.documents {
 		if doc.Category == category {
-			matches = append(matches, doc)
+			matches = append(matches, *doc)
 		}
 	}
 
-	slices.SortFunc(matches, func(a, b *Document) int {
+	slices.SortFunc(matches, func(a, b Document) int {
 		// Higher importance first, then newer first.
 		if a.Importance != b.Importance {
 			return cmp.Compare(b.Importance, a.Importance)

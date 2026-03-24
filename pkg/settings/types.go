@@ -188,6 +188,7 @@ type StorageSettings struct {
 	SaveInProject  *bool                  `yaml:"save_in_project,omitempty" json:"save_in_project,omitempty" schema:"label=Save in Project;desc=Store specs/plans/chat in .valksor/ instead of home (~/.valksor/kvelmo/);default=false"`
 	SpecOutputPath string                 `yaml:"spec_output_path,omitempty" json:"spec_output_path,omitempty" schema:"label=Spec Output Path;desc=Write specs to this repo path. Variables: {key}, {slug}. Example: docs/specs/{key}.md;advanced"`
 	PlanOutputPath string                 `yaml:"plan_output_path,omitempty" json:"plan_output_path,omitempty" schema:"label=Plan Output Path;desc=Write plans to this repo path. Variables: {key}, {slug}. Example: docs/plans/{key}.md;advanced"`
+	CommitSpecs    *bool                  `yaml:"commit_specs,omitempty" json:"commit_specs,omitempty" schema:"label=Commit Specs to Git;desc=Auto-commit specs and plans to git when written to repo output paths;default=false;advanced"`
 	ChangelogPath  string                 `yaml:"changelog_path,omitempty" json:"changelog_path,omitempty" schema:"label=Changelog Path;desc=Path to CHANGELOG.md for auto-generated entries. Empty to disable;default=;placeholder=CHANGELOG.md;advanced"`
 	Recording      RecordingSettings      `yaml:"recording,omitempty" json:"recording,omitempty"`
 	ActivityLog    ActivityLogSettings    `yaml:"activity_log,omitempty" json:"activity_log,omitempty"`
@@ -287,7 +288,7 @@ type WorkflowSettings struct {
 	CI                   CISettings                 `yaml:"ci,omitempty" json:"ci,omitempty"`
 	Hooks                HooksSettings              `yaml:"hooks,omitempty" json:"hooks,omitempty"`
 	HoldTheLine          *bool                      `yaml:"hold_the_line,omitempty" json:"hold_the_line,omitempty" schema:"label=Hold the Line;desc=Only gate on findings in lines changed by the agent, ignoring pre-existing tech debt;default=true"`
-	PhaseGuardrails      map[string]GuardrailConfig `yaml:"phase_guardrails,omitempty" json:"phase_guardrails,omitempty" schema:"label=Phase Guardrails;desc=Pre/post validation checks per phase;type=keyvalue;advanced"`
+	PhaseGuardrails      map[string]GuardrailConfig `yaml:"phase_guardrails,omitempty" json:"phase_guardrails,omitempty" schema:"label=Phase Guardrails;desc=Pre/post validation checks per phase;type=json;advanced"`
 }
 
 // GuardrailConfig defines pre and post guardrails for a workflow phase.

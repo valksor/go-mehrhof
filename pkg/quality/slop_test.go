@@ -265,6 +265,11 @@ func TestSlopScanFileCommentedOutCode(t *testing.T) {
 			if len(matched) != tt.want {
 				t.Errorf("got %d findings, want %d; findings: %+v", len(matched), tt.want, ff)
 			}
+			for _, f := range matched {
+				if f.Severity != findings.SeverityLow {
+					t.Errorf("severity = %v, want low", f.Severity)
+				}
+			}
 		})
 	}
 }

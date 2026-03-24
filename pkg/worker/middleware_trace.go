@@ -7,7 +7,7 @@ import (
 	"github.com/valksor/kvelmo/pkg/trace"
 )
 
-// TracingMiddleware adds trace spans around agent execution.
+// TracingMiddleware logs agent execution lifecycle with trace correlation.
 func TracingMiddleware() AgentMiddleware {
 	return func(next AgentExecFunc) AgentExecFunc {
 		return func(ctx context.Context, prompt string) error {

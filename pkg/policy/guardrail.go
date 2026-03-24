@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os/exec"
+	"slices"
 	"strconv"
 	"strings"
 
@@ -39,14 +40,7 @@ func ListGuardrails() []string {
 		names = append(names, name)
 	}
 
-	// Sort for deterministic output.
-	for i := range names {
-		for j := i + 1; j < len(names); j++ {
-			if names[j] < names[i] {
-				names[i], names[j] = names[j], names[i]
-			}
-		}
-	}
+	slices.Sort(names)
 
 	return names
 }

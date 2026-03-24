@@ -38,6 +38,7 @@ var DefaultDefinitions = []SettingDefinition{
 	{Key: "notify.enabled", DisplayName: "Notifications Enabled", Description: "Send webhook notifications on state changes", DataType: "bool", DefaultValue: false, Scopes: []string{"global", "project"}, Category: "notify"},
 	{Key: "notify.terminal", DisplayName: "Terminal Bell", Description: "Ring terminal bell on completion or failure", DataType: "bool", DefaultValue: true, Scopes: []string{"global", "project"}, Category: "notify"},
 	{Key: "storage.save_in_project", DisplayName: "Save in Project", Description: "Store specs/plans/chat in project directory", DataType: "bool", DefaultValue: false, Scopes: []string{"global", "project"}, Category: "storage"},
+	{Key: "workflow.hold_the_line", DisplayName: "Hold the Line", Description: "Only gate on findings in changed lines", DataType: "bool", DefaultValue: true, Scopes: []string{"global", "project"}, Category: "workflow"},
 }
 
 // CascadeResolver resolves settings with project -> global -> default cascade.

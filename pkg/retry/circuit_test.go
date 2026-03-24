@@ -100,7 +100,9 @@ func TestCircuitBreaker_HalfOpenSuccessCloses(t *testing.T) {
 
 	time.Sleep(15 * time.Millisecond)
 
-	cb.Allow() // Transitions to half-open
+	if !cb.Allow() {
+		t.Fatal("expected Allow() to return true and transition to half-open")
+	}
 	cb.RecordSuccess()
 
 	if cb.State() != CircuitClosed {

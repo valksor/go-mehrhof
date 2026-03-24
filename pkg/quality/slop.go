@@ -88,6 +88,10 @@ func changedFiles(ctx context.Context, workDir string) ([]string, error) {
 		}
 	}
 
+	if err := scanner.Err(); err != nil {
+		return nil, fmt.Errorf("scanning git output: %w", err)
+	}
+
 	return files, nil
 }
 
@@ -103,8 +107,9 @@ var aiBoilerplatePhrases = []string{
 }
 
 // commentedCodePattern matches lines that look like commented-out Go/JS code.
+// Requires a code-like token after keywords to avoid false positives on doc comments.
 var commentedCodePattern = regexp.MustCompile(
-	`^\s*//\s*(fmt\.\w+|log\.\w+|return\s|if\s|for\s|switch\s|func\s|var\s|const\s|type\s|import\s|package\s)\s*\(`,
+	`^\s*//\s*(fmt\.\w+|log\.\w+|return\s+\w|if\s+\w|for\s+\w|switch\s+\w|func\s+\w|var\s+\w|const\s+\w|type\s+\w|import\s+[("']|package\s+\w)`,
 )
 
 // commentedCodeSimple matches simpler commented-out code patterns like
@@ -118,7 +123,7 @@ var redundantErrWrapPattern = regexp.MustCompile(
 	`fmt\.Errorf\(\s*"(?:error|err|failed to fail)[:\s].*%w"`,
 )
 
-// ignoredErrPattern matches `_ = err` or `_ = someFunc()` patterns.
+// ignoredErrPattern matches explicit `_ = err` assignments.
 var ignoredErrPattern = regexp.MustCompile(
 	`_\s*=\s*err\b`,
 )
@@ -128,7 +133,7 @@ func (s *SlopChecker) scanFile(relPath, absPath string) ([]findings.Finding, err
 	if err != nil {
 		return nil, err
 	}
-	defer func() { _ = f.Close() }()
+	defer func() { _ = f.Close() }() // read-only open; close error irrelevant
 
 	var (
 		ff           []findings.Finding
@@ -147,7 +152,8 @@ func (s *SlopChecker) scanFile(relPath, absPath string) ([]findings.Finding, err
 		trimmed := strings.TrimSpace(line)
 
 		isComment := strings.HasPrefix(trimmed, "//") || strings.HasPrefix(trimmed, "#") ||
-			strings.HasPrefix(trimmed, "/*") || strings.HasPrefix(trimmed, "*")
+			strings.HasPrefix(trimmed, "/*") || strings.HasPrefix(trimmed, "* ") ||
+			trimmed == "*" || trimmed == "*/"
 
 		if isComment {
 			commentLines++

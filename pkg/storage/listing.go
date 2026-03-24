@@ -28,8 +28,10 @@ func ListNumberedFiles(dir string, pattern *regexp.Regexp) ([]int, error) {
 
 		matches := pattern.FindStringSubmatch(entry.Name())
 		if len(matches) > 1 {
-			num, _ := strconv.Atoi(matches[1])
-			numbers = append(numbers, num)
+			num, err := strconv.Atoi(matches[1])
+			if err == nil {
+				numbers = append(numbers, num)
+			}
 		}
 	}
 

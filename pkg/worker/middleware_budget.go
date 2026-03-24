@@ -64,6 +64,8 @@ func (b *TokenBudget) TryAdd(tokens int64) bool {
 // BudgetMiddleware enforces a token budget across agent calls.
 func BudgetMiddleware(budget *TokenBudget) AgentMiddleware {
 	return func(next AgentExecFunc) AgentExecFunc {
+		var warned atomic.Bool
+
 		return func(ctx context.Context, prompt string) error {
 			if budget == nil {
 				return next(ctx, prompt)
@@ -80,7 +82,7 @@ func BudgetMiddleware(budget *TokenBudget) AgentMiddleware {
 			// Warn at 80%
 			if budget.limit > 0 {
 				used := float64(budget.Consumed()) / float64(budget.limit)
-				if used >= 0.8 {
+				if used >= 0.8 && warned.CompareAndSwap(false, true) {
 					slog.Warn("token budget 80% consumed", "consumed", budget.Consumed(), "limit", budget.limit)
 				}
 			}

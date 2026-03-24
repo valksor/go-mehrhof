@@ -6,6 +6,7 @@ package timeline
 
 import (
 	"fmt"
+	"slices"
 	"strings"
 	"time"
 
@@ -53,6 +54,24 @@ func (s *Service) TaskTimeline(taskTraceID string, limit int) ([]Activity, error
 	if limit > 0 && len(activities) > limit {
 		activities = activities[:limit]
 	}
+
+	return activities, nil
+}
+
+// RecentActivity returns human-readable activities matching the given query options,
+// ordered newest-first (reverse chronological) for feed UX.
+func (s *Service) RecentActivity(opts activitylog.QueryOptions) ([]Activity, error) {
+	entries, err := s.activityLog.Query(opts)
+	if err != nil {
+		return nil, fmt.Errorf("recent activity: %w", err)
+	}
+
+	activities := make([]Activity, 0, len(entries))
+	for _, e := range entries {
+		activities = append(activities, entryToActivity(e))
+	}
+
+	slices.Reverse(activities)
 
 	return activities, nil
 }

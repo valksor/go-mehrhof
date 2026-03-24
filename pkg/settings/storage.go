@@ -279,6 +279,9 @@ func Merge(dst, src *Settings) {
 	if src.Storage.PlanOutputPath != "" {
 		dst.Storage.PlanOutputPath = src.Storage.PlanOutputPath
 	}
+	if src.Storage.CommitSpecs != nil {
+		dst.Storage.CommitSpecs = src.Storage.CommitSpecs
+	}
 	if src.Storage.ChangelogPath != "" {
 		dst.Storage.ChangelogPath = src.Storage.ChangelogPath
 	}
@@ -980,6 +983,14 @@ func SetValue(s *Settings, path string, value any) error {
 		}
 
 		return errors.New("storage.plan_output_path must be a string")
+	case "storage.commit_specs":
+		if v, ok := value.(bool); ok {
+			s.Storage.CommitSpecs = &v
+
+			return nil
+		}
+
+		return errors.New("storage.commit_specs must be a boolean")
 	case "storage.changelog_path":
 		if v, ok := value.(string); ok {
 			s.Storage.ChangelogPath = v
@@ -1246,6 +1257,8 @@ func GetValue(s *Settings, path string) (any, error) {
 		return s.Storage.SpecOutputPath, nil
 	case "storage.plan_output_path":
 		return s.Storage.PlanOutputPath, nil
+	case "storage.commit_specs":
+		return BoolValue(s.Storage.CommitSpecs, false), nil
 	case "storage.changelog_path":
 		return s.Storage.ChangelogPath, nil
 
@@ -1344,6 +1357,7 @@ var envOverrides = []struct {
 	{"STORAGE_SAVE_IN_PROJECT", "storage.save_in_project"},
 	{"STORAGE_SPEC_OUTPUT_PATH", "storage.spec_output_path"},
 	{"STORAGE_PLAN_OUTPUT_PATH", "storage.plan_output_path"},
+	{"STORAGE_COMMIT_SPECS", "storage.commit_specs"},
 	{"STORAGE_CHANGELOG_PATH", "storage.changelog_path"},
 
 	// Workflow
@@ -1373,7 +1387,7 @@ func applyEnvOverrides(s *Settings) {
 
 		// Boolean fields
 		case "git.create_branch", "git.auto_commit", "git.sign_commits",
-			"git.allow_pr_comment", "storage.save_in_project",
+			"git.allow_pr_comment", "storage.save_in_project", "storage.commit_specs",
 			"workflow.use_worktree_isolation":
 			if b, err := strconv.ParseBool(val); err == nil {
 				_ = SetValue(s, ov.path, b)

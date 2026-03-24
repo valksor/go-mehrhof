@@ -25,6 +25,7 @@ type SearchOptions struct {
 type ArchivedTask struct {
 	ID           string    `yaml:"id" json:"id"`
 	Title        string    `yaml:"title" json:"title"`
+	Description  string    `yaml:"description,omitempty" json:"description,omitempty"` // Task description for search
 	Branch       string    `yaml:"branch,omitempty" json:"branch,omitempty"`
 	Source       string    `yaml:"source,omitempty" json:"source,omitempty"`
 	FinalState   string    `yaml:"final_state" json:"final_state"` // "finished", "abandoned", etc.
@@ -32,6 +33,7 @@ type ArchivedTask struct {
 	CompletedAt  time.Time `yaml:"completed_at" json:"completed_at"`
 	Duration     string    `yaml:"duration,omitempty" json:"duration,omitempty"`           // Human-readable duration (e.g., "2h15m")
 	FilesTouched []string  `yaml:"files_touched,omitempty" json:"files_touched,omitempty"` // Files modified during task
+	Tags         []string  `yaml:"tags,omitempty" json:"tags,omitempty"`                   // Task tags for filtering
 }
 
 // ArchiveFile returns the path to the archive index file.
@@ -83,9 +85,15 @@ func (s *Store) SearchArchivedTasks(opts SearchOptions) ([]ArchivedTask, error) 
 			q := strings.ToLower(opts.Query)
 			if !strings.Contains(strings.ToLower(t.Title), q) &&
 				!strings.Contains(strings.ToLower(t.Branch), q) &&
-				!strings.Contains(strings.ToLower(t.Source), q) {
+				!strings.Contains(strings.ToLower(t.Source), q) &&
+				!strings.Contains(strings.ToLower(t.Description), q) {
 				continue
 			}
+		}
+		if opts.Tag != "" && !slices.ContainsFunc(t.Tags, func(tag string) bool {
+			return strings.EqualFold(tag, opts.Tag)
+		}) {
+			continue
 		}
 		if !opts.Since.IsZero() && t.CompletedAt.Before(opts.Since) {
 			continue
