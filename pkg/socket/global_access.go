@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"github.com/valksor/kvelmo/pkg/access"
+	"github.com/valksor/kvelmo/pkg/page"
 )
 
 // AccessTokenCreateParams is the request for access.token.create.
@@ -20,6 +21,16 @@ type AccessTokenRevokeParams struct {
 }
 
 func (g *GlobalSocket) handleAccessTokenList(_ context.Context, req *Request) (*Response, error) {
+	var params struct {
+		Page    int `json:"page,omitempty"`
+		PerPage int `json:"per_page,omitempty"`
+	}
+	if req.Params != nil {
+		if err := json.Unmarshal(req.Params, &params); err != nil {
+			return NewErrorResponse(req.ID, ErrCodeInvalidParams, "invalid params"), nil //nolint:nilerr // JSON-RPC error response
+		}
+	}
+
 	store := access.New("")
 
 	tokens, err := store.List()
@@ -27,8 +38,14 @@ func (g *GlobalSocket) handleAccessTokenList(_ context.Context, req *Request) (*
 		return NewErrorResponse(req.ID, ErrCodeInternal, fmt.Sprintf("list tokens: %v", err)), nil
 	}
 
+	pg := page.NewPage(tokens, paginationWithDefault(params.Page, params.PerPage))
+
 	return NewResultResponse(req.ID, map[string]any{
-		"tokens": tokens,
+		"tokens":   pg.Items,
+		"total":    pg.Total,
+		"page":     pg.PageNum,
+		"per_page": pg.PerPage,
+		"has_next": pg.HasNext,
 	})
 }
 

@@ -22,6 +22,8 @@ import (
 	"github.com/valksor/kvelmo/pkg/meta"
 	"github.com/valksor/kvelmo/pkg/metrics"
 	"github.com/valksor/kvelmo/pkg/notify"
+	"github.com/valksor/kvelmo/pkg/provider"
+	"github.com/valksor/kvelmo/pkg/search"
 	"github.com/valksor/kvelmo/pkg/settings"
 	"github.com/valksor/kvelmo/pkg/worker"
 )
@@ -434,48 +436,8 @@ func (g *GlobalSocket) handleProvidersTest(ctx context.Context, req *Request) (*
 	})
 }
 
-// providerLoginConfig holds display metadata for provider login flows.
-var providerLoginConfigs = map[string]struct {
-	Name        string `json:"name"`
-	EnvVar      string `json:"env_var"`
-	HelpURL     string `json:"help_url"`
-	HelpSteps   string `json:"help_steps"`
-	Scopes      string `json:"scopes"`
-	TokenPrefix string `json:"token_prefix"`
-}{
-	"github": {
-		Name:        "GitHub",
-		EnvVar:      "GITHUB_TOKEN",
-		HelpURL:     "https://github.com/settings/tokens",
-		HelpSteps:   "Settings → Developer settings → Personal access tokens → Tokens (classic)",
-		Scopes:      "repo, read:user (or Fine-grained with repository access)",
-		TokenPrefix: "ghp_",
-	},
-	"gitlab": {
-		Name:        "GitLab",
-		EnvVar:      "GITLAB_TOKEN",
-		HelpURL:     "https://gitlab.com/-/user_settings/personal_access_tokens",
-		HelpSteps:   "Preferences → Access Tokens → Add new token",
-		Scopes:      "api, read_user, read_repository",
-		TokenPrefix: "glpat-",
-	},
-	"linear": {
-		Name:        "Linear",
-		EnvVar:      "LINEAR_TOKEN",
-		HelpURL:     "https://linear.app/settings/api",
-		HelpSteps:   "Settings → API → Personal API keys → Create key",
-		Scopes:      "Workspace access",
-		TokenPrefix: "lin_api_",
-	},
-	"wrike": {
-		Name:        "Wrike",
-		EnvVar:      "WRIKE_TOKEN",
-		HelpURL:     "https://www.wrike.com/frontend/apps/index.html#/api",
-		HelpSteps:   "Apps & Integrations → API → Permanent access tokens",
-		Scopes:      "Default (read/write access)",
-		TokenPrefix: "",
-	},
-}
+// providerLoginConfigs is the canonical provider login configuration from pkg/provider.
+var providerLoginConfigs = provider.LoginConfigs
 
 func (g *GlobalSocket) handleProviderLogin(ctx context.Context, req *Request) (*Response, error) {
 	var params struct {
@@ -1307,6 +1269,14 @@ type FileEntry struct {
 	Size    int64  `json:"size,omitempty"`
 }
 
+// Searchable interface for pkg/search hybrid fuzzy matching.
+func (f FileEntry) SearchTitle() string        { return f.Name }
+func (f FileEntry) SearchDescription() string  { return f.RelPath }
+func (f FileEntry) SearchTags() []string       { return nil }
+func (f FileEntry) SearchStatus() string       { return "" }
+func (f FileEntry) SearchCreatedAt() time.Time { return time.Time{} }
+func (f FileEntry) SearchPriority() int        { return 0 }
+
 func (g *GlobalSocket) handleFilesList(ctx context.Context, req *Request) (*Response, error) {
 	var params FilesListParams
 	if req.Params != nil {
@@ -1476,8 +1446,9 @@ func (g *GlobalSocket) handleFilesSearch(ctx context.Context, req *Request) (*Re
 		maxResults = 20
 	}
 
-	query := strings.ToLower(params.Query)
-	entries := []FileEntry{}
+	// Phase B: Collect all candidate entries up to a cap of 500.
+	const collectCap = 500
+	candidates := []FileEntry{}
 
 	_ = filepath.WalkDir(basePath, func(p string, d os.DirEntry, err error) error {
 		if err != nil {
@@ -1502,23 +1473,30 @@ func (g *GlobalSocket) handleFilesSearch(ctx context.Context, req *Request) (*Re
 			}
 		}
 
-		// Match query against filename
-		if strings.Contains(strings.ToLower(d.Name()), query) {
-			relPath, _ := filepath.Rel(basePath, p)
-			entries = append(entries, FileEntry{
-				Name:    d.Name(),
-				Path:    p,
-				RelPath: relPath,
-				IsDir:   d.IsDir(),
-			})
-		}
+		relPath, _ := filepath.Rel(basePath, p)
+		candidates = append(candidates, FileEntry{
+			Name:    d.Name(),
+			Path:    p,
+			RelPath: relPath,
+			IsDir:   d.IsDir(),
+		})
 
-		if len(entries) >= maxResults {
+		if len(candidates) >= collectCap {
 			return filepath.SkipAll
 		}
 
 		return nil
 	})
+
+	// Rank candidates using hybrid fuzzy + exact search, then unwrap.
+	ranked := search.Search(candidates, params.Query, search.Options{})
+	entries := make([]FileEntry, 0, min(len(ranked), maxResults))
+	for i, r := range ranked {
+		if i >= maxResults {
+			break
+		}
+		entries = append(entries, r.Item)
+	}
 
 	return NewResultResponse(req.ID, map[string]any{
 		"query":   params.Query,
@@ -2394,13 +2372,16 @@ func (g *GlobalSocket) ListWorktrees() []*WorktreeInfo {
 
 // TaskListSummary represents a task for the tasks.list response.
 type TaskListSummary struct {
-	ID         string `json:"id"`
-	Path       string `json:"path"`
-	State      string `json:"state"`
-	TaskID     string `json:"task_id,omitempty"`
-	TaskTitle  string `json:"task_title,omitempty"`
-	Source     string `json:"source,omitempty"`
-	QueueCount int    `json:"queue_count,omitempty"`
+	ID               string `json:"id"`
+	Path             string `json:"path"`
+	State            string `json:"state"`
+	TaskID           string `json:"task_id,omitempty"`
+	TaskTitle        string `json:"task_title,omitempty"`
+	Source           string `json:"source,omitempty"`
+	QueueCount       int    `json:"queue_count,omitempty"`
+	LastError        string `json:"last_error,omitempty"`
+	LastFailureClass string `json:"last_failure_class,omitempty"`
+	PendingPromptID  string `json:"pending_prompt_id,omitempty"`
 }
 
 // TasksListResult is the response for tasks.list.
@@ -2438,6 +2419,9 @@ func (g *GlobalSocket) handleTasksList(ctx context.Context, req *Request) (*Resp
 							summary.Source = status.Task.Source
 						}
 						summary.State = string(status.State)
+						summary.LastError = status.LastError
+						summary.LastFailureClass = status.LastFailureClass
+						summary.PendingPromptID = status.PendingPromptID
 					}
 				}
 				// Fetch queue count

@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"log/slog"
+	"slices"
+	"strings"
 	"time"
 )
 
@@ -62,9 +64,16 @@ func (g *GlobalSocket) handleBatch(ctx context.Context, req *Request) (*Response
 	// Dispatch action to each matching worktree
 	var results []BatchResultItem
 	stateFilter := params.Filter["state"]
+	tagFilter := params.Filter["tag"]
+	matchFilter := params.Filter["match"]
 
 	for _, wt := range worktrees {
-		// Query worktree status to check state filter
+		// Apply path match filter before connecting
+		if matchFilter != "" && !strings.Contains(wt.Path, matchFilter) {
+			continue
+		}
+
+		// Query worktree status to check state/tag filters
 		client, err := NewClient(wt.SocketPath, WithTimeout(3*time.Second))
 		if err != nil {
 			results = append(results, BatchResultItem{
@@ -89,7 +98,8 @@ func (g *GlobalSocket) handleBatch(ctx context.Context, req *Request) (*Response
 		}
 
 		var status struct {
-			State string `json:"state"`
+			State string   `json:"state"`
+			Tags  []string `json:"tags"`
 		}
 		if err := json.Unmarshal(resp.Result, &status); err != nil {
 			_ = client.Close()
@@ -99,6 +109,15 @@ func (g *GlobalSocket) handleBatch(ctx context.Context, req *Request) (*Response
 
 		// Apply state filter
 		if stateFilter != "" && status.State != stateFilter {
+			_ = client.Close()
+
+			continue
+		}
+
+		// Apply tag filter (case-insensitive to match archive filtering)
+		if tagFilter != "" && !slices.ContainsFunc(status.Tags, func(t string) bool {
+			return strings.EqualFold(t, tagFilter)
+		}) {
 			_ = client.Close()
 
 			continue

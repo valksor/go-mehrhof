@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"time"
 
+	"github.com/valksor/kvelmo/pkg/page"
 	"github.com/valksor/kvelmo/pkg/storage"
 )
 
@@ -67,11 +68,23 @@ func (w *WorktreeSocket) handleQueueList(ctx context.Context, req *Request) (*Re
 		return NewErrorResponse(req.ID, ErrCodeInternal, "no conductor"), nil
 	}
 
+	var params struct {
+		Page    int `json:"page,omitempty"`
+		PerPage int `json:"per_page,omitempty"`
+	}
+	if req.Params != nil {
+		_ = json.Unmarshal(req.Params, &params)
+	}
+
 	queue := w.conductor.ListQueue()
+	pg := page.NewPage(queue, paginationWithDefault(params.Page, params.PerPage))
 
 	return NewResultResponse(req.ID, map[string]any{
-		"queue": queue,
-		"count": len(queue),
+		"queue":    pg.Items,
+		"total":    pg.Total,
+		"page":     pg.PageNum,
+		"per_page": pg.PerPage,
+		"has_next": pg.HasNext,
 	})
 }
 

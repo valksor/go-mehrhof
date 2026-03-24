@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/valksor/kvelmo/pkg/activitylog"
+	"github.com/valksor/kvelmo/pkg/timeline"
 )
 
 // activityLogAdapter bridges socket.ActivityLogger to activitylog.Log.
@@ -49,6 +50,7 @@ func (g *GlobalSocket) handleActivityQuery(_ context.Context, req *Request) (*Re
 		MethodPattern string `json:"method_pattern"` // Pipe-separated: "start|plan"
 		ErrorsOnly    bool   `json:"errors_only"`
 		Limit         int    `json:"limit"`
+		Timeline      bool   `json:"timeline"` // Return human-readable timeline activities
 	}
 	if req.Params != nil {
 		if err := json.Unmarshal(req.Params, &params); err != nil {
@@ -68,6 +70,22 @@ func (g *GlobalSocket) handleActivityQuery(_ context.Context, req *Request) (*Re
 			return NewErrorResponse(req.ID, ErrCodeInvalidParams, "invalid since duration: "+err.Error()), nil //nolint:nilerr // JSON-RPC error response
 		}
 		opts.Since = d
+	}
+
+	// Timeline mode: return human-readable activities instead of raw entries
+	if params.Timeline {
+		svc := timeline.New(adapter.log)
+		activities, err := svc.RecentActivity(opts)
+		if err != nil {
+			return NewErrorResponse(req.ID, ErrCodeInternal, err.Error()), nil
+		}
+
+		return NewResultResponse(req.ID, map[string]any{
+			"entries":  activities,
+			"count":    len(activities),
+			"timeline": true,
+			"enabled":  true,
+		})
 	}
 
 	entries, err := adapter.log.Query(opts)

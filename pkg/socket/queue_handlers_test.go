@@ -44,8 +44,17 @@ func TestWorktreeHandleQueueList_EmptyQueue(t *testing.T) {
 	if _, ok := result["queue"]; !ok {
 		t.Error("result should have 'queue' key")
 	}
-	if _, ok := result["count"]; !ok {
-		t.Error("result should have 'count' key")
+	if _, ok := result["total"]; !ok {
+		t.Error("result should have 'total' key")
+	}
+	if _, ok := result["page"]; !ok {
+		t.Error("result should have 'page' key")
+	}
+	if _, ok := result["per_page"]; !ok {
+		t.Error("result should have 'per_page' key")
+	}
+	if _, ok := result["has_next"]; !ok {
+		t.Error("result should have 'has_next' key")
 	}
 }
 

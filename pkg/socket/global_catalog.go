@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 
 	"github.com/valksor/kvelmo/pkg/catalog"
+	"github.com/valksor/kvelmo/pkg/page"
 )
 
 var catalogInstance *catalog.Catalog
@@ -19,12 +20,28 @@ func (g *GlobalSocket) handleCatalogList(_ context.Context, req *Request) (*Resp
 		return NewResultResponse(req.ID, map[string]any{"templates": []any{}})
 	}
 
+	var params struct {
+		Page    int `json:"page,omitempty"`
+		PerPage int `json:"per_page,omitempty"`
+	}
+	if req.Params != nil {
+		_ = json.Unmarshal(req.Params, &params)
+	}
+
 	templates, err := catalogInstance.List()
 	if err != nil {
 		return NewErrorResponse(req.ID, ErrCodeInternal, err.Error()), nil
 	}
 
-	return NewResultResponse(req.ID, map[string]any{"templates": templates})
+	pg := page.NewPage(templates, paginationWithDefault(params.Page, params.PerPage))
+
+	return NewResultResponse(req.ID, map[string]any{
+		"templates": pg.Items,
+		"total":     pg.Total,
+		"page":      pg.PageNum,
+		"per_page":  pg.PerPage,
+		"has_next":  pg.HasNext,
+	})
 }
 
 func (g *GlobalSocket) handleCatalogGet(_ context.Context, req *Request) (*Response, error) {

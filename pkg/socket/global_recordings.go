@@ -8,12 +8,16 @@ import (
 	"time"
 
 	"github.com/valksor/kvelmo/pkg/agent/recorder"
+	"github.com/valksor/kvelmo/pkg/filter"
+	"github.com/valksor/kvelmo/pkg/page"
 	"github.com/valksor/kvelmo/pkg/paths"
 )
 
 type recordingsListParams struct {
-	Job   string `json:"job,omitempty"`
-	Since string `json:"since,omitempty"`
+	Job     string `json:"job,omitempty"`
+	Since   string `json:"since,omitempty"`
+	Page    int    `json:"page,omitempty"`
+	PerPage int    `json:"per_page,omitempty"`
 }
 
 type recordingsViewParams struct {
@@ -43,43 +47,38 @@ func (g *GlobalSocket) handleRecordingsList(_ context.Context, req *Request) (*R
 		return NewErrorResponse(req.ID, ErrCodeInternal, err.Error()), nil
 	}
 
-	// Filter by job if specified
+	// Build filter chain
+	f := filter.New[recorder.RecordingInfo]()
 	if params.Job != "" {
-		var filtered []recorder.RecordingInfo
-		for _, info := range infos {
-			if info.JobID == params.Job {
-				filtered = append(filtered, info)
-			}
-		}
-		infos = filtered
+		f.Eq(func(r recorder.RecordingInfo) any { return r.JobID }, params.Job)
 	}
-
-	// Filter by time if specified
 	if params.Since != "" {
 		since, err := parseDurationString(params.Since)
 		if err != nil {
 			return NewErrorResponse(req.ID, ErrCodeInvalidParams, "invalid since duration: "+err.Error()), nil //nolint:nilerr // JSON-RPC error response
 		}
 		cutoff := time.Now().Add(-since)
-		var filtered []recorder.RecordingInfo
-		for _, info := range infos {
-			t, err := time.Parse(time.RFC3339, info.StartedAt)
-			if err != nil {
-				continue
-			}
-			if t.After(cutoff) {
-				filtered = append(filtered, info)
-			}
-		}
-		infos = filtered
+		f.Where(func(r recorder.RecordingInfo) bool {
+			t, err := time.Parse(time.RFC3339, r.StartedAt)
+
+			return err == nil && t.After(cutoff)
+		})
 	}
+	infos = f.Apply(infos)
 
 	if infos == nil {
 		infos = []recorder.RecordingInfo{}
 	}
 
+	// Paginate
+	pg := page.NewPage(infos, paginationWithDefault(params.Page, params.PerPage))
+
 	return NewResultResponse(req.ID, map[string]any{
-		"recordings": infos,
+		"recordings": pg.Items,
+		"total":      pg.Total,
+		"page":       pg.PageNum,
+		"per_page":   pg.PerPage,
+		"has_next":   pg.HasNext,
 	})
 }
 
@@ -126,6 +125,21 @@ func (g *GlobalSocket) handleRecordingsView(_ context.Context, req *Request) (*R
 	}
 
 	return NewResultResponse(req.ID, result)
+}
+
+// paginationWithDefault returns a Pagination using the given values, defaulting
+// to page 1 / per_page 100 when not specified. This preserves backward compatibility
+// for handlers that previously returned unbounded arrays.
+func paginationWithDefault(pg, perPage int) page.Pagination {
+	p := page.Pagination{Page: pg, PerPage: perPage}
+	if p.Page < 1 {
+		p.Page = 1
+	}
+	if p.PerPage < 1 {
+		p.PerPage = 100
+	}
+
+	return p.Normalize()
 }
 
 // parseDurationString parses duration strings like "24h", "7d", "30d".

@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/valksor/kvelmo/pkg/agent/strategy"
+	"github.com/valksor/kvelmo/pkg/codegraph"
 	"github.com/valksor/kvelmo/pkg/conductor"
 	"github.com/valksor/kvelmo/pkg/git"
 	"github.com/valksor/kvelmo/pkg/memory"
@@ -41,6 +42,11 @@ type WorktreeSocket struct {
 	repo        *git.Repository
 	pool        *worker.Pool
 	screenshots *screenshot.Store
+
+	// Codegraph: lazy-initialized cached connection.
+	codegraphOnce    sync.Once
+	codegraphInst    *codegraph.Graph
+	codegraphInitErr error
 
 	// Streaming: active subscriber channels
 	streams   map[string]chan []byte
@@ -181,10 +187,12 @@ func NewWorktreeSocketSimple(socketPath, worktreePath string) *WorktreeSocket {
 
 func (w *WorktreeSocket) registerBasicHandlers() {
 	w.server.Handle("status", w.handleStatus)
+	w.server.Handle("recap", w.handleRecap)
 	w.server.Handle("ping", w.handlePing)
 	w.server.Handle("strategy.list", w.handleStrategyList)
 	w.server.Handle("checkpoints", w.handleCheckpoints)
 	w.server.Handle("checkpoint.goto", w.handleCheckpointGoto)
+	w.server.Handle("checkpoint.preview", w.handleCheckpointPreview)
 
 	// Git handlers (work if repo is set)
 	w.server.Handle("git.status", w.handleGitStatus)
@@ -282,10 +290,11 @@ func (w *WorktreeSocket) registerHandlers() {
 	w.server.Handle("hooks.list", w.handleHooksList)
 
 	// Code graph
-	w.server.Handle("graph.index", w.handleGraphIndex)
-	w.server.Handle("graph.query", w.handleGraphQuery)
-	w.server.Handle("graph.callers", w.handleGraphCallers)
-	w.server.Handle("graph.stats", w.handleGraphStats)
+	w.server.Handle("codegraph.stats", w.handleCodegraphStats)
+	w.server.Handle("codegraph.index", w.handleCodegraphIndex)
+	w.server.Handle("codegraph.search", w.handleCodegraphSearch)
+	w.server.Handle("codegraph.callers", w.handleCodegraphCallers)
+	w.server.Handle("codegraph.deps", w.handleCodegraphDeps)
 }
 
 // injectSeqAndBuffer assigns a sequence number to a JSON event, stores it in the
@@ -388,10 +397,14 @@ func (w *WorktreeSocket) handleStatus(ctx context.Context, req *Request) (*Respo
 		result.State = TaskState(state)
 
 		if wu := w.conductor.WorkUnit(); wu != nil {
+			var sourceRef string
+			if wu.Source != nil {
+				sourceRef = wu.Source.Reference
+			}
 			result.Task = &TaskInfo{
 				ID:           wu.ID,
 				Title:        wu.Title,
-				Source:       wu.Source.Reference,
+				Source:       sourceRef,
 				Branch:       wu.Branch,
 				WorktreePath: wu.WorktreePath,
 			}
@@ -428,9 +441,165 @@ func (w *WorktreeSocket) handleStatus(ctx context.Context, req *Request) (*Respo
 		if rs := w.conductor.RecoveryState(); rs != "" {
 			result.NeedsRecovery = rs
 		}
+
+		if sp := w.conductor.SkipPhases(); len(sp) > 0 {
+			result.SkipPhases = sp
+		}
 	}
 
 	return NewResultResponse(req.ID, result)
+}
+
+func (w *WorktreeSocket) handleRecap(ctx context.Context, req *Request) (*Response, error) {
+	result := RecapResult{
+		Path:       w.path,
+		State:      StateNone,
+		NextAction: "Run 'kvelmo start' to load a task",
+	}
+
+	if w.conductor == nil {
+		return NewResultResponse(req.ID, result)
+	}
+
+	state := w.conductor.State()
+	result.State = TaskState(state)
+
+	wu := w.conductor.WorkUnit()
+	if wu != nil {
+		var sourceRef string
+		if wu.Source != nil {
+			sourceRef = wu.Source.Reference
+		}
+		result.Task = &TaskInfo{
+			ID:           wu.ID,
+			Title:        wu.Title,
+			Source:       sourceRef,
+			Branch:       wu.Branch,
+			WorktreePath: wu.WorktreePath,
+		}
+
+		result.CheckpointCount = len(wu.Checkpoints)
+		result.Tags = wu.Tags
+
+		if len(wu.PhaseMetrics) > 0 {
+			result.PhaseMetrics = wu.PhaseMetrics
+		}
+
+		// Last checkpoint with enrichment
+		if len(wu.Checkpoints) > 0 {
+			lastSHA := wu.Checkpoints[len(wu.Checkpoints)-1]
+			info := CheckpointInfo{SHA: lastSHA}
+			if w.repo != nil {
+				if entry, err := w.repo.CommitInfo(ctx, lastSHA); err == nil {
+					info.Message = entry.Message
+					info.Author = entry.Author
+					info.Timestamp = entry.Date
+					// Compute human-readable time since last activity
+					if t, parseErr := time.Parse(time.RFC3339, entry.Date); parseErr == nil {
+						result.LastActivity = formatTimeSince(t)
+					}
+				}
+			}
+			result.LastCheckpoint = &info
+		}
+	}
+
+	// Files changed in working tree
+	if w.repo != nil {
+		if files, err := w.repo.DiffFilesWithStatus(ctx); err == nil {
+			result.FilesChanged = files
+		}
+	}
+
+	if fc := w.conductor.LastFailureClass(); fc != "" {
+		switch fc {
+		case conductor.FailureClassHardStop:
+			result.LastError = "Hard failure — requires manual intervention (run 'kvelmo logs' for details)"
+		case conductor.FailureClassRecoverable:
+			result.LastError = "Transient error — will auto-retry"
+		case conductor.FailureClassDegraded:
+			result.LastError = "Non-critical failure — workflow continued with warning"
+		case conductor.FailureClassSkippable:
+			result.LastError = "Phase skipped — nothing to do"
+		default:
+			result.LastError = string(fc)
+		}
+	}
+
+	result.NextAction = suggestNextAction(state, wu)
+
+	return NewResultResponse(req.ID, result)
+}
+
+// suggestNextAction returns a human-readable suggestion for the next workflow step.
+func suggestNextAction(state conductor.State, wu *conductor.WorkUnit) string {
+	switch state {
+	case conductor.StateNone:
+		return "Run 'kvelmo start' to load a task"
+	case conductor.StateLoaded:
+		return "Run 'kvelmo plan' to generate a specification"
+	case conductor.StatePlanning:
+		return "Planning in progress — wait or run 'kvelmo watch'"
+	case conductor.StatePlanned:
+		return "Run 'kvelmo implement' to start coding"
+	case conductor.StateImplementing:
+		return "Implementation in progress — wait or run 'kvelmo watch'"
+	case conductor.StateImplemented:
+		return "Run 'kvelmo review' to check the work, or 'kvelmo simplify' for cleanup"
+	case conductor.StateSimplifying:
+		return "Simplification in progress — wait or run 'kvelmo watch'"
+	case conductor.StateOptimizing:
+		return "Optimization in progress — wait or run 'kvelmo watch'"
+	case conductor.StateReviewing:
+		return "Review in progress — wait or check 'kvelmo checklist list'"
+	case conductor.StateSubmitted:
+		if wu != nil && wu.PRID != "" {
+			return "PR submitted (" + wu.PRID + ") — merge it, then run 'kvelmo finish'"
+		}
+
+		return "PR submitted — merge it, then run 'kvelmo finish'"
+	case conductor.StateFailed:
+		return "Run 'kvelmo retry' to re-run the failed phase, or 'kvelmo reset' to start over"
+	case conductor.StateWaiting:
+		return "Agent is waiting for input — check 'kvelmo quality respond' or answer via chat"
+	case conductor.StatePaused:
+		return "Task is paused — resume when ready"
+	default:
+		return ""
+	}
+}
+
+// formatTimeSince returns a human-readable duration string.
+func formatTimeSince(t time.Time) string {
+	d := time.Since(t)
+	if d < 0 {
+		return "just now"
+	}
+	switch {
+	case d < time.Minute:
+		return "just now"
+	case d < time.Hour:
+		m := int(d.Minutes())
+		if m == 1 {
+			return "1 minute ago"
+		}
+
+		return fmt.Sprintf("%d minutes ago", m)
+	case d < 24*time.Hour:
+		h := int(d.Hours())
+		if h == 1 {
+			return "1 hour ago"
+		}
+
+		return fmt.Sprintf("%d hours ago", h)
+	default:
+		days := int(d.Hours() / 24)
+		if days == 1 {
+			return "1 day ago"
+		}
+
+		return fmt.Sprintf("%d days ago", days)
+	}
 }
 
 // --- Show Spec/Plan Handlers ---
@@ -473,9 +642,10 @@ func (w *WorktreeSocket) handleShowSpec(_ context.Context, req *Request) (*Respo
 // --- Task Lifecycle Handlers ---
 
 type StartParams struct {
-	Source               string `json:"source"` // e.g., "github:owner/repo#123"
-	UseWorktreeIsolation bool   `json:"use_worktree_isolation,omitempty"`
-	AutoAdvance          bool   `json:"auto_advance,omitempty"` // Auto-progress through plan → implement → review
+	Source               string   `json:"source"` // e.g., "github:owner/repo#123"
+	UseWorktreeIsolation bool     `json:"use_worktree_isolation,omitempty"`
+	AutoAdvance          bool     `json:"auto_advance,omitempty"` // Auto-progress through plan → implement → review
+	SkipPhases           []string `json:"skip_phases,omitempty"`  // Per-invocation phases to skip (e.g., ["simplify", "optimize"])
 }
 
 func (w *WorktreeSocket) handleStart(ctx context.Context, req *Request) (*Response, error) {
@@ -501,16 +671,37 @@ func (w *WorktreeSocket) handleStart(ctx context.Context, req *Request) (*Respon
 		w.conductor.SetAutoAdvance(true)
 	}
 
+	// Set per-invocation skip phases
+	if len(params.SkipPhases) > 0 {
+		w.conductor.SetSkipPhases(params.SkipPhases)
+	}
+
 	// Worktree isolation is handled inside conductor.Start(). Log if active.
 	if wu := w.conductor.WorkUnit(); wu != nil && wu.WorktreePath != "" {
 		slog.Info("handleStart: worktree isolation active", "path", wu.WorktreePath, "branch", wu.Branch)
 	}
 
-	// Auto-advance: trigger planning immediately after start
+	// Auto-advance: trigger next phase immediately after start.
+	// If "plan" is in skip_phases, jump straight to implement.
 	if params.AutoAdvance {
-		go func() {
-			if _, err := w.conductor.Plan(ctx); err != nil {
-				slog.Warn("auto-advance: plan after start failed", "error", err)
+		skipPlan := false
+		for _, p := range params.SkipPhases {
+			if p == "plan" {
+				skipPlan = true
+
+				break
+			}
+		}
+		go func() { //nolint:contextcheck // intentionally uses background context for async auto-advance
+			bgCtx := context.Background()
+			if skipPlan {
+				if _, err := w.conductor.Implement(bgCtx); err != nil {
+					slog.Warn("auto-advance: implement after start failed", "error", err)
+				}
+			} else {
+				if _, err := w.conductor.Plan(bgCtx); err != nil {
+					slog.Warn("auto-advance: plan after start failed", "error", err)
+				}
 			}
 		}()
 	}
@@ -710,12 +901,14 @@ func (w *WorktreeSocket) handleReview(ctx context.Context, req *Request) (*Respo
 }
 
 type SubmitParams struct {
-	Title        string   `json:"title,omitempty"`
-	Body         string   `json:"body,omitempty"`
-	Draft        bool     `json:"draft,omitempty"`
-	Reviewers    []string `json:"reviewers,omitempty"`
-	Labels       []string `json:"labels,omitempty"`
-	DeleteBranch bool     `json:"delete_branch,omitempty"` // Delete local branch after submit
+	Title        string            `json:"title,omitempty"`
+	Body         string            `json:"body,omitempty"`
+	Draft        bool              `json:"draft,omitempty"`
+	Reviewers    []string          `json:"reviewers,omitempty"`
+	Labels       []string          `json:"labels,omitempty"`
+	DeleteBranch bool              `json:"delete_branch,omitempty"` // Delete local branch after submit
+	DryRun       bool              `json:"dry_run,omitempty"`       // Preview PR without creating it
+	Sections     map[string]string `json:"sections,omitempty"`      // Per-PR custom sections (not yet wired into PR body generation)
 }
 
 func (w *WorktreeSocket) handleSubmit(ctx context.Context, req *Request) (*Response, error) {
@@ -726,6 +919,19 @@ func (w *WorktreeSocket) handleSubmit(ctx context.Context, req *Request) (*Respo
 	var params SubmitParams
 	if req.Params != nil {
 		_ = json.Unmarshal(req.Params, &params)
+	}
+
+	// Dry-run: preview PR without creating it
+	if params.DryRun {
+		preview, err := w.conductor.PreviewSubmit(ctx)
+		if err != nil {
+			return NewErrorResponse(req.ID, -32603, err.Error()), nil
+		}
+
+		return NewResultResponse(req.ID, map[string]any{
+			"status":  "preview",
+			"preview": preview,
+		})
 	}
 
 	if err := w.conductor.Submit(ctx, params.DeleteBranch); err != nil {
@@ -1141,12 +1347,44 @@ func (w *WorktreeSocket) handleCheckpointGoto(ctx context.Context, req *Request)
 	})
 }
 
+// handleCheckpointPreview returns the diff between HEAD and a target checkpoint SHA.
+func (w *WorktreeSocket) handleCheckpointPreview(ctx context.Context, req *Request) (*Response, error) {
+	if w.repo == nil {
+		return NewErrorResponse(req.ID, -32600, "no git repository"), nil
+	}
+
+	var params CheckpointGotoParams
+	if req.Params != nil {
+		if err := json.Unmarshal(req.Params, &params); err != nil {
+			return NewErrorResponse(req.ID, ErrCodeInvalidParams, "invalid params"), nil //nolint:nilerr // JSON-RPC error response
+		}
+	}
+
+	if params.SHA == "" {
+		return NewErrorResponse(req.ID, ErrCodeInvalidParams, "sha is required"), nil
+	}
+
+	diff, err := w.repo.DiffAgainst(ctx, params.SHA, false)
+	if err != nil {
+		return NewErrorResponse(req.ID, -32603, err.Error()), nil
+	}
+
+	stat, _ := w.repo.DiffAgainst(ctx, params.SHA, true)
+
+	return NewResultResponse(req.ID, map[string]any{
+		"sha":  params.SHA,
+		"diff": diff,
+		"stat": stat,
+	})
+}
+
 // CheckpointInfo holds a checkpoint SHA enriched with git commit metadata.
 type CheckpointInfo struct {
 	SHA       string `json:"sha"`
 	Message   string `json:"message"`
 	Author    string `json:"author"`
 	Timestamp string `json:"timestamp"`
+	State     string `json:"state,omitempty"` // Conductor state at checkpoint time (from persisted metadata)
 }
 
 func (w *WorktreeSocket) handleCheckpoints(ctx context.Context, req *Request) (*Response, error) {
@@ -1165,6 +1403,7 @@ func (w *WorktreeSocket) handleCheckpoints(ctx context.Context, req *Request) (*
 		})
 	}
 
+	meta := wu.CheckpointMeta
 	enrich := func(shas []string) []CheckpointInfo {
 		result := make([]CheckpointInfo, 0, len(shas))
 		for _, sha := range shas {
@@ -1175,6 +1414,9 @@ func (w *WorktreeSocket) handleCheckpoints(ctx context.Context, req *Request) (*
 					info.Author = entry.Author
 					info.Timestamp = entry.Date
 				}
+			}
+			if m, ok := meta[sha]; ok {
+				info.State = m.State
 			}
 			result = append(result, info)
 		}
@@ -1780,6 +2022,10 @@ func (w *WorktreeSocket) Stop() error {
 	w.streams = make(map[string]chan []byte)
 	w.streamsMu.Unlock()
 
+	if w.codegraphInst != nil {
+		_ = w.codegraphInst.Close()
+	}
+
 	return w.server.Stop()
 }
 
@@ -1840,6 +2086,7 @@ type StatusResult struct {
 	LastFailureClass string                             `json:"last_failure_class,omitempty"`
 	PhaseMetrics     map[string]*conductor.PhaseMetrics `json:"phase_metrics,omitempty"`
 	NeedsRecovery    string                             `json:"needs_recovery,omitempty"` // Interrupted phase name if recovery needed
+	SkipPhases       []string                           `json:"skip_phases,omitempty"`    // Phases that will be skipped
 }
 
 type TaskInfo struct {
@@ -1848,4 +2095,20 @@ type TaskInfo struct {
 	Source       string `json:"source"`
 	Branch       string `json:"branch,omitempty"`
 	WorktreePath string `json:"worktree_path,omitempty"`
+}
+
+// RecapResult is returned by the recap RPC method.
+// It provides a concise summary of the current task state for resuming work.
+type RecapResult struct {
+	State           TaskState                          `json:"state"`
+	Path            string                             `json:"path"`
+	Task            *TaskInfo                          `json:"task,omitempty"`
+	LastCheckpoint  *CheckpointInfo                    `json:"last_checkpoint,omitempty"`
+	CheckpointCount int                                `json:"checkpoint_count"`
+	FilesChanged    []git.FileStatus                   `json:"files_changed,omitempty"`
+	PhaseMetrics    map[string]*conductor.PhaseMetrics `json:"phase_metrics,omitempty"`
+	Tags            []string                           `json:"tags,omitempty"`
+	LastActivity    string                             `json:"last_activity,omitempty"` // Human-readable time since last checkpoint
+	NextAction      string                             `json:"next_action"`             // Suggested next step
+	LastError       string                             `json:"last_error,omitempty"`
 }
