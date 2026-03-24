@@ -137,12 +137,146 @@ Commit your fixes with meaningful commit messages.`
 		}()
 	}
 
+	// Run spec alignment check in background if specifications exist.
+	// Compares the diff against the spec to detect drift or missing items.
+	go c.runSpecAlignmentCheckAsync(lifecycleCtx, workDir, pool)
+
 	// Start quality gate in background so result is ready for Submit()
 	// This runs the lint/vet/typecheck checks asynchronously, avoiding
 	// the 60-second blocking wait in Submit().
 	c.runQualityGateAsync()
 
 	return nil
+}
+
+// runSpecAlignmentCheckAsync submits a background review job that compares
+// the implementation diff against the specification to detect drift.
+func (c *Conductor) runSpecAlignmentCheckAsync(lifecycleCtx context.Context, workDir string, pool *worker.Pool) {
+	c.mu.RLock()
+	if c.workUnit == nil || c.store == nil || pool == nil {
+		c.mu.RUnlock()
+
+		return
+	}
+	taskID := c.workUnit.ID
+	store := c.store
+	c.mu.RUnlock()
+
+	specStore := storage.NewSpecStore(store)
+	specContent, _, err := specStore.GetLatestSpecificationContent(taskID)
+	if err != nil || specContent == "" {
+		return // No specs to compare against
+	}
+
+	// Truncate spec to avoid overwhelming the agent prompt
+	const maxSpecLen = 20000
+	specRunes := []rune(specContent)
+	if len(specRunes) > maxSpecLen {
+		specContent = string(specRunes[:maxSpecLen]) + "\n\n…(specification truncated)"
+	}
+
+	// Get the diff against base branch
+	var diff string
+	if c.git != nil {
+		if base, bErr := c.getBaseBranch(lifecycleCtx); bErr == nil && base != "" {
+			if d, dErr := c.git.DiffAgainst(lifecycleCtx, "origin/"+base, false); dErr == nil {
+				diff = d
+			}
+		}
+	}
+	if diff == "" {
+		return // No diff available to compare
+	}
+
+	// Truncate diff to avoid overwhelming the agent (rune-safe)
+	const maxDiffLen = 50000
+	diffRunes := []rune(diff)
+	if len(diffRunes) > maxDiffLen {
+		diff = string(diffRunes[:maxDiffLen]) + "\n\n…(diff truncated)"
+	}
+
+	prompt := fmt.Sprintf(`Compare the implementation changes against the specification below and verify alignment.
+
+## Specification
+
+%s
+
+## Changes (diff)
+
+%s
+
+## Instructions
+
+1. Check each requirement in the specification against the diff
+2. Report any specification items that were NOT implemented
+3. Report any changes that were NOT in the specification (scope creep)
+4. Report any deviations from the specified approach
+5. Write a structured review with pass/fail per spec item
+
+Output your review as markdown. Start with a summary line: "Spec alignment: X of Y items implemented" followed by details.`, specContent, diff)
+
+	job, err := pool.Submit(worker.JobTypeReview, workDir, prompt)
+	if err != nil {
+		slog.Warn("spec alignment check failed to submit", "error", err)
+
+		return
+	}
+
+	c.mu.Lock()
+	if c.workUnit != nil {
+		c.workUnit.Jobs = append(c.workUnit.Jobs, job.ID)
+		c.workUnit.UpdatedAt = time.Now()
+		c.persistState()
+	}
+	c.mu.Unlock()
+
+	c.emit(ConductorEvent{
+		Type:    "spec_alignment_started",
+		State:   c.machine.State(),
+		JobID:   job.ID,
+		Message: "Spec alignment check started",
+	})
+
+	go c.watchSpecAlignmentJob(c.lifecycleCtx, pool, job.ID) //nolint:contextcheck // intentionally uses lifecycle context
+}
+
+// watchSpecAlignmentJob monitors the spec alignment job and saves the result as a review.
+func (c *Conductor) watchSpecAlignmentJob(ctx context.Context, pool *worker.Pool, jobID string) {
+	stream := pool.Stream(jobID)
+	if stream == nil {
+		return
+	}
+
+	var result string
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case event, ok := <-stream:
+			if !ok {
+				goto done
+			}
+			if event.Type == "job_completed" {
+				result = event.Content
+			}
+		}
+	}
+done:
+
+	if result == "" {
+		return
+	}
+
+	// Save as a review document. Do not auto-approve — the alignment result
+	// may contain findings. Let the user assess the review content.
+	c.AddReview(false, "## Spec Alignment Check\n\n"+result)
+
+	c.emit(ConductorEvent{
+		Type:    "spec_alignment_complete",
+		State:   c.machine.State(),
+		JobID:   jobID,
+		Message: "Spec alignment check complete",
+	})
 }
 
 // AddReview records a review result and persists it to disk.

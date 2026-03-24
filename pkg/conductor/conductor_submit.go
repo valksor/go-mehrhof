@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"log/slog"
 	"os"
 	"path/filepath"
@@ -12,12 +13,14 @@ import (
 	"strings"
 	"time"
 
+	"github.com/valksor/kvelmo/pkg/agent/recorder"
 	"github.com/valksor/kvelmo/pkg/changelog"
 	"github.com/valksor/kvelmo/pkg/changeset"
 	"github.com/valksor/kvelmo/pkg/git"
 	"github.com/valksor/kvelmo/pkg/memory"
 	"github.com/valksor/kvelmo/pkg/provider"
 	"github.com/valksor/kvelmo/pkg/settings"
+	"github.com/valksor/kvelmo/pkg/storage"
 )
 
 // Submit submits the task to the provider (creates PR, updates issue, etc).
@@ -242,6 +245,13 @@ func (c *Conductor) Submit(ctx context.Context, deleteBranch bool) error {
 	memoryIndexer := c.memoryIndexer
 	lifecycleCtx := c.lifecycleCtx
 	shouldComment := c.shouldPostTicketComment()
+
+	// Copy data needed for PR context (spec, review, recordings)
+	phaseMetrics := c.workUnit.PhaseMetrics
+	taskID := c.workUnit.ID
+	checklistChecked := c.workUnit.ChecklistChecked
+	qualityGatePassed := c.workUnit.QualityGatePassed
+	store := c.store
 	c.mu.Unlock()
 
 	// Get diff stats for PR body (best-effort, outside lock)
@@ -256,6 +266,18 @@ func (c *Conductor) Submit(ctx context.Context, deleteBranch bool) error {
 		if statuses, fErr := repo.DiffFilesWithStatus(ctx); fErr == nil {
 			fileStatuses = statuses
 		}
+	}
+
+	// Build PR context: spec content, review summary, recordings
+	prc := &prContext{
+		Recordings: loadRecordingsFlat(phaseMetrics),
+	}
+	if store != nil && taskID != "" {
+		specStore := storage.NewSpecStore(store)
+		if content, _, err := specStore.GetLatestSpecificationContent(taskID); err == nil {
+			prc.SpecContent = content
+		}
+		prc.ReviewSummary = buildReviewSummary(store, taskID, checklistChecked, qualityGatePassed)
 	}
 
 	// Phase 2.5: Auto-generate changelog entry if configured (before push)
@@ -333,7 +355,7 @@ func (c *Conductor) Submit(ctx context.Context, deleteBranch bool) error {
 					if tmpl := detectPRTemplate(repoPath); tmpl != "" {
 						prBody = fillPRTemplate(tmpl, workUnitDescription, checkpointCount, sourceURL)
 					} else {
-						prBody = buildPRDescriptionWithDecisions(workUnitDescription, specCount, checkpointCount, diffStat, fileStatuses, nil, prCustomSections)
+						prBody = buildPRDescriptionWithDecisions(workUnitDescription, specCount, checkpointCount, diffStat, fileStatuses, prCustomSections, prc)
 					}
 					// Validate required PR template sections are filled
 					if len(prRequiredSections) > 0 {
@@ -460,6 +482,108 @@ func (c *Conductor) Submit(ctx context.Context, deleteBranch bool) error {
 	}
 
 	return nil
+}
+
+// SubmitPreview holds the PR preview data for dry-run submission.
+type SubmitPreview struct {
+	Title          string               `json:"title"`
+	Body           string               `json:"body"`
+	Branch         string               `json:"branch"`
+	BaseBranch     string               `json:"base_branch"`
+	DiffStat       string               `json:"diff_stat,omitempty"`
+	FileChanges    []git.FileStatus     `json:"file_changes,omitempty"`
+	Checkpoints    int                  `json:"checkpoints"`
+	Specifications int                  `json:"specifications"`
+	CustomSections []settings.PRSection `json:"custom_sections,omitempty"`
+}
+
+// PreviewSubmit runs the pre-flight checks and PR body generation without
+// actually pushing or creating a PR. Returns the preview of what would be submitted.
+func (c *Conductor) PreviewSubmit(ctx context.Context) (*SubmitPreview, error) {
+	c.mu.Lock()
+	if c.workUnit == nil {
+		c.mu.Unlock()
+
+		return nil, errors.New("no task loaded")
+	}
+
+	// Copy state needed for preview generation
+	branch := c.workUnit.Branch
+	title := c.workUnit.Title
+	workUnitDescription := c.workUnit.Description
+	specCount := len(c.workUnit.Specifications)
+	checkpointCount := len(c.workUnit.Checkpoints)
+	var sourceURL string
+	if c.workUnit.Source != nil {
+		sourceURL = c.workUnit.Source.URL
+	}
+	repo := c.git
+	effectiveSettings := c.getEffectiveSettings()
+	var prCustomSections []settings.PRSection
+	if effectiveSettings != nil {
+		prCustomSections = effectiveSettings.Git.PRCustomSections
+	}
+
+	// Copy PR context data
+	phaseMetrics := c.workUnit.PhaseMetrics
+	taskID := c.workUnit.ID
+	checklistChecked := c.workUnit.ChecklistChecked
+	qualityGatePassed := c.workUnit.QualityGatePassed
+	store := c.store
+	c.mu.Unlock()
+
+	// Get diff stats (best-effort, outside lock)
+	var diffStat string
+	var fileStatuses []git.FileStatus
+	var baseBranch string
+	if repo != nil {
+		if base, bErr := c.getBaseBranch(ctx); bErr == nil && base != "" {
+			baseBranch = base
+			if stat, sErr := repo.DiffAgainst(ctx, "origin/"+base, true); sErr == nil {
+				diffStat = stat
+			}
+		}
+		if statuses, fErr := repo.DiffFilesWithStatus(ctx); fErr == nil {
+			fileStatuses = statuses
+		}
+	}
+
+	// Build PR context
+	prc := &prContext{
+		Recordings: loadRecordingsFlat(phaseMetrics),
+	}
+	if store != nil && taskID != "" {
+		specStore := storage.NewSpecStore(store)
+		if content, _, err := specStore.GetLatestSpecificationContent(taskID); err == nil {
+			prc.SpecContent = content
+		}
+		prc.ReviewSummary = buildReviewSummary(store, taskID, checklistChecked, qualityGatePassed)
+	}
+
+	// Build PR body using same logic as Submit
+	var prBody string
+	if repo != nil {
+		repoPath := repo.Path()
+		if tmpl := detectPRTemplate(repoPath); tmpl != "" {
+			prBody = fillPRTemplate(tmpl, workUnitDescription, checkpointCount, sourceURL)
+		} else {
+			prBody = buildPRDescriptionWithDecisions(workUnitDescription, specCount, checkpointCount, diffStat, fileStatuses, prCustomSections, prc)
+		}
+	} else {
+		prBody = buildPRDescriptionWithDecisions(workUnitDescription, specCount, checkpointCount, diffStat, fileStatuses, prCustomSections, prc)
+	}
+
+	return &SubmitPreview{
+		Title:          c.interpolatePRTitle(title),
+		Body:           prBody,
+		Branch:         branch,
+		BaseBranch:     baseBranch,
+		DiffStat:       diffStat,
+		FileChanges:    fileStatuses,
+		Checkpoints:    checkpointCount,
+		Specifications: specCount,
+		CustomSections: prCustomSections,
+	}, nil
 }
 
 // Abandon stops any running jobs, optionally deletes the branch, and resets state.
@@ -625,9 +749,16 @@ func fillPRTemplate(template, description string, checkpointCount int, sourceURL
 	return strings.Join(result, "\n")
 }
 
+// prContext holds spec, review, and recording data for PR body generation.
+type prContext struct {
+	SpecContent   string
+	ReviewSummary string
+	Recordings    []map[string]any
+}
+
 // buildPRDescription constructs the PR body from task metadata.
 // Takes explicit parameters so it can be called outside the lock with copied values.
-func buildPRDescription(description string, specCount, checkpointCount int, diffStat string, fileStatuses []git.FileStatus, customSections []settings.PRSection) string {
+func buildPRDescription(description string, specCount, checkpointCount int, diffStat string, fileStatuses []git.FileStatus, customSections []settings.PRSection, ctx *prContext) string {
 	desc := fmt.Sprintf("## Summary\n\n%s\n", description)
 
 	if len(fileStatuses) > 0 {
@@ -657,7 +788,28 @@ func buildPRDescription(description string, specCount, checkpointCount int, diff
 	}
 
 	if specCount > 0 {
-		desc += "\n## Implementation\n\nImplemented according to kvelmo specifications.\n"
+		specContent := ""
+		if ctx != nil {
+			specContent = ctx.SpecContent
+		}
+		if specContent != "" {
+			// Truncate long specs to keep PR readable (rune-safe)
+			const maxSpecLen = 2000
+			runes := []rune(specContent)
+			truncated := specContent
+			if len(runes) > maxSpecLen {
+				truncated = string(runes[:maxSpecLen]) + "\n\n…(truncated)"
+			}
+			// Sanitize closing tags that would break the <details> wrapper
+			truncated = strings.ReplaceAll(truncated, "</details>", "&lt;/details&gt;")
+			desc += "\n## Specification\n\n<details>\n<summary>Implementation specification</summary>\n\n" + truncated + "\n\n</details>\n"
+		} else {
+			desc += "\n## Implementation\n\nImplemented according to kvelmo specifications.\n"
+		}
+	}
+
+	if ctx != nil && ctx.ReviewSummary != "" {
+		desc += "\n## Review\n\n" + ctx.ReviewSummary + "\n"
 	}
 
 	if checkpointCount > 0 {
@@ -676,9 +828,13 @@ func buildPRDescription(description string, specCount, checkpointCount int, diff
 }
 
 // buildPRDescriptionWithDecisions extends the PR body with AI decision context.
-func buildPRDescriptionWithDecisions(description string, specCount, checkpointCount int, diffStat string, fileStatuses []git.FileStatus, recordings []map[string]any, customSections []settings.PRSection) string {
-	base := buildPRDescription(description, specCount, checkpointCount, diffStat, fileStatuses, customSections)
+func buildPRDescriptionWithDecisions(description string, specCount, checkpointCount int, diffStat string, fileStatuses []git.FileStatus, customSections []settings.PRSection, ctx *prContext) string {
+	base := buildPRDescription(description, specCount, checkpointCount, diffStat, fileStatuses, customSections, ctx)
 
+	var recordings []map[string]any
+	if ctx != nil {
+		recordings = ctx.Recordings
+	}
 	decisions := changeset.ExtractDecisions(recordings)
 	if len(decisions) == 0 {
 		return base
@@ -687,6 +843,103 @@ func buildPRDescriptionWithDecisions(description string, specCount, checkpointCo
 	aiSection := changeset.FormatMarkdown(decisions, diffStat)
 
 	return base + "\n" + aiSection
+}
+
+// loadRecordingsFlat reads recording JSONL files from phase metrics and flattens
+// them into the format expected by changeset.ExtractDecisions.
+// Uses streaming reader to avoid loading entire files into memory.
+// Caps at maxRecordsPerFile records per file and maxTotalRecords total.
+func loadRecordingsFlat(phaseMetrics map[string]*PhaseMetrics) []map[string]any {
+	const maxRecordsPerFile = 5000
+	const maxTotalRecords = 10000
+
+	var flat []map[string]any
+
+	for _, pm := range phaseMetrics {
+		if pm == nil || pm.RecordingPath == "" {
+			continue
+		}
+
+		r, err := recorder.OpenReader(pm.RecordingPath)
+		if err != nil {
+			slog.Debug("could not open recording for PR", "path", pm.RecordingPath, "error", err)
+
+			continue
+		}
+
+		count := 0
+		for count < maxRecordsPerFile && len(flat) < maxTotalRecords {
+			rec, err := r.Next()
+			if err != nil {
+				if !errors.Is(err, io.EOF) {
+					slog.Debug("error reading recording", "path", pm.RecordingPath, "error", err)
+				}
+
+				break
+			}
+			if rec == nil {
+				break
+			}
+
+			entry := map[string]any{
+				"type": rec.Type,
+			}
+
+			// Unmarshal Event to extract tool name and file info
+			var event map[string]any
+			if err := json.Unmarshal(rec.Event, &event); err == nil {
+				if content, ok := event["content"].(string); ok {
+					entry["tool"] = content
+				}
+				if data, ok := event["data"].(map[string]any); ok {
+					if fp, ok := data["file_path"].(string); ok {
+						entry["file"] = fp
+					}
+				}
+			}
+
+			flat = append(flat, entry)
+			count++
+		}
+		if err := r.Close(); err != nil {
+			slog.Debug("could not close recording reader", "path", pm.RecordingPath, "error", err)
+		}
+	}
+
+	return flat
+}
+
+// buildReviewSummary constructs a review summary string from work unit state.
+func buildReviewSummary(store *storage.Store, taskID string, checklistChecked []string, qualityGatePassed *bool) string {
+	var parts []string
+
+	// Quality gate status
+	if qualityGatePassed != nil {
+		if *qualityGatePassed {
+			parts = append(parts, "Quality gate: passed")
+		} else {
+			parts = append(parts, "Quality gate: failed")
+		}
+	}
+
+	// Checklist items
+	if len(checklistChecked) > 0 {
+		parts = append(parts, fmt.Sprintf("Checklist: %d item(s) checked", len(checklistChecked)))
+	}
+
+	// Latest review status
+	if store != nil && taskID != "" {
+		reviStore := storage.NewReviewStore(store)
+		if review, err := reviStore.GetLatestReview(taskID); err == nil && review != nil {
+			status := review.Status
+			if status == "" {
+				status = "pending"
+			}
+			parts = append(parts, "Review status: "+status)
+		}
+	}
+
+	return strings.Join(parts, "\n")
 }
 
 // validatePRSections checks that all required sections in the PR body contain

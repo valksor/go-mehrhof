@@ -107,7 +107,10 @@ func TestFailedChecksSummary_NilStatus(t *testing.T) {
 }
 
 func TestExtractCILogs_FallsBackToSummary(t *testing.T) {
-	c, _ := New()
+	c, err := New()
+	if err != nil {
+		t.Fatalf("New() failed: %v", err)
+	}
 	status := &ciwatch.Status{
 		State: "failure",
 		Checks: []ciwatch.Check{

@@ -39,7 +39,10 @@ func TestConvertHunks(t *testing.T) {
 }
 
 func TestHoldTheLineEnabled_Default(t *testing.T) {
-	c, _ := New(WithWorkDir(t.TempDir()))
+	c, err := New(WithWorkDir(t.TempDir()))
+	if err != nil {
+		t.Fatalf("New: %v", err)
+	}
 	if !c.holdTheLineEnabled() {
 		t.Error("holdTheLineEnabled() should default to true")
 	}

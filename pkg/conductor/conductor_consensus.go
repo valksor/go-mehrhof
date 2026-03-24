@@ -157,6 +157,8 @@ func parseConsensusFindings(agentName, output string) []findings.Finding {
 		return nil
 	}
 
+	const maxFindings = 500
+
 	var result []findings.Finding
 
 	lines := strings.Split(output, "\n")
@@ -165,6 +167,12 @@ func parseConsensusFindings(agentName, output string) []findings.Finding {
 		line = strings.TrimSpace(line)
 		if line == "" {
 			continue
+		}
+
+		if len(result) >= maxFindings {
+			slog.Warn("consensus findings truncated", "agent", agentName, "max", maxFindings)
+
+			break
 		}
 
 		f := findings.Finding{

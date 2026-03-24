@@ -1,6 +1,7 @@
 package conductor
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/valksor/kvelmo/pkg/varpool"
@@ -106,10 +107,10 @@ func TestBuildPhaseContext_BudgetExceeded(t *testing.T) {
 	// Create a work unit with a large description that will exceed a tiny budget
 	wu := &WorkUnit{
 		Title:       "Test",
-		Description: string(make([]byte, 2000)), // 2000 chars = ~500 tokens
+		Description: strings.Repeat("x", 2000), // 2000 chars = ~500 tokens
 	}
 	pool := varpool.New()
-	pool.SetScoped("sys", "last_diff", string(make([]byte, 2000)), "test")
+	pool.SetScoped("sys", "last_diff", strings.Repeat("d", 2000), "test")
 
 	profile := PhaseContextProfile{
 		IncludeTask:    true,

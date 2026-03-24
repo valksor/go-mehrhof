@@ -164,6 +164,7 @@ func (c *Conductor) startCIFixLoop(ctx context.Context) {
 	})
 	if err != nil {
 		slog.Warn("cifix: failed to marshal exhaustion data", "error", err)
+		data = []byte("{}")
 	}
 
 	c.emit(ConductorEvent{
@@ -214,24 +215,33 @@ func (c *Conductor) attemptCIFix(ctx context.Context, ciLogs string, attempt int
 
 	var jobErr error
 
-	for event := range stream {
-		// Forward streaming output
-		c.emit(ConductorEvent{
-			Type:    "job_output",
-			JobID:   job.ID,
-			Message: event.Content,
-		})
+	for {
+		select {
+		case <-ctx.Done():
+			return fmt.Errorf("CI fix job timed out: %w", ctx.Err())
+		case event, ok := <-stream:
+			if !ok {
+				goto streamDone
+			}
+			// Forward streaming output
+			c.emit(ConductorEvent{
+				Type:    "job_output",
+				JobID:   job.ID,
+				Message: event.Content,
+			})
 
-		if event.Type == "job_completed" {
-			break
-		}
+			if event.Type == "job_completed" {
+				goto streamDone
+			}
 
-		if event.Type == "job_failed" {
-			jobErr = fmt.Errorf("CI fix job failed: %s", event.Content)
+			if event.Type == "job_failed" {
+				jobErr = fmt.Errorf("CI fix job failed: %s", event.Content)
 
-			break
+				goto streamDone
+			}
 		}
 	}
+streamDone:
 
 	if jobErr != nil {
 		return jobErr

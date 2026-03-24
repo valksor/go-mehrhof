@@ -67,3 +67,42 @@ func TestFormatCheckpointMessage_EmptyPrefix(t *testing.T) {
 		t.Errorf("expected default kvelmo prefix, got %q", msg)
 	}
 }
+
+func TestFormatCheckpointMessage_WithPhase(t *testing.T) {
+	c := newTestConductor(t)
+	c.workUnit = &WorkUnit{ID: "test-1"}
+
+	// Force state to implementing
+	c.machine.ForceState(StateImplementing)
+
+	msg := c.formatCheckpointMessage("safety checkpoint")
+	if msg != "kvelmo: [implement] safety checkpoint" {
+		t.Errorf("expected phase tag, got %q", msg)
+	}
+}
+
+func TestStateToPhase(t *testing.T) {
+	tests := []struct {
+		state State
+		want  string
+	}{
+		{StatePlanning, "plan"},
+		{StatePlanned, "plan"},
+		{StateImplementing, "implement"},
+		{StateImplemented, "implement"},
+		{StateSimplifying, "simplify"},
+		{StateOptimizing, "optimize"},
+		{StateReviewing, "review"},
+		{StateSubmitted, "submit"},
+		{StateNone, ""},
+		{StateLoaded, ""},
+		{StateFailed, ""},
+	}
+
+	for _, tt := range tests {
+		got := stateToPhase(tt.state)
+		if got != tt.want {
+			t.Errorf("stateToPhase(%s) = %q, want %q", tt.state, got, tt.want)
+		}
+	}
+}

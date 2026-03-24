@@ -430,14 +430,14 @@ func TestConductorLogVerbosef_NotVerbose(t *testing.T) {
 // ─── buildPRDescription ───────────────────────────────────────────────────────
 
 func TestBuildPRDescription_EmptyDescription(t *testing.T) {
-	result := buildPRDescription("", 0, 0, "", nil, nil)
+	result := buildPRDescription("", 0, 0, "", nil, nil, nil)
 	if !strings.Contains(result, "## Summary") {
 		t.Error("buildPRDescription missing Summary section")
 	}
 }
 
 func TestBuildPRDescription_Basic(t *testing.T) {
-	result := buildPRDescription("Do something important", 0, 0, "", nil, nil)
+	result := buildPRDescription("Do something important", 0, 0, "", nil, nil, nil)
 	if !strings.Contains(result, "Do something important") {
 		t.Error("buildPRDescription missing description")
 	}
@@ -447,14 +447,36 @@ func TestBuildPRDescription_Basic(t *testing.T) {
 }
 
 func TestBuildPRDescription_WithSpecs(t *testing.T) {
-	result := buildPRDescription("desc", 1, 0, "", nil, nil)
+	result := buildPRDescription("desc", 1, 0, "", nil, nil, nil)
 	if !strings.Contains(result, "## Implementation") {
 		t.Error("buildPRDescription with specs missing Implementation section")
 	}
 }
 
+func TestBuildPRDescription_WithSpecContent(t *testing.T) {
+	ctx := &prContext{SpecContent: "Build a REST API with GET /users endpoint"}
+	result := buildPRDescription("desc", 1, 0, "", nil, nil, ctx)
+	if !strings.Contains(result, "## Specification") {
+		t.Error("buildPRDescription with spec content missing Specification section")
+	}
+	if !strings.Contains(result, "REST API") {
+		t.Error("buildPRDescription with spec content missing actual spec text")
+	}
+}
+
+func TestBuildPRDescription_WithReviewSummary(t *testing.T) {
+	ctx := &prContext{ReviewSummary: "Quality gate: passed\nReview status: approved"}
+	result := buildPRDescription("desc", 0, 0, "", nil, nil, ctx)
+	if !strings.Contains(result, "## Review") {
+		t.Error("buildPRDescription with review summary missing Review section")
+	}
+	if !strings.Contains(result, "Quality gate: passed") {
+		t.Error("buildPRDescription with review summary missing quality gate status")
+	}
+}
+
 func TestBuildPRDescription_WithCheckpoints(t *testing.T) {
-	result := buildPRDescription("desc", 0, 2, "", nil, nil)
+	result := buildPRDescription("desc", 0, 2, "", nil, nil, nil)
 	if !strings.Contains(result, "## Checkpoints") {
 		t.Error("buildPRDescription with checkpoints missing Checkpoints section")
 	}
