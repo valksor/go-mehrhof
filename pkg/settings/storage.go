@@ -238,9 +238,6 @@ func Merge(dst, src *Settings) {
 	if src.Git.CommitPattern != "" {
 		dst.Git.CommitPattern = src.Git.CommitPattern
 	}
-	if src.Git.CheckpointPrefix != "" {
-		dst.Git.CheckpointPrefix = src.Git.CheckpointPrefix
-	}
 	if src.Git.PRTitlePattern != "" {
 		dst.Git.PRTitlePattern = src.Git.PRTitlePattern
 	}
@@ -886,14 +883,6 @@ func SetValue(s *Settings, path string, value any) error {
 		}
 
 		return errors.New("git.commit_pattern must be a string")
-	case "git.checkpoint_prefix":
-		if v, ok := value.(string); ok {
-			s.Git.CheckpointPrefix = v
-
-			return nil
-		}
-
-		return errors.New("git.checkpoint_prefix must be a string")
 	case "git.pr_title_pattern":
 		if v, ok := value.(string); ok {
 			s.Git.PRTitlePattern = v
@@ -1231,8 +1220,6 @@ func GetValue(s *Settings, path string) (any, error) {
 		return s.Git.CommitPrefix, nil
 	case "git.commit_pattern":
 		return s.Git.CommitPattern, nil
-	case "git.checkpoint_prefix":
-		return s.Git.CheckpointPrefix, nil
 	case "git.pr_title_pattern":
 		return s.Git.PRTitlePattern, nil
 	case "git.branch_validation_pattern":
@@ -1342,7 +1329,6 @@ var envOverrides = []struct {
 	{"GIT_BRANCH_PATTERN", "git.branch_pattern"},
 	{"GIT_COMMIT_PREFIX", "git.commit_prefix"},
 	{"GIT_COMMIT_PATTERN", "git.commit_pattern"},
-	{"GIT_CHECKPOINT_PREFIX", "git.checkpoint_prefix"},
 	{"GIT_PR_TITLE_PATTERN", "git.pr_title_pattern"},
 	{"GIT_BRANCH_VALIDATION_PATTERN", "git.branch_validation_pattern"},
 	{"GIT_CREATE_BRANCH", "git.create_branch"},
@@ -1381,7 +1367,7 @@ func applyEnvOverrides(s *Settings) {
 		case "agent.default", "providers.default", "providers.github.owner",
 			"providers.gitlab.base_url", "providers.linear.team",
 			"git.base_branch", "git.branch_pattern", "git.commit_prefix",
-			"git.commit_pattern", "git.checkpoint_prefix", "git.pr_title_pattern", "git.branch_validation_pattern",
+			"git.commit_pattern", "git.pr_title_pattern", "git.branch_validation_pattern",
 			"storage.spec_output_path", "storage.plan_output_path", "storage.changelog_path":
 			_ = SetValue(s, ov.path, val)
 

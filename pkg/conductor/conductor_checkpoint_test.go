@@ -11,14 +11,14 @@ func TestFormatCheckpointMessage_Default(t *testing.T) {
 	c.workUnit = &WorkUnit{ID: "test-1"}
 
 	msg := c.formatCheckpointMessage("plan_done complete")
-	if msg != "kvelmo: plan_done complete" {
-		t.Errorf("expected default prefix, got %q", msg)
+	if msg != "[kvelmo] plan_done complete" {
+		t.Errorf("expected default commit prefix, got %q", msg)
 	}
 }
 
 func TestFormatCheckpointMessage_CustomPrefix(t *testing.T) {
 	s := settings.DefaultSettings()
-	s.Git.CheckpointPrefix = "chore({key}):"
+	s.Git.CommitPrefix = "chore({key}):"
 
 	c, err := New(WithWorkDir(t.TempDir()), WithSettings(s))
 	if err != nil {
@@ -37,7 +37,7 @@ func TestFormatCheckpointMessage_CustomPrefix(t *testing.T) {
 
 func TestFormatCheckpointMessage_CustomPrefixNoExternalID(t *testing.T) {
 	s := settings.DefaultSettings()
-	s.Git.CheckpointPrefix = "[{key}]"
+	s.Git.CommitPrefix = "[{key}]"
 
 	c, err := New(WithWorkDir(t.TempDir()), WithSettings(s))
 	if err != nil {
@@ -46,7 +46,7 @@ func TestFormatCheckpointMessage_CustomPrefixNoExternalID(t *testing.T) {
 	c.workUnit = &WorkUnit{ID: "test-1"}
 
 	msg := c.formatCheckpointMessage("implement_done complete")
-	// No external ID → {key} becomes "kvelmo"
+	// No external ID → {key} becomes empty, [] becomes [kvelmo]
 	if msg != "[kvelmo] implement_done complete" {
 		t.Errorf("expected fallback key, got %q", msg)
 	}
@@ -54,7 +54,7 @@ func TestFormatCheckpointMessage_CustomPrefixNoExternalID(t *testing.T) {
 
 func TestFormatCheckpointMessage_EmptyPrefix(t *testing.T) {
 	s := settings.DefaultSettings()
-	s.Git.CheckpointPrefix = ""
+	s.Git.CommitPrefix = ""
 
 	c, err := New(WithWorkDir(t.TempDir()), WithSettings(s))
 	if err != nil {
@@ -63,46 +63,8 @@ func TestFormatCheckpointMessage_EmptyPrefix(t *testing.T) {
 	c.workUnit = &WorkUnit{ID: "test-1"}
 
 	msg := c.formatCheckpointMessage("some checkpoint")
-	if msg != "kvelmo: some checkpoint" {
+	// Empty CommitPrefix → falls back to [kvelmo]
+	if msg != "[kvelmo] some checkpoint" {
 		t.Errorf("expected default kvelmo prefix, got %q", msg)
-	}
-}
-
-func TestFormatCheckpointMessage_WithPhase(t *testing.T) {
-	c := newTestConductor(t)
-	c.workUnit = &WorkUnit{ID: "test-1"}
-
-	// Force state to implementing
-	c.machine.ForceState(StateImplementing)
-
-	msg := c.formatCheckpointMessage("safety checkpoint")
-	if msg != "kvelmo: [implement] safety checkpoint" {
-		t.Errorf("expected phase tag, got %q", msg)
-	}
-}
-
-func TestStateToPhase(t *testing.T) {
-	tests := []struct {
-		state State
-		want  string
-	}{
-		{StatePlanning, "plan"},
-		{StatePlanned, "plan"},
-		{StateImplementing, "implement"},
-		{StateImplemented, "implement"},
-		{StateSimplifying, "simplify"},
-		{StateOptimizing, "optimize"},
-		{StateReviewing, "review"},
-		{StateSubmitted, "submit"},
-		{StateNone, ""},
-		{StateLoaded, ""},
-		{StateFailed, ""},
-	}
-
-	for _, tt := range tests {
-		got := stateToPhase(tt.state)
-		if got != tt.want {
-			t.Errorf("stateToPhase(%s) = %q, want %q", tt.state, got, tt.want)
-		}
 	}
 }

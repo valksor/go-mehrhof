@@ -601,15 +601,11 @@ func TestMerge_NewGitFields(t *testing.T) {
 	dst := DefaultSettings()
 	src := &Settings{
 		Git: GitSettings{
-			CheckpointPrefix:   "chore({key}):",
 			PRRequiredSections: []string{"summary", "test plan"},
 		},
 	}
 	Merge(dst, src)
 
-	if dst.Git.CheckpointPrefix != "chore({key}):" {
-		t.Errorf("CheckpointPrefix not merged: %q", dst.Git.CheckpointPrefix)
-	}
 	if len(dst.Git.PRRequiredSections) != 2 {
 		t.Errorf("PRRequiredSections not merged: %v", dst.Git.PRRequiredSections)
 	}
@@ -653,20 +649,6 @@ func TestMerge_Preset(t *testing.T) {
 
 	if dst.Preset != "compliance" {
 		t.Errorf("Preset not merged: %q", dst.Preset)
-	}
-}
-
-func TestSetGetValue_CheckpointPrefix(t *testing.T) {
-	s := DefaultSettings()
-	if err := SetValue(s, "git.checkpoint_prefix", "chore:"); err != nil {
-		t.Fatalf("SetValue error: %v", err)
-	}
-	got, err := GetValue(s, "git.checkpoint_prefix")
-	if err != nil {
-		t.Fatalf("GetValue error: %v", err)
-	}
-	if got != "chore:" {
-		t.Errorf("got %v, want chore:", got)
 	}
 }
 

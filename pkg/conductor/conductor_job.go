@@ -204,13 +204,11 @@ func (c *Conductor) watchJob(ctx context.Context, jobID string, completionEvent 
 				indexer    *memory.Indexer
 			)
 			if c.workUnit != nil {
-				// Capture pre-job checkpoint ref and validation params under lock
+				// Capture pre-job checkpoint ref for commit validation range.
 				var preJobCheckpoint string
 				if len(c.workUnit.Checkpoints) > 0 {
 					preJobCheckpoint = c.workUnit.Checkpoints[len(c.workUnit.Checkpoints)-1]
 				}
-				commitValParams := c.prepareCommitValidation(preJobCheckpoint)
-
 				// For planning jobs, detect newly written specification files
 				// and optionally copy to the repo
 				if completionEvent == EventPlanDone {
@@ -260,6 +258,10 @@ func (c *Conductor) watchJob(ctx context.Context, jobID string, completionEvent 
 						}
 					}
 				}
+
+				// Build validation params after checkpoint creation so checkpointSHAs
+				// includes newly created checkpoints.
+				commitValParams := c.prepareCommitValidation(preJobCheckpoint)
 
 				// Evaluate output via strategy before dispatching completion.
 				// If the strategy requests iteration, re-submit and skip normal completion.
@@ -482,51 +484,12 @@ func validateBranchName(name, pattern string) error {
 	return nil
 }
 
-// formatCheckpointMessage formats a checkpoint commit message using the configured prefix.
-// If CheckpointPrefix is set, it wraps the message with that prefix; otherwise uses "kvelmo:" default.
+// formatCheckpointMessage formats a checkpoint commit message using the same
+// CommitPrefix as agent commits, keeping git history style-consistent.
 func (c *Conductor) formatCheckpointMessage(message string) string {
-	s := c.getEffectiveSettings()
-	prefix := s.Git.CheckpointPrefix
-	if prefix == "" {
-		prefix = "kvelmo:"
-	} else {
-		// Interpolate {key} variable
-		if c.workUnit != nil && c.workUnit.ExternalID != "" {
-			prefix = strings.ReplaceAll(prefix, "{key}", c.workUnit.ExternalID)
-		} else {
-			prefix = strings.ReplaceAll(prefix, "{key}", "kvelmo")
-		}
-	}
-
-	// Inject current phase into checkpoint message
-	phase := stateToPhase(c.machine.State())
-	if phase != "" {
-		return fmt.Sprintf("%s [%s] %s", prefix, phase, message)
-	}
+	prefix := c.interpolatedCommitPrefix()
 
 	return prefix + " " + message
-}
-
-// stateToPhase maps conductor states to human-readable phase labels.
-func stateToPhase(state State) string {
-	switch state {
-	case StatePlanning, StatePlanned:
-		return "plan"
-	case StateImplementing, StateImplemented:
-		return "implement"
-	case StateSimplifying:
-		return "simplify"
-	case StateOptimizing:
-		return "optimize"
-	case StateReviewing:
-		return "review"
-	case StateSubmitted:
-		return "submit"
-	case StateNone, StateLoaded, StateFailed, StateWaiting, StatePaused:
-		return ""
-	}
-
-	return ""
 }
 
 // recordCheckpointMeta stores rich metadata for a checkpoint SHA.
@@ -624,7 +587,7 @@ type commitValidationParams struct {
 	pattern        string
 	workDir        string
 	lastCheckpoint string
-	cpPrefix       string
+	checkpointSHAs map[string]struct{}
 }
 
 // prepareCommitValidation extracts commit validation parameters from conductor state.
@@ -640,23 +603,17 @@ func (c *Conductor) prepareCommitValidation(lastCheckpoint string) *commitValida
 		return nil
 	}
 
-	// Interpolate checkpoint prefix the same way formatCheckpointMessage does,
-	// so HasPrefix matches the actual commit messages kvelmo creates.
-	cpPrefix := settings.Git.CheckpointPrefix
-	if cpPrefix == "" {
-		cpPrefix = "kvelmo:"
-	}
-	if c.workUnit != nil && c.workUnit.ExternalID != "" {
-		cpPrefix = strings.ReplaceAll(cpPrefix, "{key}", c.workUnit.ExternalID)
-	} else {
-		cpPrefix = strings.ReplaceAll(cpPrefix, "{key}", "kvelmo")
+	// Collect checkpoint SHAs so validateAgentCommits can skip kvelmo's own commits.
+	cpSHAs := make(map[string]struct{}, len(c.workUnit.Checkpoints))
+	for _, sha := range c.workUnit.Checkpoints {
+		cpSHAs[sha] = struct{}{}
 	}
 
 	return &commitValidationParams{
 		pattern:        pattern,
 		workDir:        c.getWorkDir(),
 		lastCheckpoint: lastCheckpoint,
-		cpPrefix:       cpPrefix,
+		checkpointSHAs: cpSHAs,
 	}
 }
 
@@ -684,8 +641,8 @@ func (c *Conductor) validateAgentCommits(ctx context.Context, params *commitVali
 
 	var invalid []string
 	for _, entry := range commits {
-		// Skip kvelmo's own checkpoint commits
-		if strings.HasPrefix(entry.Message, params.cpPrefix) {
+		// Skip kvelmo's own checkpoint commits (identified by SHA, not prefix).
+		if _, isCheckpoint := params.checkpointSHAs[entry.SHA]; isCheckpoint {
 			continue
 		}
 		if err := git.ValidateCommitMessage(entry.Message, params.pattern); err != nil {
