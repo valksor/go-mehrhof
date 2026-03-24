@@ -313,6 +313,13 @@ type WorkflowSettings struct {
 	Hooks                HooksSettings              `yaml:"hooks,omitempty" json:"hooks,omitempty"`
 	HoldTheLine          *bool                      `yaml:"hold_the_line,omitempty" json:"hold_the_line,omitempty" schema:"label=Hold the Line;desc=Only gate on findings in lines changed by the agent, ignoring pre-existing tech debt;default=true"`
 	PhaseGuardrails      map[string]GuardrailConfig `yaml:"phase_guardrails,omitempty" json:"phase_guardrails,omitempty" schema:"label=Phase Guardrails;desc=Pre/post validation checks per phase;type=json;advanced"`
+	TaskGroups           *TaskGroupSettings         `yaml:"task_groups,omitempty" json:"task_groups,omitempty"`
+}
+
+// TaskGroupSettings configures cross-repo task group coordination.
+type TaskGroupSettings struct {
+	Enabled    bool `yaml:"enabled,omitempty" json:"enabled,omitempty" schema:"label=Task Groups;desc=Enable cross-repo task group coordination;default=false"`
+	SyncSubmit bool `yaml:"sync_submit,omitempty" json:"sync_submit,omitempty" schema:"label=Sync Submit;desc=All group members must be ready before any can submit;default=true"`
 }
 
 // GuardrailConfig defines pre and post guardrails for a workflow phase.

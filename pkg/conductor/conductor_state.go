@@ -31,6 +31,21 @@ type MetricsRecorder interface {
 	RecordPhaseTransition(phase string, duration time.Duration, err error)
 }
 
+// TaskGroupChecker verifies whether a task is allowed to submit based on
+// cross-repo task group readiness. When syncSubmit is true and the task
+// belongs to a group, all group members must be ready before any can submit.
+type TaskGroupChecker interface {
+	CanSubmit(taskID string, syncSubmit bool) (bool, error)
+}
+
+// SetTaskGroupChecker configures the task group checker used during submit.
+// Safe to call with nil (disables task group checking).
+func (c *Conductor) SetTaskGroupChecker(checker TaskGroupChecker) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.taskGroupChecker = checker
+}
+
 // SetNotifier configures an optional notification service.
 // Safe to call with nil (clears the notifier).
 func (c *Conductor) SetNotifier(n Notifier) {

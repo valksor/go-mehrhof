@@ -138,6 +138,11 @@ type Conductor struct {
 	// Uses atomic.Pointer for lock-free access to avoid deadlock when called
 	// from methods that already hold c.mu.
 	cachedSettings atomic.Pointer[settings.Settings]
+
+	// taskGroupChecker is called during submit to verify cross-repo group readiness.
+	// When non-nil and sync_submit is enabled, it blocks submit until all group
+	// members reach the reviewing state. Set via SetTaskGroupChecker.
+	taskGroupChecker TaskGroupChecker
 }
 
 // ConductorEvent represents an event emitted by the conductor.

@@ -56,6 +56,21 @@ export interface MemoryResult {
   created_at: string
 }
 
+export interface TaskGroupRef {
+  project_dir: string
+  task_id: string
+  state: string
+}
+
+export interface TaskGroup {
+  id: string
+  label: string
+  tasks: TaskGroupRef[]
+  status: string
+  created_at: string
+  updated_at: string
+}
+
 export interface TimedSnapshot {
   timestamp: string
   jobs_submitted: number
@@ -160,6 +175,12 @@ interface GlobalState {
   // Jobs
   loadJobs: () => Promise<void>
   loadJob: (id: string) => Promise<Job | null>
+
+  // Task Groups
+  taskGroups: TaskGroup[]
+  loadTaskGroups: () => Promise<void>
+  createTaskGroup: (label: string) => Promise<TaskGroup | null>
+  removeTaskGroup: (id: string) => Promise<void>
 }
 
 export const useGlobalStore = create<GlobalState>()(
@@ -180,6 +201,7 @@ export const useGlobalStore = create<GlobalState>()(
       metricsHistory: [],
       memoryStats: null,
       jobs: [],
+      taskGroups: [],
       agentStatus: null,
       worktreeHealth: [],
       selectedProjectId: null,
@@ -636,6 +658,44 @@ export const useGlobalStore = create<GlobalState>()(
         } catch (err) {
           console.warn('Failed to load job:', err)
           return null
+        }
+      },
+
+      loadTaskGroups: async () => {
+        const client = get().client
+        if (!client) return
+
+        try {
+          const result = await client.call<{ groups: TaskGroup[] }>('taskgroup.list', {})
+          set({ taskGroups: result.groups || [] })
+        } catch (err) {
+          console.warn('Failed to load task groups:', err)
+        }
+      },
+
+      createTaskGroup: async (label: string): Promise<TaskGroup | null> => {
+        const client = get().client
+        if (!client) return null
+
+        try {
+          const result = await client.call<TaskGroup>('taskgroup.create', { label })
+          await get().loadTaskGroups()
+          return result
+        } catch (err) {
+          console.warn('Failed to create task group:', err)
+          return null
+        }
+      },
+
+      removeTaskGroup: async (id: string) => {
+        const client = get().client
+        if (!client) return
+
+        try {
+          await client.call('taskgroup.remove', { id })
+          await get().loadTaskGroups()
+        } catch (err) {
+          console.warn('Failed to remove task group:', err)
         }
       }
     }),
