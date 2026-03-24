@@ -168,7 +168,7 @@ Each transition creates a git checkpoint. `undo`/`redo` navigate between checkpo
 
 ### Web Frontend (`web/`)
 
-- React 19 + TypeScript + Vite 8
+- React 19 + TypeScript 6 + Vite 8
 - UI: Tailwind CSS 4 + DaisyUI 5
 - Views: `GlobalView` (project picker) ↔ `ProjectView` (active project dashboard)
 

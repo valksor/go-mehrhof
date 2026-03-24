@@ -64,7 +64,7 @@ reviews:
     - path: "web/**"
       instructions: |
         Uses **bun**, not npm or node. Do not suggest npm/npx commands.
-        Frontend stack: React 19, TypeScript, Vite 8, Tailwind CSS 4, DaisyUI 5, Zustand.
+        Frontend stack: React 19, TypeScript 6, Vite 8, Tailwind CSS 4, DaisyUI 5, Zustand.
         Communicates with backend via WebSocket (socket proxy), not REST.
         Views: GlobalView (project picker) ↔ ProjectView (active project dashboard).
         Add `?demo` URL param for UI testing without backend.

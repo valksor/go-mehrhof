@@ -168,7 +168,7 @@ Each transition creates a git checkpoint. `undo`/`redo` navigate between checkpo
 
 ### Web Frontend (`web/`)
 
-- React 19 + TypeScript + Vite 8
+- React 19 + TypeScript 6 + Vite 8
 - UI: Tailwind CSS 4 + DaisyUI 5
 - Views: `GlobalView` (project picker) ↔ `ProjectView` (active project dashboard)
 
@@ -216,7 +216,7 @@ Before deleting any logic flagged as "dead code," verify whether it is truly unu
 Commands in `cmd/kvelmo/commands/`. Entry point: `serve` (global socket + web server, port 6337).
 
 **Workflow progression:**
-- `start` - Load task and initialize worktree (accepts positional text arg; `--skip` for phase skipping)
+- `start` - Load task and initialize worktree (accepts positional text arg; `--skip` for phase skipping; `--file`/`--symbol`/`--commit` for context attachment)
 - `plan` - Have agent write specification
 - `implement` - Have agent write code
 - `simplify` - Optional code cleanup pass
@@ -224,7 +224,7 @@ Commands in `cmd/kvelmo/commands/`. Entry point: `serve` (global socket + web se
 - `review` - Enter human review mode
 - `submit` - Create pull request (`--dry-run` to preview, `--section` for custom sections)
 - `finish` - Cleanup after PR merge
-- `quick` - Quick-fix mode: load, implement, submit in one step (accepts positional text arg; `--skip`)
+- `quick` - Quick-fix mode: load, implement, submit in one step (accepts positional text arg; `--skip`; `--file`/`--symbol`/`--commit`)
 
 **Workflow control:**
 - `undo`/`redo` - Navigate checkpoints
@@ -264,6 +264,7 @@ Commands in `cmd/kvelmo/commands/`. Entry point: `serve` (global socket + web se
 - `list` - List tasks (active, history, queue)
 - `jobs` - View job queue and status
 - `codegraph` - Code symbol graph (stats, index, search, callers, deps)
+- `eventlog` - View task lifecycle events (phase transitions, checkpoints)
 - `tui` - Terminal UI dashboard (Bubbletea)
 - `rpc` - Raw JSON-RPC calls to sockets
 
@@ -303,6 +304,7 @@ Commands in `cmd/kvelmo/commands/`. Entry point: `serve` (global socket + web se
 - `tutorial` - Interactive walkthrough
 - `pipe` - One-shot agent prompt (stdin/stdout, no server required)
 - `remote` - Remote PR operations (approve, merge)
+- `discover` - List available project commands (Makefile, package.json, Taskfile)
 
 ## Code Style
 
