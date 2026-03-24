@@ -1,6 +1,7 @@
 import { useState, type ReactNode } from 'react'
 import type { Section, Field } from '../../types/settings'
 import { evaluateShowWhen, getPath } from '../../lib/schemaUtils'
+import { getSectionFieldGroups } from '../../lib/settingsLayout'
 import { FieldRenderer } from './FieldRenderer'
 
 // Icon mapping for section icons
@@ -76,6 +77,7 @@ export function DynamicSection({
   }
 
   const icon = section.icon ? iconMap[section.icon] : null
+  const fieldGroups = getSectionFieldGroups(section, visibleFields)
 
   return (
     <div className="collapse collapse-arrow bg-base-200 rounded-lg">
@@ -97,15 +99,33 @@ export function DynamicSection({
       </div>
       <div className="collapse-content px-4 pb-4">
         <div className="space-y-4 pt-2">
-          {visibleFields.map((field: Field) => (
-            <FieldRenderer
-              key={field.path}
-              field={field}
-              value={getPath(values, field.path)}
-              error={errors[field.path]}
-              onChange={value => onChange(field.path, value)}
-              disabled={disabled}
-            />
+          {fieldGroups.map(group => (
+            <section key={group.id} className="rounded-xl border border-base-300 bg-base-100/70 p-4 space-y-4">
+              {(fieldGroups.length > 1 || group.badge || group.description) && (
+                <div className="space-y-2">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h4 className="font-medium text-sm md:text-base">{group.title}</h4>
+                    {group.badge && <span className="badge badge-outline badge-sm">{group.badge}</span>}
+                  </div>
+                  {group.description && (
+                    <p className="text-sm text-base-content/60">{group.description}</p>
+                  )}
+                </div>
+              )}
+
+              <div className="space-y-4">
+                {group.fields.map((field: Field) => (
+                  <FieldRenderer
+                    key={field.path}
+                    field={field}
+                    value={getPath(values, field.path)}
+                    error={errors[field.path]}
+                    onChange={value => onChange(field.path, value)}
+                    disabled={disabled}
+                  />
+                ))}
+              </div>
+            </section>
           ))}
         </div>
       </div>
