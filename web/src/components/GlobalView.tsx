@@ -454,9 +454,9 @@ export function GlobalView() {
             </p>
             <p className="text-sm opacity-80">
               {agentStatus.checks
-                .filter(c => c.status === 'failed' && c.fix)
+                ?.filter(c => (c.status === 'failed' || c.status === 'warning') && c.fix)
                 .map(c => c.fix)
-                .join(' · ') || 'Install Claude CLI or check authentication.'}
+                .join(' · ') || 'Check agent diagnostics for details.'}
             </p>
           </div>
         </div>

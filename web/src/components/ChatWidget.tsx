@@ -388,7 +388,7 @@ export function ChatWidget({ embedded = false, onModalCommand }: ChatWidgetProps
                 onChange={handleInputChange}
                 onKeyDown={handleKeyDown}
                 placeholder="Type a message... (@ files, / commands)"
-                className="textarea textarea-bordered w-full resize-none min-h-[40px] max-h-[120px] pr-10 text-sm"
+                className="chat-input w-full resize-none min-h-[40px] max-h-[120px] pr-10 text-sm px-3 py-2.5"
                 rows={1}
                 disabled={isTyping}
                 role="combobox"
@@ -493,7 +493,7 @@ export function ChatWidget({ embedded = false, onModalCommand }: ChatWidgetProps
             <button
               type="submit"
               disabled={!input.trim() || isTyping}
-              className="btn btn-primary btn-square"
+              className="btn btn-primary btn-square rounded-xl"
               aria-label="Send message"
             >
               {isTyping ? (

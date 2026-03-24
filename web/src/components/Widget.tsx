@@ -43,7 +43,7 @@ export function Widget({
 
   return (
     <section
-      className={`widget elevation-2 ${className}`}
+      className={`widget ${collapsed ? 'widget-collapsed' : ''} ${className}`}
       data-widget-id={id}
     >
       {/* Header */}

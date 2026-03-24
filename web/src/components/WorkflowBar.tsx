@@ -162,7 +162,7 @@ export function WorkflowBar() {
 
   return (
     <>
-      <div className="flex items-center gap-1 px-3 py-1.5 bg-base-200/50 border-b border-base-300">
+      <div className="flex items-center gap-1.5 px-3 py-2 bg-base-200 border-b border-base-content/6">
         {/* Dry-run toggle */}
         <label className="flex items-center gap-1 mr-2 cursor-pointer">
           <input
@@ -199,13 +199,13 @@ export function WorkflowBar() {
         )}
 
         {/* Step indicators */}
-        <div className="flex items-center gap-0.5 overflow-x-auto">
+        <div className="flex items-center gap-1 overflow-x-auto">
           {steps.map((step, index) => {
             const isCompleted = stepIndex > index
             const isCurrent = stepIndex === index
             const isClickable = !loading && step.triggerState === state && (step.action || step.id === 'submit')
 
-            let dotClass = 'w-2 h-2 rounded-full flex-shrink-0 transition-colors'
+            let dotClass = 'w-2.5 h-2.5 rounded-full flex-shrink-0 transition-colors'
             let labelClass = 'text-[10px] sm:text-xs transition-colors whitespace-nowrap'
 
             if (isCompleted) {
@@ -228,8 +228,8 @@ export function WorkflowBar() {
             const isSkipped = skipPhases.includes(step.id)
 
             const stepContent = (
-              <div className="flex items-center gap-1">
-                <div className={isSkipped ? 'w-2 h-2 rounded-full flex-shrink-0 bg-base-300 opacity-30' : dotClass} />
+              <div className="flex items-center gap-1.5">
+                <div className={isSkipped ? 'w-2.5 h-2.5 rounded-full flex-shrink-0 bg-base-300 opacity-30' : dotClass} />
                 <span className={isSkipped ? 'text-[10px] sm:text-xs text-base-content/20 line-through' : labelClass}>{step.label}</span>
               </div>
             )
@@ -249,8 +249,8 @@ export function WorkflowBar() {
                   stepContent
                 )}
                 {index < steps.length - 1 && (
-                  <div className={`flex-1 h-px min-w-2 max-w-6 transition-colors ${
-                    isCompleted ? 'bg-success/50' : 'bg-base-300'
+                  <div className={`flex-1 h-[1.5px] min-w-3 max-w-8 transition-colors ${
+                    isCompleted ? 'bg-success/40' : 'bg-base-content/12'
                   }`} />
                 )}
               </div>

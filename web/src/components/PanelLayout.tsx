@@ -82,7 +82,7 @@ export function PanelLayout({ leftContent, rightContent, header }: PanelLayoutPr
           {/* Left sidebar - hidden on mobile unless active */}
           <aside
             aria-label="Left sidebar"
-            className={`flex-shrink-0 overflow-hidden bg-base-200/50 ${
+            className={`flex-shrink-0 overflow-hidden bg-base-200 ${
               mobilePanel === 'left' ? 'flex md:flex' : 'hidden md:flex'
             } flex-col`}
             style={{ width: mobilePanel === 'left' ? '100%' : undefined }}
@@ -104,7 +104,9 @@ export function PanelLayout({ leftContent, rightContent, header }: PanelLayoutPr
             aria-valuemin={15}
             aria-valuemax={35}
             tabIndex={0}
-            className="hidden md:block w-1 flex-shrink-0 bg-base-300 hover:bg-primary/50 cursor-col-resize transition-colors focus:bg-primary/70 focus:outline-none"
+            className={`hidden md:block w-1 flex-shrink-0 cursor-col-resize transition-colors duration-150 focus:outline-none ${
+              isResizingLeft ? 'bg-primary/60' : 'bg-transparent hover:bg-primary/30 focus-visible:bg-primary/50'
+            }`}
             onMouseDown={() => setIsResizingLeft(true)}
             onKeyDown={(e) => {
               if (e.key === 'ArrowLeft') {
@@ -141,7 +143,9 @@ export function PanelLayout({ leftContent, rightContent, header }: PanelLayoutPr
             aria-valuemin={15}
             aria-valuemax={35}
             tabIndex={0}
-            className="hidden md:block w-1 flex-shrink-0 bg-base-300 hover:bg-primary/50 cursor-col-resize transition-colors focus:bg-primary/70 focus:outline-none"
+            className={`hidden md:block w-1 flex-shrink-0 cursor-col-resize transition-colors duration-150 focus:outline-none ${
+              isResizingRight ? 'bg-primary/60' : 'bg-transparent hover:bg-primary/30 focus-visible:bg-primary/50'
+            }`}
             onMouseDown={() => setIsResizingRight(true)}
             onKeyDown={(e) => {
               if (e.key === 'ArrowLeft') {
@@ -162,7 +166,7 @@ export function PanelLayout({ leftContent, rightContent, header }: PanelLayoutPr
           {/* Right sidebar - hidden on mobile unless active */}
           <aside
             aria-label="Right sidebar"
-            className={`flex-shrink-0 overflow-hidden bg-base-200/50 ${
+            className={`flex-shrink-0 overflow-hidden bg-base-200 ${
               mobilePanel === 'right' ? 'flex md:flex' : 'hidden md:flex'
             } flex-col`}
             style={{ width: mobilePanel === 'right' ? '100%' : undefined }}

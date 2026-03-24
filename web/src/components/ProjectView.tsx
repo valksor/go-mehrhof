@@ -129,8 +129,8 @@ export function ProjectView() {
           </div>
         </div>
 
-        <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto justify-between sm:justify-end flex-wrap">
-          <div className="flex items-center gap-1 sm:gap-2 flex-wrap">
+        <div className="flex items-center gap-1.5 sm:gap-2 w-full sm:w-auto justify-between sm:justify-end">
+          <div className="flex items-center gap-0.5 sm:gap-1">
             {/* Documentation link */}
             {docsData?.url && (
               <a
@@ -157,43 +157,48 @@ export function ProjectView() {
                 <span className="absolute -top-1 -right-1 w-2 h-2 bg-primary rounded-full" />
               )}
             </button>
-            <button
-              onClick={() => setShowCIStatus(true)}
-              className="btn btn-ghost btn-xs sm:btn-sm btn-circle hidden sm:inline-flex"
-              aria-label="CI Status"
-            >
-              <svg aria-hidden="true" className="w-4 h-4 sm:w-5 sm:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2z" />
-              </svg>
-            </button>
-            <button
-              onClick={() => setShowPolicy(true)}
-              className="btn btn-ghost btn-xs sm:btn-sm btn-circle hidden sm:inline-flex"
-              aria-label="Policy Checks"
-            >
-              <svg aria-hidden="true" className="w-4 h-4 sm:w-5 sm:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-              </svg>
-            </button>
-            <button
-              onClick={() => setShowCodegraph(true)}
-              className="btn btn-ghost btn-xs sm:btn-sm btn-circle hidden sm:inline-flex"
-              aria-label="Code Graph"
-              title="Code Graph"
-            >
-              <svg aria-hidden="true" className="w-4 h-4 sm:w-5 sm:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4" />
-              </svg>
-            </button>
-            <button
-              onClick={() => setShowHooks(true)}
-              className="btn btn-ghost btn-xs sm:btn-sm btn-circle hidden sm:inline-flex"
-              aria-label="Workflow Hooks"
-            >
-              <svg aria-hidden="true" className="w-4 h-4 sm:w-5 sm:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
-              </svg>
-            </button>
+            {/* Secondary actions dropdown */}
+            <div className="dropdown dropdown-end">
+              <div tabIndex={0} role="button" className="btn btn-ghost btn-xs sm:btn-sm btn-circle" aria-label="More tools">
+                <svg aria-hidden="true" className="w-4 h-4 sm:w-5 sm:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h.01M12 12h.01M19 12h.01M6 12a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0z" />
+                </svg>
+              </div>
+              <ul role="menu" className="dropdown-content z-20 menu p-1.5 shadow-lg bg-base-200 rounded-lg w-44 border border-base-300">
+                <li>
+                  <button role="menuitem" onClick={() => { setShowCIStatus(true); (document.activeElement as HTMLElement)?.blur() }} className="text-xs gap-2">
+                    <svg aria-hidden="true" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                    </svg>
+                    CI Status
+                  </button>
+                </li>
+                <li>
+                  <button role="menuitem" onClick={() => { setShowPolicy(true); (document.activeElement as HTMLElement)?.blur() }} className="text-xs gap-2">
+                    <svg aria-hidden="true" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                    </svg>
+                    Policy
+                  </button>
+                </li>
+                <li>
+                  <button role="menuitem" onClick={() => { setShowCodegraph(true); (document.activeElement as HTMLElement)?.blur() }} className="text-xs gap-2">
+                    <svg aria-hidden="true" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4" />
+                    </svg>
+                    Code Graph
+                  </button>
+                </li>
+                <li>
+                  <button role="menuitem" onClick={() => { setShowHooks(true); (document.activeElement as HTMLElement)?.blur() }} className="text-xs gap-2">
+                    <svg aria-hidden="true" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                    </svg>
+                    Hooks
+                  </button>
+                </li>
+              </ul>
+            </div>
             <button
               onClick={() => setShowSettings(true)}
               className="btn btn-ghost btn-xs sm:btn-sm btn-circle"
