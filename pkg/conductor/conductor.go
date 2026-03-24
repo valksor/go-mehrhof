@@ -20,6 +20,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/valksor/kvelmo/pkg/agent/strategy"
 	"github.com/valksor/kvelmo/pkg/eventlog"
+	"github.com/valksor/kvelmo/pkg/findings"
 	"github.com/valksor/kvelmo/pkg/git"
 	"github.com/valksor/kvelmo/pkg/graph"
 	"github.com/valksor/kvelmo/pkg/memory"
@@ -138,6 +139,9 @@ type Conductor struct {
 	// Uses atomic.Pointer for lock-free access to avoid deadlock when called
 	// from methods that already hold c.mu.
 	cachedSettings atomic.Pointer[settings.Settings]
+
+	// adversarialFindings stores the most recent adversarial review results.
+	adversarialFindings []findings.Finding
 }
 
 // ConductorEvent represents an event emitted by the conductor.

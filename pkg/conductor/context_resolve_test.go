@@ -34,8 +34,14 @@ func TestContainedPath_Valid(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	if path != testFile {
-		t.Errorf("expected %q, got %q", testFile, path)
+
+	// EvalSymlinks on expected path for macOS /var → /private/var consistency.
+	want, wantErr := filepath.EvalSymlinks(testFile)
+	if wantErr != nil {
+		want = testFile
+	}
+	if path != want {
+		t.Errorf("expected %q, got %q", want, path)
 	}
 }
 

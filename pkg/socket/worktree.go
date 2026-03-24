@@ -309,6 +309,10 @@ func (w *WorktreeSocket) registerHandlers() {
 	w.server.Handle("codegraph.callers", w.handleCodegraphCallers)
 	w.server.Handle("codegraph.deps", w.handleCodegraphDeps)
 
+	// Adversarial review
+	w.server.Handle("adversarial.run", w.handleAdversarialRun)
+	w.server.Handle("adversarial.results", w.handleAdversarialResults)
+
 	// Discovery
 	w.server.Handle("discovery.scan", w.handleDiscoveryScan)
 

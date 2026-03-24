@@ -314,6 +314,15 @@ type WorkflowSettings struct {
 	Hooks                HooksSettings              `yaml:"hooks,omitempty" json:"hooks,omitempty"`
 	HoldTheLine          *bool                      `yaml:"hold_the_line,omitempty" json:"hold_the_line,omitempty" schema:"label=Hold the Line;desc=Only gate on findings in lines changed by the agent, ignoring pre-existing tech debt;default=true"`
 	PhaseGuardrails      map[string]GuardrailConfig `yaml:"phase_guardrails,omitempty" json:"phase_guardrails,omitempty" schema:"label=Phase Guardrails;desc=Pre/post validation checks per phase;type=json;advanced"`
+	AdversarialReview    *AdversarialReviewSettings `yaml:"adversarial_review,omitempty" json:"adversarial_review,omitempty"`
+}
+
+// AdversarialReviewSettings configures persona-based adversarial code review.
+type AdversarialReviewSettings struct {
+	Enabled         bool     `yaml:"enabled,omitempty" json:"enabled,omitempty" schema:"label=Adversarial Review;desc=Run persona-based adversarial reviews during review phase;default=false"`
+	Personas        []string `yaml:"personas,omitempty" json:"personas,omitempty" schema:"label=Personas;desc=Review personas to use (security, performance, maintainability);type=tags;default=security,performance"`
+	Agent           string   `yaml:"agent,omitempty" json:"agent,omitempty" schema:"label=Review Agent;desc=Agent to use for adversarial reviews (empty = default review agent)"`
+	BlockOnFindings bool     `yaml:"block_on_findings,omitempty" json:"block_on_findings,omitempty" schema:"label=Block on Findings;desc=Block review phase if adversarial review finds issues;default=false"`
 }
 
 // GuardrailConfig defines pre and post guardrails for a workflow phase.
