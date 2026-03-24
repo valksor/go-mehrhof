@@ -236,6 +236,9 @@ interface ProjectState {
   // CI fix loop status
   ciFixStatus: { active: boolean; attempt?: number; maxAttempts?: number; result?: 'success' | 'failed' } | null
 
+  // Phase progress estimation (from progress.get RPC)
+  phaseProgress: { percent: number; eta: number; calibrated: boolean } | null
+
   // Dry-run mode
   dryRunMode: boolean
   toggleDryRun: () => void
@@ -356,6 +359,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
   tags: [],
   pendingNodeApprovals: [],
   ciFixStatus: null,
+  phaseProgress: null,
   dryRunMode: false,
   toggleDryRun: () => {
     set(s => ({ dryRunMode: !s.dryRunMode }))
@@ -422,6 +426,20 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
       const debouncedRefresh = debounce(() => get().refreshStatus(), 300)
       const debouncedLoadQueue = debounce(() => get().loadQueue(), 500)
 
+      // Progress estimation polling (3s interval, only during active phases)
+      const ACTIVE_PHASES = new Set(['planning', 'implementing', 'simplifying', 'optimizing'])
+      const progressInterval = setInterval(async () => {
+        if (!ACTIVE_PHASES.has(get().state)) return
+        try {
+          const progress = await client.call<{ active: boolean; percent?: number; eta_seconds?: number; calibrated?: boolean }>('progress.get', {})
+          if (progress.active) {
+            set({ phaseProgress: { percent: progress.percent ?? 0, eta: progress.eta_seconds ?? -1, calibrated: progress.calibrated ?? false } })
+          }
+        } catch {
+          // Ignore polling errors
+        }
+      }, 3000)
+
       // Handle streaming events
       const unsubscribe = client.subscribe((data: unknown) => {
         // Dispatch to typed event emitter so typed handlers receive events
@@ -452,9 +470,13 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
           return
         } else if (msg.type === 'state_changed') {
           const newState = msg.state || 'none'
+          const ACTIVE = new Set(['planning', 'implementing', 'simplifying', 'optimizing'])
           const updates: Partial<ProjectState> = { state: newState }
           if (newState !== 'failed') {
             updates.phaseError = null
+          }
+          if (!ACTIVE.has(newState)) {
+            updates.phaseProgress = null
           }
           set(updates)
           get().appendOutput(`State: ${msg.state}`)
@@ -593,6 +615,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
         unsubscribeSocket: () => {
           debouncedRefresh.cancel()
           debouncedLoadQueue.cancel()
+          clearInterval(progressInterval)
           unsubscribe()
           worktreeEvents.clear()
         }
@@ -1521,6 +1544,18 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
 
         // Tags
         get().loadTags(),
+
+        // Progress estimation (only when a phase is active)
+        (['planning', 'implementing', 'simplifying', 'optimizing'].includes(result.state)
+          ? client.call<{ active: boolean; percent?: number; eta_seconds?: number; calibrated?: boolean }>('progress.get', {}).then(progress => {
+              if (progress.active) {
+                set({ phaseProgress: { percent: progress.percent ?? 0, eta: progress.eta_seconds ?? -1, calibrated: progress.calibrated ?? false } })
+              } else {
+                set({ phaseProgress: null })
+              }
+            }).catch(() => { set({ phaseProgress: null }) })
+          : Promise.resolve(set({ phaseProgress: null }))
+        ),
       ])
     } catch (err) {
       set({ error: err instanceof Error ? err.message : 'Status refresh failed' })

@@ -8,6 +8,20 @@ import type { FailureClass } from '../lib/events'
 
 const EXPLAIN_PROMPT = 'Explain what you did in the last action, why you made those choices, and any assumptions or constraints you encountered.'
 
+/** Format seconds into human-friendly ETA string. */
+function formatETA(seconds: number): string {
+  if (seconds <= 0) return '0s'
+  if (seconds < 60) return `${seconds}s`
+  const mins = Math.floor(seconds / 60)
+  const secs = seconds % 60
+  if (mins < 60) {
+    return secs > 0 ? `${mins}m${secs}s` : `${mins}m`
+  }
+  const hrs = Math.floor(mins / 60)
+  const remainMins = mins % 60
+  return remainMins > 0 ? `${hrs}h${remainMins}m` : `${hrs}h`
+}
+
 interface WorkflowStep {
   id: string
   label: string
@@ -64,7 +78,7 @@ export function WorkflowBar() {
     state, plan, implement, review, submit, finish,
     stop, undo, redo, abandon, approveTransition, retry,
     loading, checkpoints, redoStack, approveRemote, mergeRemote, refresh, error,
-    phaseError, dryRunMode, toggleDryRun, skipPhases,
+    phaseError, dryRunMode, toggleDryRun, skipPhases, phaseProgress,
   } = useProjectStore(useShallow(s => ({
     state: s.state,
     plan: s.plan,
@@ -89,6 +103,7 @@ export function WorkflowBar() {
     dryRunMode: s.dryRunMode,
     toggleDryRun: s.toggleDryRun,
     skipPhases: s.skipPhases,
+    phaseProgress: s.phaseProgress,
   })))
 
   const [showSubmitModal, setShowSubmitModal] = useState(false)
@@ -257,6 +272,24 @@ export function WorkflowBar() {
             )
           })}
         </div>
+
+        {/* Progress bar during active phases */}
+        {isActive && phaseProgress && (
+          <div className="flex items-center gap-1.5 ml-2">
+            <div className="w-16 h-1.5 bg-base-300 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-primary rounded-full transition-all duration-1000"
+                style={{ width: `${Math.min(phaseProgress.percent, 100)}%` }}
+              />
+            </div>
+            <span className="text-[10px] text-base-content/50 tabular-nums whitespace-nowrap">
+              {Math.round(phaseProgress.percent)}%
+              {phaseProgress.calibrated && phaseProgress.eta >= 0 && (
+                <> ~{formatETA(phaseProgress.eta)}</>
+              )}
+            </span>
+          </div>
+        )}
 
         {/* Approval gate button — shown when a transition requires explicit approval */}
         {error && error.includes('approval required') && (

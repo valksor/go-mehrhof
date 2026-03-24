@@ -70,6 +70,12 @@ func (c *Conductor) recordPhaseMetrics(completionEvent Event, jobID string) {
 
 	c.workUnit.PhaseMetrics[phase] = pm
 
+	// Feed completed duration into the calibrator for future progress estimates.
+	c.recordProgressCalibration(phase)
+
+	// Clear progress estimator now that the phase is complete.
+	c.progressEstimator = nil
+
 	// Emit event log entry for phase completion.
 	c.emitEventLog(eventlog.Entry{
 		Type:  eventlog.EventPhaseCompleted,
@@ -111,6 +117,12 @@ func (c *Conductor) recordPhaseMetricsFromGraph(completionEvent Event, _ *graph.
 	}
 
 	c.workUnit.PhaseMetrics[phase] = pm
+
+	// Feed completed duration into the calibrator for future progress estimates.
+	c.recordProgressCalibration(phase)
+
+	// Clear progress estimator now that the phase is complete.
+	c.progressEstimator = nil
 }
 
 // setupCanaryHarness creates a canary harness if canary sandboxing is enabled.
@@ -189,6 +201,11 @@ func (c *Conductor) watchJob(ctx context.Context, jobID string, completionEvent 
 	c.mu.Unlock()
 
 	for event := range stream {
+		// Signal progress on agent activity events (tool calls).
+		if event.Type == "tool_use" || event.Type == "tool_result" {
+			c.SignalProgress()
+		}
+
 		// Forward streaming events
 		c.emit(ConductorEvent{
 			Type:    "job_output",

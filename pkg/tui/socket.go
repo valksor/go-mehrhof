@@ -160,6 +160,56 @@ func subscribeWorktree(ctx context.Context, dir string, ch chan<- tea.Msg) tea.C
 	}
 }
 
+// startProgressPolling launches a goroutine that periodically calls progress.get
+// on the worktree socket and sends progressMsg updates to the fan-in channel.
+func startProgressPolling(ctx context.Context, dir string, ch chan<- tea.Msg) {
+	go func() {
+		ticker := time.NewTicker(3 * time.Second)
+		defer ticker.Stop()
+
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case <-ticker.C:
+				socketPath := socket.WorktreeSocketPath(dir)
+				client, err := socket.NewClient(socketPath, socket.WithTimeout(2*time.Second))
+				if err != nil {
+					continue
+				}
+
+				resp, callErr := client.Call(ctx, "progress.get", nil)
+				_ = client.Close()
+				if callErr != nil {
+					continue
+				}
+
+				var result struct {
+					Active     bool    `json:"active"`
+					Percent    float64 `json:"percent"`
+					ETASeconds int     `json:"eta_seconds"`
+					Calibrated bool    `json:"calibrated"`
+				}
+				if err := json.Unmarshal(resp.Result, &result); err != nil {
+					continue
+				}
+
+				select {
+				case ch <- progressMsg{
+					worktreeDir: dir,
+					percent:     result.Percent,
+					etaSeconds:  result.ETASeconds,
+					calibrated:  result.Calibrated,
+					active:      result.Active,
+				}:
+				case <-ctx.Done():
+					return
+				}
+			}
+		}
+	}()
+}
+
 // waitForMsg returns a tea.Cmd that blocks until a message arrives on ch
 // or the context is done, then returns it.
 // Call this repeatedly from Update to drain the fan-in channel.

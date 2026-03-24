@@ -117,6 +117,7 @@ func (c *Conductor) Plan(ctx context.Context) (string, error) {
 	c.persistState()
 
 	c.phaseStartedAt = time.Now()
+	c.initProgressEstimator("plan")
 	c.emitEventLog(eventlog.Entry{Type: eventlog.EventPhaseStarted, Phase: "plan"})
 	c.emit(ConductorEvent{
 		Type:    "planning_started",

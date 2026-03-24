@@ -23,6 +23,7 @@ import (
 	"github.com/valksor/kvelmo/pkg/git"
 	"github.com/valksor/kvelmo/pkg/graph"
 	"github.com/valksor/kvelmo/pkg/memory"
+	"github.com/valksor/kvelmo/pkg/progress"
 	"github.com/valksor/kvelmo/pkg/provider"
 	"github.com/valksor/kvelmo/pkg/security"
 	"github.com/valksor/kvelmo/pkg/settings"
@@ -133,6 +134,10 @@ type Conductor struct {
 	// Inspired by Dify/RAGFlow per-node error strategies.
 	phasePolicies map[string]PhasePolicy
 	retryCount    map[string]int // phase → current retry count
+
+	// Progress estimation for active phases.
+	progressEstimator  *progress.Estimator
+	progressCalibrator *progress.Calibrator
 
 	// Cached settings (loaded once, reused across phases).
 	// Uses atomic.Pointer for lock-free access to avoid deadlock when called
@@ -345,25 +350,26 @@ func New(opts ...Option) (*Conductor, error) {
 	lifecycleCtx, lifecycleCancel := context.WithCancel(context.Background())
 
 	c := &Conductor{
-		machine:         machine,
-		worktree:        workDir,
-		pool:            options.Pool,
-		providers:       providers,
-		globalPath:      options.GlobalPath,
-		lifecycleCtx:    lifecycleCtx,
-		lifecycleCancel: lifecycleCancel,
-		events:          make(chan ConductorEvent, 100),
-		pendingPrompts:  make(map[string]chan bool),
-		opts:            options,
-		stdout:          options.Stdout,
-		stderr:          options.Stderr,
-		varPool:         varpool.New(),
-		iterationCount:  make(map[string]int),
-		maxIterations:   3,
-		phasePolicies:   defaultPhasePolicies(),
-		retryCount:      make(map[string]int),
-		dryRun:          options.DryRun,
-		router:          NewDefaultRouter(),
+		machine:            machine,
+		worktree:           workDir,
+		pool:               options.Pool,
+		providers:          providers,
+		globalPath:         options.GlobalPath,
+		lifecycleCtx:       lifecycleCtx,
+		lifecycleCancel:    lifecycleCancel,
+		events:             make(chan ConductorEvent, 100),
+		pendingPrompts:     make(map[string]chan bool),
+		opts:               options,
+		stdout:             options.Stdout,
+		stderr:             options.Stderr,
+		varPool:            varpool.New(),
+		iterationCount:     make(map[string]int),
+		maxIterations:      3,
+		phasePolicies:      defaultPhasePolicies(),
+		retryCount:         make(map[string]int),
+		dryRun:             options.DryRun,
+		router:             NewDefaultRouter(),
+		progressCalibrator: progress.NewCalibrator(),
 	}
 	c.cachedSettings.Store(effectiveSettings) // Cache pre-loaded settings (atomic)
 	c.loadPhasePoliciesFromSettings()
@@ -827,22 +833,23 @@ func NewConductor(cfg ConductorConfig) *Conductor {
 	lifecycleCtx, lifecycleCancel := context.WithCancel(context.Background())
 
 	c := &Conductor{
-		machine:         machine,
-		git:             cfg.Repo,
-		pool:            cfg.Pool,
-		providers:       providers,
-		lifecycleCtx:    lifecycleCtx,
-		lifecycleCancel: lifecycleCancel,
-		events:          make(chan ConductorEvent, 100),
-		pendingPrompts:  make(map[string]chan bool),
-		stdout:          os.Stdout,
-		stderr:          os.Stderr,
-		varPool:         varpool.New(),
-		iterationCount:  make(map[string]int),
-		maxIterations:   3,
-		phasePolicies:   defaultPhasePolicies(),
-		retryCount:      make(map[string]int),
-		router:          NewDefaultRouter(),
+		machine:            machine,
+		git:                cfg.Repo,
+		pool:               cfg.Pool,
+		providers:          providers,
+		lifecycleCtx:       lifecycleCtx,
+		lifecycleCancel:    lifecycleCancel,
+		events:             make(chan ConductorEvent, 100),
+		pendingPrompts:     make(map[string]chan bool),
+		stdout:             os.Stdout,
+		stderr:             os.Stderr,
+		varPool:            varpool.New(),
+		iterationCount:     make(map[string]int),
+		maxIterations:      3,
+		phasePolicies:      defaultPhasePolicies(),
+		retryCount:         make(map[string]int),
+		router:             NewDefaultRouter(),
+		progressCalibrator: progress.NewCalibrator(),
 	}
 
 	// Set worktree path - prefer explicit config, fallback to repo path

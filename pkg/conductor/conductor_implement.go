@@ -127,6 +127,7 @@ func (c *Conductor) Implement(ctx context.Context) (string, error) {
 	c.persistState()
 
 	c.phaseStartedAt = time.Now()
+	c.initProgressEstimator("implement")
 	c.emitEventLog(eventlog.Entry{Type: eventlog.EventPhaseStarted, Phase: "implement"})
 	c.emit(ConductorEvent{
 		Type:    "implementing_started",
@@ -216,6 +217,7 @@ func (c *Conductor) Optimize(ctx context.Context) (string, error) {
 	c.persistState()
 
 	c.phaseStartedAt = time.Now()
+	c.initProgressEstimator("optimize")
 	c.emitEventLog(eventlog.Entry{Type: eventlog.EventPhaseStarted, Phase: "optimize"})
 	c.emit(ConductorEvent{
 		Type:    "optimizing_started",
@@ -305,6 +307,7 @@ func (c *Conductor) Simplify(ctx context.Context) (string, error) {
 	c.persistState()
 
 	c.phaseStartedAt = time.Now()
+	c.initProgressEstimator("simplify")
 	c.emitEventLog(eventlog.Entry{Type: eventlog.EventPhaseStarted, Phase: "simplify"})
 	c.emit(ConductorEvent{
 		Type:    "simplifying_started",

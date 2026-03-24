@@ -313,6 +313,7 @@ type WorkflowSettings struct {
 	CI                   CISettings                 `yaml:"ci,omitempty" json:"ci,omitempty"`
 	Hooks                HooksSettings              `yaml:"hooks,omitempty" json:"hooks,omitempty"`
 	HoldTheLine          *bool                      `yaml:"hold_the_line,omitempty" json:"hold_the_line,omitempty" schema:"label=Hold the Line;desc=Only gate on findings in lines changed by the agent, ignoring pre-existing tech debt;default=true"`
+	ProgressEstimation   *bool                      `yaml:"progress_estimation,omitempty" json:"progress_estimation,omitempty" schema:"label=Progress Estimation;desc=Show estimated progress and ETA during active phases;default=true"`
 	PhaseGuardrails      map[string]GuardrailConfig `yaml:"phase_guardrails,omitempty" json:"phase_guardrails,omitempty" schema:"label=Phase Guardrails;desc=Pre/post validation checks per phase;type=json;advanced"`
 }
 

@@ -104,6 +104,10 @@ func (r *ContextResolver) containedPath(ref string) (string, error) {
 	}
 
 	root := filepath.Clean(r.WorktreeRoot)
+	// Also eval symlinks on root to handle macOS /var -> /private/var and similar.
+	if evaledRoot, rootErr := filepath.EvalSymlinks(root); rootErr == nil {
+		root = evaledRoot
+	}
 	if evaled != root && !strings.HasPrefix(evaled, root+string(filepath.Separator)) {
 		return "", fmt.Errorf("path %q escapes worktree", ref)
 	}
