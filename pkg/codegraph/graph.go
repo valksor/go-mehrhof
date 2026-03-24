@@ -75,12 +75,22 @@ func New(ctx context.Context, dbPath string) (*Graph, error) {
 		return nil, fmt.Errorf("set WAL mode: %w", err)
 	}
 
+	// Enable foreign key constraints for referential integrity.
+	if _, err := db.ExecContext(ctx, "PRAGMA foreign_keys=ON"); err != nil {
+		_ = db.Close()
+
+		return nil, fmt.Errorf("enable foreign keys: %w", err)
+	}
+
 	if _, err := db.ExecContext(ctx, schema); err != nil {
 		_ = db.Close()
 
 		return nil, fmt.Errorf("create schema: %w", err)
 	}
 
+	// rootDir is left empty here; it is set by IndexDirectory() to enable
+	// relative path storage. Calling IndexFile() without IndexDirectory()
+	// stores absolute paths, which is valid but less portable.
 	return &Graph{db: db}, nil
 }
 
@@ -138,7 +148,10 @@ func (g *Graph) IndexFile(ctx context.Context, path string) error {
 		if err != nil {
 			return fmt.Errorf("insert symbol %s: %w", symbols[i].Name, err)
 		}
-		id, _ := res.LastInsertId()
+		id, err := res.LastInsertId()
+		if err != nil {
+			return fmt.Errorf("get last insert id for %s: %w", symbols[i].Name, err)
+		}
 		symbols[i].ID = id
 		nameToID[symbols[i].Name] = id
 	}
