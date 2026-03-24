@@ -19,9 +19,11 @@ import (
 	"github.com/valksor/kvelmo/pkg/agent/strategy"
 	"github.com/valksor/kvelmo/pkg/browser"
 	"github.com/valksor/kvelmo/pkg/conductor"
+	"github.com/valksor/kvelmo/pkg/filter"
 	"github.com/valksor/kvelmo/pkg/meta"
 	"github.com/valksor/kvelmo/pkg/metrics"
 	"github.com/valksor/kvelmo/pkg/notify"
+	"github.com/valksor/kvelmo/pkg/page"
 	"github.com/valksor/kvelmo/pkg/provider"
 	"github.com/valksor/kvelmo/pkg/search"
 	"github.com/valksor/kvelmo/pkg/settings"
@@ -218,6 +220,11 @@ func (g *GlobalSocket) registerHandlers() {
 	// Activity log
 	g.server.Handle("activity.query", g.handleActivityQuery)
 
+	// Timeline
+	g.server.Handle("timeline.recent", g.handleTimelineRecent)
+	g.server.Handle("timeline.task", g.handleTimelineTask)
+	g.server.Handle("timeline.summary", g.handleTimelineSummary)
+
 	// Job management
 	g.server.Handle("jobs.list", g.handleListJobs)
 	g.server.Handle("jobs.get", g.handleGetJob)
@@ -290,6 +297,11 @@ func (g *GlobalSocket) registerHandlers() {
 	// Recordings
 	g.server.Handle("recordings.list", g.handleRecordingsList)
 	g.server.Handle("recordings.view", g.handleRecordingsView)
+
+	// Onboarding
+	g.server.Handle("onboarding.status", g.handleOnboardingStatus)
+	g.server.Handle("onboarding.complete", g.handleOnboardingComplete)
+	g.server.Handle("onboarding.reset", g.handleOnboardingReset)
 
 	// Backup
 	g.server.Handle("backup.create", g.handleBackupCreate)
@@ -2384,12 +2396,37 @@ type TaskListSummary struct {
 	PendingPromptID  string `json:"pending_prompt_id,omitempty"`
 }
 
+// Searchable interface implementation for TaskListSummary.
+func (t TaskListSummary) SearchTitle() string        { return t.TaskTitle }
+func (t TaskListSummary) SearchDescription() string  { return t.Source }
+func (t TaskListSummary) SearchTags() []string       { return nil }
+func (t TaskListSummary) SearchStatus() string       { return t.State }
+func (t TaskListSummary) SearchCreatedAt() time.Time { return time.Time{} }
+func (t TaskListSummary) SearchPriority() int        { return 0 }
+
 // TasksListResult is the response for tasks.list.
 type TasksListResult struct {
-	Tasks []TaskListSummary `json:"tasks"`
+	Tasks      []TaskListSummary `json:"tasks"`
+	Total      int               `json:"total"`
+	Page       int               `json:"page,omitempty"`
+	PerPage    int               `json:"per_page,omitempty"`
+	TotalPages int               `json:"total_pages,omitempty"`
+	HasNext    bool              `json:"has_next,omitempty"`
 }
 
 func (g *GlobalSocket) handleTasksList(ctx context.Context, req *Request) (*Response, error) {
+	var params struct {
+		State   string `json:"state,omitempty"`
+		Query   string `json:"query,omitempty"`
+		Page    int    `json:"page,omitempty"`
+		PerPage int    `json:"per_page,omitempty"`
+	}
+	if req.Params != nil {
+		if err := json.Unmarshal(req.Params, &params); err != nil {
+			return NewErrorResponse(req.ID, ErrCodeInvalidParams, "invalid params"), nil //nolint:nilerr // JSON-RPC error response
+		}
+	}
+
 	g.mu.RLock()
 	worktrees := make([]*WorktreeInfo, 0, len(g.worktrees))
 	for _, w := range g.worktrees {
@@ -2441,5 +2478,38 @@ func (g *GlobalSocket) handleTasksList(ctx context.Context, req *Request) (*Resp
 		tasks = append(tasks, summary)
 	}
 
-	return NewResultResponse(req.ID, TasksListResult{Tasks: tasks})
+	// Apply filters if provided
+	if params.State != "" {
+		f := filter.New[TaskListSummary]().
+			Eq(func(t TaskListSummary) any { return t.State }, params.State)
+		tasks = f.Apply(tasks)
+	}
+
+	// Apply search if query provided
+	if params.Query != "" {
+		ranked := search.Search(tasks, params.Query, search.Options{BoostActive: true})
+		tasks = make([]TaskListSummary, len(ranked))
+		for i, r := range ranked {
+			tasks[i] = r.Item
+		}
+	}
+
+	total := len(tasks)
+
+	// Apply pagination if requested
+	if params.Page > 0 || params.PerPage > 0 {
+		pg := paginationWithDefault(params.Page, params.PerPage)
+		p := page.NewPage(tasks, pg)
+
+		return NewResultResponse(req.ID, TasksListResult{
+			Tasks:      p.Items,
+			Total:      int(p.Total),
+			Page:       p.PageNum,
+			PerPage:    p.PerPage,
+			TotalPages: p.TotalPages,
+			HasNext:    p.HasNext,
+		})
+	}
+
+	return NewResultResponse(req.ID, TasksListResult{Tasks: tasks, Total: total})
 }
