@@ -8,6 +8,9 @@ interface ReviewPanelProps {
 export function ReviewPanel({ data }: ReviewPanelProps) {
   const reviews = useProjectStore((state) => state.reviews)
   const loadReview = useProjectStore((state) => state.loadReview)
+  const pendingNodeApprovals = useProjectStore((state) => state.pendingNodeApprovals)
+  const approveNode = useProjectStore((state) => state.approveNode)
+  const rejectNode = useProjectStore((state) => state.rejectNode)
   const [selectedReview, setSelectedReview] = useState<ReviewDetail | null>(null)
   const [selectedSummary, setSelectedSummary] = useState<Review | null>(null)
   const [loading, setLoading] = useState(false)
@@ -125,6 +128,45 @@ export function ReviewPanel({ data }: ReviewPanelProps) {
             <p className="text-sm text-success">No issues found</p>
           </div>
         ) : null}
+
+        {/* Pending Node Approvals */}
+        {pendingNodeApprovals.length > 0 && (
+          <div className="space-y-2">
+            <h3 className="text-sm font-medium text-base-content/70">
+              Pending Approvals ({pendingNodeApprovals.length})
+            </h3>
+            <div className="space-y-2">
+              {pendingNodeApprovals.map((node) => (
+                <div key={node.nodeId} className="bg-warning/10 border border-warning/20 rounded-lg p-3">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">{node.nodeId}</p>
+                      {node.message && (
+                        <p className="text-xs text-base-content/60 mt-0.5">{node.message}</p>
+                      )}
+                    </div>
+                    <div className="flex gap-1.5 shrink-0">
+                      <button
+                        className="btn btn-success btn-xs"
+                        onClick={() => approveNode(node.nodeId)}
+                        aria-label={`Approve node ${node.nodeId}`}
+                      >
+                        Approve
+                      </button>
+                      <button
+                        className="btn btn-error btn-xs btn-outline"
+                        onClick={() => rejectNode(node.nodeId)}
+                        aria-label={`Reject node ${node.nodeId}`}
+                      >
+                        Reject
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Review History */}
         {displayReviews.length > 1 && (

@@ -44,6 +44,7 @@ interface BrowserState {
   // Actions
   checkStatus: () => Promise<void>
   install: () => Promise<void>
+  getConfig: () => Promise<BrowserConfig | null>
   setConfig: (key: string, value: string) => Promise<void>
 
   // Navigation
@@ -134,6 +135,18 @@ export const useBrowserStore = create<BrowserState>((set, get) => ({
         loading: false,
         error: err instanceof Error ? err.message : 'Failed to install browser'
       })
+    }
+  },
+
+  getConfig: async () => {
+    const client = useGlobalStore.getState().client
+    if (!client) return null
+
+    try {
+      const result = await client.call<BrowserConfig>('browser.config.get', {})
+      return result
+    } catch {
+      return null
     }
   },
 

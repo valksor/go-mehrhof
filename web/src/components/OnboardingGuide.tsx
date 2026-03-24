@@ -1,4 +1,5 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
+import { useGlobalStore } from '../stores/globalStore'
 
 interface OnboardingGuideProps {
   onDismiss: () => void
@@ -8,6 +9,7 @@ interface Step {
   title: string
   description: string
   icon: string
+  key: string // Maps to Go onboarding.Step
 }
 
 const STEPS: Step[] = [
@@ -15,70 +17,69 @@ const STEPS: Step[] = [
     title: 'Install Check',
     description: 'Ensure kvelmo is installed and the global socket is running.',
     icon: 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z',
+    key: 'install_check',
   },
   {
     title: 'First Project',
     description: 'Register a project to create a worktree and connect to the socket.',
     icon: 'M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z',
+    key: 'first_project',
   },
   {
     title: 'First Task',
     description: 'Load a task from GitHub, Linear, or a local file using kvelmo start.',
     icon: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2',
+    key: 'first_task',
   },
   {
     title: 'First Plan',
     description: 'Run kvelmo plan to have the agent write a specification for your task.',
     icon: 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z',
+    key: 'first_plan',
   },
   {
     title: 'First Implement',
     description: 'Run kvelmo implement to have the agent write code based on the plan.',
     icon: 'M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4',
+    key: 'first_implement',
   },
   {
     title: 'First Submit',
     description: 'Run kvelmo submit to create a pull request from the completed work.',
     icon: 'M9 5l7 7-7 7',
+    key: 'first_submit',
   },
 ]
 
-const STORAGE_KEY = 'kvelmo-onboarding-completed'
-
-function getCompletedSteps(): Set<number> {
-  try {
-    const stored = localStorage.getItem(STORAGE_KEY)
-    if (stored) {
-      const parsed = JSON.parse(stored)
-      return new Set(Array.isArray(parsed) ? parsed : [])
-    }
-  } catch {
-    // Ignore parse errors
-  }
-  return new Set()
-}
-
-function saveCompletedSteps(steps: Set<number>) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify([...steps]))
-}
-
 export function OnboardingGuide({ onDismiss }: OnboardingGuideProps) {
-  const [completedSteps, setCompletedSteps] = useState<Set<number>>(getCompletedSteps)
+  const client = useGlobalStore(state => state.client)
+  const [stepStatus, setStepStatus] = useState<Record<string, boolean>>({})
 
-  const toggleStep = useCallback((index: number) => {
-    setCompletedSteps(prev => {
-      const next = new Set(prev)
-      if (next.has(index)) {
-        next.delete(index)
-      } else {
-        next.add(index)
-      }
-      saveCompletedSteps(next)
-      return next
-    })
-  }, [])
+  // Load onboarding status from server
+  useEffect(() => {
+    if (!client) return
 
-  const completedCount = completedSteps.size
+    client.call<{ steps: Record<string, boolean> }>('onboarding.status', {})
+      .then(result => {
+        setStepStatus(result.steps || {})
+      })
+      .catch(() => {
+        // Ignore — steps will show as incomplete
+      })
+  }, [client])
+
+  const completeStep = useCallback((step: Step) => {
+    if (stepStatus[step.key]) return // Already completed
+
+    setStepStatus(prev => ({ ...prev, [step.key]: true }))
+    if (client) {
+      client.call('onboarding.complete', { step: step.key }).catch(() => {
+        setStepStatus(prev => ({ ...prev, [step.key]: false }))
+      })
+    }
+  }, [client, stepStatus])
+
+  const completedCount = STEPS.filter(s => stepStatus[s.key]).length
   const totalSteps = STEPS.length
   const allComplete = completedCount === totalSteps
 
@@ -118,12 +119,12 @@ export function OnboardingGuide({ onDismiss }: OnboardingGuideProps) {
 
         {/* Steps */}
         <div className="space-y-2">
-          {STEPS.map((step, index) => {
-            const isCompleted = completedSteps.has(index)
+          {STEPS.map((step) => {
+            const isCompleted = stepStatus[step.key] === true
             return (
               <button
-                key={step.title}
-                onClick={() => toggleStep(index)}
+                key={step.key}
+                onClick={() => completeStep(step)}
                 className={`flex items-start gap-3 w-full text-left rounded-lg p-3 transition-colors ${
                   isCompleted
                     ? 'bg-base-100/50 opacity-60'

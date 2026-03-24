@@ -223,6 +223,9 @@ interface ProjectState {
   // Tags
   tags: string[]
 
+  // Pending graph node approvals (set by node_approval_required events)
+  pendingNodeApprovals: { nodeId: string; message: string }[]
+
   // CI fix loop status
   ciFixStatus: { active: boolean; attempt?: number; maxAttempts?: number; result?: 'success' | 'failed' } | null
 
@@ -257,6 +260,8 @@ interface ProjectState {
   finish: (options?: FinishOptions) => Promise<FinishResult | null>
   refresh: () => Promise<RefreshResult | null>
   approveTransition: (event: string) => Promise<void>
+  approveNode: (nodeId: string) => Promise<void>
+  rejectNode: (nodeId: string) => Promise<void>
   approveRemote: (comment?: string) => Promise<void>
   mergeRemote: (method?: string) => Promise<void>
 
@@ -342,6 +347,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
   needsRecovery: null,
   skipPhases: [],
   tags: [],
+  pendingNodeApprovals: [],
   ciFixStatus: null,
   dryRunMode: false,
   toggleDryRun: () => {
@@ -541,6 +547,24 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
           const rd = msg as { data?: { action?: string; reason?: string; attempt?: number; max_retries?: number } }
           const detail = rd.data ? `Router: ${rd.data.action ?? 'advance'}${rd.data.reason ? ` — ${rd.data.reason}` : ''}` : (msg.message || 'Router decision made')
           get().appendOutput(detail)
+        } else if (msg.type === 'node_approval_required') {
+          const nodeMsg = msg as { node_id?: string; message?: string }
+          if (nodeMsg.node_id) {
+            set(s => ({
+              pendingNodeApprovals: [
+                ...s.pendingNodeApprovals.filter(n => n.nodeId !== nodeMsg.node_id),
+                { nodeId: nodeMsg.node_id!, message: nodeMsg.message || '' },
+              ],
+            }))
+            get().appendOutput(`Node awaiting approval: ${nodeMsg.node_id}`)
+          }
+        } else if (msg.type === 'node_completed' || msg.type === 'node_failed') {
+          const nodeMsg = msg as { node_id?: string }
+          if (nodeMsg.node_id) {
+            set(s => ({
+              pendingNodeApprovals: s.pendingNodeApprovals.filter(n => n.nodeId !== nodeMsg.node_id),
+            }))
+          }
         }
       })
 
@@ -626,6 +650,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
       needsRecovery: null,
       skipPhases: [],
       tags: [],
+      pendingNodeApprovals: [],
       ciFixStatus: null,
       recap: null,
     })
@@ -1010,6 +1035,38 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
       get().appendOutput(`Transition approved: ${event}`)
     } catch (err) {
       set({ loading: false, error: err instanceof Error ? err.message : 'Approval failed' })
+    }
+  },
+
+  approveNode: async (nodeId: string) => {
+    const client = get().client
+    if (!client) return
+
+    get().appendOutput(`Approving node: ${nodeId}...`)
+    try {
+      await client.call('approve.node', { node_id: nodeId })
+      set(s => ({
+        pendingNodeApprovals: s.pendingNodeApprovals.filter(n => n.nodeId !== nodeId),
+      }))
+      get().appendOutput(`Node approved: ${nodeId}`)
+    } catch (err) {
+      set({ error: err instanceof Error ? err.message : 'Node approval failed' })
+    }
+  },
+
+  rejectNode: async (nodeId: string) => {
+    const client = get().client
+    if (!client) return
+
+    get().appendOutput(`Rejecting node: ${nodeId}...`)
+    try {
+      await client.call('approve.node', { node_id: nodeId, reject: true })
+      set(s => ({
+        pendingNodeApprovals: s.pendingNodeApprovals.filter(n => n.nodeId !== nodeId),
+      }))
+      get().appendOutput(`Node rejected: ${nodeId}`)
+    } catch (err) {
+      set({ error: err instanceof Error ? err.message : 'Node rejection failed' })
     }
   },
 
