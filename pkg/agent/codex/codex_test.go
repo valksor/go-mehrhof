@@ -2,6 +2,8 @@ package codex_test
 
 import (
 	"context"
+	"os"
+	"path/filepath"
 	"testing"
 	"time"
 
@@ -145,6 +147,26 @@ func TestAvailable_ExistingBinary(t *testing.T) {
 	a := codex.NewWithConfig(cfg)
 	// go --version exits 0, so Available() should return nil
 	_ = a.Available()
+}
+
+func TestAvailable_UsesFallbackCommandPath(t *testing.T) {
+	tmpDir := t.TempDir()
+	binaryName := "codex-fallback-test"
+	binaryPath := filepath.Join(tmpDir, binaryName)
+	script := "#!/bin/sh\nexit 0\n"
+	if err := os.WriteFile(binaryPath, []byte(script), 0o755); err != nil {
+		t.Fatalf("WriteFile() error = %v", err)
+	}
+
+	origPath := os.Getenv("PATH")
+	t.Setenv("PATH", origPath+string(os.PathListSeparator)+tmpDir)
+
+	cfg := codex.Config{}
+	cfg.Command = []string{binaryName}
+	a := codex.NewWithConfig(cfg)
+	if err := a.Available(); err != nil {
+		t.Fatalf("Available() error = %v", err)
+	}
 }
 
 func TestWithPermissionHandler(t *testing.T) {

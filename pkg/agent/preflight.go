@@ -219,7 +219,7 @@ func checkOllamaAvailable() error {
 
 // checkClaudeAuth verifies Claude CLI authentication by running a quick check.
 func checkClaudeAuth() error {
-	path, err := exec.LookPath("claude")
+	path, err := ResolveCommandPath("claude")
 	if err != nil {
 		return fmt.Errorf("claude not found: %w", err)
 	}
@@ -247,7 +247,7 @@ func checkClaudeAuth() error {
 
 // getVersion runs a command and returns a cleaned version string.
 func getVersion(name string, args ...string) (string, error) {
-	path, err := exec.LookPath(name)
+	path, err := ResolveCommandPath(name)
 	if err != nil {
 		return "", err
 	}

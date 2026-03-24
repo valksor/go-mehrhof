@@ -77,7 +77,7 @@ func (a *Agent) Name() string {
 // Available checks if the Claude CLI is installed.
 func (a *Agent) Available() error {
 	binary := a.config.Command[0]
-	path, err := exec.LookPath(binary)
+	path, err := agent.ResolveCommandPath(binary)
 	if err != nil {
 		return fmt.Errorf("claude CLI not found: %w", err)
 	}
