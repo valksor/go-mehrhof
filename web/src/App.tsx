@@ -159,9 +159,8 @@ export default function App() {
       <ErrorBoundary>
         <main id="main-content" tabIndex={-1} className="min-h-screen bg-base-100 transition-colors">
           {!isViewModeHydrated() ? null : (
-            isFirstVisit ? <ModePickerModal /> :
             selectedProject
-              ? (mode === 'simple' ? <SimpleProjectView /> : <ProjectView />)
+              ? (isFirstVisit ? <ModePickerModal /> : (mode === 'simple' ? <SimpleProjectView /> : <ProjectView />))
               : (
                 <div className="h-screen flex items-center justify-center">
                   <span className="loading loading-spinner loading-lg"></span>
@@ -208,9 +207,8 @@ export default function App() {
       <main id="main-content" tabIndex={-1} className="min-h-screen bg-base-100 transition-colors">
         <StateAnnouncer />
         {!isViewModeHydrated() ? null : (
-          isFirstVisit ? <ModePickerModal /> :
           selectedProject
-            ? (mode === 'simple' ? <SimpleProjectView /> : <ProjectView />)
+            ? (isFirstVisit ? <ModePickerModal /> : (mode === 'simple' ? <SimpleProjectView /> : <ProjectView />))
             : <GlobalView />
         )}
       </main>

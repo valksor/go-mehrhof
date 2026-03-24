@@ -21,7 +21,7 @@ export function isViewModeHydrated(): boolean {
 export const useViewModeStore = create<ViewModeState>()(
   persist(
     (set, get) => ({
-      mode: 'developer',
+      mode: 'simple',
       isFirstVisit: true,
       setMode: (mode: ViewMode) => {
         set({ mode })
