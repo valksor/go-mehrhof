@@ -136,6 +136,7 @@ func TestLinkOutcome(t *testing.T) {
 		}
 		if doc.Outcome == nil {
 			t.Errorf("Get(%s).Outcome = nil, want non-nil", id)
+
 			continue
 		}
 		if !doc.Outcome.Success {

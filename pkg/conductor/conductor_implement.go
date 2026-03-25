@@ -36,7 +36,7 @@ func (c *Conductor) Implement(ctx context.Context) (string, error) {
 	}
 
 	// Check approval requirement
-	if err := c.checkApproval(EventImplement); err != nil {
+	if err := c.checkApproval(ctx, EventImplement); err != nil {
 		return "", err
 	}
 

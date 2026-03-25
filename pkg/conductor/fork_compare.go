@@ -2,7 +2,7 @@ package conductor
 
 import (
 	"context"
-	"fmt"
+	"errors"
 	"strconv"
 	"strings"
 )
@@ -15,6 +15,7 @@ type ForkComparison struct {
 // ForkCompareEntry holds comparison data for one fork.
 type ForkCompareEntry struct {
 	ForkInfo
+
 	DiffStats     DiffStats `json:"diff_stats"`
 	FilesAdded    int       `json:"files_added"`
 	FilesModified int       `json:"files_modified"`
@@ -37,11 +38,11 @@ func (c *Conductor) CompareForks(ctx context.Context) (*ForkComparison, error) {
 	c.mu.RUnlock()
 
 	if wu == nil {
-		return nil, fmt.Errorf("compare forks: no active task")
+		return nil, errors.New("compare forks: no active task")
 	}
 
 	if repo == nil {
-		return nil, fmt.Errorf("compare forks: git not available")
+		return nil, errors.New("compare forks: git not available")
 	}
 
 	if len(wu.Forks) == 0 {
@@ -62,7 +63,7 @@ func (c *Conductor) CompareForks(ctx context.Context) (*ForkComparison, error) {
 			continue
 		}
 
-		entry.DiffStats, entry.FilesAdded, entry.FilesModified, entry.LinesAdded, entry.LinesRemoved = parseDiffStat(stat)
+		entry.DiffStats, entry.FilesModified, entry.LinesAdded, entry.LinesRemoved = parseDiffStat(stat)
 		entries = append(entries, entry)
 	}
 
@@ -75,10 +76,13 @@ func (c *Conductor) CompareForks(ctx context.Context) (*ForkComparison, error) {
 //	file1.go | 10 ++++------
 //	file2.go | 5 +++++
 //	2 files changed, 9 insertions(+), 6 deletions(-)
-func parseDiffStat(stat string) (ds DiffStats, added, modified, linesAdded, linesRemoved int) {
+func parseDiffStat(stat string) (DiffStats, int, int, int) {
+	var ds DiffStats
+	var modified, linesAdded, linesRemoved int
+
 	lines := strings.Split(strings.TrimSpace(stat), "\n")
 	if len(lines) == 0 {
-		return
+		return ds, modified, linesAdded, linesRemoved
 	}
 
 	// Parse the summary line (last line)
@@ -131,5 +135,5 @@ func parseDiffStat(stat string) (ds DiffStats, added, modified, linesAdded, line
 		}
 	}
 
-	return ds, added, modified, linesAdded, linesRemoved
+	return ds, modified, linesAdded, linesRemoved
 }

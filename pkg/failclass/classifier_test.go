@@ -67,7 +67,7 @@ func TestClassify_HistoryOverridesPattern(t *testing.T) {
 
 	h := NewHistory(5)
 	// Record mostly failures for this rule (4/5 = 80% > 60%)
-	for i := 0; i < 4; i++ {
+	for range 4 {
 		h.Record("my_rule", false)
 	}
 	h.Record("my_rule", true)
@@ -170,7 +170,7 @@ func TestHistory_IsFlaky(t *testing.T) {
 		t.Parallel()
 
 		h := NewHistory(10)
-		for i := 0; i < 8; i++ {
+		for range 8 {
 			h.Record("rule", true)
 		}
 		h.Record("rule", false)

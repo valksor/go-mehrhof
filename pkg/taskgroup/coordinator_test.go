@@ -9,6 +9,7 @@ import (
 func tempStore(t *testing.T) *Store {
 	t.Helper()
 	dir := filepath.Join(t.TempDir(), "groups")
+
 	return NewStore(dir)
 }
 

@@ -190,6 +190,7 @@ func startProgressPolling(ctx context.Context, dir string, ch chan<- tea.Msg) {
 						switch status.State {
 						case "none", "loaded", "failed", "submitted":
 							_ = client.Close()
+
 							continue
 						}
 					}

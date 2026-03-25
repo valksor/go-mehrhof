@@ -514,6 +514,7 @@ func parseNumStat(out string) DiffNumStat {
 		// Binary files show "-" for added/removed
 		if fields[0] == "-" || fields[1] == "-" {
 			result.Files = append(result.Files, fields[2])
+
 			continue
 		}
 		added := 0
@@ -526,6 +527,7 @@ func parseNumStat(out string) DiffNumStat {
 		}
 		result.Files = append(result.Files, fields[2])
 	}
+
 	return result
 }
 

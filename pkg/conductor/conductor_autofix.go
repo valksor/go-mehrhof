@@ -196,9 +196,12 @@ func stateToPhase(s State) string {
 		return "simplify"
 	case StateOptimizing:
 		return "optimize"
-	default:
+	case StateNone, StateLoaded, StatePlanned, StateImplemented,
+		StateReviewing, StateSubmitted, StateFailed, StateWaiting, StatePaused:
 		return ""
 	}
+
+	return ""
 }
 
 // shouldAutoFix checks whether the auto-fix loop should run for the current

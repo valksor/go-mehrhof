@@ -81,6 +81,7 @@ func (c *Conductor) SetEventLog(log *eventlog.Log) {
 func (c *Conductor) EventLog() *eventlog.Log {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
+
 	return c.eventLog
 }
 

@@ -123,6 +123,7 @@ func TestAdversarialReview_FindingsAttribution(t *testing.T) {
 				if len(result) != 0 {
 					t.Fatalf("expected no findings for empty output, got %d", len(result))
 				}
+
 				return
 			}
 

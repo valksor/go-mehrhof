@@ -143,6 +143,7 @@ Commit your fixes with meaningful commit messages.`
 			adversarialFindings, err := c.runAdversarialReview(lifecycleCtx)
 			if err != nil {
 				slog.Warn("adversarial review failed", "error", err)
+
 				return
 			}
 

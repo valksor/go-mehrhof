@@ -82,6 +82,7 @@ func groupClient() (*socket.Client, error) {
 	if !socket.SocketExists(globalPath) {
 		return nil, errors.New("global socket not running\nRun '" + meta.Name + " serve' first")
 	}
+
 	return socket.NewClient(globalPath, socket.WithTimeout(5*time.Second))
 }
 
@@ -108,6 +109,7 @@ func runGroupCreate(_ *cobra.Command, args []string) error {
 		return fmt.Errorf("parse: %w", err)
 	}
 	fmt.Printf("Created group %s (%s)\n", g.ID, g.Label)
+
 	return nil
 }
 
@@ -140,6 +142,7 @@ func runGroupAdd(_ *cobra.Command, args []string) error {
 	}
 	fmt.Printf("Added task %s to group %s\n", args[1], args[0])
 	fmt.Printf("Note: task state recorded as %q. Use 'kvelmo group status' to verify.\n", groupAddState)
+
 	return nil
 }
 
@@ -167,12 +170,14 @@ func runGroupList(_ *cobra.Command, _ []string) error {
 
 	if len(result.Groups) == 0 {
 		fmt.Println("No task groups.")
+
 		return nil
 	}
 
 	for _, g := range result.Groups {
 		fmt.Printf("  %-18s %-8s %s (%d tasks)\n", g.ID, g.Status, g.Label, len(g.Tasks))
 	}
+
 	return nil
 }
 
@@ -206,6 +211,7 @@ func runGroupStatus(_ *cobra.Command, args []string) error {
 	for _, t := range g.Tasks {
 		fmt.Printf("  %-20s %-14s %s\n", t.TaskID, t.State, t.ProjectDir)
 	}
+
 	return nil
 }
 
@@ -227,6 +233,7 @@ func runGroupSubmit(_ *cobra.Command, args []string) error {
 		return fmt.Errorf("taskgroup.submit: %s", resp.Error.Message)
 	}
 	fmt.Printf("Group %s submitted\n", args[0])
+
 	return nil
 }
 
@@ -248,5 +255,6 @@ func runGroupRemove(_ *cobra.Command, args []string) error {
 		return fmt.Errorf("taskgroup.remove: %s", resp.Error.Message)
 	}
 	fmt.Printf("Group %s removed\n", args[0])
+
 	return nil
 }

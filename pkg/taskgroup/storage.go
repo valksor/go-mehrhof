@@ -39,18 +39,22 @@ func (s *Store) Save(g *Group) error {
 	tmpPath := tmp.Name()
 
 	if _, err := tmp.Write(data); err != nil {
-		tmp.Close()
-		os.Remove(tmpPath)
+		_ = tmp.Close()
+		_ = os.Remove(tmpPath)
+
 		return fmt.Errorf("save group: write temp: %w", err)
 	}
 	if err := tmp.Close(); err != nil {
-		os.Remove(tmpPath)
+		_ = os.Remove(tmpPath)
+
 		return fmt.Errorf("save group: close temp: %w", err)
 	}
 	if err := os.Rename(tmpPath, finalPath); err != nil {
-		os.Remove(tmpPath)
+		_ = os.Remove(tmpPath)
+
 		return fmt.Errorf("save group: rename: %w", err)
 	}
+
 	return nil
 }
 
@@ -65,6 +69,7 @@ func (s *Store) Load(id string) (*Group, error) {
 	if err := json.Unmarshal(data, &g); err != nil {
 		return nil, fmt.Errorf("load group: unmarshal: %w", err)
 	}
+
 	return &g, nil
 }
 
@@ -75,6 +80,7 @@ func (s *Store) LoadAll() ([]*Group, error) {
 		if os.IsNotExist(err) {
 			return nil, nil
 		}
+
 		return nil, fmt.Errorf("load all groups: %w", err)
 	}
 	var groups []*Group
@@ -89,6 +95,7 @@ func (s *Store) LoadAll() ([]*Group, error) {
 		}
 		groups = append(groups, g)
 	}
+
 	return groups, nil
 }
 
@@ -98,5 +105,6 @@ func (s *Store) Delete(id string) error {
 	if err := os.Remove(path); err != nil {
 		return fmt.Errorf("delete group: %w", err)
 	}
+
 	return nil
 }

@@ -51,6 +51,7 @@ func (g *Group) AllReady() bool {
 			return false
 		}
 	}
+
 	return true
 }
 
@@ -65,6 +66,7 @@ func (g *Group) AddTask(ref TaskRef) error {
 	g.Tasks = append(g.Tasks, ref)
 	g.UpdatedAt = time.Now()
 	g.refreshStatus()
+
 	return nil
 }
 
@@ -80,6 +82,7 @@ func (g *Group) RemoveTask(taskID string) error {
 	g.Tasks = slices.Delete(g.Tasks, idx, idx+1)
 	g.UpdatedAt = time.Now()
 	g.refreshStatus()
+
 	return nil
 }
 
@@ -91,6 +94,7 @@ func (g *Group) UpdateTaskState(taskID, state string) {
 			g.Tasks[i].State = state
 			g.UpdatedAt = time.Now()
 			g.refreshStatus()
+
 			return
 		}
 	}

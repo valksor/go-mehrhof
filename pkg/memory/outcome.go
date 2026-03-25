@@ -2,6 +2,7 @@ package memory
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 )
@@ -50,7 +51,7 @@ func OutcomeScoreBoost(outcome *DocumentOutcome) float64 {
 // This persists the outcome data alongside the document on disk.
 func (vs *VectorStore) LinkOutcome(ctx context.Context, taskID string, outcome DocumentOutcome) error {
 	if taskID == "" {
-		return fmt.Errorf("link outcome: taskID is required")
+		return errors.New("link outcome: taskID is required")
 	}
 
 	vs.mu.Lock()
@@ -70,6 +71,7 @@ func (vs *VectorStore) LinkOutcome(ctx context.Context, taskID string, outcome D
 
 	if len(copies) == 0 {
 		slog.Debug("link outcome: no documents found for task", "task_id", taskID)
+
 		return nil
 	}
 

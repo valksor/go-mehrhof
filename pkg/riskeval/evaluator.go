@@ -97,6 +97,7 @@ func scoreDiffSize(totalLines int) float64 {
 	if totalLines >= 500 {
 		return 1.0
 	}
+
 	return float64(totalLines-20) / float64(500-20)
 }
 
@@ -111,11 +112,13 @@ func scoreSensitivePaths(files, patterns []string) float64 {
 		for _, pattern := range patterns {
 			if ok, _ := filepath.Match(pattern, f); ok {
 				matched++
+
 				break
 			}
 			// Also match against base name for patterns like "*.env"
 			if ok, _ := filepath.Match(pattern, filepath.Base(f)); ok {
 				matched++
+
 				break
 			}
 		}
@@ -129,6 +132,7 @@ func scoreSecurityFindings(count int) float64 {
 	if count > 0 {
 		return 1.0
 	}
+
 	return 0.0
 }
 
@@ -140,6 +144,7 @@ func scoreFileCount(count int) float64 {
 	if count >= 20 {
 		return 1.0
 	}
+
 	return float64(count-1) / float64(20-1)
 }
 
@@ -152,5 +157,6 @@ func scoreTestRatio(testFiles, totalFiles int) float64 {
 	if ratio >= 0.5 {
 		return 0.0
 	}
+
 	return 1.0 - (ratio / 0.5)
 }

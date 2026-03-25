@@ -27,7 +27,7 @@ func (g *GlobalSocket) handleTaskGroupCreate(_ context.Context, req *Request) (*
 		Label string `json:"label"`
 	}
 	if err := json.Unmarshal(req.Params, &params); err != nil {
-		return NewErrorResponse(req.ID, ErrCodeInvalidParams, "invalid params"), nil
+		return NewErrorResponse(req.ID, ErrCodeInvalidParams, "invalid params"), nil //nolint:nilerr // JSON-RPC pattern: error response is the return value, not a Go error
 	}
 	if params.Label == "" {
 		return NewErrorResponse(req.ID, ErrCodeInvalidParams, "label is required"), nil
@@ -36,6 +36,7 @@ func (g *GlobalSocket) handleTaskGroupCreate(_ context.Context, req *Request) (*
 	if err != nil {
 		return NewErrorResponse(req.ID, ErrCodeInternal, err.Error()), nil
 	}
+
 	return NewResultResponse(req.ID, group)
 }
 
@@ -44,6 +45,7 @@ func (g *GlobalSocket) handleTaskGroupList(_ context.Context, req *Request) (*Re
 		return NewResultResponse(req.ID, map[string]any{"groups": []any{}})
 	}
 	groups := taskGroupCoordinator.ListGroups()
+
 	return NewResultResponse(req.ID, map[string]any{"groups": groups})
 }
 
@@ -55,7 +57,7 @@ func (g *GlobalSocket) handleTaskGroupStatus(_ context.Context, req *Request) (*
 		ID string `json:"id"`
 	}
 	if err := json.Unmarshal(req.Params, &params); err != nil {
-		return NewErrorResponse(req.ID, ErrCodeInvalidParams, "invalid params"), nil
+		return NewErrorResponse(req.ID, ErrCodeInvalidParams, "invalid params"), nil //nolint:nilerr // JSON-RPC pattern: error response is the return value, not a Go error
 	}
 	if params.ID == "" {
 		return NewErrorResponse(req.ID, ErrCodeInvalidParams, "id is required"), nil
@@ -64,6 +66,7 @@ func (g *GlobalSocket) handleTaskGroupStatus(_ context.Context, req *Request) (*
 	if err != nil {
 		return NewErrorResponse(req.ID, ErrCodeInternal, err.Error()), nil
 	}
+
 	return NewResultResponse(req.ID, group)
 }
 
@@ -78,7 +81,7 @@ func (g *GlobalSocket) handleTaskGroupAdd(_ context.Context, req *Request) (*Res
 		State      string `json:"state"`
 	}
 	if err := json.Unmarshal(req.Params, &params); err != nil {
-		return NewErrorResponse(req.ID, ErrCodeInvalidParams, "invalid params"), nil
+		return NewErrorResponse(req.ID, ErrCodeInvalidParams, "invalid params"), nil //nolint:nilerr // JSON-RPC pattern: error response is the return value, not a Go error
 	}
 	if params.ID == "" || params.TaskID == "" {
 		return NewErrorResponse(req.ID, ErrCodeInvalidParams, "id and task_id are required"), nil
@@ -95,6 +98,7 @@ func (g *GlobalSocket) handleTaskGroupAdd(_ context.Context, req *Request) (*Res
 	if err != nil {
 		return NewErrorResponse(req.ID, ErrCodeInternal, err.Error()), nil
 	}
+
 	return NewResultResponse(req.ID, group)
 }
 
@@ -106,7 +110,7 @@ func (g *GlobalSocket) handleTaskGroupSubmit(_ context.Context, req *Request) (*
 		ID string `json:"id"`
 	}
 	if err := json.Unmarshal(req.Params, &params); err != nil {
-		return NewErrorResponse(req.ID, ErrCodeInvalidParams, "invalid params"), nil
+		return NewErrorResponse(req.ID, ErrCodeInvalidParams, "invalid params"), nil //nolint:nilerr // JSON-RPC pattern: error response is the return value, not a Go error
 	}
 	if err := taskGroupCoordinator.SubmitGroup(params.ID); err != nil {
 		return NewErrorResponse(req.ID, ErrCodeInternal, err.Error()), nil
@@ -115,6 +119,7 @@ func (g *GlobalSocket) handleTaskGroupSubmit(_ context.Context, req *Request) (*
 	if err != nil {
 		return NewErrorResponse(req.ID, ErrCodeInternal, err.Error()), nil
 	}
+
 	return NewResultResponse(req.ID, group)
 }
 
@@ -126,10 +131,11 @@ func (g *GlobalSocket) handleTaskGroupRemove(_ context.Context, req *Request) (*
 		ID string `json:"id"`
 	}
 	if err := json.Unmarshal(req.Params, &params); err != nil {
-		return NewErrorResponse(req.ID, ErrCodeInvalidParams, "invalid params"), nil
+		return NewErrorResponse(req.ID, ErrCodeInvalidParams, "invalid params"), nil //nolint:nilerr // JSON-RPC pattern: error response is the return value, not a Go error
 	}
 	if err := taskGroupCoordinator.RemoveGroup(params.ID); err != nil {
 		return NewErrorResponse(req.ID, ErrCodeInternal, err.Error()), nil
 	}
+
 	return NewResultResponse(req.ID, map[string]string{"status": "removed"})
 }

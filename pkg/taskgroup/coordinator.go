@@ -30,6 +30,7 @@ func NewCoordinator(store *Store) *Coordinator {
 	for _, g := range groups {
 		c.groups[g.ID] = g
 	}
+
 	return c
 }
 
@@ -56,6 +57,7 @@ func (c *Coordinator) CreateGroup(label string) (*Group, error) {
 		return nil, fmt.Errorf("create group: %w", err)
 	}
 	slog.Info("task group created", "id", g.ID, "label", label)
+
 	return g, nil
 }
 
@@ -67,6 +69,7 @@ func (c *Coordinator) GetGroup(id string) (*Group, error) {
 	if !ok {
 		return nil, fmt.Errorf("get group: group %q not found", id)
 	}
+
 	return g, nil
 }
 
@@ -79,6 +82,7 @@ func (c *Coordinator) ListGroups() []Group {
 	for _, g := range c.groups {
 		result = append(result, *g)
 	}
+
 	return result
 }
 
@@ -88,10 +92,12 @@ func (c *Coordinator) AddTask(groupID string, ref TaskRef) error {
 	g, ok := c.groups[groupID]
 	if !ok {
 		c.mu.Unlock()
+
 		return fmt.Errorf("add task to group: group %q not found", groupID)
 	}
 	if err := g.AddTask(ref); err != nil {
 		c.mu.Unlock()
+
 		return err
 	}
 	c.mu.Unlock()
@@ -100,6 +106,7 @@ func (c *Coordinator) AddTask(groupID string, ref TaskRef) error {
 		return fmt.Errorf("add task to group: %w", err)
 	}
 	slog.Info("task added to group", "group_id", groupID, "task_id", ref.TaskID)
+
 	return nil
 }
 
@@ -114,6 +121,7 @@ func (c *Coordinator) UpdateTaskState(taskID, state string) {
 				slog.Warn("failed to persist task state update",
 					"task_id", taskID, "group_id", g.ID, "state", state, "error", err)
 			}
+
 			return
 		}
 	}
@@ -133,6 +141,7 @@ func (c *Coordinator) CanSubmit(taskID string, syncSubmit bool) (bool, error) {
 			if g.AllReady() {
 				return true, nil
 			}
+
 			return false, fmt.Errorf("cannot submit: task group %q (%s) has members not yet ready", g.ID, g.Label)
 		}
 	}
@@ -146,10 +155,12 @@ func (c *Coordinator) SubmitGroup(id string) error {
 	g, ok := c.groups[id]
 	if !ok {
 		c.mu.Unlock()
+
 		return fmt.Errorf("submit group: group %q not found", id)
 	}
 	if !g.AllReady() {
 		c.mu.Unlock()
+
 		return fmt.Errorf("submit group: not all tasks are ready in group %q", id)
 	}
 	g.Status = StatusSubmitted
@@ -160,6 +171,7 @@ func (c *Coordinator) SubmitGroup(id string) error {
 		return fmt.Errorf("submit group: %w", err)
 	}
 	slog.Info("task group submitted", "id", id)
+
 	return nil
 }
 
@@ -168,6 +180,7 @@ func (c *Coordinator) RemoveGroup(id string) error {
 	c.mu.Lock()
 	if _, ok := c.groups[id]; !ok {
 		c.mu.Unlock()
+
 		return fmt.Errorf("remove group: group %q not found", id)
 	}
 	delete(c.groups, id)
@@ -177,6 +190,7 @@ func (c *Coordinator) RemoveGroup(id string) error {
 		return fmt.Errorf("remove group: %w", err)
 	}
 	slog.Info("task group removed", "id", id)
+
 	return nil
 }
 
@@ -189,6 +203,7 @@ func (c *Coordinator) FindGroupForTask(taskID string) *Group {
 			return g
 		}
 	}
+
 	return nil
 }
 
@@ -198,5 +213,6 @@ func generateID() (string, error) {
 	if _, err := rand.Read(b); err != nil {
 		return "", fmt.Errorf("generate id: %w", err)
 	}
+
 	return hex.EncodeToString(b), nil
 }

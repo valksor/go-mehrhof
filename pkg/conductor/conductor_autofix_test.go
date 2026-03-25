@@ -8,22 +8,6 @@ import (
 	"github.com/valksor/kvelmo/pkg/settings"
 )
 
-// mockQualityRunner implements the QualityRunner interface for testing.
-// It returns failures for the first N calls, then succeeds.
-type mockQualityRunner struct {
-	failCount int // how many times to fail before succeeding
-	calls     int
-}
-
-func (m *mockQualityRunner) RunGates(_ context.Context, _ string) (bool, []string, error) {
-	m.calls++
-	if m.calls <= m.failCount {
-		return false, []string{"lint: unused variable x"}, nil
-	}
-
-	return true, nil, nil
-}
-
 func autoFixSettings(enabled bool, maxAttempts int, phases []string) *settings.Settings {
 	s := settings.DefaultSettings()
 	s.Workflow.ExternalReview.Mode = settings.ExternalReviewNever

@@ -8,7 +8,7 @@ import (
 )
 
 // handleRiskEvaluate returns the current task risk score.
-func (w *WorktreeSocket) handleRiskEvaluate(_ context.Context, req *Request) (*Response, error) {
+func (w *WorktreeSocket) handleRiskEvaluate(ctx context.Context, req *Request) (*Response, error) {
 	if w.conductor == nil {
 		return NewErrorResponse(req.ID, ErrCodeInternal, "no conductor"), nil
 	}
@@ -18,7 +18,7 @@ func (w *WorktreeSocket) handleRiskEvaluate(_ context.Context, req *Request) (*R
 		return NewErrorResponse(req.ID, ErrCodeInternal, "no task loaded"), nil
 	}
 
-	score := w.conductor.EvaluateRisk()
+	score := w.conductor.EvaluateRisk(ctx)
 
 	return NewResultResponse(req.ID, score)
 }

@@ -137,7 +137,7 @@ func (c *Conductor) Start(ctx context.Context, sourceRef string) error {
 
 		// Provision worktree with config files and dependency symlinks.
 		if useWorktree && c.workUnit.WorktreePath != "" {
-			c.provisionWorktree(effectiveSettings, c.git.Path(), c.workUnit.WorktreePath)
+			c.provisionWorktree(ctx, effectiveSettings, c.git.Path(), c.workUnit.WorktreePath)
 		}
 
 		// Fallback: just create/switch branch on the main repo
@@ -185,7 +185,7 @@ func (c *Conductor) Start(ctx context.Context, sourceRef string) error {
 // provisionWorktree copies config files and creates dependency symlinks into
 // the newly created worktree. Settings overrides are merged with auto-detected
 // defaults. The result is emitted as a "worktree_provisioned" event.
-func (c *Conductor) provisionWorktree(cfg *settings.Settings, srcDir, worktreeDir string) {
+func (c *Conductor) provisionWorktree(ctx context.Context, cfg *settings.Settings, srcDir, worktreeDir string) {
 	if !settings.BoolValue(cfg.Git.Provision.Enabled, true) {
 		return
 	}
@@ -198,7 +198,7 @@ func (c *Conductor) provisionWorktree(cfg *settings.Settings, srcDir, worktreeDi
 	}
 	merged := provision.MergeOptions(defaults, userOpts)
 
-	result, err := provision.Provision(srcDir, worktreeDir, merged)
+	result, err := provision.Provision(ctx, srcDir, worktreeDir, merged)
 	if err != nil {
 		slog.Warn("worktree provisioning failed", "error", err)
 		c.emit(ConductorEvent{
@@ -213,7 +213,10 @@ func (c *Conductor) provisionWorktree(cfg *settings.Settings, srcDir, worktreeDi
 		return
 	}
 
-	data, _ := json.Marshal(result)
+	data, jsonErr := json.Marshal(result)
+	if jsonErr != nil {
+		slog.Warn("failed to marshal provision result", "error", jsonErr)
+	}
 	c.logVerbosef("Provisioned worktree: %d files copied, %d symlinks created, %d commands run",
 		len(result.FilesCopied), len(result.SymlinksCreated), len(result.CommandsRun))
 

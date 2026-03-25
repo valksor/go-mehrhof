@@ -77,9 +77,11 @@ func runReview(cmd *cobra.Command, args []string) error {
 		resp, advErr := client.Call(ctx, "adversarial.run", nil)
 		if advErr != nil {
 			spinner.Fail("Adversarial review failed")
+
 			return fmt.Errorf("adversarial.run: %w", advErr)
 		}
 		spinner.Success("Adversarial review started")
+
 		return outputJSON(resp.Result)
 	}
 

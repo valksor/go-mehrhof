@@ -107,12 +107,13 @@ func (c *Conductor) Submit(ctx context.Context, deleteBranch bool) error {
 		c.mu.Lock()
 		if !ok {
 			c.mu.Unlock()
+
 			return groupErr
 		}
 	}
 
 	// Check approval requirement
-	if err := c.checkApproval(EventSubmit); err != nil {
+	if err := c.checkApproval(ctx, EventSubmit); err != nil {
 		c.mu.Unlock()
 
 		return err

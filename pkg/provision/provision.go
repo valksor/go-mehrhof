@@ -6,6 +6,7 @@ package provision
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"log/slog"
@@ -44,9 +45,9 @@ func (r *Result) Empty() bool {
 // Provision copies config files and creates symlinks from srcDir to worktreeDir.
 // It merges all copy/symlink patterns from opts, globs against srcDir, and
 // reproduces the matched items in worktreeDir.
-func Provision(srcDir, worktreeDir string, opts Options) (*Result, error) {
+func Provision(ctx context.Context, srcDir, worktreeDir string, opts Options) (*Result, error) {
 	if srcDir == "" || worktreeDir == "" {
-		return nil, fmt.Errorf("provision: srcDir and worktreeDir must be non-empty")
+		return nil, errors.New("provision: srcDir and worktreeDir must be non-empty")
 	}
 
 	result := &Result{}
@@ -56,6 +57,7 @@ func Provision(srcDir, worktreeDir string, opts Options) (*Result, error) {
 		matches, err := filepath.Glob(filepath.Join(srcDir, pattern))
 		if err != nil {
 			slog.Warn("provision: bad glob pattern", "pattern", pattern, "error", err)
+
 			continue
 		}
 
@@ -109,8 +111,8 @@ func Provision(srcDir, worktreeDir string, opts Options) (*Result, error) {
 			continue
 		}
 
-		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
-		c := exec.CommandContext(ctx, "sh", "-c", cmd)
+		cmdCtx, cancel := context.WithTimeout(ctx, 5*time.Minute)
+		c := exec.CommandContext(cmdCtx, "sh", "-c", cmd)
 		c.Dir = worktreeDir
 
 		out, err := c.CombinedOutput()
@@ -129,7 +131,7 @@ func Provision(srcDir, worktreeDir string, opts Options) (*Result, error) {
 // It checks which files match copy patterns and which symlink targets exist.
 func Preview(srcDir string, opts Options) (*Result, error) {
 	if srcDir == "" {
-		return nil, fmt.Errorf("preview: srcDir must be non-empty")
+		return nil, errors.New("preview: srcDir must be non-empty")
 	}
 
 	result := &Result{}
@@ -177,7 +179,7 @@ func copyFile(src, dst string) error {
 	if err != nil {
 		return fmt.Errorf("open source: %w", err)
 	}
-	defer in.Close()
+	defer func() { _ = in.Close() }()
 
 	info, err := in.Stat()
 	if err != nil {
@@ -188,10 +190,15 @@ func copyFile(src, dst string) error {
 	if err != nil {
 		return fmt.Errorf("create dest: %w", err)
 	}
-	defer out.Close()
 
 	if _, err := io.Copy(out, in); err != nil {
+		_ = out.Close()
+
 		return fmt.Errorf("copy data: %w", err)
+	}
+
+	if err := out.Close(); err != nil {
+		return fmt.Errorf("close dest: %w", err)
 	}
 
 	return nil

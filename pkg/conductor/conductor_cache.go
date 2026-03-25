@@ -66,16 +66,6 @@ func (c *Conductor) ClearResponseCache() {
 	}
 }
 
-// checkResponseCache looks up a prompt in the response cache.
-// Returns (response, true) on hit, ("", false) on miss or if cache is disabled.
-func (c *Conductor) checkResponseCache(prompt string) (string, bool) {
-	if c.responseCache == nil {
-		return "", false
-	}
-
-	return c.responseCache.Get(prompt)
-}
-
 // storeResponseCache stores a prompt-response pair in the cache.
 // No-op if caching is disabled.
 func (c *Conductor) storeResponseCache(prompt, response, phase string) {

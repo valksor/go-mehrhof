@@ -34,6 +34,7 @@ func (c *Conductor) runAdversarialReview(ctx context.Context) ([]findings.Findin
 		p, ok := allPersonas[name]
 		if !ok {
 			slog.Warn("unknown adversarial persona, skipping", "persona", name)
+
 			continue
 		}
 
@@ -110,6 +111,7 @@ func (c *Conductor) runAdversarialReview(ctx context.Context) ([]findings.Findin
 	for _, r := range results {
 		if r.err != nil {
 			slog.Warn("adversarial persona submit failed", "persona", r.persona, "error", r.err)
+
 			continue
 		}
 
@@ -121,6 +123,7 @@ func (c *Conductor) runAdversarialReview(ctx context.Context) ([]findings.Findin
 			}
 
 			slog.Warn("adversarial persona job failed", "persona", r.persona, "error", errMsg)
+
 			continue
 		}
 

@@ -1,6 +1,7 @@
 package provision
 
 import (
+	"context"
 	"os"
 	"path/filepath"
 	"testing"
@@ -19,7 +20,7 @@ func TestProvision_CopiesFiles(t *testing.T) {
 		CopyPatterns: []string{".env", ".env.*"},
 	}
 
-	result, err := Provision(srcDir, wtDir, opts)
+	result, err := Provision(context.Background(), srcDir, wtDir, opts)
 	if err != nil {
 		t.Fatalf("Provision() error = %v", err)
 	}
@@ -58,7 +59,7 @@ func TestProvision_CreatesSymlinks(t *testing.T) {
 		SymlinkPatterns: []string{"node_modules", "nonexistent_dir"},
 	}
 
-	result, err := Provision(srcDir, wtDir, opts)
+	result, err := Provision(context.Background(), srcDir, wtDir, opts)
 	if err != nil {
 		t.Fatalf("Provision() error = %v", err)
 	}
@@ -99,7 +100,7 @@ func TestProvision_RunsSetupCommands(t *testing.T) {
 		SetupCommands: []string{"echo hello > setup_marker.txt"},
 	}
 
-	result, err := Provision(srcDir, wtDir, opts)
+	result, err := Provision(context.Background(), srcDir, wtDir, opts)
 	if err != nil {
 		t.Fatalf("Provision() error = %v", err)
 	}
@@ -125,19 +126,19 @@ func TestProvision_FailingCommandReturnsError(t *testing.T) {
 		SetupCommands: []string{"exit 1"},
 	}
 
-	_, err := Provision(srcDir, wtDir, opts)
+	_, err := Provision(context.Background(), srcDir, wtDir, opts)
 	if err == nil {
 		t.Fatal("expected error from failing command")
 	}
 }
 
 func TestProvision_EmptyDirsReturnsError(t *testing.T) {
-	_, err := Provision("", "/tmp/wt", Options{})
+	_, err := Provision(context.Background(), "", "/tmp/wt", Options{})
 	if err == nil {
 		t.Error("expected error for empty srcDir")
 	}
 
-	_, err = Provision("/tmp/src", "", Options{})
+	_, err = Provision(context.Background(), "/tmp/src", "", Options{})
 	if err == nil {
 		t.Error("expected error for empty worktreeDir")
 	}
@@ -162,7 +163,7 @@ func TestProvision_SkipsExistingSymlinks(t *testing.T) {
 		SymlinkPatterns: []string{"node_modules"},
 	}
 
-	result, err := Provision(srcDir, wtDir, opts)
+	result, err := Provision(context.Background(), srcDir, wtDir, opts)
 	if err != nil {
 		t.Fatalf("Provision() error = %v", err)
 	}
@@ -343,6 +344,7 @@ func assertNotContains(t *testing.T, items []string, notWant string) {
 	for _, item := range items {
 		if item == notWant {
 			t.Errorf("slice %v should not contain %q", items, notWant)
+
 			return
 		}
 	}

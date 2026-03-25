@@ -36,7 +36,7 @@ func (c *Conductor) Plan(ctx context.Context) (string, error) {
 	}
 
 	// Check approval requirement
-	if err := c.checkApproval(EventPlan); err != nil {
+	if err := c.checkApproval(ctx, EventPlan); err != nil {
 		return "", err
 	}
 

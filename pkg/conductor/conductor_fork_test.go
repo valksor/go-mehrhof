@@ -11,6 +11,15 @@ import (
 	"github.com/valksor/kvelmo/pkg/settings"
 )
 
+// gitCmd runs a git command with context for the given arguments.
+func gitCmd(ctx context.Context, t *testing.T, args ...string) {
+	t.Helper()
+	cmd := exec.CommandContext(ctx, "git", args...)
+	if err := cmd.Run(); err != nil {
+		t.Fatalf("git %v failed: %v", args, err)
+	}
+}
+
 // setupForkTestRepo creates a git repo with an initial commit and returns
 // a Conductor wired to it. Caller must defer cleanup().
 func setupForkTestRepo(t *testing.T, forkingEnabled bool, maxForks int) (*Conductor, string, func()) {
@@ -18,16 +27,15 @@ func setupForkTestRepo(t *testing.T, forkingEnabled bool, maxForks int) (*Conduc
 
 	dir := t.TempDir()
 
+	ctx := context.Background()
+
 	// Initialize git repo with initial commit
 	for _, args := range [][]string{
 		{"init", dir},
 		{"-C", dir, "config", "user.email", "test@test.com"},
 		{"-C", dir, "config", "user.name", "Test User"},
 	} {
-		cmd := exec.Command("git", args...) //nolint:gosec // Test helper, args are static
-		if err := cmd.Run(); err != nil {
-			t.Fatalf("git %v failed: %v", args, err)
-		}
+		gitCmd(ctx, t, args...)
 	}
 
 	// Create initial commit
@@ -40,10 +48,7 @@ func setupForkTestRepo(t *testing.T, forkingEnabled bool, maxForks int) (*Conduc
 		{"-C", dir, "add", "."},
 		{"-C", dir, "commit", "-m", "initial commit"},
 	} {
-		cmd := exec.Command("git", args...) //nolint:gosec // Test helper, args are static
-		if err := cmd.Run(); err != nil {
-			t.Fatalf("git %v failed: %v", args, err)
-		}
+		gitCmd(ctx, t, args...)
 	}
 
 	repo, err := git.Open(dir)
@@ -214,10 +219,7 @@ func TestCompareForks_DiffStats(t *testing.T) {
 		{"-C", info.WorktreeDir, "add", "."},
 		{"-C", info.WorktreeDir, "commit", "-m", "add new feature"},
 	} {
-		cmd := exec.Command("git", args...) //nolint:gosec // Test helper, args are static
-		if err := cmd.Run(); err != nil {
-			t.Fatalf("git %v failed: %v", args, err)
-		}
+		gitCmd(ctx, t, args...)
 	}
 
 	comparison, err := c.CompareForks(ctx)
@@ -296,7 +298,7 @@ func TestParseDiffStat(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			ds, _, _, linesAdded, linesRemoved := parseDiffStat(tt.input)
+			ds, _, linesAdded, linesRemoved := parseDiffStat(tt.input)
 			if ds.Files != tt.wantFiles {
 				t.Errorf("files: got %d, want %d", ds.Files, tt.wantFiles)
 			}

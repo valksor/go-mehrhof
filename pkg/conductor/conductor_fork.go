@@ -3,6 +3,7 @@ package conductor
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log/slog"
 	"path/filepath"
@@ -39,11 +40,11 @@ func (c *Conductor) Fork(ctx context.Context, label string) (*ForkInfo, error) {
 	c.mu.Unlock()
 
 	if wu == nil {
-		return nil, fmt.Errorf("fork: no active task")
+		return nil, errors.New("fork: no active task")
 	}
 
 	if repo == nil {
-		return nil, fmt.Errorf("fork: git not available")
+		return nil, errors.New("fork: git not available")
 	}
 
 	maxForks := c.maxForks()
@@ -92,10 +93,13 @@ func (c *Conductor) Fork(ctx context.Context, label string) (*ForkInfo, error) {
 
 	slog.Info("fork created", "fork_id", forkID, "label", label, "branch", branchName)
 
-	data, _ := json.Marshal(info)
+	data, err := json.Marshal(info)
+	if err != nil {
+		slog.Warn("failed to marshal fork info", "error", err)
+	}
 	c.emit(ConductorEvent{
 		Type:    "fork_created",
-		Message: fmt.Sprintf("Fork created: %s", label),
+		Message: "Fork created: " + label,
 		Data:    data,
 	})
 
@@ -127,11 +131,11 @@ func (c *Conductor) SelectFork(ctx context.Context, forkID string) error {
 	c.mu.RUnlock()
 
 	if wu == nil {
-		return fmt.Errorf("select fork: no active task")
+		return errors.New("select fork: no active task")
 	}
 
 	if repo == nil {
-		return fmt.Errorf("select fork: git not available")
+		return errors.New("select fork: git not available")
 	}
 
 	// Find the winning fork
@@ -180,10 +184,13 @@ func (c *Conductor) SelectFork(ctx context.Context, forkID string) error {
 	c.persistState()
 	c.mu.Unlock()
 
-	data, _ := json.Marshal(map[string]string{"fork_id": forkID, "label": winner.Label})
+	data, err := json.Marshal(map[string]string{"fork_id": forkID, "label": winner.Label})
+	if err != nil {
+		slog.Warn("failed to marshal fork selection", "error", err)
+	}
 	c.emit(ConductorEvent{
 		Type:    "fork_selected",
-		Message: fmt.Sprintf("Fork selected: %s", winner.Label),
+		Message: "Fork selected: " + winner.Label,
 		Data:    data,
 	})
 
@@ -194,11 +201,11 @@ func (c *Conductor) SelectFork(ctx context.Context, forkID string) error {
 func (c *Conductor) validateForkingEnabled() error {
 	s := c.getEffectiveSettings()
 	if s == nil {
-		return fmt.Errorf("fork: settings not available")
+		return errors.New("fork: settings not available")
 	}
 
 	if s.Workflow.Forking == nil || !s.Workflow.Forking.Enabled {
-		return fmt.Errorf("fork: forking is disabled (enable in workflow.forking.enabled)")
+		return errors.New("fork: forking is disabled (enable in workflow.forking.enabled)")
 	}
 
 	return nil

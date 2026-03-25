@@ -37,14 +37,14 @@ func approverIdentity(configuredIdentity string) string {
 // changes require review regardless of explicit approval settings.
 // Must be called with c.mu held (read or write). The lock is temporarily released
 // during risk evaluation to avoid blocking on git subprocess I/O.
-func (c *Conductor) checkApproval(event Event) error {
+func (c *Conductor) checkApproval(ctx context.Context, event Event) error {
 	s := c.getEffectiveSettings()
 
 	// Risk-based approval: evaluate risk and decide automatically.
 	rba := s.Workflow.Policy.RiskBasedApproval
 	if rba != nil && rba.Enabled && s.Workflow.Policy.ApprovalRequired[string(event)] {
 		// Release lock before git I/O — evaluateRiskUnlocked performs subprocess calls.
-		score := c.evaluateRiskUnlocked(s)
+		score := c.evaluateRiskUnlocked(ctx, s)
 		c.emitRiskEvaluated(score)
 
 		autoThreshold := rba.AutoApproveThreshold
@@ -59,6 +59,7 @@ func (c *Conductor) checkApproval(event Event) error {
 		if score.Score < autoThreshold {
 			slog.Info("risk-based auto-approval",
 				"event", event, "score", score.Score, "level", score.Level)
+
 			return nil
 		}
 
@@ -71,8 +72,10 @@ func (c *Conductor) checkApproval(event Event) error {
 					State:   c.machine.State(),
 					Message: fmt.Sprintf("High-risk change (score=%.2f): approval required for %s", score.Score, event),
 				})
+
 				return fmt.Errorf("cannot %s: high-risk change (score=%.2f) requires explicit approval. Run: kvelmo approve %s", event, score.Score, event)
 			}
+
 			return nil
 		}
 
@@ -100,7 +103,7 @@ func (c *Conductor) checkApproval(event Event) error {
 // evaluateRiskUnlocked computes the risk score without requiring c.mu to be held.
 // It snapshots the git handle from the caller-provided settings or conductor fields,
 // then performs blocking git I/O outside the lock.
-func (c *Conductor) evaluateRiskUnlocked(s *settings.Settings) riskeval.RiskScore {
+func (c *Conductor) evaluateRiskUnlocked(ctx context.Context, s *settings.Settings) riskeval.RiskScore {
 	// Snapshot the git handle under lock.
 	c.mu.RLock()
 	repo := c.git
@@ -112,7 +115,7 @@ func (c *Conductor) evaluateRiskUnlocked(s *settings.Settings) riskeval.RiskScor
 
 	// Gather diff stats from git if available — this runs a subprocess.
 	if repo != nil {
-		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 		defer cancel()
 
 		stat, err := repo.DiffNumStatAgainst(ctx, "")
@@ -137,16 +140,17 @@ func (c *Conductor) evaluateRiskUnlocked(s *settings.Settings) riskeval.RiskScor
 }
 
 // EvaluateRisk computes the risk score for the current work unit (exported for RPC).
-func (c *Conductor) EvaluateRisk() riskeval.RiskScore {
+func (c *Conductor) EvaluateRisk(ctx context.Context) riskeval.RiskScore {
 	c.mu.RLock()
 	if c.workUnit == nil {
 		c.mu.RUnlock()
+
 		return riskeval.RiskScore{Level: riskeval.LevelLow}
 	}
 	s := c.getEffectiveSettings()
 	c.mu.RUnlock()
 
-	return c.evaluateRiskUnlocked(s)
+	return c.evaluateRiskUnlocked(ctx, s)
 }
 
 // emitRiskEvaluated emits a risk_evaluated event with score and factors.
@@ -154,6 +158,7 @@ func (c *Conductor) emitRiskEvaluated(score riskeval.RiskScore) {
 	data, err := json.Marshal(score)
 	if err != nil {
 		slog.Warn("failed to marshal risk score", "error", err)
+
 		return
 	}
 
@@ -177,6 +182,7 @@ func isTestFile(path string) bool {
 			return true
 		}
 	}
+
 	return false
 }
 
