@@ -6,7 +6,7 @@ import { useScreenshotStore, Screenshot } from './screenshotStore'
 import { sendNotification, requestNotificationPermission } from '../lib/notify'
 import { worktreeEvents } from '../lib/events'
 import type { FailureClass } from '../lib/events'
-import type { PhaseMetrics } from '../types/conductor'
+import type { PhaseMetrics, ForkInfo } from '../types/conductor'
 
 type TaskState =
   | 'none'
@@ -77,16 +77,6 @@ export interface FilesEntry {
   modified?: string
 }
 
-export interface ForkInfo {
-  id: string
-  label: string
-  branch: string
-  worktree_dir: string
-  checkpoint_sha: string
-  state: string
-  tokens_used?: number
-  created_at: string
-}
 
 export interface CacheStats {
   enabled: boolean

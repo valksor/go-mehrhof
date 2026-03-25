@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useProjectStore } from '../stores/projectStore'
-import type { ForkInfo } from '../stores/projectStore'
+import type { ForkInfo } from '../types/conductor'
 
 interface ForkComparison {
   forks: Array<{

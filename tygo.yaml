@@ -25,6 +25,7 @@ packages:
       ContextResolver: "unknown"
     # Only export types needed by the web frontend
     include_files:
+      - "conductor_fork.go"
       - "context.go"
       - "state.go"
       - "router.go"
