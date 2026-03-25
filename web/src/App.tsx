@@ -20,6 +20,56 @@ const DEMO_MODE = import.meta.env.DEV && new URLSearchParams(window.location.sea
 if (DEMO_MODE) {
   useViewModeStore.getState().setIsFirstVisit(false)
   useViewModeStore.getState().setMode('developer')
+
+  // Seed demo data for new features (forks, risk, progress, autofix, cache).
+  // State defaults to 'none'; use ?demo&state=implementing to test active-phase UI.
+  const now = new Date().toISOString()
+  const demoState = new URLSearchParams(window.location.search).get('state')
+  const validStates = ['none', 'loaded', 'planning', 'planned', 'implementing', 'implemented', 'simplifying', 'optimizing', 'reviewing', 'submitted', 'waiting', 'paused', 'failed'] as const
+  const validatedState = demoState && (validStates as readonly string[]).includes(demoState)
+    ? (demoState as (typeof validStates)[number])
+    : undefined
+  useProjectStore.setState({
+    ...(validatedState ? { state: validatedState } : {}),
+    forks: [
+      { id: 'fork-1', label: 'approach-a', branch: 'fork/approach-a', worktree_dir: '/tmp/fork-a', checkpoint_sha: 'abc1234', state: 'active', created_at: now },
+      { id: 'fork-2', label: 'approach-b', branch: 'fork/approach-b', worktree_dir: '/tmp/fork-b', checkpoint_sha: 'def5678', state: 'active', created_at: now },
+    ],
+    riskScore: { score: 0.35, factors: { diff_size: 0.2, sensitive_paths: 0.1, file_count: 0.05 }, level: 'low' },
+    phaseProgress: { percent: 65, eta: 135, calibrated: true },
+    autoFixStatus: { active: true, attempt: 1, maxAttempts: 3 },
+    cacheStats: { enabled: true, entries: 42, hits: 28, misses: 14, hit_rate: 0.667, tokens_saved: 12500 },
+    reviews: [
+      { number: 1, timestamp: now, approved: false, message: 'Demo review with persona findings' },
+    ],
+    reviewDetails: {
+      1: {
+        number: 1, timestamp: now, approved: false, message: 'Demo review with persona findings',
+        content: 'Automated review found several issues across security, performance, and maintainability.',
+        findings: [
+          '[security] SQL injection risk in query builder',
+          '[performance] N+1 query detected in user loader',
+          '[maintainability] Complex nested conditionals in auth handler',
+          'Missing error handling for edge case {flaky}',
+          'Test timeout in integration suite {intermittent}',
+        ],
+      },
+    },
+  })
+
+  // Seed global store with task group demo data
+  useGlobalStore.setState({
+    taskGroups: [
+      {
+        id: 'group-1', label: 'Auth Refactor', status: 'active',
+        tasks: [
+          { project_dir: '/workspace/api', task_id: 'task-1', state: 'implemented' },
+          { project_dir: '/workspace/web', task_id: 'task-2', state: 'planning' },
+        ],
+        created_at: now, updated_at: now,
+      },
+    ],
+  })
 }
 
 // URL param override for view mode — applied after rehydration so it wins over localStorage.

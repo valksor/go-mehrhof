@@ -27,6 +27,11 @@ export function TaskHistory() {
   const [searchResults, setSearchResults] = useState<SearchTask[] | null>(null)
   const [searching, setSearching] = useState(false)
   const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const [showFilters, setShowFilters] = useState(false)
+  const [fileFilter, setFileFilter] = useState('')
+  const [stateFilter, setStateFilter] = useState('')
+  const [tagFilter, setTagFilter] = useState('')
+  const [sinceFilter, setSinceFilter] = useState('')
 
   useEffect(() => {
     if (!connected || !client) return
@@ -44,7 +49,8 @@ export function TaskHistory() {
       clearTimeout(searchTimerRef.current)
     }
 
-    if (!query.trim()) {
+    const hasFilters = fileFilter || stateFilter || tagFilter || sinceFilter
+    if (!query.trim() && !hasFilters) {
       setSearchResults(null)
       setSearching(false)
       return
@@ -57,10 +63,15 @@ export function TaskHistory() {
         return
       }
       try {
-        const result = await client.call<{ tasks: SearchTask[] | null }>('task.search', {
-          query: query.trim(),
-          limit: 20,
-        })
+        const params: Record<string, unknown> = { query: query.trim(), limit: 20 }
+        if (fileFilter) params.file = fileFilter
+        if (stateFilter) params.state = stateFilter
+        if (tagFilter) params.tag = tagFilter
+        if (sinceFilter) {
+          const [y, m, d] = sinceFilter.split('-').map(Number)
+          params.since = new Date(y, m - 1, d).toISOString()
+        }
+        const result = await client.call<{ tasks: SearchTask[] | null }>('task.search', params)
         setSearchResults(result.tasks || [])
       } catch {
         setSearchResults([])
@@ -68,7 +79,12 @@ export function TaskHistory() {
         setSearching(false)
       }
     }, 300)
-  }, [client])
+  }, [client, fileFilter, stateFilter, tagFilter, sinceFilter])
+
+  // Trigger search when filters change.
+  useEffect(() => {
+    handleSearch(searchQuery)
+  }, [handleSearch, searchQuery])
 
   // Cleanup timer on unmount
   useEffect(() => {
@@ -81,8 +97,9 @@ export function TaskHistory() {
     return <p className="text-xs text-base-content/50">Loading history...</p>
   }
 
-  const displayTasks = searchQuery.trim() ? searchResults : tasks
-  const isSearchMode = !!searchQuery.trim()
+  const hasActiveFilters = !!(fileFilter || stateFilter || tagFilter || sinceFilter)
+  const isSearchMode = !!searchQuery.trim() || hasActiveFilters
+  const displayTasks = isSearchMode ? searchResults : tasks
 
   return (
     <div className="space-y-2">
@@ -102,6 +119,57 @@ export function TaskHistory() {
           </span>
         )}
       </div>
+
+      {/* Filter toggle */}
+      <button
+        className="btn btn-ghost btn-xs text-base-content/50"
+        onClick={() => setShowFilters(f => !f)}
+      >
+        {showFilters ? '▾ Filters' : '▸ Filters'}
+        {(fileFilter || stateFilter || tagFilter || sinceFilter) && (
+          <span className="badge badge-xs badge-primary ml-1">active</span>
+        )}
+      </button>
+
+      {/* Advanced filters */}
+      {showFilters && (
+        <div className="grid grid-cols-2 gap-1.5">
+          <input
+            type="text"
+            placeholder="File path..."
+            value={fileFilter}
+            onChange={e => setFileFilter(e.target.value)}
+            className="input input-xs input-bordered"
+            aria-label="Filter by file"
+          />
+          <select
+            value={stateFilter}
+            onChange={e => setStateFilter(e.target.value)}
+            className="select select-xs select-bordered"
+            aria-label="Filter by state"
+          >
+            <option value="">Any state</option>
+            <option value="finished">Finished</option>
+            <option value="abandoned">Abandoned</option>
+            <option value="failed">Failed</option>
+          </select>
+          <input
+            type="text"
+            placeholder="Tag..."
+            value={tagFilter}
+            onChange={e => setTagFilter(e.target.value)}
+            className="input input-xs input-bordered"
+            aria-label="Filter by tag"
+          />
+          <input
+            type="date"
+            value={sinceFilter}
+            onChange={e => setSinceFilter(e.target.value)}
+            className="input input-xs input-bordered"
+            aria-label="Since date"
+          />
+        </div>
+      )}
 
       {/* Results */}
       {displayTasks === null ? (

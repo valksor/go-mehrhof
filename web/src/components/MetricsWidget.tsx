@@ -125,6 +125,39 @@ export function MetricsWidget() {
           </div>
         </div>
       )}
+
+      {/* Per-agent performance breakdown */}
+      {metrics.agents && Object.keys(metrics.agents).length > 0 && (
+        <div className="mt-3 pt-3 border-t border-base-300">
+          <span className="text-xs font-semibold opacity-70">Agent Performance</span>
+          <div className="overflow-x-auto mt-1">
+            <table className="table table-xs">
+              <thead>
+                <tr>
+                  <th>Agent</th>
+                  <th className="text-right">Requests</th>
+                  <th className="text-right">Tokens</th>
+                  <th className="text-right">Avg Latency</th>
+                  <th className="text-right">Errors</th>
+                </tr>
+              </thead>
+              <tbody>
+                {Object.entries(metrics.agents)
+                  .sort(([, a], [, b]) => (b.tokens ?? 0) - (a.tokens ?? 0))
+                  .map(([name, stats]) => (
+                    <tr key={name}>
+                      <td className="font-mono">{name}</td>
+                      <td className="text-right font-mono">{stats.requests ?? 0}</td>
+                      <td className="text-right font-mono">{(stats.tokens ?? 0).toLocaleString()}</td>
+                      <td className="text-right font-mono">{(stats.avg_latency_ms ?? 0).toFixed(0)}ms</td>
+                      <td className="text-right font-mono">{(stats.errors ?? 0) > 0 ? <span className="text-error">{stats.errors}</span> : '0'}</td>
+                    </tr>
+                  ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

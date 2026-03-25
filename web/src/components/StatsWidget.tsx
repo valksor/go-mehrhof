@@ -96,6 +96,16 @@ export function StatsWidget() {
             {metrics ? `${(metrics.avg_latency_ms ?? 0).toFixed(1)}ms` : '--'}
           </span>
         </div>
+
+        {/* Total tokens consumed */}
+        {(metrics?.tokens_consumed ?? 0) > 0 && (
+          <div>
+            <span className="opacity-60">Tokens Used</span>
+            <span className="block font-mono">
+              {(metrics?.tokens_consumed ?? 0).toLocaleString()}
+            </span>
+          </div>
+        )}
       </div>
 
       {/* Response cache stats */}

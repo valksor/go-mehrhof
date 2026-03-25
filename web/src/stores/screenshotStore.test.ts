@@ -418,9 +418,12 @@ describe('getScreenshot', () => {
   })
 
   it('returns null on error', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
     const client = makeMockClient()
     client.call.mockRejectedValueOnce(new Error('fetch failed'))
     const result = await useScreenshotStore.getState().getScreenshot('ss-1', client as never)
     expect(result).toBeNull()
+    expect(warn).toHaveBeenCalledWith('Could not fetch screenshot data:', expect.any(Error))
+    warn.mockRestore()
   })
 })

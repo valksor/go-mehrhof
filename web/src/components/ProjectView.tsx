@@ -9,6 +9,7 @@ import { Widget, TaskIcon, FilesIcon, CheckpointsIcon } from './Widget'
 import { ErrorBoundary } from './ErrorBoundary'
 import { PanelLayout } from './PanelLayout'
 import { TaskWidget } from './TaskWidget'
+import { SuggestionBanner } from './SuggestionBanner'
 import { CheckpointsWidget } from './CheckpointsWidget'
 import { RecapWidget } from './RecapWidget'
 import { PhaseMetricsWidget } from './PhaseMetricsWidget'
@@ -30,6 +31,9 @@ const CIStatusPanel = lazy(() => import('./CIStatusPanel').then(m => ({ default:
 const PolicyPanel = lazy(() => import('./PolicyPanel').then(m => ({ default: m.PolicyPanel })))
 const HooksPanel = lazy(() => import('./HooksPanel').then(m => ({ default: m.HooksPanel })))
 const CodegraphPanel = lazy(() => import('./CodegraphPanel').then(m => ({ default: m.CodegraphPanel })))
+const ChangelogPanel = lazy(() => import('./ChangelogPanel').then(m => ({ default: m.ChangelogPanel })))
+const MetricsPanel = lazy(() => import('./MetricsPanel').then(m => ({ default: m.MetricsPanel })))
+const QualityPanel = lazy(() => import('./QualityPanel').then(m => ({ default: m.QualityPanel })))
 
 function ReviewIcon() {
   return (
@@ -79,6 +83,9 @@ export function ProjectView() {
   const [showPolicy, setShowPolicy] = useState(false)
   const [showHooks, setShowHooks] = useState(false)
   const [showCodegraph, setShowCodegraph] = useState(false)
+  const [showChangelog, setShowChangelog] = useState(false)
+  const [showMetrics, setShowMetrics] = useState(false)
+  const [showQuality, setShowQuality] = useState(false)
   const docsData = useDocsURL()
   const debugEnabled = useDebugStore(s => s.enabled)
   useKeyboardShortcuts() // Register keyboard shortcuts (overlay rendered in App.tsx)
@@ -197,6 +204,30 @@ export function ProjectView() {
                     Hooks
                   </button>
                 </li>
+                <li>
+                  <button role="menuitem" onClick={() => { setShowChangelog(true); (document.activeElement as HTMLElement)?.blur() }} className="text-xs gap-2">
+                    <svg aria-hidden="true" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                    </svg>
+                    Changelog
+                  </button>
+                </li>
+                <li>
+                  <button role="menuitem" onClick={() => { setShowMetrics(true); (document.activeElement as HTMLElement)?.blur() }} className="text-xs gap-2">
+                    <svg aria-hidden="true" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                    </svg>
+                    Metrics
+                  </button>
+                </li>
+                <li>
+                  <button role="menuitem" onClick={() => { setShowQuality(true); (document.activeElement as HTMLElement)?.blur() }} className="text-xs gap-2">
+                    <svg aria-hidden="true" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    Quality Gates
+                  </button>
+                </li>
               </ul>
             </div>
             <button
@@ -227,6 +258,7 @@ export function ProjectView() {
         icon={<TaskIcon />}
         defaultCollapsed={widgetStates.task?.collapsed}
       >
+        <SuggestionBanner />
         <TaskWidget embedded />
       </Widget>
 
@@ -359,6 +391,24 @@ export function ProjectView() {
           <CodegraphPanel
             isOpen={showCodegraph}
             onClose={() => setShowCodegraph(false)}
+          />
+        )}
+        {showChangelog && (
+          <ChangelogPanel
+            isOpen={showChangelog}
+            onClose={() => setShowChangelog(false)}
+          />
+        )}
+        {showMetrics && (
+          <MetricsPanel
+            isOpen={showMetrics}
+            onClose={() => setShowMetrics(false)}
+          />
+        )}
+        {showQuality && (
+          <QualityPanel
+            isOpen={showQuality}
+            onClose={() => setShowQuality(false)}
           />
         )}
       </Suspense>

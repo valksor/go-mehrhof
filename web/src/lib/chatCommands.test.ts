@@ -22,11 +22,32 @@ const mockProjectState: Record<string, unknown> = {
   redo: vi.fn(),
   stop: vi.fn(),
   abort: vi.fn(),
+  reset: vi.fn(),
+  retry: vi.fn(),
   update: vi.fn(),
+  queueTask: vi.fn(),
+  dequeueTask: vi.fn(),
+  loadQueue: vi.fn(),
+  taskQueue: [],
+  createFork: vi.fn(),
+  listForks: vi.fn(),
+  compareForks: vi.fn(),
+  selectFork: vi.fn(),
+  forks: [],
+  approveRemote: vi.fn(),
+  mergeRemote: vi.fn(),
+}
+
+const mockGlobalState: Record<string, unknown> = {
+  client: null,
 }
 
 vi.mock('../stores/projectStore', () => ({
   useProjectStore: { getState: () => mockProjectState },
+}))
+
+vi.mock('../stores/globalStore', () => ({
+  useGlobalStore: { getState: () => mockGlobalState },
 }))
 
 vi.mock('../stores/chatStore', () => ({
@@ -480,5 +501,220 @@ describe('command execution', () => {
     setState({ client: { call: mockClientCall } })
 
     await expect(tags.execute('')).resolves.toBe('No tags.')
+  })
+})
+
+// ---------------------------------------------------------------------------
+// New commands — parsing
+// ---------------------------------------------------------------------------
+
+describe('new command parsing', () => {
+  it('parses /reset as action', () => {
+    const result = parseCommand('/reset')
+    expect(result).toMatchObject({ type: 'action' })
+    expect(result!.command!.name).toBe('/reset')
+  })
+
+  it('parses /retry as action', () => {
+    const result = parseCommand('/retry')
+    expect(result).toMatchObject({ type: 'action' })
+    expect(result!.command!.name).toBe('/retry')
+  })
+
+  it('parses /checkpoints goto with sha', () => {
+    const result = parseCommand('/checkpoints goto abc1234')
+    expect(result!.command!.name).toBe('/checkpoints goto')
+    expect(result!.args).toBe('abc1234')
+  })
+
+  it('parses /checkpoints alone', () => {
+    const result = parseCommand('/checkpoints')
+    expect(result!.command!.name).toBe('/checkpoints')
+  })
+
+  it('parses /diff', () => {
+    const result = parseCommand('/diff')
+    expect(result!.command!.name).toBe('/diff')
+  })
+
+  it('parses /show spec', () => {
+    const result = parseCommand('/show spec')
+    expect(result!.command!.name).toBe('/show spec')
+  })
+
+  it('parses /queue add with source', () => {
+    const result = parseCommand('/queue add github:repo#1')
+    expect(result!.command!.name).toBe('/queue add')
+    expect(result!.args).toBe('github:repo#1')
+  })
+
+  it('parses /fork create with label', () => {
+    const result = parseCommand('/fork create experiment')
+    expect(result!.command!.name).toBe('/fork create')
+    expect(result!.args).toBe('experiment')
+  })
+
+  it('parses /changelog with refs', () => {
+    const result = parseCommand('/changelog v1.0..v2.0')
+    expect(result!.command!.name).toBe('/changelog')
+    expect(result!.args).toBe('v1.0..v2.0')
+  })
+
+  it('parses /changelog full with refs', () => {
+    const result = parseCommand('/changelog full v1.0..v2.0')
+    expect(result!.command!.name).toBe('/changelog full')
+    expect(result!.args).toBe('v1.0..v2.0')
+  })
+
+  it('parses /changelog with refs and note', () => {
+    const result = parseCommand('/changelog v1.0..v2.0 only frontend changes')
+    expect(result!.command!.name).toBe('/changelog')
+    expect(result!.args).toBe('v1.0..v2.0 only frontend changes')
+  })
+
+  it('parses /changelog full with refs and note', () => {
+    const result = parseCommand('/changelog full v1.0..v2.0 my note')
+    expect(result!.command!.name).toBe('/changelog full')
+    expect(result!.args).toBe('v1.0..v2.0 my note')
+  })
+
+  it('parses /git status', () => {
+    const result = parseCommand('/git status')
+    expect(result!.command!.name).toBe('/git status')
+  })
+
+  it('parses /memory search with query', () => {
+    const result = parseCommand('/memory search auth tokens')
+    expect(result!.command!.name).toBe('/memory search')
+    expect(result!.args).toBe('auth tokens')
+  })
+
+  it('parses /remote merge', () => {
+    const result = parseCommand('/remote merge')
+    expect(result!.command!.name).toBe('/remote merge')
+  })
+
+  it('parses /security scan', () => {
+    const result = parseCommand('/security scan')
+    expect(result!.command!.name).toBe('/security scan')
+  })
+})
+
+// ---------------------------------------------------------------------------
+// New commands — availability
+// ---------------------------------------------------------------------------
+
+describe('new commands availability', () => {
+  it('/reset is available when active', () => {
+    const reset = COMMANDS.find(c => c.name === '/reset')!
+    setState({ state: 'loaded' })
+    expect(reset.isAvailable()).toBe(true)
+    setState({ state: 'none' })
+    expect(reset.isAvailable()).toBe(false)
+  })
+
+  it('/retry is available when state=failed', () => {
+    const retry = COMMANDS.find(c => c.name === '/retry')!
+    setState({ state: 'failed' })
+    expect(retry.isAvailable()).toBe(true)
+    setState({ state: 'loaded' })
+    expect(retry.isAvailable()).toBe(false)
+  })
+
+  it('/approve is available when state=waiting', () => {
+    const approve = COMMANDS.find(c => c.name === '/approve')!
+    setState({ state: 'waiting' })
+    expect(approve.isAvailable()).toBe(true)
+    setState({ state: 'loaded' })
+    expect(approve.isAvailable()).toBe(false)
+  })
+
+  it('/remote approve is available when state=submitted', () => {
+    const cmd = COMMANDS.find(c => c.name === '/remote approve')!
+    setState({ state: 'submitted' })
+    expect(cmd.isAvailable()).toBe(true)
+    setState({ state: 'loaded' })
+    expect(cmd.isAvailable()).toBe(false)
+  })
+
+  it('/changelog is always available', () => {
+    const cmd = COMMANDS.find(c => c.name === '/changelog')!
+    setState({ state: 'none' })
+    expect(cmd.isAvailable()).toBe(true)
+  })
+
+  it('/workers is always available', () => {
+    const cmd = COMMANDS.find(c => c.name === '/workers')!
+    setState({ state: 'none' })
+    expect(cmd.isAvailable()).toBe(true)
+  })
+})
+
+// ---------------------------------------------------------------------------
+// New commands — execution
+// ---------------------------------------------------------------------------
+
+describe('new commands execution', () => {
+  it('/reset calls store reset', async () => {
+    const reset = COMMANDS.find(c => c.name === '/reset')!
+    await expect(reset.execute('')).resolves.toBe('Task reset.')
+    expect(mockProjectState.reset).toHaveBeenCalledOnce()
+  })
+
+  it('/retry calls store retry', async () => {
+    const retry = COMMANDS.find(c => c.name === '/retry')!
+    await expect(retry.execute('')).resolves.toBe('Retrying failed phase.')
+    expect(mockProjectState.retry).toHaveBeenCalledOnce()
+  })
+
+  it('/queue add returns usage when no args', async () => {
+    const cmd = COMMANDS.find(c => c.name === '/queue add')!
+    expect(await cmd.execute('')).toBe('Usage: /queue add <source>')
+  })
+
+  it('/queue add queues a task', async () => {
+    const cmd = COMMANDS.find(c => c.name === '/queue add')!
+    await cmd.execute('github:repo#1')
+    expect(mockProjectState.queueTask).toHaveBeenCalledWith('github:repo#1')
+  })
+
+  it('/fork create returns usage when no args', async () => {
+    const cmd = COMMANDS.find(c => c.name === '/fork create')!
+    setState({ state: 'loaded' })
+    expect(await cmd.execute('')).toBe('Usage: /fork create <label>')
+  })
+
+  it('/changelog returns usage for bad format', async () => {
+    const cmd = COMMANDS.find(c => c.name === '/changelog')!
+    expect(await cmd.execute('norange')).toContain('Usage')
+    expect(await cmd.execute('')).toContain('Usage')
+  })
+
+  it('/checkpoints returns not connected when no client', async () => {
+    const cmd = COMMANDS.find(c => c.name === '/checkpoints')!
+    setState({ state: 'loaded', client: null })
+    expect(await cmd.execute('')).toBe('Not connected.')
+  })
+
+  it('/checkpoints lists checkpoints', async () => {
+    const cmd = COMMANDS.find(c => c.name === '/checkpoints')!
+    mockClientCall.mockResolvedValue({ checkpoints: [{ sha: 'abc1234567', message: 'Plan done', timestamp: '2026-01-01' }] })
+    setState({ state: 'loaded', client: { call: mockClientCall } })
+    const result = await cmd.execute('')
+    expect(result).toContain('abc1234')
+    expect(result).toContain('Plan done')
+  })
+
+  it('/diff shows changes', async () => {
+    const cmd = COMMANDS.find(c => c.name === '/diff')!
+    mockClientCall.mockResolvedValue({ diff: '+new line\n-old line' })
+    setState({ state: 'loaded', client: { call: mockClientCall } })
+    expect(await cmd.execute('')).toBe('+new line\n-old line')
+  })
+
+  it('/remote merge calls store mergeRemote', async () => {
+    const cmd = COMMANDS.find(c => c.name === '/remote merge')!
+    await cmd.execute('')
+    expect(mockProjectState.mergeRemote).toHaveBeenCalledOnce()
   })
 })

@@ -20,6 +20,7 @@ import { PRPreviewPanel } from './PRPreviewPanel'
 const ChatWidget = lazy(() => import('./ChatWidget').then(m => ({ default: m.ChatWidget })))
 const BrowserPanel = lazy(() => import('./BrowserPanel').then(m => ({ default: m.BrowserPanel })))
 const ReviewPanel = lazy(() => import('./ReviewPanel').then(m => ({ default: m.ReviewPanel })))
+const ForkComparePanel = lazy(() => import('./ForkComparePanel').then(m => ({ default: m.ForkComparePanel })))
 
 const LazyFallback = <div className="flex items-center justify-center h-32"><span className="loading loading-spinner loading-sm" /></div>
 
@@ -60,6 +61,7 @@ export function TabPanel({ className = '' }: TabPanelProps) {
       {activeTab.type === 'review' && <ReviewContent data={activeTab.data} />}
       {activeTab.type === 'filechanges' && <FileChangesContent data={activeTab.data} />}
       {activeTab.type === 'submit-preview' && <PRPreviewPanel data={activeTab.data} />}
+      {activeTab.type === 'fork' && <ForkContent />}
     </div>
   )
 }
@@ -460,6 +462,16 @@ function FileChangesContent({ data }: { data?: Record<string, unknown> }) {
   return (
     <div className="h-full">
       <FileChangesPanel data={data} />
+    </div>
+  )
+}
+
+function ForkContent() {
+  return (
+    <div className="h-full">
+      <Suspense fallback={LazyFallback}>
+        <ForkComparePanel />
+      </Suspense>
     </div>
   )
 }

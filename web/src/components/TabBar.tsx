@@ -8,6 +8,8 @@ interface TabBarProps {
 const TAB_TYPE_OPTIONS: Array<{ type: TabType; label: string; icon: string }> = [
   { type: 'chat', label: 'Chat', icon: 'chat' },
   { type: 'spec', label: 'Spec', icon: 'document' },
+  { type: 'review', label: 'Review', icon: 'review' },
+  { type: 'fork', label: 'Forks', icon: 'fork' },
   { type: 'screenshots', label: 'Screenshots', icon: 'camera' },
   { type: 'jobs', label: 'Jobs', icon: 'jobs' },
   { type: 'files', label: 'Files', icon: 'files' },
@@ -252,6 +254,12 @@ function TabIcon({ type }: { type: Tab['type'] }) {
       return (
         <svg aria-hidden="true" className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4M16 17H4m0 0l4 4m-4-4l4-4" />
+        </svg>
+      )
+    case 'fork':
+      return (
+        <svg aria-hidden="true" className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v6m0 0l-4 4m4-4l4 4M8 17a2 2 0 11-4 0 2 2 0 014 0zm12 0a2 2 0 11-4 0 2 2 0 014 0zM12 5a2 2 0 110-4 2 2 0 010 4z" />
         </svg>
       )
     case 'output':

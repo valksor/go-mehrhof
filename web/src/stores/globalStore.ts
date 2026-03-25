@@ -105,6 +105,8 @@ export interface Metrics {
   events_dropped: number
   permissions_approved: number
   permissions_denied: number
+  tokens_consumed: number
+  agents?: Record<string, { tokens: number; requests: number; errors: number; avg_latency_ms: number }>
 }
 
 interface GlobalState {
