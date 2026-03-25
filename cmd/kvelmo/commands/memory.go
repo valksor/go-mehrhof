@@ -37,6 +37,13 @@ var memoryClearCmd = &cobra.Command{
 	RunE:  runMemoryClear,
 }
 
+var memoryOutcomesCmd = &cobra.Command{
+	Use:   "outcomes",
+	Short: "Show task outcome statistics from memory",
+	Long:  "Display aggregated outcome data (success rates, CI pass rates) from stored task memories.",
+	RunE:  runMemoryOutcomes,
+}
+
 var (
 	memorySearchJSON bool
 	memoryStatsJSON  bool
@@ -46,6 +53,7 @@ func init() {
 	MemoryCmd.AddCommand(memorySearchCmd)
 	MemoryCmd.AddCommand(memoryStatsCmd)
 	MemoryCmd.AddCommand(memoryClearCmd)
+	MemoryCmd.AddCommand(memoryOutcomesCmd)
 
 	memorySearchCmd.Flags().IntP("limit", "n", 10, "Maximum number of results")
 	memorySearchCmd.Flags().Float32P("min-score", "s", 0.0, "Minimum similarity score (0-1)")
@@ -179,4 +187,16 @@ func runMemoryClear(cmd *cobra.Command, args []string) error {
 	}
 
 	return nil
+}
+
+func runMemoryOutcomes(_ *cobra.Command, _ []string) error {
+	ctx, cancel := context.WithTimeout(context.Background(), defaultTimeout)
+	defer cancel()
+
+	resp, err := callGlobal(ctx, "memory.outcomes", nil)
+	if err != nil {
+		return fmt.Errorf("memory.outcomes: %w", err)
+	}
+
+	return outputJSON(resp.Result)
 }

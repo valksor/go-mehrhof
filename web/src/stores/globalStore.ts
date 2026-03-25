@@ -188,6 +188,9 @@ interface GlobalState {
   taskGroups: TaskGroup[]
   loadTaskGroups: () => Promise<void>
   createTaskGroup: (label: string) => Promise<TaskGroup | null>
+  addTaskToGroup: (groupId: string, taskId: string, projectDir: string) => Promise<void>
+  submitTaskGroup: (groupId: string) => Promise<void>
+  getTaskGroupStatus: (groupId: string) => Promise<TaskGroup | null>
   removeTaskGroup: (id: string) => Promise<void>
 }
 
@@ -691,6 +694,43 @@ export const useGlobalStore = create<GlobalState>()(
           return result
         } catch (err) {
           console.warn('Failed to create task group:', err)
+          return null
+        }
+      },
+
+      addTaskToGroup: async (groupId: string, taskId: string, projectDir: string) => {
+        const client = get().client
+        if (!client) return
+
+        try {
+          await client.call('taskgroup.add', { id: groupId, task_id: taskId, project_dir: projectDir, state: 'loaded' })
+          await get().loadTaskGroups()
+        } catch (err) {
+          console.warn('Failed to add task to group:', err)
+        }
+      },
+
+      submitTaskGroup: async (groupId: string) => {
+        const client = get().client
+        if (!client) return
+
+        try {
+          await client.call('taskgroup.submit', { id: groupId })
+          await get().loadTaskGroups()
+        } catch (err) {
+          console.warn('Failed to submit task group:', err)
+        }
+      },
+
+      getTaskGroupStatus: async (groupId: string): Promise<TaskGroup | null> => {
+        const client = get().client
+        if (!client) return null
+
+        try {
+          const result = await client.call<TaskGroup>('taskgroup.status', { id: groupId })
+          return result
+        } catch (err) {
+          console.warn('Failed to get task group status:', err)
           return null
         }
       },

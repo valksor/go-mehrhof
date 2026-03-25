@@ -35,10 +35,14 @@ func init() {
 	ReviewCmd.Flags().StringP("message", "m", "", "Review message/notes")
 	ReviewCmd.Flags().Bool("fix", false, "Auto-fix issues after entering review state")
 	ReviewCmd.Flags().Bool("force", false, "Re-run review even if already reviewed")
+	ReviewCmd.Flags().Bool("adversarial", false, "Run adversarial review (stress-test the implementation)")
 	ReviewCmd.Flags().BoolVarP(&reviewWait, "wait", "w", false, "Wait for job to complete, streaming output")
 
 	ReviewCmd.AddCommand(reviewListCmd)
 	ReviewCmd.AddCommand(reviewViewCmd)
+	ReviewCmd.AddCommand(reviewAdversarialResultsCmd)
+	ReviewCmd.AddCommand(reviewRiskCmd)
+	ReviewCmd.AddCommand(reviewRiskHistoryCmd)
 }
 
 func runReview(cmd *cobra.Command, args []string) error {
@@ -65,6 +69,19 @@ func runReview(cmd *cobra.Command, args []string) error {
 	message, _ := cmd.Flags().GetString("message")
 	fix, _ := cmd.Flags().GetBool("fix")
 	force, _ := cmd.Flags().GetBool("force")
+	adversarial, _ := cmd.Flags().GetBool("adversarial")
+
+	// If --adversarial, run adversarial review via separate RPC
+	if adversarial {
+		ctx := context.Background()
+		resp, advErr := client.Call(ctx, "adversarial.run", nil)
+		if advErr != nil {
+			spinner.Fail("Adversarial review failed")
+			return fmt.Errorf("adversarial.run: %w", advErr)
+		}
+		spinner.Success("Adversarial review started")
+		return outputJSON(resp.Result)
+	}
 
 	params := map[string]any{
 		"approve": approve,
@@ -231,4 +248,61 @@ func runReviewView(cmd *cobra.Command, args []string) error {
 	}
 
 	return nil
+}
+
+// reviewAdversarialResultsCmd shows results of the last adversarial review.
+var reviewAdversarialResultsCmd = &cobra.Command{
+	Use:   "adversarial-results",
+	Short: "Show results of the last adversarial review",
+	RunE:  runReviewAdversarialResults,
+}
+
+func runReviewAdversarialResults(_ *cobra.Command, _ []string) error {
+	ctx, cancel := context.WithTimeout(context.Background(), defaultTimeout)
+	defer cancel()
+
+	resp, err := callWorktree(ctx, "adversarial.results", nil)
+	if err != nil {
+		return fmt.Errorf("adversarial.results: %w", err)
+	}
+
+	return outputJSON(resp.Result)
+}
+
+// reviewRiskCmd evaluates the risk score for the current task.
+var reviewRiskCmd = &cobra.Command{
+	Use:   "risk",
+	Short: "Evaluate risk score for the current task",
+	RunE:  runReviewRisk,
+}
+
+func runReviewRisk(_ *cobra.Command, _ []string) error {
+	ctx, cancel := context.WithTimeout(context.Background(), defaultTimeout)
+	defer cancel()
+
+	resp, err := callWorktree(ctx, "risk.evaluate", nil)
+	if err != nil {
+		return fmt.Errorf("risk.evaluate: %w", err)
+	}
+
+	return outputJSON(resp.Result)
+}
+
+// reviewRiskHistoryCmd shows the risk evaluation history.
+var reviewRiskHistoryCmd = &cobra.Command{
+	Use:   "risk-history",
+	Short: "Show risk evaluation history",
+	RunE:  runReviewRiskHistory,
+}
+
+func runReviewRiskHistory(_ *cobra.Command, _ []string) error {
+	ctx, cancel := context.WithTimeout(context.Background(), defaultTimeout)
+	defer cancel()
+
+	resp, err := callWorktree(ctx, "risk.history", nil)
+	if err != nil {
+		return fmt.Errorf("risk.history: %w", err)
+	}
+
+	return outputJSON(resp.Result)
 }

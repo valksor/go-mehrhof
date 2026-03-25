@@ -24,12 +24,28 @@ The prompt ID is shown in 'kvelmo status' when a quality gate question is waitin
 	RunE: runQualityRespond,
 }
 
+var qualityAutofixStatusCmd = &cobra.Command{
+	Use:   "autofix-status",
+	Short: "Show the current auto-fix loop status",
+	Long:  "Display the status of the quality gate auto-fix loop including attempt count and result.",
+	RunE:  runQualityAutofixStatus,
+}
+
+var qualityFailclassCmd = &cobra.Command{
+	Use:   "failclass",
+	Short: "Show failure classification statistics",
+	Long:  "Display statistics about failure pattern classification (flaky vs genuine) for quality gate findings.",
+	RunE:  runQualityFailclass,
+}
+
 func init() {
 	qualityRespondCmd.Flags().String("prompt-id", "", "Prompt ID to respond to (required)")
 	qualityRespondCmd.Flags().Bool("yes", false, "Answer yes")
 	qualityRespondCmd.Flags().Bool("no", false, "Answer no")
 	_ = qualityRespondCmd.MarkFlagRequired("prompt-id")
 	QualityCmd.AddCommand(qualityRespondCmd)
+	QualityCmd.AddCommand(qualityAutofixStatusCmd)
+	QualityCmd.AddCommand(qualityFailclassCmd)
 }
 
 func runQualityRespond(cmd *cobra.Command, args []string) error {
@@ -59,4 +75,28 @@ func runQualityRespond(cmd *cobra.Command, args []string) error {
 	}
 
 	return nil
+}
+
+func runQualityAutofixStatus(_ *cobra.Command, _ []string) error {
+	ctx, cancel := context.WithTimeout(context.Background(), defaultTimeout)
+	defer cancel()
+
+	resp, err := callWorktree(ctx, "autofix.status", nil)
+	if err != nil {
+		return fmt.Errorf("autofix.status: %w", err)
+	}
+
+	return outputJSON(resp.Result)
+}
+
+func runQualityFailclass(_ *cobra.Command, _ []string) error {
+	ctx, cancel := context.WithTimeout(context.Background(), defaultTimeout)
+	defer cancel()
+
+	resp, err := callWorktree(ctx, "failclass.stats", nil)
+	if err != nil {
+		return fmt.Errorf("failclass.stats: %w", err)
+	}
+
+	return outputJSON(resp.Result)
 }

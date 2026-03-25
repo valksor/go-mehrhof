@@ -217,6 +217,9 @@ func init() {
 	// Cross-repo task groups
 	rootCmd.AddCommand(commands.GroupCmd)
 
+	// Response cache management
+	rootCmd.AddCommand(commands.CacheCmd)
+
 	// Raw JSON-RPC access
 	rootCmd.AddCommand(commands.RPCCmd)
 

@@ -59,6 +59,7 @@ export function TabBar({ className = '' }: TabBarProps) {
       review: 'Review',
       filechanges: 'File Changes',
       'submit-preview': 'PR Preview',
+      fork: 'Forks',
     }
     openTab({
       id: newId,

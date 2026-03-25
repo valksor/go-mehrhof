@@ -146,6 +146,7 @@ Each transition creates a git checkpoint. `undo`/`redo` navigate between checkpo
 | `configcheck/` | Configuration drift detection |
 | `discovery/` | Project command scanning (Makefile, package.json, Taskfile) |
 | `eventlog/` | Append-only JSONL event log for task lifecycle replay |
+| `failclass/` | Failure pattern classification (flaky vs genuine) for quality gate findings |
 | `filter/` | Generic type-safe in-memory filtering with predicates (not yet wired) |
 | `findings/` | Unified finding model with gate rules and phase-aware quality profiles |
 | `graph/` | Dependency graph scheduling for parallel sub-tasks within phases |
@@ -154,11 +155,16 @@ Each transition creates a git checkpoint. `undo`/`redo` navigate between checkpo
 | `onboarding/` | User onboarding workflows |
 | `page/` | Pagination primitives (not yet wired) |
 | `policy/` | Workflow policy checking and validation |
+| `progress/` | Phase progress estimation with historical calibration and ETA |
+| `provision/` | Smart worktree provisioning (config copy, dependency symlinks) |
 | `quality/` | Code quality gate execution |
 | `ratelimit/` | Rate limiting utilities |
 | `report/` | Compliance report generation |
+| `respcache/` | Semantic response cache for agent prompt deduplication |
 | `retry/` | Retry logic with exponential backoff |
+| `riskeval/` | Risk scoring for task-level auto-approval decisions |
 | `search/` | Hybrid fuzzy + exact text search with RRF scoring (not yet wired) |
+| `taskgroup/` | Cross-repo task group coordination with synchronized submit |
 | `testutil/` | Test helpers and fixtures |
 | `timeline/` | Activity timeline service over activitylog (not yet wired) |
 | `trace/` | Distributed tracing |
@@ -236,6 +242,7 @@ Commands in `cmd/kvelmo/commands/`. Entry point: `serve` (global socket + web se
 - `delete` - Delete task permanently
 - `update` - Refresh task from source
 - `checklist` - Manage review checklist items (check, uncheck, list)
+- `fork` - Fork task into parallel alternatives (create, list, compare, select)
 
 **Governance & quality:**
 - `approve` - Approve workflow transitions
@@ -249,6 +256,7 @@ Commands in `cmd/kvelmo/commands/`. Entry point: `serve` (global socket + web se
 - `queue` - Task queue management (add, remove, list, reorder)
 - `batch` - Run actions across all active projects
 - `catalog` - Browse and use task templates
+- `group` - Cross-repo task group management (create, add, list, status, submit, remove)
 
 **Context & debugging:**
 - `chat` - Interactive agent conversation

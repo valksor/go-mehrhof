@@ -268,6 +268,10 @@ interface ProjectState {
 
   // Conversation forks
   forks: ForkInfo[]
+  createFork: (label: string) => Promise<ForkInfo | null>
+  listForks: () => Promise<void>
+  compareForks: () => Promise<Record<string, unknown> | null>
+  selectFork: (forkId: string) => Promise<void>
 
   // Dry-run mode
   dryRunMode: boolean
@@ -658,7 +662,8 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
           }
         } else if (msg.type === 'risk_evaluated') {
           try {
-            const riskData = typeof msg.data === 'string' ? JSON.parse(msg.data) : msg.data
+            const rawData = (msg as { data?: unknown }).data
+            const riskData = typeof rawData === 'string' ? JSON.parse(rawData) : rawData
             if (riskData && typeof riskData.score === 'number') {
               set({ riskScore: riskData as { score: number; factors: Record<string, number>; level: string } })
               get().appendOutput(`Risk evaluated: ${riskData.score.toFixed(2)} (${riskData.level})`)
@@ -1681,6 +1686,58 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
       set({ cacheStats: { enabled: true, entries: 0, hits: 0, misses: 0, hit_rate: 0, tokens_saved: 0 } })
     } catch {
       // Ignore clear failures
+    }
+  },
+
+  createFork: async (label: string): Promise<ForkInfo | null> => {
+    const client = get().client
+    if (!client) return null
+
+    try {
+      const result = await client.call<ForkInfo>('fork.create', { label })
+      await get().listForks()
+      return result
+    } catch (err) {
+      console.warn('Failed to create fork:', err)
+      return null
+    }
+  },
+
+  listForks: async () => {
+    const client = get().client
+    if (!client) return
+
+    try {
+      const result = await client.call<{ forks: ForkInfo[] }>('fork.list', {})
+      set({ forks: result.forks || [] })
+    } catch (err) {
+      console.warn('Failed to list forks:', err)
+    }
+  },
+
+  compareForks: async (): Promise<Record<string, unknown> | null> => {
+    const client = get().client
+    if (!client) return null
+
+    try {
+      const result = await client.call<Record<string, unknown>>('fork.compare', {})
+      return result
+    } catch (err) {
+      console.warn('Failed to compare forks:', err)
+      return null
+    }
+  },
+
+  selectFork: async (forkId: string) => {
+    const client = get().client
+    if (!client) return
+
+    try {
+      await client.call('fork.select', { fork_id: forkId })
+      await get().listForks()
+      await get().refreshStatus()
+    } catch (err) {
+      set({ error: err instanceof Error ? err.message : 'Failed to select fork' })
     }
   }
 }))

@@ -87,9 +87,15 @@ func init() {
 	StartCmd.Flags().StringSliceVar(&startContextFiles, "file", nil, "Attach file context (e.g., --file src/main.go --file pkg/handler.go:40-60)")
 	StartCmd.Flags().StringSliceVar(&startContextSymbol, "symbol", nil, "Attach symbol context (e.g., --symbol HandleRequest)")
 	StartCmd.Flags().StringSliceVar(&startContextCommit, "commit", nil, "Attach commit context (e.g., --commit abc123)")
+	StartCmd.Flags().Bool("provision-preview", false, "Preview what would be provisioned for the worktree (dry run)")
 }
 
-func runStart(_ *cobra.Command, args []string) error {
+func runStart(cmd *cobra.Command, args []string) error {
+	provisionPreview, _ := cmd.Flags().GetBool("provision-preview")
+	if provisionPreview {
+		return runProvisionPreview()
+	}
+
 	if startText == "-" {
 		data, err := io.ReadAll(os.Stdin)
 		if err != nil {
@@ -515,4 +521,17 @@ func validateContextItems(items []conductor.ContextItem) error {
 	}
 
 	return nil
+}
+
+// runProvisionPreview calls the provision.preview RPC to show what would be provisioned.
+func runProvisionPreview() error {
+	ctx, cancel := context.WithTimeout(context.Background(), defaultTimeout)
+	defer cancel()
+
+	resp, err := callWorktree(ctx, "provision.preview", nil)
+	if err != nil {
+		return fmt.Errorf("provision.preview: %w", err)
+	}
+
+	return outputJSON(resp.Result)
 }

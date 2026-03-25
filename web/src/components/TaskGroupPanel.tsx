@@ -4,10 +4,26 @@ import type { TaskGroup } from '../stores/globalStore'
 import { AccessibleModal } from './ui/AccessibleModal'
 
 export function TaskGroupPanel({ onClose }: { onClose: () => void }) {
-  const { taskGroups, loadTaskGroups, createTaskGroup, removeTaskGroup, connected } = useGlobalStore()
+  const {
+    taskGroups,
+    loadTaskGroups,
+    createTaskGroup,
+    addTaskToGroup,
+    submitTaskGroup,
+    getTaskGroupStatus,
+    removeTaskGroup,
+    connected,
+  } = useGlobalStore()
   const [newLabel, setNewLabel] = useState('')
   const [creating, setCreating] = useState(false)
   const [expandedId, setExpandedId] = useState<string | null>(null)
+
+  // Add task form state (per group)
+  const [addingToGroup, setAddingToGroup] = useState<string | null>(null)
+  const [addProjectDir, setAddProjectDir] = useState('')
+  const [addTaskId, setAddTaskId] = useState('')
+  const [submitting, setSubmitting] = useState<string | null>(null)
+  const [statusDetail, setStatusDetail] = useState<TaskGroup | null>(null)
 
   useEffect(() => {
     if (connected) loadTaskGroups()
@@ -20,6 +36,25 @@ export function TaskGroupPanel({ onClose }: { onClose: () => void }) {
     setNewLabel('')
     setCreating(false)
   }, [newLabel, createTaskGroup])
+
+  const handleAddTask = useCallback(async (groupId: string) => {
+    if (!addTaskId.trim() || !addProjectDir.trim()) return
+    await addTaskToGroup(groupId, addTaskId.trim(), addProjectDir.trim())
+    setAddTaskId('')
+    setAddProjectDir('')
+    setAddingToGroup(null)
+  }, [addTaskId, addProjectDir, addTaskToGroup])
+
+  const handleSubmit = useCallback(async (groupId: string) => {
+    setSubmitting(groupId)
+    await submitTaskGroup(groupId)
+    setSubmitting(null)
+  }, [submitTaskGroup])
+
+  const handleRefreshStatus = useCallback(async (groupId: string) => {
+    const result = await getTaskGroupStatus(groupId)
+    setStatusDetail(result)
+  }, [getTaskGroupStatus])
 
   const handleRemove = useCallback(async (id: string) => {
     await removeTaskGroup(id)
@@ -82,7 +117,7 @@ export function TaskGroupPanel({ onClose }: { onClose: () => void }) {
               <div className="collapse-content">
                 <div className="text-xs opacity-60 mb-2">ID: {g.id}</div>
                 {g.tasks.length === 0 ? (
-                  <p className="text-sm opacity-50">No tasks in group. Use CLI to add tasks.</p>
+                  <p className="text-sm opacity-50">No tasks in this group yet.</p>
                 ) : (
                   <table className="table table-xs">
                     <thead>
@@ -103,12 +138,75 @@ export function TaskGroupPanel({ onClose }: { onClose: () => void }) {
                     </tbody>
                   </table>
                 )}
-                <div className="mt-2 flex justify-end">
+
+                {/* Add task form */}
+                {addingToGroup === g.id ? (
+                  <div className="mt-3 p-2 bg-base-300 rounded space-y-2">
+                    <input
+                      type="text"
+                      className="input input-bordered input-xs w-full"
+                      placeholder="Project directory (e.g. /path/to/project)"
+                      value={addProjectDir}
+                      onChange={(e) => setAddProjectDir(e.target.value)}
+                    />
+                    <input
+                      type="text"
+                      className="input input-bordered input-xs w-full"
+                      placeholder="Task ID"
+                      value={addTaskId}
+                      onChange={(e) => setAddTaskId(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && handleAddTask(g.id)}
+                    />
+                    <div className="flex gap-2 justify-end">
+                      <button className="btn btn-ghost btn-xs" onClick={() => setAddingToGroup(null)}>
+                        Cancel
+                      </button>
+                      <button
+                        className="btn btn-primary btn-xs"
+                        onClick={() => handleAddTask(g.id)}
+                        disabled={!addTaskId.trim() || !addProjectDir.trim()}
+                      >
+                        Add
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <button
+                    className="btn btn-ghost btn-xs mt-2"
+                    onClick={() => { setAddingToGroup(g.id); setAddProjectDir(''); setAddTaskId('') }}
+                  >
+                    + Add Task
+                  </button>
+                )}
+
+                {/* Status detail (after refresh) */}
+                {statusDetail && statusDetail.id === g.id && (
+                  <div className="mt-2 p-2 bg-base-300 rounded text-xs">
+                    <div>Status: <strong>{statusDetail.status}</strong></div>
+                    <div>Tasks: {statusDetail.tasks.length}</div>
+                    <div>Updated: {statusDetail.updated_at}</div>
+                  </div>
+                )}
+
+                <div className="mt-2 flex gap-2 justify-end">
+                  <button
+                    className="btn btn-ghost btn-xs"
+                    onClick={() => handleRefreshStatus(g.id)}
+                  >
+                    Refresh
+                  </button>
+                  <button
+                    className="btn btn-info btn-xs"
+                    onClick={() => handleSubmit(g.id)}
+                    disabled={submitting === g.id || g.tasks.length === 0}
+                  >
+                    {submitting === g.id ? 'Submitting...' : 'Submit Group'}
+                  </button>
                   <button
                     className="btn btn-ghost btn-xs text-error"
                     onClick={() => handleRemove(g.id)}
                   >
-                    Remove Group
+                    Remove
                   </button>
                 </div>
               </div>
