@@ -1,166 +1,158 @@
 # Your First Task
 
-A complete walkthrough of creating and completing your first task with kvelmo.
+This walkthrough shows the first full task flow with the Web UI as the primary path, while keeping the CLI visible as a companion tool.
 
-## Prerequisites
+## Before You Start
 
-- kvelmo installed (`kvelmo version` works)
-- An agent CLI installed (e.g., Claude)
-- A project to work on
+Make sure you have:
 
-## Step 1: Start the Server
+- kvelmo installed
+- a working project directory
+- Git available
+- at least one configured agent path
 
-Open a terminal and start kvelmo:
+Quick checks:
+
+```bash
+kvelmo version
+kvelmo diagnose
+```
+
+## Step 1: Start the Local Server
+
+From the project you want to work in:
 
 ```bash
 cd /path/to/your/project
-kvelmo serve
+kvelmo serve --open
 ```
 
-You should see:
-```
-Global socket listening at ~/.valksor/kvelmo/global.sock
-Web UI available at http://localhost:6337
+If the browser does not open automatically, go to `http://localhost:6337`.
+
+## Step 2: Create a Task
+
+In the Web UI:
+
+1. Open the target project
+2. Start a new task
+3. Add a concise title
+4. Add a concrete description with enough implementation detail to review
+
+Example task:
+
+```text
+Add a GET /hello endpoint that returns "Hello, World!" and include a basic test.
 ```
 
-## Step 2: Create a Task File
+## Step 3: Plan
 
-Create a simple task. In your project directory:
+Run the planning step from the browser.
+
+What to check:
+
+- does the task understanding match what you asked for
+- does the plan touch the right files or areas
+- are there gaps in testing, migration, or rollout expectations
+
+If the plan is off, adjust the task description or add clarifying notes before continuing.
+
+## Step 4: Implement
+
+Run the implementation step.
+
+Use the Web UI to watch:
+
+- live output
+- file changes
+- task state
+- related context such as logs or chat
+
+If you want a terminal view while the same task is running:
 
 ```bash
-cat > task.md << 'EOF'
----
-title: Add hello endpoint
----
-
-Add a GET /hello endpoint that returns "Hello, World!".
-
-Requirements:
-- Return JSON response
-- Status code 200
-EOF
+kvelmo status
+kvelmo watch
 ```
 
-## Step 3: Start the Task
+## Step 5: Simplify or Optimize if Needed
 
-In a new terminal:
+Some tasks benefit from an extra refinement pass after the first implementation succeeds.
+
+Use:
+
+- `simplify` when the code works but feels heavier than necessary
+- `optimize` when you want a quality-focused follow-up pass
 
 ```bash
-kvelmo start --from file:task.md
+kvelmo simplify
+kvelmo optimize
 ```
 
-Output:
-```
-Task started: Add hello endpoint
-Branch created: feature/add-hello-endpoint
-State: loaded
-```
-
-## Step 4: Plan
-
-Generate a specification:
-
-```bash
-kvelmo plan
-```
-
-Watch the agent analyze your codebase and create a plan. When done:
-```
-State: planned
-Specification: .kvelmo/specifications/specification.md
-```
-
-Review the specification:
-```bash
-cat .kvelmo/specifications/specification.md
-```
-
-## Step 5: Implement
-
-Execute the plan:
-
-```bash
-kvelmo implement
-```
-
-Watch the agent write code. When done:
-```
-State: implemented
-Files modified: src/routes/hello.js
-```
-
-Check the changes:
-```bash
-git diff
-```
+These phases are optional, not mandatory for every task.
 
 ## Step 6: Review
 
-Review the implementation:
+Review the result before submission.
+
+Focus on:
+
+- diff quality
+- test coverage expectations
+- findings, policy, or CI signals
+- whether the task intent was actually met
+
+If the result is not acceptable, recover instead of forcing it forward:
 
 ```bash
-kvelmo review
-```
-
-If satisfied, you're ready to submit. If not:
-```bash
-kvelmo undo  # Go back to planned state
-# Adjust task description or plan
-kvelmo implement  # Try again
+kvelmo undo
+kvelmo redo
+kvelmo reset
 ```
 
 ## Step 7: Submit
 
-Create a PR:
+Submit the task when it is ready to become a pull request.
+
+At this point kvelmo moves from local execution into your team-facing workflow.
+
+## Step 8: Finish
+
+After merge, run cleanup:
 
 ```bash
+kvelmo finish
+```
+
+## CLI Equivalent
+
+If you prefer to run the same flow in the terminal:
+
+```bash
+kvelmo start "Add a GET /hello endpoint that returns Hello, World! and include a basic test."
+kvelmo plan
+kvelmo implement
+# kvelmo simplify   # optional cleanup pass
+# kvelmo optimize   # optional quality pass
+kvelmo review
 kvelmo submit
+kvelmo finish
 ```
 
-Output:
-```
-PR created: https://github.com/your/repo/pull/123
-State: submitted
-```
+## What This Tutorial Shows
 
-## Using the Web UI
+This is the common path, not the whole surface area.
 
-All of the above can be done in the Web UI:
+kvelmo also supports:
 
-1. Open http://localhost:6337
-2. Click **New Task**
-3. Enter title: "Add hello endpoint"
-4. Enter description (same as above)
-5. Click **Start**
-6. Click **Plan**
-7. Review the specification
-8. Click **Implement**
-9. Review changes in the Changes panel
-10. Click **Submit**
+- external task providers
+- task queues and groups
+- recordings, exports, and activity logs
+- policy, CI, and security surfaces
+- TUI and desktop interfaces over the same local state
 
-## Common Issues
+## Next Reading
 
-### "No agent found"
-
-Install an agent CLI:
-```bash
-# Check if Claude is installed
-claude --version
-```
-
-### "Branch already exists"
-
-Delete the old branch:
-```bash
-git branch -D feature/add-hello-endpoint
-```
-
-### "Specification doesn't look right"
-
-Add more context to your task description and re-plan.
-
-## Next Steps
-
-- [Web UI Guide](/web-ui/getting-started.md) — Learn the visual interface
-- [CLI Reference](/cli/index.md) — Explore all commands
-- [Workflow Concepts](/concepts/workflow.md) — Understand the philosophy
+- [Quickstart](/quickstart.md)
+- [Web UI Getting Started](/web-ui/getting-started.md)
+- [CLI Overview](/cli/index.md)
+- [Workflow Concepts](/concepts/workflow.md)

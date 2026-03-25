@@ -1,158 +1,170 @@
 # CLI Reference
 
-The kvelmo CLI provides a text-based interface for power users and automation.
+The CLI is the most direct interface to kvelmo's local orchestration system.
 
-## Installation
+Use it when you want explicit control over task state, scripting and automation hooks, provider operations, shell-native tooling, or system-facing commands that do not belong in the browser.
 
-```bash
-curl -fsSL https://raw.githubusercontent.com/valksor/kvelmo/master/install.sh | bash
-```
+The Web UI is the primary experience for most users, but the CLI is the clearest way to understand the product's full control surface.
 
-## Global Flags
+## What the CLI Is Best At
 
-All commands support these global flags:
+- scripting and automation
+- shell integration
+- daemon lifecycle control
+- provider operations
+- raw inspection and recovery flows
+- commands that intentionally stay outside the browser
 
-| Flag           | Description              |
-|----------------|--------------------------|
-| `--help`, `-h` | Show help for a command  |
-| `--version`    | Show version information |
+## Core Workflow
 
-## Reference Taxonomy
-
-The CLI docs include three kinds of reference pages:
-
-- **Commands** — runnable entries such as `kvelmo plan` or `kvelmo status`
-- **Nested command families** — provider-scoped or grouped commands such as `kvelmo github login`
-- **Flags and behavioral references** — shared options such as [`--wait`](/cli/wait.md)
-
-Use the tables below as a command map, not as a guarantee that every page is a top-level `kvelmo <name>` command.
-
-## Command Categories
-
-### Workflow Commands
-
-Commands that drive the task lifecycle:
-
-| Command                        | Description                            |
-|--------------------------------|----------------------------------------|
-| [start](/cli/start.md)         | Load task from provider, create branch |
-| [plan](/cli/plan.md)           | Generate implementation specification  |
-| [implement](/cli/implement.md) | Execute the specification              |
-| [simplify](/cli/simplify.md)   | Optional: simplify code for clarity    |
-| [optimize](/cli/optimize.md)   | Optional: optimize code quality        |
-| [review](/cli/review.md)       | Human review + security scan           |
-| [submit](/cli/submit.md)       | Create PR and submit to provider       |
-| [refresh](/cli/refresh.md)     | Check PR status and update state       |
-| [finish](/cli/finish.md)       | Clean up after PR merge                |
-
-### Navigation Commands
-
-Commands for moving through your work history:
-
-| Command                    | Description                             |
-|----------------------------|-----------------------------------------|
-| [undo](/cli/undo.md)       | Revert to previous checkpoint           |
-| [redo](/cli/redo.md)       | Restore next checkpoint                 |
-| [reset](/cli/reset.md)     | Recover from failed state               |
-| [abort](/cli/abort.md)     | Abort current task                      |
-| [abandon](/cli/abandon.md) | Full cleanup (stop + branch + work dir) |
-
-### Information Commands
-
-Commands for viewing status and information:
-
-| Command                            | Description                    |
-|------------------------------------|--------------------------------|
-| [status](/cli/status.md)           | Show current task state        |
-| [watch](/cli/watch.md)             | Stream live task output        |
-| [tui](/cli/tui.md)                 | Interactive terminal UI        |
-| [logs](/cli/logs.md)               | Show agent activity log        |
-| [diff](/cli/diff.md)               | Show what the agent changed    |
-| [show](/cli/show.md)               | Display task artifacts (specs) |
-| [stats](/cli/stats.md)             | Show task analytics            |
-| [list](/cli/list.md)               | List all tasks in workspace    |
-| [checkpoints](/cli/checkpoints.md) | List git checkpoints           |
-| [jobs](/cli/jobs.md)               | List worker jobs               |
-
-### Management Commands
-
-Commands for managing the kvelmo system:
-
-| Command                      | Description                      |
-|------------------------------|----------------------------------|
-| [serve](/cli/serve.md)       | Start global socket + web server |
-| [config](/cli/config.md)     | Configuration management         |
-| [projects](/cli/projects.md) | Project registry management      |
-| [workers](/cli/workers.md)   | Worker pool status               |
-| [delete](/cli/delete.md)     | Delete terminal task             |
-| [update](/cli/update.md)     | Re-fetch task from provider      |
-| [stop](/cli/stop.md)         | Stop running job                 |
-| [diagnose](/cli/diagnose.md) | Check system requirements        |
-| [cleanup](/cli/cleanup.md)   | Remove stale socket files        |
-| [shutdown](/cli/shutdown.md) | Shutdown worktree socket server  |
-
-### Authentication Commands
-
-Nested provider commands for authenticating with task providers:
-
-| Nested command                | Description              |
-|-------------------------------|--------------------------|
-| [github login](/cli/login.md) | Authenticate with GitHub |
-| [gitlab login](/cli/login.md) | Authenticate with GitLab |
-| [linear login](/cli/login.md) | Authenticate with Linear |
-| [wrike login](/cli/login.md)  | Authenticate with Wrike  |
-| [jira login](/cli/login.md)   | Authenticate with Jira   |
-| [azuredevops login](/cli/login.md) | Authenticate with Azure DevOps |
-
-### Shared References
-
-Behavior references shared by multiple commands:
-
-| Reference                    | Description                                    |
-|-----------------------------|------------------------------------------------|
-| [--wait flag](/cli/wait.md) | Block on supported phase commands until completion |
-| [Provider login](/cli/login.md) | Shared reference for provider-scoped `login` subcommands |
-| [test-provider](/cli/test-provider.md) | Provider connectivity check command |
-
-### Utility Commands
-
-Additional utility commands:
-
-| Command                            | Description                      |
-|------------------------------------|----------------------------------|
-| [chat](/cli/chat.md)               | Interactive chat with agent      |
-| [explain](/cli/explain.md)         | Ask agent to explain last action |
-| [pipe](/cli/pipe.md)               | Run one-shot prompt (no server)  |
-| [memory](/cli/memory.md)           | Memory management                |
-| [files](/cli/files.md)             | File browser                     |
-| [screenshots](/cli/screenshots.md) | Screenshot management            |
-| [recordings](/cli/recordings.md)   | Agent interaction recordings     |
-| [browse](/cli/browse.md)           | Open URLs in browser             |
-| [browser](/cli/browser.md)         | Browser automation               |
-| [git](/cli/git.md)                 | Git operations                   |
-| [remote](/cli/remote.md)           | Remote provider ops (approve, merge) |
-| [quality](/cli/quality.md)         | Quality gate controls            |
-| [completion](/cli/completion.md)   | Shell completion setup           |
-
-## Quick Example
+The common path remains:
 
 ```bash
-# Start a task from a file
 kvelmo start --from file:task.md
-
-# Run the workflow
 kvelmo plan
 kvelmo implement
 kvelmo review
 kvelmo submit
-
-# Check status at any time
-kvelmo status
-
-# Undo if something goes wrong
-kvelmo undo
+kvelmo finish
 ```
 
-## Web UI
+Optional follow-up phases also exist:
 
-Prefer a visual interface? See [Web UI Guide](/web-ui/getting-started.md).
+```bash
+kvelmo simplify
+kvelmo optimize
+```
+
+Quick path:
+
+```bash
+kvelmo quick "Fix the broken validation message"
+```
+
+## Shared State With Other Interfaces
+
+The CLI does not run a different workflow. It operates on the same local task state used by the Web UI, desktop app, and TUI.
+
+That means you can:
+
+- start a task in the browser
+- inspect it in CLI
+- continue it in TUI
+- return to the browser for review
+
+## Command Areas
+
+### Workflow
+
+The workflow commands move a task through the lifecycle:
+
+| Command | Description |
+|---------|-------------|
+| [start](/cli/start.md) | Load or create a task |
+| [plan](/cli/plan.md) | Generate the implementation specification |
+| [implement](/cli/implement.md) | Execute the approved plan |
+| [simplify](/cli/simplify.md) | Run a clarity-focused pass |
+| [optimize](/cli/optimize.md) | Run a quality-focused pass |
+| [review](/cli/review.md) | Enter the review checkpoint |
+| [submit](/cli/submit.md) | Create the pull request |
+| [finish](/cli/finish.md) | Clean up after merge or completion |
+| [quick](/cli/quick.md) | Fast path that skips planning |
+
+### Navigation and Recovery
+
+Use these when you need visibility or control over task progression:
+
+| Command | Description |
+|---------|-------------|
+| [status](/cli/status.md) | Inspect current task state |
+| [watch](/cli/watch.md) | Stream progress |
+| [undo](/cli/undo.md) | Go back to a checkpoint |
+| [redo](/cli/redo.md) | Restore an undone checkpoint |
+| [reset](/cli/reset.md) | Recover task state |
+| [retry](/cli/retry.md) | Re-run a failed phase |
+| [abort](/cli/abort.md) | Force a task into failed state |
+| [stop](/cli/stop.md) | Interrupt running work |
+| [abandon](/cli/abandon.md) | Discard the current task |
+
+### Governance and Review
+
+These commands sit around execution rather than replacing it:
+
+| Command | Description |
+|---------|-------------|
+| [approve](/cli/approve.md) | Record approval decisions |
+| [checklist](/cli/checklist.md) | Manage review checklist items |
+| [audit](/cli/audit.md) | Inspect audit trail data |
+| [policy](/cli/policy.md) | Evaluate workflow policy |
+| [quality](/cli/quality.md) | Run quality gates |
+| [ci](/cli/ci.md) | Inspect CI status |
+| [security](/cli/security.md) | Run security scanning |
+
+### Information and Context
+
+These commands help you understand task and project state:
+
+| Command | Description |
+|---------|-------------|
+| [show](/cli/show.md) | Display saved workflow artifacts |
+| [diff](/cli/diff.md) | Inspect changed files |
+| [checkpoints](/cli/checkpoints.md) | Inspect checkpoint history |
+| [jobs](/cli/jobs.md) | Inspect running and queued jobs |
+| [logs](/cli/logs.md) | Review logs |
+| [activity](/cli/activity.md) | Inspect RPC activity |
+| [eventlog](/cli/eventlog.md) | View lifecycle events |
+| [recap](/cli/recap.md) | Summarize state for resume |
+| [explain](/cli/explain.md) | Ask for explanation of recent behavior |
+| [stats](/cli/stats.md) | View metrics and counters |
+
+### Project Operations
+
+These commands cover the broader operational surface:
+
+| Command | Description |
+|---------|-------------|
+| [queue](/cli/queue.md) | Manage task queues |
+| [batch](/cli/batch.md) | Run actions across projects |
+| [catalog](/cli/catalog.md) | Work with task templates |
+| [fork](/cli/fork.md) | Branch task alternatives |
+| [group](/cli/group.md) | Coordinate task groups |
+| [projects](/cli/projects.md) | Manage registered projects |
+| [workers](/cli/workers.md) | Manage worker pools |
+| [backup](/cli/backup.md) | Export state for recovery |
+| [restore](/cli/restore.md) | Restore saved state |
+| [export](/cli/export.md) | Export task data |
+| [report](/cli/report.md) | Generate reports |
+| [notify](/cli/notify.md) | Test notification delivery |
+| [hooks](/cli/hooks.md) | Inspect workflow hooks |
+| [access](/cli/access.md) | Manage access tokens |
+
+### Interface and Utility Commands
+
+| Command | Description |
+|---------|-------------|
+| [serve](/cli/serve.md) | Start sockets and web server |
+| [shutdown](/cli/shutdown.md) | Stop the server |
+| [tui](/cli/tui.md) | Open the terminal UI |
+| [chat](/cli/chat.md) | Chat with the agent |
+| [pipe](/cli/pipe.md) | Run a one-shot prompt without server mode |
+| [rpc](/cli/rpc.md) | Call raw JSON-RPC methods |
+| [browse](/cli/browse.md) | Open URLs in a browser |
+| [browser](/cli/browser.md) | Control browser automation |
+| [memory](/cli/memory.md) | Manage semantic memory |
+| [screenshots](/cli/screenshots.md) | Manage screenshots |
+| [codegraph](/cli/codegraph.md) | Inspect code graph data |
+| [discover](/cli/discover.md) | Discover project commands |
+| [prompt](/cli/prompt.md) | Shell prompt integration |
+| [completion](/cli/completion.md) | Shell completion |
+
+## Providers and Login
+
+Provider-aware task sources and login flows are documented here:
+
+- [Providers Overview](/providers/index.md)
+- [Provider login subcommands](/cli/login.md)
+- [test-provider](/cli/test-provider.md)
+
+## Prefer the Browser?
+
+If you want the same workflow with richer dashboards and visual review surfaces, start with [Web UI Getting Started](/web-ui/getting-started.md).

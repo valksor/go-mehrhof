@@ -1,36 +1,35 @@
 # Quickstart
 
-Get kvelmo up and running in 5 minutes.
+This guide gets you into kvelmo with the Web UI first, then shows where CLI, desktop, and TUI fit.
 
-## What You'll Accomplish
+## What You'll Do
 
-By the end of this guide, you'll have:
-1. Installed kvelmo on your computer
-2. Started your first task
-3. Seen the plan → implement → review workflow in action
+By the end of this guide, you will have:
 
-No prior experience with command-line tools is required if you choose the Desktop App or Web UI path.
-
----
+1. Installed kvelmo locally
+2. Started the local server
+3. Created a task in the Web UI
+4. Walked through plan, implement, review, and submit
+5. Seen how the other interfaces connect to the same workflow
 
 ## Prerequisites
 
-**Git** — kvelmo uses Git for version control and checkpoints. [Install Git](https://git-scm.com/downloads) if you don't have it.
+**Git**
 
-**Agent CLI** — kvelmo coordinates your local AI agent. Claude is recommended. Codex and other agents are also supported.
+kvelmo uses Git for branches, checkpoints, diffs, and recovery.
 
-> **Agent Ready?**
->
-> kvelmo uses your agent CLI directly. If `claude --version` works, you're ready.
+**An agent runtime**
+
+kvelmo orchestrates your local agent setup. Claude CLI is the default path, and Codex plus custom/API-backed agents are also supported.
+
+Check what you already have:
 
 ```bash
-# Check if Claude is installed
 claude --version
+codex --version
 ```
 
-If you don't have Claude, follow the [Claude setup guide](https://claude.ai/code). For other agents, see [AI Agents](/agents/index.md).
-
----
+You only need one working agent path, not every option.
 
 ## Install kvelmo
 
@@ -38,158 +37,124 @@ If you don't have Claude, follow the [Claude setup guide](https://claude.ai/code
 curl -fsSL https://raw.githubusercontent.com/valksor/kvelmo/master/install.sh | bash
 ```
 
-Verify the installation:
+Verify the install and local environment:
 
 ```bash
 kvelmo version
+kvelmo diagnose
 ```
 
-> **Starting from scratch?** See the complete [Installation Guide](/INSTALL.md) for WSL, Git, and agent CLI setup.
+For platform-specific setup, see [Installation Guide](/INSTALL.md).
 
----
+## Start With the Web UI
 
-## Choose Your Interface
+The Web UI is the main experience and the best place to understand the product.
 
-kvelmo works through multiple interfaces. Choose what matches your comfort level:
-
-| Interface       | Best For                           | Setup                                                  |
-|-----------------|------------------------------------|--------------------------------------------------------|
-| **Desktop App** | Visual users, no terminal needed   | [Download](https://github.com/valksor/kvelmo/releases) |
-| **Web UI**      | Visual users, one terminal command | `kvelmo serve --open`                                  |
-| **CLI**         | Power users, scripting, CI/CD      | Terminal commands                                      |
-
-All interfaces have the same features — the choice is about preference, not capability.
-
----
-
-## Desktop App — Native Experience
-
-The Desktop App is ideal if you want a fully native experience without using the terminal.
-
-**Get started:**
-
-1. Download from [Releases](https://github.com/valksor/kvelmo/releases) for your platform
-2. Install and launch the app
-3. Select your project folder
-4. Click **New Task** to begin
-
-**[Full Desktop App Guide](/desktop/getting-started.md)** — Complete walkthrough
-
----
-
-## Web UI — Visual Workflow
-
-The Web UI is ideal if you prefer a visual interface.
-
-**Get started:**
-
-```bash
-kvelmo serve --open
-```
-
-1. Your browser opens automatically
-2. Navigate to your project folder
-3. Click **Create Task** to begin
-
-**What you'll see:**
-- A dashboard showing your current task
-- Buttons to plan, implement, and review
-- Real-time streaming of progress
-- Undo/redo controls if something goes wrong
-
-**[Full Web UI Guide](/web-ui/getting-started.md)** — Complete walkthrough with visual examples
-
----
-
-## CLI — Power User Workflow
-
-The CLI is ideal for text-based workflows, scripting, and CI/CD pipelines.
-
-**Try it in 60 seconds:**
+From the project you want to work in:
 
 ```bash
 cd /path/to/your/project
-
-cat > task.md << 'EOF'
----
-title: Add hello world endpoint
----
-Add a GET /hello endpoint that returns "Hello, World!".
-EOF
-
-kvelmo start --from file:task.md
-kvelmo plan
-kvelmo implement
-kvelmo review
-kvelmo submit
+kvelmo serve --open
 ```
 
-**[Full CLI Tutorial](/guides/first-task.md)** — Step-by-step guide
+If your browser does not open automatically, go to `http://localhost:6337`.
 
----
+## Create Your First Task
 
-## The Workflow
+In the Web UI:
 
-### 1. Start
+1. Open or register the project you want to work on
+2. Click the control for creating a new task
+3. Enter a short title and a concrete description
+4. Start the task
 
-Load a task and prepare your workspace:
+A task can also come from providers such as GitHub, GitLab, Linear, Wrike, Jira, Azure DevOps, or a local file. The Web UI and CLI both operate on the same underlying task state.
 
-```bash
-kvelmo start --from file:task.md
-```
+## Run the Workflow
 
-### 2. Plan
+### 1. Plan
 
-Generate a specification you can review before any changes happen:
+Generate a specification before code changes begin.
 
-```bash
-kvelmo plan
-```
+Review the plan carefully. This is the first major control point.
 
-**Why this matters:** You approve the plan before any code is written. Nothing proceeds without your review.
+### 2. Implement
 
-### 3. Implement
+Run the implementation phase after the plan looks right.
 
-Build your changes based on the approved plan:
+Watch live output in the UI while the agent works through the task.
 
-```bash
-kvelmo implement
-```
+### 3. Simplify and Optimize
 
-Watch the agent work in real-time. If something's wrong, use `kvelmo undo` to revert.
+Depending on the workflow and settings, you may also run optional cleanup and quality passes.
+
+Use these when you want a second pass focused on clarity or polish rather than first-pass completion.
 
 ### 4. Review
 
-Review the changes before they ship:
-
-```bash
-kvelmo review
-```
+Inspect file changes, output, findings, logs, and any supporting context before approving the result.
 
 ### 5. Submit
 
-Create a PR when you're satisfied:
+Create the pull request when the task is ready.
+
+After merge, use `finish` to clean up task state and branch state.
+
+## Other Interfaces
+
+### CLI
+
+Use the CLI for direct control, scripts, automation, or provider-heavy workflows.
 
 ```bash
+kvelmo start --from file:task.md
+kvelmo plan
+kvelmo implement
+kvelmo review
 kvelmo submit
 ```
 
----
+### Desktop App
 
-## Check Status
+Use the desktop app if you want a native shell around the same local workflow.
 
-At any point, see where you are:
+### TUI
+
+Use the terminal UI when you want a full-screen interface without a browser.
 
 ```bash
-kvelmo status
+kvelmo tui
 ```
 
----
+## Shared State Across Interfaces
+
+The interfaces are not separate products. They are separate views into the same local orchestration system.
+
+That means you can:
+
+- start a task in the Web UI
+- inspect or steer it in CLI
+- watch it in TUI
+- return to the browser for review and submission
+
+Some capabilities are intentionally interface-specific. For example, shell integration and raw RPC are CLI-oriented, while dashboards and panel-heavy exploration are strongest in the Web UI.
+
+## Useful Commands
+
+```bash
+kvelmo status    # snapshot of current task state
+kvelmo watch     # stream live progress
+kvelmo undo      # step back to previous checkpoint
+kvelmo redo      # step forward to next checkpoint
+kvelmo reset     # recover from stuck state
+kvelmo review    # enter review before submission
+kvelmo finish    # clean up after merge
+```
 
 ## What's Next?
 
-- [Desktop App Guide](/desktop/getting-started.md) — Native application walkthrough
-- [Web UI Guide](/web-ui/getting-started.md) — Browser interface walkthrough
-- [CLI Reference](/cli/index.md) — All commands and options
-- [Workflow Concepts](/concepts/workflow.md) — Understanding the process
-- [Providers](/providers/index.md) — Pull tasks from GitHub, GitLab, Linear
+- [Web UI Guide](/web-ui/getting-started.md)
+- [CLI Reference](/cli/index.md)
+- [Workflow Concepts](/concepts/workflow.md)
+- [Providers](/providers/index.md)
+- [Configuration](/configuration/index.md)

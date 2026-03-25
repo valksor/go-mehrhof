@@ -1,114 +1,124 @@
 # Getting Started with Web UI
 
-The kvelmo Web UI provides a comfortable browser-based interface for managing development tasks. It's ideal for non-technical contributors and anyone who prefers visual workflows.
+The Web UI is the primary way to use kvelmo.
 
-## Starting the Web UI
+It gives you a project dashboard, task controls, live output, review context, and access to the broader orchestration features that sit around agent-driven development work.
 
-Start the kvelmo server:
+## Start the Server
+
+From the project you want to work on:
 
 ```bash
-kvelmo serve
+kvelmo serve --open
 ```
 
-Then open http://localhost:6337 in your browser.
+If your browser does not open automatically, go to `http://localhost:6337`.
 
-**Tip:** Use `kvelmo serve --open` to automatically open the browser.
+## What You See First
 
-## Dashboard Overview
+The Web UI is organized around two broad views:
 
-When you open the Web UI, you'll see the dashboard with:
+- **Global view** for project-level navigation, worker visibility, and cross-project state
+- **Project view** for the active task, workflow controls, live output, and supporting panels
 
-- **Project selector** — Choose which project to work on
-- **Task status** — Current task state and progress
-- **Actions panel** — Workflow buttons (Plan, Implement, Review, Submit)
-- **Output panel** — Real-time agent output
-- **Sidebar** — Navigation to different views
+## Create a Task
 
-## Creating a Task
+Use the task creation flow in the UI to start work from:
 
-1. Click **New Task** in the actions panel
-2. Enter a **Title** — A short description of what you want to build
-3. Enter a **Description** — Detailed requirements
-4. Click **Start**
+- a freeform description
+- a local file
+- a connected provider reference
 
-The task will be loaded and a branch created automatically.
+Once created, the task enters the shared workflow used by every interface.
 
-## Running the Workflow
+## Run the Workflow in the Browser
 
-The workflow has five phases. Each phase requires your approval before proceeding:
+### Plan
 
-### 1. Plan
+Generate and inspect the specification before implementation begins.
 
-Click **Plan** to generate a specification. The agent will analyze your task and create a structured implementation plan.
+### Implement
 
-Review the specification in the **Specifications** panel.
+Run the implementation phase and follow live output as the agent works.
 
-### 2. Implement
+### Simplify and Optimize
 
-Once you're happy with the plan, click **Implement**. The agent will execute the specification and make changes to your code.
+Use optional refinement passes when the task needs a cleanup or quality pass after first completion.
 
-Watch the progress in the **Output** panel.
+### Review
 
-### 3. Review
+Inspect changes and surrounding context before approving the result.
 
-Click **Review** to start the review phase. This includes:
-- Viewing the changes in the **File Changes** panel
-- Running security scans
-- Approving or rejecting the implementation
+### Submit
 
-### 4. Submit
+Create the pull request when the task is ready.
 
-When satisfied, click **Submit** to create a PR.
+## Where Features Show Up
 
-## Sidebar Panels
+The Web UI is broader than a single linear task view. Features may appear as:
 
-The sidebar provides access to additional features:
+- persistent tabs or panels
+- project widgets
+- drawers and dialogs
+- contextual review surfaces
+- global dashboards
 
-| Panel           | Description                 |
-|-----------------|-----------------------------|
-| **Files**       | Browse project files        |
-| **Changes**     | View file diffs             |
-| **Checkpoints** | Navigate undo/redo history  |
-| **Workers**     | Monitor worker pool         |
-| **Memory**      | Semantic memory management  |
-| **Screenshots** | Screenshot gallery          |
-| **Browser**     | Browser automation controls |
-| **Settings**    | Configuration               |
+Common areas include:
 
-## Where Features Live in the UI
+| Area | Typical capabilities |
+|------|----------------------|
+| **Project dashboard** | Task state, actions, progress, quick controls |
+| **Panels and tabs** | Chat, output, files, browser, screenshots, jobs, review context |
+| **Context widgets** | Activity, logs, memory, recordings, code graph, policy, CI |
+| **Dialogs and drawers** | Settings, exports, reports, backups, access management |
+| **Global views** | Projects, workers, cross-project status |
 
-Not every web-documented capability appears as a permanent top-level tab. Depending on the feature, you may find it in one of these places:
+## What the Web UI Is Best At
 
-| UI location | Typical features |
-|-------------|------------------|
-| **GlobalView** | Project picker, worker overview, cross-project status |
-| **ProjectView actions** | Plan, Implement, Review, Submit, quick task actions |
-| **Persistent tabs/panels** | Chat, Output, Files, Browser, Screenshots, Jobs, Review, Submit preview |
-| **Dialogs and drawers** | Settings, provider tokens, backup/restore, exports, reports |
-| **Contextual widgets** | Activity, logs, memory, recordings, code graph, policy, CI |
+Use the Web UI when you want:
 
-When a feature page says it is available in the Web UI, that may mean it is available through a modal, drawer, or contextual panel rather than a dedicated always-visible tab.
+- the clearest day-to-day task workflow
+- visual review and comparison surfaces
+- multiple context streams on screen at once
+- easy movement between orchestration features without remembering commands
 
-## CLI and Web Parity
+## How It Relates to CLI, Desktop, and TUI
 
-Most workflow, governance, observability, and provider-management features are available through CLI, RPC, and often the Web UI. Some features are intentionally CLI-only because they are shell-native or system-facing, such as:
+The Web UI is not a separate product tier. It is one interface over the same local orchestration system.
 
-- daemon lifecycle commands like `serve` and `shutdown`
-- shell integration such as `completion` and `prompt`
-- raw transport/debug utilities like `rpc`
-- terminal-only experiences like `tui` and `pipe`
+That means you can:
 
-Treat those as deliberate parity boundaries rather than missing web features.
+- start a task in the browser
+- inspect it with `kvelmo status`
+- operate it in `kvelmo tui`
+- return to the browser for review and submit
 
-## Undo and Redo
+Some commands stay CLI-first by design, including shell integration, raw RPC access, daemon lifecycle management, and pipe-style workflows.
 
-Every workflow step creates a git checkpoint. Use the **Checkpoints** panel to:
+## Recovery and Control
 
-- **Undo** — Revert to a previous checkpoint
-- **Redo** — Restore a checkpoint you undid
+The browser workflow still benefits from the same recovery model as the CLI:
 
-## Also Available via CLI
+- checkpoints support undo and redo
+- reset paths exist for recovery
+- logs, activity, and status views help diagnose stuck work
+- submission remains explicit
 
-Prefer the command line? Core Web UI workflows are available via CLI commands, and some shell-native capabilities remain CLI-only by design.
+## Useful Companion Commands
 
-See [CLI Reference](/cli/index.md) for the full command list.
+```bash
+kvelmo status
+kvelmo watch
+kvelmo review
+kvelmo undo
+kvelmo redo
+kvelmo reset
+kvelmo tui
+```
+
+## Next Reading
+
+- [Quickstart](/quickstart.md)
+- [Workflow Concepts](/concepts/workflow.md)
+- [CLI Reference](/cli/index.md)
+- [Configuration](/configuration/index.md)

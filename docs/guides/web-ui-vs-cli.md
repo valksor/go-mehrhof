@@ -1,153 +1,126 @@
 # Web UI vs CLI vs TUI
 
-kvelmo offers three interfaces. Choose the one that fits your workflow.
+kvelmo has multiple interfaces because different parts of the workflow benefit from different control surfaces.
+
+The important point is this: they are not separate products. They are separate views into the same local orchestration system.
+
+## Short Version
+
+- start with the **Web UI** if you want the clearest day-to-day experience
+- use the **CLI** when you want explicit control, automation, or shell-native operations
+- use the **TUI** when you want a full-screen terminal workflow without opening a browser
 
 ## Quick Comparison
 
-| Aspect           | Web UI              | CLI        | TUI (`kvelmo tui`)      |
-|------------------|---------------------|------------|-------------------------|
-| Best for         | Non-technical users | Developers | SSH / headless servers  |
-| Learning curve   | Lower               | Higher     | Medium                  |
-| Visual feedback  | Yes                 | Limited    | Yes (terminal)          |
-| Scripting        | No                  | Yes        | No                      |
-| Keyboard-first   | No                  | Yes        | Yes                     |
-| Real-time output | Yes                 | Yes        | Yes                     |
-| Browser required | Yes                 | No         | No                      |
+| Aspect | Web UI | CLI | TUI |
+|--------|--------|-----|-----|
+| Best for | primary day-to-day orchestration | scripting, automation, system-facing control | terminal-first live steering |
+| Interaction style | dashboards, panels, visual review | commands, pipes, shell integration | full-screen terminal dashboard |
+| Browser required | yes | no | no |
+| Scriptable | limited | yes | no |
+| Visual review | strongest | lower | limited |
+| Raw control surface | medium | strongest | medium |
+| Remote/headless use | possible with browser access | strongest | strong |
 
-## When to Use Web UI
+## When to Use the Web UI
 
-**Choose the Web UI when:**
+Choose the Web UI when you want:
 
-- You prefer visual interfaces
-- You're new to kvelmo
-- You want click-through workflows
-- You need to monitor multiple tasks
-- You want easy access to file changes and diffs
+- the main product experience
+- project dashboards and task views
+- visual review of changes and context
+- easy access to related surfaces such as logs, activity, memory, recordings, code graph, policy, CI, and browser tools
 
-**Web UI strengths:**
+The Web UI is the best default because it exposes the orchestration system most clearly.
 
-- Dashboard shows everything at a glance
-- Sidebar panels for files, changes, checkpoints
-- Click-based workflow
-- No commands to memorize
+## When to Use the CLI
 
-## When to Use CLI
+Choose the CLI when you want:
 
-**Choose the CLI when:**
+- automation and scripting
+- provider-heavy workflows
+- shell integration and raw command control
+- system-facing operations like daemon lifecycle, RPC, and one-shot pipelines
 
-- You're comfortable with terminals
-- You want to script workflows
-- You need to integrate with other tools
-- You prefer keyboard-driven workflows
-- You're working in a headless environment
-
-**CLI strengths:**
-
-- Fast once you know the commands
-- Scriptable and automatable
-- Works over SSH
-- Composable with other tools
+The CLI is also the best reference surface for understanding the full command model.
 
 ## When to Use the TUI
 
-**Choose the TUI (`kvelmo tui`) when:**
+Choose the TUI when you want:
 
-- You are working over SSH or in a headless environment where opening a browser is inconvenient
-- You want the dashboard experience (live output, chat, worker status) without leaving the terminal
-- You need keyboard-driven workflow transitions
+- a full-screen terminal interface
+- live output and workflow control without a browser
+- a terminal-first environment where switching contexts is expensive
 
-**TUI strengths:**
-
-- No browser required — works anywhere a terminal does
-- Full-screen layout with live agent output streaming
-- Interactive chat and one-key workflow triggers
-- Supports multiple worktree tabs with `Tab`/`Shift+Tab`
-
-See [kvelmo tui](/cli/tui.md) for full reference.
-
-## Mixing Both
-
-The interfaces share the same underlying engine. You can mix them:
+Start it with:
 
 ```bash
-# Start task via CLI
-kvelmo start --from file:task.md
-
-# Monitor in Web UI
-# Open http://localhost:6337
-
-# Continue via CLI
-kvelmo plan
-kvelmo implement
-
-# Review changes in Web UI
-# Use the Changes panel
-
-# Submit via CLI
-kvelmo submit
+kvelmo tui
 ```
 
-## Common Workflows
+## Mixing Interfaces
 
-### Web UI Workflow
+Mixing interfaces is normal.
 
-1. Open http://localhost:6337
-2. Click **New Task**
-3. Enter details, click **Start**
-4. Click **Plan**, review specification
-5. Click **Implement**, watch progress
-6. Review in Changes panel
-7. Click **Submit**
-
-### CLI Workflow
+Example:
 
 ```bash
-kvelmo start --from file:task.md
-kvelmo plan
-kvelmo implement
-kvelmo review
-kvelmo submit
+# Start the local server
+kvelmo serve --open
+
+# Check state from the terminal
+kvelmo status
+
+# Watch progress in CLI or TUI
+kvelmo watch
+kvelmo tui
 ```
 
-### Hybrid Workflow
+You can start in the browser, inspect in CLI, monitor in TUI, and come back to the browser for review and submit.
+
+## Common Patterns
+
+### Browser-First
+
+Use this when you want the main product path:
+
+1. create the task in the Web UI
+2. plan and implement in the browser
+3. review visually
+4. submit from the same interface
+
+### CLI-First
+
+Use this when you want shell-native control:
 
 ```bash
-# Start and plan via CLI (faster)
 kvelmo start --from github:owner/repo#123
 kvelmo plan
-
-# Review specification in Web UI
-# Open http://localhost:6337
-
-# Implement and review via CLI
 kvelmo implement
 kvelmo review
-
-# Submit via CLI
 kvelmo submit
 ```
 
-## Feature Availability
+### Hybrid
 
-| Feature      | Web UI | CLI             | TUI             |
-|--------------|--------|-----------------|-----------------|
-| Start task   | Yes    | Yes             | No              |
-| Plan         | Yes    | Yes             | Yes (key: `p`)  |
-| Implement    | Yes    | Yes             | Yes (key: `i`)  |
-| Review       | Yes    | Yes             | No              |
-| Submit       | Yes    | Yes             | No              |
-| Undo/Redo    | Yes    | Yes             | No              |
-| File browser | Yes    | `ls` / `cat`    | No              |
-| Diff viewer  | Yes    | `git diff`      | No              |
-| Settings     | Yes    | `kvelmo config` | No              |
-| Live output  | Yes    | `kvelmo watch`  | Yes             |
-| Agent chat   | Yes    | `kvelmo chat`   | Yes             |
-| Worker view  | Yes    | `kvelmo workers`| Dashboard layout|
+Use this when you want speed in terminal plus visual review:
 
-## Recommendations
+```bash
+kvelmo start "Refactor the settings panel"
+kvelmo plan
+kvelmo implement
+```
 
-**New users:** Start with the Web UI to understand the workflow, then graduate to CLI for speed.
+Then use the Web UI for diff-heavy review and submission.
 
-**Experienced users:** Use CLI for routine tasks, Web UI for complex reviews.
+## Deliberate Parity Boundaries
 
-**Teams:** Use Web UI for collaboration, CLI for individual work.
+Not every feature should appear identically in every interface.
+
+That is deliberate:
+
+- the Web UI is strongest for visual review and multi-panel context
+- the CLI is strongest for commands, automation, and raw tooling
+- the TUI is strongest for compact terminal control
+
+Choose the interface that matches the job instead of expecting every surface to look the same.

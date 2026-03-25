@@ -1,98 +1,97 @@
 # Configuration
 
-kvelmo uses a layered configuration system with global, project, and environment settings.
+Configuration controls how kvelmo behaves across agents, providers, workflow policy, workers, storage, and interface defaults.
 
-## Configuration Files
+The core principle is simple: kvelmo runs locally, so configuration is also local and layered.
 
-| File    | Scope          | Location                        |
-|---------|----------------|---------------------------------|
-| Global  | All projects   | `~/.valksor/kvelmo/kvelmo.yaml` |
-| Project | Single project | `.valksor/kvelmo.yaml`          |
+## Configuration Sources
 
-## Priority Order
+kvelmo combines settings from multiple places (listed in order of increasing priority):
 
-Settings are applied in this order (highest priority first):
+1. built-in defaults
+2. global settings
+3. project settings
+4. environment files
+5. process environment variables
 
-1. Command-line flags
-2. Environment variables
-3. Project config
-4. Global config
-5. Defaults
+Project-level configuration overrides global configuration.
 
-## Quick Start
+## Main Files
 
-```bash
-# Initialize default config
-kvelmo config init
+| Scope | Path |
+|-------|------|
+| Global settings | `~/.valksor/kvelmo/kvelmo.yaml` |
+| Project settings | `.valksor/kvelmo.yaml` |
+| Global environment | `~/.valksor/kvelmo/.env` |
+| Project environment | `.valksor/.env` |
 
-# Show current config
-kvelmo config show
+Use YAML for settings files. Environment files are useful for tokens and other sensitive values.
 
-# Set a value
-kvelmo config set default_agent claude
-```
+## What You Usually Configure
 
-## Common Settings
+Common configuration areas include:
 
-| Setting         | Description                | Default     |
-|-----------------|----------------------------|-------------|
-| `default_agent` | AI agent to use            | Auto-detect |
-| `max_workers`   | Maximum concurrent workers | 4           |
-| `web_port`      | Web UI port                | 6337        |
+- default and allowed agents
+- provider credentials and behavior
+- worker pool behavior
+- workflow defaults and skip phases
+- policy and review controls
+- browser, memory, and other subsystem settings
 
-## Configuration Topics
+## Start With the CLI
 
-- [Settings Reference](/configuration/settings.md) — All settings
-- [Environment Variables](/configuration/environment.md) — Environment overrides
-
-## TUI Configuration
-
-Settings for the terminal UI (`kvelmo tui`):
-
-```yaml
-tui:
-  layout: stacked  # stacked (default) or dashboard
-```
-
-| Setting      | Description                             | Default   |
-|--------------|-----------------------------------------|-----------|
-| `tui.layout` | Default layout for the terminal UI      | `stacked` |
-
-The `stacked` layout shows status, output, and chat vertically. The `dashboard` layout adds a workers pane alongside the output. See [kvelmo tui](/cli/tui.md) for details.
-
-## Example Configuration
-
-```json
-{
-  "default_agent": "claude",
-  "max_workers": 8,
-  "web_port": 6337,
-  "git": {
-    "auto_commit": true,
-    "branch_pattern": "feature/{slug}"
-  },
-  "tui": {
-    "layout": "stacked"
-  },
-  "providers": {
-    "github": {
-      "token": "ghp_xxxx"
-    }
-  }
-}
-```
-
-## CLI Commands
+The simplest way to inspect configuration is:
 
 ```bash
-# Initialize with defaults
-kvelmo config init
-
-# Show all settings
 kvelmo config show
+```
 
-# Set a value
+Set values with:
+
+```bash
 kvelmo config set <key> <value>
 ```
 
-See [CLI: config](/cli/config.md) for full reference.
+## Common Patterns
+
+### Set a Global Default Agent
+
+```bash
+kvelmo config set agent.default claude
+```
+
+### Set a Project-Specific Override
+
+```bash
+kvelmo config set workflow.auto_advance true --scope project
+```
+
+### Add Provider Credentials
+
+Use provider login commands or environment files instead of hardcoding secrets into YAML when possible.
+
+## How to Think About Scope
+
+Use **global** settings for things you want across all projects:
+
+- preferred agent
+- general workflow defaults
+- default provider credentials
+
+Use **project** settings for things that belong to one repository:
+
+- project-specific workflow tweaks
+- local provider overrides
+- repository-specific behavior
+
+## Security Guidance
+
+- keep secrets in environment files or environment variables when possible
+- do not commit `.env` files (add them to `.gitignore`)
+- treat project settings as repository-local behavior, not as a secret store
+
+## Related
+
+- [Settings Reference](/configuration/settings.md)
+- [Environment Variables](/configuration/environment.md)
+- [Providers Overview](/providers/index.md)

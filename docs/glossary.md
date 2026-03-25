@@ -1,133 +1,89 @@
 # Glossary
 
-Terms and definitions used in kvelmo.
+## Agent
 
-## A
+The model or agent runtime that performs planning, implementation, review assistance, or related workflow steps. kvelmo orchestrates agents; it is not the agent itself.
 
-### Agent
-An AI model that executes kvelmo's workflow phases. Examples: Claude, Codex.
+## Checkpoint
 
-### Abandon
-Complete cleanup of a task, removing the branch and work directory.
+A saved workflow point, usually backed by git state, that supports undo and redo.
 
-### Abort
-Stop the current task execution and transition to failed state.
+## CLI
 
-## B
+The command-line interface for direct control, scripting, automation, and system-facing operations.
 
-### Branch
-A git branch created for each task. Pattern: `feature/<slug>`.
+## Conductor
 
-## C
+The orchestration layer that drives workflow transitions and task lifecycle behavior.
 
-### Checkpoint
-A git commit created at each workflow phase, enabling undo/redo.
+## Global Socket
 
-### CLI
-Command Line Interface. Text-based interface for kvelmo.
+The machine-level socket at `~/.valksor/kvelmo/global.sock`.
 
-### Conductor
-The core orchestrator component that drives the workflow.
+## Implement
 
-## E
+The phase where the approved plan turns into code changes.
 
-### Event
-A message emitted during agent execution (token, tool_call, etc.).
+## Job
 
-## G
+A unit of work handled by the worker system.
 
-### Global Socket
-The main kvelmo socket at `~/.valksor/kvelmo/global.sock`.
+## JSON-RPC
 
-### Guard
-A condition that must be true for a state transition to occur.
+The protocol used across kvelmo sockets.
 
-## I
+## Memory
 
-### Implement
-The workflow phase where the agent writes code based on the specification.
+The semantic context subsystem used for codebase understanding and retrieval.
 
-## J
+## Plan
 
-### Job
-A unit of work in the worker pool.
+The phase where kvelmo generates a specification before implementation begins.
 
-### JSON-RPC
-The protocol used for socket communication.
+## Provider
 
-## M
+An external task source such as a file, GitHub, GitLab, Jira, Linear, Wrike, or Azure DevOps.
 
-### Memory
-Semantic memory system for codebase understanding.
+## Review
 
-## P
+The checkpoint where humans inspect the result before submission.
 
-### Phase
-A stage in the workflow: start, plan, implement, review, submit.
+## Socket
 
-### Plan
-The workflow phase where a specification is generated.
+A Unix domain socket used for communication between local kvelmo components and interfaces.
 
-### Provider
-A source for tasks: file, GitHub, GitLab, Wrike.
+## State Machine
 
-## R
+The workflow model that defines valid task states and transitions.
 
-### Redo
-Restore a checkpoint that was undone.
+## Submit
 
-### Reset
-Recover from a stuck or failed state.
+The phase where the task becomes a pull request or otherwise enters the team-facing delivery flow.
 
-### Review
-The workflow phase for human approval of changes.
+## Task
 
-## S
+The unit of work tracked through the lifecycle.
 
-### Socket
-Unix domain socket for inter-process communication.
+## TUI
 
-### Specification
-A document describing how to implement a task, generated during planning.
+The full-screen terminal interface opened with `kvelmo tui`.
 
-### State
-The current position in the workflow (loaded, planning, planned, etc.).
+## Undo / Redo
 
-### State Machine
-The system that manages workflow states and transitions.
+Checkpoint navigation for stepping backward or forward through workflow history.
 
-### Submit
-The workflow phase where a PR is created.
+## Web UI
 
-## T
+The primary browser-based interface for day-to-day use of kvelmo.
 
-### Task
-A unit of work to be completed (feature, bug fix, etc.).
+## Worker Pool
 
-### Tool
-A capability an agent can use (Read, Write, Bash, etc.).
+The system that manages concurrent agent jobs and background work.
 
-### Transition
-Moving from one state to another in the workflow.
+## Worktree Socket
 
-## U
+The project-level socket at `<project>/.kvelmo/worktree.sock`.
 
-### Undo
-Revert to a previous checkpoint.
+## Workflow
 
-## W
-
-### Web UI
-Browser-based graphical interface for kvelmo.
-
-### Worker
-A process that executes agent jobs.
-
-### Worker Pool
-The system that manages multiple concurrent workers.
-
-### Worktree Socket
-Per-project socket at `<project>/.kvelmo/worktree.sock`.
-
-### Workflow
-The sequence of phases: start → plan → implement → review → submit.
+The structured lifecycle around a task, commonly `start -> plan -> implement -> review -> submit -> finish`, with optional refinement and recovery paths.

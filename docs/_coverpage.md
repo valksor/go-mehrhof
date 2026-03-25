@@ -1,11 +1,11 @@
 # kvelmo
 
-> Turn ideas into merged pull requests
+> Local orchestration for AI-assisted development
 
-- Human oversight at every step
-- Desktop App, Web UI, and CLI
-- Undo anything that doesn't look right
-- Free — uses your existing Claude CLI
+- Web UI first, with CLI, desktop, TUI, and RPC sharing the same workflow
+- Human-gated planning, implementation, review, and submission
+- Checkpoints, recovery paths, policy, CI, logs, and observability built in
+- Runs locally and coordinates the agent work around your codebase
 
 [valksor.com](https://valksor.com)
 [Get Started](/quickstart.md)

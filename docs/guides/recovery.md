@@ -1,167 +1,133 @@
 # Recovery Guide
 
-How to recover from common problems in kvelmo.
+Recovery is part of normal kvelmo usage, not a rare failure path.
 
-## Quick Recovery Commands
+Because the workflow records checkpoints and keeps explicit task state, you usually recover by navigating state instead of improvising cleanup.
 
-| Problem               | Solution               |
-|-----------------------|------------------------|
-| Bad implementation    | `kvelmo undo`          |
-| Stuck state           | `kvelmo reset`         |
-| Want to start over    | `kvelmo abandon`       |
-| Server not responding | Restart `kvelmo serve` |
+## First Response Checklist
 
-## Undo a Bad Implementation
-
-If the implementation doesn't look right:
+When something looks wrong, start with:
 
 ```bash
-# Revert to previous checkpoint
-kvelmo undo
-
-# Now you're back to planned state
 kvelmo status
-# State: planned
-
-# Try again with more context
-kvelmo implement
+kvelmo watch
 ```
 
-You can undo multiple times:
+`status` shows a point-in-time snapshot; `watch` streams live updates. Together they tell you whether the task is progressing, waiting for input, paused, failed, or in a different state than expected.
+
+## Common Recovery Commands
+
+| Situation | Command |
+|-----------|---------|
+| Implementation looks wrong | `kvelmo undo` |
+| You undid too far | `kvelmo redo` |
+| Task is stuck or confused | `kvelmo reset` |
+| A phase failed and should be retried | `kvelmo retry` |
+| Running work should stop | `kvelmo stop` |
+| Running work should fail immediately | `kvelmo abort` |
+| You want to discard the task | `kvelmo abandon` |
+
+## Undo a Bad Result
+
+If the current implementation or review state is not acceptable:
+
 ```bash
-kvelmo undo  # Back to planned
-kvelmo undo  # Back to loaded
+kvelmo undo
+kvelmo status
 ```
 
-## Redo After Undo
+Then either:
 
-If you undid too far:
+- change the task description or context and run forward again
+- re-run the next phase
+- inspect the task in the Web UI before proceeding
+
+## Redo When Needed
+
+If you undo and realize the previous state was actually correct:
 
 ```bash
 kvelmo redo
 ```
 
-This restores the next checkpoint in the redo stack.
+## Reset a Stuck Task
 
-## Reset Stuck State
-
-If kvelmo is stuck (e.g., after a crash):
+Use `reset` when the task state is inconsistent or appears stuck.
 
 ```bash
 kvelmo reset
 ```
 
-This:
-- Resets state to `loaded`
-- Preserves your task data
-- Keeps checkpoints intact
+This is the go-to command for general workflow-state problems. Use the situation-specific commands from the table above for targeted recovery.
+
+## Retry a Failed Phase
+
+If the task failed for a transient reason and the workflow should continue from the same point:
+
+```bash
+kvelmo retry
+```
+
+## Stop or Abort Running Work
+
+Use:
+
+- `stop` when you want to interrupt current execution cleanly
+- `abort` when you want the task to move directly into a failed state
 
 ## Abandon a Task
 
-To completely abandon a task:
+If the task should be thrown away rather than recovered:
 
 ```bash
 kvelmo abandon
 ```
 
-This:
-- Deletes the task branch
-- Cleans up `.kvelmo/` files
-- Resets to no active task
+Use this only when you want to discard the current path, not when you simply need to step back.
 
-**Caution:** This is destructive. Your work on this task will be lost.
+## Browser-Oriented Recovery
 
-## Restart the Server
+If you are working primarily in the Web UI, recovery still follows the same underlying model:
 
-If the server is unresponsive:
+- inspect task state
+- navigate checkpoints
+- review logs and activity
+- reset if the workflow state is unhealthy
 
-```bash
-# Stop any running server (Ctrl+C in the terminal)
+The browser gives you more context, but the core recovery model is the same as the CLI.
 
-# Remove stale socket file
-rm ~/.valksor/kvelmo/global.sock
+## Typical Recovery Flow
 
-# Start fresh
-kvelmo serve
-```
-
-## Fix Corrupted State
-
-If `.kvelmo/` is corrupted:
-
-```bash
-# Backup first
-cp -r .kvelmo .kvelmo.bak
-
-# Reset state
-kvelmo reset
-
-# If still broken, remove and re-create
-rm -rf .kvelmo
-kvelmo start --from file:task.md
-```
-
-## Recover Lost Work
-
-kvelmo creates git checkpoints. Even after `abandon`, your work may be in git:
-
-```bash
-# List recent commits
-git log --all --oneline -20
-
-# Find the checkpoint commit
-# It will have a message like "[kvelmo] Checkpoint: implement"
-
-# Create a branch from it
-git checkout -b recovered <commit-sha>
-```
-
-## Debug Mode
-
-For more information on what's happening:
-
-```bash
-# Run with verbose output
-kvelmo status --json
-
-# Check server logs
-kvelmo serve  # Watch the terminal output
-```
-
-## Common Error Messages
-
-### "no active task"
-
-You need to start a task first:
-```bash
-kvelmo start --from file:task.md
-```
-
-### "guards failed for transition"
-
-You're trying to do something out of order. Check the state:
 ```bash
 kvelmo status
+kvelmo undo
+kvelmo watch
 ```
 
-Then follow the [workflow](/concepts/workflow.md).
+If that is not enough:
 
-### "socket not found"
-
-The server isn't running:
 ```bash
-kvelmo serve
+kvelmo reset
+kvelmo retry
 ```
 
-### "permission denied"
+## When Recovery Is Not Enough
 
-Socket file permissions issue:
+If the issue comes from environment setup rather than workflow state:
+
 ```bash
-chmod 600 ~/.valksor/kvelmo/global.sock
+kvelmo diagnose
 ```
 
-## Getting Help
+Also inspect:
 
-- Check [FAQ](/faq.md)
-- Review [State Machine](/concepts/state-machine.md)
-- Open an issue on [GitHub](https://github.com/valksor/kvelmo/issues)
+- provider authentication
+- configured agent path
+- local server health
+- repository/worktree state
+
+## Related
+
+- [Workflow Concepts](/concepts/workflow.md)
+- [Web UI Getting Started](/web-ui/getting-started.md)
+- [CLI Reference](/cli/index.md)

@@ -1,24 +1,26 @@
 # FAQ
 
-Frequently asked questions about kvelmo.
-
 ## General
 
 ### What is kvelmo?
 
-kvelmo is a structured development workflow that orchestrates AI agents. It manages the lifecycle of development tasks from requirements through implementation to PR submission.
+kvelmo is a local orchestration system for AI-assisted development. It manages task state, worktree state, checkpoints, approvals, and interface synchronization across the Web UI, CLI, desktop app, TUI, and RPC endpoints.
 
 ### Is kvelmo an AI?
 
-No. kvelmo is an **orchestrator**. It coordinates existing AI tools (like Claude CLI) through a structured workflow with human oversight.
+No. kvelmo coordinates AI agents. It is the workflow and control layer around them.
+
+### Who is it for?
+
+kvelmo is best understood as Web UI first, with strong support for CLI, desktop, and TUI workflows. It is useful for individual developers, operators, and teams who want structure around agent-driven code changes.
 
 ### Is kvelmo free?
 
-Yes. kvelmo is BSD-3 licensed and completely free. You use your existing AI CLI subscriptions.
+Yes. kvelmo is BSD-3 licensed. You bring your own agent access where needed.
 
 ### Does kvelmo require API keys?
 
-Not for kvelmo itself. Your agent CLI (Claude, Codex) handles authentication. If your CLI works, kvelmo works.
+Not for the core product itself. Agent authentication depends on the agent path you choose. Some providers and API-backed agent integrations do require tokens.
 
 ## Installation
 
@@ -28,93 +30,108 @@ Not for kvelmo itself. Your agent CLI (Claude, Codex) handles authentication. If
 curl -fsSL https://raw.githubusercontent.com/valksor/kvelmo/master/install.sh | bash
 ```
 
-See [INSTALL.md](/INSTALL.md) for detailed instructions.
+Then verify your environment:
+
+```bash
+kvelmo version
+kvelmo diagnose
+```
 
 ### What are the requirements?
 
-- An AI agent CLI (Claude, Codex)
 - Git
-- Unix-like environment (macOS, Linux, WSL2)
+- A supported local environment such as macOS, Linux, or WSL2
+- At least one working agent path such as Claude CLI, Codex, or a configured API-backed/custom agent
 
 ### Does kvelmo work on Windows?
 
 Yes, through WSL2. See [Windows WSL Setup](/guides/windows-wsl.md).
 
-## Usage
+## Interfaces
 
-### How do I start a task?
+### Which interface should I start with?
+
+Start with the Web UI unless you already know you want a terminal-first workflow.
 
 ```bash
-kvelmo start --from file:task.md
+kvelmo serve --open
 ```
 
-Or from GitHub:
+Then open `http://localhost:6337` if needed.
+
+### Does the CLI do more than the Web UI?
+
+Some capabilities are intentionally CLI-oriented, such as shell integration, raw RPC, daemon lifecycle commands, and pipe-style workflows. The Web UI is still the primary place for day-to-day task orchestration and visual review.
+
+### What is the TUI for?
+
+The TUI is a full-screen terminal interface for live workflow control and output streaming.
+
 ```bash
-kvelmo start --from github:owner/repo#123
+kvelmo tui
 ```
 
-### What's the workflow?
+### Is the desktop app different from the Web UI?
 
-1. `start` — Load task
-2. `plan` — Generate specification
-3. `implement` — Execute specification
-4. `review` — Review changes
-5. `submit` — Create PR
+The desktop app is another local interface over the same core workflow. Think of it as a native shell, not a separate backend.
+
+## Workflow
+
+### What is the workflow?
+
+The common path is:
+
+1. `start`
+2. `plan`
+3. `implement`
+4. `review`
+5. `submit`
+6. `finish`
+
+Optional refinement phases such as `simplify` and `optimize` may also run depending on how you operate kvelmo.
+
+### Can I skip planning?
+
+Yes. `quick` starts a fast path that skips planning and auto-advances through the remaining phases.
+
+```bash
+kvelmo quick "Fix the broken settings copy"
+```
 
 ### Can I undo changes?
 
-Yes. Every phase creates a git checkpoint:
+Yes. kvelmo records checkpoints through the workflow.
+
 ```bash
 kvelmo undo
+kvelmo redo
 ```
 
-### How do I use the Web UI?
+### What happens if a task gets stuck?
+
+Use the status and recovery tools first:
 
 ```bash
-kvelmo serve
-```
-
-Then open http://localhost:6337.
-
-## Troubleshooting
-
-### "command not found: kvelmo"
-
-kvelmo isn't in your PATH. Reinstall:
-```bash
-curl -fsSL https://raw.githubusercontent.com/valksor/kvelmo/master/install.sh | bash
-```
-
-### "no agent found"
-
-Install an agent CLI:
-```bash
-claude --version  # Check Claude
-codex --version   # Check Codex
-```
-
-### Task is stuck
-
-Reset the state:
-```bash
+kvelmo status
+kvelmo watch
 kvelmo reset
 ```
 
-### Server not responding
+### Can I resume later?
 
-Restart the server:
-```bash
-# Stop (Ctrl+C) then
-rm ~/.valksor/kvelmo/global.sock
-kvelmo serve
-```
+Yes. Task state is persisted locally. You can return through any interface that works for your environment.
 
 ## Configuration
 
 ### Where is the config file?
 
-Global: `~/.valksor/kvelmo/kvelmo.yaml`
-Project: `.valksor/kvelmo.yaml`
+Global configuration lives at `~/.valksor/kvelmo/kvelmo.yaml`.
+
+Project configuration lives at `.valksor/kvelmo.yaml`.
+
+### Is configuration YAML or JSON?
+
+Settings files are YAML. Some command output is printed as JSON for inspection, but the configuration files themselves are YAML.
 
 ### How do I change settings?
 
@@ -122,36 +139,45 @@ Project: `.valksor/kvelmo.yaml`
 kvelmo config set <key> <value>
 ```
 
-Or edit the JSON file directly.
+You can also inspect effective settings:
 
-### How do I set up GitHub integration?
-
-Set your token:
 ```bash
-export GITHUB_TOKEN=ghp_xxxx
+kvelmo config show
 ```
+
+### How do provider tokens work?
+
+Provider integrations such as GitHub, GitLab, Linear, Jira, Wrike, and Azure DevOps may require tokens or login flows. See [Configuration](/configuration/index.md) and [Providers](/providers/index.md).
 
 ## Agents
 
 ### Which agents are supported?
 
-- Claude (recommended)
-- Codex
-- Custom agents
+kvelmo can work with Claude, Codex, custom agents, and configured API-backed agents, depending on your local setup and settings.
 
 ### Can I use different agents for different phases?
 
-Yes. Configure in settings:
-```json
-{
-  "agent_steps": {
-    "planning": "claude",
-    "implementing": "codex"
-  }
-}
-```
+Yes. The settings model supports phase-aware agent selection.
 
-## Getting Help
+## Advanced Features
+
+### Is kvelmo only for task execution?
+
+No. It also includes operational and governance features:
+
+- policy and approvals
+- CI status and security scans
+- activity logs and recordings
+- exports and backups
+- hooks and notifications
+- memory and browser automation
+- code graph tooling
+
+### Can I manage more than one project?
+
+Yes. The system supports global and per-worktree coordination, including project views, worker pools, and task grouping.
+
+## Help
 
 ### Where can I report bugs?
 
@@ -161,6 +187,6 @@ Yes. Configure in settings:
 
 [GitHub Discussions](https://github.com/valksor/kvelmo/discussions)
 
-### Is there documentation?
+### Where is the documentation?
 
-Yes. [Documentation](https://valksor.com/docs/kvelmo/nightly)
+[Documentation](https://valksor.com/docs/kvelmo/nightly)

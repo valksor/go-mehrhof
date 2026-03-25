@@ -1,150 +1,189 @@
 # Workflow
 
-kvelmo manages tasks through a structured workflow that keeps you in control while your AI agent handles the details.
+kvelmo manages development tasks through a structured workflow that stays visible across the Web UI, CLI, desktop app, TUI, and RPC layer.
 
 ## Philosophy
 
-**You decide what ships. The agent handles the mechanics.**
+The core idea is simple:
 
-The workflow is designed around human oversight:
-- Every phase requires your approval before proceeding
-- Nothing ships without explicit confirmation
-- You can undo at any point to try a different approach
+**The agent does the mechanical work. You control transitions, review, and submission.**
 
-Whether you use the CLI, Web UI, or Desktop App — the workflow is identical. You can switch between interfaces at any time without losing your place.
+That principle shows up in the system design:
 
-## The Five Phases
+- phase transitions are explicit
+- checkpoints make recovery normal, not exceptional
+- interfaces stay synchronized through sockets and shared state
+- review, approval, and policy sit around the agent instead of behind it
 
-```
-START → PLAN → IMPLEMENT → REVIEW → SUBMIT
-```
+## The Common Path
 
-### 1. Start
+The most common flow is:
 
-Load a task from a provider and prepare the workspace.
-
-**What happens:**
-- Task is fetched from the source (file, GitHub, GitLab, Linear, Wrike)
-- A new git branch is created
-- Workspace state transitions to `loaded`
-
-**Why this matters:**
-Starting from an issue tracker or file means everyone works from the same requirements. The automatic branch keeps your work isolated until you're ready to share.
-
-**Commands:**
-- CLI: `kvelmo start --from <provider>:<reference>`
-- Web UI: Click **New Task** and enter details
-
-### 2. Plan
-
-Generate a structured specification that describes how to implement the task.
-
-**What happens:**
-- Agent analyzes the task requirements
-- Agent explores the codebase for context
-- A specification file is generated in `.kvelmo/specifications/`
-- A git checkpoint is created
-- Workspace state transitions to `planned`
-
-**Why this matters:**
-You review the plan before any code changes. This catches misunderstandings early.
-
-**Commands:**
-- CLI: `kvelmo plan`
-- Web UI: Click **Plan**
-
-### 3. Implement
-
-Build your changes based on the approved plan.
-
-**What happens:**
-- Agent follows the specification you approved
-- Code is written, modified, or deleted
-- A git checkpoint is created after completion
-- Workspace state transitions to `implemented`
-
-**Why this matters:**
-Because you approved the plan first, there are no surprises. If the implementation goes wrong, you can undo and try again without losing the original specification.
-
-**Optional refinements:**
-- `kvelmo simplify` — Simplify code for clarity
-- `kvelmo optimize` — Optimize code quality
-
-**Commands:**
-- CLI: `kvelmo implement`
-- Web UI: Click **Implement**
-
-### 4. Review
-
-Review the changes before they ship.
-
-**What happens:**
-- Changes are displayed for human review
-- Security scanning runs (if configured)
-- You approve or reject the implementation
-- Workspace state transitions to `reviewing`
-
-**Why this matters:**
-Nothing leaves your machine without your explicit approval. Review catches issues before they become problems for your team.
-
-**If you reject:**
-Use `kvelmo undo` to revert, then try a different approach.
-
-**Commands:**
-- CLI: `kvelmo review`
-- Web UI: Click **Review**
-
-### 5. Submit
-
-Create a PR and submit to the provider.
-
-**What happens:**
-- PR is created with the changes
-- Task is marked as submitted in your issue tracker
-- Workspace state transitions to `submitted`
-
-**Why this matters:**
-Your work is now visible to your team. The PR includes everything needed for code review — your original requirements and the changes that implement them.
-
-**Commands:**
-- CLI: `kvelmo submit`
-- Web UI: Click **Submit**
-
----
-
-## After Submit
-
-Once your PR is merged:
-
-- `kvelmo refresh` — Check PR status and update task state
-- `kvelmo finish` — Clean up the branch and return to main
-
-## Undo and Redo
-
-Every phase creates a checkpoint. If something goes wrong, you can step back:
-
-```
-kvelmo undo    # Revert to previous checkpoint
-kvelmo redo    # Restore a checkpoint you undid
+```text
+start -> plan -> implement -> review -> submit -> finish
 ```
 
-**Why this matters:**
-You can experiment freely. Try an approach, undo if it doesn't work, try something different. Your history is preserved — nothing is lost until you explicitly clean up.
+That is the path most users will recognize in the Web UI and the path most docs should teach first.
+
+## The Full Lifecycle
+
+The actual lifecycle is broader:
+
+```text
+start -> plan -> implement -> simplify? -> optimize? -> review -> submit -> finish
+```
+
+The state machine also includes recovery and coordination states such as `waiting`, `paused`, and `failed`.
+
+## 1. Start
+
+Load a task and prepare the project workspace.
+
+Typical sources include:
+
+- local files
+- GitHub
+- GitLab
+- Linear
+- Wrike
+- Jira
+- Azure DevOps
+- plain text input
+
+What happens:
+
+- task context is loaded
+- task state moves to `loaded`
+- git/worktree preparation happens
+- the task becomes visible through every active interface
+
+## 2. Plan
+
+Generate a specification before code changes begin.
+
+What happens:
+
+- the agent inspects the task and codebase
+- a reviewable plan is produced
+- task state moves through planning into `planned`
+- a checkpoint is recorded
+
+Why it matters:
+
+- it separates understanding from execution
+- it gives humans a clean approval point before code churn starts
+
+## 3. Implement
+
+Execute the approved direction in the project worktree.
+
+What happens:
+
+- code changes are applied
+- output and progress are streamed
+- task state moves into `implementing` and then `implemented`
+- another checkpoint is recorded
+
+## 4. Simplify
+
+Optionally run a cleanup pass focused on clarity.
+
+Use this when the first implementation works but is more complex or verbose than necessary.
+
+## 5. Optimize
+
+Optionally run a follow-up pass focused on quality improvements.
+
+Use this when you want to improve output quality, reduce complexity, or clean up rough edges after functional completion.
+
+## 6. Review
+
+Review is the human checkpoint before submission.
+
+Depending on your setup, review may include:
+
+- file diffs
+- logs and live output
+- findings and policy gates
+- CI and security signals
+- checklisting and approvals
+
+This is where kvelmo stops being "agent runner" and behaves more like workflow control.
+
+## 7. Submit
+
+Create the pull request and update provider-facing task state.
+
+At this point the work is ready to leave the machine and enter the team workflow.
+
+## 8. Finish
+
+Clean up after merge or after the task reaches its natural endpoint.
+
+This usually means closing the loop on task state and repository state.
 
 ## Recovery
 
-If something goes wrong, you have options:
+Recovery is part of the workflow, not an afterthought.
 
-| Situation          | Solution                                           |
-|--------------------|----------------------------------------------------|
-| Bad implementation | `kvelmo undo` to revert to the previous checkpoint |
-| Stuck state        | `kvelmo reset` to recover without losing work      |
-| Want to start over | `kvelmo abandon` for full cleanup                  |
+Common commands:
 
-**The key insight:** Every step is reversible. You're never stuck with a bad outcome.
+```bash
+kvelmo undo
+kvelmo redo
+kvelmo reset
+kvelmo retry
+kvelmo stop
+kvelmo abort
+```
 
----
+Use them to navigate checkpoints, recover from failed states, or interrupt long-running operations.
+
+## Interface Perspective
+
+### Web UI
+
+Best for:
+
+- dashboards
+- visual task control
+- live status and review context
+- panel-based exploration of related features
+
+### CLI
+
+Best for:
+
+- scripts and automation
+- explicit command composition
+- provider operations and shell-native tasks
+- system-facing control paths
+
+### Desktop App
+
+Best for:
+
+- local native shell around the same workflow
+
+### TUI
+
+Best for:
+
+- full-screen terminal control without a browser
+- live output monitoring in terminal-first environments
+
+## Parity Boundaries
+
+The workflow is shared across interfaces, but not every control is presented identically everywhere.
+
+That is deliberate.
+
+Examples of interface-specific emphasis:
+
+- the Web UI is strongest for dashboards, panels, and review surfaces
+- the CLI is strongest for raw command control, shell integration, and RPC
+- the TUI is strongest for compact terminal-based steering
 
 ## Technical Details
 
-For developers interested in the underlying mechanics, see [State Machine](/concepts/state-machine.md) for the full state transition diagram.
+For the formal state model, see [State Machine](/concepts/state-machine.md).
