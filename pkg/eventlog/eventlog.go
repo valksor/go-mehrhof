@@ -85,7 +85,7 @@ func (l *Log) Append(entry Entry) error {
 }
 
 // Query reads all entries matching the given event type, returning the last limit entries.
-func (l *Log) Query(eventType string, limit int) ([]Entry, error) {
+func (l *Log) Query(eventType EventType, limit int) ([]Entry, error) {
 	all, err := ReadAll(l.dir)
 	if err != nil {
 		return nil, err
@@ -93,7 +93,7 @@ func (l *Log) Query(eventType string, limit int) ([]Entry, error) {
 
 	var results []Entry
 	for _, e := range all {
-		if string(e.Type) == eventType {
+		if e.Type == eventType {
 			results = append(results, e)
 		}
 	}

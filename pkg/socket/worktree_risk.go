@@ -3,6 +3,8 @@ package socket
 import (
 	"context"
 	"encoding/json"
+
+	"github.com/valksor/kvelmo/pkg/eventlog"
 )
 
 // handleRiskEvaluate returns the current task risk score.
@@ -42,7 +44,7 @@ func (w *WorktreeSocket) handleRiskHistory(_ context.Context, req *Request) (*Re
 		return NewResultResponse(req.ID, map[string]any{"entries": []any{}})
 	}
 
-	entries, err := el.Query("risk_evaluated", params.Limit)
+	entries, err := el.Query(eventlog.EventRiskEvaluated, params.Limit)
 	if err != nil {
 		return NewErrorResponse(req.ID, ErrCodeInternal, err.Error()), nil
 	}

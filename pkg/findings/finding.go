@@ -41,6 +41,15 @@ const (
 	OriginUnknown     Origin = "unknown"
 )
 
+// Classification identifies the failure pattern type of a finding.
+type Classification string
+
+const (
+	ClassificationFlaky        Classification = "flaky"
+	ClassificationGenuine      Classification = "genuine"
+	ClassificationIntermittent Classification = "intermittent"
+)
+
 // Category identifies which subsystem produced the finding.
 type Category string
 

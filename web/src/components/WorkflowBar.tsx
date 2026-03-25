@@ -10,6 +10,7 @@ const EXPLAIN_PROMPT = 'Explain what you did in the last action, why you made th
 
 /** Format seconds into human-friendly ETA string. */
 function formatETA(seconds: number): string {
+  seconds = Math.round(seconds)
   if (seconds <= 0) return '0s'
   if (seconds < 60) return `${seconds}s`
   const mins = Math.floor(seconds / 60)
@@ -251,7 +252,7 @@ export function WorkflowBar() {
                 <span className={isSkipped ? 'text-[10px] sm:text-xs text-base-content/20 line-through' : labelClass}>{step.label}</span>
                 {showAutoFix && (
                   <span className="badge badge-xs badge-warning animate-pulse" title={`Auto-fix attempt ${autoFixStatus.attempt ?? '?'}/${autoFixStatus.maxAttempts ?? '?'}`}>
-                    fix {autoFixStatus.attempt}/{autoFixStatus.maxAttempts}
+                    fix {autoFixStatus.attempt ?? '?'}/{autoFixStatus.maxAttempts ?? '?'}
                   </span>
                 )}
               </div>

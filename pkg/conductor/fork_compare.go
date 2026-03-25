@@ -118,25 +118,16 @@ func parseDiffStat(stat string) (ds DiffStats, added, modified, linesAdded, line
 		}
 	}
 
-	// Count file types from individual lines (all non-summary lines)
+	// Count file entries from individual lines (all non-summary lines).
+	// Note: git diff --stat cannot reliably distinguish new files from modified
+	// files, so all entries are classified as modified.
 	for _, line := range lines[:len(lines)-1] {
 		line = strings.TrimSpace(line)
 		if line == "" {
 			continue
 		}
-		// Files with only additions are "added" if they have no removals
 		if strings.Contains(line, "|") {
-			parts := strings.SplitN(line, "|", 2)
-			if len(parts) == 2 {
-				changePart := strings.TrimSpace(parts[1])
-				hasPlus := strings.Contains(changePart, "+")
-				hasMinus := strings.Contains(changePart, "-")
-				if hasPlus && !hasMinus {
-					added++
-				} else {
-					modified++
-				}
-			}
+			modified++
 		}
 	}
 

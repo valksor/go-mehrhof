@@ -40,7 +40,6 @@ func (c *Conductor) runQualityAutoFix(ctx context.Context, qualityErr error) err
 		maxAttempts = defaultMaxAutoFixAttempts
 	}
 
-	state := c.machine.State()
 	lastErr := qualityErr
 
 	for attempt := 1; attempt <= maxAttempts; attempt++ {
@@ -57,7 +56,7 @@ func (c *Conductor) runQualityAutoFix(ctx context.Context, qualityErr error) err
 		if data, err := json.Marshal(map[string]int{"attempt": attempt, "max_attempts": maxAttempts}); err == nil {
 			c.emit(ConductorEvent{
 				Type:    "autofix_attempt",
-				State:   state,
+				State:   c.machine.State(),
 				Message: fmt.Sprintf("Auto-fix attempt %d/%d: %s", attempt, maxAttempts, lastErr.Error()),
 				Data:    data,
 			})
@@ -113,7 +112,7 @@ func (c *Conductor) runQualityAutoFix(ctx context.Context, qualityErr error) err
 
 			c.emit(ConductorEvent{
 				Type:    "autofix_success",
-				State:   state,
+				State:   c.machine.State(),
 				Message: fmt.Sprintf("Auto-fix succeeded on attempt %d/%d", attempt, maxAttempts),
 			})
 
@@ -135,7 +134,7 @@ func (c *Conductor) runQualityAutoFix(ctx context.Context, qualityErr error) err
 
 	c.emit(ConductorEvent{
 		Type:    "autofix_exhausted",
-		State:   state,
+		State:   c.machine.State(),
 		Message: fmt.Sprintf("Auto-fix exhausted after %d attempts", maxAttempts),
 	})
 

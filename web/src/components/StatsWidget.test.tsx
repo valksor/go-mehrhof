@@ -211,6 +211,7 @@ describe('StatsWidget', () => {
   })
 
   it('does not show cache stats when disabled', () => {
+    mockProjectState.connected = true
     mockProjectState.cacheStats = { enabled: false, entries: 0, hits: 0, misses: 0, hit_rate: 0, tokens_saved: 0 }
     const { queryByText } = render(<StatsWidget />)
     expect(queryByText('Response Cache')).not.toBeInTheDocument()

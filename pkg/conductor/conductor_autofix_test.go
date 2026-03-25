@@ -130,9 +130,6 @@ func TestAutoFixLoop_MaxAttemptsRespected(t *testing.T) {
 	if fixErr == nil {
 		t.Error("runQualityAutoFix() = nil, want error (no pool)")
 	}
-	if fixErr != nil && !errors.Is(fixErr, fixErr) {
-		t.Errorf("unexpected error type: %v", fixErr)
-	}
 }
 
 func TestAutoFixLoop_GetAutoFixStatus(t *testing.T) {

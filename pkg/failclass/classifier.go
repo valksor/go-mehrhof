@@ -2,13 +2,13 @@ package failclass
 
 import "github.com/valksor/kvelmo/pkg/findings"
 
-// Classification represents the failure pattern type.
-type Classification string
+// Classification is an alias for findings.Classification.
+type Classification = findings.Classification
 
 const (
-	ClassFlaky        Classification = "flaky"
-	ClassGenuine      Classification = "genuine"
-	ClassIntermittent Classification = "intermittent"
+	ClassFlaky        = findings.ClassificationFlaky
+	ClassGenuine      = findings.ClassificationGenuine
+	ClassIntermittent = findings.ClassificationIntermittent
 )
 
 // Classifier annotates findings with failure pattern classifications.
@@ -68,7 +68,7 @@ func (c *Classifier) Stats(ff []findings.Finding) Stats {
 	s := Stats{Total: len(ff)}
 
 	for _, f := range ff {
-		switch Classification(f.Classification) {
+		switch findings.Classification(f.Classification) {
 		case ClassFlaky:
 			s.Flaky++
 		case ClassGenuine:

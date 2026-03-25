@@ -28,9 +28,10 @@ function OutcomeBadges({ outcome }: { outcome?: DocumentOutcome }) {
 
   return (
     <div className="flex items-center gap-1 flex-wrap">
-      {outcome.success ? (
+      {outcome.success === true && (
         <span className="badge badge-xs badge-success" title="Task succeeded">pass</span>
-      ) : (
+      )}
+      {outcome.success === false && (
         <span className="badge badge-xs badge-error" title="Task failed">fail</span>
       )}
       {outcome.pr_merged && (

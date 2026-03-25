@@ -57,6 +57,9 @@ func (g *GlobalSocket) handleTaskGroupStatus(_ context.Context, req *Request) (*
 	if err := json.Unmarshal(req.Params, &params); err != nil {
 		return NewErrorResponse(req.ID, ErrCodeInvalidParams, "invalid params"), nil
 	}
+	if params.ID == "" {
+		return NewErrorResponse(req.ID, ErrCodeInvalidParams, "id is required"), nil
+	}
 	group, err := taskGroupCoordinator.GetGroup(params.ID)
 	if err != nil {
 		return NewErrorResponse(req.ID, ErrCodeInternal, err.Error()), nil
@@ -88,7 +91,10 @@ func (g *GlobalSocket) handleTaskGroupAdd(_ context.Context, req *Request) (*Res
 	if err := taskGroupCoordinator.AddTask(params.ID, ref); err != nil {
 		return NewErrorResponse(req.ID, ErrCodeInternal, err.Error()), nil
 	}
-	group, _ := taskGroupCoordinator.GetGroup(params.ID)
+	group, err := taskGroupCoordinator.GetGroup(params.ID)
+	if err != nil {
+		return NewErrorResponse(req.ID, ErrCodeInternal, err.Error()), nil
+	}
 	return NewResultResponse(req.ID, group)
 }
 
@@ -105,7 +111,10 @@ func (g *GlobalSocket) handleTaskGroupSubmit(_ context.Context, req *Request) (*
 	if err := taskGroupCoordinator.SubmitGroup(params.ID); err != nil {
 		return NewErrorResponse(req.ID, ErrCodeInternal, err.Error()), nil
 	}
-	group, _ := taskGroupCoordinator.GetGroup(params.ID)
+	group, err := taskGroupCoordinator.GetGroup(params.ID)
+	if err != nil {
+		return NewErrorResponse(req.ID, ErrCodeInternal, err.Error()), nil
+	}
 	return NewResultResponse(req.ID, group)
 }
 
