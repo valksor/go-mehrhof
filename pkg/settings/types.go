@@ -51,6 +51,10 @@ type AgentSettings struct {
 	Consensus     *ConsensusConfig       `yaml:"consensus,omitempty" json:"consensus,omitempty"`
 	ResponseCache *ResponseCacheSettings `yaml:"response_cache,omitempty" json:"response_cache,omitempty"`
 
+	// Budget limits (0 = unlimited)
+	TokenBudget     int64 `yaml:"token_budget,omitempty" json:"token_budget,omitempty" schema:"label=Token Budget;desc=Max tokens per agent execution (0 = unlimited);min=0;advanced"`
+	TaskTokenBudget int64 `yaml:"task_token_budget,omitempty" json:"task_token_budget,omitempty" schema:"label=Task Token Budget;desc=Max tokens per task across all phases (0 = unlimited);min=0;advanced"`
+
 	// API agent settings
 	OpenAI    OpenAIAgentConfig    `yaml:"openai,omitempty" json:"openai,omitempty"`
 	Anthropic AnthropicAgentConfig `yaml:"anthropic,omitempty" json:"anthropic,omitempty"`

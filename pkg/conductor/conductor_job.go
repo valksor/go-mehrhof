@@ -15,6 +15,7 @@ import (
 	"github.com/valksor/kvelmo/pkg/git"
 	"github.com/valksor/kvelmo/pkg/graph"
 	"github.com/valksor/kvelmo/pkg/memory"
+	"github.com/valksor/kvelmo/pkg/metrics"
 	"github.com/valksor/kvelmo/pkg/security"
 	"github.com/valksor/kvelmo/pkg/storage"
 	"github.com/valksor/kvelmo/pkg/worker"
@@ -60,6 +61,19 @@ func (c *Conductor) recordPhaseMetrics(completionEvent Event, jobID string) {
 			if recPath, ok := job.Metadata["recording_path"].(string); ok {
 				pm.RecordingPath = recPath
 			}
+			// Capture token usage from agent.
+			if v, ok := toInt64(job.Metadata["input_tokens"]); ok {
+				pm.InputTokens = v
+			}
+			if v, ok := toInt64(job.Metadata["output_tokens"]); ok {
+				pm.OutputTokens = v
+			}
+			if v, ok := toInt64(job.Metadata["total_tokens"]); ok {
+				pm.TotalTokens = v
+			}
+			if pm.TotalTokens > 0 {
+				pm.EstCostUSD = estimateCost(pm.Agent, pm.InputTokens, pm.OutputTokens)
+			}
 		}
 	}
 
@@ -69,6 +83,11 @@ func (c *Conductor) recordPhaseMetrics(completionEvent Event, jobID string) {
 	}
 
 	c.workUnit.PhaseMetrics[phase] = pm
+
+	// Record per-agent execution metrics for dashboard breakdown.
+	if pm.Agent != "" {
+		metrics.Global().RecordAgentExecution(pm.Agent, pm.TotalTokens, pm.Duration, false)
+	}
 
 	// Feed completed duration into the calibrator for future progress estimates.
 	c.recordProgressCalibration(phase)
@@ -1013,4 +1032,45 @@ func (c *Conductor) commitRepoSpecs(ctx context.Context) {
 
 	c.workUnit.Checkpoints = append(c.workUnit.Checkpoints, sha)
 	slog.Info("spec committed to repo", "sha", sha)
+}
+
+// toInt64 extracts an int64 from an any value (handles int64 and float64 from JSON).
+func toInt64(v any) (int64, bool) {
+	switch n := v.(type) {
+	case int64:
+		return n, true
+	case float64:
+		return int64(n), true
+	case int:
+		return int64(n), true
+	default:
+		return 0, false
+	}
+}
+
+// estimateCost returns a rough USD cost estimate based on provider pricing.
+// Prices are approximate and should be updated as provider pricing changes.
+func estimateCost(agentName string, inputTokens, outputTokens int64) float64 {
+	var inputPricePer1M, outputPricePer1M float64
+
+	switch agentName {
+	case "anthropic":
+		// Claude Sonnet 4 pricing (approximate)
+		inputPricePer1M = 3.0
+		outputPricePer1M = 15.0
+	case "openai":
+		// GPT-4o pricing (approximate)
+		inputPricePer1M = 2.5
+		outputPricePer1M = 10.0
+	case "ollama":
+		// Local models: no cost
+		return 0
+	default:
+		// Conservative default estimate
+		inputPricePer1M = 3.0
+		outputPricePer1M = 15.0
+	}
+
+	return float64(inputTokens)/1_000_000*inputPricePer1M +
+		float64(outputTokens)/1_000_000*outputPricePer1M
 }

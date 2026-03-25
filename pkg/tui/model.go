@@ -58,15 +58,17 @@ type Model struct {
 	chatInput textinput.Model // bubbles text input for chat
 	msgs      chan tea.Msg    // fan-in channel from all socket connections
 	//nolint:containedctx // Model owns its shutdown context for goroutine lifecycle management
-	ctx       context.Context
-	cancel    context.CancelFunc
-	width     int
-	height    int
-	ready     bool
-	showHelp  bool
-	dryRun    bool
-	startMode bool // when true, Enter sends task start instead of chat message
-	err       error
+	ctx           context.Context
+	cancel        context.CancelFunc
+	width         int
+	height        int
+	ready         bool
+	showHelp      bool
+	dryRun        bool
+	startMode     bool // when true, Enter sends task start instead of chat message
+	changelogMode bool // when true, Enter sends changelog generate (source..target)
+	changelogFull bool // when true, changelog includes body text
+	err           error
 }
 
 // NewModel constructs a new TUI model with the given cwd and layout.
@@ -135,6 +137,23 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		return m, nil
 
+	case changelogResultMsg:
+		m.output.SetContent(msg.content)
+		m.output.GotoTop()
+
+		return m, nil
+
+	case commandResultMsg:
+		if msg.output != "" {
+			if wt := m.activeWorktree(); wt != nil {
+				idx := m.active
+				m.worktrees[idx].Output = append(m.worktrees[idx].Output, msg.output)
+				m.syncViewport()
+			}
+		}
+
+		return m, nil
+
 	case progressMsg:
 		for i, wt := range m.worktrees {
 			if wt.Dir == msg.worktreeDir {
@@ -196,6 +215,19 @@ func (m *Model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 				m.chatInput.Placeholder = "Chat with agent..."
 
 				return m, m.sendStartTask(text)
+			}
+			if m.changelogMode {
+				full := m.changelogFull
+				m.changelogMode = false
+				m.changelogFull = false
+				m.chatInput.Placeholder = "Chat with agent..."
+
+				return m, m.fetchChangelog(text, full)
+			}
+
+			// Check for slash commands before sending as chat message.
+			if cmd, args := parseSlashCommand(text); cmd != nil {
+				return m, m.executeCommand(cmd, args)
 			}
 
 			return m, m.sendChatMessage(text)
@@ -260,6 +292,49 @@ func (m *Model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			m.dryRun = !m.dryRun
 
 			return m, nil
+		}
+
+	case "c":
+		if !m.chatInput.Focused() {
+			m.changelogMode = true
+			m.changelogFull = false
+			m.chatInput.Placeholder = "Enter source..target [note] (e.g. v1.0..v2.0 frontend only)"
+
+			return m, nil
+		}
+
+	case "C":
+		if !m.chatInput.Focused() {
+			m.changelogMode = true
+			m.changelogFull = true
+			m.chatInput.Placeholder = "Enter source..target [note] (e.g. v1.0..v2.0 frontend only) [full]"
+
+			return m, nil
+		}
+
+	case "f":
+		if !m.chatInput.Focused() {
+			return m, m.sendWorkflowCmd("simplify")
+		}
+
+	case "o":
+		if !m.chatInput.Focused() {
+			return m, m.sendWorkflowCmd("optimize")
+		}
+
+	case "F":
+		if !m.chatInput.Focused() {
+			return m, m.sendWorkflowCmd("task.finish")
+		}
+
+	case "e":
+		if !m.chatInput.Focused() {
+			return m, m.sendChatMessage("Explain what you did in the last action, why you made those choices, and any assumptions or constraints you encountered.")
+		}
+
+	case "U":
+		if !m.chatInput.Focused() {
+			return m, m.sendWorkflowCmd("update")
 		}
 
 	case "ctrl+a":
@@ -545,6 +620,73 @@ func (m *Model) sendWorkflowCmd(method string) tea.Cmd {
 		}
 
 		return nil
+	}
+}
+
+// changelogResultMsg carries the generated changelog content.
+type changelogResultMsg struct {
+	content string
+}
+
+// fetchChangelog returns a tea.Cmd that calls changelog.generate on the active worktree.
+// The input should be "source..target [note]" format.
+func (m *Model) fetchChangelog(input string, full bool) tea.Cmd {
+	wt := m.activeWorktree()
+	if wt == nil {
+		return nil
+	}
+	dir := wt.Dir
+
+	// Parse "source..target [note]" input.
+	refPart, note, _ := strings.Cut(input, " ")
+	parts := strings.SplitN(refPart, "..", 2)
+	if len(parts) != 2 || parts[0] == "" || parts[1] == "" {
+		return func() tea.Msg {
+			return errMsg{err: fmt.Errorf("invalid changelog range %q — use source..target format", input)}
+		}
+	}
+	source, target := parts[0], parts[1]
+	note = strings.TrimSpace(note)
+
+	return func() tea.Msg {
+		socketPath := socket.WorktreeSocketPath(dir)
+		client, err := socket.NewClient(socketPath, socket.WithTimeout(30*time.Second))
+		if err != nil {
+			return errMsg{err: fmt.Errorf("changelog: %w", err)}
+		}
+		defer func() { _ = client.Close() }()
+
+		p := map[string]any{
+			"source": source,
+			"target": target,
+			"full":   full,
+		}
+		if note != "" {
+			p["note"] = note
+		}
+		params, err := json.Marshal(p)
+		if err != nil {
+			return errMsg{err: fmt.Errorf("marshal params: %w", err)}
+		}
+
+		resp, err := client.Call(m.ctx, "changelog.generate", json.RawMessage(params))
+		if err != nil {
+			return errMsg{err: fmt.Errorf("changelog.generate: %w", err)}
+		}
+
+		var result struct {
+			Markdown string `json:"markdown"`
+		}
+		if err := json.Unmarshal(resp.Result, &result); err != nil {
+			return errMsg{err: fmt.Errorf("parse changelog: %w", err)}
+		}
+
+		content := result.Markdown
+		if content == "" {
+			content = fmt.Sprintf("No commits between %s and %s", source, target)
+		}
+
+		return changelogResultMsg{content: content}
 	}
 }
 

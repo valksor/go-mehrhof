@@ -39,6 +39,8 @@ var DefaultDefinitions = []SettingDefinition{
 	{Key: "notify.terminal", DisplayName: "Terminal Bell", Description: "Ring terminal bell on completion or failure", DataType: "bool", DefaultValue: true, Scopes: []string{"global", "project"}, Category: "notify"},
 	{Key: "storage.save_in_project", DisplayName: "Save in Project", Description: "Store specs/plans/chat in project directory", DataType: "bool", DefaultValue: false, Scopes: []string{"global", "project"}, Category: "storage"},
 	{Key: "workflow.hold_the_line", DisplayName: "Hold the Line", Description: "Only gate on findings in changed lines", DataType: "bool", DefaultValue: true, Scopes: []string{"global", "project"}, Category: "workflow"},
+	{Key: "agent.token_budget", DisplayName: "Token Budget", Description: "Max tokens per agent execution (0 = unlimited)", DataType: "int", DefaultValue: 0, Scopes: []string{"global", "project"}, Category: "agent"},
+	{Key: "agent.task_token_budget", DisplayName: "Task Token Budget", Description: "Max tokens per task across all phases (0 = unlimited)", DataType: "int", DefaultValue: 0, Scopes: []string{"global", "project"}, Category: "agent"},
 }
 
 // CascadeResolver resolves settings with project -> global -> default cascade.

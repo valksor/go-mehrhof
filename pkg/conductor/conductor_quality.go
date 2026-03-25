@@ -17,6 +17,7 @@ import (
 	"github.com/valksor/kvelmo/pkg/failclass"
 	"github.com/valksor/kvelmo/pkg/findings"
 	"github.com/valksor/kvelmo/pkg/quality"
+	"github.com/valksor/kvelmo/pkg/security"
 	"github.com/valksor/kvelmo/pkg/settings"
 )
 
@@ -79,6 +80,11 @@ func (c *Conductor) runQualityGateChecks(ctx context.Context) error {
 
 	// Run structured quality gates (QualityRunner) with hold-the-line filtering.
 	if err := c.runStructuredQualityGates(ctx, workDir); err != nil {
+		return err
+	}
+
+	// Run security scan if configured as a quality gate.
+	if err := c.qualityGateSecurity(ctx, workDir); err != nil {
 		return err
 	}
 
@@ -446,6 +452,70 @@ func (c *Conductor) qualityGateSlop(ctx context.Context, workDir string) error {
 	slog.Warn("quality gate: slop detected", "count", len(filtered))
 
 	return fmt.Errorf("slop detection found %d issue(s):\n%s", len(filtered), strings.Join(msgs, "\n"))
+}
+
+// qualityGateSecurity runs security scanning when RequireSecurityScan is enabled.
+// Runs secret detection and dependency vulnerability scanning, then applies
+// hold-the-line filtering so only newly introduced findings block the gate.
+func (c *Conductor) qualityGateSecurity(ctx context.Context, workDir string) error {
+	s := c.getEffectiveSettings()
+	if s == nil || !s.Workflow.Policy.RequireSecurityScan {
+		return nil
+	}
+
+	slog.Info("quality gate: running security scan")
+	c.emit(ConductorEvent{
+		Type:    "quality_gate",
+		State:   c.machine.State(),
+		Message: "Running security scan...",
+	})
+
+	secCtx, cancel := context.WithTimeout(ctx, 2*time.Minute)
+	defer cancel()
+
+	runner := security.NewRunner()
+	reports, err := runner.Run(secCtx, workDir)
+	if err != nil {
+		slog.Warn("quality gate: security scan failed", "err", err)
+
+		return nil // non-fatal; don't block on scan infrastructure failures
+	}
+
+	unified := security.ReportsToFindings(reports)
+	if len(unified) == 0 {
+		slog.Info("quality gate: security scan clean")
+
+		return nil
+	}
+
+	// Apply hold-the-line: only block on findings introduced by the agent.
+	filtered := c.classifyFindings(ctx, unified)
+	if len(filtered) == 0 {
+		slog.Info("quality gate: all security findings are pre-existing, passing")
+
+		return nil
+	}
+
+	// Only block on High/Critical severity findings.
+	var blocking []findings.Finding
+	for _, f := range filtered {
+		if f.Severity <= findings.SeverityHigh {
+			blocking = append(blocking, f)
+		}
+	}
+
+	if len(blocking) == 0 {
+		slog.Info("quality gate: security findings are low severity, passing", "count", len(filtered))
+
+		return nil
+	}
+
+	var msgs []string
+	for _, f := range blocking {
+		msgs = append(msgs, fmt.Sprintf("  [%s] %s: %s", f.Severity, f.Rule, f.Message))
+	}
+
+	return fmt.Errorf("security scan found %d blocking issue(s):\n%s", len(blocking), strings.Join(msgs, "\n"))
 }
 
 // qualityCtx returns a context with the standard 60-second quality-gate timeout.

@@ -40,6 +40,9 @@ type Metrics struct {
 	// Token tracking
 	TokensConsumed atomic.Int64
 
+	// Per-agent metrics (lock-free via sync.Map)
+	agentMetrics sync.Map // map[string]*agentCounter
+
 	// Latency tracking (simple moving average)
 	mu              sync.RWMutex
 	rpcLatencies    []time.Duration
@@ -109,6 +112,33 @@ func (m *Metrics) RecordTokens(tokens int64) {
 	m.TokensConsumed.Add(tokens)
 }
 
+// agentCounter tracks per-agent stats using lock-free atomics.
+type agentCounter struct {
+	tokens   atomic.Int64
+	requests atomic.Int64
+	errors   atomic.Int64
+	latency  atomic.Int64 // nanoseconds total
+}
+
+// RecordAgentExecution records metrics for a completed agent execution.
+func (m *Metrics) RecordAgentExecution(agentName string, tokens int64, latency time.Duration, failed bool) {
+	if agentName == "" {
+		return
+	}
+	val, _ := m.agentMetrics.LoadOrStore(agentName, &agentCounter{})
+	ac, ok := val.(*agentCounter)
+	if !ok {
+		ac = &agentCounter{}
+		m.agentMetrics.Store(agentName, ac)
+	}
+	ac.requests.Add(1)
+	ac.tokens.Add(tokens)
+	ac.latency.Add(int64(latency))
+	if failed {
+		ac.errors.Add(1)
+	}
+}
+
 // RecordRPCRequest records an RPC request with its latency and per-method breakdown.
 func (m *Metrics) RecordRPCRequest(method string, latency time.Duration, err error) {
 	m.RPCRequests.Add(1)
@@ -146,6 +176,14 @@ type MethodSnapshot struct {
 	AvgLatencyMs float64 `json:"avg_latency_ms"`
 }
 
+// AgentSnapshot holds per-agent execution statistics.
+type AgentSnapshot struct {
+	Tokens       int64   `json:"tokens"`
+	Requests     int64   `json:"requests"`
+	Errors       int64   `json:"errors"`
+	AvgLatencyMs float64 `json:"avg_latency_ms"`
+}
+
 // Snapshot returns a point-in-time snapshot of all metrics.
 type Snapshot struct {
 	JobsSubmitted  int64   `json:"jobs_submitted"`
@@ -168,6 +206,9 @@ type Snapshot struct {
 
 	// Per-method RPC metrics
 	Methods map[string]MethodSnapshot `json:"methods,omitempty"`
+
+	// Per-agent execution metrics
+	Agents map[string]AgentSnapshot `json:"agents,omitempty"`
 }
 
 // Snapshot returns current metrics values.
@@ -204,8 +245,7 @@ func (m *Metrics) Snapshot() Snapshot {
 			Errors:   mc.errors.Load(),
 		}
 		if reqs > 0 {
-			totalNs := mc.totalLatency.Load()
-			ms.AvgLatencyMs = float64(time.Duration(totalNs).Milliseconds()) / float64(reqs)
+			ms.AvgLatencyMs = float64(mc.totalLatency.Load()) / float64(time.Millisecond) / float64(reqs)
 		}
 		methods[name] = ms
 
@@ -213,6 +253,34 @@ func (m *Metrics) Snapshot() Snapshot {
 	})
 	if len(methods) > 0 {
 		s.Methods = methods
+	}
+
+	// Collect per-agent metrics
+	agents := make(map[string]AgentSnapshot)
+	m.agentMetrics.Range(func(key, value any) bool {
+		name, ok := key.(string)
+		if !ok {
+			return true
+		}
+		ac, ok := value.(*agentCounter)
+		if !ok {
+			return true
+		}
+		reqs := ac.requests.Load()
+		as := AgentSnapshot{
+			Tokens:   ac.tokens.Load(),
+			Requests: reqs,
+			Errors:   ac.errors.Load(),
+		}
+		if reqs > 0 {
+			as.AvgLatencyMs = float64(ac.latency.Load()) / float64(time.Millisecond) / float64(reqs)
+		}
+		agents[name] = as
+
+		return true
+	})
+	if len(agents) > 0 {
+		s.Agents = agents
 	}
 
 	m.mu.RLock()

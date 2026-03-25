@@ -223,11 +223,6 @@ func (g *GlobalSocket) registerHandlers() {
 	// Activity log
 	g.server.Handle("activity.query", g.handleActivityQuery)
 
-	// Timeline
-	g.server.Handle("timeline.recent", g.handleTimelineRecent)
-	g.server.Handle("timeline.task", g.handleTimelineTask)
-	g.server.Handle("timeline.summary", g.handleTimelineSummary)
-
 	// Job management
 	g.server.Handle("jobs.list", g.handleListJobs)
 	g.server.Handle("jobs.get", g.handleGetJob)

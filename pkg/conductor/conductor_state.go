@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
+	"slices"
 	"time"
 
 	"github.com/valksor/kvelmo/pkg/agent/strategy"
@@ -159,6 +160,22 @@ func (c *Conductor) archiveTask(finalState string) {
 		StartedAt:   c.workUnit.CreatedAt,
 		CompletedAt: time.Now(),
 		Tags:        c.workUnit.Tags,
+	}
+
+	// Record which phases ran and which agent was used (for pattern detection).
+	if c.workUnit.PhaseMetrics != nil {
+		phases := make([]string, 0, len(c.workUnit.PhaseMetrics))
+		for phase := range c.workUnit.PhaseMetrics {
+			phases = append(phases, phase)
+		}
+		slices.Sort(phases)
+		for _, phase := range phases {
+			pm := c.workUnit.PhaseMetrics[phase]
+			archived.PhasesRun = append(archived.PhasesRun, phase)
+			if archived.AgentUsed == "" && pm.Agent != "" {
+				archived.AgentUsed = pm.Agent
+			}
+		}
 	}
 
 	if err := c.store.ArchiveTask(archived); err != nil {

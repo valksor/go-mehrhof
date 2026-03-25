@@ -34,6 +34,8 @@ type ArchivedTask struct {
 	Duration     string    `yaml:"duration,omitempty" json:"duration,omitempty"`           // Human-readable duration (e.g., "2h15m")
 	FilesTouched []string  `yaml:"files_touched,omitempty" json:"files_touched,omitempty"` // Files modified during task
 	Tags         []string  `yaml:"tags,omitempty" json:"tags,omitempty"`                   // Task tags for filtering
+	PhasesRun    []string  `yaml:"phases_run,omitempty" json:"phases_run,omitempty"`       // Phases that were executed (for pattern detection)
+	AgentUsed    string    `yaml:"agent_used,omitempty" json:"agent_used,omitempty"`       // Primary agent used
 }
 
 // ArchiveFile returns the path to the archive index file.

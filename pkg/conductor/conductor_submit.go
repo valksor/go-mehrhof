@@ -18,6 +18,7 @@ import (
 	"github.com/valksor/kvelmo/pkg/changeset"
 	"github.com/valksor/kvelmo/pkg/git"
 	"github.com/valksor/kvelmo/pkg/memory"
+	"github.com/valksor/kvelmo/pkg/policy"
 	"github.com/valksor/kvelmo/pkg/provider"
 	"github.com/valksor/kvelmo/pkg/settings"
 	"github.com/valksor/kvelmo/pkg/storage"
@@ -128,6 +129,53 @@ func (c *Conductor) Submit(ctx context.Context, deleteBranch bool) error {
 	}
 	c.mu.Lock()
 
+	// Hoist DiffFilesWithStatus so both the policy block and the sensitive-paths
+	// block can reuse the result without calling git twice.
+	var changedFiles []git.FileStatus
+	var changedPaths []string
+	if c.git != nil {
+		c.mu.Unlock()
+		files, diffErr := c.git.DiffFilesWithStatus(ctx)
+		c.mu.Lock()
+		if diffErr != nil {
+			slog.Warn("failed to diff files for policy/sensitive-path checks", "error", diffErr)
+		} else {
+			changedFiles = files
+			changedPaths = make([]string, len(files))
+			for i, f := range files {
+				changedPaths[i] = f.Path
+			}
+		}
+	}
+
+	// Enforce policy violations — error-severity violations block submit.
+	if policyCfg := settings.Workflow.Policy; policyCfg.RequiredPhases != nil || policyCfg.RequireSecurityScan || len(policyCfg.SensitivePaths) > 0 || len(policyCfg.DocRequirements) > 0 {
+		specs := c.workUnit.Specifications
+		state := string(c.machine.State())
+		var docReqs []policy.DocRequirement
+		for _, d := range policyCfg.DocRequirements {
+			docReqs = append(docReqs, policy.DocRequirement{Trigger: d.Trigger, Requires: d.Requires})
+		}
+		violations := policy.Evaluate(policy.Settings{
+			RequiredPhases:      policyCfg.RequiredPhases,
+			SensitivePaths:      policyCfg.SensitivePaths,
+			MinSpecSections:     policyCfg.MinSpecSections,
+			RequireSecurityScan: policyCfg.RequireSecurityScan,
+			DocRequirements:     docReqs,
+		}, "submit", state, specs, changedPaths)
+		if policy.HasBlockingViolation(violations) {
+			var msgs []string
+			for _, v := range violations {
+				if v.Severity == policy.SeverityError {
+					msgs = append(msgs, v.Message)
+				}
+			}
+			c.mu.Unlock()
+
+			return fmt.Errorf("policy violations block submit: %s", strings.Join(msgs, "; "))
+		}
+	}
+
 	// Validate PR template required sections (checked early to fail fast)
 	prRequiredSections := settings.Git.PRRequiredSections
 	prCustomSections := settings.Git.PRCustomSections
@@ -159,17 +207,9 @@ func (c *Conductor) Submit(ctx context.Context, deleteBranch bool) error {
 	}
 
 	// Check sensitive paths policy — changes to sensitive files require review.
-	// The mutex is released during DiffFilesWithStatus, creating a narrow TOCTOU
-	// window where both history and git index state could change. Acceptable
-	// for single-user (concurrent agent staging is not expected during submit).
+	// Uses the hoisted changedFiles computed above.
 	if sensitivePaths := settings.Workflow.Policy.SensitivePaths; len(sensitivePaths) > 0 && c.git != nil {
-		// Get changed files
-		c.mu.Unlock()
-		changedFiles, diffErr := c.git.DiffFilesWithStatus(ctx)
-		c.mu.Lock()
-		if diffErr != nil {
-			slog.Warn("failed to diff files for sensitive path check", "error", diffErr)
-		} else {
+		if changedFiles != nil {
 			// Scope review check to current cycle (since last EventSubmit),
 			// matching the required-phases check above.
 			history := c.machine.History()

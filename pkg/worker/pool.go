@@ -407,6 +407,21 @@ func (p *Pool) executeWithAgent(ctx context.Context, job *Job, w *Worker) {
 			now := time.Now()
 			job.CompletedAt = &now
 			job.Result = result.String()
+			// Capture token usage from agent event data.
+			if agentEvent.Data != nil {
+				if job.Metadata == nil {
+					job.Metadata = make(map[string]any)
+				}
+				if v, ok := agentEvent.Data["input_tokens"]; ok {
+					job.Metadata["input_tokens"] = v
+				}
+				if v, ok := agentEvent.Data["output_tokens"]; ok {
+					job.Metadata["output_tokens"] = v
+				}
+				if v, ok := agentEvent.Data["total_tokens"]; ok {
+					job.Metadata["total_tokens"] = v
+				}
+			}
 			w.Status = StatusAvailable
 			w.CurrentJob = ""
 			p.mu.Unlock()

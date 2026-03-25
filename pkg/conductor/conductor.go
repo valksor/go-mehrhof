@@ -585,6 +585,22 @@ func (c *Conductor) SkipPhases() []string {
 	return merged
 }
 
+// Suggestions returns workflow suggestions based on historical task patterns.
+func (c *Conductor) Suggestions() ([]memory.SkipSuggestion, []memory.AgentSuggestion) {
+	if c.store == nil {
+		return nil, nil
+	}
+
+	tasks, err := c.store.ListArchivedTasks()
+	if err != nil {
+		slog.Debug("failed to list archived tasks for suggestions", "error", err)
+
+		return nil, nil
+	}
+
+	return memory.DetectSkipPatterns(tasks), memory.DetectAgentPatterns(tasks)
+}
+
 // getWorkDir returns the effective working directory for operations.
 // When worktree isolation is active, returns the isolated worktree path.
 // Otherwise returns the main worktree (project root).

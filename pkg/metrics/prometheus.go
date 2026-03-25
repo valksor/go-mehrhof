@@ -75,5 +75,42 @@ func RenderPrometheus(snap Snapshot) string {
 		}
 	}
 
+	// Per-agent execution metrics
+	if len(snap.Agents) > 0 {
+		agentNames := make([]string, 0, len(snap.Agents))
+		for name := range snap.Agents {
+			agentNames = append(agentNames, name)
+		}
+		slices.Sort(agentNames)
+
+		b = fmt.Appendf(b, "# HELP kvelmo_agent_tokens_total Total tokens consumed per agent.\n# TYPE kvelmo_agent_tokens_total counter\n")
+		for _, name := range agentNames {
+			as := snap.Agents[name]
+			label := fmt.Sprintf("agent=%q", name)
+			writeLabeled("kvelmo_agent_tokens_total", label, as.Tokens)
+		}
+
+		b = fmt.Appendf(b, "# HELP kvelmo_agent_requests_total Total requests per agent.\n# TYPE kvelmo_agent_requests_total counter\n")
+		for _, name := range agentNames {
+			as := snap.Agents[name]
+			label := fmt.Sprintf("agent=%q", name)
+			writeLabeled("kvelmo_agent_requests_total", label, as.Requests)
+		}
+
+		b = fmt.Appendf(b, "# HELP kvelmo_agent_errors_total Total errors per agent.\n# TYPE kvelmo_agent_errors_total counter\n")
+		for _, name := range agentNames {
+			as := snap.Agents[name]
+			label := fmt.Sprintf("agent=%q", name)
+			writeLabeled("kvelmo_agent_errors_total", label, as.Errors)
+		}
+
+		b = fmt.Appendf(b, "# HELP kvelmo_agent_execution_latency_avg_ms Average execution latency per agent.\n# TYPE kvelmo_agent_execution_latency_avg_ms gauge\n")
+		for _, name := range agentNames {
+			as := snap.Agents[name]
+			label := fmt.Sprintf("agent=%q", name)
+			writeLabeled("kvelmo_agent_execution_latency_avg_ms", label, as.AvgLatencyMs)
+		}
+	}
+
 	return strings.TrimRight(string(b), "\n") + "\n"
 }
