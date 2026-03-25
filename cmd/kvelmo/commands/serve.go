@@ -157,6 +157,7 @@ func runServe(cmd *cobra.Command, args []string) error {
 		// Register API-based agents from settings
 		if effective != nil {
 			apiCfg := apiagent.DefaultAPIConfig()
+			apiCfg.TokenBudget = effective.Agent.TokenBudget
 
 			cfg := effective.Agent.OpenAI
 			if err := registry.Register(openai.New(

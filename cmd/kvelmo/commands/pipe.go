@@ -20,6 +20,7 @@ import (
 	"github.com/valksor/kvelmo/pkg/agent/codex"
 	"github.com/valksor/kvelmo/pkg/agent/ollama"
 	"github.com/valksor/kvelmo/pkg/agent/openai"
+	"github.com/valksor/kvelmo/pkg/agent/replay"
 	"github.com/valksor/kvelmo/pkg/meta"
 	"github.com/valksor/kvelmo/pkg/settings"
 )
@@ -45,11 +46,13 @@ overridden per-invocation with flags.`, meta.Name),
 var (
 	pipeAgent   string
 	pipeTimeout time.Duration
+	pipeReplay  string
 )
 
 func init() {
 	PipeCmd.Flags().StringVarP(&pipeAgent, "agent", "a", "", "Agent to use (claude, codex, or custom agent name)")
 	PipeCmd.Flags().DurationVar(&pipeTimeout, "timeout", 10*time.Minute, "Maximum execution time")
+	PipeCmd.Flags().StringVar(&pipeReplay, "replay", "", "Replay a recording file instead of calling a live agent")
 }
 
 func runPipe(cmd *cobra.Command, args []string) error {
@@ -95,6 +98,7 @@ func runPipe(cmd *cobra.Command, args []string) error {
 
 	// Register API-based agents from settings.
 	apiCfg := apiagent.DefaultAPIConfig()
+	apiCfg.TokenBudget = effective.Agent.TokenBudget
 
 	oaiCfg := effective.Agent.OpenAI
 	if err := reg.Register(openai.New(
@@ -120,7 +124,14 @@ func runPipe(cmd *cobra.Command, args []string) error {
 	// Resolve the agent instance.
 	var ag agent.Agent
 
-	if customCfg, ok := effective.CustomAgents[agentName]; ok {
+	if pipeReplay != "" {
+		// Use replay agent instead of live agent.
+		ra, err := replay.New(pipeReplay)
+		if err != nil {
+			return fmt.Errorf("load replay recording: %w", err)
+		}
+		ag = ra
+	} else if customCfg, ok := effective.CustomAgents[agentName]; ok {
 		// Custom agent: extend a base agent with extra args/env.
 		base, err := reg.Get(customCfg.Extends)
 		if err != nil {

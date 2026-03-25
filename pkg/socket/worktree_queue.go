@@ -151,6 +151,7 @@ type taskSearchParams struct {
 	Until string `json:"until,omitempty"`
 	State string `json:"state,omitempty"`
 	Limit int    `json:"limit,omitempty"`
+	File  string `json:"file,omitempty"`
 }
 
 func (w *WorktreeSocket) handleTaskSearch(ctx context.Context, req *Request) (*Response, error) {
@@ -170,6 +171,7 @@ func (w *WorktreeSocket) handleTaskSearch(ctx context.Context, req *Request) (*R
 		Tag:   params.Tag,
 		State: params.State,
 		Limit: params.Limit,
+		File:  params.File,
 	}
 
 	if params.Since != "" {
@@ -196,5 +198,20 @@ func (w *WorktreeSocket) handleTaskSearch(ctx context.Context, req *Request) (*R
 	return NewResultResponse(req.ID, map[string]any{
 		"tasks": tasks,
 		"count": len(tasks),
+	})
+}
+
+// --- Suggestions Handler ---
+
+func (w *WorktreeSocket) handleSuggestionsList(_ context.Context, req *Request) (*Response, error) {
+	if w.conductor == nil {
+		return NewErrorResponse(req.ID, ErrCodeInternal, "no conductor"), nil
+	}
+
+	skipSuggestions, agentSuggestions := w.conductor.Suggestions()
+
+	return NewResultResponse(req.ID, map[string]any{
+		"skip":  skipSuggestions,
+		"agent": agentSuggestions,
 	})
 }

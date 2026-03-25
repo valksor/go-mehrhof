@@ -263,6 +263,12 @@ func (w *WorktreeSocket) registerHandlers() {
 	w.server.Handle("task.history", w.handleTaskHistory)
 	w.server.Handle("task.search", w.handleTaskSearch)
 
+	// Suggestions
+	w.server.Handle("suggestions.list", w.handleSuggestionsList)
+
+	// Changelog
+	w.server.Handle("changelog.generate", w.handleChangelogGenerate)
+
 	// Review
 	w.server.Handle("review.view", w.handleReviewView)
 

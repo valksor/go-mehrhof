@@ -304,6 +304,7 @@ func runInForeground(cwd, globalPath, wtPath string) error {
 	effective, _, _, _ := settings.LoadEffective(cwd) //nolint:dogsled // Only need effective settings
 	if effective != nil {
 		apiCfg := apiagent.DefaultAPIConfig()
+		apiCfg.TokenBudget = effective.Agent.TokenBudget
 
 		cfg := effective.Agent.OpenAI
 		if err := registry.Register(openai.New(

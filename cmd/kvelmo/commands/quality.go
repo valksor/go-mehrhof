@@ -8,11 +8,14 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var qualityJSON bool
+
 // QualityCmd is the parent command for quality gate controls.
 var QualityCmd = &cobra.Command{
 	Use:   "quality",
 	Short: "Quality gate controls",
 	Long:  "Commands for interacting with the quality gate during task review.",
+	RunE:  runQuality,
 }
 
 var qualityRespondCmd = &cobra.Command{
@@ -39,6 +42,8 @@ var qualityFailclassCmd = &cobra.Command{
 }
 
 func init() {
+	QualityCmd.Flags().BoolVar(&qualityJSON, "json", false, "Output as JSON")
+
 	qualityRespondCmd.Flags().String("prompt-id", "", "Prompt ID to respond to (required)")
 	qualityRespondCmd.Flags().Bool("yes", false, "Answer yes")
 	qualityRespondCmd.Flags().Bool("no", false, "Answer no")
@@ -46,6 +51,24 @@ func init() {
 	QualityCmd.AddCommand(qualityRespondCmd)
 	QualityCmd.AddCommand(qualityAutofixStatusCmd)
 	QualityCmd.AddCommand(qualityFailclassCmd)
+}
+
+func runQuality(_ *cobra.Command, _ []string) error {
+	ctx, cancel := context.WithTimeout(context.Background(), defaultTimeout)
+	defer cancel()
+
+	resp, err := callWorktree(ctx, "autofix.status", nil)
+	if err != nil {
+		return fmt.Errorf("autofix.status: %w", err)
+	}
+
+	if qualityJSON {
+		fmt.Println(string(resp.Result))
+
+		return nil
+	}
+
+	return outputJSON(resp.Result)
 }
 
 func runQualityRespond(cmd *cobra.Command, args []string) error {

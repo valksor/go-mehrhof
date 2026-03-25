@@ -27,13 +27,16 @@ var (
 
 var QuickCmd = &cobra.Command{
 	Use:   "quick [description]",
-	Short: "Quick-fix workflow: load, implement, and submit in one step",
-	Long: `Start a task in quick mode, skipping planning and review phases.
-Useful for trivial fixes where the full lifecycle is overkill.
+	Short: "Quick-fix workflow: load and implement, skipping planning",
+	Long: `Start a task in quick mode, skipping the planning phase and auto-advancing
+through implement, simplify, optimize, and review.
 
+Use --skip to skip additional phases (e.g., --skip simplify,optimize).
+
+  kvelmo quick "Fix typo in README"
   kvelmo quick --from github:owner/repo#123
   kvelmo quick --from file:task.md
-  kvelmo quick --text "Fix typo in README"`,
+  kvelmo quick --skip simplify,optimize`,
 	RunE: runQuick,
 }
 
@@ -119,7 +122,7 @@ func runQuick(_ *cobra.Command, args []string) error {
 		fmt.Println("Quick mode: task loaded")
 	}
 
-	fmt.Printf("Skipping plan phase, proceeding directly to implementation.\n")
+	fmt.Printf("Skipping plan phase — auto-advancing through remaining phases.\n")
 	fmt.Printf("Use '%s watch' to monitor progress.\n", meta.Name)
 
 	return nil

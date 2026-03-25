@@ -14,6 +14,8 @@ import (
 	"github.com/valksor/kvelmo/pkg/socket"
 )
 
+var catalogListJSON bool
+
 var CatalogCmd = &cobra.Command{
 	Use:   "catalog",
 	Short: "Task template catalog",
@@ -41,6 +43,8 @@ var catalogAddCmd = &cobra.Command{
 }
 
 func init() {
+	catalogListCmd.Flags().BoolVar(&catalogListJSON, "json", false, "Output as JSON")
+
 	CatalogCmd.AddCommand(catalogListCmd)
 	CatalogCmd.AddCommand(catalogUseCmd)
 	CatalogCmd.AddCommand(catalogAddCmd)
@@ -64,6 +68,12 @@ func runCatalogList(_ *cobra.Command, _ []string) error {
 	resp, err := client.Call(ctx, "catalog.list", nil)
 	if err != nil {
 		return fmt.Errorf("catalog.list: %w", err)
+	}
+
+	if catalogListJSON {
+		fmt.Println(string(resp.Result))
+
+		return nil
 	}
 
 	var result struct {

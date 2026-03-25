@@ -64,7 +64,11 @@ var groupRemoveCmd = &cobra.Command{
 	RunE:  runGroupRemove,
 }
 
-var groupAddState string
+var (
+	groupAddState   string
+	groupListJSON   bool
+	groupStatusJSON bool
+)
 
 func init() {
 	GroupCmd.AddCommand(groupCreateCmd)
@@ -75,6 +79,8 @@ func init() {
 	GroupCmd.AddCommand(groupRemoveCmd)
 
 	groupAddCmd.Flags().StringVar(&groupAddState, "state", "loaded", "Initial state to record for the task")
+	groupListCmd.Flags().BoolVar(&groupListJSON, "json", false, "Output as JSON")
+	groupStatusCmd.Flags().BoolVar(&groupStatusJSON, "json", false, "Output as JSON")
 }
 
 func groupClient() (*socket.Client, error) {
@@ -161,6 +167,12 @@ func runGroupList(_ *cobra.Command, _ []string) error {
 		return fmt.Errorf("taskgroup.list: %w", err)
 	}
 
+	if groupListJSON {
+		fmt.Println(string(resp.Result))
+
+		return nil
+	}
+
 	var result struct {
 		Groups []taskgroup.Group `json:"groups"`
 	}
@@ -197,6 +209,12 @@ func runGroupStatus(_ *cobra.Command, args []string) error {
 	}
 	if resp.Error != nil {
 		return fmt.Errorf("taskgroup.status: %s", resp.Error.Message)
+	}
+
+	if groupStatusJSON {
+		fmt.Println(string(resp.Result))
+
+		return nil
 	}
 
 	var g taskgroup.Group

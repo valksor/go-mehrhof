@@ -10,6 +10,11 @@ import (
 	"github.com/valksor/kvelmo/pkg/socket"
 )
 
+var (
+	remoteApproveJSON bool
+	remoteMergeJSON   bool
+)
+
 // RemoteCmd is the parent command for remote provider operations.
 var RemoteCmd = &cobra.Command{
 	Use:   "remote",
@@ -35,9 +40,11 @@ Supports merge methods: merge, squash, rebase (default: rebase).`,
 func init() {
 	// Approve flags
 	RemoteApproveCmd.Flags().StringP("comment", "c", "", "Comment to include with the approval")
+	RemoteApproveCmd.Flags().BoolVar(&remoteApproveJSON, "json", false, "Output as JSON")
 
 	// Merge flags
 	RemoteMergeCmd.Flags().StringP("method", "m", "rebase", "Merge method: merge, squash, rebase")
+	RemoteMergeCmd.Flags().BoolVar(&remoteMergeJSON, "json", false, "Output as JSON")
 
 	// Register subcommands
 	RemoteCmd.AddCommand(RemoteApproveCmd)
@@ -72,6 +79,12 @@ func runRemoteApprove(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("approve: %w", err)
 	}
 
+	if remoteApproveJSON {
+		fmt.Println(string(result.Result))
+
+		return nil
+	}
+
 	fmt.Printf("PR approved: %v\n", result)
 
 	return nil
@@ -103,6 +116,12 @@ func runRemoteMerge(cmd *cobra.Command, args []string) error {
 	result, err := client.Call(ctx, "remote.merge", params)
 	if err != nil {
 		return fmt.Errorf("merge: %w", err)
+	}
+
+	if remoteMergeJSON {
+		fmt.Println(string(result.Result))
+
+		return nil
 	}
 
 	fmt.Printf("PR merged: %v\n", result)

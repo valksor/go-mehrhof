@@ -14,7 +14,10 @@ import (
 	"github.com/valksor/kvelmo/pkg/storage"
 )
 
-var reviewWait bool
+var (
+	reviewWait     bool
+	reviewListJSON bool
+)
 
 var ReviewCmd = &cobra.Command{
 	Use:     "review",
@@ -37,6 +40,8 @@ func init() {
 	ReviewCmd.Flags().Bool("force", false, "Re-run review even if already reviewed")
 	ReviewCmd.Flags().Bool("adversarial", false, "Run adversarial review (stress-test the implementation)")
 	ReviewCmd.Flags().BoolVarP(&reviewWait, "wait", "w", false, "Wait for job to complete, streaming output")
+
+	reviewListCmd.Flags().BoolVar(&reviewListJSON, "json", false, "Output as JSON")
 
 	ReviewCmd.AddCommand(reviewListCmd)
 	ReviewCmd.AddCommand(reviewViewCmd)
@@ -152,6 +157,12 @@ func runReviewList(cmd *cobra.Command, args []string) error {
 	resp, err := client.Call(ctx, "review.list", nil)
 	if err != nil {
 		return fmt.Errorf("review.list: %w", err)
+	}
+
+	if reviewListJSON {
+		fmt.Println(string(resp.Result))
+
+		return nil
 	}
 
 	var result struct {
