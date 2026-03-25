@@ -261,7 +261,14 @@ func (p *Provider) ParseStream(ctx context.Context, body io.ReadCloser) (<-chan 
 
 			// Check if done
 			if resp.Done {
-				chunks <- apiagent.Chunk{Type: apiagent.ChunkDone}
+				chunk := apiagent.Chunk{Type: apiagent.ChunkDone}
+				if resp.PromptEvalCount > 0 || resp.EvalCount > 0 {
+					chunk.Usage = &apiagent.UsageData{
+						InputTokens:  resp.PromptEvalCount,
+						OutputTokens: resp.EvalCount,
+					}
+				}
+				chunks <- chunk
 
 				return
 			}
@@ -277,9 +284,11 @@ func (p *Provider) ParseStream(ctx context.Context, body io.ReadCloser) (<-chan 
 // Ollama native /api/chat response format.
 
 type chatResponse struct {
-	Message    chatMessage `json:"message"`
-	Done       bool        `json:"done"`
-	DoneReason string      `json:"done_reason"`
+	Message         chatMessage `json:"message"`
+	Done            bool        `json:"done"`
+	DoneReason      string      `json:"done_reason"`
+	PromptEvalCount int64       `json:"prompt_eval_count,omitempty"` // Input tokens (reported on done=true)
+	EvalCount       int64       `json:"eval_count,omitempty"`        // Output tokens (reported on done=true)
 }
 
 type chatMessage struct {

@@ -148,9 +148,9 @@ func TestCategorize(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.title, func(t *testing.T) {
-			got := categorize(tt.title)
+			got := Categorize(tt.title)
 			if got != tt.want {
-				t.Errorf("categorize(%q) = %q, want %q", tt.title, got, tt.want)
+				t.Errorf("Categorize(%q) = %q, want %q", tt.title, got, tt.want)
 			}
 		})
 	}

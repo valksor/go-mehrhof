@@ -424,6 +424,65 @@ func (r *Repository) CommitsSince(ctx context.Context, sinceRef string) ([]LogEn
 	return parseLogOutput(out), nil
 }
 
+// CommitsBetween returns log entries for commits in the range from..to (exclusive..inclusive).
+func (r *Repository) CommitsBetween(ctx context.Context, from, to string) ([]LogEntry, error) {
+	out, err := r.run(ctx, "log", "--format="+logFormat, from+".."+to)
+	if err != nil {
+		return nil, err
+	}
+
+	return parseLogOutput(out), nil
+}
+
+// logFormatFull includes the commit body, using NUL as record separator.
+const logFormatFull = "%H|%s|%an|%ai%x00%b%x00"
+
+// LogEntryFull extends LogEntry with the commit body.
+type LogEntryFull struct {
+	LogEntry
+
+	Body string
+}
+
+// parseLogOutputFull parses git log output produced with logFormatFull.
+func parseLogOutputFull(out string) []LogEntryFull {
+	var entries []LogEntryFull
+	records := strings.Split(out, "\x00")
+	// Records come in pairs: header, body, header, body, ...
+	for i := 0; i+1 < len(records); i += 2 {
+		header := strings.TrimSpace(records[i])
+		body := strings.TrimSpace(records[i+1])
+		if header == "" {
+			continue
+		}
+		parts := strings.SplitN(header, "|", 4)
+		if len(parts) < 4 {
+			continue
+		}
+		entries = append(entries, LogEntryFull{
+			LogEntry: LogEntry{
+				SHA:     parts[0],
+				Message: parts[1],
+				Author:  parts[2],
+				Date:    parts[3],
+			},
+			Body: body,
+		})
+	}
+
+	return entries
+}
+
+// CommitsBetweenFull returns log entries with body text for commits in the range from..to.
+func (r *Repository) CommitsBetweenFull(ctx context.Context, from, to string) ([]LogEntryFull, error) {
+	out, err := r.run(ctx, "log", "--format="+logFormatFull, from+".."+to)
+	if err != nil {
+		return nil, err
+	}
+
+	return parseLogOutputFull(out), nil
+}
+
 // CommitInfo returns metadata for a single commit SHA.
 func (r *Repository) CommitInfo(ctx context.Context, sha string) (LogEntry, error) {
 	out, err := r.run(ctx, "log", "-1", "--format="+logFormat, sha)

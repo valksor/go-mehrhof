@@ -11,6 +11,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"slices"
 	"strings"
 
 	"github.com/valksor/kvelmo/pkg/agent/apiagent"
@@ -122,12 +123,17 @@ func ParseOpenAIStream(ctx context.Context, body io.ReadCloser) <-chan apiagent.
 
 		// Accumulate tool calls across chunks (OpenAI sends them incrementally)
 		pendingTools := make(map[int]*toolCallAccumulator)
+		var usage apiagent.UsageData
 
 		for sse := range apiagent.ParseSSE(ctx, body) {
 			if sse.Data == "[DONE]" {
 				// Flush any pending tool calls
 				flushTools(pendingTools, chunks)
-				chunks <- apiagent.Chunk{Type: apiagent.ChunkDone}
+				chunk := apiagent.Chunk{Type: apiagent.ChunkDone}
+				if usage.InputTokens > 0 || usage.OutputTokens > 0 {
+					chunk.Usage = &usage
+				}
+				chunks <- chunk
 
 				return
 			}
@@ -135,6 +141,12 @@ func ParseOpenAIStream(ctx context.Context, body io.ReadCloser) <-chan apiagent.
 			var resp streamResponse
 			if err := json.Unmarshal([]byte(sse.Data), &resp); err != nil {
 				continue // Skip malformed events
+			}
+
+			// Accumulate usage data (OpenAI sends it on the final chunk)
+			if resp.Usage != nil {
+				usage.InputTokens += resp.Usage.PromptTokens
+				usage.OutputTokens += resp.Usage.CompletionTokens
 			}
 
 			if len(resp.Choices) == 0 {
@@ -175,7 +187,11 @@ func ParseOpenAIStream(ctx context.Context, body io.ReadCloser) <-chan apiagent.
 			// Check for stop reason
 			if resp.Choices[0].FinishReason != "" {
 				flushTools(pendingTools, chunks)
-				chunks <- apiagent.Chunk{Type: apiagent.ChunkDone}
+				chunk := apiagent.Chunk{Type: apiagent.ChunkDone}
+				if usage.InputTokens > 0 || usage.OutputTokens > 0 {
+					chunk.Usage = &usage
+				}
+				chunks <- chunk
 
 				return
 			}
@@ -183,7 +199,11 @@ func ParseOpenAIStream(ctx context.Context, body io.ReadCloser) <-chan apiagent.
 
 		// Stream ended without explicit DONE
 		flushTools(pendingTools, chunks)
-		chunks <- apiagent.Chunk{Type: apiagent.ChunkDone}
+		chunk := apiagent.Chunk{Type: apiagent.ChunkDone}
+		if usage.InputTokens > 0 || usage.OutputTokens > 0 {
+			chunk.Usage = &usage
+		}
+		chunks <- chunk
 	}()
 
 	return chunks
@@ -267,6 +287,12 @@ type streamResponse struct {
 		} `json:"delta"`
 		FinishReason string `json:"finish_reason"`
 	} `json:"choices"`
+	Usage *streamUsage `json:"usage,omitempty"`
+}
+
+type streamUsage struct {
+	PromptTokens     int64 `json:"prompt_tokens"`
+	CompletionTokens int64 `json:"completion_tokens"`
 }
 
 type toolCall struct {
@@ -285,9 +311,17 @@ type toolCallAccumulator struct {
 	args string
 }
 
-// flushTools emits accumulated tool calls as ChunkToolUse events.
+// flushTools emits accumulated tool calls as ChunkToolUse events in index order.
 func flushTools(tools map[int]*toolCallAccumulator, chunks chan<- apiagent.Chunk) {
-	for _, acc := range tools {
+	// Emit in index order for deterministic output.
+	indices := make([]int, 0, len(tools))
+	for idx := range tools {
+		indices = append(indices, idx)
+	}
+	slices.Sort(indices)
+
+	for _, idx := range indices {
+		acc := tools[idx]
 		var input map[string]any
 		if acc.args != "" {
 			_ = json.Unmarshal([]byte(acc.args), &input)

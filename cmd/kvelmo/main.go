@@ -168,6 +168,9 @@ func init() {
 	// Compliance reports
 	rootCmd.AddCommand(commands.ReportCmd)
 
+	// Changelog generation
+	rootCmd.AddCommand(commands.ChangelogCmd)
+
 	// Template catalog
 	rootCmd.AddCommand(commands.CatalogCmd)
 

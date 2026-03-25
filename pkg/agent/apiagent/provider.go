@@ -45,12 +45,19 @@ const (
 	ChunkError                    // API error
 )
 
+// UsageData contains token consumption data from an API response.
+type UsageData struct {
+	InputTokens  int64 // Tokens used for the prompt/input
+	OutputTokens int64 // Tokens generated in the response
+}
+
 // Chunk represents a single piece of a streaming API response.
 type Chunk struct {
 	Type    ChunkType
 	Text    string        // For ChunkText
 	ToolUse *ToolUseChunk // For ChunkToolUse
 	Error   string        // For ChunkError
+	Usage   *UsageData    // For ChunkDone (populated by providers that report usage)
 }
 
 // ToolUseChunk represents a tool call requested by the model.

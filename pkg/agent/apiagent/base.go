@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/valksor/kvelmo/pkg/agent"
+	"github.com/valksor/kvelmo/pkg/metrics"
 )
 
 // Base implements the agent.Agent interface for API-based agents.
@@ -194,8 +195,19 @@ func (b *Base) conversationLoop(ctx context.Context, cancel context.CancelFunc, 
 
 	tools := KvelmoTools()
 
+	var totalInputTokens, totalOutputTokens int64
+
 	for turn := range b.config.MaxTurns {
 		slog.Debug("apiagent: conversation turn", "agent", b.provider.Name(), "turn", turn+1, "messages", len(messages))
+
+		// Check token budget before each turn.
+		if b.config.TokenBudget > 0 && (totalInputTokens+totalOutputTokens) >= b.config.TokenBudget {
+			b.emitError(events, fmt.Sprintf("token budget exceeded: used %d of %d tokens",
+				totalInputTokens+totalOutputTokens, b.config.TokenBudget))
+
+			return
+		}
+
 		if b.interrupted.Load() {
 			b.emit(events, agent.Event{
 				Type:      agent.EventInterrupted,
@@ -240,6 +252,7 @@ func (b *Base) conversationLoop(ctx context.Context, cancel context.CancelFunc, 
 		var assistantText string
 		var toolCalls []ToolCall
 		hadToolUse := false
+		var turnUsage *UsageData
 
 		for chunk := range chunks {
 			if b.interrupted.Load() {
@@ -290,10 +303,18 @@ func (b *Base) conversationLoop(ctx context.Context, cancel context.CancelFunc, 
 
 			case ChunkDone:
 				// Stream finished for this turn
+				turnUsage = chunk.Usage
 			}
 		}
 
 		resp.Body.Close() //nolint:errcheck // Best-effort cleanup on error path
+
+		// Accumulate token usage for this turn.
+		if turnUsage != nil {
+			totalInputTokens += turnUsage.InputTokens
+			totalOutputTokens += turnUsage.OutputTokens
+			metrics.Global().RecordTokens(turnUsage.InputTokens + turnUsage.OutputTokens)
+		}
 
 		// Add assistant message to conversation
 		messages = append(messages, Message{
@@ -313,6 +334,11 @@ func (b *Base) conversationLoop(ctx context.Context, cancel context.CancelFunc, 
 			b.emit(events, agent.Event{
 				Type:      agent.EventComplete,
 				Timestamp: time.Now(),
+				Data: map[string]any{
+					"input_tokens":  totalInputTokens,
+					"output_tokens": totalOutputTokens,
+					"total_tokens":  totalInputTokens + totalOutputTokens,
+				},
 			})
 
 			return

@@ -22,6 +22,9 @@ type APIConfig struct {
 	MaxTokens   int           // Maximum tokens per response (0 = provider default)
 	ExecTimeout time.Duration // Per-tool execution timeout (default: 2m)
 
+	// Budget limits
+	TokenBudget int64 // Max tokens for this execution (0 = unlimited)
+
 	// System prompt override (empty uses default)
 	SystemPrompt string
 }

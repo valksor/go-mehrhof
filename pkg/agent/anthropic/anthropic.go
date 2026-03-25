@@ -136,6 +136,7 @@ func (p *Provider) ParseStream(ctx context.Context, body io.ReadCloser) (<-chan 
 
 		// Track content blocks by index
 		blocks := make(map[int]*contentBlock)
+		var usage apiagent.UsageData
 
 		for sse := range apiagent.ParseSSE(ctx, body) {
 			switch sse.Event {
@@ -207,7 +208,11 @@ func (p *Provider) ParseStream(ctx context.Context, body io.ReadCloser) (<-chan 
 				delete(blocks, event.Index)
 
 			case "message_stop":
-				chunks <- apiagent.Chunk{Type: apiagent.ChunkDone}
+				chunk := apiagent.Chunk{Type: apiagent.ChunkDone}
+				if usage.InputTokens > 0 || usage.OutputTokens > 0 {
+					chunk.Usage = &usage
+				}
+				chunks <- chunk
 
 				return
 
@@ -221,8 +226,22 @@ func (p *Provider) ParseStream(ctx context.Context, body io.ReadCloser) (<-chan 
 
 				return
 
-			case "message_start", "message_delta", "ping":
-				// Informational events, skip
+			case "message_start":
+				// Extract input token usage from message_start event.
+				var ms messageStartEvent
+				if err := json.Unmarshal([]byte(sse.Data), &ms); err == nil {
+					usage.InputTokens += ms.Message.Usage.InputTokens
+				}
+
+			case "message_delta":
+				// Extract output token usage from message_delta event.
+				var md messageDeltaEvent
+				if err := json.Unmarshal([]byte(sse.Data), &md); err == nil {
+					usage.OutputTokens += md.Usage.OutputTokens
+				}
+
+			case "ping":
+				// Heartbeat, skip
 			}
 		}
 
@@ -337,4 +356,18 @@ type errorEvent struct {
 		Type    string `json:"type"`
 		Message string `json:"message"`
 	} `json:"error"`
+}
+
+type messageStartEvent struct {
+	Message struct {
+		Usage struct {
+			InputTokens int64 `json:"input_tokens"`
+		} `json:"usage"`
+	} `json:"message"`
+}
+
+type messageDeltaEvent struct {
+	Usage struct {
+		OutputTokens int64 `json:"output_tokens"`
+	} `json:"usage"`
 }

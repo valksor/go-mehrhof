@@ -17,8 +17,8 @@ type Entry struct {
 	Category    string // "Added", "Changed", "Fixed", "Removed"
 }
 
-// categorize determines the changelog category from the title.
-func categorize(title string) string {
+// Categorize determines the changelog category from the title.
+func Categorize(title string) string {
 	lower := strings.ToLower(title)
 	switch {
 	case strings.HasPrefix(lower, "fix") || strings.Contains(lower, "bug"):
@@ -36,7 +36,7 @@ func categorize(title string) string {
 // If the file doesn't exist, it creates it with a header.
 func AppendEntry(changelogPath string, entry Entry) error {
 	if entry.Category == "" {
-		entry.Category = categorize(entry.Title)
+		entry.Category = Categorize(entry.Title)
 	}
 
 	// Format the entry line
