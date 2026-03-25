@@ -124,6 +124,9 @@ func TestCLIFullCycle(t *testing.T) {
 	runKvelmo(t, kvelmoPath, workDir, "list")
 	tryRunKvelmo(t, kvelmoPath, workDir, "hooks")
 
+	// Test provision preview (dry run mode)
+	tryRunKvelmo(t, kvelmoPath, workDir, "start", "--provision-preview")
+
 	// Get branch name for cleanup
 	statusOutput := runKvelmoCapture(t, kvelmoPath, workDir, "status", "--json")
 	var statusResult map[string]any
@@ -172,6 +175,12 @@ func TestCLIFullCycle(t *testing.T) {
 	tryRunKvelmo(t, kvelmoPath, workDir, "security", "scan")
 	tryRunKvelmo(t, kvelmoPath, workDir, "codegraph", "stats")
 
+	// Test new feature commands (cache, quality diagnostics)
+	t.Log("Testing new feature diagnostic commands...")
+	tryRunKvelmo(t, kvelmoPath, workDir, "cache", "stats")
+	tryRunKvelmo(t, kvelmoPath, workDir, "quality", "autofix-status")
+	tryRunKvelmo(t, kvelmoPath, workDir, "quality", "failclass")
+
 	// Test task organization commands
 	t.Log("Testing task organization...")
 	runKvelmo(t, kvelmoPath, workDir, "tag", "add", "e2e-test")
@@ -207,11 +216,25 @@ func TestCLIFullCycle(t *testing.T) {
 	t.Log("Step 7: Running quality check...")
 	runKvelmo(t, kvelmoPath, workDir, "quality")
 
+	// 12b. Test fork operations (create, list, compare)
+	t.Log("Testing fork operations...")
+	tryRunKvelmo(t, kvelmoPath, workDir, "fork", "create", "test-fork-a")
+	tryRunKvelmo(t, kvelmoPath, workDir, "fork", "list")
+	tryRunKvelmo(t, kvelmoPath, workDir, "fork", "list", "--json")
+	tryRunKvelmo(t, kvelmoPath, workDir, "fork", "compare")
+
 	// 13. Review, export, and submit
 	t.Log("Step 8: Reviewing and submitting...")
 	runKvelmo(t, kvelmoPath, workDir, "review", "--approve")
 	runKvelmo(t, kvelmoPath, workDir, "show", "review")
 	runKvelmo(t, kvelmoPath, workDir, "checklist", "list")
+
+	// Test review subcommands (risk evaluation, adversarial results)
+	t.Log("Testing review diagnostic commands...")
+	tryRunKvelmo(t, kvelmoPath, workDir, "review", "risk")
+	tryRunKvelmo(t, kvelmoPath, workDir, "review", "risk-history")
+	tryRunKvelmo(t, kvelmoPath, workDir, "review", "adversarial-results")
+
 	runKvelmo(t, kvelmoPath, workDir, "export", "--format", "json")
 	tryRunKvelmo(t, kvelmoPath, workDir, "submit", "--dry-run")
 	runKvelmo(t, kvelmoPath, workDir, "submit")
@@ -261,6 +284,17 @@ func TestCLIFullCycle(t *testing.T) {
 	tryRunKvelmo(t, kvelmoPath, workDir, "cleanup")
 	tryRunKvelmo(t, kvelmoPath, workDir, "projects")
 	tryRunKvelmo(t, kvelmoPath, workDir, "access", "list")
+
+	// Test task group operations (global socket, no active task needed)
+	t.Log("Testing task group operations...")
+	tryRunKvelmo(t, kvelmoPath, workDir, "group", "create", "e2e-test-group")
+	tryRunKvelmo(t, kvelmoPath, workDir, "group", "list")
+
+	// Test memory outcomes (global socket)
+	tryRunKvelmo(t, kvelmoPath, workDir, "memory", "outcomes")
+
+	// Test cache cleanup
+	tryRunKvelmo(t, kvelmoPath, workDir, "cache", "clear")
 
 	t.Log("Workflow completed successfully!")
 

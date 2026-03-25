@@ -37,6 +37,9 @@
   - [Access Tokens](/web-ui/access.md)
   - [Logs](/web-ui/logs.md)
   - [Diagnose](/web-ui/diagnose.md)
+  - [Forks](/web-ui/forks.md)
+  - [Task Groups](/web-ui/task-groups.md)
+  - [Changelog](/web-ui/changelog.md)
   - [Settings](/web-ui/settings.md)
 
 - CLI Reference
@@ -82,6 +85,8 @@
     - [queue](/cli/queue.md)
     - [batch](/cli/batch.md)
     - [catalog](/cli/catalog.md)
+    - [fork](/cli/fork.md)
+    - [group](/cli/group.md)
   - Management
     - [autostart](/cli/autostart.md)
     - [serve](/cli/serve.md)
@@ -111,6 +116,7 @@
     - [recordings](/cli/recordings.md)
     - [rpc](/cli/rpc.md)
     - [pipe](/cli/pipe.md)
+    - [cache](/cli/cache.md)
     - [codegraph](/cli/codegraph.md)
     - [discover](/cli/discover.md)
   - Shared References
@@ -124,6 +130,7 @@
     - [security](/cli/security.md)
     - [export](/cli/export.md)
     - [report](/cli/report.md)
+    - [changelog](/cli/changelog.md)
     - [activity](/cli/activity.md)
     - [notify](/cli/notify.md)
     - [hooks](/cli/hooks.md)
@@ -141,6 +148,10 @@
   - [Claude](/agents/claude.md)
   - [Codex](/agents/codex.md)
   - [Custom](/agents/custom.md)
+  - [Ollama](/agents/ollama.md)
+  - [OpenAI](/agents/openai.md)
+  - [Permissions](/agents/permissions.md)
+  - [Replay](/agents/replay.md)
   - [Strategies](/agents/strategies.md)
 
 - Providers

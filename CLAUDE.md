@@ -147,13 +147,13 @@ Each transition creates a git checkpoint. `undo`/`redo` navigate between checkpo
 | `discovery/` | Project command scanning (Makefile, package.json, Taskfile) |
 | `eventlog/` | Append-only JSONL event log for task lifecycle replay |
 | `failclass/` | Failure pattern classification (flaky vs genuine) for quality gate findings |
-| `filter/` | Generic type-safe in-memory filtering with predicates (not yet wired) |
+| `filter/` | Generic type-safe in-memory filtering with predicates |
 | `findings/` | Unified finding model with gate rules and phase-aware quality profiles |
 | `graph/` | Dependency graph scheduling for parallel sub-tasks within phases |
 | `meta/` | Build metadata (version, commit, docs URL) |
 | `notify/` | Webhook notifications (Slack, generic) |
 | `onboarding/` | User onboarding workflows |
-| `page/` | Pagination primitives (not yet wired) |
+| `page/` | Pagination primitives |
 | `policy/` | Workflow policy checking and validation |
 | `progress/` | Phase progress estimation with historical calibration and ETA |
 | `provision/` | Smart worktree provisioning (config copy, dependency symlinks) |
@@ -163,10 +163,10 @@ Each transition creates a git checkpoint. `undo`/`redo` navigate between checkpo
 | `respcache/` | Semantic response cache for agent prompt deduplication |
 | `retry/` | Retry logic with exponential backoff |
 | `riskeval/` | Risk scoring for task-level auto-approval decisions |
-| `search/` | Hybrid fuzzy + exact text search with RRF scoring (not yet wired) |
+| `search/` | Hybrid fuzzy + exact text search with RRF scoring |
 | `taskgroup/` | Cross-repo task group coordination with synchronized submit |
 | `testutil/` | Test helpers and fixtures |
-| `timeline/` | Activity timeline service over activitylog (not yet wired) |
+| `timeline/` | Activity timeline service over activitylog |
 | `trace/` | Distributed tracing |
 | `tui/` | Terminal UI (Bubbletea-based dashboard) |
 | `varpool/` | Variable pool for inter-node context sharing during graph execution |
@@ -271,6 +271,7 @@ Commands in `cmd/kvelmo/commands/`. Entry point: `serve` (global socket + web se
 - `diff` - Show file changes from agent work
 - `list` - List tasks (active, history, queue)
 - `jobs` - View job queue and status
+- `cache` - Response cache management (stats, clear)
 - `codegraph` - Code symbol graph (stats, index, search, callers, deps)
 - `eventlog` - View task lifecycle events (phase transitions, checkpoints)
 - `tui` - Terminal UI dashboard (Bubbletea)
@@ -291,6 +292,7 @@ Commands in `cmd/kvelmo/commands/`. Entry point: `serve` (global socket + web se
 **Data & reporting:**
 - `export` - Export task history and metrics (JSON/CSV)
 - `report` - Generate compliance reports
+- `changelog` - Generate changelog between two git refs (`--full` for descriptions)
 - `stats` - Show real-time metrics
 - `activity` - View RPC activity log
 

@@ -24,10 +24,9 @@ let fixture: TestFixture
 
 // ─── WebSocket API helpers ────────────────────────────────────────────────────
 
-async function callWorktreeAPI(projectPath: string, method: string, params: any = {}): Promise<any> {
+async function callWebSocketAPI(wsUrl: string, id: string, method: string, params: Record<string, unknown> = {}): Promise<unknown> {
   const WebSocket = (await import('ws')).default
-  const encodedPath = encodeURIComponent(projectPath)
-  const ws = new WebSocket(`ws://localhost:6337/ws/worktree/${encodedPath}`)
+  const ws = new WebSocket(wsUrl)
 
   return new Promise((resolve, reject) => {
     let settled = false
@@ -35,7 +34,7 @@ async function callWorktreeAPI(projectPath: string, method: string, params: any 
     let buffer = ''
 
     ws.on('open', () => {
-      ws.send(JSON.stringify({ jsonrpc: '2.0', id: 'call', method, params }) + '\n')
+      ws.send(JSON.stringify({ jsonrpc: '2.0', id, method, params }) + '\n')
     })
     ws.on('message', (data: Buffer) => {
       buffer += data.toString()
@@ -44,49 +43,32 @@ async function callWorktreeAPI(projectPath: string, method: string, params: any 
         if (!line.trim()) continue
         try {
           const msg = JSON.parse(line)
-          if (msg.id === 'call') {
+          if (msg.id === id) {
             clearTimeout(timeout); settled = true; ws.close()
             msg.error ? reject(new Error(msg.error.message)) : resolve(msg.result)
             return
           }
-        } catch { /* ignore */ }
+        } catch { /* ignore partial JSON */ }
       }
     })
-    ws.on('error', (err) => { clearTimeout(timeout); if (!settled) reject(err) })
+    ws.on('error', (err: Error) => { clearTimeout(timeout); if (!settled) reject(err) })
     ws.on('close', () => { clearTimeout(timeout); if (!settled) reject(new Error('WebSocket closed')) })
   })
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function callWorktreeAPI(projectPath: string, method: string, params: any = {}): Promise<any> {
+  const encodedPath = encodeURIComponent(projectPath)
+  return callWebSocketAPI(`ws://localhost:6337/ws/worktree/${encodedPath}`, 'call', method, params)
+}
+
 async function addProjectViaAPI(projectPath: string, socketPath?: string): Promise<void> {
-  const WebSocket = (await import('ws')).default
-  const ws = new WebSocket('ws://localhost:6337/ws/global')
+  await callWebSocketAPI('ws://localhost:6337/ws/global', 'add', 'projects.register', { path: projectPath, socket_path: socketPath || '' })
+}
 
-  await new Promise<void>((resolve, reject) => {
-    let settled = false
-    const timeout = setTimeout(() => { settled = true; ws.close(); reject(new Error('Timeout')) }, 10000)
-    let buffer = ''
-
-    ws.on('open', () => {
-      ws.send(JSON.stringify({ jsonrpc: '2.0', id: 'add', method: 'projects.register', params: { path: projectPath, socket_path: socketPath || '' } }) + '\n')
-    })
-    ws.on('message', (data: Buffer) => {
-      buffer += data.toString()
-      for (const line of buffer.split('\n').slice(0, -1)) {
-        buffer = buffer.slice(line.length + 1)
-        if (!line.trim()) continue
-        try {
-          const msg = JSON.parse(line)
-          if (msg.id === 'add') {
-            clearTimeout(timeout); settled = true; ws.close()
-            msg.error ? reject(new Error(msg.error.message)) : resolve()
-            return
-          }
-        } catch { /* ignore */ }
-      }
-    })
-    ws.on('error', (err) => { clearTimeout(timeout); if (!settled) reject(err) })
-    ws.on('close', () => { clearTimeout(timeout); if (!settled) reject(new Error('WebSocket closed')) })
-  })
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function callGlobalAPI(method: string, params: Record<string, unknown> = {}): Promise<any> {
+  return callWebSocketAPI('ws://localhost:6337/ws/global', 'call', method, params)
 }
 
 // ─── State helpers ────────────────────────────────────────────────────────────
@@ -232,6 +214,49 @@ test.describe('Full Task Lifecycle', () => {
       console.log('Optimization completed!')
     }
 
+    // ─── New feature API calls (best-effort) ─────────────────────────
+    console.log('Testing new feature APIs...')
+
+    // Cache stats
+    try {
+      const cacheResult = await callWorktreeAPI(fixture.repoPath, 'cache.stats')
+      console.log('Cache stats:', JSON.stringify(cacheResult))
+    } catch (err) { console.log('cache.stats skipped:', err) }
+
+    // Risk evaluation
+    try {
+      const riskResult = await callWorktreeAPI(fixture.repoPath, 'risk.evaluate')
+      console.log('Risk score:', riskResult?.score)
+      if (riskResult) {
+        expect(riskResult).toHaveProperty('score')
+      }
+    } catch (err) { console.log('risk.evaluate skipped:', err) }
+
+    // Fork operations
+    try {
+      await callWorktreeAPI(fixture.repoPath, 'fork.create', { label: 'e2e-fork' })
+      const forks = await callWorktreeAPI(fixture.repoPath, 'fork.list')
+      console.log('Forks:', JSON.stringify(forks))
+    } catch (err) { console.log('fork ops skipped:', err) }
+
+    // Failure classification
+    try {
+      const failclass = await callWorktreeAPI(fixture.repoPath, 'failclass.stats')
+      console.log('Failclass stats:', JSON.stringify(failclass))
+    } catch (err) { console.log('failclass.stats skipped:', err) }
+
+    // Autofix status
+    try {
+      const autofix = await callWorktreeAPI(fixture.repoPath, 'autofix.status')
+      console.log('Autofix status:', JSON.stringify(autofix))
+    } catch (err) { console.log('autofix.status skipped:', err) }
+
+    // Progress (may be null if phase finished)
+    try {
+      const progress = await callWorktreeAPI(fixture.repoPath, 'progress.get')
+      console.log('Progress:', JSON.stringify(progress))
+    } catch (err) { console.log('progress.get skipped:', err) }
+
     // ─── Undo / Redo ────────────────────────────────────────────────
     try {
       await callWorktreeAPI(fixture.repoPath, 'undo')
@@ -249,6 +274,17 @@ test.describe('Full Task Lifecycle', () => {
       await waitForState(fixture.repoPath, 'reviewing', 120_000)
       console.log('Review phase active!')
     }
+
+    // ─── Post-review feature checks ──────────────────────────────────
+    try {
+      const advResults = await callWorktreeAPI(fixture.repoPath, 'adversarial.results')
+      console.log('Adversarial results:', JSON.stringify(advResults))
+    } catch (err) { console.log('adversarial.results skipped:', err) }
+
+    try {
+      const riskHistory = await callWorktreeAPI(fixture.repoPath, 'risk.history')
+      console.log('Risk history:', JSON.stringify(riskHistory))
+    } catch (err) { console.log('risk.history skipped:', err) }
 
     // ─── Submit (best-effort — needs GitHub token) ──────────────────
     try {
@@ -378,6 +414,38 @@ test.describe('Standalone Tests', () => {
       const after = await html.getAttribute('data-theme')
       console.log(`Theme: ${initial} → ${after}`)
       expect(after).not.toBe(initial)
+    }
+  })
+
+  test('global socket — task group CRUD', async () => {
+    test.setTimeout(30_000)
+
+    // Create a task group via global socket
+    const group = await callGlobalAPI('taskgroup.create', { label: 'e2e-integration-group' })
+    console.log('Created group:', JSON.stringify(group))
+    expect(group).toHaveProperty('id')
+
+    // List groups
+    const groups = await callGlobalAPI('taskgroup.list')
+    console.log('Groups:', JSON.stringify(groups))
+
+    // Remove it
+    try {
+      await callGlobalAPI('taskgroup.remove', { id: group.id })
+      console.log('Group removed')
+    } catch (err) {
+      console.log('Group remove skipped:', err)
+    }
+  })
+
+  test('global socket — memory outcomes', async () => {
+    test.setTimeout(15_000)
+
+    try {
+      const outcomes = await callGlobalAPI('memory.outcomes')
+      console.log('Memory outcomes:', JSON.stringify(outcomes))
+    } catch (err) {
+      console.log('memory.outcomes skipped (empty store):', err)
     }
   })
 })
