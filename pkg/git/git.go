@@ -483,6 +483,16 @@ func (r *Repository) CommitsBetweenFull(ctx context.Context, from, to string) ([
 	return parseLogOutputFull(out), nil
 }
 
+// DiffBetween returns the diff between two refs (from..to).
+func (r *Repository) DiffBetween(ctx context.Context, from, to string) (string, error) {
+	return r.run(ctx, "diff", from+".."+to)
+}
+
+// DiffStatBetween returns the --stat summary for the diff between two refs.
+func (r *Repository) DiffStatBetween(ctx context.Context, from, to string) (string, error) {
+	return r.run(ctx, "diff", "--stat", from+".."+to)
+}
+
 // CommitInfo returns metadata for a single commit SHA.
 func (r *Repository) CommitInfo(ctx context.Context, sha string) (LogEntry, error) {
 	out, err := r.run(ctx, "log", "-1", "--format="+logFormat, sha)

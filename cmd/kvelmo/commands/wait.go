@@ -19,7 +19,7 @@ import (
 // waitForJob connects to the worktree socket, subscribes to the event stream,
 // and blocks until the specified job completes or fails.
 // Returns nil on success, error on failure.
-func waitForJob(socketPath, _ string) error {
+func waitForJob(socketPath, jobID string) error {
 	var d net.Dialer
 	conn, err := d.DialContext(context.Background(), "unix", socketPath)
 	if err != nil {
@@ -64,6 +64,7 @@ func waitForJob(socketPath, _ string) error {
 	// Handle Ctrl+C: exit cleanly without stopping the running job.
 	sigCh := make(chan os.Signal, 1)
 	signal.Notify(sigCh, syscall.SIGINT, syscall.SIGTERM)
+	defer signal.Stop(sigCh)
 	go func() {
 		<-sigCh
 		_ = conn.Close()
@@ -78,6 +79,11 @@ func waitForJob(socketPath, _ string) error {
 
 		var event conductor.ConductorEvent
 		if err := json.Unmarshal(line, &event); err != nil {
+			continue
+		}
+
+		// Filter events by job ID when specified.
+		if jobID != "" && event.JobID != "" && event.JobID != jobID {
 			continue
 		}
 

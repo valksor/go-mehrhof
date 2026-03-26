@@ -47,6 +47,7 @@ var (
 	serveOpen    bool
 	serveTLSCert string
 	serveTLSKey  string
+	serveAPIOnly bool
 )
 
 var ServeCmd = &cobra.Command{
@@ -67,13 +68,15 @@ If port 6337 is in use, a random available port is selected automatically.
 Examples:
   %[1]s serve              # Port 6337 (or random if taken)
   %[1]s serve --port 8080  # Specific port
-  %[1]s serve --open       # Open browser automatically`, meta.Name)
+  %[1]s serve --open       # Open browser automatically
+  %[1]s serve --api        # API-only mode (no web UI)`, meta.Name)
 	ServeCmd.Flags().IntVarP(&servePort, "port", "p", 0, "Server port (default: 6337, 0 = random)")
 	ServeCmd.Flags().StringVar(&serveStatic, "static", "", "Static files directory")
 	ServeCmd.Flags().BoolVarP(&serveVerbose, "verbose", "v", false, "Verbose output")
 	ServeCmd.Flags().BoolVar(&serveOpen, "open", false, "Open browser automatically")
 	ServeCmd.Flags().StringVar(&serveTLSCert, "tls-cert", "", "TLS certificate file path")
 	ServeCmd.Flags().StringVar(&serveTLSKey, "tls-key", "", "TLS key file path")
+	ServeCmd.Flags().BoolVar(&serveAPIOnly, "api", false, "API-only mode (no web UI)")
 }
 
 func runServe(cmd *cobra.Command, args []string) error {
@@ -318,6 +321,9 @@ func runServe(cmd *cobra.Command, args []string) error {
 	if serveTLSCert != "" && serveTLSKey != "" {
 		webOpts = append(webOpts, web.WithTLS(serveTLSCert, serveTLSKey))
 	}
+	if serveAPIOnly {
+		webOpts = append(webOpts, web.WithAPIOnly())
+	}
 	webServer, err := web.NewServer(staticDir, port, webOpts...)
 	if err != nil {
 		return fmt.Errorf("create web server: %w", err)
@@ -339,8 +345,8 @@ func runServe(cmd *cobra.Command, args []string) error {
 		}
 	}()
 
-	// Open browser if requested
-	if serveOpen {
+	// Open browser if requested (skip in API-only mode)
+	if serveOpen && !serveAPIOnly {
 		openBrowser(webServer.URL())
 	}
 
