@@ -1,4 +1,4 @@
-import { render, waitFor, act, fireEvent } from '@testing-library/react'
+import { render, act, fireEvent } from '@testing-library/react'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { ChangelogPanel } from './ChangelogPanel'
 
