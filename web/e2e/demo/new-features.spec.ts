@@ -45,8 +45,8 @@ test.describe('ForkComparePanel via tab', () => {
     await menu.getByRole('menuitem', { name: 'Forks' }).click()
 
     // The panel should show our demo forks (pre-seeded in App.tsx)
-    await expect(page.getByText('approach-a')).toBeVisible({ timeout: 5000 })
-    await expect(page.getByText('approach-b')).toBeVisible({ timeout: 5000 })
+    await expect(page.getByRole('cell', { name: 'approach-a', exact: true })).toBeVisible({ timeout: 5000 })
+    await expect(page.getByRole('cell', { name: 'approach-b', exact: true })).toBeVisible({ timeout: 5000 })
   })
 })
 

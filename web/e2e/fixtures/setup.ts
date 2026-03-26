@@ -1,15 +1,20 @@
 /**
  * E2E Test Fixture Setup
  *
- * Creates an isolated git repository for integration testing.
- * This ensures tests never touch real user repos.
+ * Clones the e2e test repository from GitHub for integration testing.
+ * This ensures tests exercise the same flow a real user would have —
+ * pointing kvelmo at an existing project with a task.
  *
  * The worktree socket is created on-demand by the main server when the
  * frontend connects - no need to start a standalone socket here.
+ *
+ * Requires:
+ * - E2E_KVELMO_TOKEN: GitHub personal access token
+ * - E2E_GITHUB_REPO: Repository in "owner/repo" format (default: ozo2003/e2e-test)
  */
 
 import { execFileSync } from 'child_process'
-import { mkdtempSync, writeFileSync, cpSync, rmSync, existsSync, mkdirSync, realpathSync, readdirSync, readFileSync, statSync } from 'fs'
+import { mkdtempSync, writeFileSync, rmSync, existsSync, mkdirSync, realpathSync, readdirSync, readFileSync, statSync, cpSync } from 'fs'
 import { tmpdir, homedir } from 'os'
 import { join, resolve } from 'path'
 import { createHash } from 'crypto'
@@ -18,6 +23,8 @@ export interface TestFixture {
   repoPath: string
   taskPath: string
   socketPath: string
+  token: string
+  repo: string
   cleanup: () => void
 }
 
@@ -34,7 +41,14 @@ function getWorktreeSocketPath(projectDir: string): string {
 }
 
 /**
- * Creates a temporary git repository with a test task.
+ * Checks if GitHub credentials are configured for e2e tests.
+ */
+export function isGitHubConfigured(): boolean {
+  return !!process.env.E2E_KVELMO_TOKEN
+}
+
+/**
+ * Creates a test fixture by cloning the e2e test repository from GitHub.
  * Call cleanup() when done to remove the temp directory.
  *
  * Note: This does NOT start a worktree socket. The main server creates
@@ -42,36 +56,25 @@ function getWorktreeSocketPath(projectDir: string): string {
  * the worker pool for planning/implementation.
  */
 export function createTestFixture(): TestFixture {
-  // Create temp directory
-  // Use realpathSync to get canonical path (e.g., /private/var instead of /var on macOS)
-  // This is critical because Go's filepath.Abs resolves symlinks, so socket path hash must match
-  const repoPath = realpathSync(mkdtempSync(join(tmpdir(), 'kvelmo-e2e-')))
+  const token = process.env.E2E_KVELMO_TOKEN
+  if (!token) {
+    throw new Error('E2E_KVELMO_TOKEN must be set for integration tests')
+  }
 
-  // Initialize git repo (using execFileSync for safety - no shell injection)
-  execFileSync('git', ['init'], { cwd: repoPath, stdio: 'pipe' })
+  const repo = process.env.E2E_GITHUB_REPO || 'ozo2003/e2e-test'
+  const [owner, repoName] = repo.split('/')
+  if (!owner || !repoName) {
+    throw new Error(`E2E_GITHUB_REPO must be in "owner/repo" format, got: ${repo}`)
+  }
+
+  // Clone to temp directory
+  const repoPath = realpathSync(mkdtempSync(join(tmpdir(), 'kvelmo-e2e-')))
+  const repoURL = `https://x-access-token:${token}@github.com/${owner}/${repoName}.git`
+  execFileSync('git', ['clone', repoURL, repoPath], { stdio: 'pipe' })
+
+  // Configure git user
   execFileSync('git', ['config', 'user.email', 'test@example.com'], { cwd: repoPath, stdio: 'pipe' })
   execFileSync('git', ['config', 'user.name', 'E2E Test'], { cwd: repoPath, stdio: 'pipe' })
-
-  // Create basic project structure
-  writeFileSync(join(repoPath, 'package.json'), JSON.stringify({
-    name: 'e2e-test-project',
-    version: '1.0.0',
-    type: 'module',
-  }, null, 2))
-
-  writeFileSync(join(repoPath, 'tsconfig.json'), JSON.stringify({
-    compilerOptions: {
-      target: 'ES2022',
-      module: 'ESNext',
-      moduleResolution: 'bundler',
-      strict: true,
-      outDir: 'dist',
-    },
-    include: ['src/**/*'],
-  }, null, 2))
-
-  mkdirSync(join(repoPath, 'src'), { recursive: true })
-  writeFileSync(join(repoPath, 'src', 'index.ts'), '// Entry point\n')
 
   // Copy the test task file
   const fixturesDir = join(import.meta.dirname, '.')
@@ -79,7 +82,6 @@ export function createTestFixture(): TestFixture {
   cpSync(join(fixturesDir, 'task.md'), taskPath)
 
   // Create .valksor directory with agent config
-  // Agent configurable via KVELMO_E2E_AGENT (default: ollama)
   const agentName = process.env.KVELMO_E2E_AGENT || 'ollama'
   const valksorDir = join(repoPath, '.valksor')
   mkdirSync(valksorDir, { recursive: true })
@@ -96,9 +98,9 @@ export function createTestFixture(): TestFixture {
     '',
   ].join('\n'))
 
-  // Initial commit
+  // Commit task and config so the agent starts with a clean worktree
   execFileSync('git', ['add', '-A'], { cwd: repoPath, stdio: 'pipe' })
-  execFileSync('git', ['commit', '-m', 'Initial commit'], { cwd: repoPath, stdio: 'pipe' })
+  execFileSync('git', ['commit', '-m', 'Add e2e test task and config'], { cwd: repoPath, stdio: 'pipe' })
 
   // Compute the expected socket path (server will create this on-demand)
   const socketPath = getWorktreeSocketPath(repoPath)
@@ -111,6 +113,8 @@ export function createTestFixture(): TestFixture {
     repoPath,
     taskPath,
     socketPath,
+    token,
+    repo,
     cleanup: () => {
       // Unregister project from server (sync call via curl to avoid async issues)
       try {

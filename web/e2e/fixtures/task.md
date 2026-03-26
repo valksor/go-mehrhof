@@ -1,30 +1,22 @@
-# Add string utility module
+# Build bookmark manager API
 
-Create a string utility module with helper functions for common string operations.
+Build a bookmark manager HTTP API in Go.
 
-## Requirements
+The API stores bookmarks in memory and serves a single-page HTML dashboard for browsing them.
 
-1. Create `./src/strings.ts` with these exported functions:
-   - `truncate(str, maxLen, suffix?)` — truncate string to maxLen, append suffix (default "...")
-   - `slugify(str)` — convert to URL-friendly slug (lowercase, hyphens, strip special chars)
-   - `capitalize(str)` — capitalize first letter of each word
-   - `countWords(str)` — count words in a string
+A bookmark has a URL, title, optional tags, and timestamps for when it was created and last updated.
 
-2. Create `./src/strings.test.ts` with tests for each function:
-   - At least 2 test cases per function
-   - Test edge cases: empty string, null/undefined input, single character
-   - Use simple assert-style checks (no test framework needed)
+The API should support:
+- Listing all bookmarks as JSON
+- Adding a new bookmark (URL, title, tags)
+- Getting a single bookmark by ID
+- Updating a bookmark
+- Deleting a bookmark
+- Searching bookmarks by title or URL substring (case-insensitive)
+- Serving an HTML dashboard at the root that lists bookmarks, has a form to add new ones, and a search input
 
-## Implementation Notes
+The HTML dashboard should be embedded in the binary using Go embed. It should show bookmarks in a table with clickable titles, tags, and creation dates. Include basic styling (centered layout, simple table, form).
 
-- Files go in the existing `src/` directory
-- Use standard ES module syntax (`export function`)
-- Use verbose, unoptimized implementations (multiple passes, redundant checks, nested conditionals)
-- This gives simplify and optimize phases real work to do
+Tests should verify every endpoint works correctly and edge cases like missing IDs return proper errors.
 
-## Acceptance Criteria
-
-- `src/strings.ts` exports all 4 functions
-- `src/strings.test.ts` has passing tests
-- Each function handles edge cases gracefully
-- No TypeScript errors
+`go build ./...` and `go test ./...` must both pass.

@@ -35,8 +35,10 @@ test.describe('Widget collapse/expand behavior', () => {
     const rightSidebar = page.getByRole('complementary', { name: 'Right sidebar' })
     const reviewWidget = rightSidebar.locator('[data-widget-id="review-history"]')
 
-    const expandBtn = reviewWidget.getByRole('button', { name: 'Expand' })
+    // Use aria-expanded=false on the widget-level chevron (not the review item button)
+    const expandBtn = reviewWidget.locator('button[aria-expanded="false"][aria-controls]').first()
     await expect(expandBtn).toBeVisible()
+    await expect(expandBtn).toHaveAttribute('aria-label', 'Expand')
   })
 
   test('task history widget starts collapsed', async ({ page }) => {
@@ -55,14 +57,15 @@ test.describe('Widget collapse/expand behavior', () => {
     const rightSidebar = page.getByRole('complementary', { name: 'Right sidebar' })
     const reviewWidget = rightSidebar.locator('[data-widget-id="review-history"]')
 
-    // Expand it
-    await reviewWidget.getByRole('button', { name: 'Expand' }).click()
+    // Expand using the widget-level chevron (has aria-controls pointing to content ID)
+    await reviewWidget.locator('button[aria-expanded="false"][aria-controls]').first().click()
 
-    // Content should be visible now
-    await expect(reviewWidget.getByText('No reviews yet')).toBeVisible()
+    // Content should be visible now (demo seeds a rejected review)
+    await expect(reviewWidget.getByText('Rejected #1')).toBeVisible()
 
-    // Button should now say Collapse
-    await expect(reviewWidget.getByRole('button', { name: 'Collapse' })).toBeVisible()
+    // Chevron should now say Collapse (re-query since aria-expanded changed)
+    const collapseBtn = reviewWidget.locator('button[aria-expanded="true"][aria-controls]').first()
+    await expect(collapseBtn).toHaveAttribute('aria-label', 'Collapse')
   })
 })
 

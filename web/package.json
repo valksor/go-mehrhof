@@ -28,12 +28,14 @@
     "@tanstack/react-virtual": "^3.13.23",
     "@tauri-apps/plugin-notification": "^2.3.3",
     "@tauri-apps/plugin-updater": "^2.10.0",
+    "clsx": "^2.1.1",
     "focus-trap-react": "^12.0.0",
     "react": "^19.2.4",
     "react-diff-viewer-continued": "^4.2.0",
     "react-dom": "^19.2.4",
     "react-hook-form": "^7.72.0",
     "react-markdown": "^10.1.0",
+    "tailwind-merge": "^3.5.0",
     "zod": "^4.3.6",
     "zustand": "^5.0.12"
   },
@@ -62,7 +64,7 @@
     "tailwindcss": "^4.2.2",
     "typescript": "^6.0.2",
     "typescript-eslint": "^8.57.2",
-    "vite": "^8.0.2",
+    "vite": "^8.0.3",
     "vitest": "^4.1.1",
     "ws": "^8.20.0"
   }

@@ -10,12 +10,22 @@
  * - kvelmo backend running (`make run`)
  * - Agent available: Ollama (`ollama serve`) or Claude CLI
  * - Override agent with KVELMO_E2E_AGENT env var (default: ollama)
+ * - E2E_KVELMO_TOKEN: GitHub token for cloning test repo
+ * - E2E_GITHUB_REPO: Repository (default: ozo2003/e2e-test)
  *
  * Run with: cd web && bun run test:e2e:integration
  */
 
+import { execFileSync } from 'child_process'
 import { test, expect, type Page } from '@playwright/test'
-import { createTestFixture, isOllamaAvailable, type TestFixture } from '../fixtures/setup'
+import { createTestFixture, isGitHubConfigured, isOllamaAvailable, type TestFixture } from '../fixtures/setup'
+
+function stderrOf(err: unknown): string {
+  if (err instanceof Error && 'stderr' in err) {
+    return (err as { stderr: Buffer }).stderr?.toString() || err.message
+  }
+  return String(err)
+}
 
 const PHASE_TIMEOUT = 600_000 // 10 minutes per phase
 const UI_TIMEOUT = 15_000
@@ -102,12 +112,25 @@ async function skipOnboarding(page: Page) {
       version: 1,
     }))
   })
+
+  // Dismiss onboarding via backend settings (prevents the welcome modal)
+  try {
+    await callGlobalAPI('settings.set', { scope: 'global', values: { 'ui.onboarding_dismissed': true } })
+  } catch { /* best effort — dismissOnboarding handles it via UI too */ }
 }
 
 async function dismissOnboarding(page: Page) {
+  // Dismiss view mode selector if visible
   const card = page.getByText('Developer').first()
   if (await card.isVisible({ timeout: 3000 }).catch(() => false)) {
     await card.click()
+    await page.waitForTimeout(500)
+  }
+
+  // Dismiss "Welcome to kvelmo" onboarding modal if visible
+  const skipBtn = page.getByText('Skip for now')
+  if (await skipBtn.isVisible({ timeout: 3000 }).catch(() => false)) {
+    await skipBtn.click()
     await page.waitForTimeout(500)
   }
 }
@@ -116,7 +139,7 @@ async function navigateToProject(page: Page) {
   await skipOnboarding(page)
   await page.goto('/')
   await dismissOnboarding(page)
-  await expect(page.getByRole('button', { name: 'Add Project' })).toBeVisible({ timeout: UI_TIMEOUT })
+  await expect(page.getByRole('button', { name: 'Add Project' }).first()).toBeVisible({ timeout: UI_TIMEOUT })
 
   await addProjectViaAPI(fixture.repoPath, fixture.socketPath)
   await page.getByRole('button', { name: 'Refresh' }).first().click()
@@ -134,13 +157,17 @@ async function navigateToProject(page: Page) {
 
 test.describe('Full Task Lifecycle', () => {
   test.beforeAll(async () => {
+    if (!isGitHubConfigured()) {
+      throw new Error('E2E_KVELMO_TOKEN must be set for integration tests')
+    }
+
     const agent = process.env.KVELMO_E2E_AGENT || 'ollama'
     if (agent === 'ollama' && !isOllamaAvailable()) {
       throw new Error('Ollama not reachable. Start with: ollama serve')
     }
 
     fixture = createTestFixture()
-    console.log(`Fixture: ${fixture.repoPath}, Agent: ${agent}`)
+    console.log(`Fixture: ${fixture.repoPath}, Repo: ${fixture.repo}, Agent: ${agent}`)
   })
 
   test.afterAll(async () => {
@@ -196,6 +223,16 @@ test.describe('Full Task Lifecycle', () => {
       console.log('Implementation completed!')
     }
 
+    // Verify Go build and tests pass after implementation
+    try {
+      execFileSync('go', ['build', './...'], { cwd: fixture.repoPath, stdio: 'pipe', timeout: 60_000 })
+      console.log('Go build passed after implement')
+    } catch (err) { console.log('Go build failed after implement (may be fixed in simplify/optimize):', stderrOf(err)) }
+    try {
+      execFileSync('go', ['test', './...'], { cwd: fixture.repoPath, stdio: 'pipe', timeout: 60_000 })
+      console.log('Go tests passed after implement')
+    } catch (err) { console.log('Go tests failed after implement (may be fixed in simplify/optimize):', stderrOf(err)) }
+
     // ─── Simplify ───────────────────────────────────────────────────
     state = await getState(fixture.repoPath)
     if (state === 'implemented') {
@@ -213,6 +250,16 @@ test.describe('Full Task Lifecycle', () => {
       await waitForState(fixture.repoPath, 'implemented')
       console.log('Optimization completed!')
     }
+
+    // Verify Go build and tests still pass after simplify/optimize
+    try {
+      execFileSync('go', ['build', './...'], { cwd: fixture.repoPath, stdio: 'pipe', timeout: 60_000 })
+      console.log('Go build passed after optimize')
+    } catch (err) { console.log('Go build failed after optimize:', stderrOf(err)) }
+    try {
+      execFileSync('go', ['test', './...'], { cwd: fixture.repoPath, stdio: 'pipe', timeout: 60_000 })
+      console.log('Go tests passed after optimize')
+    } catch (err) { console.log('Go tests failed after optimize:', stderrOf(err)) }
 
     // ─── New feature API calls (best-effort) ─────────────────────────
     console.log('Testing new feature APIs...')
