@@ -6,42 +6,27 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 )
 
-// Test checkOrigin with wildcard allowing all origins.
-func TestCheckOrigin_AllowAll(t *testing.T) {
+// Test originPatterns with wildcard allowing all origins.
+func TestOriginPatterns_AllowAll(t *testing.T) {
 	srv, err := NewServer("", 0, WithAllowedOrigins([]string{"*"}))
 	if err != nil {
 		t.Fatalf("NewServer failed: %v", err)
 	}
 	defer func() { _ = srv.Shutdown(context.Background()) }()
 
-	tests := []struct {
-		name   string
-		origin string
-		want   bool
-	}{
-		{"external origin", "https://example.com", true},
-		{"localhost", "http://localhost:3000", true},
-		{"any domain", "https://evil.com", true},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/ws/global", nil)
-			req.Header.Set("Origin", tt.origin)
-
-			if got := srv.checkOrigin(req); got != tt.want {
-				t.Errorf("checkOrigin() = %v, want %v", got, tt.want)
-			}
-		})
+	patterns := srv.originPatterns()
+	if !slices.Contains(patterns, "*") {
+		t.Errorf("originPatterns() = %v, want to contain '*'", patterns)
 	}
 }
 
-// Test checkOrigin with exact origin matching.
-func TestCheckOrigin_ExactMatch(t *testing.T) {
+// Test originPatterns with specific allowed origins.
+func TestOriginPatterns_ExactMatch(t *testing.T) {
 	allowed := []string{"https://app.example.com", "https://admin.example.com"}
 	srv, err := NewServer("", 0, WithAllowedOrigins(allowed))
 	if err != nil {
@@ -49,107 +34,78 @@ func TestCheckOrigin_ExactMatch(t *testing.T) {
 	}
 	defer func() { _ = srv.Shutdown(context.Background()) }()
 
-	tests := []struct {
-		name   string
-		origin string
-		want   bool
-	}{
-		{"allowed origin 1", "https://app.example.com", true},
-		{"allowed origin 2", "https://admin.example.com", true},
-		{"not in list", "https://other.example.com", false},
-		{"localhost still allowed", "http://localhost:3000", true},
+	patterns := srv.originPatterns()
+
+	// Should contain extracted hostnames
+	if !slices.Contains(patterns, "app.example.com") {
+		t.Errorf("originPatterns() = %v, want to contain 'app.example.com'", patterns)
+	}
+	if !slices.Contains(patterns, "admin.example.com") {
+		t.Errorf("originPatterns() = %v, want to contain 'admin.example.com'", patterns)
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/ws/global", nil)
-			req.Header.Set("Origin", tt.origin)
-
-			if got := srv.checkOrigin(req); got != tt.want {
-				t.Errorf("checkOrigin() = %v, want %v", got, tt.want)
-			}
-		})
+	// Should always include localhost defaults
+	if !slices.Contains(patterns, "localhost:*") {
+		t.Errorf("originPatterns() = %v, want to contain 'localhost:*'", patterns)
 	}
 }
 
-// Test checkOrigin allows localhost variants by default.
-func TestCheckOrigin_LocalhostVariants(t *testing.T) {
+// Test originPatterns includes localhost variants by default.
+func TestOriginPatterns_LocalhostVariants(t *testing.T) {
 	srv, err := NewServer("", 0) // No explicit allowed origins
 	if err != nil {
 		t.Fatalf("NewServer failed: %v", err)
 	}
 	defer func() { _ = srv.Shutdown(context.Background()) }()
 
-	tests := []struct {
-		name   string
-		origin string
-		want   bool
-	}{
-		{"localhost http", "http://localhost:3000", true},
-		{"localhost https", "https://localhost:3000", true},
-		{"127.0.0.1 http", "http://127.0.0.1:8080", true},
-		{"127.0.0.1 https", "https://127.0.0.1:8080", true},
-		{"::1 http", "http://[::1]:8080", true},
-		{"no origin header", "", true}, // Same-origin request
-	}
+	patterns := srv.originPatterns()
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/ws/global", nil)
-			if tt.origin != "" {
-				req.Header.Set("Origin", tt.origin)
-			}
-
-			if got := srv.checkOrigin(req); got != tt.want {
-				t.Errorf("checkOrigin() = %v, want %v", got, tt.want)
-			}
-		})
+	expectedPatterns := []string{"localhost:*", "127.0.0.1:*", "[::1]:*"}
+	for _, expected := range expectedPatterns {
+		if !slices.Contains(patterns, expected) {
+			t.Errorf("originPatterns() = %v, want to contain %q", patterns, expected)
+		}
 	}
 }
 
-// Test checkOrigin rejects non-localhost by default.
-func TestCheckOrigin_RejectNonLocalhost(t *testing.T) {
+// Test originPatterns does not include wildcard by default.
+func TestOriginPatterns_RejectNonLocalhost(t *testing.T) {
 	srv, err := NewServer("", 0) // No explicit allowed origins
 	if err != nil {
 		t.Fatalf("NewServer failed: %v", err)
 	}
 	defer func() { _ = srv.Shutdown(context.Background()) }()
 
-	tests := []struct {
-		name   string
-		origin string
-		want   bool
-	}{
-		{"external domain", "https://example.com", false},
-		{"subdomain of localhost", "http://foo.localhost:3000", false},
-		{"localhost typo", "http://localhst:3000", false},
+	patterns := srv.originPatterns()
+
+	// Should not have wildcard
+	if slices.Contains(patterns, "*") {
+		t.Error("originPatterns() should not contain '*' by default")
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/ws/global", nil)
-			req.Header.Set("Origin", tt.origin)
-
-			if got := srv.checkOrigin(req); got != tt.want {
-				t.Errorf("checkOrigin() = %v, want %v", got, tt.want)
-			}
-		})
+	// Should only have localhost patterns
+	for _, p := range patterns {
+		isLocalhost := p == "localhost:*" || p == "127.0.0.1:*" || p == "[::1]:*"
+		if !isLocalhost {
+			t.Errorf("originPatterns() contains non-localhost pattern %q", p)
+		}
 	}
 }
 
-// Test checkOrigin with invalid URL in origin header.
-func TestCheckOrigin_InvalidURL(t *testing.T) {
+// Test acceptOptions returns non-nil with patterns.
+func TestAcceptOptions_HasPatterns(t *testing.T) {
 	srv, err := NewServer("", 0)
 	if err != nil {
 		t.Fatalf("NewServer failed: %v", err)
 	}
 	defer func() { _ = srv.Shutdown(context.Background()) }()
 
-	req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/ws/global", nil)
-	req.Header.Set("Origin", "not-a-valid-url://\\invalid")
-
-	if got := srv.checkOrigin(req); got != false {
-		t.Errorf("checkOrigin() with invalid URL = %v, want false", got)
+	opts := srv.acceptOptions()
+	if opts == nil {
+		t.Fatal("acceptOptions() returned nil")
+	}
+	if len(opts.OriginPatterns) == 0 {
+		t.Error("acceptOptions().OriginPatterns should not be empty")
 	}
 }
 

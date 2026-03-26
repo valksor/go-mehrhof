@@ -6,6 +6,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 )
@@ -192,11 +193,10 @@ func TestServerMultipleOptions(t *testing.T) {
 		t.Error("worktreeCreator should not be nil")
 	}
 
-	// Verify the custom origin is accepted
-	req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/ws/global", nil)
-	req.Header.Set("Origin", "https://custom.example.com")
-	if !srv.checkOrigin(req) {
-		t.Error("custom origin should be accepted")
+	// Verify the custom origin host is included in origin patterns
+	patterns := srv.originPatterns()
+	if !slices.Contains(patterns, "custom.example.com") {
+		t.Errorf("originPatterns() = %v, want to contain 'custom.example.com'", patterns)
 	}
 }
 

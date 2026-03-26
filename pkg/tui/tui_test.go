@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	tea "github.com/charmbracelet/bubbletea"
+	tea "charm.land/bubbletea/v2"
 
 	"github.com/valksor/kvelmo/pkg/conductor"
 )
@@ -211,7 +211,7 @@ func TestActiveWorktree(t *testing.T) {
 func TestHandleKey(t *testing.T) {
 	t.Run("q quits", func(t *testing.T) {
 		m := NewModel("/tmp", LayoutStacked)
-		_, cmd := m.handleKey(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'q'}})
+		_, cmd := m.handleKey(tea.KeyPressMsg{Code: 'q', Text: "q"})
 		if cmd == nil {
 			t.Fatal("expected quit command, got nil")
 		}
@@ -224,7 +224,7 @@ func TestHandleKey(t *testing.T) {
 
 	t.Run("ctrl+c quits", func(t *testing.T) {
 		m := NewModel("/tmp", LayoutStacked)
-		_, cmd := m.handleKey(tea.KeyMsg{Type: tea.KeyCtrlC})
+		_, cmd := m.handleKey(tea.KeyPressMsg{Code: 'c', Mod: tea.ModCtrl})
 		if cmd == nil {
 			t.Fatal("expected quit command, got nil")
 		}
@@ -239,11 +239,11 @@ func TestHandleKey(t *testing.T) {
 		if m.showHelp {
 			t.Fatal("showHelp should be false initially")
 		}
-		m.handleKey(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'?'}})
+		m.handleKey(tea.KeyPressMsg{Code: '?', Text: "?"})
 		if !m.showHelp {
 			t.Error("showHelp should be true after pressing ?")
 		}
-		m.handleKey(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'?'}})
+		m.handleKey(tea.KeyPressMsg{Code: '?', Text: "?"})
 		if m.showHelp {
 			t.Error("showHelp should be false after pressing ? again")
 		}
@@ -259,15 +259,15 @@ func TestHandleKey(t *testing.T) {
 		if m.active != 0 {
 			t.Fatalf("active = %d, want 0", m.active)
 		}
-		m.handleKey(tea.KeyMsg{Type: tea.KeyTab})
+		m.handleKey(tea.KeyPressMsg{Code: tea.KeyTab})
 		if m.active != 1 {
 			t.Errorf("after tab: active = %d, want 1", m.active)
 		}
-		m.handleKey(tea.KeyMsg{Type: tea.KeyTab})
+		m.handleKey(tea.KeyPressMsg{Code: tea.KeyTab})
 		if m.active != 2 {
 			t.Errorf("after tab: active = %d, want 2", m.active)
 		}
-		m.handleKey(tea.KeyMsg{Type: tea.KeyTab})
+		m.handleKey(tea.KeyPressMsg{Code: tea.KeyTab})
 		if m.active != 0 {
 			t.Errorf("after tab (wrap): active = %d, want 0", m.active)
 		}
@@ -280,11 +280,11 @@ func TestHandleKey(t *testing.T) {
 			{Dir: "/b"},
 			{Dir: "/c"},
 		}
-		m.handleKey(tea.KeyMsg{Type: tea.KeyShiftTab})
+		m.handleKey(tea.KeyPressMsg{Code: tea.KeyTab, Mod: tea.ModShift})
 		if m.active != 2 {
 			t.Errorf("after shift+tab: active = %d, want 2", m.active)
 		}
-		m.handleKey(tea.KeyMsg{Type: tea.KeyShiftTab})
+		m.handleKey(tea.KeyPressMsg{Code: tea.KeyTab, Mod: tea.ModShift})
 		if m.active != 1 {
 			t.Errorf("after shift+tab: active = %d, want 1", m.active)
 		}
@@ -292,7 +292,7 @@ func TestHandleKey(t *testing.T) {
 
 	t.Run("tab with no worktrees does nothing", func(t *testing.T) {
 		m := NewModel("/tmp", LayoutStacked)
-		m.handleKey(tea.KeyMsg{Type: tea.KeyTab})
+		m.handleKey(tea.KeyPressMsg{Code: tea.KeyTab})
 		if m.active != 0 {
 			t.Errorf("active = %d, want 0", m.active)
 		}
@@ -300,7 +300,7 @@ func TestHandleKey(t *testing.T) {
 
 	t.Run("enter with empty chat does nothing", func(t *testing.T) {
 		m := NewModel("/tmp", LayoutStacked)
-		_, cmd := m.handleKey(tea.KeyMsg{Type: tea.KeyEnter})
+		_, cmd := m.handleKey(tea.KeyPressMsg{Code: tea.KeyEnter})
 		if cmd != nil {
 			t.Errorf("expected nil cmd for empty chat, got non-nil")
 		}
@@ -443,11 +443,11 @@ func TestUpdateWindowSize(t *testing.T) {
 	if m.height != 40 {
 		t.Errorf("height = %d, want 40", m.height)
 	}
-	if m.output.Width != 120 {
-		t.Errorf("output.Width = %d, want 120", m.output.Width)
+	if m.output.Width() != 120 {
+		t.Errorf("output.Width = %d, want 120", m.output.Width())
 	}
-	if m.chatInput.Width != 118 {
-		t.Errorf("chatInput.Width = %d, want 118", m.chatInput.Width)
+	if m.chatInput.Width() != 118 {
+		t.Errorf("chatInput.Width = %d, want 118", m.chatInput.Width())
 	}
 }
 
@@ -497,8 +497,8 @@ func TestUpdateErrMsg(t *testing.T) {
 func TestViewNotReady(t *testing.T) {
 	m := NewModel("/tmp", LayoutStacked)
 	v := m.View()
-	if v != "Loading...\n" {
-		t.Errorf("View() = %q, want %q", v, "Loading...\n")
+	if v.Content != "Loading...\n" {
+		t.Errorf("View().Content = %q, want %q", v.Content, "Loading...\n")
 	}
 }
 
@@ -509,13 +509,13 @@ func TestViewShowsHelp(t *testing.T) {
 	m.height = 24
 	m.showHelp = true
 	v := m.View()
-	if !strings.Contains(v, "Keybindings") {
+	if !strings.Contains(v.Content, "Keybindings") {
 		t.Error("help view should contain 'Keybindings'")
 	}
-	if !strings.Contains(v, "q/ctrl+c") {
+	if !strings.Contains(v.Content, "q/ctrl+c") {
 		t.Error("help view should contain 'q/ctrl+c'")
 	}
-	if !strings.Contains(v, "tab/shift+tab") {
+	if !strings.Contains(v.Content, "tab/shift+tab") {
 		t.Error("help view should contain 'tab/shift+tab'")
 	}
 }
@@ -526,7 +526,7 @@ func TestViewNoWorktrees(t *testing.T) {
 	m.width = 80
 	m.height = 24
 	v := m.View()
-	if !strings.Contains(v, "no active tasks") {
+	if !strings.Contains(v.Content, "no active tasks") {
 		t.Error("View with no worktrees should contain 'no active tasks'")
 	}
 }
@@ -540,10 +540,10 @@ func TestViewWithWorktree(t *testing.T) {
 		{Dir: "/home/user/myproj", State: "implementing"},
 	}
 	v := m.View()
-	if !strings.Contains(v, "myproj") {
+	if !strings.Contains(v.Content, "myproj") {
 		t.Error("View should contain project name 'myproj'")
 	}
-	if !strings.Contains(v, "implementing") {
+	if !strings.Contains(v.Content, "implementing") {
 		t.Error("View should contain state 'implementing'")
 	}
 }
@@ -560,10 +560,10 @@ func TestViewWithMultipleWorktrees(t *testing.T) {
 	m.active = 0
 	v := m.View()
 	// Tab bar should show both project names
-	if !strings.Contains(v, "proj-a") {
+	if !strings.Contains(v.Content, "proj-a") {
 		t.Error("View should contain 'proj-a'")
 	}
-	if !strings.Contains(v, "proj-b") {
+	if !strings.Contains(v.Content, "proj-b") {
 		t.Error("View should contain 'proj-b'")
 	}
 }
@@ -584,13 +584,13 @@ func TestViewDashboardLayout(t *testing.T) {
 		},
 	}
 	v := m.View()
-	if !strings.Contains(v, "Workers") {
+	if !strings.Contains(v.Content, "Workers") {
 		t.Error("dashboard layout should show Workers section")
 	}
-	if !strings.Contains(v, "worker-1") {
+	if !strings.Contains(v.Content, "worker-1") {
 		t.Error("dashboard layout should show worker-1")
 	}
-	if !strings.Contains(v, "worker-2") {
+	if !strings.Contains(v.Content, "worker-2") {
 		t.Error("dashboard layout should show worker-2")
 	}
 }
@@ -604,7 +604,7 @@ func TestViewDashboardNoWorkers(t *testing.T) {
 		{Dir: "/home/user/proj", State: "loaded"},
 	}
 	v := m.View()
-	if !strings.Contains(v, "no workers") {
+	if !strings.Contains(v.Content, "no workers") {
 		t.Error("dashboard with no workers should show '(no workers)'")
 	}
 }
@@ -645,8 +645,8 @@ func TestSyncViewport(t *testing.T) {
 		{Dir: "/a", Output: []string{"line1", "line2", "line3"}},
 	}
 	m.active = 0
-	m.output.Width = 80
-	m.output.Height = 10
+	m.output.SetWidth(80)
+	m.output.SetHeight(10)
 	m.syncViewport()
 
 	content := m.output.View()

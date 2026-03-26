@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	tea "github.com/charmbracelet/bubbletea"
+	tea "charm.land/bubbletea/v2"
 	"github.com/spf13/cobra"
 
 	"github.com/valksor/kvelmo/pkg/settings"
@@ -46,7 +46,7 @@ func runTui(cmd *cobra.Command, args []string) error {
 	}
 
 	m := tui.NewModel(cwd, layout)
-	p := tea.NewProgram(&m, tea.WithAltScreen(), tea.WithMouseCellMotion())
+	p := tea.NewProgram(&m)
 	_, err = p.Run()
 
 	return err

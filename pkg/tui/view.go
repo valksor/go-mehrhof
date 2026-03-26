@@ -5,7 +5,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/charmbracelet/lipgloss"
+	tea "charm.land/bubbletea/v2"
+	"charm.land/lipgloss/v2"
 )
 
 var (
@@ -40,13 +41,21 @@ var (
 )
 
 // View renders the full TUI frame.
-func (m *Model) View() string {
+func (m *Model) View() tea.View {
+	v := tea.NewView("")
+	v.AltScreen = true
+	v.MouseMode = tea.MouseModeCellMotion
+
 	if !m.ready {
-		return "Loading...\n"
+		v.SetContent("Loading...\n")
+
+		return v
 	}
 
 	if m.showHelp {
-		return m.renderHelp()
+		v.SetContent(m.renderHelp())
+
+		return v
 	}
 
 	var b strings.Builder
@@ -68,7 +77,9 @@ func (m *Model) View() string {
 
 	b.WriteString(m.renderChatInput())
 
-	return b.String()
+	v.SetContent(b.String())
+
+	return v
 }
 
 // renderStatusBar renders the 1-line status bar at the top.

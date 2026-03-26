@@ -2,6 +2,7 @@
 package web
 
 import (
+	"bufio"
 	"context"
 	"errors"
 	"fmt"
@@ -16,7 +17,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/gorilla/websocket"
+	"github.com/coder/websocket"
 	"github.com/valksor/kvelmo/pkg/socket"
 	"github.com/valksor/kvelmo/pkg/web/static"
 )
@@ -33,7 +34,6 @@ type WorktreeCreator interface {
 type Server struct {
 	httpServer       *http.Server
 	listener         net.Listener
-	upgrader         websocket.Upgrader
 	staticDir        string
 	embeddedFS       fs.FS // Fallback when staticDir is empty
 	port             int
@@ -42,6 +42,7 @@ type Server struct {
 	globalSocketPath string
 	tlsCertFile      string
 	tlsKeyFile       string
+	apiOnly          bool
 }
 
 // ServerOption configures the web server.
@@ -69,6 +70,13 @@ func WithTLS(certFile, keyFile string) ServerOption {
 	return func(s *Server) {
 		s.tlsCertFile = certFile
 		s.tlsKeyFile = keyFile
+	}
+}
+
+// WithAPIOnly enables API-only mode, disabling web UI static file serving.
+func WithAPIOnly() ServerOption {
+	return func(s *Server) {
+		s.apiOnly = true
 	}
 }
 
@@ -109,11 +117,6 @@ func NewServer(staticDir string, port int, opts ...ServerOption) (*Server, error
 		opt(s)
 	}
 
-	// Configure CORS check
-	s.upgrader = websocket.Upgrader{
-		CheckOrigin: s.checkOrigin,
-	}
-
 	mux := http.NewServeMux()
 
 	// WebSocket proxy endpoints
@@ -131,7 +134,7 @@ func NewServer(staticDir string, port int, opts ...ServerOption) (*Server, error
 
 	// Static file serving (SPA)
 	// Serve from disk (staticDir) or embedded assets (fallback for production)
-	if staticDir != "" || s.embeddedFS != nil {
+	if !s.apiOnly && (staticDir != "" || s.embeddedFS != nil) {
 		mux.HandleFunc("/", s.handleStatic)
 	}
 
@@ -146,32 +149,49 @@ func NewServer(staticDir string, port int, opts ...ServerOption) (*Server, error
 	return s, nil
 }
 
-// checkOrigin validates WebSocket connection origins.
+// acceptOptions returns WebSocket accept options with origin validation.
 // By default, only localhost is allowed (secure default).
-func (s *Server) checkOrigin(r *http.Request) bool {
-	origin := r.Header.Get("Origin")
-	if origin == "" {
-		return true // No origin header = same-origin request
-	}
+func (s *Server) acceptOptions() *websocket.AcceptOptions {
+	patterns := s.originPatterns()
 
-	// Check if all origins are allowed
+	return &websocket.AcceptOptions{
+		OriginPatterns: patterns,
+	}
+}
+
+// originPatterns converts allowedOrigins to coder/websocket OriginPatterns.
+func (s *Server) originPatterns() []string {
+	// Check for wildcard
 	for _, allowed := range s.allowedOrigins {
 		if allowed == "*" {
-			return true
-		}
-		if allowed == origin {
-			return true
+			return []string{"*"}
 		}
 	}
 
-	// Default: allow localhost only (http or https, parse URL to prevent subdomain bypass)
-	u, err := url.Parse(origin)
-	if err != nil {
-		return false
-	}
-	host := u.Hostname()
+	// Start with localhost defaults
+	patterns := []string{"localhost:*", "127.0.0.1:*", "[::1]:*"}
 
-	return (u.Scheme == "http" || u.Scheme == "https") && (host == "localhost" || host == "127.0.0.1" || host == "::1")
+	// Add configured origins as patterns (preserve port if present)
+	for _, allowed := range s.allowedOrigins {
+		u, err := url.Parse(allowed)
+		if err != nil {
+			slog.Warn("skipping unparseable allowed origin", "origin", allowed, "error", err)
+
+			continue
+		}
+		host := u.Host // Includes port if present (e.g. "app.example.com:8443")
+		if host == "" {
+			host = u.Hostname()
+		}
+		if host == "" {
+			slog.Warn("skipping allowed origin with empty host", "origin", allowed)
+
+			continue
+		}
+		patterns = append(patterns, host)
+	}
+
+	return patterns
 }
 
 // securityHeaders wraps a handler with security headers.
@@ -261,25 +281,25 @@ func (s *Server) handleStatic(w http.ResponseWriter, r *http.Request) {
 
 // handleGlobalWS proxies WebSocket connections to the global Unix socket.
 func (s *Server) handleGlobalWS(w http.ResponseWriter, r *http.Request) {
-	wsConn, err := s.upgrader.Upgrade(w, r, nil)
+	wsConn, err := websocket.Accept(w, r, s.acceptOptions())
 	if err != nil {
 		return
 	}
-	defer func() { _ = wsConn.Close() }()
+	defer func() { _ = wsConn.CloseNow() }()
 
 	// Connect to global Unix socket
 	sockPath := socket.GlobalSocketPath()
 	dialer := &net.Dialer{Timeout: 5 * time.Second}
 	unixConn, err := dialer.DialContext(r.Context(), "unix", sockPath)
 	if err != nil {
-		_ = wsConn.WriteMessage(websocket.TextMessage, []byte(fmt.Sprintf(`{"error":"failed to connect to global socket: %v"}`, err)))
+		_ = wsConn.Write(r.Context(), websocket.MessageText, []byte(fmt.Sprintf(`{"error":"failed to connect to global socket: %v"}`, err)))
 
 		return
 	}
 	defer func() { _ = unixConn.Close() }()
 
 	// Proxy bidirectionally
-	s.proxyConnections(wsConn, unixConn)
+	s.proxyConnections(r.Context(), wsConn, unixConn)
 }
 
 // handleWorktreeWS proxies WebSocket connections to a worktree Unix socket.
@@ -322,11 +342,11 @@ func (s *Server) handleWorktreeWS(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	wsConn, err := s.upgrader.Upgrade(w, r, nil)
+	wsConn, err := websocket.Accept(w, r, s.acceptOptions())
 	if err != nil {
 		return
 	}
-	defer func() { _ = wsConn.Close() }()
+	defer func() { _ = wsConn.CloseNow() }()
 
 	// Connect to worktree Unix socket with retry (socket may still be starting)
 	var unixConn net.Conn
@@ -355,60 +375,39 @@ connectLoop:
 		}
 	}
 	if err != nil {
-		_ = wsConn.WriteMessage(websocket.TextMessage, []byte(fmt.Sprintf(`{"error":"failed to connect to worktree socket: %v"}`, err)))
+		_ = wsConn.Write(r.Context(), websocket.MessageText, []byte(fmt.Sprintf(`{"error":"failed to connect to worktree socket: %v"}`, err)))
 
 		return
 	}
 	defer func() { _ = unixConn.Close() }()
 
 	// Proxy bidirectionally
-	s.proxyConnections(wsConn, unixConn)
+	s.proxyConnections(r.Context(), wsConn, unixConn)
 }
 
 // proxyConnections handles bidirectional proxying between WebSocket and Unix socket.
 // When either connection fails, both are closed to prevent goroutine leaks.
-func (s *Server) proxyConnections(wsConn *websocket.Conn, unixConn net.Conn) {
-	var wg sync.WaitGroup
-	wg.Add(3)
+// coder/websocket handles ping/pong automatically and is concurrent-write safe.
+func (s *Server) proxyConnections(ctx context.Context, wsConn *websocket.Conn, unixConn net.Conn) {
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
 
-	// closeOnce ensures both connections are closed exactly once when either side fails
-	var closeOnce sync.Once
-	closeAll := func() {
-		closeOnce.Do(func() {
-			_ = wsConn.Close()
-			_ = unixConn.Close()
-		})
-	}
-
-	// Keepalive: send a ping every 30s and close if pong not received within 60s.
-	// WriteControl is concurrent-safe per gorilla/websocket docs.
-	_ = wsConn.SetReadDeadline(time.Now().Add(60 * time.Second))
-	wsConn.SetPongHandler(func(string) error {
-		return wsConn.SetReadDeadline(time.Now().Add(60 * time.Second))
-	})
+	// Close unixConn when context is cancelled to unblock scanner.Scan().
+	// Without this, the scanner goroutine would deadlock on Read() when
+	// the WebSocket side disconnects (browser tab close, network drop).
 	go func() {
-		defer func() { closeAll(); wg.Done() }()
-		ticker := time.NewTicker(30 * time.Second)
-		defer ticker.Stop()
-		for range ticker.C {
-			deadline := time.Now().Add(10 * time.Second)
-			if err := wsConn.WriteControl(websocket.PingMessage, nil, deadline); err != nil {
-				return
-			}
-		}
+		<-ctx.Done()
+		_ = unixConn.Close()
 	}()
+
+	var wg sync.WaitGroup
+	wg.Add(2)
 
 	// WebSocket -> Unix socket
 	go func() {
-		defer func() {
-			if r := recover(); r != nil {
-				fmt.Fprintf(os.Stderr, "ws->unix proxy panic: %v\n", r)
-			}
-			closeAll()
-			wg.Done()
-		}()
+		defer func() { cancel(); wg.Done() }()
 		for {
-			_, msg, err := wsConn.ReadMessage()
+			_, msg, err := wsConn.Read(ctx)
 			if err != nil {
 				return
 			}
@@ -420,24 +419,27 @@ func (s *Server) proxyConnections(wsConn *websocket.Conn, unixConn net.Conn) {
 	}()
 
 	// Unix socket -> WebSocket
+	// Use a scanner to read complete NDJSON lines from the Unix socket,
+	// ensuring each WebSocket message contains a complete JSON-RPC frame.
+	// Append \n to preserve NDJSON framing — clients split on newlines and
+	// buffer the last fragment, so without \n the message never gets processed.
 	go func() {
-		defer func() {
-			if r := recover(); r != nil {
-				fmt.Fprintf(os.Stderr, "unix->ws proxy panic: %v\n", r)
+		defer func() { cancel(); wg.Done() }()
+		scanner := bufio.NewScanner(unixConn)
+		scanner.Buffer(make([]byte, 0, 64*1024), 1024*1024) // 64KB initial, 1MB max
+		for scanner.Scan() {
+			line := scanner.Bytes()
+			if len(line) == 0 {
+				continue
 			}
-			closeAll()
-			wg.Done()
-		}()
-		buf := make([]byte, 4096)
-		for {
-			n, err := unixConn.Read(buf)
+			msg := append(line, '\n')
+			err := wsConn.Write(ctx, websocket.MessageText, msg)
 			if err != nil {
 				return
 			}
-			err = wsConn.WriteMessage(websocket.TextMessage, buf[:n])
-			if err != nil {
-				return
-			}
+		}
+		if err := scanner.Err(); err != nil && ctx.Err() == nil {
+			slog.Debug("unix->ws scanner error", "error", err)
 		}
 	}()
 

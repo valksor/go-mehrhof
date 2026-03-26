@@ -16,27 +16,14 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/coder/websocket"
 	"github.com/google/uuid"
-	"github.com/gorilla/websocket"
 	"github.com/valksor/kvelmo/pkg/agent"
 )
 
-var upgrader = websocket.Upgrader{
-	CheckOrigin: checkLocalOrigin,
-}
-
-// checkLocalOrigin validates that WebSocket connections come from localhost only.
-// No Origin header (CLI client) or localhost origins are allowed.
-func checkLocalOrigin(r *http.Request) bool {
-	origin := r.Header.Get("Origin")
-	if origin == "" {
-		return true // No origin = non-browser client (CLI)
-	}
-
-	return strings.HasPrefix(origin, "http://localhost:") ||
-		strings.HasPrefix(origin, "http://127.0.0.1:") ||
-		origin == "http://localhost" ||
-		origin == "http://127.0.0.1"
+// localAcceptOptions restricts WebSocket connections to localhost only.
+var localAcceptOptions = &websocket.AcceptOptions{
+	OriginPatterns: []string{"localhost:*", "127.0.0.1:*", "[::1]:*"},
 }
 
 // WebSocketConnection manages a Claude CLI connection via WebSocket.
@@ -364,9 +351,9 @@ func (w *WebSocketConnection) buildArgs() []string {
 // handleConnection handles incoming WebSocket connections from Claude CLI.
 func (w *WebSocketConnection) handleConnection(rw http.ResponseWriter, r *http.Request) {
 	slog.Info("claude websocket: incoming connection", "remote", r.RemoteAddr)
-	conn, err := upgrader.Upgrade(rw, r, nil)
+	conn, err := websocket.Accept(rw, r, localAcceptOptions)
 	if err != nil {
-		slog.Error("claude websocket: upgrade failed", "error", err)
+		slog.Error("claude websocket: accept failed", "error", err)
 
 		return
 	}
@@ -382,13 +369,25 @@ func (w *WebSocketConnection) handleConnection(rw http.ResponseWriter, r *http.R
 		close(w.ready)
 	})
 
+	// Use a context that cancels when done is closed
+	ctx, cancel := context.WithCancel(r.Context())
+	go func() {
+		select {
+		case <-w.done:
+			cancel()
+		case <-ctx.Done():
+		}
+	}()
+	defer cancel()
+
 	// Read messages
 	for {
-		_, data, err := conn.ReadMessage()
+		_, data, err := conn.Read(ctx)
 		if err != nil {
 			// Shutdown in progress — context canceled or explicit Close
+			status := websocket.CloseStatus(err)
 			if w.closed.Load() || isClosed(w.done) ||
-				websocket.IsCloseError(err, websocket.CloseNormalClosure, websocket.CloseGoingAway) ||
+				status == websocket.StatusNormalClosure || status == websocket.StatusGoingAway ||
 				strings.Contains(err.Error(), "use of closed") {
 				slog.Debug("claude websocket: connection closed", "error", err)
 			} else {
@@ -501,8 +500,8 @@ func (w *WebSocketConnection) handleIncomingMessage(msg incomingMessage) {
 		}
 
 	case "result":
-		// Result uses subtype:"success" or is_error:true, not a boolean success field
-		if msg.Subtype == "success" || !msg.IsError {
+		// Result uses subtype:"success" for success, or is_error:true for errors
+		if msg.Subtype == "success" && !msg.IsError {
 			w.events <- agent.Event{
 				Type:      agent.EventComplete,
 				Timestamp: time.Now(),
@@ -578,7 +577,7 @@ func (w *WebSocketConnection) sendLoop(ctx context.Context) {
 				if err == nil {
 					slog.Info("claude websocket: sending message", "type", msg.Type, "len", len(data), "data", string(data))
 					data = append(data, '\n')
-					_ = w.conn.WriteMessage(websocket.TextMessage, data)
+					_ = w.conn.Write(ctx, websocket.MessageText, data)
 				}
 			}
 			w.connMu.Unlock()
@@ -716,7 +715,7 @@ func (w *WebSocketConnection) Close() error {
 		// Close WebSocket
 		w.connMu.Lock()
 		if w.conn != nil {
-			_ = w.conn.Close()
+			_ = w.conn.CloseNow()
 		}
 		w.connMu.Unlock()
 

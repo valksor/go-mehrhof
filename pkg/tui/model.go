@@ -4,12 +4,13 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"slices"
 	"strings"
 	"time"
 
-	"github.com/charmbracelet/bubbles/textinput"
-	"github.com/charmbracelet/bubbles/viewport"
-	tea "github.com/charmbracelet/bubbletea"
+	"charm.land/bubbles/v2/textinput"
+	"charm.land/bubbles/v2/viewport"
+	tea "charm.land/bubbletea/v2"
 	"github.com/valksor/kvelmo/pkg/socket"
 )
 
@@ -97,16 +98,16 @@ func (m *Model) Init() tea.Cmd {
 // Update handles all incoming messages and key events.
 func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
-	case tea.KeyMsg:
+	case tea.KeyPressMsg:
 		return m.handleKey(msg)
 
 	case tea.WindowSizeMsg:
 		m.width = msg.Width
 		m.height = msg.Height
 		m.ready = true
-		m.output.Width = msg.Width
-		m.output.Height = m.outputHeight()
-		m.chatInput.Width = msg.Width - 2
+		m.output.SetWidth(msg.Width)
+		m.output.SetHeight(m.outputHeight())
+		m.chatInput.SetWidth(msg.Width - 2)
 
 		return m, nil
 
@@ -178,7 +179,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 // handleKey processes keyboard input.
-func (m *Model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+func (m *Model) handleKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 	switch msg.String() {
 	case "q", "ctrl+c":
 		m.cancel()
@@ -443,13 +444,9 @@ func (m *Model) handleSocketEvent(msg socketEventMsg) (tea.Model, tea.Cmd) {
 
 // hasWorktree returns true if the given dir is already tracked.
 func (m *Model) hasWorktree(dir string) bool {
-	for _, wt := range m.worktrees {
-		if wt.Dir == dir {
-			return true
-		}
-	}
-
-	return false
+	return slices.ContainsFunc(m.worktrees, func(wt WorktreeState) bool {
+		return wt.Dir == dir
+	})
 }
 
 // activeWorktree returns a pointer to the active WorktreeState, or nil.

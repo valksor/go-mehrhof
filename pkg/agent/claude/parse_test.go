@@ -1,10 +1,8 @@
 package claude
 
 import (
-	"context"
 	"encoding/json"
-	"net/http"
-	"net/http/httptest"
+	"slices"
 	"testing"
 )
 
@@ -36,31 +34,19 @@ func TestExtractTextContent(t *testing.T) {
 	}
 }
 
-func TestCheckLocalOrigin(t *testing.T) {
-	tests := []struct {
-		name   string
-		origin string
-		want   bool
-	}{
-		{"no origin header", "", true},
-		{"localhost with port", "http://localhost:3000", true},
-		{"localhost no port", "http://localhost", true},
-		{"127.0.0.1 with port", "http://127.0.0.1:8080", true},
-		{"127.0.0.1 no port", "http://127.0.0.1", true},
-		{"external origin", "https://example.com", false},
-		{"https localhost", "https://localhost:3000", false},
+func TestLocalAcceptOptions_OriginPatterns(t *testing.T) {
+	patterns := localAcceptOptions.OriginPatterns
+
+	// Must include localhost and 127.0.0.1 patterns
+	expectedPatterns := []string{"localhost:*", "127.0.0.1:*", "[::1]:*"}
+	for _, expected := range expectedPatterns {
+		if !slices.Contains(patterns, expected) {
+			t.Errorf("localAcceptOptions.OriginPatterns missing %q, got %v", expected, patterns)
+		}
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/", nil)
-			if tt.origin != "" {
-				req.Header.Set("Origin", tt.origin)
-			}
-			got := checkLocalOrigin(req)
-			if got != tt.want {
-				t.Errorf("checkLocalOrigin(%q) = %v, want %v", tt.origin, got, tt.want)
-			}
-		})
+	// Must not include wildcard (security)
+	if slices.Contains(patterns, "*") {
+		t.Error("localAcceptOptions.OriginPatterns should not allow all origins")
 	}
 }

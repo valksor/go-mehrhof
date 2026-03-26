@@ -13,8 +13,8 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/coder/websocket"
 	"github.com/google/uuid"
-	"github.com/gorilla/websocket"
 	"github.com/valksor/kvelmo/pkg/agent"
 )
 
@@ -112,7 +112,7 @@ func (w *WebSocketConnection) Connect(ctx context.Context) error {
 		}
 
 		var dialErr error
-		conn, _, dialErr = websocket.DefaultDialer.DialContext(ctx, wsURL, nil)
+		conn, _, dialErr = websocket.Dial(ctx, wsURL, nil)
 		if dialErr == nil {
 			break // Success
 		}
@@ -253,7 +253,7 @@ func (w *WebSocketConnection) initialize(ctx context.Context) error {
 	}
 
 	// Step 2: initialized notification
-	if err := w.transport.Notify("initialized", map[string]any{}); err != nil {
+	if err := w.transport.Notify(ctx, "initialized", map[string]any{}); err != nil {
 		return fmt.Errorf("initialized: %w", err)
 	}
 
@@ -361,9 +361,9 @@ func (w *WebSocketConnection) handleRequest(method string, id int64, params json
 	case "item/fileChange/requestApproval":
 		w.handleFileChangeApproval(id, params)
 	case "item/mcpToolCall/requestApproval":
-		_ = w.transport.Respond(id, map[string]any{"decision": "accept"})
+		_ = w.transport.Respond(context.Background(), id, map[string]any{"decision": "accept"})
 	default:
-		_ = w.transport.Respond(id, map[string]any{"decision": "accept"})
+		_ = w.transport.Respond(context.Background(), id, map[string]any{"decision": "accept"})
 	}
 }
 
@@ -374,7 +374,7 @@ func (w *WebSocketConnection) handleCommandApproval(id int64, params json.RawMes
 	}
 	if err := json.Unmarshal(params, &req); err != nil {
 		slog.Warn("rejecting malformed command approval request", "error", err)
-		_ = w.transport.Respond(id, map[string]any{"decision": "reject"})
+		_ = w.transport.Respond(context.Background(), id, map[string]any{"decision": "reject"})
 
 		return
 	}
@@ -417,7 +417,7 @@ func (w *WebSocketConnection) handleFileChangeApproval(id int64, params json.Raw
 	}
 	if err := json.Unmarshal(params, &req); err != nil {
 		slog.Warn("rejecting malformed file change approval request", "error", err)
-		_ = w.transport.Respond(id, map[string]any{"decision": "reject"})
+		_ = w.transport.Respond(context.Background(), id, map[string]any{"decision": "reject"})
 
 		return
 	}
@@ -539,7 +539,7 @@ func (w *WebSocketConnection) HandlePermission(requestID string, approved bool) 
 		decision = "reject"
 	}
 
-	return w.transport.Respond(rpcID, map[string]any{"decision": decision})
+	return w.transport.Respond(context.Background(), rpcID, map[string]any{"decision": decision})
 }
 
 // Interrupt aborts the current agent turn via turn/interrupt JSON-RPC call.
@@ -603,7 +603,7 @@ func (w *WebSocketConnection) Close() error {
 
 		w.connMu.Lock()
 		if w.conn != nil {
-			_ = w.conn.Close()
+			_ = w.conn.CloseNow()
 		}
 		w.connMu.Unlock()
 
@@ -626,16 +626,19 @@ func newWsTransport(conn *websocket.Conn) *wsTransport {
 }
 
 func (t *wsTransport) readLoop(ctx context.Context) {
-	for {
+	// Create a context that cancels when the transport is closed
+	ctx, cancel := context.WithCancel(ctx)
+	go func() {
 		select {
-		case <-ctx.Done():
-			return
 		case <-t.closeCh:
-			return
-		default:
+			cancel()
+		case <-ctx.Done():
 		}
+	}()
+	defer cancel()
 
-		_, data, err := t.conn.ReadMessage()
+	for {
+		_, data, err := t.conn.Read(ctx)
 		if err != nil {
 			if !t.closed.Load() {
 				slog.Debug("codex ws read error", "error", err)
@@ -715,7 +718,7 @@ func (t *wsTransport) Call(ctx context.Context, method string, params any) (json
 		t.pendingM.Unlock()
 	}()
 
-	if err := t.write(req); err != nil {
+	if err := t.write(ctx, req); err != nil {
 		return nil, fmt.Errorf("write: %w", err)
 	}
 
@@ -740,7 +743,7 @@ func (t *wsTransport) Call(ctx context.Context, method string, params any) (json
 	}
 }
 
-func (t *wsTransport) Notify(method string, params any) error {
+func (t *wsTransport) Notify(ctx context.Context, method string, params any) error {
 	if t.closed.Load() {
 		return errors.New("transport closed")
 	}
@@ -751,10 +754,10 @@ func (t *wsTransport) Notify(method string, params any) error {
 		Params:  params,
 	}
 
-	return t.write(msg)
+	return t.write(ctx, msg)
 }
 
-func (t *wsTransport) Respond(id int64, result any) error {
+func (t *wsTransport) Respond(ctx context.Context, id int64, result any) error {
 	if t.closed.Load() {
 		return errors.New("transport closed")
 	}
@@ -765,10 +768,10 @@ func (t *wsTransport) Respond(id int64, result any) error {
 		"result":  result,
 	}
 
-	return t.write(msg)
+	return t.write(ctx, msg)
 }
 
-func (t *wsTransport) write(msg any) error {
+func (t *wsTransport) write(ctx context.Context, msg any) error {
 	data, err := json.Marshal(msg)
 	if err != nil {
 		return fmt.Errorf("marshal: %w", err)
@@ -777,7 +780,9 @@ func (t *wsTransport) write(msg any) error {
 	t.connMu.Lock()
 	defer t.connMu.Unlock()
 
-	return t.conn.WriteMessage(websocket.TextMessage, data)
+	// coder/websocket is concurrent-write safe, but we keep the mutex
+	// to serialize writes for protocol ordering guarantees.
+	return t.conn.Write(ctx, websocket.MessageText, data)
 }
 
 func (t *wsTransport) Close() error {
@@ -787,8 +792,7 @@ func (t *wsTransport) Close() error {
 	close(t.closeCh)
 
 	t.pendingM.Lock()
-	for id, ch := range t.pending {
-		close(ch)
+	for id := range t.pending {
 		delete(t.pending, id)
 	}
 	t.pendingM.Unlock()
