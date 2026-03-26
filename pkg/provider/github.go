@@ -580,6 +580,50 @@ func (p *GitHubProvider) AddLabels(ctx context.Context, id string, labels []stri
 	return nil
 }
 
+// CreateTask creates a new GitHub issue.
+func (p *GitHubProvider) CreateTask(ctx context.Context, opts CreateTaskOptions) (*Task, error) {
+	if opts.Team == "" {
+		return nil, errors.New("team must be set to owner/repo for GitHub")
+	}
+
+	parts := strings.SplitN(opts.Team, "/", 2)
+	if len(parts) != 2 {
+		return nil, fmt.Errorf("invalid repository format %q, expected owner/repo", opts.Team)
+	}
+	owner, repo := parts[0], parts[1]
+
+	req := &github.IssueRequest{
+		Title: &opts.Title,
+		Body:  &opts.Description,
+	}
+	if len(opts.Labels) > 0 {
+		req.Labels = &opts.Labels
+	}
+
+	issue, _, err := p.client.Issues.Create(ctx, owner, repo, req)
+	if err != nil {
+		return nil, fmt.Errorf("create issue: %w", err)
+	}
+
+	return p.issueToTask(owner, repo, issue), nil
+}
+
+// DeleteBranch deletes a branch from a GitHub repository.
+// The id should be in "owner/repo" format, and branch is the branch name.
+func (p *GitHubProvider) DeleteBranch(ctx context.Context, repo string, branch string) error {
+	parts := strings.SplitN(repo, "/", 2)
+	if len(parts) != 2 {
+		return fmt.Errorf("invalid repository format %q, expected owner/repo", repo)
+	}
+
+	_, err := p.client.Git.DeleteRef(ctx, parts[0], parts[1], "refs/heads/"+branch)
+	if err != nil {
+		return fmt.Errorf("delete branch: %w", err)
+	}
+
+	return nil
+}
+
 // RemoveLabels removes labels from a GitHub issue or PR.
 func (p *GitHubProvider) RemoveLabels(ctx context.Context, id string, labels []string) error {
 	owner, repo, number, err := parseGitHubIDFull(id)

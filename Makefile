@@ -14,7 +14,7 @@ COMMIT := $(shell git rev-parse --short HEAD 2>/dev/null || echo "unknown")
 BUILD_TIME := $(shell date -u '+%Y-%m-%dT%H:%M:%SZ')
 LDFLAGS := -ldflags "-s -w -X github.com/valksor/kvelmo/pkg/meta.Version=$(VERSION) -X github.com/valksor/kvelmo/pkg/meta.Commit=$(COMMIT) -X github.com/valksor/kvelmo/pkg/meta.BuildTime=$(BUILD_TIME)"
 
-# E2E suite selection (SUITE=provider|gitlab|workflow|cli|all, default: all)
+# E2E suite selection (SUITE=provider|workflow|cli|all, default: all)
 SUITE ?= all
 
 # Default target
@@ -55,12 +55,10 @@ test-cover:
 test-race:
 	go test -race -p 4 ./pkg/... ./cmd/...
 
-## E2E tests (SUITE=provider|gitlab|workflow|cli|all, default: all provider+workflow tests; cli excluded due to 30m timeout)
+## E2E tests (SUITE=provider|workflow|cli|all, default: all provider+workflow tests; cli excluded due to 30m timeout)
 test-e2e:
 ifeq ($(SUITE),provider)
 	go test -tags=e2e -v ./pkg/provider/... -run TestE2E
-else ifeq ($(SUITE),gitlab)
-	go test -tags=e2e -v -timeout=5m ./pkg/provider/... -run TestE2E_GitLab
 else ifeq ($(SUITE),workflow)
 	go test -tags=e2e -v ./pkg/conductor/... -run TestE2E
 else ifeq ($(SUITE),cli)
@@ -239,7 +237,7 @@ help:
 	@echo "Quality & Testing:"
 	@echo "  make quality        Full-stack: Go fmt/vet/lint + frontend lint/typecheck + Tauri fmt/clippy"
 	@echo "  make test           Full-stack: Go tests + frontend unit tests + Tauri tests"
-	@echo "  make test-e2e       E2E tests (SUITE=provider|gitlab|workflow|cli|all)"
+	@echo "  make test-e2e       E2E tests (SUITE=provider|workflow|cli|all)"
 	@echo "  make test-cover     Go tests with coverage report"
 	@echo "  make test-race      Go tests with race detector"
 	@echo "  make web-test       Frontend unit tests only"

@@ -17,15 +17,19 @@ import (
 // Run with: go test -tags=e2e -v ./pkg/provider/... -run TestE2E
 //
 // Required environment variables:
-//   E2E_GITHUB_REPO  - Repository in "owner/repo" format (e.g., "ozo2003/e2e-test")
-//   GITHUB_TOKEN     - Personal access token with repo scope
+//   E2E_KVELMO_TOKEN - Personal access token with repo scope
+//
+// Optional:
+//   E2E_GITHUB_REPO  - Repository in "owner/repo" format (default: "ozo2003/e2e-test")
+
+const defaultE2ERepo = "ozo2003/e2e-test"
 
 func getE2EConfig(t *testing.T) (owner, repo, token string) {
 	t.Helper()
 
 	repoFull := os.Getenv("E2E_GITHUB_REPO")
 	if repoFull == "" {
-		t.Skip("E2E_GITHUB_REPO not set")
+		repoFull = defaultE2ERepo
 	}
 
 	parts := strings.SplitN(repoFull, "/", 2)
@@ -34,58 +38,54 @@ func getE2EConfig(t *testing.T) (owner, repo, token string) {
 	}
 	owner, repo = parts[0], parts[1]
 
-	token = os.Getenv("GITHUB_TOKEN")
+	token = os.Getenv("E2E_KVELMO_TOKEN")
 	if token == "" {
-		token = os.Getenv("E2E_GITHUB_TOKEN")
-	}
-	if token == "" {
-		t.Skip("GITHUB_TOKEN or E2E_GITHUB_TOKEN not set")
+		t.Skip("E2E_KVELMO_TOKEN not set")
 	}
 
 	return owner, repo, token
+}
+
+// e2eRepoID returns the "owner/repo" string for use with provider methods.
+func e2eRepoID(owner, repo string) string {
+	return owner + "/" + repo
+}
+
+// e2eTaskID returns the "owner/repo#number" string for use with provider methods.
+func e2eTaskID(owner, repo string, number int) string {
+	return fmt.Sprintf("%s/%s#%d", owner, repo, number)
 }
 
 func TestE2E_CreateAndCloseIssue(t *testing.T) {
 	owner, repo, token := getE2EConfig(t)
 	ctx := context.Background()
 
-	provider := NewGitHubProvider(token)
-	client := newGitHubClient(token, "")
+	p := NewGitHubProvider(token)
 
-	// Create issue
+	// Create issue via provider
 	title := fmt.Sprintf("E2E Test Issue %d", time.Now().Unix())
 	body := "This is an automated test issue.\n\nIt will be closed automatically."
-	labels := []string{"test", "automated"}
-
-	issue, _, err := client.Issues.Create(ctx, owner, repo, &github.IssueRequest{
-		Title:  &title,
-		Body:   &body,
-		Labels: &labels,
+	task, err := p.CreateTask(ctx, CreateTaskOptions{
+		Title:       title,
+		Description: body,
+		Team:        e2eRepoID(owner, repo),
+		Labels:      []string{"test", "automated"},
 	})
 	if err != nil {
-		t.Fatalf("Create issue: %v", err)
+		t.Fatalf("CreateTask: %v", err)
 	}
-	issueNum := issue.GetNumber()
-	t.Logf("Created issue #%d: %s", issueNum, issue.GetHTMLURL())
+	t.Logf("Created issue: %s", task.URL)
 
-	// Cleanup: close and delete issue
+	// Cleanup: close issue
 	t.Cleanup(func() {
 		if os.Getenv("E2E_SKIP_CLEANUP") != "" {
-			t.Logf("Skipping cleanup (E2E_SKIP_CLEANUP set)")
 			return
 		}
-		state := "closed"
-		_, _, _ = client.Issues.Edit(ctx, owner, repo, issueNum, &github.IssueRequest{State: &state})
-		t.Logf("Closed issue #%d", issueNum)
+		_ = p.UpdateStatus(ctx, task.ID, "closed")
+		t.Logf("Closed issue %s", task.ID)
 	})
 
-	// Fetch via provider
-	taskID := fmt.Sprintf("%s/%s#%d", owner, repo, issueNum)
-	task, err := provider.FetchTask(ctx, taskID)
-	if err != nil {
-		t.Fatalf("FetchTask: %v", err)
-	}
-
+	// Verify created task fields
 	if task.Title != title {
 		t.Errorf("Title = %q, want %q", task.Title, title)
 	}
@@ -96,72 +96,28 @@ func TestE2E_CreateAndCloseIssue(t *testing.T) {
 		t.Errorf("Labels = %v, want 2 labels", task.Labels)
 	}
 
-	// Update status to closed
-	err = provider.UpdateStatus(ctx, taskID, "closed")
+	// Fetch via provider and verify
+	fetched, err := p.FetchTask(ctx, task.ID)
+	if err != nil {
+		t.Fatalf("FetchTask: %v", err)
+	}
+	if fetched.Title != title {
+		t.Errorf("FetchTask Title = %q, want %q", fetched.Title, title)
+	}
+
+	// Close via provider
+	err = p.UpdateStatus(ctx, task.ID, "closed")
 	if err != nil {
 		t.Fatalf("UpdateStatus: %v", err)
 	}
 
 	// Verify closed
-	task, err = provider.FetchTask(ctx, taskID)
+	closed, err := p.FetchTask(ctx, task.ID)
 	if err != nil {
 		t.Fatalf("FetchTask after close: %v", err)
 	}
-	if task.Metadata("github_state") != "closed" {
-		t.Errorf("State = %q, want closed", task.Metadata("github_state"))
-	}
-}
-
-func TestE2E_UpdateIssue(t *testing.T) {
-	owner, repo, token := getE2EConfig(t)
-	ctx := context.Background()
-
-	client := newGitHubClient(token, "")
-
-	// Create issue
-	title := fmt.Sprintf("E2E Update Test %d", time.Now().Unix())
-	body := "Original body"
-
-	issue, _, err := client.Issues.Create(ctx, owner, repo, &github.IssueRequest{
-		Title: &title,
-		Body:  &body,
-	})
-	if err != nil {
-		t.Fatalf("Create issue: %v", err)
-	}
-	issueNum := issue.GetNumber()
-	t.Logf("Created issue #%d", issueNum)
-
-	t.Cleanup(func() {
-		if os.Getenv("E2E_SKIP_CLEANUP") != "" {
-			return
-		}
-		state := "closed"
-		_, _, _ = client.Issues.Edit(ctx, owner, repo, issueNum, &github.IssueRequest{State: &state})
-	})
-
-	// Update title and body
-	newTitle := title + " (updated)"
-	newBody := "Updated body\n\nWith more content."
-	_, _, err = client.Issues.Edit(ctx, owner, repo, issueNum, &github.IssueRequest{
-		Title: &newTitle,
-		Body:  &newBody,
-	})
-	if err != nil {
-		t.Fatalf("Edit issue: %v", err)
-	}
-
-	// Verify update
-	updated, _, err := client.Issues.Get(ctx, owner, repo, issueNum)
-	if err != nil {
-		t.Fatalf("Get issue: %v", err)
-	}
-
-	if updated.GetTitle() != newTitle {
-		t.Errorf("Title = %q, want %q", updated.GetTitle(), newTitle)
-	}
-	if updated.GetBody() != newBody {
-		t.Errorf("Body not updated")
+	if closed.Metadata("github_state") != "closed" {
+		t.Errorf("State = %q, want closed", closed.Metadata("github_state"))
 	}
 }
 
@@ -169,49 +125,45 @@ func TestE2E_IssueComments(t *testing.T) {
 	owner, repo, token := getE2EConfig(t)
 	ctx := context.Background()
 
-	client := newGitHubClient(token, "")
+	p := NewGitHubProvider(token)
 
-	// Create issue
-	title := fmt.Sprintf("E2E Comment Test %d", time.Now().Unix())
-	issue, _, err := client.Issues.Create(ctx, owner, repo, &github.IssueRequest{
-		Title: &title,
+	// Create issue via provider
+	task, err := p.CreateTask(ctx, CreateTaskOptions{
+		Title: fmt.Sprintf("E2E Comment Test %d", time.Now().Unix()),
+		Team:  e2eRepoID(owner, repo),
 	})
 	if err != nil {
-		t.Fatalf("Create issue: %v", err)
+		t.Fatalf("CreateTask: %v", err)
 	}
-	issueNum := issue.GetNumber()
 
 	t.Cleanup(func() {
 		if os.Getenv("E2E_SKIP_CLEANUP") != "" {
 			return
 		}
-		state := "closed"
-		_, _, _ = client.Issues.Edit(ctx, owner, repo, issueNum, &github.IssueRequest{State: &state})
+		_ = p.UpdateStatus(ctx, task.ID, "closed")
 	})
 
-	// Add comment
+	// Add comment via provider
 	commentBody := "This is an automated test comment."
-	comment, _, err := client.Issues.CreateComment(ctx, owner, repo, issueNum, &github.IssueComment{
-		Body: &commentBody,
-	})
+	err = p.AddComment(ctx, task.ID, commentBody)
 	if err != nil {
-		t.Fatalf("CreateComment: %v", err)
+		t.Fatalf("AddComment: %v", err)
 	}
-	t.Logf("Created comment ID %d", comment.GetID())
+	t.Log("Added comment")
 
-	// List comments
-	comments, _, err := client.Issues.ListComments(ctx, owner, repo, issueNum, nil)
+	// Fetch comments via provider
+	comments, err := p.FetchComments(ctx, task.ID)
 	if err != nil {
-		t.Fatalf("ListComments: %v", err)
+		t.Fatalf("FetchComments: %v", err)
 	}
 
 	if len(comments) < 1 {
-		t.Errorf("Expected at least 1 comment, got %d", len(comments))
+		t.Fatalf("Expected at least 1 comment, got %d", len(comments))
 	}
 
 	found := false
 	for _, c := range comments {
-		if c.GetBody() == commentBody {
+		if c.Body == commentBody {
 			found = true
 			break
 		}
@@ -225,7 +177,11 @@ func TestE2E_CreatePR(t *testing.T) {
 	owner, repo, token := getE2EConfig(t)
 	ctx := context.Background()
 
-	provider := NewGitHubProvider(token)
+	p := NewGitHubProvider(token)
+	repoID := e2eRepoID(owner, repo)
+
+	// Use internal client for git-level fixture setup (branch + file creation).
+	// These are GitHub API git operations, not provider-level task operations.
 	client := newGitHubClient(token, "")
 
 	// Get default branch
@@ -235,18 +191,16 @@ func TestE2E_CreatePR(t *testing.T) {
 	}
 	defaultBranch := repoInfo.GetDefaultBranch()
 	if defaultBranch == "" {
-		defaultBranch = "main" // GitHub's new default
+		defaultBranch = "main"
 	}
 
 	// Get latest commit SHA - handle empty repo by creating initial commit
 	ref, resp, err := client.Git.GetRef(ctx, owner, repo, "refs/heads/"+defaultBranch)
 	if err != nil {
 		if resp != nil && resp.StatusCode == 409 {
-			// Repo is empty, create initial README to bootstrap default branch
 			t.Log("Repo is empty, creating initial commit")
 			readmeContent := []byte("# E2E Test Repository\n\nThis repository is used for automated E2E testing.\n")
 			initMsg := "Initial commit"
-			// Explicitly specify branch when creating initial file
 			_, _, err = client.Repositories.CreateFile(ctx, owner, repo, "README.md", &github.RepositoryContentFileOptions{
 				Message: &initMsg,
 				Content: readmeContent,
@@ -255,9 +209,7 @@ func TestE2E_CreatePR(t *testing.T) {
 			if err != nil {
 				t.Fatalf("CreateFile (initial): %v", err)
 			}
-			// Small delay to let GitHub process the commit
 			time.Sleep(500 * time.Millisecond)
-			// Now get the ref again
 			ref, _, err = client.Git.GetRef(ctx, owner, repo, "refs/heads/"+defaultBranch)
 			if err != nil {
 				t.Fatalf("GetRef after init: %v", err)
@@ -284,8 +236,7 @@ func TestE2E_CreatePR(t *testing.T) {
 		if os.Getenv("E2E_SKIP_CLEANUP") != "" {
 			return
 		}
-		// Delete branch
-		_, _ = client.Git.DeleteRef(ctx, owner, repo, "refs/heads/"+branchName)
+		_ = p.DeleteBranch(ctx, repoID, branchName)
 		t.Logf("Deleted branch: %s", branchName)
 	})
 
@@ -302,13 +253,13 @@ func TestE2E_CreatePR(t *testing.T) {
 	}
 
 	// Create PR using provider
-	result, err := provider.CreatePR(ctx, PROptions{
+	result, err := p.CreatePR(ctx, PROptions{
 		Title:  fmt.Sprintf("E2E Test PR %d", time.Now().Unix()),
 		Body:   "Automated test PR",
-		Head:   fmt.Sprintf("%s/%s:%s", owner, repo, branchName),
+		Head:   fmt.Sprintf("%s:%s", repoID, branchName),
 		Base:   defaultBranch,
 		Draft:  true,
-		TaskID: fmt.Sprintf("%s/%s#0", owner, repo),
+		TaskID: fmt.Sprintf("%s#0", repoID),
 	})
 	if err != nil {
 		t.Fatalf("CreatePR: %v", err)
@@ -323,13 +274,12 @@ func TestE2E_CreatePR(t *testing.T) {
 		t.Errorf("PR state = %q, want draft or open", result.State)
 	}
 
-	// Cleanup: close the PR
+	// Cleanup: close the PR via provider
 	t.Cleanup(func() {
 		if os.Getenv("E2E_SKIP_CLEANUP") != "" {
 			return
 		}
-		state := "closed"
-		_, _, _ = client.PullRequests.Edit(ctx, owner, repo, result.Number, &github.PullRequest{State: &state})
+		_ = p.UpdateStatus(ctx, result.ID, "closed")
 		t.Logf("Closed PR #%d", result.Number)
 	})
 }
@@ -338,18 +288,16 @@ func TestE2E_ListIssues(t *testing.T) {
 	owner, repo, token := getE2EConfig(t)
 	ctx := context.Background()
 
-	client := newGitHubClient(token, "")
+	p := NewGitHubProvider(token)
 
-	// List open issues (just verify we can call the API)
-	issues, _, err := client.Issues.ListByRepo(ctx, owner, repo, &github.IssueListByRepoOptions{
-		State: "all",
-		ListOptions: github.ListOptions{
-			PerPage: 10,
-		},
+	result, err := p.ListTasks(ctx, ListOptions{
+		Team:   e2eRepoID(owner, repo),
+		Status: "all",
+		Limit:  10,
 	})
 	if err != nil {
-		t.Fatalf("ListByRepo: %v", err)
+		t.Fatalf("ListTasks: %v", err)
 	}
 
-	t.Logf("Found %d issues/PRs in repo", len(issues))
+	t.Logf("Found %d issues in repo", len(result.Tasks))
 }

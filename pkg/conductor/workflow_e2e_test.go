@@ -12,62 +12,58 @@ import (
 	"testing"
 	"time"
 
-	"github.com/google/go-github/v67/github"
 	"github.com/valksor/kvelmo/pkg/agent"
 	"github.com/valksor/kvelmo/pkg/agent/claude"
 	"github.com/valksor/kvelmo/pkg/git"
+	"github.com/valksor/kvelmo/pkg/provider"
 	"github.com/valksor/kvelmo/pkg/settings"
 	"github.com/valksor/kvelmo/pkg/storage"
 	"github.com/valksor/kvelmo/pkg/worker"
-	"golang.org/x/oauth2"
 )
 
 // E2E workflow tests for conductor with real Claude agent.
 // Run with: go test -tags=e2e -v ./pkg/conductor/... -run TestE2E
 //
 // Required environment variables:
-//   E2E_GITHUB_REPO  - Repository in "owner/repo" format (e.g., "ozo2003/e2e-test")
-//   GITHUB_TOKEN     - Personal access token with repo scope
-//   ANTHROPIC_API_KEY - API key for Claude (optional, uses Claude CLI if not set)
+//   E2E_KVELMO_TOKEN - Personal access token with repo scope
 //
-// These tests use REAL Claude agents and will incur API costs.
-// Run times can be 1-5 minutes per test depending on task complexity.
+// Optional:
+//   E2E_GITHUB_REPO  - Repository in "owner/repo" format (default: "ozo2003/e2e-test")
 
-func getE2EWorkflowConfig(t *testing.T) (owner, repo, token string) {
+const defaultE2ERepo = "ozo2003/e2e-test"
+
+func getE2EWorkflowConfig(t *testing.T) (repoID, token string) {
 	t.Helper()
 
-	repoFull := os.Getenv("E2E_GITHUB_REPO")
-	if repoFull == "" {
-		t.Skip("E2E_GITHUB_REPO not set")
+	repoID = os.Getenv("E2E_GITHUB_REPO")
+	if repoID == "" {
+		repoID = defaultE2ERepo
 	}
 
-	parts := strings.SplitN(repoFull, "/", 2)
+	parts := strings.SplitN(repoID, "/", 2)
 	if len(parts) != 2 {
-		t.Fatalf("E2E_GITHUB_REPO must be in owner/repo format, got: %s", repoFull)
-	}
-	owner, repo = parts[0], parts[1]
-
-	token = os.Getenv("GITHUB_TOKEN")
-	if token == "" {
-		token = os.Getenv("E2E_GITHUB_TOKEN")
-	}
-	if token == "" {
-		t.Skip("GITHUB_TOKEN or E2E_GITHUB_TOKEN not set")
+		t.Fatalf("E2E_GITHUB_REPO must be in owner/repo format, got: %s", repoID)
 	}
 
-	return owner, repo, token
+	token = os.Getenv("E2E_KVELMO_TOKEN")
+	if token == "" {
+		t.Skip("E2E_KVELMO_TOKEN not set")
+	}
+
+	return repoID, token
 }
 
-// newE2EGitHubClient creates a GitHub client for E2E tests.
-func newE2EGitHubClient(token string) *github.Client {
-	ts := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: token})
-	httpClient := oauth2.NewClient(context.Background(), ts)
-	return github.NewClient(httpClient)
+// newE2EProvider creates a GitHubProvider for E2E tests.
+func newE2EProvider(token string) *provider.GitHubProvider {
+	return provider.NewGitHubProvider(token)
 }
 
 // setupE2EWorkDir creates a temporary directory with a cloned repo for E2E tests.
-func setupE2EWorkDir(t *testing.T, owner, repo, token string) string {
+func setupE2EWorkDir(t *testing.T, repoID, token string) string {
 	t.Helper()
+
+	parts := strings.SplitN(repoID, "/", 2)
+	owner, repo := parts[0], parts[1]
 
 	tmpDir, err := os.MkdirTemp("", "kvelmo-e2e-*")
 	if err != nil {
@@ -90,7 +86,7 @@ func setupE2EWorkDir(t *testing.T, owner, repo, token string) string {
 		t.Fatalf("git clone failed: %v (check repo access and token permissions)", err)
 	} else {
 		t.Logf("Clone completed successfully")
-		_ = output // Suppress unused warning
+		_ = output
 	}
 
 	// Configure git user for commits
@@ -128,7 +124,7 @@ func setupWorkerPool(t *testing.T, workDir string) *worker.Pool {
 	registry := agent.NewRegistry()
 	claudeAgent := claude.New()
 
-	// Configure Claude with the work directory (use safe type assertion)
+	// Configure Claude with the work directory
 	configured := claudeAgent.WithWorkDir(workDir)
 	typedAgent, ok := configured.(*claude.Agent)
 	if !ok {
@@ -149,19 +145,16 @@ func setupWorkerPool(t *testing.T, workDir string) *worker.Pool {
 		t.Fatalf("Start pool: %v", err)
 	}
 
-	// Register cleanup immediately after Start() so it runs even if test skips
 	t.Cleanup(func() {
 		pool.Stop()
 	})
 
-	// Add a worker with Claude - use AddAgentWorker to actually connect the agent
+	// Add a worker with Claude
 	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cancel()
 
 	w, err := pool.AddAgentWorker(ctx, "claude", false)
 	if err != nil {
-		// Claude CLI may fail to connect in certain environments
-		// (e.g., when running inside Claude Code itself)
 		t.Skipf("Could not connect Claude agent (may be running in nested Claude session): %v", err)
 	}
 	t.Logf("Worker created: %s (agent: %s, connected: %v)", w.ID, w.AgentName, w.Agent != nil && w.Agent.Connected())
@@ -184,35 +177,33 @@ func waitForState(t *testing.T, c *Conductor, expected State, timeout time.Durat
 }
 
 func TestE2E_LoadFromGitHub(t *testing.T) {
-	owner, repo, token := getE2EWorkflowConfig(t)
+	repoID, token := getE2EWorkflowConfig(t)
 	ctx := context.Background()
 
-	// Create GitHub client for test setup
-	client := newE2EGitHubClient(token)
+	p := newE2EProvider(token)
 
+	// Create issue via provider
 	title := fmt.Sprintf("E2E Load Test %d", time.Now().Unix())
 	body := "## Description\n\nSimple test task for E2E loading.\n\n## Acceptance Criteria\n\n- [ ] Task loads successfully"
-
-	issue, _, err := client.Issues.Create(ctx, owner, repo, &github.IssueRequest{
-		Title: &title,
-		Body:  &body,
+	task, err := p.CreateTask(ctx, provider.CreateTaskOptions{
+		Title:       title,
+		Description: body,
+		Team:        repoID,
 	})
 	if err != nil {
-		t.Fatalf("Create issue: %v", err)
+		t.Fatalf("CreateTask: %v", err)
 	}
-	issueNum := issue.GetNumber()
-	t.Logf("Created issue #%d", issueNum)
+	t.Logf("Created issue: %s", task.ID)
 
 	t.Cleanup(func() {
 		if os.Getenv("E2E_SKIP_CLEANUP") == "" {
-			state := "closed"
-			_, _, _ = client.Issues.Edit(ctx, owner, repo, issueNum, &github.IssueRequest{State: &state})
-			t.Logf("Closed issue #%d", issueNum)
+			_ = p.UpdateStatus(ctx, task.ID, "closed")
+			t.Logf("Closed issue %s", task.ID)
 		}
 	})
 
 	// Setup work directory
-	workDir := setupE2EWorkDir(t, owner, repo, token)
+	workDir := setupE2EWorkDir(t, repoID, token)
 
 	// Create conductor with settings
 	effectiveSettings := &settings.Settings{
@@ -237,7 +228,7 @@ func TestE2E_LoadFromGitHub(t *testing.T) {
 	}
 
 	// Load the task from GitHub
-	taskRef := fmt.Sprintf("github:%s/%s#%d", owner, repo, issueNum)
+	taskRef := fmt.Sprintf("github:%s", task.ID)
 	err = conductor.Start(ctx, taskRef)
 	if err != nil {
 		t.Fatalf("Start: %v", err)
@@ -266,10 +257,10 @@ func TestE2E_LoadFromGitHub(t *testing.T) {
 
 	t.Logf("Loaded task: %s on branch %s", wu.ID, wu.Branch)
 
-	// Cleanup: delete branch if created
+	// Cleanup: delete branch
 	t.Cleanup(func() {
 		if os.Getenv("E2E_SKIP_CLEANUP") == "" && wu.Branch != "" {
-			_, _ = client.Git.DeleteRef(ctx, owner, repo, "refs/heads/"+wu.Branch)
+			_ = p.DeleteBranch(ctx, repoID, wu.Branch)
 			t.Logf("Deleted branch: %s", wu.Branch)
 		}
 	})
@@ -280,16 +271,15 @@ func TestE2E_FullWorkflow(t *testing.T) {
 		t.Skip("Skipping full workflow test in short mode")
 	}
 
-	owner, repo, token := getE2EWorkflowConfig(t)
+	repoID, token := getE2EWorkflowConfig(t)
 	ctx := context.Background()
 
 	// Check Claude is available
 	checkClaudeAvailable(t)
 
-	// Create GitHub client
-	client := newE2EGitHubClient(token)
+	p := newE2EProvider(token)
 
-	// Create a simple task that Claude can complete quickly
+	// Create a simple task via provider
 	title := fmt.Sprintf("E2E Full Workflow Test %d", time.Now().Unix())
 	body := `## Description
 
@@ -304,18 +294,18 @@ Create a simple "Hello World" text file.
 
 This is a minimal task for E2E testing. Just create the file with the specified content.`
 
-	issue, _, err := client.Issues.Create(ctx, owner, repo, &github.IssueRequest{
-		Title: &title,
-		Body:  &body,
+	task, err := p.CreateTask(ctx, provider.CreateTaskOptions{
+		Title:       title,
+		Description: body,
+		Team:        repoID,
 	})
 	if err != nil {
-		t.Fatalf("Create issue: %v", err)
+		t.Fatalf("CreateTask: %v", err)
 	}
-	issueNum := issue.GetNumber()
-	t.Logf("Created issue #%d: %s", issueNum, issue.GetHTMLURL())
+	t.Logf("Created issue: %s (%s)", task.ID, task.URL)
 
 	// Setup work directory
-	workDir := setupE2EWorkDir(t, owner, repo, token)
+	workDir := setupE2EWorkDir(t, repoID, token)
 
 	// Setup worker pool with Claude
 	pool := setupWorkerPool(t, workDir)
@@ -344,12 +334,12 @@ This is a minimal task for E2E testing. Just create the file with the specified 
 	}
 
 	// Setup storage for specifications
-	store := storage.NewStore(workDir, true) // Save in project
+	store := storage.NewStore(workDir, true)
 	conductor.SetStore(store)
 
 	// Step 1: Load task from GitHub
 	t.Log("Step 1: Loading task from GitHub...")
-	taskRef := fmt.Sprintf("github:%s/%s#%d", owner, repo, issueNum)
+	taskRef := fmt.Sprintf("github:%s", task.ID)
 	if err := conductor.Start(ctx, taskRef); err != nil {
 		t.Fatalf("Start: %v", err)
 	}
@@ -360,14 +350,11 @@ This is a minimal task for E2E testing. Just create the file with the specified 
 	// Cleanup branch and issue
 	t.Cleanup(func() {
 		if os.Getenv("E2E_SKIP_CLEANUP") == "" {
-			// Close issue
-			state := "closed"
-			_, _, _ = client.Issues.Edit(ctx, owner, repo, issueNum, &github.IssueRequest{State: &state})
-			t.Logf("Closed issue #%d", issueNum)
+			_ = p.UpdateStatus(ctx, task.ID, "closed")
+			t.Logf("Closed issue %s", task.ID)
 
-			// Delete branch
 			if wu.Branch != "" {
-				_, _ = client.Git.DeleteRef(ctx, owner, repo, "refs/heads/"+wu.Branch)
+				_ = p.DeleteBranch(ctx, repoID, wu.Branch)
 				t.Logf("Deleted branch: %s", wu.Branch)
 			}
 		}
@@ -408,10 +395,8 @@ This is a minimal task for E2E testing. Just create the file with the specified 
 	// Verify hello.txt was created (or at least some changes were made)
 	helloPath := filepath.Join(workDir, "hello.txt")
 	if _, err := os.Stat(helloPath); os.IsNotExist(err) {
-		// It might be named differently, check git status
 		status := runGitCmd(t, workDir, "status", "--porcelain")
 		t.Logf("Git status after implementation:\n%s", status)
-		// At minimum, verify some files were created/modified
 		if status == "" {
 			t.Error("No changes made during implementation phase")
 		}
@@ -444,29 +429,14 @@ This is a minimal task for E2E testing. Just create the file with the specified 
 	if conductor.State() != StateSubmitted {
 		t.Errorf("Final state = %v, want %v", conductor.State(), StateSubmitted)
 	}
-
-	// Cleanup: close any PRs created
-	t.Cleanup(func() {
-		if os.Getenv("E2E_SKIP_CLEANUP") == "" {
-			// List and close PRs for this branch
-			prs, _, _ := client.PullRequests.List(ctx, owner, repo, &github.PullRequestListOptions{
-				Head: fmt.Sprintf("%s:%s", owner, wu.Branch),
-			})
-			for _, pr := range prs {
-				state := "closed"
-				_, _, _ = client.PullRequests.Edit(ctx, owner, repo, pr.GetNumber(), &github.PullRequest{State: &state})
-				t.Logf("Closed PR #%d", pr.GetNumber())
-			}
-		}
-	})
 }
 
 func TestE2E_GitOperations(t *testing.T) {
-	owner, repo, token := getE2EWorkflowConfig(t)
+	repoID, token := getE2EWorkflowConfig(t)
 	ctx := context.Background()
 
 	// Setup work directory
-	workDir := setupE2EWorkDir(t, owner, repo, token)
+	workDir := setupE2EWorkDir(t, repoID, token)
 
 	// Open git repo
 	gitRepo, err := git.Open(workDir)
@@ -524,44 +494,39 @@ func TestE2E_PlanOnly(t *testing.T) {
 		t.Skip("Skipping planning test in short mode")
 	}
 
-	owner, repo, token := getE2EWorkflowConfig(t)
+	repoID, token := getE2EWorkflowConfig(t)
 	ctx := context.Background()
 
 	// Check Claude is available
 	checkClaudeAvailable(t)
 
-	// Create GitHub client
-	client := newE2EGitHubClient(token)
+	p := newE2EProvider(token)
 
-	title := fmt.Sprintf("E2E Plan Test %d", time.Now().Unix())
-	body := `## Description
+	task, err := p.CreateTask(ctx, provider.CreateTaskOptions{
+		Title: fmt.Sprintf("E2E Plan Test %d", time.Now().Unix()),
+		Description: `## Description
 
 Add a README.md file with project description.
 
 ## Acceptance Criteria
 
 - [ ] Create README.md
-- [ ] Include project title and description`
-
-	issue, _, err := client.Issues.Create(ctx, owner, repo, &github.IssueRequest{
-		Title: &title,
-		Body:  &body,
+- [ ] Include project title and description`,
+		Team: repoID,
 	})
 	if err != nil {
-		t.Fatalf("Create issue: %v", err)
+		t.Fatalf("CreateTask: %v", err)
 	}
-	issueNum := issue.GetNumber()
-	t.Logf("Created issue #%d", issueNum)
+	t.Logf("Created issue: %s", task.ID)
 
 	t.Cleanup(func() {
 		if os.Getenv("E2E_SKIP_CLEANUP") == "" {
-			state := "closed"
-			_, _, _ = client.Issues.Edit(ctx, owner, repo, issueNum, &github.IssueRequest{State: &state})
+			_ = p.UpdateStatus(ctx, task.ID, "closed")
 		}
 	})
 
 	// Setup
-	workDir := setupE2EWorkDir(t, owner, repo, token)
+	workDir := setupE2EWorkDir(t, repoID, token)
 	pool := setupWorkerPool(t, workDir)
 
 	effectiveSettings := &settings.Settings{
@@ -590,7 +555,7 @@ Add a README.md file with project description.
 	conductor.SetStore(store)
 
 	// Load task
-	taskRef := fmt.Sprintf("github:%s/%s#%d", owner, repo, issueNum)
+	taskRef := fmt.Sprintf("github:%s", task.ID)
 	if err := conductor.Start(ctx, taskRef); err != nil {
 		t.Fatalf("Start: %v", err)
 	}
@@ -598,7 +563,7 @@ Add a README.md file with project description.
 	wu := conductor.GetWorkUnit()
 	t.Cleanup(func() {
 		if os.Getenv("E2E_SKIP_CLEANUP") == "" && wu.Branch != "" {
-			_, _ = client.Git.DeleteRef(ctx, owner, repo, "refs/heads/"+wu.Branch)
+			_ = p.DeleteBranch(ctx, repoID, wu.Branch)
 		}
 	})
 

@@ -17,9 +17,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/google/go-github/v67/github"
+	"github.com/valksor/kvelmo/pkg/provider"
 	"github.com/valksor/kvelmo/pkg/socket"
-	"golang.org/x/oauth2"
 )
 
 // TestCLIFullCycle tests the complete kvelmo workflow via CLI.
@@ -39,20 +38,18 @@ func TestCLIFullCycle(t *testing.T) {
 		checkOllamaAvailable(t)
 	}
 	token, repo := getE2EConfig(t)
-	parts := strings.SplitN(repo, "/", 2)
-	owner, repoName := parts[0], parts[1]
 
 	// 2. Build kvelmo binary
 	kvelmoPath := buildKvelmo(t)
 
-	// 3. Create test issue
-	client := newGitHubClient(token)
-	issueNum := createTestIssue(t, client, owner, repoName)
+	// 3. Create test issue via provider
+	p := newE2EProvider(token)
+	issueNum := createTestIssue(t, p, repo)
+	taskID := fmt.Sprintf("%s#%d", repo, issueNum)
 	t.Logf("Created test issue #%d", issueNum)
 
 	// Setup cleanup
 	var createdBranch string
-	var createdPRNum int
 	t.Cleanup(func() {
 		if os.Getenv("E2E_SKIP_CLEANUP") != "" {
 			t.Log("Skipping cleanup (E2E_SKIP_CLEANUP set)")
@@ -61,22 +58,14 @@ func TestCLIFullCycle(t *testing.T) {
 
 		ctx := context.Background()
 
-		// Close PR if created
-		if createdPRNum > 0 {
-			state := "closed"
-			_, _, _ = client.PullRequests.Edit(ctx, owner, repoName, createdPRNum, &github.PullRequest{State: &state})
-			t.Logf("Closed PR #%d", createdPRNum)
-		}
-
 		// Delete branch if created
 		if createdBranch != "" {
-			_, _ = client.Git.DeleteRef(ctx, owner, repoName, "refs/heads/"+createdBranch)
+			_ = p.DeleteBranch(ctx, repo, createdBranch)
 			t.Logf("Deleted branch: %s", createdBranch)
 		}
 
 		// Close issue
-		state := "closed"
-		_, _, _ = client.Issues.Edit(ctx, owner, repoName, issueNum, &github.IssueRequest{State: &state})
+		_ = p.UpdateStatus(ctx, taskID, "closed")
 		t.Logf("Closed issue #%d", issueNum)
 	})
 
@@ -94,7 +83,8 @@ func TestCLIFullCycle(t *testing.T) {
 		}
 	}
 	t.Setenv("HOME", testHome)
-	workDir := setupWorkDir(t, token, owner, repoName)
+	parts := strings.SplitN(repo, "/", 2)
+	workDir := setupWorkDir(t, token, parts[0], parts[1])
 
 	// 5. Start kvelmo socket in background
 	t.Log("Step 1: Starting kvelmo socket in background...")
@@ -245,15 +235,6 @@ func TestCLIFullCycle(t *testing.T) {
 	}
 	t.Log("PR submitted")
 
-	// Get PR number for cleanup
-	prs, _, _ := client.PullRequests.List(context.Background(), owner, repoName, &github.PullRequestListOptions{
-		Head: fmt.Sprintf("%s:%s", owner, createdBranch),
-	})
-	if len(prs) > 0 {
-		createdPRNum = prs[0].GetNumber()
-		t.Logf("Created PR #%d: %s", createdPRNum, prs[0].GetHTMLURL())
-	}
-
 	// 14. Approve and merge via remote commands
 	// Note: Self-approval is not allowed on GitHub, so we skip approval and merge directly.
 	// In a real workflow, approval would come from a different user/token.
@@ -300,7 +281,6 @@ func TestCLIFullCycle(t *testing.T) {
 
 	// Branch was deleted by finish, clear for cleanup
 	createdBranch = ""
-	createdPRNum = 0
 }
 
 // TestCLIPipe tests the pipe command (one-shot agent, no server required).
@@ -375,22 +355,17 @@ func getE2EConfig(t *testing.T) (token, repo string) {
 		t.Fatalf("E2E_GITHUB_REPO must be in owner/repo format, got: %s", repo)
 	}
 
-	token = os.Getenv("KVELMO_E2E_TOKEN")
+	token = os.Getenv("E2E_KVELMO_TOKEN")
 	if token == "" {
-		token = os.Getenv("GITHUB_TOKEN") // Fallback
-	}
-	if token == "" {
-		t.Skip("KVELMO_E2E_TOKEN not set (set a GitHub PAT with repo scope)")
+		t.Skip("E2E_KVELMO_TOKEN not set (set a GitHub PAT with repo scope)")
 	}
 
 	return token, repo
 }
 
-// newGitHubClient creates a GitHub client.
-func newGitHubClient(token string) *github.Client {
-	ts := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: token})
-	httpClient := oauth2.NewClient(context.Background(), ts)
-	return github.NewClient(httpClient)
+// newE2EProvider creates a GitHub provider for E2E tests.
+func newE2EProvider(token string) *provider.GitHubProvider {
+	return provider.NewGitHubProvider(token)
 }
 
 // buildKvelmo compiles the kvelmo binary and returns the path.
@@ -441,40 +416,57 @@ func findProjectRoot(t *testing.T) string {
 
 // createTestIssue creates a realistic test issue with multiple files and code to simplify/optimize.
 // Uses a unique timestamp suffix to avoid conflicts between test runs.
-func createTestIssue(t *testing.T, client *github.Client, owner, repo string) int {
+func createTestIssue(t *testing.T, p *provider.GitHubProvider, repo string) int {
 	t.Helper()
 
 	timestamp := time.Now().Unix()
-	title := fmt.Sprintf("Add string utility module (%d)", timestamp)
+	title := fmt.Sprintf("Build bookmark manager API (%d)", timestamp)
 	body := fmt.Sprintf(`## Description
 
-Add a string utility module at src/strings_%d.ts with helper functions for common string operations.
+Build a bookmark manager HTTP API in Go. (Run ID: %d)
+
+The API stores bookmarks in memory and serves a single-page HTML dashboard for browsing them.
+
+A bookmark has a URL, title, optional tags, and timestamps for when it was created and last updated.
+
+## Requirements
+
+The API should support:
+- Listing all bookmarks as JSON
+- Adding a new bookmark (URL, title, tags)
+- Getting a single bookmark by ID
+- Updating a bookmark
+- Deleting a bookmark
+- Searching bookmarks by title or URL substring (case-insensitive)
+- Serving an HTML dashboard at the root that lists bookmarks, has a form to add new ones, and a search input
+
+The HTML dashboard should be embedded in the binary using Go embed. It should show bookmarks in a table with clickable titles, tags, and creation dates. Include basic styling (centered layout, simple table, form).
 
 ## Acceptance Criteria
 
-- [ ] Create src/strings_%d.ts with these exported functions:
-  - truncate(str, maxLen, suffix?) — truncate string to maxLen, append suffix (default "...")
-  - slugify(str) — convert to URL-friendly slug (lowercase, hyphens, strip special chars)
-  - capitalize(str) — capitalize first letter of each word
-  - countWords(str) — count words in a string
-- [ ] Create src/strings_%d.test.ts with tests for each function (at least 2 test cases per function)
-- [ ] Each function should handle edge cases: empty string, null/undefined input, single character
+- [ ] API endpoints work for all CRUD operations plus search
+- [ ] HTML dashboard renders with bookmark list, add form, and search
+- [ ] Tests verify every endpoint works and edge cases return proper errors
+- [ ] `+"`go build ./...`"+` passes
+- [ ] `+"`go test ./...`"+` passes`, timestamp)
 
-## Implementation Notes
-
-Use verbose, unoptimized implementations on purpose (e.g., multiple passes over the string,
-redundant checks, nested conditionals). This gives the simplify and optimize phases real work to do.
-Write tests using simple assert-style checks (no test framework needed).`, timestamp, timestamp, timestamp)
-
-	issue, _, err := client.Issues.Create(context.Background(), owner, repo, &github.IssueRequest{
-		Title: &title,
-		Body:  &body,
+	task, err := p.CreateTask(context.Background(), provider.CreateTaskOptions{
+		Title:       title,
+		Description: body,
+		Team:        repo,
 	})
 	if err != nil {
-		t.Fatalf("Create issue: %v", err)
+		t.Fatalf("CreateTask: %v", err)
 	}
 
-	return issue.GetNumber()
+	// Extract issue number from task ID (format: "owner/repo#number")
+	parts := strings.SplitN(task.ID, "#", 2)
+	if len(parts) != 2 {
+		t.Fatalf("unexpected task ID format: %s", task.ID)
+	}
+	var num int
+	fmt.Sscanf(parts[1], "%d", &num)
+	return num
 }
 
 // setupTestHome creates an isolated HOME directory with global kvelmo config for Ollama.
