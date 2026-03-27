@@ -1,4 +1,4 @@
-.PHONY: build build-go test test-cover test-race test-e2e quality types \
+.PHONY: build build-go test test-cover test-race test-e2e quality ci-quality ci-test types \
         web-build web-dev web-test web-e2e web-e2e-ui \
         run run-dev install release man-pages \
         desktop-dev desktop-build desktop-sidecar desktop-sidecar-all desktop-clean tauri-install \
@@ -45,6 +45,26 @@ test: quality
 	go test -p 4 ./pkg/... ./cmd/...
 	cd web && bun run test:run
 	cd web/src-tauri && cargo test --lib
+
+## CI quality checks (Go + frontend only, Tauri checked in dedicated CI job)
+ci-quality:
+	go fmt ./...
+	@command -v goimports >/dev/null && find . -name '*.go' -not -path './.claude/*' -not -path './prototype/*' -not -path './vendor/*' -exec goimports -w {} + || true
+	@command -v gofumpt >/dev/null && find . -name '*.go' -not -path './.claude/*' -not -path './prototype/*' -not -path './vendor/*' -exec gofumpt -l -w {} + || true
+	go vet ./...
+	@alias_issues="$$(./.github/alias.sh || true)"; \
+	if [ -n "$$alias_issues" ]; then \
+		echo "Unnecessary import alias detected:"; \
+		echo "$$alias_issues"; \
+		exit 1; \
+	fi
+	golangci-lint run ./... --fix
+	cd web && bun install --frozen-lockfile && bun run lint && bun run typecheck
+
+## CI tests (Go + frontend only, Tauri tested in dedicated CI job)
+ci-test: ci-quality
+	go test -p 4 ./pkg/... ./cmd/...
+	cd web && bun run test:run
 
 ## Go tests with coverage report
 test-cover:
@@ -220,8 +240,8 @@ tidy: clean
 	go mod tidy -e
 	go get -d -v ./...
 
-## CI checks (quality + test + build)
-ci: quality test build
+## CI checks (ci-quality + ci-test + build; Tauri checked separately)
+ci: ci-quality ci-test build
 
 ## Full dev workflow (quality + test + run)
 dev: quality test run
