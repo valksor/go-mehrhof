@@ -18,13 +18,13 @@ import (
 
 // Entry stores a cached prompt-response pair.
 type Entry struct {
-	ID         string    `json:"id"`
-	PromptHash string    `json:"prompt_hash"`
-	Prompt     string    `json:"prompt"`
-	Response   string    `json:"response"`
-	Phase      string    `json:"phase,omitempty"`
-	CreatedAt  time.Time `json:"created_at"`
-	HitCount   int       `json:"hit_count"`
+	ID         string      `json:"id"`
+	PromptHash string      `json:"prompt_hash"`
+	Prompt     string      `json:"prompt"`
+	Response   string      `json:"response"`
+	Phase      string      `json:"phase,omitempty"`
+	CreatedAt  time.Time   `json:"created_at"`
+	HitCount   atomic.Int64 `json:"hit_count"`
 }
 
 // Stats tracks cache performance.
@@ -98,8 +98,7 @@ func (c *Cache) Get(prompt string) (string, bool) {
 		return "", false
 	}
 
-	// HitCount is informational and tolerates benign races under RLock.
-	entry.HitCount++
+	entry.HitCount.Add(1)
 	response := entry.Response
 	phase := entry.Phase
 	c.mu.RUnlock()
@@ -108,7 +107,7 @@ func (c *Cache) Get(prompt string) (string, bool) {
 	// Estimate tokens saved (~4 chars per token).
 	c.tokensSaved.Add(int64(len(response)) / 4)
 
-	slog.Debug("cache hit", "hash", hash[:12], "phase", phase, "hit_count", entry.HitCount)
+	slog.Debug("cache hit", "hash", hash[:12], "phase", phase, "hit_count", entry.HitCount.Load())
 
 	return response, true
 }

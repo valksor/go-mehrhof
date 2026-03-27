@@ -542,6 +542,11 @@ func (g *GlobalSocket) handleConfigValidate(_ context.Context, req *Request) (*R
 	}
 
 	// Run preflight checks (git, agent CLIs).
+	// Determine effective default agent so we only fail validity for relevant agents.
+	defaultAgent := effective.Agent.Default
+	if defaultAgent == "" {
+		defaultAgent = "claude"
+	}
 	preflight := agent.RunPreflight() //nolint:contextcheck // RunPreflight manages its own timeouts internally
 	for _, c := range preflight.Checks {
 		status := "ok"
@@ -549,8 +554,15 @@ func (g *GlobalSocket) handleConfigValidate(_ context.Context, req *Request) (*R
 		case agent.CheckPassed:
 			// ok
 		case agent.CheckFailed:
-			status = "error"
-			res.Valid = false
+			// CLI agent checks (claude, codex) only fail validity when that
+			// agent is the configured default.  Other checks (git) always
+			// affect validity.
+			if (c.Name == "claude" || c.Name == "codex") && c.Name != defaultAgent {
+				status = "warning"
+			} else {
+				status = "error"
+				res.Valid = false
+			}
 		case agent.CheckWarning:
 			status = "warning"
 		}
