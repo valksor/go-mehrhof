@@ -18,12 +18,12 @@ import (
 
 // Entry stores a cached prompt-response pair.
 type Entry struct {
-	ID         string      `json:"id"`
-	PromptHash string      `json:"prompt_hash"`
-	Prompt     string      `json:"prompt"`
-	Response   string      `json:"response"`
-	Phase      string      `json:"phase,omitempty"`
-	CreatedAt  time.Time   `json:"created_at"`
+	ID         string       `json:"id"`
+	PromptHash string       `json:"prompt_hash"`
+	Prompt     string       `json:"prompt"`
+	Response   string       `json:"response"`
+	Phase      string       `json:"phase,omitempty"`
+	CreatedAt  time.Time    `json:"created_at"`
 	HitCount   atomic.Int64 `json:"hit_count"`
 }
 
