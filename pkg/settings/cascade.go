@@ -6,6 +6,9 @@ import (
 	"sync"
 )
 
+// KeyAgentDefault is the setting key for the default agent.
+const KeyAgentDefault = "agent.default"
+
 // ResolvedSetting holds a resolved value with its source.
 type ResolvedSetting struct {
 	Key    string `json:"key"`
@@ -26,7 +29,7 @@ type SettingDefinition struct {
 
 // DefaultDefinitions contains the known overridable settings with their metadata.
 var DefaultDefinitions = []SettingDefinition{
-	{Key: "agent.default", DisplayName: "Default Agent", Description: "Agent used when none specified", DataType: "string", DefaultValue: "claude", Scopes: []string{"global", "project"}, Category: "agent"},
+	{Key: KeyAgentDefault, DisplayName: "Default Agent", Description: "Agent used when none specified", DataType: "string", DefaultValue: "claude", Scopes: []string{"global", "project"}, Category: "agent"},
 	{Key: "agent.strategy", DisplayName: "Agent Strategy", Description: "Agent reasoning strategy", DataType: "string", DefaultValue: "direct", Scopes: []string{"global", "project"}, Category: "agent"},
 	{Key: "workflow.auto_advance", DisplayName: "Auto Advance", Description: "Automatically progress through phases", DataType: "bool", DefaultValue: false, Scopes: []string{"global", "project"}, Category: "workflow"},
 	{Key: "workflow.use_worktree_isolation", DisplayName: "Worktree Isolation", Description: "Create isolated git worktree for each task", DataType: "bool", DefaultValue: true, Scopes: []string{"global", "project"}, Category: "workflow"},
@@ -131,7 +134,7 @@ func (r *CascadeResolver) resolve(key string, def SettingDefinition, projectSett
 // Returns (value, true) if the field is explicitly set (non-zero), or (nil, false) otherwise.
 func getSettingFromConfig(key string, s *Settings) (any, bool) {
 	switch key {
-	case "agent.default":
+	case KeyAgentDefault:
 		if s.Agent.Default != "" {
 			return s.Agent.Default, true
 		}

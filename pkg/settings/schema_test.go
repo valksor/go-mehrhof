@@ -5,6 +5,14 @@ import (
 	"testing"
 )
 
+const (
+	testKeyWorkersMax   = "workers.max"
+	testKeyAgentDefault = KeyAgentDefault
+	testValTrue         = tagValueTrue
+	testValClaude       = "claude"
+	testValCodex        = "codex"
+)
+
 func TestGenerateSchema_NotNil(t *testing.T) {
 	schema := GenerateSchema()
 	if schema == nil {
@@ -94,16 +102,16 @@ func TestGenerateSchema_NumberFieldsHaveCorrectType(t *testing.T) {
 
 	for _, section := range schema.Sections {
 		for _, field := range section.Fields {
-			if field.Path == "workers.max" {
+			if field.Path == testKeyWorkersMax {
 				if field.Type != TypeNumber {
-					t.Errorf("workers.max type=%q, want number", field.Type)
+					t.Errorf("%s type=%q, want number", testKeyWorkersMax, field.Type)
 				}
 
 				return
 			}
 		}
 	}
-	t.Error("workers.max field not found in schema")
+	t.Errorf("%s field not found in schema", testKeyWorkersMax)
 }
 
 func TestGenerateSchema_SensitiveFieldsHaveEnvVar(t *testing.T) {
@@ -121,7 +129,7 @@ func TestGenerateSchema_SensitiveFieldsHaveEnvVar(t *testing.T) {
 func TestGenerateSchemaWithCustomAgents_AddsOptions(t *testing.T) {
 	s := &Settings{
 		CustomAgents: map[string]CustomAgent{
-			"my-bot": {Extends: "claude", Description: "My custom bot"},
+			"my-bot": {Extends: testValClaude, Description: "My custom bot"},
 		},
 	}
 
@@ -133,7 +141,7 @@ func TestGenerateSchemaWithCustomAgents_AddsOptions(t *testing.T) {
 			continue
 		}
 		for _, field := range section.Fields {
-			if field.Path != "agent.default" {
+			if field.Path != testKeyAgentDefault {
 				continue
 			}
 			for _, opt := range field.Options {
@@ -145,7 +153,7 @@ func TestGenerateSchemaWithCustomAgents_AddsOptions(t *testing.T) {
 	}
 
 	if !found {
-		t.Error("GenerateSchemaWithCustomAgents() did not add my-bot to agent.default options")
+		t.Errorf("GenerateSchemaWithCustomAgents() did not add my-bot to %s options", testKeyAgentDefault)
 	}
 }
 
@@ -186,14 +194,14 @@ func TestParseSchemaTag_KeyValue(t *testing.T) {
 func TestParseSchemaTag_Flags(t *testing.T) {
 	tags := parseSchemaTag("label=Token;sensitive;required;advanced")
 
-	if tags["sensitive"] != "true" {
-		t.Errorf("sensitive = %q, want true", tags["sensitive"])
+	if tags["sensitive"] != testValTrue {
+		t.Errorf("sensitive = %q, want %s", tags["sensitive"], testValTrue)
 	}
-	if tags["required"] != "true" {
-		t.Errorf("required = %q, want true", tags["required"])
+	if tags["required"] != testValTrue {
+		t.Errorf("required = %q, want %s", tags["required"], testValTrue)
 	}
-	if tags["advanced"] != "true" {
-		t.Errorf("advanced = %q, want true", tags["advanced"])
+	if tags["advanced"] != testValTrue {
+		t.Errorf("advanced = %q, want %s", tags["advanced"], testValTrue)
 	}
 }
 
@@ -205,30 +213,30 @@ func TestParseSchemaTag_Empty(t *testing.T) {
 }
 
 func TestParseShowWhen_Equals(t *testing.T) {
-	cond := parseShowWhen("agent.default:claude")
+	cond := parseShowWhen(testKeyAgentDefault + ":" + testValClaude)
 	if cond == nil {
 		t.Fatal("parseShowWhen() = nil")
 	}
-	if cond.Field != "agent.default" {
-		t.Errorf("Field = %q, want agent.default", cond.Field)
+	if cond.Field != testKeyAgentDefault {
+		t.Errorf("Field = %q, want %s", cond.Field, testKeyAgentDefault)
 	}
-	if cond.Equals != "claude" {
-		t.Errorf("Equals = %v, want claude", cond.Equals)
+	if cond.Equals != testValClaude {
+		t.Errorf("Equals = %v, want %s", cond.Equals, testValClaude)
 	}
 }
 
 func TestParseShowWhen_NotEquals(t *testing.T) {
-	cond := parseShowWhen("agent.default:!codex")
+	cond := parseShowWhen(testKeyAgentDefault + ":!" + testValCodex)
 	if cond == nil {
 		t.Fatal("parseShowWhen() = nil")
 	}
-	if cond.NotEquals != "codex" {
-		t.Errorf("NotEquals = %q, want codex", cond.NotEquals)
+	if cond.NotEquals != testValCodex {
+		t.Errorf("NotEquals = %q, want %s", cond.NotEquals, testValCodex)
 	}
 }
 
 func TestParseShowWhen_BoolTrue(t *testing.T) {
-	cond := parseShowWhen("git.auto_commit:true")
+	cond := parseShowWhen("git.auto_commit:" + testValTrue)
 	if cond == nil {
 		t.Fatal("parseShowWhen() = nil")
 	}
@@ -250,15 +258,15 @@ func TestParseShowWhen_NoColon(t *testing.T) {
 }
 
 func TestParseOptions_Simple(t *testing.T) {
-	opts := parseOptions("claude|codex")
+	opts := parseOptions(testValClaude + "|" + testValCodex)
 	if len(opts) != 2 {
 		t.Fatalf("parseOptions() len = %d, want 2", len(opts))
 	}
-	if opts[0].Value != "claude" {
-		t.Errorf("opts[0].Value = %q, want claude", opts[0].Value)
+	if opts[0].Value != testValClaude {
+		t.Errorf("opts[0].Value = %q, want %s", opts[0].Value, testValClaude)
 	}
-	if opts[1].Value != "codex" {
-		t.Errorf("opts[1].Value = %q, want codex", opts[1].Value)
+	if opts[1].Value != testValCodex {
+		t.Errorf("opts[1].Value = %q, want %s", opts[1].Value, testValCodex)
 	}
 }
 
@@ -279,21 +287,21 @@ func TestParseOptions_Empty(t *testing.T) {
 }
 
 func TestParseDefaultValue_Uint(t *testing.T) {
-	result := parseDefaultValue("42", reflect.TypeOf(uint(0)))
+	result := parseDefaultValue("42", reflect.TypeFor[uint]())
 	if v, ok := result.(uint64); !ok || v != 42 {
 		t.Errorf("parseDefaultValue(uint) = %v (%T), want uint64(42)", result, result)
 	}
 }
 
 func TestParseDefaultValue_Float(t *testing.T) {
-	result := parseDefaultValue("3.14", reflect.TypeOf(float64(0)))
+	result := parseDefaultValue("3.14", reflect.TypeFor[float64]())
 	if v, ok := result.(float64); !ok || v != 3.14 {
 		t.Errorf("parseDefaultValue(float) = %v (%T), want float64(3.14)", result, result)
 	}
 }
 
 func TestParseDefaultValue_InvalidInt(t *testing.T) {
-	result := parseDefaultValue("notanumber", reflect.TypeOf(int(0)))
+	result := parseDefaultValue("notanumber", reflect.TypeFor[int]())
 	// Falls through to return 0 (int)
 	if result != 0 {
 		t.Errorf("parseDefaultValue(invalid int) = %v, want 0", result)
@@ -314,7 +322,7 @@ func TestCapitalizeFirst(t *testing.T) {
 
 func TestGenerate_PointerType(t *testing.T) {
 	// Generate should handle pointer types
-	schema := Generate(reflect.TypeOf(&Settings{}))
+	schema := Generate(reflect.TypeFor[*Settings]())
 	if schema == nil {
 		t.Fatal("Generate(pointer) = nil")
 	}
@@ -325,7 +333,7 @@ func TestGenerate_PointerType(t *testing.T) {
 
 func TestGenerate_NonStruct(t *testing.T) {
 	// Non-struct types should return empty schema
-	schema := Generate(reflect.TypeOf("string"))
+	schema := Generate(reflect.TypeFor[string]())
 	if schema == nil {
 		t.Fatal("Generate(string) = nil")
 	}

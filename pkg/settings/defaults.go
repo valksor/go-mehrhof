@@ -1,11 +1,5 @@
 package settings
 
-// boolPtr returns a pointer to a bool value.
-// Used for setting default values for *bool fields.
-func boolPtr(v bool) *bool {
-	return &v
-}
-
 // BoolValue safely dereferences a *bool, returning the default if nil.
 func BoolValue(p *bool, defaultVal bool) bool {
 	if p == nil {
@@ -51,16 +45,16 @@ func DefaultSettings() *Settings {
 			BranchPattern:  "feature/{key}--{slug}",
 			CommitPrefix:   "[{key}]",
 			PRTitlePattern: "[{key}] {title}",
-			CreateBranch:   boolPtr(true),
-			AutoCommit:     boolPtr(true),
-			SignCommits:    boolPtr(false),
-			AllowPRComment: boolPtr(false),
+			CreateBranch:   new(true),
+			AutoCommit:     new(true),
+			SignCommits:    new(false),
+			AllowPRComment: new(false),
 		},
 		Workers: WorkerSettings{
 			Max: 3,
 		},
 		Storage: StorageSettings{
-			SaveInProject: boolPtr(false),
+			SaveInProject: new(false),
 		},
 		Watchdog: WatchdogSettings{
 			Enabled:     true,
@@ -69,7 +63,7 @@ func DefaultSettings() *Settings {
 			ThresholdMB: 200,
 		},
 		Workflow: WorkflowSettings{
-			UseWorktreeIsolation: boolPtr(true),
+			UseWorktreeIsolation: new(true),
 			ExternalReview: ExternalReviewConfig{
 				Mode:    ExternalReviewAsk,
 				Command: "coderabbit",

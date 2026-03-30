@@ -21,7 +21,7 @@ func TestSaveLoad(t *testing.T) {
 	path := filepath.Join(dir, "sub", "kvelmo.yaml")
 
 	s := &Settings{
-		Agent:   AgentSettings{Default: "claude"},
+		Agent:   AgentSettings{Default: testValClaude},
 		Workers: WorkerSettings{Max: 5},
 	}
 
@@ -41,7 +41,7 @@ func TestSaveLoad(t *testing.T) {
 	if got == nil {
 		t.Fatal("Load() = nil, want settings")
 	}
-	if got.Agent.Default != "claude" {
+	if got.Agent.Default != testValClaude {
 		t.Errorf("Agent.Default = %q, want claude", got.Agent.Default)
 	}
 	if got.Workers.Max != 5 {
@@ -94,17 +94,17 @@ func TestMerge_NilSrc(t *testing.T) {
 
 func TestMerge_OverridesFields(t *testing.T) {
 	dst := DefaultSettings()
-	dst.Agent.Default = "claude"
+	dst.Agent.Default = testValClaude
 	dst.Workers.Max = 3
 
 	src := &Settings{
-		Agent:   AgentSettings{Default: "codex"},
+		Agent:   AgentSettings{Default: testValCodex},
 		Workers: WorkerSettings{Max: 8},
 	}
 
 	Merge(dst, src)
 
-	if dst.Agent.Default != "codex" {
+	if dst.Agent.Default != testValCodex {
 		t.Errorf("Agent.Default = %q, want codex", dst.Agent.Default)
 	}
 	if dst.Workers.Max != 8 {
@@ -114,13 +114,13 @@ func TestMerge_OverridesFields(t *testing.T) {
 
 func TestMerge_EmptySrcDoesNotOverride(t *testing.T) {
 	dst := DefaultSettings()
-	dst.Agent.Default = "claude"
+	dst.Agent.Default = testValClaude
 
 	// src with empty/zero values should not override
 	src := &Settings{}
 	Merge(dst, src)
 
-	if dst.Agent.Default != "claude" {
+	if dst.Agent.Default != testValClaude {
 		t.Errorf("Agent.Default = %q, want claude (empty src should not override)", dst.Agent.Default)
 	}
 	if dst.Workers.Max != 3 {
@@ -132,7 +132,7 @@ func TestMerge_CustomAgents(t *testing.T) {
 	dst := DefaultSettings()
 	src := &Settings{
 		CustomAgents: map[string]CustomAgent{
-			"my-agent": {Extends: "claude", Description: "Custom agent"},
+			"my-agent": {Extends: testValClaude, Description: "Custom agent"},
 		},
 	}
 
@@ -206,8 +206,8 @@ func TestSetGetValue_AllPaths(t *testing.T) {
 		path  string
 		value any
 	}{
-		{"agent.default", "codex"},
-		{"agent.allowed", []string{"claude", "codex"}},
+		{KeyAgentDefault, testValCodex},
+		{"agent.allowed", []string{testValClaude, testValCodex}},
 		{"providers.default", "gitlab"},
 		{"providers.github.token", "ghtoken"},
 		{"providers.github.owner", "myorg"},
@@ -326,7 +326,7 @@ func TestSetValue_WorkersMax_Float64(t *testing.T) {
 
 func TestSetValue_AgentAllowed_SliceAny(t *testing.T) {
 	s := DefaultSettings()
-	if err := SetValue(s, "agent.allowed", []any{"claude", "codex"}); err != nil {
+	if err := SetValue(s, "agent.allowed", []any{testValClaude, testValCodex}); err != nil {
 		t.Fatalf("SetValue(agent.allowed, []any) error = %v", err)
 	}
 	if len(s.Agent.Allowed) != 2 {
@@ -343,7 +343,7 @@ func TestIsSensitivePath(t *testing.T) {
 	notSensitive := []string{
 		"providers.github.owner",
 		"git.branch_pattern",
-		"agent.default",
+		KeyAgentDefault,
 		"workers.max",
 	}
 
@@ -419,10 +419,10 @@ func TestApplyEnvOverrides(t *testing.T) {
 	}{
 		{
 			envVar: "KVELMO_AGENT_DEFAULT",
-			value:  "codex",
+			value:  testValCodex,
 			check: func(t *testing.T, s *Settings) {
 				t.Helper()
-				if s.Agent.Default != "codex" {
+				if s.Agent.Default != testValCodex {
 					t.Errorf("Agent.Default = %q, want codex", s.Agent.Default)
 				}
 			},

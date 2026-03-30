@@ -3,6 +3,7 @@ package settings
 import (
 	"errors"
 	"fmt"
+	"maps"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -314,9 +315,7 @@ func Merge(dst, src *Settings) {
 		if dst.Workflow.Policy.ApprovalRequired == nil {
 			dst.Workflow.Policy.ApprovalRequired = make(map[string]bool)
 		}
-		for k, v := range src.Workflow.Policy.ApprovalRequired {
-			dst.Workflow.Policy.ApprovalRequired[k] = v
-		}
+		maps.Copy(dst.Workflow.Policy.ApprovalRequired, src.Workflow.Policy.ApprovalRequired)
 	}
 	if len(src.Workflow.Policy.ReviewChecklist) > 0 {
 		dst.Workflow.Policy.ReviewChecklist = src.Workflow.Policy.ReviewChecklist
@@ -330,9 +329,7 @@ func Merge(dst, src *Settings) {
 		if dst.Workflow.PhaseGuardrails == nil {
 			dst.Workflow.PhaseGuardrails = make(map[string]GuardrailConfig)
 		}
-		for k, v := range src.Workflow.PhaseGuardrails {
-			dst.Workflow.PhaseGuardrails[k] = v
-		}
+		maps.Copy(dst.Workflow.PhaseGuardrails, src.Workflow.PhaseGuardrails)
 	}
 
 	// Workflow hooks
@@ -340,9 +337,7 @@ func Merge(dst, src *Settings) {
 		if dst.Workflow.Hooks == nil {
 			dst.Workflow.Hooks = make(HooksSettings)
 		}
-		for k, v := range src.Workflow.Hooks {
-			dst.Workflow.Hooks[k] = v
-		}
+		maps.Copy(dst.Workflow.Hooks, src.Workflow.Hooks)
 	}
 
 	// Preset
@@ -360,9 +355,7 @@ func Merge(dst, src *Settings) {
 		if dst.CustomAgents == nil {
 			dst.CustomAgents = make(map[string]CustomAgent)
 		}
-		for k, v := range src.CustomAgents {
-			dst.CustomAgents[k] = v
-		}
+		maps.Copy(dst.CustomAgents, src.CustomAgents)
 	}
 }
 
@@ -383,9 +376,7 @@ func mergeGitHubConfig(dst, src *GitHubConfig) {
 		if dst.StatusMapping == nil {
 			dst.StatusMapping = make(map[string]string)
 		}
-		for k, v := range src.StatusMapping {
-			dst.StatusMapping[k] = v
-		}
+		maps.Copy(dst.StatusMapping, src.StatusMapping)
 	}
 }
 
@@ -406,9 +397,7 @@ func mergeGitLabConfig(dst, src *GitLabConfig) {
 		if dst.StatusMapping == nil {
 			dst.StatusMapping = make(map[string]string)
 		}
-		for k, v := range src.StatusMapping {
-			dst.StatusMapping[k] = v
-		}
+		maps.Copy(dst.StatusMapping, src.StatusMapping)
 	}
 }
 
@@ -460,9 +449,7 @@ func mergeLinearConfig(dst, src *LinearConfig) {
 		if dst.StatusMapping == nil {
 			dst.StatusMapping = make(map[string]string)
 		}
-		for k, v := range src.StatusMapping {
-			dst.StatusMapping[k] = v
-		}
+		maps.Copy(dst.StatusMapping, src.StatusMapping)
 	}
 }
 
@@ -486,9 +473,7 @@ func mergeJiraConfig(dst, src *JiraConfig) {
 		if dst.StatusMapping == nil {
 			dst.StatusMapping = make(map[string]string)
 		}
-		for k, v := range src.StatusMapping {
-			dst.StatusMapping[k] = v
-		}
+		maps.Copy(dst.StatusMapping, src.StatusMapping)
 	}
 }
 
@@ -518,9 +503,7 @@ func mergeAzureDevOpsConfig(dst, src *AzureDevOpsConfig) {
 		if dst.StatusMapping == nil {
 			dst.StatusMapping = make(map[string]string)
 		}
-		for k, v := range src.StatusMapping {
-			dst.StatusMapping[k] = v
-		}
+		maps.Copy(dst.StatusMapping, src.StatusMapping)
 	}
 }
 
@@ -553,7 +536,7 @@ func setStatusMapping(dst *map[string]string, value any, path string) error {
 func SetValue(s *Settings, path string, value any) error {
 	switch path {
 	// Agent
-	case "agent.default":
+	case KeyAgentDefault:
 		if v, ok := value.(string); ok {
 			s.Agent.Default = v
 
@@ -1126,7 +1109,7 @@ func SetValue(s *Settings, path string, value any) error {
 func GetValue(s *Settings, path string) (any, error) {
 	switch path {
 	// Agent
-	case "agent.default":
+	case KeyAgentDefault:
 		return s.Agent.Default, nil
 	case "agent.allowed":
 		return s.Agent.Allowed, nil
@@ -1316,7 +1299,7 @@ var envOverrides = []struct {
 	path      string // dot-notation settings path
 }{
 	// Agent
-	{"AGENT_DEFAULT", "agent.default"},
+	{"AGENT_DEFAULT", KeyAgentDefault},
 
 	// Providers
 	{"PROVIDERS_DEFAULT", "providers.default"},
@@ -1364,7 +1347,7 @@ func applyEnvOverrides(s *Settings) {
 		// Convert value to the appropriate type and apply
 		switch ov.path {
 		// String fields
-		case "agent.default", "providers.default", "providers.github.owner",
+		case KeyAgentDefault, "providers.default", "providers.github.owner",
 			"providers.gitlab.base_url", "providers.linear.team",
 			"git.base_branch", "git.branch_pattern", "git.commit_prefix",
 			"git.commit_pattern", "git.pr_title_pattern", "git.branch_validation_pattern",

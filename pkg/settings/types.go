@@ -16,17 +16,17 @@ package settings
 type Settings struct {
 	Preset       string                 `yaml:"preset,omitempty" json:"preset,omitempty" schema:"label=Preset;desc=Configuration preset to apply defaults (e.g. compliance);options=|compliance|fast|solo;advanced"`
 	Identity     string                 `yaml:"identity,omitempty" json:"identity,omitempty" schema:"label=Identity;desc=User identity for approval records and audit trail (defaults to OS username)"`
-	Agent        AgentSettings          `yaml:"agent,omitempty" json:"agent,omitempty"`
-	Providers    ProviderSettings       `yaml:"providers,omitempty" json:"providers,omitempty"`
-	Git          GitSettings            `yaml:"git,omitempty" json:"git,omitempty"`
-	Workers      WorkerSettings         `yaml:"workers,omitempty" json:"workers,omitempty"`
-	Storage      StorageSettings        `yaml:"storage,omitempty" json:"storage,omitempty"`
-	Workflow     WorkflowSettings       `yaml:"workflow,omitempty" json:"workflow,omitempty"`
-	Notify       NotifySettings         `yaml:"notify,omitempty" json:"notify,omitempty"`
-	Watchdog     WatchdogSettings       `yaml:"watchdog,omitempty" json:"watchdog,omitempty"`
-	Security     SecuritySettings       `yaml:"security,omitempty" json:"security,omitempty"`
-	UI           UISettings             `yaml:"ui,omitempty" json:"ui,omitempty"`
-	TUI          TUISettings            `yaml:"tui,omitempty" json:"tui,omitempty"`
+	Agent        AgentSettings          `yaml:"agent,omitempty" json:"agent,omitzero"`
+	Providers    ProviderSettings       `yaml:"providers,omitempty" json:"providers,omitzero"`
+	Git          GitSettings            `yaml:"git,omitempty" json:"git,omitzero"`
+	Workers      WorkerSettings         `yaml:"workers,omitempty" json:"workers,omitzero"`
+	Storage      StorageSettings        `yaml:"storage,omitempty" json:"storage,omitzero"`
+	Workflow     WorkflowSettings       `yaml:"workflow,omitempty" json:"workflow,omitzero"`
+	Notify       NotifySettings         `yaml:"notify,omitempty" json:"notify,omitzero"`
+	Watchdog     WatchdogSettings       `yaml:"watchdog,omitempty" json:"watchdog,omitzero"`
+	Security     SecuritySettings       `yaml:"security,omitempty" json:"security,omitzero"`
+	UI           UISettings             `yaml:"ui,omitempty" json:"ui,omitzero"`
+	TUI          TUISettings            `yaml:"tui,omitempty" json:"tui,omitzero"`
 	Environment  string                 `yaml:"environment,omitempty" json:"environment,omitempty" schema:"label=Environment;desc=Deployment environment (dev, staging, prod);options=dev|staging|prod;default=dev"`
 	CustomAgents map[string]CustomAgent `yaml:"custom_agents,omitempty" json:"custom_agents,omitempty"`
 }
@@ -56,9 +56,9 @@ type AgentSettings struct {
 	TaskTokenBudget int64 `yaml:"task_token_budget,omitempty" json:"task_token_budget,omitempty" schema:"label=Task Token Budget;desc=Max tokens per task across all phases (0 = unlimited);min=0;advanced"`
 
 	// API agent settings
-	OpenAI    OpenAIAgentConfig    `yaml:"openai,omitempty" json:"openai,omitempty"`
-	Anthropic AnthropicAgentConfig `yaml:"anthropic,omitempty" json:"anthropic,omitempty"`
-	Ollama    OllamaAgentConfig    `yaml:"ollama,omitempty" json:"ollama,omitempty"`
+	OpenAI    OpenAIAgentConfig    `yaml:"openai,omitempty" json:"openai,omitzero"`
+	Anthropic AnthropicAgentConfig `yaml:"anthropic,omitempty" json:"anthropic,omitzero"`
+	Ollama    OllamaAgentConfig    `yaml:"ollama,omitempty" json:"ollama,omitzero"`
 }
 
 // ConsensusConfig configures multi-agent consensus review.
@@ -108,12 +108,12 @@ type OllamaAgentConfig struct {
 // ProviderSettings configures task providers (GitHub, GitLab, etc.).
 type ProviderSettings struct {
 	Default     string            `yaml:"default,omitempty" json:"default,omitempty" schema:"label=Default Provider;desc=Provider used when none specified;options=github|gitlab|wrike|linear|azuredevops|file"`
-	GitHub      GitHubConfig      `yaml:"github,omitempty" json:"github,omitempty"`
-	GitLab      GitLabConfig      `yaml:"gitlab,omitempty" json:"gitlab,omitempty"`
-	Wrike       WrikeConfig       `yaml:"wrike,omitempty" json:"wrike,omitempty"`
-	Linear      LinearConfig      `yaml:"linear,omitempty" json:"linear,omitempty"`
-	Jira        JiraConfig        `yaml:"jira,omitempty" json:"jira,omitempty"`
-	AzureDevOps AzureDevOpsConfig `yaml:"azuredevops,omitempty" json:"azuredevops,omitempty"`
+	GitHub      GitHubConfig      `yaml:"github,omitempty" json:"github,omitzero"`
+	GitLab      GitLabConfig      `yaml:"gitlab,omitempty" json:"gitlab,omitzero"`
+	Wrike       WrikeConfig       `yaml:"wrike,omitempty" json:"wrike,omitzero"`
+	Linear      LinearConfig      `yaml:"linear,omitempty" json:"linear,omitzero"`
+	Jira        JiraConfig        `yaml:"jira,omitempty" json:"jira,omitzero"`
+	AzureDevOps AzureDevOpsConfig `yaml:"azuredevops,omitempty" json:"azuredevops,omitzero"`
 }
 
 // AzureDevOpsConfig configures the Azure DevOps provider.
@@ -206,7 +206,7 @@ type GitSettings struct {
 	SignCommits             *bool             `yaml:"sign_commits,omitempty" json:"sign_commits,omitempty" schema:"label=Sign Commits;desc=GPG sign commits;showWhen=git.auto_commit:true"`
 	AllowPRComment          *bool             `yaml:"allow_pr_comment,omitempty" json:"allow_pr_comment,omitempty" schema:"label=Allow PR Comments;desc=Post status comments on pull requests after submit"`
 	PRCustomSections        []PRSection       `yaml:"pr_custom_sections,omitempty" json:"pr_custom_sections,omitempty" schema:"label=Custom PR Sections;desc=Additional sections to include in auto-generated PR body;advanced"`
-	Provision               ProvisionSettings `yaml:"provision,omitempty" json:"provision,omitempty"`
+	Provision               ProvisionSettings `yaml:"provision,omitempty" json:"provision,omitzero"`
 }
 
 // PRSection defines a custom section to include in auto-generated PR descriptions.
@@ -236,9 +236,9 @@ type StorageSettings struct {
 	PlanOutputPath string                 `yaml:"plan_output_path,omitempty" json:"plan_output_path,omitempty" schema:"label=Plan Output Path;desc=Write plans to this repo path. Variables: {key}, {slug}. Example: docs/plans/{key}.md;advanced"`
 	CommitSpecs    *bool                  `yaml:"commit_specs,omitempty" json:"commit_specs,omitempty" schema:"label=Commit Specs to Git;desc=Auto-commit specs and plans to git when written to repo output paths;default=false;advanced"`
 	ChangelogPath  string                 `yaml:"changelog_path,omitempty" json:"changelog_path,omitempty" schema:"label=Changelog Path;desc=Path to CHANGELOG.md for auto-generated entries. Empty to disable;default=;placeholder=CHANGELOG.md;advanced"`
-	Recording      RecordingSettings      `yaml:"recording,omitempty" json:"recording,omitempty"`
-	ActivityLog    ActivityLogSettings    `yaml:"activity_log,omitempty" json:"activity_log,omitempty"`
-	MetricsHistory MetricsHistorySettings `yaml:"metrics_history,omitempty" json:"metrics_history,omitempty"`
+	Recording      RecordingSettings      `yaml:"recording,omitempty" json:"recording,omitzero"`
+	ActivityLog    ActivityLogSettings    `yaml:"activity_log,omitempty" json:"activity_log,omitzero"`
+	MetricsHistory MetricsHistorySettings `yaml:"metrics_history,omitempty" json:"metrics_history,omitzero"`
 }
 
 // ActivityLogSettings configures the RPC activity log.
@@ -336,15 +336,15 @@ type WorkflowSettings struct {
 	UseWorktreeIsolation  *bool                         `yaml:"use_worktree_isolation,omitempty" json:"use_worktree_isolation,omitempty" schema:"label=Use Worktree Isolation;desc=Create an isolated git worktree for each task, enabling parallel work without conflicts;default=true"`
 	AutoAdvance           *bool                         `yaml:"auto_advance,omitempty" json:"auto_advance,omitempty" schema:"label=Auto Advance;desc=Automatically progress through plan, implement, and review phases;default=false"`
 	SkipPhases            []string                      `yaml:"skip_phases,omitempty" json:"skip_phases,omitempty" schema:"label=Skip Phases;desc=Phases to skip by default when auto-advancing (simplify, optimize, plan);type=tags"`
-	ExternalReview        ExternalReviewConfig          `yaml:"external_review,omitempty" json:"external_review,omitempty" schema:"label=External Review;desc=External CLI review tool integration"`
-	Policy                PolicySettings                `yaml:"policy,omitempty" json:"policy,omitempty"`
-	Retry                 RetrySettings                 `yaml:"retry,omitempty" json:"retry,omitempty"`
+	ExternalReview        ExternalReviewConfig          `yaml:"external_review,omitempty" json:"external_review,omitzero" schema:"label=External Review;desc=External CLI review tool integration"`
+	Policy                PolicySettings                `yaml:"policy,omitempty" json:"policy,omitzero"`
+	Retry                 RetrySettings                 `yaml:"retry,omitempty" json:"retry,omitzero"`
 	PhasePolicies         map[string]string             `yaml:"phase_policies,omitempty" json:"phase_policies,omitempty" schema:"label=Phase Policies;desc=Per-phase failure policy overrides: fail, retry, or skip (e.g., simplify: skip)"`
-	CI                    CISettings                    `yaml:"ci,omitempty" json:"ci,omitempty"`
-	Hooks                 HooksSettings                 `yaml:"hooks,omitempty" json:"hooks,omitempty"`
+	CI                    CISettings                    `yaml:"ci,omitempty" json:"ci,omitzero"`
+	Hooks                 HooksSettings                 `yaml:"hooks,omitempty" json:"hooks,omitzero"`
 	HoldTheLine           *bool                         `yaml:"hold_the_line,omitempty" json:"hold_the_line,omitempty" schema:"label=Hold the Line;desc=Only gate on findings in lines changed by the agent, ignoring pre-existing tech debt;default=true"`
-	FailureClassification FailureClassificationSettings `yaml:"failure_classification,omitempty" json:"failure_classification,omitempty"`
-	AutoFix               AutoFixSettings               `yaml:"auto_fix,omitempty" json:"auto_fix,omitempty"`
+	FailureClassification FailureClassificationSettings `yaml:"failure_classification,omitempty" json:"failure_classification,omitzero"`
+	AutoFix               AutoFixSettings               `yaml:"auto_fix,omitempty" json:"auto_fix,omitzero"`
 	ProgressEstimation    *bool                         `yaml:"progress_estimation,omitempty" json:"progress_estimation,omitempty" schema:"label=Progress Estimation;desc=Show estimated progress and ETA during active phases;default=true"`
 	PhaseGuardrails       map[string]GuardrailConfig    `yaml:"phase_guardrails,omitempty" json:"phase_guardrails,omitempty" schema:"label=Phase Guardrails;desc=Pre/post validation checks per phase;type=json;advanced"`
 	AdversarialReview     *AdversarialReviewSettings    `yaml:"adversarial_review,omitempty" json:"adversarial_review,omitempty"`

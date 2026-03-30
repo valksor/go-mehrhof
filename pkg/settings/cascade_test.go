@@ -8,13 +8,13 @@ func TestGetResolved_ProjectOverridesGlobal(t *testing.T) {
 	r := NewCascadeResolver()
 
 	global := &Settings{}
-	global.Agent.Default = "codex"
+	global.Agent.Default = testValCodex
 
 	project := &Settings{}
-	project.Agent.Default = "claude"
+	project.Agent.Default = testValClaude
 
-	got := r.GetResolved("agent.default", project, global)
-	if got.Value != "claude" {
+	got := r.GetResolved(testKeyAgentDefault, project, global)
+	if got.Value != testValClaude {
 		t.Errorf("expected project value 'claude', got %v", got.Value)
 	}
 	if got.Source != "project" {
@@ -26,15 +26,15 @@ func TestGetResolved_FallsBackToGlobal(t *testing.T) {
 	r := NewCascadeResolver()
 
 	global := &Settings{}
-	global.Agent.Default = "codex"
+	global.Agent.Default = testValCodex
 
 	project := &Settings{} // agent.default is empty
 
-	got := r.GetResolved("agent.default", project, global)
-	if got.Value != "codex" {
+	got := r.GetResolved(testKeyAgentDefault, project, global)
+	if got.Value != testValCodex {
 		t.Errorf("expected global value 'codex', got %v", got.Value)
 	}
-	if got.Source != "global" {
+	if got.Source != string(ScopeGlobal) {
 		t.Errorf("expected source 'global', got %q", got.Source)
 	}
 }
@@ -45,8 +45,8 @@ func TestGetResolved_FallsBackToDefault(t *testing.T) {
 	global := &Settings{}
 	project := &Settings{}
 
-	got := r.GetResolved("agent.default", project, global)
-	if got.Value != "claude" {
+	got := r.GetResolved(testKeyAgentDefault, project, global)
+	if got.Value != testValClaude {
 		t.Errorf("expected default value 'claude', got %v", got.Value)
 	}
 	if got.Source != "default" {
@@ -58,13 +58,13 @@ func TestGetResolved_NilProject(t *testing.T) {
 	r := NewCascadeResolver()
 
 	global := &Settings{}
-	global.Agent.Default = "codex"
+	global.Agent.Default = testValCodex
 
-	got := r.GetResolved("agent.default", nil, global)
-	if got.Value != "codex" {
+	got := r.GetResolved(testKeyAgentDefault, nil, global)
+	if got.Value != testValCodex {
 		t.Errorf("expected global value 'codex', got %v", got.Value)
 	}
-	if got.Source != "global" {
+	if got.Source != string(ScopeGlobal) {
 		t.Errorf("expected source 'global', got %q", got.Source)
 	}
 }
@@ -72,8 +72,8 @@ func TestGetResolved_NilProject(t *testing.T) {
 func TestGetResolved_NilBoth(t *testing.T) {
 	r := NewCascadeResolver()
 
-	got := r.GetResolved("agent.default", nil, nil)
-	if got.Value != "claude" {
+	got := r.GetResolved(testKeyAgentDefault, nil, nil)
+	if got.Value != testValClaude {
 		t.Errorf("expected default 'claude', got %v", got.Value)
 	}
 	if got.Source != "default" {
@@ -127,7 +127,7 @@ func TestGetResolved_IntField(t *testing.T) {
 	if got.Value != 5 {
 		t.Errorf("expected global value 5, got %v", got.Value)
 	}
-	if got.Source != "global" {
+	if got.Source != string(ScopeGlobal) {
 		t.Errorf("expected source 'global', got %q", got.Source)
 	}
 }
@@ -136,7 +136,7 @@ func TestGetAllResolved(t *testing.T) {
 	r := NewCascadeResolver()
 
 	global := &Settings{}
-	global.Agent.Default = "codex"
+	global.Agent.Default = testValCodex
 
 	results := r.GetAllResolved(nil, global)
 	if len(results) != len(DefaultDefinitions) {
@@ -153,12 +153,12 @@ func TestGetAllResolved(t *testing.T) {
 	// Find agent.default and verify it resolved from global.
 	found := false
 	for _, rs := range results {
-		if rs.Key == "agent.default" {
+		if rs.Key == testKeyAgentDefault {
 			found = true
-			if rs.Value != "codex" {
-				t.Errorf("expected agent.default = 'codex', got %v", rs.Value)
+			if rs.Value != testValCodex {
+				t.Errorf("expected agent.default = '%s', got %v", testValCodex, rs.Value)
 			}
-			if rs.Source != "global" {
+			if rs.Source != string(ScopeGlobal) {
 				t.Errorf("expected source 'global', got %q", rs.Source)
 			}
 		}
@@ -176,7 +176,7 @@ func TestRegisterDefinitions(t *testing.T) {
 		DisplayName:  "Custom Setting",
 		DataType:     "string",
 		DefaultValue: "hello",
-		Scopes:       []string{"global"},
+		Scopes:       []string{string(ScopeGlobal)},
 		Category:     "custom",
 	}
 	r.RegisterDefinitions(custom)
@@ -194,21 +194,21 @@ func TestInvalidateCache(t *testing.T) {
 	r := NewCascadeResolver()
 
 	global := &Settings{}
-	global.Agent.Default = "codex"
+	global.Agent.Default = testValCodex
 
 	// Populate cache.
-	got1 := r.GetResolved("agent.default", nil, global)
-	if got1.Value != "codex" {
-		t.Fatalf("expected 'codex', got %v", got1.Value)
+	got1 := r.GetResolved(testKeyAgentDefault, nil, global)
+	if got1.Value != testValCodex {
+		t.Fatalf("expected '%s', got %v", testValCodex, got1.Value)
 	}
 
 	// InvalidateCache is a no-op now but should not panic.
 	r.InvalidateCache()
 
 	// Re-resolve should still work.
-	got2 := r.GetResolved("agent.default", nil, global)
-	if got2.Value != "codex" {
-		t.Fatalf("expected 'codex' after InvalidateCache, got %v", got2.Value)
+	got2 := r.GetResolved(testKeyAgentDefault, nil, global)
+	if got2.Value != testValCodex {
+		t.Fatalf("expected '%s' after InvalidateCache, got %v", testValCodex, got2.Value)
 	}
 }
 
@@ -254,7 +254,7 @@ func TestGetResolved_StorageSaveInProject(t *testing.T) {
 	if got.Value != true {
 		t.Errorf("expected true, got %v", got.Value)
 	}
-	if got.Source != "global" {
+	if got.Source != string(ScopeGlobal) {
 		t.Errorf("expected source 'global', got %q", got.Source)
 	}
 }

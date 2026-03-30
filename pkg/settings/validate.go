@@ -2,6 +2,7 @@ package settings
 
 import (
 	"fmt"
+	"slices"
 	"strings"
 )
 
@@ -39,14 +40,7 @@ func (s *Settings) Validate() []string {
 	// Agent settings
 	if s.Agent.Default != "" {
 		validAgents := []string{"claude", "codex", "custom"}
-		found := false
-		for _, a := range validAgents {
-			if s.Agent.Default == a {
-				found = true
-
-				break
-			}
-		}
+		found := slices.Contains(validAgents, s.Agent.Default)
 		// Also check custom agents
 		if !found {
 			if _, ok := s.CustomAgents[s.Agent.Default]; ok {
@@ -61,15 +55,7 @@ func (s *Settings) Validate() []string {
 	// Preset validation
 	if s.Preset != "" {
 		validPresets := []string{"compliance", "fast", "solo"}
-		found := false
-		for _, p := range validPresets {
-			if s.Preset == p {
-				found = true
-
-				break
-			}
-		}
-		if !found {
+		if !slices.Contains(validPresets, s.Preset) {
 			issues = append(issues, fmt.Sprintf("preset %q is not recognized (valid: %s)", s.Preset, strings.Join(validPresets, ", ")))
 		}
 	}

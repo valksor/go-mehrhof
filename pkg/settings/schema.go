@@ -9,6 +9,12 @@ import (
 // SchemaVersion is the current schema format version.
 const SchemaVersion = "1.0"
 
+// sectionCustomAgents is the section ID for custom agent configuration.
+const sectionCustomAgents = "custom_agents"
+
+// tagValueTrue is the string representation of boolean true in schema tags.
+const tagValueTrue = "true"
+
 // Generate creates a Schema from a Go struct type using reflection.
 // It uses reflect.Type traversal to safely handle nil pointer fields.
 //
@@ -29,8 +35,7 @@ func Generate(cfgType reflect.Type) *Schema {
 	var sectionOrder []string
 
 	// Traverse all fields in the config struct
-	for i := range cfgType.NumField() {
-		structField := cfgType.Field(i)
+	for structField := range cfgType.Fields() {
 		processField(structField, "", sections, &sectionOrder)
 	}
 
@@ -51,7 +56,7 @@ func Generate(cfgType reflect.Type) *Schema {
 
 // GenerateSchema is a convenience function that generates the schema for Settings.
 func GenerateSchema() *Schema {
-	return Generate(reflect.TypeOf(Settings{}))
+	return Generate(reflect.TypeFor[Settings]())
 }
 
 // GenerateSchemaWithCustomAgents generates the schema and adds custom agents to the agent selection options.
@@ -78,7 +83,7 @@ func GenerateSchemaWithCustomAgents(s *Settings) *Schema {
 		if section.ID == "agent" {
 			for j := range section.Fields {
 				field := &section.Fields[j]
-				if field.Path == "agent.default" || field.Path == "agent.allowed" {
+				if field.Path == KeyAgentDefault || field.Path == "agent.allowed" {
 					for _, name := range customAgentNames {
 						field.Options = append(field.Options, SelectOption{
 							Value: name,
@@ -90,10 +95,10 @@ func GenerateSchemaWithCustomAgents(s *Settings) *Schema {
 		}
 
 		// Add to custom_agents extends options (so custom agents can extend other custom agents)
-		if section.ID == "custom_agents" {
+		if section.ID == sectionCustomAgents {
 			for j := range section.Fields {
 				field := &section.Fields[j]
-				if field.Path == "custom_agents" && field.ItemSchema != nil {
+				if field.Path == sectionCustomAgents && field.ItemSchema != nil {
 					for k := range field.ItemSchema {
 						itemField := &field.ItemSchema[k]
 						if itemField.Path == "extends" {
@@ -173,8 +178,8 @@ func processField(structField reflect.StructField, pathPrefix string, sections m
 			addFieldToSection(path, schemaTag, fieldType, sections, sectionOrder)
 		} else {
 			// Recurse into nested struct
-			for j := range fieldType.NumField() {
-				processField(fieldType.Field(j), path, sections, sectionOrder)
+			for nestedField := range fieldType.Fields() {
+				processField(nestedField, path, sections, sectionOrder)
 			}
 		}
 
@@ -183,7 +188,7 @@ func processField(structField reflect.StructField, pathPrefix string, sections m
 
 	// Handle map types - special handling for custom_agents
 	if fieldType.Kind() == reflect.Map {
-		if path == "custom_agents" {
+		if path == sectionCustomAgents {
 			addCustomAgentsSection(sections, sectionOrder)
 		}
 
@@ -243,10 +248,10 @@ func addFieldToSection(path, schemaTag string, fieldType reflect.Type, sections 
 		Label:       label,
 		Description: tags["desc"],
 		Placeholder: tags["placeholder"],
-		Sensitive:   tags["sensitive"] == "true",
+		Sensitive:   tags["sensitive"] == tagValueTrue,
 		EnvVar:      tags["env"],
 		HelpURL:     tags["helpUrl"],
-		Advanced:    tags["advanced"] == "true",
+		Advanced:    tags["advanced"] == tagValueTrue,
 		ShowWhen:    parseShowWhen(tags["showWhen"]),
 		Options:     parseOptions(tags["options"]),
 		Multiple:    tags["type"] == "multiselect",
@@ -288,7 +293,7 @@ func inferFieldType(goType reflect.Type, tags map[string]string) FieldType {
 	if tags["options"] != "" {
 		return TypeSelect
 	}
-	if tags["sensitive"] == "true" {
+	if tags["sensitive"] == tagValueTrue {
 		return TypePassword
 	}
 
@@ -311,7 +316,7 @@ func inferFieldType(goType reflect.Type, tags map[string]string) FieldType {
 func parseDefaultValue(defaultStr string, goType reflect.Type) any {
 	switch goType.Kind() { //nolint:exhaustive // Only common Go types are handled
 	case reflect.Bool:
-		return defaultStr == "true"
+		return defaultStr == tagValueTrue
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
 		if v, err := strconv.ParseInt(defaultStr, 10, 64); err == nil {
 			return v
@@ -338,7 +343,7 @@ func parseDefaultValue(defaultStr string, goType reflect.Type) any {
 // buildValidation creates ValidationRules from tag values.
 func buildValidation(tags map[string]string) *ValidationRules {
 	validation := &ValidationRules{
-		Required:       tags["required"] == "true",
+		Required:       tags["required"] == tagValueTrue,
 		Pattern:        tags["pattern"],
 		PatternMessage: tags["patternMsg"],
 	}
@@ -379,8 +384,7 @@ func parseSchemaTag(tag string) map[string]string {
 		return result
 	}
 
-	pairs := strings.Split(tag, ";")
-	for _, pair := range pairs {
+	for pair := range strings.SplitSeq(tag, ";") {
 		pair = strings.TrimSpace(pair)
 		if pair == "" {
 			continue
@@ -392,7 +396,7 @@ func parseSchemaTag(tag string) map[string]string {
 			result[key] = value
 		} else {
 			// Flag without value (e.g., "sensitive", "advanced", "required")
-			result[pair] = "true"
+			result[pair] = tagValueTrue
 		}
 	}
 
@@ -413,16 +417,16 @@ func parseShowWhen(value string) *Condition {
 	field := strings.TrimSpace(value[:idx])
 	condValue := strings.TrimSpace(value[idx+1:])
 
-	if strings.HasPrefix(condValue, "!") {
+	if neg, ok := strings.CutPrefix(condValue, "!"); ok {
 		return &Condition{
 			Field:     field,
-			NotEquals: strings.TrimPrefix(condValue, "!"),
+			NotEquals: neg,
 		}
 	}
 
 	var equalValue any = condValue
 	switch condValue {
-	case "true":
+	case tagValueTrue:
 		equalValue = true
 	case "false":
 		equalValue = false
@@ -503,7 +507,7 @@ func toSnakeCase(s string) string {
 // addCustomAgentsSection adds a special section for custom_agents configuration.
 // Custom agents use a dynamic list UI since they're stored as map[string]CustomAgent.
 func addCustomAgentsSection(sections map[string]*Section, sectionOrder *[]string) {
-	sectionID := "custom_agents"
+	sectionID := sectionCustomAgents
 	meta := GetSectionMeta(sectionID)
 
 	// Create section
@@ -548,7 +552,7 @@ func addCustomAgentsSection(sections map[string]*Section, sectionOrder *[]string
 
 	// Add the list field
 	sections[sectionID].Fields = append(sections[sectionID].Fields, Field{
-		Path:        "custom_agents",
+		Path:        sectionCustomAgents,
 		Type:        TypeList,
 		Label:       "Custom Agents",
 		Description: "Define custom agent configurations that wrap base agents with additional settings",

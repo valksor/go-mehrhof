@@ -91,7 +91,7 @@ func TestValidate(t *testing.T) {
 			name:       "agent default unrecognized",
 			modify:     func(s *Settings) { s.Agent.Default = "invalid-agent" },
 			wantCount:  1,
-			wantSubstr: []string{"agent.default"},
+			wantSubstr: []string{KeyAgentDefault},
 		},
 		{
 			name:      "agent default claude",
@@ -143,7 +143,7 @@ func TestValidate(t *testing.T) {
 				"watchdog.interval_sec",
 				"watchdog.window_size",
 				"activity_log.max_files",
-				"agent.default",
+				KeyAgentDefault,
 				"preset",
 			},
 		},
