@@ -5,6 +5,7 @@ package agent
 
 import (
 	"context"
+	"maps"
 	"strings"
 	"time"
 
@@ -58,19 +59,20 @@ type Agent interface {
 type EventType string
 
 const (
-	EventStream       EventType = "stream"        // Token-by-token output
-	EventAssistant    EventType = "assistant"     // Full assistant message
-	EventToolUse      EventType = "tool_use"      // Tool call initiated
-	EventToolResult   EventType = "tool_result"   // Tool call completed
-	EventPermission   EventType = "permission"    // Permission request
-	EventComplete     EventType = "complete"      // Job completed successfully
-	EventError        EventType = "error"         // Error occurred
-	EventInit         EventType = "init"          // Session initialized
-	EventKeepAlive    EventType = "keep_alive"    // Heartbeat
-	EventSubagent     EventType = "subagent"      // Subagent lifecycle event
-	EventProgress     EventType = "progress"      // Partial completion update
-	EventToolProgress EventType = "tool_progress" // Tool execution heartbeat (elapsed time)
-	EventInterrupted  EventType = "interrupted"   // Agent turn was interrupted
+	EventStream           EventType = "stream"            // Token-by-token output
+	EventAssistant        EventType = "assistant"         // Full assistant message
+	EventToolUse          EventType = "tool_use"          // Tool call initiated
+	EventToolResult       EventType = "tool_result"       // Tool call completed
+	EventPermission       EventType = "permission"        // Permission request
+	EventComplete         EventType = "complete"          // Job completed successfully
+	EventError            EventType = "error"             // Error occurred
+	EventInit             EventType = "init"              // Session initialized
+	EventKeepAlive        EventType = "keep_alive"        // Heartbeat
+	EventSubagent         EventType = "subagent"          // Subagent lifecycle event
+	EventProgress         EventType = "progress"          // Partial completion update
+	EventToolProgress     EventType = "tool_progress"     // Tool execution heartbeat (elapsed time)
+	EventInterrupted      EventType = "interrupted"       // Agent turn was interrupted
+	EventPromptSuggestion EventType = "prompt_suggestion" // Predicted follow-up prompts
 )
 
 // Event represents a streaming event from an agent.
@@ -78,7 +80,7 @@ type Event struct {
 	Type      EventType      `json:"type"`
 	Content   string         `json:"content,omitempty"`
 	Data      map[string]any `json:"data,omitempty"`
-	Timestamp time.Time      `json:"timestamp,omitempty"`
+	Timestamp time.Time      `json:"timestamp,omitzero"`
 
 	// For EventPermission
 	PermissionRequest *PermissionRequest `json:"permission_request,omitempty"`
@@ -115,8 +117,8 @@ type SubagentEvent struct {
 	Type        string         `json:"type"`        // "Explore", "Plan", etc.
 	Description string         `json:"description"` // Short description from agent
 	Status      SubagentStatus `json:"status"`
-	StartedAt   time.Time      `json:"started_at,omitempty"`
-	CompletedAt time.Time      `json:"completed_at,omitempty"`
+	StartedAt   time.Time      `json:"started_at,omitzero"`
+	CompletedAt time.Time      `json:"completed_at,omitzero"`
 	Duration    int64          `json:"duration,omitempty"`    // milliseconds
 	ExitReason  string         `json:"exit_reason,omitempty"` // For failed status
 }
@@ -334,9 +336,7 @@ func (c Config) Merge(other Config) Config {
 		if c.Environment == nil {
 			c.Environment = make(map[string]string)
 		}
-		for k, v := range other.Environment {
-			c.Environment[k] = v
-		}
+		maps.Copy(c.Environment, other.Environment)
 	}
 	if other.PermissionHandler != nil {
 		c.PermissionHandler = other.PermissionHandler

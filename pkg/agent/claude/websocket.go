@@ -59,6 +59,9 @@ type WebSocketConnection struct {
 	connected    atomic.Bool
 	closed       atomic.Bool
 	closedOnce   sync.Once
+
+	// Subagent tracker for detecting Task tool calls
+	subagents *agent.SubagentTracker
 }
 
 // Incoming message types from Claude CLI.
@@ -97,10 +100,21 @@ type incomingMessage struct {
 	IsError bool   `json:"is_error,omitempty"`
 	Error   string `json:"error,omitempty"`
 
+	// tool_use fields
+	ID    string          `json:"id,omitempty"`
+	Name  string          `json:"name,omitempty"`
+	Input json.RawMessage `json:"input,omitempty"`
+
+	// tool_result fields
+	Result string `json:"result,omitempty"`
+
 	// tool_progress fields
 	ToolUseID          string  `json:"tool_use_id,omitempty"`
 	ToolName           string  `json:"tool_name,omitempty"`
 	ElapsedTimeSeconds float64 `json:"elapsed_time_seconds,omitempty"`
+
+	// prompt_suggestion fields
+	Suggestions []string `json:"suggestions,omitempty"`
 }
 
 // Outgoing message types to Claude CLI.
@@ -154,14 +168,17 @@ type pendingRequest struct {
 
 // NewWebSocketConnection creates a new WebSocket connection for Claude.
 func NewWebSocketConnection(cfg Config) *WebSocketConnection {
+	events := make(chan agent.Event, 100)
+
 	return &WebSocketConnection{
 		config:          cfg,
 		port:            cfg.WebSocketPort,
 		outgoing:        make(chan outgoingMessage, 100),
-		events:          make(chan agent.Event, 100),
+		events:          events,
 		pendingRequests: make(map[string]pendingRequest),
 		ready:           make(chan struct{}),
 		sessionReady:    make(chan struct{}),
+		subagents:       agent.NewSubagentTracker(events),
 	}
 }
 
@@ -331,8 +348,10 @@ func (w *WebSocketConnection) buildArgs() []string {
 	args := []string{
 		"--sdk-url", fmt.Sprintf("ws://127.0.0.1:%d", w.port),
 		"--print",
+		"--verbose",
 		"--output-format", "stream-json",
 		"--input-format", "stream-json",
+		"--include-partial-messages",
 		"--permission-mode", "bypassPermissions", // kvelmo manages permissions via KvelmoPermissionHandler
 	}
 	slog.Info("claude websocket buildArgs", "args", args)
@@ -401,8 +420,7 @@ func (w *WebSocketConnection) handleConnection(rw http.ResponseWriter, r *http.R
 		slog.Debug("claude websocket: raw message", "data", string(data))
 
 		// Handle NDJSON - may have multiple JSON objects per message
-		lines := strings.Split(string(data), "\n")
-		for _, line := range lines {
+		for line := range strings.SplitSeq(string(data), "\n") {
 			line = strings.TrimSpace(line)
 			if line == "" {
 				continue
@@ -517,6 +535,37 @@ func (w *WebSocketConnection) handleIncomingMessage(msg incomingMessage) {
 	case "keep_alive":
 		// Heartbeat - no action needed
 
+	case "tool_use":
+		var input map[string]any
+		if msg.Input != nil {
+			_ = json.Unmarshal(msg.Input, &input)
+		}
+
+		toolCallID := msg.ID
+		if toolCallID == "" {
+			toolCallID = uuid.NewString()
+		}
+		w.subagents.OnToolUse(toolCallID, msg.Name, input)
+
+		w.events <- agent.Event{
+			Type:      agent.EventToolUse,
+			Content:   msg.Name,
+			Data:      input,
+			Timestamp: time.Now(),
+		}
+
+	case "tool_result":
+		toolCallID := msg.ToolUseID
+		if toolCallID != "" {
+			w.subagents.OnToolResult(toolCallID, !msg.IsError, msg.Error)
+		}
+
+		w.events <- agent.Event{
+			Type:      agent.EventToolResult,
+			Content:   msg.Result,
+			Timestamp: time.Now(),
+		}
+
 	case "tool_progress":
 		// Tool execution heartbeat - shows elapsed time for long-running tools
 		w.events <- agent.Event{
@@ -526,6 +575,37 @@ func (w *WebSocketConnection) handleIncomingMessage(msg incomingMessage) {
 				"tool_use_id":     msg.ToolUseID,
 				"tool_name":       msg.ToolName,
 				"elapsed_seconds": msg.ElapsedTimeSeconds,
+			},
+		}
+
+	case "streamlined_text":
+		// Simplified text output mode (Claude v2.1.81+)
+		content := msg.Content
+		if content == "" {
+			content = msg.Delta
+		}
+		if content != "" {
+			w.events <- agent.Event{
+				Type:      agent.EventStream,
+				Content:   content,
+				Timestamp: time.Now(),
+			}
+		}
+
+	case "streamlined_tool_use_summary":
+		// Compact tool usage summary (e.g., "Read 2 files, wrote 1 file")
+		w.events <- agent.Event{
+			Type:      agent.EventToolUse,
+			Content:   msg.Content,
+			Timestamp: time.Now(),
+		}
+
+	case "prompt_suggestion":
+		w.events <- agent.Event{
+			Type:      agent.EventPromptSuggestion,
+			Timestamp: time.Now(),
+			Data: map[string]any{
+				"suggestions": msg.Suggestions,
 			},
 		}
 
