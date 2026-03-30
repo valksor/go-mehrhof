@@ -143,6 +143,8 @@ version: build-go
 types:
 	@mkdir -p web/src/types
 	tygo generate
+	@# tygo emits `any` for Go function types it cannot convert; replace with `unknown`
+	@sed -i 's/= any;/= unknown;/g' web/src/types/conductor.ts
 
 ## Build web UI
 web-build: types

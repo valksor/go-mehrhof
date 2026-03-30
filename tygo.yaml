@@ -1,6 +1,8 @@
 packages:
   - path: "github.com/valksor/kvelmo/pkg/socket"
     output_path: "web/src/types/socket.ts"
+    frontmatter: |
+      import type { ContextItem, PhaseMetrics, FileStatus } from './shared'
     # Type mappings for Go types that don't translate well
     type_mappings:
       time.Time: "string"
@@ -8,6 +10,10 @@ packages:
       json.RawMessage: "unknown"
       worker.Pool: "unknown"
       storage.Review: "unknown"
+      # Cross-package struct types resolved to hand-written interfaces
+      conductor.ContextItem: "ContextItem"
+      conductor.PhaseMetrics: "PhaseMetrics"
+      git.FileStatus: "FileStatus"
     # Only include API-relevant files, skip internal ones
     include_files:
       - "global.go"
