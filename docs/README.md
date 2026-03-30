@@ -2,15 +2,15 @@
 
 **kvelmo turns your ideas into merged pull requests — with human oversight at every step.**
 
-Whether you're a product manager, ops person, or developer — kvelmo provides the guardrails to ship changes safely. It coordinates your local AI agent to handle the mechanics while you stay in control.
+Whether you write code or not — kvelmo provides the guardrails to ship changes safely. It coordinates your local AI agent to handle the mechanics while you stay in control.
 
 **Completely free.** Uses your existing Claude CLI directly — no API keys, no fees, no account needed.
 
 ## Quick Links
 
 - [Quickstart](/quickstart.md) — Get up and running in 5 minutes
-- [Web UI Guide](/web-ui/getting-started.md) — Visual interface walkthrough
 - [Desktop App](/desktop/getting-started.md) — Native application guide
+- [Web UI Guide](/web-ui/getting-started.md) — Visual interface in the browser
 - [CLI Reference](/cli/index.md) — Commands for power users
 
 ## How It Works
@@ -25,18 +25,21 @@ Every step creates a checkpoint. Use undo/redo if something doesn't look right.
 
 ## Choose Your Interface
 
-| Interface                                  | Best For                           |
-|--------------------------------------------|------------------------------------|
-| [Desktop App](/desktop/getting-started.md) | Visual users, no terminal needed   |
-| [Web UI](/web-ui/getting-started.md)       | Visual users, one command to start |
-| [CLI](/cli/index.md)                       | Developers, automation, scripting  |
+| Interface                                  | Best For                                    |
+|--------------------------------------------|--------------------------------------------|
+| [Desktop App](/desktop/getting-started.md) | Most users — native app, no terminal needed |
+| [Web UI](/web-ui/getting-started.md)       | Browser-based, one command to start         |
+| [CLI](/cli/index.md)                       | Automation, scripting, shell workflows      |
 
-All three share the same workflow — your work is portable between them.
+All interfaces share the same workflow — your work is portable between them.
 
 ## Core Concepts
 
 - [Workflow](/concepts/workflow.md) — The plan → implement → review → submit process
-- [Checkpoints](/concepts/checkpoints.md) — Git-based undo/redo
+- [Checkpoints](/concepts/checkpoints.md) — Undo/redo and recovery
+
+**Technical details:**
+
 - [State Machine](/concepts/state-machine.md) — Task states and transitions
 - [Sockets](/concepts/sockets.md) — Architecture overview
 

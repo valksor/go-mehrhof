@@ -58,7 +58,7 @@ The workflow model that defines valid task states and transitions.
 
 ## Submit
 
-The phase where the task becomes a pull request or otherwise enters the team-facing delivery flow.
+The phase where the task becomes a pull request or otherwise enters the delivery flow.
 
 ## Task
 

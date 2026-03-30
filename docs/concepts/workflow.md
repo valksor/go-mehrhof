@@ -114,7 +114,7 @@ This is where kvelmo stops being "agent runner" and behaves more like workflow c
 
 Create the pull request and update provider-facing task state.
 
-At this point the work is ready to leave the machine and enter the team workflow.
+At this point the work is ready to leave the machine and enter the pull request review process.
 
 ## 8. Finish
 

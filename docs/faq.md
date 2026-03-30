@@ -4,7 +4,7 @@
 
 ### What is kvelmo?
 
-kvelmo is a local orchestration system for AI-assisted development. It manages task state, worktree state, checkpoints, approvals, and interface synchronization across the Web UI, CLI, desktop app, TUI, and RPC endpoints.
+kvelmo is a local orchestration system for AI-assisted development. It manages task state, checkpoints, approvals, and progress across the desktop app, Web UI, CLI, and TUI.
 
 ### Is kvelmo an AI?
 
@@ -12,7 +12,7 @@ No. kvelmo coordinates AI agents. It is the workflow and control layer around th
 
 ### Who is it for?
 
-kvelmo is best understood as Web UI first, with strong support for CLI, desktop, and TUI workflows. It is useful for individual developers, operators, and teams who want structure around agent-driven code changes.
+kvelmo is for anyone who wants to ship code changes with AI assistance and human oversight. It works through a desktop app, Web UI, CLI, or TUI — technical background not required.
 
 ### Is kvelmo free?
 

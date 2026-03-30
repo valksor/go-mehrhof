@@ -113,7 +113,7 @@ kvelmo reset
 
 Submit the task when it is ready to become a pull request.
 
-At this point kvelmo moves from local execution into your team-facing workflow.
+At this point kvelmo moves from local execution into the pull request and review process.
 
 ## Step 8: Finish
 

@@ -1,6 +1,6 @@
 # Quickstart
 
-This guide gets you into kvelmo with the Web UI first, then shows where CLI, desktop, and TUI fit.
+This guide gets you into kvelmo with the Web UI, then shows where the desktop app, CLI, and TUI fit.
 
 ## What You'll Do
 
@@ -16,11 +16,11 @@ By the end of this guide, you will have:
 
 **Git**
 
-kvelmo uses Git for branches, checkpoints, diffs, and recovery.
+Git needs to be installed on your machine. kvelmo handles the Git operations for you — branches, checkpoints, and recovery are all managed automatically.
 
 **An agent runtime**
 
-kvelmo orchestrates your local agent setup. Claude CLI is the default path, and Codex plus custom/API-backed agents are also supported.
+kvelmo orchestrates a local AI agent. Claude CLI is the default, and Codex plus custom agents are also supported.
 
 Check what you already have:
 
@@ -29,7 +29,7 @@ claude --version
 codex --version
 ```
 
-You only need one working agent path, not every option.
+You only need one working agent, not every option.
 
 ## Install kvelmo
 
@@ -102,9 +102,13 @@ After merge, use `finish` to clean up task state and branch state.
 
 ## Other Interfaces
 
+### Desktop App
+
+Use the desktop app if you want a native application around the same workflow — no terminal needed.
+
 ### CLI
 
-Use the CLI for direct control, scripts, automation, or provider-heavy workflows.
+Use the CLI for scripting, automation, or shell-native workflows.
 
 ```bash
 kvelmo start --from file:task.md
@@ -113,10 +117,6 @@ kvelmo implement
 kvelmo review
 kvelmo submit
 ```
-
-### Desktop App
-
-Use the desktop app if you want a native shell around the same local workflow.
 
 ### TUI
 
@@ -153,6 +153,7 @@ kvelmo finish    # clean up after merge
 
 ## What's Next?
 
+- [Desktop App](/desktop/getting-started.md)
 - [Web UI Guide](/web-ui/getting-started.md)
 - [CLI Reference](/cli/index.md)
 - [Workflow Concepts](/concepts/workflow.md)
