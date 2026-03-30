@@ -19,7 +19,7 @@ func TestDetectSkipPatterns_InsufficientData(t *testing.T) {
 
 func TestDetectSkipPatterns_SimplifyAlwaysSkipped(t *testing.T) {
 	// 6 tasks, none ran simplify
-	var tasks []storage.ArchivedTask
+	tasks := make([]storage.ArchivedTask, 0, 6)
 	for range 6 {
 		tasks = append(tasks, storage.ArchivedTask{
 			FinalState: "finished",
@@ -50,7 +50,7 @@ func TestDetectSkipPatterns_SimplifyAlwaysSkipped(t *testing.T) {
 }
 
 func TestDetectSkipPatterns_NoSuggestionWhenPhaseUsed(t *testing.T) {
-	var tasks []storage.ArchivedTask
+	tasks := make([]storage.ArchivedTask, 0, 6)
 	for range 6 {
 		tasks = append(tasks, storage.ArchivedTask{
 			FinalState: "finished",
@@ -65,7 +65,7 @@ func TestDetectSkipPatterns_NoSuggestionWhenPhaseUsed(t *testing.T) {
 }
 
 func TestDetectSkipPatterns_IgnoresOldFormatTasks(t *testing.T) {
-	var tasks []storage.ArchivedTask
+	tasks := make([]storage.ArchivedTask, 0, 6)
 	// 3 tasks with phase data (not enough)
 	for range 3 {
 		tasks = append(tasks, storage.ArchivedTask{
@@ -88,7 +88,7 @@ func TestDetectSkipPatterns_IgnoresOldFormatTasks(t *testing.T) {
 }
 
 func TestDetectAgentPatterns_DominantAgent(t *testing.T) {
-	var tasks []storage.ArchivedTask
+	tasks := make([]storage.ArchivedTask, 0, 6)
 	for range 5 {
 		tasks = append(tasks, storage.ArchivedTask{
 			FinalState: "finished",
@@ -110,7 +110,7 @@ func TestDetectAgentPatterns_DominantAgent(t *testing.T) {
 }
 
 func TestDetectAgentPatterns_NoDominant(t *testing.T) {
-	var tasks []storage.ArchivedTask
+	tasks := make([]storage.ArchivedTask, 0, 6)
 	for range 3 {
 		tasks = append(tasks, storage.ArchivedTask{FinalState: "finished", AgentUsed: "anthropic"})
 	}

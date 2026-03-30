@@ -347,12 +347,9 @@ func (s *Scheduler) dispatchNode(ctx context.Context, id NodeID, node *Node, opt
 
 		// Check if fail-branch or skipped dependencies unlock new nodes.
 		// Goroutine avoids recursive s.mu acquisition from enqueueReady.
-		s.nodeWg.Add(1)
-
-		go func() {
-			defer s.nodeWg.Done()
+		s.nodeWg.Go(func() {
 			s.enqueueReady(ctx, opts)
-		}()
+		})
 
 		return
 	}
@@ -374,11 +371,9 @@ func (s *Scheduler) dispatchNode(ctx context.Context, id NodeID, node *Node, opt
 	s.emitProgress()
 
 	// Monitor the job in a goroutine.
-	s.nodeWg.Add(1)
-	go func() {
-		defer s.nodeWg.Done()
+	s.nodeWg.Go(func() {
 		s.watchNode(ctx, id, node, job.ID, opts)
-	}()
+	})
 }
 
 // watchNode monitors a running job and updates state on completion.
@@ -565,17 +560,13 @@ func (s *Scheduler) handleNodeFailure(ctx context.Context, id NodeID, node *Node
 
 			// Schedule retry with delay if configured.
 			if node.RetryDelay > 0 {
-				s.nodeWg.Add(1)
-
-				go func() {
-					defer s.nodeWg.Done()
-
+				s.nodeWg.Go(func() {
 					select {
 					case <-time.After(node.RetryDelay):
 						s.enqueueReady(ctx, opts)
 					case <-ctx.Done():
 					}
-				}()
+				})
 
 				return
 			}
@@ -711,12 +702,9 @@ func (s *Scheduler) dispatchSubTask(ctx context.Context, id NodeID, node *Node, 
 		_ = s.state.Transition(id, StateRunning)
 		s.handleNodeFailure(ctx, id, node, errors.New("no sub-task executor configured"), opts)
 
-		s.nodeWg.Add(1)
-
-		go func() {
-			defer s.nodeWg.Done()
+		s.nodeWg.Go(func() {
 			s.enqueueReady(ctx, opts)
-		}()
+		})
 
 		return
 	}
@@ -738,14 +726,10 @@ func (s *Scheduler) dispatchSubTask(ctx context.Context, id NodeID, node *Node, 
 	s.emitProgress()
 
 	// Run the sub-task in a goroutine.
-	s.nodeWg.Add(1)
-
-	go func() {
-		defer s.nodeWg.Done()
-
+	s.nodeWg.Go(func() {
 		result, err := s.subTaskExecutor(ctx, *node.SubTask)
 		s.completeNode(ctx, id, node, result, err, opts)
-	}()
+	})
 }
 
 // waitForApproval emits an approval event and spawns a goroutine that blocks
@@ -770,10 +754,7 @@ func (s *Scheduler) waitForApproval(ctx context.Context, id NodeID, node *Node, 
 		Content:   prompt,
 	})
 
-	s.nodeWg.Add(1)
-
-	go func() {
-		defer s.nodeWg.Done()
+	s.nodeWg.Go(func() {
 		defer func() {
 			s.approvalsMu.Lock()
 			delete(s.approvals, id)
@@ -812,7 +793,7 @@ func (s *Scheduler) waitForApproval(ctx context.Context, id NodeID, node *Node, 
 			s.handleNodeFailure(ctx, id, node, ctx.Err(), opts)
 			s.emitProgress()
 		}
-	}()
+	})
 }
 
 // ApproveNode approves a pending approval gate, allowing the node to execute.

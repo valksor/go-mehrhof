@@ -532,7 +532,8 @@ type UploadResult struct {
 
 // Upload uploads files to a file input.
 func Upload(ctx context.Context, opts *ExecOptions, selector string, files []string) (*UploadResult, error) {
-	args := []string{"upload", selector}
+	args := make([]string, 0, 2+len(files))
+	args = append(args, "upload", selector)
 	args = append(args, files...)
 
 	_, err := Exec(ctx, opts, args...)

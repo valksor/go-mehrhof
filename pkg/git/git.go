@@ -385,7 +385,7 @@ const logFormat = "%H|%s|%an|%ai"
 // parseLogOutput parses git log output produced with logFormat into LogEntry slices.
 func parseLogOutput(out string) []LogEntry {
 	var entries []LogEntry
-	for _, line := range strings.Split(out, "\n") {
+	for line := range strings.SplitSeq(out, "\n") {
 		if line == "" {
 			continue
 		}
@@ -572,7 +572,7 @@ func (r *Repository) DiffNumStatAgainst(ctx context.Context, ref string) (DiffNu
 
 func parseNumStat(out string) DiffNumStat {
 	var result DiffNumStat
-	for _, line := range strings.Split(out, "\n") {
+	for line := range strings.SplitSeq(out, "\n") {
 		if line == "" {
 			continue
 		}
@@ -652,7 +652,7 @@ func (r *Repository) DiffFilesWithStatus(ctx context.Context) ([]FileStatus, err
 		return nil, nil
 	}
 	var result []FileStatus
-	for _, line := range strings.Split(out, "\n") {
+	for line := range strings.SplitSeq(out, "\n") {
 		if line == "" {
 			continue
 		}
@@ -672,10 +672,10 @@ func (r *Repository) DefaultBranch(ctx context.Context) (string, error) {
 	out, err := r.run(ctx, "symbolic-ref", "refs/remotes/origin/HEAD")
 	if err == nil && out != "" {
 		var name string
-		if strings.HasPrefix(out, "refs/remotes/origin/") {
-			name = strings.TrimPrefix(out, "refs/remotes/origin/")
-		} else if strings.HasPrefix(out, "refs/heads/") {
-			name = strings.TrimPrefix(out, "refs/heads/")
+		if after, ok := strings.CutPrefix(out, "refs/remotes/origin/"); ok {
+			name = after
+		} else if after, ok := strings.CutPrefix(out, "refs/heads/"); ok {
+			name = after
 		}
 		if name != "" {
 			return name, nil

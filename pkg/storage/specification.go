@@ -29,9 +29,9 @@ type Specification struct {
 	Title       string    `yaml:"title,omitempty" json:"title,omitempty"`
 	Status      string    `yaml:"status,omitempty" json:"status,omitempty"`
 	Content     string    `yaml:"-" json:"content"`
-	CreatedAt   time.Time `yaml:"created_at,omitempty" json:"created_at,omitempty"`
-	UpdatedAt   time.Time `yaml:"updated_at,omitempty" json:"updated_at,omitempty"`
-	CompletedAt time.Time `yaml:"completed_at,omitempty" json:"completed_at,omitempty"`
+	CreatedAt   time.Time `yaml:"created_at,omitempty" json:"created_at,omitzero"`
+	UpdatedAt   time.Time `yaml:"updated_at,omitempty" json:"updated_at,omitzero"`
+	CompletedAt time.Time `yaml:"completed_at,omitempty" json:"completed_at,omitzero"`
 }
 
 // SpecStore manages specification persistence for tasks.
@@ -206,10 +206,9 @@ func (s *SpecStore) ParseSpecification(taskID string, number int) (*Specificatio
 	}
 
 	// Extract title from first heading
-	lines := strings.Split(spec.Content, "\n")
-	for _, line := range lines {
-		if strings.HasPrefix(line, "# ") {
-			spec.Title = strings.TrimPrefix(line, "# ")
+	for line := range strings.SplitSeq(spec.Content, "\n") {
+		if title, ok := strings.CutPrefix(line, "# "); ok {
+			spec.Title = title
 
 			break
 		}

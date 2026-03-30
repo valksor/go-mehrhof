@@ -152,7 +152,7 @@ func (a *Adapter) LearnFromCorrection(ctx context.Context, taskID, problem, solu
 		TaskID:  taskID,
 		Type:    TypeSolution,
 		Content: fmt.Sprintf("Problem: %s\n\nSolution: %s", problem, solution),
-		Metadata: map[string]interface{}{
+		Metadata: map[string]any{
 			"problem": problem,
 		},
 		Tags:      []string{"solution", "fix", "learned"},

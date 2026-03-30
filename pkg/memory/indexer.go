@@ -124,7 +124,7 @@ func (idx *Indexer) indexSpecifications(ctx context.Context, taskID, title strin
 			TaskID:  taskID,
 			Type:    TypeSpecification,
 			Content: string(data),
-			Metadata: map[string]interface{}{
+			Metadata: map[string]any{
 				"title": title,
 				"file":  e.Name(),
 			},
@@ -153,7 +153,7 @@ func (idx *Indexer) indexCodeChange(ctx context.Context, taskID, title, branch, 
 		TaskID:  taskID,
 		Type:    TypeCodeChange,
 		Content: diff,
-		Metadata: map[string]interface{}{
+		Metadata: map[string]any{
 			"title":       title,
 			"branch":      branch,
 			"base_branch": baseBranch,
@@ -189,7 +189,7 @@ func (idx *Indexer) indexSession(ctx context.Context, taskID, title, description
 			TaskID:  taskID,
 			Type:    TypeSession,
 			Content: string(data),
-			Metadata: map[string]interface{}{
+			Metadata: map[string]any{
 				"title":       title,
 				"description": description,
 				"file":        e.Name(),

@@ -24,7 +24,7 @@ func (r *Repository) ListWorktrees(ctx context.Context) ([]Worktree, error) {
 	var worktrees []Worktree
 	var current Worktree
 
-	for _, line := range strings.Split(out, "\n") {
+	for line := range strings.SplitSeq(out, "\n") {
 		if line == "" {
 			if current.Path != "" {
 				worktrees = append(worktrees, current)
@@ -34,8 +34,8 @@ func (r *Repository) ListWorktrees(ctx context.Context) ([]Worktree, error) {
 			continue
 		}
 
-		if strings.HasPrefix(line, "worktree ") {
-			current.Path = strings.TrimPrefix(line, "worktree ")
+		if after, ok := strings.CutPrefix(line, "worktree "); ok {
+			current.Path = after
 		} else if strings.HasPrefix(line, "branch ") {
 			current.Branch = strings.TrimPrefix(line, "branch refs/heads/")
 		} else if line == "bare" {

@@ -13,6 +13,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"sync"
 	"time"
@@ -27,7 +28,7 @@ import (
 type WorktreeCreator interface {
 	// GetOrCreateWorktreeSocket returns an existing or new worktree socket.
 	// The socket is started automatically if created.
-	GetOrCreateWorktreeSocket(projectPath string) (interface{}, error)
+	GetOrCreateWorktreeSocket(projectPath string) (any, error)
 }
 
 // Server serves the web UI and proxies WebSocket connections to Unix sockets.
@@ -162,10 +163,8 @@ func (s *Server) acceptOptions() *websocket.AcceptOptions {
 // originPatterns converts allowedOrigins to coder/websocket OriginPatterns.
 func (s *Server) originPatterns() []string {
 	// Check for wildcard
-	for _, allowed := range s.allowedOrigins {
-		if allowed == "*" {
-			return []string{"*"}
-		}
+	if slices.Contains(s.allowedOrigins, "*") {
+		return []string{"*"}
 	}
 
 	// Start with localhost defaults
@@ -292,7 +291,7 @@ func (s *Server) handleGlobalWS(w http.ResponseWriter, r *http.Request) {
 	dialer := &net.Dialer{Timeout: 5 * time.Second}
 	unixConn, err := dialer.DialContext(r.Context(), "unix", sockPath)
 	if err != nil {
-		_ = wsConn.Write(r.Context(), websocket.MessageText, []byte(fmt.Sprintf(`{"error":"failed to connect to global socket: %v"}`, err)))
+		_ = wsConn.Write(r.Context(), websocket.MessageText, fmt.Appendf(nil, `{"error":"failed to connect to global socket: %v"}`, err))
 
 		return
 	}
@@ -375,7 +374,7 @@ connectLoop:
 		}
 	}
 	if err != nil {
-		_ = wsConn.Write(r.Context(), websocket.MessageText, []byte(fmt.Sprintf(`{"error":"failed to connect to worktree socket: %v"}`, err)))
+		_ = wsConn.Write(r.Context(), websocket.MessageText, fmt.Appendf(nil, `{"error":"failed to connect to worktree socket: %v"}`, err))
 
 		return
 	}

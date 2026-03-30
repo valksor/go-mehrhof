@@ -36,9 +36,9 @@ func parseUnifiedDiffHunks(diffOutput string) map[string][][2]int {
 
 	var currentFile string
 
-	for _, line := range strings.Split(diffOutput, "\n") {
-		if strings.HasPrefix(line, "+++ b/") {
-			currentFile = strings.TrimPrefix(line, "+++ b/")
+	for line := range strings.SplitSeq(diffOutput, "\n") {
+		if after, ok := strings.CutPrefix(line, "+++ b/"); ok {
+			currentFile = after
 
 			continue
 		}

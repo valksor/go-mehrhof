@@ -439,15 +439,7 @@ func (vs *VectorStore) load() error {
 // matchesFilter returns true when doc passes all SearchOptions filters.
 func matchesFilter(doc *Document, opts SearchOptions) bool {
 	if len(opts.DocumentTypes) > 0 {
-		matched := false
-		for _, dt := range opts.DocumentTypes {
-			if doc.Type == dt {
-				matched = true
-
-				break
-			}
-		}
-		if !matched {
+		if !slices.Contains(opts.DocumentTypes, doc.Type) {
 			return false
 		}
 	}

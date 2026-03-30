@@ -27,9 +27,9 @@ type Review struct {
 	Status      string    `yaml:"status,omitempty" json:"status,omitempty"`
 	Content     string    `yaml:"-" json:"content"`
 	Reviewer    string    `yaml:"reviewer,omitempty" json:"reviewer,omitempty"`
-	CreatedAt   time.Time `yaml:"created_at,omitempty" json:"created_at,omitempty"`
-	UpdatedAt   time.Time `yaml:"updated_at,omitempty" json:"updated_at,omitempty"`
-	CompletedAt time.Time `yaml:"completed_at,omitempty" json:"completed_at,omitempty"`
+	CreatedAt   time.Time `yaml:"created_at,omitempty" json:"created_at,omitzero"`
+	UpdatedAt   time.Time `yaml:"updated_at,omitempty" json:"updated_at,omitzero"`
+	CompletedAt time.Time `yaml:"completed_at,omitempty" json:"completed_at,omitzero"`
 }
 
 // ReviewStore manages review persistence for tasks.
@@ -152,10 +152,9 @@ func (r *ReviewStore) ParseReview(taskID string, number int) (*Review, error) {
 	}
 
 	// Extract title from first heading
-	lines := strings.Split(review.Content, "\n")
-	for _, line := range lines {
-		if strings.HasPrefix(line, "# ") {
-			review.Title = strings.TrimPrefix(line, "# ")
+	for line := range strings.SplitSeq(review.Content, "\n") {
+		if title, ok := strings.CutPrefix(line, "# "); ok {
+			review.Title = title
 
 			break
 		}

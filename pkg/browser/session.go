@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"maps"
 	"os"
 	"path/filepath"
 )
@@ -160,18 +161,14 @@ func mergeStates(a, b *BrowserState) *BrowserState {
 		if merged.LocalStorage[origin] == nil {
 			merged.LocalStorage[origin] = make(map[string]string)
 		}
-		for k, v := range entries {
-			merged.LocalStorage[origin][k] = v
-		}
+		maps.Copy(merged.LocalStorage[origin], entries)
 	}
 
 	for origin, entries := range b.LocalStorage {
 		if merged.LocalStorage[origin] == nil {
 			merged.LocalStorage[origin] = make(map[string]string)
 		}
-		for k, v := range entries {
-			merged.LocalStorage[origin][k] = v
-		}
+		maps.Copy(merged.LocalStorage[origin], entries)
 	}
 
 	return merged

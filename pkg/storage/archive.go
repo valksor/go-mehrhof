@@ -14,8 +14,8 @@ import (
 type SearchOptions struct {
 	Query string    `json:"query,omitempty"` // Substring match in title, branch, or source
 	Tag   string    `json:"tag,omitempty"`   // Filter by tag (reserved for future use)
-	Since time.Time `json:"since,omitempty"` // Only tasks completed after this time
-	Until time.Time `json:"until,omitempty"` // Only tasks completed before this time
+	Since time.Time `json:"since,omitzero"`  // Only tasks completed after this time
+	Until time.Time `json:"until,omitzero"`  // Only tasks completed before this time
 	State string    `json:"state,omitempty"` // Filter by final_state (e.g., "finished", "abandoned")
 	Limit int       `json:"limit,omitempty"` // Max results (0 = unlimited)
 	File  string    `json:"file,omitempty"`  // Filter by file touched (substring match)

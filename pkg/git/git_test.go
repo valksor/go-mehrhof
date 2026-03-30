@@ -8,6 +8,8 @@ import (
 	"testing"
 )
 
+const testStatusModified = "modified"
+
 func setupTestRepo(t *testing.T) (string, func()) {
 	t.Helper()
 
@@ -310,12 +312,12 @@ func TestParseNameStatusLine(t *testing.T) {
 		path   string
 		status string
 	}{
-		{"M\tpkg/foo.go", "pkg/foo.go", "modified"},
+		{"M\tpkg/foo.go", "pkg/foo.go", testStatusModified},
 		{"A\tweb/new.ts", "web/new.ts", "added"},
 		{"D\told.go", "old.go", "deleted"},
 		{"R100\told.go\tnew.go", "new.go", "renamed"},
 		{"C100\torig.go\tcopy.go", "copy.go", "renamed"},
-		{"M\tsimple.txt", "simple.txt", "modified"},
+		{"M\tsimple.txt", "simple.txt", testStatusModified},
 	}
 	for _, tc := range cases {
 		path, status := parseNameStatusLine(tc.line)
@@ -350,8 +352,8 @@ func TestDiffFilesWithStatus(t *testing.T) {
 	if files[0].Path != "test.txt" {
 		t.Errorf("files[0].Path = %s, want test.txt", files[0].Path)
 	}
-	if files[0].Status != "modified" {
-		t.Errorf("files[0].Status = %s, want modified", files[0].Status)
+	if files[0].Status != testStatusModified {
+		t.Errorf("files[0].Status = %s, want %s", files[0].Status, testStatusModified)
 	}
 }
 

@@ -25,19 +25,19 @@ const (
 
 // Document is a single entry in the vector store.
 type Document struct {
-	ID        string                 `json:"id"`
-	TaskID    string                 `json:"task_id"`
-	Type      DocumentType           `json:"type"`
-	Content   string                 `json:"content"`
-	Metadata  map[string]interface{} `json:"metadata"`
-	Embedding []float32              `json:"embedding"`
-	CreatedAt time.Time              `json:"created_at"`
-	Tags      []string               `json:"tags"`
+	ID        string         `json:"id"`
+	TaskID    string         `json:"task_id"`
+	Type      DocumentType   `json:"type"`
+	Content   string         `json:"content"`
+	Metadata  map[string]any `json:"metadata"`
+	Embedding []float32      `json:"embedding"`
+	CreatedAt time.Time      `json:"created_at"`
+	Tags      []string       `json:"tags"`
 	// AccessCount tracks how many times this document has been returned in search results.
 	// Kept for backward-compatible JSON deserialization; new code uses AccessTimes.
 	AccessCount int `json:"access_count"`
 	// LastAccessed records when this document was last returned in search results.
-	LastAccessed time.Time `json:"last_accessed,omitempty"`
+	LastAccessed time.Time `json:"last_accessed,omitzero"`
 	// AccessTimes stores individual access timestamps for ACT-R activation scoring.
 	// Capped at maxAccessTimes entries to bound memory usage.
 	AccessTimes []time.Time `json:"access_times,omitempty"`
@@ -69,7 +69,7 @@ type SearchOptions struct {
 	// TimeRange filters by document creation time.
 	TimeRange *TimeRange
 	// MetadataFilters matches exact metadata key/value pairs.
-	MetadataFilters map[string]interface{}
+	MetadataFilters map[string]any
 }
 
 // TimeRange is an inclusive time window for search filtering.

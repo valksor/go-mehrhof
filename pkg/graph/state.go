@@ -2,6 +2,7 @@ package graph
 
 import (
 	"fmt"
+	"maps"
 	"sync"
 )
 
@@ -47,9 +48,7 @@ func NewStateManager(g *Graph) *StateManager {
 	}
 
 	// Copy fail-branch mappings (populated after Validate/buildEdges).
-	for src, target := range g.failEdges {
-		sm.failEdges[src] = target
-	}
+	maps.Copy(sm.failEdges, g.failEdges)
 
 	return sm
 }
@@ -118,12 +117,7 @@ func (sm *StateManager) Results() map[NodeID]string {
 	sm.mu.RLock()
 	defer sm.mu.RUnlock()
 
-	out := make(map[NodeID]string, len(sm.results))
-	for k, v := range sm.results {
-		out[k] = v
-	}
-
-	return out
+	return maps.Clone(sm.results)
 }
 
 // PreloadResults marks nodes as completed with cached results from a previous run.

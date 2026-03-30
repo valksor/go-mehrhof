@@ -166,7 +166,7 @@ func TestWithWorktreeCreator(t *testing.T) {
 
 type mockWorktreeCreator struct{}
 
-func (m *mockWorktreeCreator) GetOrCreateWorktreeSocket(_ string) (interface{}, error) {
+func (m *mockWorktreeCreator) GetOrCreateWorktreeSocket(_ string) (any, error) {
 	return struct{}{}, nil // Return non-nil empty struct to satisfy interface
 }
 

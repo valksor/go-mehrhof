@@ -302,7 +302,7 @@ func TestAdapterAugmentPromptWithSpecificationDocument(t *testing.T) {
 		TaskID:  "task-abc",
 		Type:    TypeSpecification,
 		Content: "implement login feature with email and password authentication using JWT",
-		Metadata: map[string]interface{}{
+		Metadata: map[string]any{
 			"title": "Login feature",
 		},
 		Tags:      []string{"specification"},
@@ -689,9 +689,9 @@ func TestMatchesFilter_MetadataFilter_KeyMissing(t *testing.T) {
 	doc := &Document{
 		ID:       "meta-doc",
 		Type:     TypeSpecification,
-		Metadata: map[string]interface{}{"key": "value"},
+		Metadata: map[string]any{"key": "value"},
 	}
-	opts := SearchOptions{MetadataFilters: map[string]interface{}{"missing-key": "value"}}
+	opts := SearchOptions{MetadataFilters: map[string]any{"missing-key": "value"}}
 	if matchesFilter(doc, opts) {
 		t.Error("matchesFilter() should return false when metadata key is missing")
 	}
@@ -701,9 +701,9 @@ func TestMatchesFilter_MetadataFilter_ValueMismatch(t *testing.T) {
 	doc := &Document{
 		ID:       "meta-doc",
 		Type:     TypeSpecification,
-		Metadata: map[string]interface{}{"key": "actual"},
+		Metadata: map[string]any{"key": "actual"},
 	}
-	opts := SearchOptions{MetadataFilters: map[string]interface{}{"key": "expected"}}
+	opts := SearchOptions{MetadataFilters: map[string]any{"key": "expected"}}
 	if matchesFilter(doc, opts) {
 		t.Error("matchesFilter() should return false when metadata value mismatches")
 	}
@@ -713,9 +713,9 @@ func TestMatchesFilter_MetadataFilter_Match(t *testing.T) {
 	doc := &Document{
 		ID:       "meta-doc",
 		Type:     TypeSpecification,
-		Metadata: map[string]interface{}{"env": "prod"},
+		Metadata: map[string]any{"env": "prod"},
 	}
-	opts := SearchOptions{MetadataFilters: map[string]interface{}{"env": "prod"}}
+	opts := SearchOptions{MetadataFilters: map[string]any{"env": "prod"}}
 	if !matchesFilter(doc, opts) {
 		t.Error("matchesFilter() should return true when metadata matches")
 	}

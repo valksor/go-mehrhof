@@ -7,13 +7,15 @@ import (
 	"testing"
 )
 
+const testCookieSession = "session"
+
 func TestBrowserState_SaveAndLoad_RoundTrip(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "state.json")
 
 	state := &BrowserState{
 		Cookies: []Cookie{
-			{Name: "session", Value: "abc123", Domain: ".example.com", Path: "/"},
+			{Name: testCookieSession, Value: "abc123", Domain: ".example.com", Path: "/"},
 		},
 		LocalStorage: map[string]map[string]string{
 			"https://example.com": {"key": "value"},
@@ -32,8 +34,8 @@ func TestBrowserState_SaveAndLoad_RoundTrip(t *testing.T) {
 	if len(loaded.Cookies) != 1 {
 		t.Fatalf("expected 1 cookie, got %d", len(loaded.Cookies))
 	}
-	if loaded.Cookies[0].Name != "session" {
-		t.Errorf("cookie name = %q, want %q", loaded.Cookies[0].Name, "session")
+	if loaded.Cookies[0].Name != testCookieSession {
+		t.Errorf("cookie name = %q, want %q", loaded.Cookies[0].Name, testCookieSession)
 	}
 	if loaded.Cookies[0].Value != "abc123" {
 		t.Errorf("cookie value = %q, want %q", loaded.Cookies[0].Value, "abc123")
@@ -104,7 +106,7 @@ func TestBrowserState_SaveLoad_AllFields(t *testing.T) {
 	state := &BrowserState{
 		Cookies: []Cookie{
 			{
-				Name:     "session",
+				Name:     testCookieSession,
 				Value:    "tok123",
 				Domain:   ".example.com",
 				Path:     "/app",
@@ -144,7 +146,7 @@ func TestBrowserState_SaveLoad_AllFields(t *testing.T) {
 
 	var session *Cookie
 	for i := range loaded.Cookies {
-		if loaded.Cookies[i].Name == "session" {
+		if loaded.Cookies[i].Name == testCookieSession {
 			session = &loaded.Cookies[i]
 
 			break
@@ -310,7 +312,7 @@ func TestExtractWorktreeState_DiffsCorrectly(t *testing.T) {
 	mergedState := &BrowserState{
 		Cookies: []Cookie{
 			{Name: "auth", Value: "token", Domain: "example.com", Path: "/"},
-			{Name: "session", Value: "new-session", Domain: "app.com", Path: "/"},
+			{Name: testCookieSession, Value: "new-session", Domain: "app.com", Path: "/"},
 		},
 		LocalStorage: map[string]map[string]string{
 			"https://app.com": {"state": "active"},
@@ -333,8 +335,8 @@ func TestExtractWorktreeState_DiffsCorrectly(t *testing.T) {
 	if len(wtState.Cookies) != 1 {
 		t.Fatalf("worktree cookies count = %d, want 1", len(wtState.Cookies))
 	}
-	if wtState.Cookies[0].Name != "session" {
-		t.Errorf("worktree cookie name = %q, want %q", wtState.Cookies[0].Name, "session")
+	if wtState.Cookies[0].Name != testCookieSession {
+		t.Errorf("worktree cookie name = %q, want %q", wtState.Cookies[0].Name, testCookieSession)
 	}
 
 	if wtState.LocalStorage["https://app.com"]["state"] != "active" {
@@ -380,7 +382,7 @@ func TestUpdateGlobalProfile_RoundTrip(t *testing.T) {
 func TestDiffStates_IdenticalStates(t *testing.T) {
 	state := &BrowserState{
 		Cookies: []Cookie{
-			{Name: "session", Value: "abc", Domain: "example.com", Path: "/"},
+			{Name: testCookieSession, Value: "abc", Domain: "example.com", Path: "/"},
 		},
 		LocalStorage: map[string]map[string]string{
 			"https://example.com": {"key": "val"},
@@ -423,7 +425,7 @@ func TestDiffStates_AllNew(t *testing.T) {
 func TestDiffStates_ValueChanged(t *testing.T) {
 	a := &BrowserState{
 		Cookies: []Cookie{
-			{Name: "session", Value: "old", Domain: "example.com", Path: "/"},
+			{Name: testCookieSession, Value: "old", Domain: "example.com", Path: "/"},
 		},
 		LocalStorage: map[string]map[string]string{
 			"https://example.com": {"key": "old-val"},
@@ -431,7 +433,7 @@ func TestDiffStates_ValueChanged(t *testing.T) {
 	}
 	b := &BrowserState{
 		Cookies: []Cookie{
-			{Name: "session", Value: "new", Domain: "example.com", Path: "/"},
+			{Name: testCookieSession, Value: "new", Domain: "example.com", Path: "/"},
 		},
 		LocalStorage: map[string]map[string]string{
 			"https://example.com": {"key": "new-val"},
