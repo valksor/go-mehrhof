@@ -39,7 +39,7 @@ func TestGitHubProvider_FetchTask_Issue(t *testing.T) {
 				"number":   42,
 				"title":    "Fix the login page bug",
 				"body":     "The login page has a CSS issue",
-				"state":    "open",
+				"state":    stateOpen,
 				"html_url": "https://github.com/owner/repo/issues/42",
 				"labels": []map[string]any{
 					{"name": "bug"},
@@ -68,13 +68,13 @@ func TestGitHubProvider_FetchTask_Issue(t *testing.T) {
 	if task.ID != "owner/repo#42" {
 		t.Errorf("ID = %q, want %q", task.ID, "owner/repo#42")
 	}
-	if task.Source != "github" {
+	if task.Source != NameGitHub {
 		t.Errorf("Source = %q, want github", task.Source)
 	}
 	if len(task.Labels) != 2 {
 		t.Errorf("len(Labels) = %d, want 2", len(task.Labels))
 	}
-	if task.Metadata("github_state") != "open" {
+	if task.Metadata("github_state") != stateOpen {
 		t.Errorf("github_state = %q, want open", task.Metadata("github_state"))
 	}
 	if task.Metadata("github_owner") != "owner" {
@@ -94,7 +94,7 @@ func TestGitHubProvider_FetchTask_PR(t *testing.T) {
 				"number":       10,
 				"title":        "Add new feature",
 				"body":         "This PR adds a new feature",
-				"state":        "open",
+				"state":        stateOpen,
 				"html_url":     "https://github.com/owner/repo/pull/10",
 				"pull_request": map[string]any{"url": "https://api.github.com/repos/owner/repo/pulls/10"},
 				"labels":       []map[string]any{},
@@ -105,7 +105,7 @@ func TestGitHubProvider_FetchTask_PR(t *testing.T) {
 				"number":   10,
 				"title":    "Add new feature",
 				"body":     "This PR adds a new feature",
-				"state":    "open",
+				"state":    stateOpen,
 				"draft":    true,
 				"html_url": "https://github.com/owner/repo/pull/10",
 				"labels":   []map[string]any{{"name": "enhancement"}},
@@ -126,7 +126,7 @@ func TestGitHubProvider_FetchTask_PR(t *testing.T) {
 	if task.Title != "Add new feature" {
 		t.Errorf("Title = %q, want %q", task.Title, "Add new feature")
 	}
-	if task.Metadata("github_state") != "draft" {
+	if task.Metadata("github_state") != stateDraft {
 		t.Errorf("github_state = %q, want draft", task.Metadata("github_state"))
 	}
 	if task.Metadata("github_is_pr") != "true" {
@@ -171,7 +171,7 @@ func TestGitHubProvider_FetchTask_WithAssignees(t *testing.T) {
 				"number":   5,
 				"title":    "Task with assignees",
 				"body":     "Description",
-				"state":    "open",
+				"state":    stateOpen,
 				"html_url": "https://github.com/owner/repo/issues/5",
 				"labels":   []map[string]any{},
 				"assignees": []map[string]any{
@@ -205,7 +205,7 @@ func TestGitHubProvider_FetchTask_WithMilestone(t *testing.T) {
 				"number":   7,
 				"title":    "Milestone task",
 				"body":     "",
-				"state":    "open",
+				"state":    stateOpen,
 				"html_url": "https://github.com/owner/repo/issues/7",
 				"labels":   []map[string]any{},
 				"milestone": map[string]any{
@@ -241,7 +241,7 @@ func TestGitHubProvider_FetchTask_WithDependencies(t *testing.T) {
 				"number":   20,
 				"title":    "Feature with deps",
 				"body":     "Depends on #10 and owner/repo#15",
-				"state":    "open",
+				"state":    stateOpen,
 				"html_url": "https://github.com/owner/repo/issues/20",
 				"labels":   []map[string]any{},
 			})
@@ -262,7 +262,7 @@ func TestGitHubProvider_FetchTask_WithDependencies(t *testing.T) {
 	}
 
 	for _, dep := range task.Dependencies {
-		if dep.Source != "github" {
+		if dep.Source != NameGitHub {
 			t.Errorf("dep.Source = %q, want github", dep.Source)
 		}
 	}
@@ -295,9 +295,9 @@ func TestGitHubProvider_UpdateStatus(t *testing.T) {
 		wantState string
 		wantErr   bool
 	}{
-		{"open", "open", false},
-		{"pending", "open", false},
-		{"in_progress", "open", false},
+		{stateOpen, stateOpen, false},
+		{"pending", stateOpen, false},
+		{"in_progress", stateOpen, false},
 		{"closed", "closed", false},
 		{"done", "closed", false},
 		{"completed", "closed", false},
@@ -332,7 +332,7 @@ func TestGitHubProvider_UpdateStatus_InvalidID(t *testing.T) {
 	defer srv.Close()
 
 	p := newTestGitHubProvider(t, srv)
-	err := p.UpdateStatus(context.Background(), "bad-id", "open")
+	err := p.UpdateStatus(context.Background(), "bad-id", stateOpen)
 	if err == nil {
 		t.Error("UpdateStatus() with invalid ID should return error")
 	}
@@ -387,7 +387,7 @@ func TestGitHubProvider_GetPRStatus_PR(t *testing.T) {
 			w.Header().Set("Content-Type", "application/json")
 			_ = json.NewEncoder(w).Encode(map[string]any{
 				"number":   15,
-				"state":    "open",
+				"state":    stateOpen,
 				"merged":   false,
 				"html_url": "https://github.com/owner/repo/pull/15",
 			})
@@ -405,7 +405,7 @@ func TestGitHubProvider_GetPRStatus_PR(t *testing.T) {
 	if status.Number != 15 {
 		t.Errorf("Number = %d, want 15", status.Number)
 	}
-	if status.State != "open" {
+	if status.State != stateOpen {
 		t.Errorf("State = %q, want open", status.State)
 	}
 	if status.Merged {
@@ -481,7 +481,7 @@ func TestGitHubProvider_FetchSiblings_WithMilestone(t *testing.T) {
 					"number":   1,
 					"title":    "Sibling 1",
 					"body":     "",
-					"state":    "open",
+					"state":    stateOpen,
 					"html_url": "https://github.com/owner/repo/issues/1",
 					"labels":   []map[string]any{},
 				},
@@ -489,7 +489,7 @@ func TestGitHubProvider_FetchSiblings_WithMilestone(t *testing.T) {
 					"number":   2,
 					"title":    "Current task",
 					"body":     "",
-					"state":    "open",
+					"state":    stateOpen,
 					"html_url": "https://github.com/owner/repo/issues/2",
 					"labels":   []map[string]any{},
 				},
@@ -497,7 +497,7 @@ func TestGitHubProvider_FetchSiblings_WithMilestone(t *testing.T) {
 					"number":   3,
 					"title":    "Sibling 3",
 					"body":     "",
-					"state":    "open",
+					"state":    stateOpen,
 					"html_url": "https://github.com/owner/repo/issues/3",
 					"labels":   []map[string]any{},
 				},
@@ -512,7 +512,7 @@ func TestGitHubProvider_FetchSiblings_WithMilestone(t *testing.T) {
 
 	task := &Task{
 		ID:     "owner/repo#2",
-		Source: "github",
+		Source: NameGitHub,
 	}
 	task.SetMetadata("github_milestone_number", "5")
 	task.SetMetadata("github_owner", "owner")
@@ -535,7 +535,7 @@ func TestGitHubProvider_FetchSiblings_WithMilestone(t *testing.T) {
 
 func TestGitHubProvider_FetchSiblings_NoMilestone(t *testing.T) {
 	p := &GitHubProvider{}
-	task := &Task{ID: "owner/repo#1", Source: "github"}
+	task := &Task{ID: "owner/repo#1", Source: NameGitHub}
 
 	siblings, err := p.FetchSiblings(context.Background(), task)
 	if err != nil {
@@ -548,7 +548,7 @@ func TestGitHubProvider_FetchSiblings_NoMilestone(t *testing.T) {
 
 func TestGitHubProvider_FetchParent(t *testing.T) {
 	p := &GitHubProvider{}
-	task := &Task{ID: "owner/repo#1", Source: "github"}
+	task := &Task{ID: "owner/repo#1", Source: NameGitHub}
 
 	parent, err := p.FetchParent(context.Background(), task)
 	if err != nil {
@@ -573,7 +573,7 @@ func TestGitHubProvider_CreatePR(t *testing.T) {
 			w.Header().Set("Content-Type", "application/json")
 			_ = json.NewEncoder(w).Encode(map[string]any{
 				"number":   99,
-				"state":    "open",
+				"state":    stateOpen,
 				"draft":    false,
 				"html_url": "https://github.com/owner/repo/pull/99",
 				"title":    req["title"],
@@ -597,7 +597,7 @@ func TestGitHubProvider_CreatePR(t *testing.T) {
 	if result.Number != 99 {
 		t.Errorf("Number = %d, want 99", result.Number)
 	}
-	if result.State != "open" {
+	if result.State != stateOpen {
 		t.Errorf("State = %q, want open", result.State)
 	}
 	if !strings.Contains(result.URL, "pull/99") {

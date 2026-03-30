@@ -63,7 +63,7 @@ func TestGitLabProvider_FetchTask_Issue_HTTPTest(t *testing.T) {
 	if task.Description != "Details about the bug" {
 		t.Errorf("task.Description = %q, want 'Details about the bug'", task.Description)
 	}
-	if task.Source != "gitlab" {
+	if task.Source != NameGitLab {
 		t.Errorf("task.Source = %q, want gitlab", task.Source)
 	}
 	if task.Metadata("gitlab_state") != "opened" {

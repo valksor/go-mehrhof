@@ -79,7 +79,7 @@ func NewLinearProvider(token, team string) *LinearProvider {
 }
 
 func (p *LinearProvider) Name() string {
-	return "linear"
+	return NameLinear
 }
 
 // --- internal types for GraphQL responses ---
@@ -951,7 +951,7 @@ func (p *LinearProvider) issueToTask(issue *linearIssue) *Task {
 		Description: issue.Description,
 		URL:         issue.URL,
 		Labels:      labels,
-		Source:      "linear",
+		Source:      NameLinear,
 	}
 
 	// Inference
@@ -1019,7 +1019,7 @@ func (p *LinearProvider) resolveDependencies(task *Task) []*Task {
 		}
 		deps = append(deps, &Task{
 			ID:     depID,
-			Source: "linear",
+			Source: NameLinear,
 		})
 	}
 
@@ -1031,7 +1031,7 @@ func (p *LinearProvider) findWorkflowState(ctx context.Context, teamID, status s
 	// Map status to Linear state types
 	var stateTypes []string
 	switch strings.ToLower(status) {
-	case "open", "pending", "todo", "backlog":
+	case stateOpen, "pending", "todo", "backlog":
 		stateTypes = []string{"backlog", "unstarted"}
 	case "in_progress", "started", "doing":
 		stateTypes = []string{"started"}
@@ -1211,15 +1211,15 @@ func (p *LinearProvider) getLabelIDs(ctx context.Context, teamID string, names [
 func linearPriorityToString(p int) string {
 	switch p {
 	case 1:
-		return "critical"
+		return priorityCritical
 	case 2:
-		return "high"
+		return priorityHigh
 	case 3:
-		return "normal"
+		return priorityNormal
 	case 4:
-		return "low"
+		return priorityLow
 	default:
-		return "normal"
+		return priorityNormal
 	}
 }
 

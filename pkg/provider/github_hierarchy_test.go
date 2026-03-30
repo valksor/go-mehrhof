@@ -14,8 +14,6 @@ func TestGitHubProvider_ImplementsMergeProvider(t *testing.T) {
 	var _ MergeProvider = (*GitHubProvider)(nil)
 }
 
-func intPtr(n int) *int { return &n }
-
 func TestMilestoneNumber(t *testing.T) {
 	t.Parallel()
 
@@ -32,28 +30,28 @@ func TestMilestoneNumber(t *testing.T) {
 		{
 			name: "issue with Milestone number 1",
 			issue: &github.Issue{
-				Milestone: &github.Milestone{Number: intPtr(1)},
+				Milestone: &github.Milestone{Number: new(1)},
 			},
 			want: "1",
 		},
 		{
 			name: "issue with Milestone number 42",
 			issue: &github.Issue{
-				Milestone: &github.Milestone{Number: intPtr(42)},
+				Milestone: &github.Milestone{Number: new(42)},
 			},
 			want: "42",
 		},
 		{
 			name: "issue with Milestone number 0",
 			issue: &github.Issue{
-				Milestone: &github.Milestone{Number: intPtr(0)},
+				Milestone: &github.Milestone{Number: new(0)},
 			},
 			want: "0",
 		},
 		{
 			name: "issue with large Milestone number",
 			issue: &github.Issue{
-				Milestone: &github.Milestone{Number: intPtr(9999)},
+				Milestone: &github.Milestone{Number: new(9999)},
 			},
 			want: "9999",
 		},
@@ -87,28 +85,28 @@ func TestMilestoneNumberFromPR(t *testing.T) {
 		{
 			name: "PR with Milestone number 1",
 			pr: &github.PullRequest{
-				Milestone: &github.Milestone{Number: intPtr(1)},
+				Milestone: &github.Milestone{Number: new(1)},
 			},
 			want: "1",
 		},
 		{
 			name: "PR with Milestone number 7",
 			pr: &github.PullRequest{
-				Milestone: &github.Milestone{Number: intPtr(7)},
+				Milestone: &github.Milestone{Number: new(7)},
 			},
 			want: "7",
 		},
 		{
 			name: "PR with Milestone number 0",
 			pr: &github.PullRequest{
-				Milestone: &github.Milestone{Number: intPtr(0)},
+				Milestone: &github.Milestone{Number: new(0)},
 			},
 			want: "0",
 		},
 		{
 			name: "PR with large Milestone number",
 			pr: &github.PullRequest{
-				Milestone: &github.Milestone{Number: intPtr(1024)},
+				Milestone: &github.Milestone{Number: new(1024)},
 			},
 			want: "1024",
 		},

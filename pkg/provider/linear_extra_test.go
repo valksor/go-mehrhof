@@ -41,7 +41,7 @@ func TestGitHubProvider_IssueToTask(t *testing.T) {
 	body := "The login button is broken on mobile"
 	number := 42
 	htmlURL := "https://github.com/myorg/myrepo/issues/42"
-	state := "open"
+	state := stateOpen
 	labelName := "bug"
 
 	issue := &github.Issue{
@@ -69,13 +69,13 @@ func TestGitHubProvider_IssueToTask(t *testing.T) {
 	if task.URL != htmlURL {
 		t.Errorf("URL = %s, want %s", task.URL, htmlURL)
 	}
-	if task.Source != "github" {
+	if task.Source != NameGitHub {
 		t.Errorf("Source = %s, want github", task.Source)
 	}
 	if len(task.Labels) != 1 || task.Labels[0] != "bug" {
 		t.Errorf("Labels = %v, want [bug]", task.Labels)
 	}
-	if task.Metadata("github_state") != "open" {
+	if task.Metadata("github_state") != stateOpen {
 		t.Errorf("github_state = %s, want open", task.Metadata("github_state"))
 	}
 	if task.Metadata("github_owner") != "myorg" {
@@ -93,7 +93,7 @@ func TestGitHubProvider_PrToTask(t *testing.T) {
 	body := "Implements dark mode support"
 	number := 99
 	htmlURL := "https://github.com/myorg/myrepo/pull/99"
-	state := "open"
+	state := stateOpen
 	draft := true
 	labelName := "enhancement"
 
@@ -117,7 +117,7 @@ func TestGitHubProvider_PrToTask(t *testing.T) {
 	if task.Title != "Add dark mode" {
 		t.Errorf("Title = %s, want 'Add dark mode'", task.Title)
 	}
-	if task.Source != "github" {
+	if task.Source != NameGitHub {
 		t.Errorf("Source = %s, want github", task.Source)
 	}
 	if task.Metadata("github_state") != "draft" {
@@ -138,7 +138,7 @@ func TestGitHubProvider_PrToTask_NotDraft(t *testing.T) {
 	body := ""
 	number := 100
 	htmlURL := "https://github.com/o/r/pull/100"
-	state := "open"
+	state := stateOpen
 	draft := false
 
 	pr := &github.PullRequest{
@@ -152,7 +152,7 @@ func TestGitHubProvider_PrToTask_NotDraft(t *testing.T) {
 
 	task := gp.prToTask("o", "r", pr)
 
-	if task.Metadata("github_state") != "open" {
+	if task.Metadata("github_state") != stateOpen {
 		t.Errorf("github_state = %s, want open (non-draft PR)", task.Metadata("github_state"))
 	}
 }
@@ -163,7 +163,7 @@ func TestGitHubProvider_IssueToTask_WithAssignees(t *testing.T) {
 	title := "Task with assignees"
 	number := 10
 	htmlURL := "https://github.com/o/r/issues/10"
-	state := "open"
+	state := stateOpen
 	login1 := "alice"
 	login2 := "bob"
 
@@ -190,7 +190,7 @@ func TestNewGitHubProviderWithHost(t *testing.T) {
 	if gp == nil {
 		t.Fatal("NewGitHubProviderWithHost returned nil")
 	}
-	if gp.Name() != "github" {
+	if gp.Name() != NameGitHub {
 		t.Errorf("Name() = %s, want github", gp.Name())
 	}
 	if gp.host != "https://github.example.com" {

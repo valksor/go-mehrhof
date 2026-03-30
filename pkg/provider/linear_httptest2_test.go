@@ -86,7 +86,7 @@ func TestLinearProvider_FetchTask_HTTPTest(t *testing.T) {
 	if task.Priority != "high" {
 		t.Errorf("task.Priority = %q, want high (priority=2)", task.Priority)
 	}
-	if task.Source != "linear" {
+	if task.Source != NameLinear {
 		t.Errorf("task.Source = %q, want linear", task.Source)
 	}
 	if task.Metadata("linear_id") != "issue-uuid-1" {

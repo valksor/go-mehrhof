@@ -7,7 +7,18 @@ import (
 	"strings"
 )
 
-const maxJiraSiblings = 5
+const (
+	maxJiraSiblings = 5
+
+	priorityCritical = "critical"
+	priorityHigh     = "high"
+	priorityNormal   = "normal"
+	priorityLow      = "low"
+
+	statusDone     = "done"
+	statusClosed   = "closed"
+	statusResolved = "resolved"
+)
 
 // JiraProvider implements Provider, HierarchyProvider, CommentProvider, and
 // SubmitProvider for Jira issues via the REST API v3.
@@ -23,7 +34,7 @@ func NewJiraProvider(baseURL, email, token string) *JiraProvider {
 }
 
 func (p *JiraProvider) Name() string {
-	return "jira"
+	return NameJira
 }
 
 // --- Provider interface ---
@@ -159,7 +170,7 @@ func (p *JiraProvider) issueToTask(issue *jiraIssue) *Task {
 		Description: description,
 		URL:         fmt.Sprintf("%s/browse/%s", p.client.baseURL, issue.Key),
 		Labels:      labels,
-		Source:      "jira",
+		Source:      NameJira,
 	}
 
 	// Inference
@@ -175,7 +186,7 @@ func (p *JiraProvider) issueToTask(issue *jiraIssue) *Task {
 		completed := false
 		if sub.Fields.Status != nil {
 			name := strings.ToLower(sub.Fields.Status.Name)
-			completed = name == "done" || name == "closed" || name == "resolved"
+			completed = name == statusDone || name == statusClosed || name == statusResolved
 		}
 		task.Subtasks = append(task.Subtasks, &Subtask{
 			ID:        sub.Key,
@@ -276,17 +287,17 @@ func normalizeJiraKey(ref string) string {
 // jiraPriorityToString maps Jira priority names to normalized priority strings.
 func jiraPriorityToString(name string) string {
 	switch strings.ToLower(name) {
-	case "highest", "blocker", "critical":
-		return "critical"
-	case "high":
-		return "high"
+	case "highest", "blocker", priorityCritical:
+		return priorityCritical
+	case priorityHigh:
+		return priorityHigh
 	case "medium":
-		return "normal"
-	case "low":
-		return "low"
+		return priorityNormal
+	case priorityLow:
+		return priorityLow
 	case "lowest":
-		return "low"
+		return priorityLow
 	default:
-		return "normal"
+		return priorityNormal
 	}
 }

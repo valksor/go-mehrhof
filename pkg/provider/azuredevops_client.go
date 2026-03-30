@@ -38,11 +38,11 @@ func newAzureDevOpsClient(baseURL, org, project, token string) *azureDevOpsClien
 
 // azureWorkItem represents an Azure DevOps work item from the REST API.
 type azureWorkItem struct {
-	ID     int                    `json:"id"`
-	Rev    int                    `json:"rev"`
-	Fields map[string]any         `json:"fields"`
-	URL    string                 `json:"url"`
-	Links  map[string]interface{} `json:"_links"`
+	ID     int            `json:"id"`
+	Rev    int            `json:"rev"`
+	Fields map[string]any `json:"fields"`
+	URL    string         `json:"url"`
+	Links  map[string]any `json:"_links"`
 }
 
 // azurePR represents an Azure DevOps pull request.

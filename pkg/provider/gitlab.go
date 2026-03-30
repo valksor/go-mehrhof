@@ -220,9 +220,9 @@ func (p *GitLabProvider) UpdateStatus(ctx context.Context, id string, status str
 	// Map status to GitLab state event
 	var stateEvent string
 	switch status {
-	case "open", "pending", "in_progress":
+	case stateOpen, "pending", "in_progress":
 		stateEvent = "reopen"
-	case "closed", "done", "completed":
+	case stateClosed, "done", "completed":
 		stateEvent = "close"
 	default:
 		return fmt.Errorf("unsupported status: %s", status)
@@ -230,12 +230,12 @@ func (p *GitLabProvider) UpdateStatus(ctx context.Context, id string, status str
 
 	if isMR {
 		opts := &gitlab.UpdateMergeRequestOptions{
-			StateEvent: gitlab.Ptr(stateEvent),
+			StateEvent: new(stateEvent),
 		}
 		_, _, err = p.client.MergeRequests.UpdateMergeRequest(project, int64(number), opts, gitlab.WithContext(ctx))
 	} else {
 		opts := &gitlab.UpdateIssueOptions{
-			StateEvent: gitlab.Ptr(stateEvent),
+			StateEvent: new(stateEvent),
 		}
 		_, _, err = p.client.Issues.UpdateIssue(project, int64(number), opts, gitlab.WithContext(ctx))
 	}
@@ -298,11 +298,11 @@ func (p *GitLabProvider) CreatePR(ctx context.Context, opts PROptions) (*PRResul
 	}
 
 	mrOpts := &gitlab.CreateMergeRequestOptions{
-		Title:              gitlab.Ptr(title),
-		Description:        gitlab.Ptr(description),
-		SourceBranch:       gitlab.Ptr(sourceBranch),
-		TargetBranch:       gitlab.Ptr(targetBranch),
-		RemoveSourceBranch: gitlab.Ptr(true), // Best practice: clean up merged branches
+		Title:              new(title),
+		Description:        new(description),
+		SourceBranch:       new(sourceBranch),
+		TargetBranch:       new(targetBranch),
+		RemoveSourceBranch: new(true), // Best practice: clean up merged branches
 	}
 
 	mr, _, err := p.client.MergeRequests.CreateMergeRequest(project, mrOpts, gitlab.WithContext(ctx))
@@ -332,12 +332,12 @@ func (p *GitLabProvider) AddComment(ctx context.Context, id string, comment stri
 
 	if isMR {
 		noteOpts := &gitlab.CreateMergeRequestNoteOptions{
-			Body: gitlab.Ptr(comment),
+			Body: new(comment),
 		}
 		_, _, err = p.client.Notes.CreateMergeRequestNote(project, int64(number), noteOpts, gitlab.WithContext(ctx))
 	} else {
 		noteOpts := &gitlab.CreateIssueNoteOptions{
-			Body: gitlab.Ptr(comment),
+			Body: new(comment),
 		}
 		_, _, err = p.client.Notes.CreateIssueNote(project, int64(number), noteOpts, gitlab.WithContext(ctx))
 	}

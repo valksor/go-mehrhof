@@ -241,7 +241,7 @@ func TestE2E_CreatePR(t *testing.T) {
 	})
 
 	// Create a file in the branch
-	content := []byte(fmt.Sprintf("# E2E Test\n\nCreated at %s\n", time.Now().Format(time.RFC3339)))
+	content := fmt.Appendf(nil, "# E2E Test\n\nCreated at %s\n", time.Now().Format(time.RFC3339))
 	commitMsg := "E2E test commit"
 	_, _, err = client.Repositories.CreateFile(ctx, owner, repo, "e2e-test.md", &github.RepositoryContentFileOptions{
 		Message: &commitMsg,

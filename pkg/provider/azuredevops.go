@@ -103,7 +103,7 @@ func (p *AzureDevOpsProvider) workItemToTask(wi *azureWorkItem) *Task {
 
 	var labels []string
 	if tags, ok := fields["System.Tags"].(string); ok && tags != "" {
-		for _, tag := range strings.Split(tags, ";") {
+		for tag := range strings.SplitSeq(tags, ";") {
 			tag = strings.TrimSpace(tag)
 			if tag != "" {
 				labels = append(labels, tag)

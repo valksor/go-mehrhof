@@ -12,6 +12,13 @@ import (
 	"github.com/google/go-github/v67/github"
 )
 
+// GitHub issue/PR state constants.
+const (
+	stateOpen   = "open"
+	stateClosed = "closed"
+	stateDraft  = "draft"
+)
+
 // GitHubProvider implements the Provider interface for GitHub issues and PRs.
 type GitHubProvider struct {
 	client *github.Client
@@ -36,7 +43,7 @@ func NewGitHubProviderWithHost(token, host string) *GitHubProvider {
 }
 
 func (p *GitHubProvider) Name() string {
-	return "github"
+	return NameGitHub
 }
 
 // FetchTask fetches an issue or PR from GitHub by ID (owner/repo#number).
@@ -84,7 +91,7 @@ func (p *GitHubProvider) issueToTask(owner, repo string, issue *github.Issue) *T
 		Description: issue.GetBody(),
 		URL:         issue.GetHTMLURL(),
 		Labels:      labels,
-		Source:      "github",
+		Source:      NameGitHub,
 	}
 
 	// Inference
@@ -132,7 +139,7 @@ func (p *GitHubProvider) prToTask(owner, repo string, pr *github.PullRequest) *T
 		Description: pr.GetBody(),
 		URL:         pr.GetHTMLURL(),
 		Labels:      labels,
-		Source:      "github",
+		Source:      NameGitHub,
 	}
 
 	// Inference
@@ -144,7 +151,7 @@ func (p *GitHubProvider) prToTask(owner, repo string, pr *github.PullRequest) *T
 	// Metadata (set before resolveDependencies so shorthand refs can use owner/repo)
 	state := pr.GetState()
 	if pr.GetDraft() {
-		state = "draft"
+		state = stateDraft
 	}
 	task.SetMetadata("github_state", state)
 	task.SetMetadata("github_owner", owner)
@@ -194,7 +201,7 @@ func (p *GitHubProvider) resolveDependencies(task *Task) []*Task {
 		}
 		deps = append(deps, &Task{
 			ID:     depID,
-			Source: "github",
+			Source: NameGitHub,
 		})
 	}
 
@@ -211,10 +218,10 @@ func (p *GitHubProvider) UpdateStatus(ctx context.Context, id string, status str
 	// Map status to GitHub state
 	var state string
 	switch status {
-	case "open", "pending", "in_progress":
-		state = "open"
-	case "closed", "done", "completed":
-		state = "closed"
+	case stateOpen, "pending", "in_progress":
+		state = stateOpen
+	case stateClosed, "done", "completed":
+		state = stateClosed
 	default:
 		return fmt.Errorf("unsupported status: %s", status)
 	}
@@ -295,7 +302,7 @@ func (p *GitHubProvider) CreatePR(ctx context.Context, opts PROptions) (*PRResul
 
 	state := pr.GetState()
 	if pr.GetDraft() {
-		state = "draft"
+		state = stateDraft
 	}
 
 	// Request reviewers if specified (best-effort).
@@ -476,7 +483,7 @@ func (p *GitHubProvider) ListTasks(ctx context.Context, opts ListOptions) (*List
 
 	state := opts.Status
 	if state == "" {
-		state = "open"
+		state = stateOpen
 	}
 
 	listOpts := &github.IssueListByRepoOptions{

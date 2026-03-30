@@ -7,6 +7,17 @@ import (
 	"strings"
 )
 
+// Provider name constants.
+const (
+	NameGitHub      = "github"
+	NameGitLab      = "gitlab"
+	NameLinear      = "linear"
+	NameWrike       = "wrike"
+	NameJira        = "jira"
+	NameAzureDevOps = "azuredevops"
+	NameFile        = "file"
+)
+
 // Subtask represents a checklist item within a task.
 type Subtask struct {
 	ID        string // "{taskID}-task-{index}"
@@ -242,13 +253,13 @@ type PRResult struct {
 //nolint:nonamedreturns // Named returns document the return values
 func Parse(source string) (provider string, id string, err error) {
 	// Check if it's a file path
-	if strings.HasPrefix(source, "file:") {
-		return "file", strings.TrimPrefix(source, "file:"), nil
+	if after, ok := strings.CutPrefix(source, "file:"); ok {
+		return "file", after, nil
 	}
 
 	// Check if it's an empty/manual task
-	if strings.HasPrefix(source, "empty:") {
-		return "empty", strings.TrimPrefix(source, "empty:"), nil
+	if after, ok := strings.CutPrefix(source, "empty:"); ok {
+		return "empty", after, nil
 	}
 
 	// Check if it's a URL
@@ -265,7 +276,7 @@ func Parse(source string) (provider string, id string, err error) {
 			// GitHub: /owner/repo/issues/123 or /owner/repo/pull/123
 			parts := strings.Split(strings.Trim(path, "/"), "/")
 			if len(parts) >= 4 {
-				return "github", fmt.Sprintf("%s/%s#%s", parts[0], parts[1], parts[3]), nil
+				return NameGitHub, fmt.Sprintf("%s/%s#%s", parts[0], parts[1], parts[3]), nil
 			}
 		}
 
@@ -277,10 +288,10 @@ func Parse(source string) (provider string, id string, err error) {
 					if i >= 2 && i+1 < len(parts) {
 						owner := strings.Join(parts[:i-1], "/")
 						if p == "issues" {
-							return "gitlab", fmt.Sprintf("%s#%s", owner, parts[i+1]), nil
+							return NameGitLab, fmt.Sprintf("%s#%s", owner, parts[i+1]), nil
 						}
 						// merge_requests use ! separator
-						return "gitlab", fmt.Sprintf("%s!%s", owner, parts[i+1]), nil
+						return NameGitLab, fmt.Sprintf("%s!%s", owner, parts[i+1]), nil
 					}
 				}
 			}
@@ -288,10 +299,9 @@ func Parse(source string) (provider string, id string, err error) {
 
 		if strings.Contains(host, "wrike.com") {
 			// Wrike: extract task ID from URL
-			parts := strings.Split(path, "/")
-			for _, p := range parts {
+			for p := range strings.SplitSeq(path, "/") {
 				if strings.HasPrefix(p, "task-") || strings.HasPrefix(p, "IEAA") {
-					return "wrike", p, nil
+					return NameWrike, p, nil
 				}
 			}
 		}
@@ -301,7 +311,7 @@ func Parse(source string) (provider string, id string, err error) {
 			parts := strings.Split(strings.Trim(path, "/"), "/")
 			for i, p := range parts {
 				if p == "browse" && i+1 < len(parts) {
-					return "jira", parts[i+1], nil
+					return NameJira, parts[i+1], nil
 				}
 			}
 		}
@@ -311,7 +321,7 @@ func Parse(source string) (provider string, id string, err error) {
 			parts := strings.Split(strings.Trim(path, "/"), "/")
 			for i, p := range parts {
 				if p == "edit" && i+1 < len(parts) {
-					return "azuredevops", parts[i+1], nil
+					return NameAzureDevOps, parts[i+1], nil
 				}
 			}
 		}
@@ -328,7 +338,7 @@ func Parse(source string) (provider string, id string, err error) {
 					// Extract first two dash-separated parts
 					idParts := strings.SplitN(slug, "-", 3)
 					if len(idParts) >= 2 {
-						return "linear", idParts[0] + "-" + idParts[1], nil
+						return NameLinear, idParts[0] + "-" + idParts[1], nil
 					}
 				}
 			}
@@ -338,29 +348,29 @@ func Parse(source string) (provider string, id string, err error) {
 	}
 
 	// Check for shorthand: github:owner/repo#123
-	if strings.HasPrefix(source, "github:") {
-		return "github", strings.TrimPrefix(source, "github:"), nil
+	if ref, ok := strings.CutPrefix(source, NameGitHub+":"); ok {
+		return NameGitHub, ref, nil
 	}
-	if strings.HasPrefix(source, "gitlab:") {
-		return "gitlab", strings.TrimPrefix(source, "gitlab:"), nil
+	if ref, ok := strings.CutPrefix(source, NameGitLab+":"); ok {
+		return NameGitLab, ref, nil
 	}
-	if strings.HasPrefix(source, "wrike:") {
-		return "wrike", strings.TrimPrefix(source, "wrike:"), nil
+	if ref, ok := strings.CutPrefix(source, NameWrike+":"); ok {
+		return NameWrike, ref, nil
 	}
-	if strings.HasPrefix(source, "linear:") {
-		return "linear", strings.TrimPrefix(source, "linear:"), nil
+	if ref, ok := strings.CutPrefix(source, NameLinear+":"); ok {
+		return NameLinear, ref, nil
 	}
-	if strings.HasPrefix(source, "ln:") {
-		return "linear", strings.TrimPrefix(source, "ln:"), nil
+	if ref, ok := strings.CutPrefix(source, "ln:"); ok {
+		return NameLinear, ref, nil
 	}
-	if strings.HasPrefix(source, "jira:") {
-		return "jira", strings.TrimPrefix(source, "jira:"), nil
+	if ref, ok := strings.CutPrefix(source, NameJira+":"); ok {
+		return NameJira, ref, nil
 	}
-	if strings.HasPrefix(source, "azuredevops:") {
-		return "azuredevops", strings.TrimPrefix(source, "azuredevops:"), nil
+	if ref, ok := strings.CutPrefix(source, NameAzureDevOps+":"); ok {
+		return NameAzureDevOps, ref, nil
 	}
-	if strings.HasPrefix(source, "ado:") {
-		return "azuredevops", strings.TrimPrefix(source, "ado:"), nil
+	if ref, ok := strings.CutPrefix(source, "ado:"); ok {
+		return NameAzureDevOps, ref, nil
 	}
 
 	return "", "", fmt.Errorf("unknown source format: %s", source)

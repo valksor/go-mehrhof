@@ -36,8 +36,8 @@ func (p *FileProvider) FetchTask(ctx context.Context, path string) (*Task, error
 
 	if len(lines) > 0 {
 		firstLine := strings.TrimSpace(lines[0])
-		if strings.HasPrefix(firstLine, "# ") {
-			title = strings.TrimPrefix(firstLine, "# ")
+		if after, ok := strings.CutPrefix(firstLine, "# "); ok {
+			title = after
 			description = strings.Join(lines[1:], "\n")
 		}
 	}

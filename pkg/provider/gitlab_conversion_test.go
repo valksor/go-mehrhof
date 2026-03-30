@@ -40,7 +40,7 @@ func TestGitLabProvider_IssueToTask_BasicFields(t *testing.T) {
 	if task.URL != "https://gitlab.com/owner/repo/-/issues/42" {
 		t.Errorf("URL mismatch")
 	}
-	if task.Source != "gitlab" {
+	if task.Source != NameGitLab {
 		t.Errorf("Source = %q, want gitlab", task.Source)
 	}
 	if len(task.Labels) != 2 {
@@ -125,7 +125,7 @@ func TestGitLabProvider_IssueToTask_NoLabelsNoAssignees(t *testing.T) {
 	if task == nil {
 		t.Fatal("issueToTask returned nil")
 	}
-	if task.Source != "gitlab" {
+	if task.Source != NameGitLab {
 		t.Errorf("Source = %q, want gitlab", task.Source)
 	}
 	if len(task.Labels) != 0 {
@@ -162,7 +162,7 @@ func TestGitLabProvider_MRToTask_BasicFields(t *testing.T) {
 	if task.Title != "Add dark mode" {
 		t.Errorf("Title = %q, want Add dark mode", task.Title)
 	}
-	if task.Source != "gitlab" {
+	if task.Source != NameGitLab {
 		t.Errorf("Source = %q, want gitlab", task.Source)
 	}
 	if task.Metadata("gitlab_is_mr") != "true" {
@@ -257,7 +257,7 @@ func TestGitLabProvider_ResolveDependencies_ShorthandRef(t *testing.T) {
 	if len(deps) == 0 {
 		t.Error("expected at least 1 dependency from shorthand ref")
 	}
-	if len(deps) > 0 && deps[0].Source != "gitlab" {
+	if len(deps) > 0 && deps[0].Source != NameGitLab {
 		t.Errorf("dep source = %q, want gitlab", deps[0].Source)
 	}
 }
