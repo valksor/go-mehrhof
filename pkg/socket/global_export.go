@@ -79,8 +79,7 @@ func parseSinceDuration(s string) (time.Duration, error) {
 	if d, err := time.ParseDuration(s); err == nil {
 		return d, nil
 	}
-	if strings.HasSuffix(s, "d") {
-		numStr := strings.TrimSuffix(s, "d")
+	if numStr, ok := strings.CutSuffix(s, "d"); ok {
 		var days int
 		if _, err := fmt.Sscanf(numStr, "%d", &days); err == nil {
 			return time.Duration(days) * 24 * time.Hour, nil

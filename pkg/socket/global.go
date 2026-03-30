@@ -36,9 +36,9 @@ type WorktreeInfo struct {
 	Path       string    `json:"path"`
 	SocketPath string    `json:"socket_path,omitempty"`
 	State      string    `json:"state"`
-	LastSeen   time.Time `json:"last_seen,omitempty"`
+	LastSeen   time.Time `json:"last_seen,omitzero"`
 	Healthy    *bool     `json:"healthy,omitempty"`
-	LastPing   time.Time `json:"last_ping,omitempty"`
+	LastPing   time.Time `json:"last_ping,omitzero"`
 	failCount  int       // consecutive ping failures (not serialized)
 }
 
@@ -395,7 +395,7 @@ func (g *GlobalSocket) handleProvidersList(_ context.Context, req *Request) (*Re
 		Configured  bool   `json:"configured"`
 	}
 
-	providers := []providerInfo{}
+	providers := make([]providerInfo, 0, len(providerLoginConfigs))
 	for name, cfg := range providerLoginConfigs {
 		token := resolveProviderToken(name)
 		providers = append(providers, providerInfo{
@@ -620,14 +620,7 @@ func (g *GlobalSocket) handleConfigValidate(_ context.Context, req *Request) (*R
 	// Check agent default is valid if settings loaded.
 	if effective.Agent.Default != "" {
 		allowed := []string{"claude", "codex", "openai", "anthropic", "ollama"}
-		valid := false
-		for _, a := range allowed {
-			if effective.Agent.Default == a {
-				valid = true
-
-				break
-			}
-		}
+		valid := slices.Contains(allowed, effective.Agent.Default)
 		if !valid {
 			if _, ok := effective.CustomAgents[effective.Agent.Default]; ok {
 				valid = true
@@ -2270,7 +2263,7 @@ func (g *GlobalSocket) Stop() error {
 
 // GetOrCreateWorktreeSocket returns an existing worktree socket or creates one on-demand.
 // This allows projects to use the global worker pool for planning/implementation.
-func (g *GlobalSocket) GetOrCreateWorktreeSocket(projectPath string) (interface{}, error) {
+func (g *GlobalSocket) GetOrCreateWorktreeSocket(projectPath string) (any, error) {
 	id := WorktreeIDFromPath(projectPath)
 	socketPath := WorktreeSocketPath(projectPath)
 

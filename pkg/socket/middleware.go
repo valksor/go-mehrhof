@@ -195,9 +195,9 @@ var writeVerbs = []string{
 func isWriteMethod(method string) bool {
 	// Extract the verb part: "projects.register" -> "register", "start" -> "start"
 	verb := method
-	if idx := strings.IndexByte(method, '.'); idx >= 0 {
+	if _, after, ok := strings.Cut(method, "."); ok {
 		// For dotted methods like "task.start", use the action part after the dot
-		verb = method[idx+1:]
+		verb = after
 	}
 	verb = strings.ToLower(verb)
 

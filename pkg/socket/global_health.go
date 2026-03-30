@@ -100,7 +100,7 @@ func (g *GlobalSocket) handleSystemHealth(_ context.Context, req *Request) (*Res
 		Path     string    `json:"path"`
 		State    string    `json:"state"`
 		Healthy  *bool     `json:"healthy"`
-		LastPing time.Time `json:"last_ping,omitempty"`
+		LastPing time.Time `json:"last_ping,omitzero"`
 	}
 
 	results := make([]worktreeHealth, 0, len(g.worktrees))

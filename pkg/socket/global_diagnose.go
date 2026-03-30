@@ -30,7 +30,7 @@ type diagnoseResponse struct {
 func (g *GlobalSocket) handleDiagnose(_ context.Context, req *Request) (*Response, error) {
 	preflight := agent.RunPreflight() //nolint:contextcheck // RunPreflight manages its own timeouts internally
 
-	var checks []diagnoseCheckResult
+	checks := make([]diagnoseCheckResult, 0, len(preflight.Checks))
 	var issues []string
 
 	for _, c := range preflight.Checks {
@@ -61,7 +61,7 @@ func (g *GlobalSocket) handleDiagnose(_ context.Context, req *Request) (*Respons
 
 	envMap, _ := settings.LoadEnvMap("")
 
-	var providers []diagnoseProviderResult
+	providers := make([]diagnoseProviderResult, 0, len(providerChecks))
 	for _, p := range providerChecks {
 		configured := false
 		if val := os.Getenv(p.envVar); val != "" {

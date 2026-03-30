@@ -9,6 +9,8 @@ import (
 	"github.com/valksor/kvelmo/pkg/worker"
 )
 
+const testAgentClaude = "claude"
+
 // newTestGlobalSocketWithPool2 creates a GlobalSocket with a real worker pool for testing.
 func newTestGlobalSocketWithPool2(t *testing.T) *GlobalSocket {
 	t.Helper()
@@ -74,7 +76,7 @@ func TestGlobalHandleAddWorker_WithPool(t *testing.T) {
 	ctx := context.Background()
 	g := newTestGlobalSocketWithPool2(t)
 
-	params := mustMarshal(t, AddWorkerParams{Agent: "claude"})
+	params := mustMarshal(t, AddWorkerParams{Agent: testAgentClaude})
 	resp, err := g.handleAddWorker(ctx, &Request{ID: "1", Params: params})
 	if err != nil {
 		t.Fatal(err)
@@ -90,8 +92,8 @@ func TestGlobalHandleAddWorker_WithPool(t *testing.T) {
 	if result.ID == "" {
 		t.Error("expected non-empty worker ID")
 	}
-	if result.AgentName != "claude" {
-		t.Errorf("agent = %q, want %q", result.AgentName, "claude")
+	if result.AgentName != testAgentClaude {
+		t.Errorf("agent = %q, want %q", result.AgentName, testAgentClaude)
 	}
 }
 
@@ -113,8 +115,8 @@ func TestGlobalHandleAddWorker_DefaultAgent(t *testing.T) {
 	if err := json.Unmarshal(resp.Result, &result); err != nil {
 		t.Fatalf("unmarshal: %v", err)
 	}
-	if result.AgentName != "claude" {
-		t.Errorf("agent = %q, want %q (default)", result.AgentName, "claude")
+	if result.AgentName != testAgentClaude {
+		t.Errorf("agent = %q, want %q (default)", result.AgentName, testAgentClaude)
 	}
 }
 
@@ -124,7 +126,7 @@ func TestGlobalHandleAddWorker_ExceedMaxWorkers(t *testing.T) {
 
 	// Add 2 workers to fill the pool
 	for i := range 2 {
-		params := mustMarshal(t, AddWorkerParams{Agent: "claude"})
+		params := mustMarshal(t, AddWorkerParams{Agent: testAgentClaude})
 		resp, err := g.handleAddWorker(ctx, &Request{ID: "1", Params: params})
 		if err != nil {
 			t.Fatal(err)
@@ -135,7 +137,7 @@ func TestGlobalHandleAddWorker_ExceedMaxWorkers(t *testing.T) {
 	}
 
 	// Adding a 3rd should fail
-	params := mustMarshal(t, AddWorkerParams{Agent: "claude"})
+	params := mustMarshal(t, AddWorkerParams{Agent: testAgentClaude})
 	resp, err := g.handleAddWorker(ctx, &Request{ID: "1", Params: params})
 	if err != nil {
 		t.Fatal(err)
@@ -164,7 +166,7 @@ func TestGlobalHandleRemoveWorker_AddThenRemove(t *testing.T) {
 	g := newTestGlobalSocketWithPool2(t)
 
 	// Add a worker
-	addParams := mustMarshal(t, AddWorkerParams{Agent: "claude"})
+	addParams := mustMarshal(t, AddWorkerParams{Agent: testAgentClaude})
 	addResp, err := g.handleAddWorker(ctx, &Request{ID: "1", Params: addParams})
 	if err != nil {
 		t.Fatal(err)

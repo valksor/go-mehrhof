@@ -9,6 +9,7 @@ import (
 	"net"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -367,7 +368,7 @@ func (w *WorktreeSocket) injectSeqAndBuffer(data []byte) []byte {
 	// Validate data is a non-empty JSON object
 	if len(data) < 2 || data[0] != '{' {
 		// Return safe fallback for invalid input
-		enriched := []byte(fmt.Sprintf(`{"seq":%d,"error":"invalid_input"}`+"\n", seq))
+		enriched := fmt.Appendf(nil, `{"seq":%d,"error":"invalid_input"}`+"\n", seq)
 		w.replayMu.Lock()
 		// Store a defensive copy to prevent shared backing memory issues
 		bufCopy := make([]byte, len(enriched))
@@ -382,7 +383,7 @@ func (w *WorktreeSocket) injectSeqAndBuffer(data []byte) []byte {
 	// Handle empty object {} specially to avoid invalid JSON {"seq":N,}
 	var enriched []byte
 	if len(data) == 2 && data[1] == '}' {
-		enriched = []byte(fmt.Sprintf(`{"seq":%d}`+"\n", seq))
+		enriched = fmt.Appendf(nil, `{"seq":%d}`+"\n", seq)
 	} else {
 		// data is a JSON object starting with `{`. Inject "seq":N right after the brace.
 		prefix := fmt.Appendf(nil, `{"seq":%d,`, seq)
@@ -753,14 +754,7 @@ func (w *WorktreeSocket) handleStart(ctx context.Context, req *Request) (*Respon
 	// Auto-advance: trigger next phase immediately after start.
 	// If "plan" is in skip_phases, jump straight to implement.
 	if params.AutoAdvance {
-		skipPlan := false
-		for _, p := range params.SkipPhases {
-			if p == "plan" {
-				skipPlan = true
-
-				break
-			}
-		}
+		skipPlan := slices.Contains(params.SkipPhases, "plan")
 		go func() { //nolint:contextcheck // intentionally uses background context for async auto-advance
 			bgCtx := context.Background()
 			if skipPlan {

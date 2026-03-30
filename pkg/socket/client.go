@@ -108,7 +108,7 @@ func NewClient(path string, opts ...ClientOption) (*Client, error) {
 	return c, nil
 }
 
-func (c *Client) Call(ctx context.Context, method string, params interface{}) (*Response, error) {
+func (c *Client) Call(ctx context.Context, method string, params any) (*Response, error) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -178,7 +178,7 @@ func (c *Client) SetTimeout(d time.Duration) {
 	c.timeout = d
 }
 
-func encodeParams(v interface{}) ([]byte, error) {
+func encodeParams(v any) ([]byte, error) {
 	switch p := v.(type) {
 	case []byte:
 		return p, nil

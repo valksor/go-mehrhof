@@ -98,7 +98,7 @@ func NewErrorResponse(id string, code int, message string) *Response {
 	}
 }
 
-func NewResultResponse(id string, result interface{}) (*Response, error) {
+func NewResultResponse(id string, result any) (*Response, error) {
 	data, err := json.Marshal(result)
 	if err != nil {
 		return nil, fmt.Errorf("marshal result: %w", err)

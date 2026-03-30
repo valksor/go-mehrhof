@@ -458,8 +458,7 @@ func TestServerMW_Roundtrip(t *testing.T) {
 		return NewResultResponse(req.ID, req.Params)
 	})
 
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	ctx := t.Context()
 
 	go func() { _ = srv.Start(ctx) }()
 	time.Sleep(50 * time.Millisecond)

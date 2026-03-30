@@ -2161,8 +2161,7 @@ func TestWorktreeSocket_Conductor(t *testing.T) {
 // ============================================================
 
 func TestWorktreeHandleStreamSubscribe(t *testing.T) {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel() // stops the drain goroutine started by handleStreamSubscribe
+	ctx := t.Context()
 	w := newTestWorktreeSocket(t)
 
 	c1, c2 := net.Pipe()

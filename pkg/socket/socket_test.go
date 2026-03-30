@@ -34,8 +34,7 @@ func TestServerClientRoundtrip(t *testing.T) {
 		return NewResultResponse(req.ID, req.Params)
 	})
 
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	ctx := t.Context()
 
 	go func() { _ = srv.Start(ctx) }()
 	time.Sleep(50 * time.Millisecond)
@@ -83,8 +82,7 @@ func TestGlobalSocket(t *testing.T) {
 	sockPath := filepath.Join(tmpDir, "global.sock")
 
 	global := NewGlobalSocket(sockPath)
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	ctx := t.Context()
 
 	go func() { _ = global.Start(ctx) }()
 	time.Sleep(50 * time.Millisecond)
@@ -125,8 +123,7 @@ func TestWorktreeSocket(t *testing.T) {
 	sockPath := filepath.Join(tmpDir, "wt.sock")
 
 	wt := NewWorktreeSocketSimple(sockPath, "/test/project")
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	ctx := t.Context()
 
 	go func() { _ = wt.Start(ctx) }()
 	time.Sleep(50 * time.Millisecond)
@@ -162,8 +159,7 @@ func TestClientRetry(t *testing.T) {
 		return NewResultResponse(req.ID, map[string]string{"pong": "ok"})
 	})
 
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	ctx := t.Context()
 
 	// Start server after 150ms to simulate delayed startup
 	go func() {

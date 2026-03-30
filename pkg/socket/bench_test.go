@@ -1,7 +1,6 @@
 package socket
 
 import (
-	"context"
 	"encoding/json"
 	"path/filepath"
 	"sync/atomic"
@@ -77,8 +76,7 @@ func BenchmarkClientCallRoundtrip(b *testing.B) {
 	sockPath := filepath.Join(tmpDir, "bench.sock")
 
 	gs := NewGlobalSocket(sockPath)
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	ctx := b.Context()
 
 	go func() { _ = gs.Start(ctx) }()
 	time.Sleep(50 * time.Millisecond)
@@ -100,8 +98,7 @@ func BenchmarkConcurrentClientCalls(b *testing.B) {
 	sockPath := filepath.Join(tmpDir, "b.sock")
 
 	gs := NewGlobalSocket(sockPath)
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	ctx := b.Context()
 
 	go func() { _ = gs.Start(ctx) }()
 	time.Sleep(100 * time.Millisecond)
@@ -122,12 +119,12 @@ func BenchmarkConcurrentClientCalls(b *testing.B) {
 		}
 	}()
 
-	var clientIdx int64
+	var clientIdx atomic.Int64
 
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
 		// Each goroutine uses its own client
-		idx := atomic.AddInt64(&clientIdx, 1) % numClients
+		idx := clientIdx.Add(1) % numClients
 		client := clients[idx]
 
 		for pb.Next() {

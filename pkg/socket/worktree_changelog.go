@@ -197,7 +197,7 @@ func renderChangelogMarkdown(entries []changelogEntry, note string, full bool) s
 		for _, e := range items {
 			fmt.Fprintf(&b, "- %s (%s)\n", e.Message, shortSHA(e.SHA))
 			if full && e.Body != "" {
-				for _, line := range strings.Split(e.Body, "\n") {
+				for line := range strings.SplitSeq(e.Body, "\n") {
 					fmt.Fprintf(&b, "  %s\n", line)
 				}
 			}
