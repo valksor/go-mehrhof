@@ -78,14 +78,18 @@ linters:
         - usetesting
         - wastedassign
         - whitespace
-#        - wsl_v5
-#        - tagliatelle
-#        - modernize
-#        - ireturn
-#        - varnamelen
-#        - prealloc
+        - gochecksumtype
+        - goconst
+        - importas
+        - modernize
+        - nosprintfhostport
+        - prealloc
+        - tparallel
 
     settings:
+        goconst:
+            min-occurrences: 5
+            ignore-tests: true
         errchkjson:
             # Only report json.Marshal calls that can genuinely fail (unsafe types).
             # Safe types like plain structs and map[string]string are ignored.
