@@ -96,7 +96,7 @@ export function FileBrowserWidget() {
   useEffect(() => {
     if (connected && !initialLoadDone.current) {
       initialLoadDone.current = true
-      loadEntries(currentPath)
+      void loadEntries(currentPath)
     }
     if (!connected) {
       initialLoadDone.current = false
@@ -132,7 +132,7 @@ export function FileBrowserWidget() {
   }
 
   const handleRefresh = () => {
-    loadEntries(currentPath)
+    void loadEntries(currentPath)
   }
 
   const handleSearchEntryClick = async (entry: SearchEntry) => {
@@ -195,7 +195,7 @@ export function FileBrowserWidget() {
 
         <div className="flex-1 min-w-0 flex items-center gap-1 text-xs text-base-content/60 font-mono overflow-hidden">
           <button
-            onClick={() => { setPathHistory([undefined]); setCurrentPath(undefined); loadEntries(undefined) }}
+            onClick={() => { setPathHistory([undefined]); setCurrentPath(undefined); void loadEntries(undefined) }}
             className="hover:text-base-content transition-colors flex-shrink-0"
           >
             /

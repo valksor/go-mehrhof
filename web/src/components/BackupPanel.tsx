@@ -57,7 +57,7 @@ export function BackupPanel({ isOpen, onClose }: BackupPanelProps) {
   // Load backups when panel opens
   useEffect(() => {
     if (isOpen && connected) {
-      loadBackups()
+      void loadBackups()
     }
   }, [isOpen, connected, loadBackups])
 

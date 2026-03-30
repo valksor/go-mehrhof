@@ -33,7 +33,7 @@ export function ActiveTasksWidget({ onSelectProject }: ActiveTasksWidgetProps) {
   // Initial load on connect; subsequent updates are event-driven via globalStore subscription.
   useEffect(() => {
     if (!connected) return
-    loadActiveTasks()
+    void loadActiveTasks()
   }, [connected, loadActiveTasks])
 
   const active = activeTasks.filter(t => stateIsActive(t.state))

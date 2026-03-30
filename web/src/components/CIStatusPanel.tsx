@@ -62,7 +62,7 @@ export function CIStatusPanel({ isOpen, onClose }: CIStatusPanelProps) {
 
   useEffect(() => {
     if (isOpen && connected) {
-      loadCIStatus()
+      void loadCIStatus()
     }
   }, [isOpen, connected, loadCIStatus])
 

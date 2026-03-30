@@ -62,7 +62,7 @@ export function EventLogPanel({ isOpen, onClose }: EventLogPanelProps) {
 
   useEffect(() => {
     if (isOpen && connected) {
-      loadEvents()
+      void loadEvents()
     }
   }, [isOpen, connected, loadEvents])
 

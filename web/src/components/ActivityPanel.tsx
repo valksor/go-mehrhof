@@ -147,7 +147,7 @@ export function ActivityPanel({ isOpen, onClose }: ActivityPanelProps) {
   // Auto-load when panel opens or filters change
   useEffect(() => {
     if (isOpen && connected) {
-      loadActivity()
+      void loadActivity()
     }
   }, [isOpen, connected, loadActivity])
 

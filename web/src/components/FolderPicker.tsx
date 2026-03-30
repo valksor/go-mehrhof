@@ -55,7 +55,7 @@ export function FolderPicker({ isOpen, onClose, onSelect }: FolderPickerProps) {
 
   useEffect(() => {
     if (isOpen) {
-      browse()
+      void browse()
     }
   }, [isOpen, browse])
 
@@ -65,12 +65,12 @@ export function FolderPicker({ isOpen, onClose, onSelect }: FolderPickerProps) {
   }
 
   const handleNavigate = (path: string) => {
-    browse(path)
+    void browse(path)
   }
 
   const handleGoUp = () => {
     if (parentPath && parentPath !== currentPath) {
-      browse(parentPath)
+      void browse(parentPath)
     }
   }
 

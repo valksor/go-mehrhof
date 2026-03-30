@@ -45,7 +45,7 @@ export function AccessPanel({ isOpen, onClose }: AccessPanelProps) {
 
   useEffect(() => {
     if (isOpen && connected) {
-      loadTokens()
+      void loadTokens()
     }
   }, [isOpen, connected, loadTokens])
 

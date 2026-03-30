@@ -10,7 +10,7 @@ export function JobsPanel() {
 
   useEffect(() => {
     if (connected) {
-      loadJobs()
+      void loadJobs()
     }
   }, [connected, loadJobs])
 

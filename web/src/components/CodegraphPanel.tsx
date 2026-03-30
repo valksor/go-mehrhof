@@ -86,7 +86,7 @@ export function CodegraphPanel({ isOpen, onClose }: CodegraphPanelProps) {
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
-      searchSymbols()
+      void searchSymbols()
     }
   }, [searchSymbols])
 

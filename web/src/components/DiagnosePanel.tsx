@@ -70,7 +70,7 @@ export function DiagnosePanel({ isOpen, onClose }: DiagnosePanelProps) {
 
   useEffect(() => {
     if (isOpen && connected) {
-      runDiagnose()
+      void runDiagnose()
     }
   }, [isOpen, connected, runDiagnose])
 

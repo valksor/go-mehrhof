@@ -54,7 +54,7 @@ export function LogsPanel({ isOpen, onClose }: LogsPanelProps) {
       }
     }
 
-    fetchHistory()
+    void fetchHistory()
     return () => { cancelled = true }
   }, [isOpen, tab, client, worktreeId])
 

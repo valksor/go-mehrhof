@@ -95,7 +95,7 @@ export function ChatWidget({ embedded = false, onModalCommand }: ChatWidgetProps
     }
 
     const timer = setTimeout(() => {
-      searchFiles(autocompleteQuery)
+      void searchFiles(autocompleteQuery)
     }, 150)
 
     return () => clearTimeout(timer)
@@ -259,7 +259,7 @@ export function ChatWidget({ embedded = false, onModalCommand }: ChatWidgetProps
       const refs = attachedIds.map(id => formatScreenshotRef(id)).join(' ')
       message = `${input}\n\n${refs}`
     }
-    sendMessage(message)
+    void sendMessage(message)
     setInput('')
     clearAttached()
     setAutocompleteMode(null)
@@ -297,7 +297,7 @@ export function ChatWidget({ embedded = false, onModalCommand }: ChatWidgetProps
     // Normal enter = submit
     if (e.key === 'Enter' && !e.shiftKey && !autocompleteMode) {
       e.preventDefault()
-      handleSubmit(e)
+      void handleSubmit(e)
     }
   }
 

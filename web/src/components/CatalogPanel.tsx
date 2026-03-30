@@ -53,7 +53,7 @@ export function CatalogPanel({ isOpen, onClose }: CatalogPanelProps) {
   // Auto-load when panel opens
   useEffect(() => {
     if (isOpen && connected) {
-      loadTemplates()
+      void loadTemplates()
       setView('list')
       setSelectedTemplate(null)
       setImportPath('')
@@ -104,7 +104,7 @@ export function CatalogPanel({ isOpen, onClose }: CatalogPanelProps) {
 
   const handleImportKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
-      handleImport()
+      void handleImport()
     }
   }
 

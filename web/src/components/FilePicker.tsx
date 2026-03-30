@@ -69,13 +69,13 @@ export function FilePicker({ isOpen, onClose, onSelect, startPath }: FilePickerP
 
   useEffect(() => {
     if (isOpen) {
-      browse(startPath)
+      void browse(startPath)
     }
   }, [isOpen, browse, startPath])
 
   const handleSelect = (entry: FileEntry) => {
     if (entry.is_dir) {
-      browse(entry.path)
+      void browse(entry.path)
     } else {
       onSelect(entry.path)
       onClose()
@@ -84,7 +84,7 @@ export function FilePicker({ isOpen, onClose, onSelect, startPath }: FilePickerP
 
   const handleGoUp = () => {
     if (parentPath && parentPath !== currentPath) {
-      browse(parentPath)
+      void browse(parentPath)
     }
   }
 

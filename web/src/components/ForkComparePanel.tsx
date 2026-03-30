@@ -24,7 +24,7 @@ export function ForkComparePanel() {
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
-    if (connected) listForks()
+    if (connected) void listForks()
   }, [connected, listForks])
 
   const handleCreate = useCallback(async () => {

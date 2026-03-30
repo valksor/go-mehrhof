@@ -20,7 +20,7 @@ function ConsolePanel() {
     }
   }, [getConsole])
 
-  useEffect(() => { refresh() }, [refresh])
+  useEffect(() => { void refresh() }, [refresh])
 
   const typeColor: Record<string, string> = {
     error: 'text-error',
@@ -69,7 +69,7 @@ function NetworkPanel() {
     }
   }, [getNetwork])
 
-  useEffect(() => { refresh() }, [refresh])
+  useEffect(() => { void refresh() }, [refresh])
 
   return (
     <div>
@@ -134,7 +134,7 @@ export function BrowserPanel() {
   const [evalResult, setEvalResult] = useState('')
 
   useEffect(() => {
-    checkStatus()
+    void checkStatus()
   }, [checkStatus])
 
   const handleNavigate = async () => {

@@ -60,7 +60,7 @@ export function MemoryPanel({ isOpen, onClose }: MemoryPanelProps) {
   // Load stats when panel opens
   useEffect(() => {
     if (isOpen && connected) {
-      loadMemoryStats()
+      void loadMemoryStats()
     }
   }, [isOpen, connected, loadMemoryStats])
 
@@ -84,7 +84,7 @@ export function MemoryPanel({ isOpen, onClose }: MemoryPanelProps) {
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
-      handleSearch()
+      void handleSearch()
     }
   }
 

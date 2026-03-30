@@ -39,7 +39,7 @@ export function HooksPanel({ isOpen, onClose }: HooksPanelProps) {
 
   useEffect(() => {
     if (isOpen && connected) {
-      loadHooks()
+      void loadHooks()
     }
   }, [isOpen, connected, loadHooks])
 

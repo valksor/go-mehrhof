@@ -66,8 +66,8 @@ export function AgentPanel() {
 
   useEffect(() => {
     if (!connected) return
-    fetchWorkers()
-    fetchStrategies()
+    void fetchWorkers()
+    void fetchStrategies()
     const interval = setInterval(fetchWorkers, 3000)
     const strategyInterval = setInterval(fetchStrategies, 30000)
     return () => {
@@ -80,7 +80,7 @@ export function AgentPanel() {
     if (!client) return
     try {
       await client.call('workers.add', { agent: newAgent })
-      fetchWorkers()
+      void fetchWorkers()
       setShowAddForm(false)
       setNewAgent(AGENT_OPTIONS[0].value)
     } catch (err) {
@@ -92,7 +92,7 @@ export function AgentPanel() {
     if (!client) return
     try {
       await client.call('workers.remove', { id })
-      fetchWorkers()
+      void fetchWorkers()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to remove worker')
     }

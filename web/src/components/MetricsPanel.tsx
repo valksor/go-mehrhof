@@ -60,7 +60,7 @@ export function MetricsPanel({ isOpen, onClose }: MetricsPanelProps) {
   }, [client, connected])
 
   useEffect(() => {
-    if (isOpen && connected) load()
+    if (isOpen && connected) void load()
   }, [isOpen, connected, load])
 
   const agents = metrics?.agents ? Object.entries(metrics.agents) : []

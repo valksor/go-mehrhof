@@ -29,7 +29,7 @@ export function ChecklistWidget({ embedded = false }: ChecklistWidgetProps) {
 
   useEffect(() => {
     if (connected && client && (state === 'reviewing' || state === 'implemented')) {
-      loadChecklist()
+      void loadChecklist()
     }
   }, [connected, client, state, loadChecklist])
 

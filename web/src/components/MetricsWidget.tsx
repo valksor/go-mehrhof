@@ -63,7 +63,7 @@ export function MetricsWidget() {
     const next = !showHistory
     setShowHistory(next)
     if (next && metricsHistory.length === 0) {
-      loadMetricsHistory()
+      void loadMetricsHistory()
     }
   }
 
@@ -80,7 +80,7 @@ export function MetricsWidget() {
           </button>
           <button
             className="btn btn-xs btn-ghost"
-            onClick={() => { loadMetrics(); if (showHistory) loadMetricsHistory() }}
+            onClick={() => { void loadMetrics(); if (showHistory) void loadMetricsHistory() }}
           >
             Refresh
           </button>
