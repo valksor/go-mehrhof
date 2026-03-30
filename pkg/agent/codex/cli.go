@@ -140,10 +140,11 @@ func (c *CLIConnection) Connect(ctx context.Context) error {
 
 // buildArgs constructs CLI arguments for Codex app-server.
 func (c *CLIConnection) buildArgs() []string {
-	args := []string{
+	args := make([]string, 0, 1+len(c.config.Args))
+	args = append(args,
 		"app-server",
 		// Multi-agent mode configured via ~/.codex/config.toml, not CLI flags
-	}
+	)
 
 	// Add configured arguments
 	args = append(args, c.config.Args...)

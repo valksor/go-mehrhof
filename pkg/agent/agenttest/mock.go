@@ -3,6 +3,7 @@ package agenttest
 
 import (
 	"context"
+	"maps"
 	"sync"
 	"time"
 
@@ -200,9 +201,7 @@ func (m *MockAgent) clone() *MockAgent {
 	copy(events, m.events)
 
 	env := make(map[string]string, len(m.env))
-	for k, v := range m.env {
-		env[k] = v
-	}
+	maps.Copy(env, m.env)
 
 	args := make([]string, len(m.args))
 	copy(args, m.args)

@@ -24,11 +24,12 @@ func ResolveCommandPath(name string) (string, error) {
 }
 
 func fallbackCommandPaths(name string) []string {
-	base := []string{
+	base := make([]string, 0, 5)
+	base = append(base,
 		filepath.Join("/opt/homebrew/bin", name),
 		filepath.Join("/usr/local/bin", name),
 		filepath.Join("/usr/bin", name),
-	}
+	)
 
 	if runtime.GOOS != "darwin" {
 		return base

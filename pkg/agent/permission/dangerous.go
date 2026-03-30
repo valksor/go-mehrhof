@@ -137,16 +137,16 @@ func detectPathDanger(path string) Result {
 func matchDangerousPath(path, pattern string) bool {
 	// Hidden directory patterns (like /.ssh/, /.gnupg/) can appear anywhere
 	// These are user directory patterns that could be in any home directory
-	if strings.HasPrefix(pattern, "/.") && strings.HasSuffix(pattern, "/") {
-		// Match if pattern appears anywhere in path
-		return strings.Contains(path, pattern) ||
-			strings.HasSuffix(path, strings.TrimSuffix(pattern, "/"))
+	if strings.HasPrefix(pattern, "/.") {
+		if trimmed, found := strings.CutSuffix(pattern, "/"); found {
+			// Match if pattern appears anywhere in path
+			return strings.Contains(path, pattern) ||
+				strings.HasSuffix(path, trimmed)
+		}
 	}
 
 	// For directory patterns (ending with /), use anchored prefix matching
-	if strings.HasSuffix(pattern, "/") {
-		dirPattern := strings.TrimSuffix(pattern, "/")
-
+	if dirPattern, found := strings.CutSuffix(pattern, "/"); found {
 		return path == dirPattern || strings.HasPrefix(path, pattern)
 	}
 

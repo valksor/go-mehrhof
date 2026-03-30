@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
+	"maps"
 	"net/http"
 	"strings"
 	"time"
@@ -240,9 +241,7 @@ func (p *Provider) ParseStream(ctx context.Context, body io.ReadCloser) (<-chan 
 			for _, tc := range resp.Message.ToolCalls {
 				// Convert arguments from map to map[string]any
 				input := make(map[string]any)
-				for k, v := range tc.Function.Arguments {
-					input[k] = v
-				}
+				maps.Copy(input, tc.Function.Arguments)
 
 				id := tc.ID
 				if id == "" {
@@ -309,7 +308,7 @@ type toolFunction struct {
 
 // convertMessages converts neutral messages to Ollama native format.
 func convertMessages(messages []apiagent.Message) []map[string]any {
-	var result []map[string]any
+	result := make([]map[string]any, 0, len(messages))
 
 	for _, msg := range messages {
 		m := map[string]any{
@@ -323,7 +322,7 @@ func convertMessages(messages []apiagent.Message) []map[string]any {
 				m["content"] = msg.Content
 			}
 
-			var toolCalls []map[string]any
+			toolCalls := make([]map[string]any, 0, len(msg.ToolCalls))
 			for _, tc := range msg.ToolCalls {
 				toolCalls = append(toolCalls, map[string]any{
 					"id": tc.ID,
@@ -347,7 +346,7 @@ func convertMessages(messages []apiagent.Message) []map[string]any {
 
 // convertTools converts neutral tool definitions to Ollama format.
 func convertTools(tools []apiagent.ToolDef) []map[string]any {
-	var result []map[string]any
+	result := make([]map[string]any, 0, len(tools))
 
 	for _, t := range tools {
 		result = append(result, map[string]any{

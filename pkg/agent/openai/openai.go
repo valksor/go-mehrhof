@@ -220,7 +220,7 @@ func (p *Provider) resolveAPIKey() string {
 // ConvertMessages converts neutral messages to OpenAI format.
 // Exported for reuse by OpenAI-compatible backends (Ollama, etc.).
 func ConvertMessages(messages []apiagent.Message) []map[string]any {
-	var result []map[string]any
+	result := make([]map[string]any, 0, len(messages))
 
 	for _, msg := range messages {
 		m := map[string]any{
@@ -235,7 +235,7 @@ func ConvertMessages(messages []apiagent.Message) []map[string]any {
 				m["content"] = msg.Content
 			}
 
-			var toolCalls []map[string]any
+			toolCalls := make([]map[string]any, 0, len(msg.ToolCalls))
 			for _, tc := range msg.ToolCalls {
 				argsJSON, _ := json.Marshal(tc.Input) //nolint:errchkjson // Input is always serializable map[string]any
 				toolCalls = append(toolCalls, map[string]any{
@@ -262,7 +262,7 @@ func ConvertMessages(messages []apiagent.Message) []map[string]any {
 // ConvertTools converts neutral tool definitions to OpenAI format.
 // Exported for reuse by OpenAI-compatible backends (Ollama, etc.).
 func ConvertTools(tools []apiagent.ToolDef) []map[string]any {
-	var result []map[string]any
+	result := make([]map[string]any, 0, len(tools))
 
 	for _, t := range tools {
 		result = append(result, map[string]any{

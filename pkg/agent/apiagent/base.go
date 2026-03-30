@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -249,7 +250,7 @@ func (b *Base) conversationLoop(ctx context.Context, cancel context.CancelFunc, 
 		}
 
 		// Collect this turn's response
-		var assistantText string
+		var assistantTextBuilder strings.Builder
 		var toolCalls []ToolCall
 		hadToolUse := false
 		var turnUsage *UsageData
@@ -267,7 +268,7 @@ func (b *Base) conversationLoop(ctx context.Context, cancel context.CancelFunc, 
 
 			switch chunk.Type {
 			case ChunkText:
-				assistantText += chunk.Text
+				assistantTextBuilder.WriteString(chunk.Text)
 				b.emit(events, agent.Event{
 					Type:      agent.EventStream,
 					Content:   chunk.Text,
@@ -317,6 +318,7 @@ func (b *Base) conversationLoop(ctx context.Context, cancel context.CancelFunc, 
 		}
 
 		// Add assistant message to conversation
+		assistantText := assistantTextBuilder.String()
 		messages = append(messages, Message{
 			Role:      RoleAssistant,
 			Content:   assistantText,

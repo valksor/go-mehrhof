@@ -1,6 +1,7 @@
 package recorder
 
 import (
+	"slices"
 	"testing"
 
 	"github.com/valksor/kvelmo/pkg/settings"
@@ -182,16 +183,7 @@ func TestCollectSensitiveValues_EnvVars(t *testing.T) {
 	s := &settings.Settings{}
 	vals := CollectSensitiveValues(s)
 
-	found := false
-	for _, v := range vals {
-		if v == "env-gh-tok" {
-			found = true
-
-			break
-		}
-	}
-
-	if !found {
+	if !slices.Contains(vals, "env-gh-tok") {
 		t.Error("expected GITHUB_TOKEN env var in collected values")
 	}
 }

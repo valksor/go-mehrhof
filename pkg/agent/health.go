@@ -117,9 +117,7 @@ func cooldownDuration(failures int) time.Duration {
 	shift := min(failures-1, 4)
 	d := base * time.Duration(1<<shift) // 30s, 60s, 120s, 240s
 
-	if d > 5*time.Minute {
-		d = 5 * time.Minute
-	}
+	d = min(d, 5*time.Minute)
 
 	return d
 }

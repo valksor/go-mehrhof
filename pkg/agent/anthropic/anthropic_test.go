@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/valksor/kvelmo/pkg/agent/anthropic"
@@ -61,13 +62,13 @@ func TestParseStreamText(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	var text string
+	var sb strings.Builder
 	var hasDone bool
 
 	for c := range chunks {
 		switch c.Type {
 		case apiagent.ChunkText:
-			text += c.Text
+			sb.WriteString(c.Text)
 		case apiagent.ChunkDone:
 			hasDone = true
 		case apiagent.ChunkToolUse, apiagent.ChunkError:
@@ -75,7 +76,7 @@ func TestParseStreamText(t *testing.T) {
 		}
 	}
 
-	if text != "Hello world!" {
+	if text := sb.String(); text != "Hello world!" {
 		t.Errorf("expected 'Hello world!', got %q", text)
 	}
 

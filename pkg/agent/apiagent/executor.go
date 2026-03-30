@@ -145,10 +145,7 @@ func (e *ToolExecutor) execReadFile(input map[string]any) (string, error) {
 		limit = int(l)
 	}
 
-	end := offset + limit
-	if end > len(lines) {
-		end = len(lines)
-	}
+	end := min(offset+limit, len(lines))
 
 	var buf strings.Builder
 	for i := offset; i < end; i++ {

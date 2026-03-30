@@ -228,23 +228,13 @@ func FilterRecords(records []Record, f Filter) []Record {
 		if f.Direction != "" && rec.Direction != f.Direction {
 			continue
 		}
-		if len(f.Types) > 0 && !containsString(f.Types, rec.Type) {
+		if len(f.Types) > 0 && !slices.Contains(f.Types, rec.Type) {
 			continue
 		}
 		result = append(result, rec)
 	}
 
 	return result
-}
-
-func containsString(slice []string, s string) bool {
-	for _, item := range slice {
-		if item == s {
-			return true
-		}
-	}
-
-	return false
 }
 
 // CleanOldRecordings removes recordings with modification time before the given

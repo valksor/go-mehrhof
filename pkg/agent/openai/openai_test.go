@@ -22,13 +22,13 @@ data: [DONE]
 `
 	chunks := openai.ParseOpenAIStream(context.Background(), io.NopCloser(strings.NewReader(sse)))
 
-	var text string
+	var sb strings.Builder
 	var hasDone bool
 
 	for c := range chunks {
 		switch c.Type {
 		case apiagent.ChunkText:
-			text += c.Text
+			sb.WriteString(c.Text)
 		case apiagent.ChunkDone:
 			hasDone = true
 		case apiagent.ChunkToolUse, apiagent.ChunkError:
@@ -36,7 +36,7 @@ data: [DONE]
 		}
 	}
 
-	if text != "Hello world" {
+	if text := sb.String(); text != "Hello world" {
 		t.Errorf("expected 'Hello world', got %q", text)
 	}
 

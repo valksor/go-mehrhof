@@ -182,11 +182,12 @@ func (w *WebSocketConnection) launchCodex(ctx context.Context) error {
 	w.cmdMu.Lock()
 	defer w.cmdMu.Unlock()
 
-	args := []string{
+	args := make([]string, 0, 3+len(w.config.Args))
+	args = append(args,
 		"app-server",
 		"--listen", fmt.Sprintf("ws://127.0.0.1:%d", w.port),
 		// Multi-agent mode configured via ~/.codex/config.toml, not CLI flags
-	}
+	)
 
 	// Add configured arguments
 	args = append(args, w.config.Args...)

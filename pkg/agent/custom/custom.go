@@ -9,6 +9,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"maps"
 	"os/exec"
 	"strings"
 	"sync"
@@ -463,9 +464,7 @@ func (a *Agent) WithEnv(key, value string) agent.Agent {
 		newCfg.Environment = make(map[string]string)
 	}
 	env := make(map[string]string, len(a.config.Environment)+1)
-	for k, v := range a.config.Environment {
-		env[k] = v
-	}
+	maps.Copy(env, a.config.Environment)
 	env[key] = value
 	newCfg.Environment = env
 

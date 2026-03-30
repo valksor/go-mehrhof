@@ -306,7 +306,7 @@ func convertMessage(msg apiagent.Message) map[string]any {
 
 // convertTools converts neutral tool definitions to Anthropic format.
 func convertTools(tools []apiagent.ToolDef) []map[string]any {
-	var result []map[string]any
+	result := make([]map[string]any, 0, len(tools))
 
 	for _, t := range tools {
 		result = append(result, map[string]any{
