@@ -86,7 +86,7 @@ export function QualityPanel({ isOpen, onClose }: QualityPanelProps) {
   }, [client, connected])
 
   useEffect(() => {
-    if (isOpen && connected) load()
+    if (isOpen && connected) void load()
   }, [isOpen, connected, load])
 
   return (

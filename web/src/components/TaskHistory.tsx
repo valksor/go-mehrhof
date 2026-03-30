@@ -181,7 +181,7 @@ export function TaskHistory() {
       ) : (
         <ul className="space-y-1.5">
           {(isSearchMode ? displayTasks : displayTasks.slice(0, 10)).map(task => {
-            const state = 'final_state' in task ? (task as ArchivedTask).final_state : (task as SearchTask).state
+            const state = 'final_state' in task ? (task).final_state : (task).state
             return (
               <li key={task.id} className="p-2 bg-base-300 rounded text-xs">
                 <div className="flex items-center justify-between gap-2">

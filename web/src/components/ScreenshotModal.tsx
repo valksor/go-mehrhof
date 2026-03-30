@@ -36,7 +36,7 @@ export function ScreenshotModal({ screenshot, onClose }: ScreenshotModalProps) {
 
   const handleDelete = () => {
     if (confirm('Delete this screenshot?')) {
-      deleteScreenshot(screenshot.id, client)
+      void deleteScreenshot(screenshot.id, client)
       onClose()
     }
   }

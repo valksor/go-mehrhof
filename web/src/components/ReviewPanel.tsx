@@ -370,7 +370,7 @@ function RiskGauge({ score, onEvaluate }: {
       {Object.keys(score.factors).length > 0 && (
         <div className="grid grid-cols-2 gap-1 text-xs text-base-content/50">
           {Object.entries(score.factors).map(([factor, value]) => (
-            <span key={factor}>{factor.replace(/_/g, ' ')}: {(value as number).toFixed(2)}</span>
+            <span key={factor}>{factor.replace(/_/g, ' ')}: {(value).toFixed(2)}</span>
           ))}
         </div>
       )}

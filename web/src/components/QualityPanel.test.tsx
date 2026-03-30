@@ -183,6 +183,7 @@ describe('QualityPanel', () => {
   })
 
   it('shows generic error for non-Error', async () => {
+    // eslint-disable-next-line @typescript-eslint/only-throw-error -- intentionally testing non-Error throw handling
     mockCall.mockImplementation(() => { throw 'string error' })
     const { findByText } = render(
       <QualityPanel isOpen={true} onClose={vi.fn()} />,

@@ -18,7 +18,7 @@ export function TaskQueue() {
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && source.trim()) {
-      handleAdd()
+      void handleAdd()
     }
     if (e.key === 'Escape') {
       setShowAdd(false)
@@ -27,13 +27,13 @@ export function TaskQueue() {
 
   const handleMoveUp = (task: QueuedTask) => {
     if (task.position > 1) {
-      reorderQueue(task.id, task.position - 1)
+      void reorderQueue(task.id, task.position - 1)
     }
   }
 
   const handleMoveDown = (task: QueuedTask) => {
     if (task.position < taskQueue.length) {
-      reorderQueue(task.id, task.position + 1)
+      void reorderQueue(task.id, task.position + 1)
     }
   }
 

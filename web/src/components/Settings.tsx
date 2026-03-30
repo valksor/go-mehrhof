@@ -60,7 +60,7 @@ export function Settings({ isOpen, onClose, defaultScope }: SettingsProps) {
   }, [client, isOpen, selectedProject])
 
   useEffect(() => {
-    loadSettings()
+    void loadSettings()
   }, [loadSettings])
 
   // Get values for display - use effective settings (includes defaults)

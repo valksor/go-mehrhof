@@ -13,7 +13,7 @@ export function RecapWidget() {
 
   useEffect(() => {
     if (connected) {
-      loadRecap()
+      void loadRecap()
     }
   }, [connected, state, loadRecap])
 

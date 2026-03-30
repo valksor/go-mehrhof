@@ -17,7 +17,7 @@ export function ReviewHistoryWidget({ embedded = false }: ReviewHistoryWidgetPro
 
   useEffect(() => {
     if (connected) {
-      loadReviews()
+      void loadReviews()
     }
   }, [connected, loadReviews])
 

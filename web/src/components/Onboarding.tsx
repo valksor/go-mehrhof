@@ -48,7 +48,7 @@ export function Onboarding({ onAddProject }: OnboardingProps) {
   }
 
   const handleAddProject = () => {
-    handleDismiss()
+    void handleDismiss()
     onAddProject()
   }
 

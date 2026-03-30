@@ -307,7 +307,7 @@ export function WorkflowBar() {
               // Extract event name from error message (e.g., "Run: kvelmo approve submit")
               const match = error.match(/kvelmo approve (\w+)/)
               const event = match ? match[1] : 'submit'
-              approveTransition(event)
+              void approveTransition(event)
             }}
             disabled={loading}
             className="btn btn-xs btn-warning ml-2 gap-1"
@@ -473,7 +473,7 @@ export function WorkflowBar() {
           <span className="text-sm">Delete branch after submitting</span>
         </label>
         <button
-          onClick={() => { setShowSubmitModal(false); submit({ dry_run: true }) }}
+          onClick={() => { setShowSubmitModal(false); void submit({ dry_run: true }) }}
           className="btn btn-sm btn-ghost btn-block mt-1"
         >
           Preview PR (dry-run)

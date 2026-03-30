@@ -26,7 +26,7 @@ export function TaskGroupPanel({ onClose }: { onClose: () => void }) {
   const [statusDetail, setStatusDetail] = useState<TaskGroup | null>(null)
 
   useEffect(() => {
-    if (connected) loadTaskGroups()
+    if (connected) void loadTaskGroups()
   }, [connected, loadTaskGroups])
 
   const handleCreate = useCallback(async () => {

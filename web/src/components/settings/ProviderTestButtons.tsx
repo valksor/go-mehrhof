@@ -52,7 +52,7 @@ export function ProviderTestButtons() {
   }, [client])
 
   useEffect(() => {
-    loadProviders()
+    void loadProviders()
   }, [loadProviders])
 
   const handleTest = async (provider: string) => {
@@ -182,7 +182,7 @@ export function ProviderTestButtons() {
               value={tokenInput}
               onChange={e => setTokenInput(e.target.value)}
               onKeyDown={e => {
-                if (e.key === 'Enter' && tokenInput.trim()) handleLogin(activeProvider.name)
+                if (e.key === 'Enter' && tokenInput.trim()) void handleLogin(activeProvider.name)
               }}
               placeholder={`Paste your ${activeProvider.label} API token`}
               className="input input-bordered input-sm flex-1"

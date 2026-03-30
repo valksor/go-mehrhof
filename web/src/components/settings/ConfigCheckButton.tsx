@@ -80,10 +80,10 @@ export function ConfigCheckButton() {
                     <div className="text-base-content/60 mt-0.5">{drift.description}</div>
                     <div className="flex gap-4 mt-1">
                       <span className="text-base-content/50">
-                        Expected: <span className="font-mono">{String(drift.expected ?? 'null')}</span>
+                        Expected: <span className="font-mono">{JSON.stringify(drift.expected ?? null)}</span>
                       </span>
                       <span className="text-base-content/50">
-                        Actual: <span className="font-mono">{String(drift.actual ?? 'null')}</span>
+                        Actual: <span className="font-mono">{JSON.stringify(drift.actual ?? null)}</span>
                       </span>
                     </div>
                   </div>

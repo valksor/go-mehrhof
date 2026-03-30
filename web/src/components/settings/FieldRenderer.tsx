@@ -333,7 +333,7 @@ export function FieldRenderer({ field, value, error, onChange, disabled }: Field
           <input
             id={fieldId}
             type="text"
-            value={String(value ?? '')}
+            value={value == null ? '' : String(value as string | number)}
             onChange={e => onChange(e.target.value)}
             placeholder={field.placeholder}
             disabled={disabled}

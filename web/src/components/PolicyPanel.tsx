@@ -52,7 +52,7 @@ export function PolicyPanel({ isOpen, onClose }: PolicyPanelProps) {
 
   useEffect(() => {
     if (isOpen && connected) {
-      checkPolicies()
+      void checkPolicies()
     }
   }, [isOpen, connected, checkPolicies])
 

@@ -18,13 +18,13 @@ export function StatsWidget() {
 
   useEffect(() => {
     if (!connected) return
-    loadMetrics()
-    loadActiveTasks()
+    void loadMetrics()
+    void loadActiveTasks()
   }, [connected, loadMetrics, loadActiveTasks])
 
   useEffect(() => {
     if (!projectConnected) return
-    loadCacheStats()
+    void loadCacheStats()
   }, [projectConnected, loadCacheStats])
 
   // Compute tasks by state
@@ -49,9 +49,9 @@ export function StatsWidget() {
   const idleWorkers = workerStats?.available_workers ?? (totalWorkers - activeWorkers)
 
   const handleRefresh = () => {
-    loadMetrics()
-    loadActiveTasks()
-    loadCacheStats()
+    void loadMetrics()
+    void loadActiveTasks()
+    void loadCacheStats()
   }
 
   return (

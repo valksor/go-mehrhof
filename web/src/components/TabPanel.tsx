@@ -297,7 +297,7 @@ function SpecContent({ data }: { data?: Record<string, unknown> }) {
       }
     }
 
-    fetchSpecs()
+    void fetchSpecs()
     return () => { cancelled = true }
   }, [connected, mode, loadSpec, loadPlan])
 

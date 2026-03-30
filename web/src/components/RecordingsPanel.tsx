@@ -72,7 +72,7 @@ export function RecordingsPanel({ isOpen, onClose }: RecordingsPanelProps) {
   // Load recordings when panel opens
   useEffect(() => {
     if (isOpen && connected) {
-      loadRecordings()
+      void loadRecordings()
     }
   }, [isOpen, connected, loadRecordings])
 
@@ -102,7 +102,7 @@ export function RecordingsPanel({ isOpen, onClose }: RecordingsPanelProps) {
 
   const handleFilterKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
-      loadRecordings()
+      void loadRecordings()
     }
   }
 

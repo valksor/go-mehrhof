@@ -60,7 +60,7 @@ export function SimpleProjectView() {
   useEffect(() => {
     if ((state === 'planned' || state === 'implemented') && specLoadedForState.current !== state) {
       specLoadedForState.current = state
-      loadSpec().then(setSpecs)
+      void loadSpec().then(setSpecs)
     }
   }, [state, loadSpec])
 
@@ -175,7 +175,7 @@ export function SimpleProjectView() {
                 id="task-source"
                 value={taskSource}
                 onChange={(e) => setTaskSource(e.target.value)}
-                onKeyDown={(e) => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) handleStart() }}
+                onKeyDown={(e) => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) void handleStart() }}
                 placeholder={"Paste a GitHub issue URL, file path, or describe the task...\n\nExamples:\n  https://github.com/org/repo/issues/42\n  file:task.md\n  Add error handling to the login flow"}
                 className="textarea textarea-bordered w-full min-h-32 text-base leading-relaxed"
                 disabled={loading}

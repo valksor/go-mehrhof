@@ -203,11 +203,11 @@ export function TaskWidget({ embedded = false }: TaskWidgetProps) {
 
   const loadOrQueue = (source: string, title?: string) => {
     if (hasActiveTask) {
-      queueTask(source, title)
+      void queueTask(source, title)
     } else if (quickMode) {
-      quickStart(source)
+      void quickStart(source)
     } else {
-      start(source)
+      void start(source)
     }
   }
 
@@ -216,7 +216,7 @@ export function TaskWidget({ embedded = false }: TaskWidgetProps) {
       const source = `empty:${taskDescription.trim()}`
       if (contextItems.length > 0) {
         // Use start directly to pass context items
-        start(source, quickMode, contextItems)
+        void start(source, quickMode, contextItems)
       } else {
         loadOrQueue(source, taskDescription.trim())
       }
@@ -492,7 +492,7 @@ export function TaskWidget({ embedded = false }: TaskWidgetProps) {
             onChange={e => setNewTag(e.target.value)}
             onKeyDown={e => {
               if (e.key === 'Enter' && newTag.trim()) {
-                addTag(newTag.trim())
+                void addTag(newTag.trim())
                 setNewTag('')
                 setShowTagInput(false)
               }
@@ -504,7 +504,7 @@ export function TaskWidget({ embedded = false }: TaskWidgetProps) {
             }}
             onBlur={() => {
               if (newTag.trim() && !tagCancelledRef.current) {
-                addTag(newTag.trim())
+                void addTag(newTag.trim())
               }
               tagCancelledRef.current = false
               setNewTag('')

@@ -33,7 +33,7 @@ export function ScreenshotThumbnail({
   const handleDelete = (e: React.MouseEvent) => {
     e.stopPropagation()
     if (confirm('Delete this screenshot?')) {
-      deleteScreenshot(screenshot.id, client)
+      void deleteScreenshot(screenshot.id, client)
     }
   }
 
@@ -60,7 +60,7 @@ export function ScreenshotThumbnail({
         ${isAttached ? 'ring-2 ring-success/50' : ''}
       `}
       onClick={handleClick}
-      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleClick() } }}
+      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); void handleClick() } }}
     >
       {/* Thumbnail image */}
       <div className="aspect-video bg-base-300 relative">

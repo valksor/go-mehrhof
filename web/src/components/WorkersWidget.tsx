@@ -13,8 +13,8 @@ export function WorkersWidget({ embedded = false }: WorkersWidgetProps) {
     if (!connected) return
 
     const interval = setInterval(() => {
-      loadWorkers()
-      loadWorkerStats()
+      void loadWorkers()
+      void loadWorkerStats()
     }, 5000)
 
     return () => clearInterval(interval)
