@@ -83,8 +83,8 @@ type Transition struct {
 
 // Guard pairs a predicate with a human-readable failure message.
 type Guard struct {
-	Check   func(ctx context.Context, wu *WorkUnit) bool
-	Message string // Shown when this guard fails
+	Check   func(ctx context.Context, wu *WorkUnit) bool `tstype:"-"`
+	Message string                                       // Shown when this guard fails
 }
 
 // TaskSummary is a compact representation of a task used for hierarchy context.
@@ -143,7 +143,7 @@ type WorkUnit struct {
 	// CancelledBy records who/what initiated cancellation: "user", "timeout", "policy", or "" (not cancelled).
 	CancelledBy string `json:"cancelled_by,omitempty"`
 	// CancelledAt records when cancellation occurred.
-	CancelledAt      time.Time                 `json:"cancelled_at,omitempty"`
+	CancelledAt      time.Time                 `json:"cancelled_at,omitzero"`
 	Approvals        map[string]ApprovalRecord `json:"approvals,omitempty"`         // Event -> approval record
 	ChecklistChecked []string                  `json:"checklist_checked,omitempty"` // Checked review items
 	ContextItems     []ContextItem             `json:"context_items,omitempty"`     // Attached context references (resolved at dispatch)

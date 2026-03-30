@@ -3,6 +3,7 @@ package conductor
 import (
 	"bytes"
 	"context"
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -215,7 +216,7 @@ func TestConductorStatus_WithTask(t *testing.T) {
 	if !ok {
 		t.Fatal("Status() missing 'task' key when task is loaded")
 	}
-	taskMap, ok := task.(map[string]interface{})
+	taskMap, ok := task.(map[string]any)
 	if !ok {
 		t.Fatal("Status()['task'] is not a map")
 	}
@@ -945,15 +946,7 @@ func TestNextStates_FromNone(t *testing.T) {
 	if len(states) == 0 {
 		t.Error("NextStates(None) should return at least one state")
 	}
-	found := false
-	for _, s := range states {
-		if s == StateLoaded {
-			found = true
-
-			break
-		}
-	}
-	if !found {
+	if !slices.Contains(states, StateLoaded) {
 		t.Error("NextStates(None) should include StateLoaded")
 	}
 }

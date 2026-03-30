@@ -2,6 +2,7 @@ package conductor
 
 import (
 	"context"
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -185,15 +186,7 @@ func TestStateMachineAvailableEvents(t *testing.T) {
 	events := m.AvailableEvents(ctx)
 
 	// From None, should have Start available
-	found := false
-	for _, e := range events {
-		if e == EventStart {
-			found = true
-
-			break
-		}
-	}
-	if !found {
+	if !slices.Contains(events, EventStart) {
 		t.Error("EventStart should be available from None state")
 	}
 }

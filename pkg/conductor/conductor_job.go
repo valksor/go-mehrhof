@@ -5,9 +5,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"log/slog"
+	"maps"
 	"os"
 	"path/filepath"
 	"regexp"
+	"slices"
 	"strings"
 	"time"
 
@@ -16,6 +18,7 @@ import (
 	"github.com/valksor/kvelmo/pkg/graph"
 	"github.com/valksor/kvelmo/pkg/memory"
 	"github.com/valksor/kvelmo/pkg/metrics"
+	"github.com/valksor/kvelmo/pkg/provider"
 	"github.com/valksor/kvelmo/pkg/security"
 	"github.com/valksor/kvelmo/pkg/storage"
 	"github.com/valksor/kvelmo/pkg/worker"
@@ -276,15 +279,7 @@ func (c *Conductor) watchJob(ctx context.Context, jobID string, completionEvent 
 						// No uncommitted changes - but Claude may have committed during the job.
 						// Capture the current HEAD if it's not already in checkpoints.
 						if headSHA, headErr := repo.CurrentCommit(ctx); headErr == nil && headSHA != "" {
-							isNew := true
-							for _, cp := range c.workUnit.Checkpoints {
-								if cp == headSHA {
-									isNew = false
-
-									break
-								}
-							}
-							if isNew {
+							if !slices.Contains(c.workUnit.Checkpoints, headSHA) {
 								c.workUnit.Checkpoints = append(c.workUnit.Checkpoints, headSHA)
 								c.recordCheckpointMeta(headSHA, fmt.Sprintf("%s complete (agent commit)", completionEvent), string(c.machine.State()))
 								slog.Info("checkpoint captured (agent commit)", "sha", headSHA, "event", completionEvent)
@@ -755,15 +750,15 @@ func (c *Conductor) shouldPostTicketComment() bool {
 	effectiveSettings := c.getEffectiveSettings()
 
 	switch c.workUnit.Source.Provider {
-	case "github":
+	case provider.NameGitHub:
 		return effectiveSettings.Providers.GitHub.AllowTicketComment
-	case "gitlab":
+	case provider.NameGitLab:
 		return effectiveSettings.Providers.GitLab.AllowTicketComment
-	case "wrike":
+	case provider.NameWrike:
 		return effectiveSettings.Providers.Wrike.AllowTicketComment
-	case "linear":
+	case provider.NameLinear:
 		return effectiveSettings.Providers.Linear.AllowTicketComment
-	case "jira":
+	case provider.NameJira:
 		return effectiveSettings.Providers.Jira.AllowTicketComment
 	default:
 		return false
@@ -807,9 +802,7 @@ func (c *Conductor) buildJobOptions() *worker.JobOptions {
 		if opts.Environment == nil {
 			opts.Environment = make(map[string]string)
 		}
-		for k, v := range c.canaryHarness.Env() {
-			opts.Environment[k] = v
-		}
+		maps.Copy(opts.Environment, c.canaryHarness.Env())
 	}
 
 	return opts

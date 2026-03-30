@@ -555,7 +555,7 @@ func (c *Conductor) SetContextItems(items []ContextItem) {
 
 		// Emit event so TUI and web UI see the attached context
 		if len(items) > 0 {
-			var refs []string
+			refs := make([]string, 0, len(items))
 			for _, item := range items {
 				refs = append(refs, fmt.Sprintf("@%s %s", item.Type, item.Ref))
 			}
@@ -839,17 +839,17 @@ func (c *Conductor) logVerbosef(format string, args ...any) {
 }
 
 // Status returns the current status for display.
-func (c *Conductor) Status() map[string]interface{} {
+func (c *Conductor) Status() map[string]any {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 
-	status := map[string]interface{}{
+	status := map[string]any{
 		"state":    c.machine.State(),
 		"worktree": c.worktree,
 	}
 
 	if c.workUnit != nil {
-		status["task"] = map[string]interface{}{
+		status["task"] = map[string]any{
 			"id":          c.workUnit.ID,
 			"title":       c.workUnit.Title,
 			"branch":      c.workUnit.Branch,

@@ -174,7 +174,7 @@ func (r *ContextResolver) resolveSymbol(ctx context.Context, item ContextItem) (
 
 // formatSymbolResults formats codegraph symbol query results.
 func (r *ContextResolver) formatSymbolResults(name string, symbols []codegraph.Symbol, label string) (ResolvedContext, error) {
-	var parts []string
+	parts := make([]string, 0, len(symbols))
 	for _, sym := range symbols {
 		parts = append(parts, fmt.Sprintf("- %s %s (%s:%d, package %s)", sym.Kind, sym.Name, sym.File, sym.Line, sym.Package))
 	}

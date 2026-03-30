@@ -7,6 +7,7 @@ import (
 	"log/slog"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"time"
 
@@ -457,15 +458,7 @@ func (c *Conductor) createCompletionCheckpoint(ctx context.Context, completionEv
 	} else {
 		// Capture agent commits if any.
 		if headSHA, headErr := repo.CurrentCommit(ctx); headErr == nil && headSHA != "" {
-			isNew := true
-			for _, cp := range c.workUnit.Checkpoints {
-				if cp == headSHA {
-					isNew = false
-
-					break
-				}
-			}
-			if isNew {
+			if !slices.Contains(c.workUnit.Checkpoints, headSHA) {
 				c.workUnit.Checkpoints = append(c.workUnit.Checkpoints, headSHA)
 				slog.Info("checkpoint captured (agent commit)", "sha", headSHA, "event", completionEvent)
 			}
@@ -722,14 +715,14 @@ func (c *Conductor) applyFailurePolicy(ctx context.Context, completionEvent Even
 // while a phase is actively running. Used by skip policy to verify the
 // machine hasn't been moved by a retry cycle before dispatching completion.
 func expectedInProgressState(phase string) State {
-	switch phase {
-	case "plan":
+	switch Event(phase) { //nolint:exhaustive // Only phase events have in-progress states
+	case EventPlan:
 		return StatePlanning
-	case "implement":
+	case EventImplement:
 		return StateImplementing
-	case "simplify":
+	case EventSimplify:
 		return StateSimplifying
-	case "optimize":
+	case EventOptimize:
 		return StateOptimizing
 	default:
 		return ""
@@ -740,13 +733,13 @@ func expectedInProgressState(phase string) State {
 func phaseFromEvent(event Event) string {
 	switch event { //nolint:exhaustive // Only completion events map to phases
 	case EventPlanDone:
-		return "plan"
+		return string(EventPlan)
 	case EventImplementDone:
-		return "implement"
+		return string(EventImplement)
 	case EventSimplifyDone:
-		return "simplify"
+		return string(EventSimplify)
 	case EventOptimizeDone:
-		return "optimize"
+		return string(EventOptimize)
 	default:
 		return ""
 	}
@@ -816,14 +809,14 @@ func (c *Conductor) evaluateAndMaybeIterate(_ context.Context, completionEvent E
 		}
 
 		var err error
-		switch phase {
-		case "implement":
+		switch Event(phase) { //nolint:exhaustive // Only iteratable phase events
+		case EventImplement:
 			_, err = c.Implement(c.lifecycleCtx)
-		case "simplify":
+		case EventSimplify:
 			_, err = c.Simplify(c.lifecycleCtx)
-		case "optimize":
+		case EventOptimize:
 			_, err = c.Optimize(c.lifecycleCtx)
-		case "plan":
+		case EventPlan:
 			_, err = c.Plan(c.lifecycleCtx)
 		}
 		if err != nil {

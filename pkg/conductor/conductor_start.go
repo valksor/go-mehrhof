@@ -19,8 +19,8 @@ import (
 // Returns empty string if no status label is found.
 func getStatusFromLabels(labels []string) string {
 	for _, label := range labels {
-		if strings.HasPrefix(label, "status:") {
-			return strings.TrimPrefix(label, "status:")
+		if after, ok := strings.CutPrefix(label, "status:"); ok {
+			return after
 		}
 	}
 
@@ -48,7 +48,7 @@ func (c *Conductor) Start(ctx context.Context, sourceRef string) error {
 
 	// Build hierarchy options from settings; currently Wrike-specific.
 	hierarchyOpts := provider.HierarchyOptions{}
-	if providerName == "wrike" {
+	if providerName == provider.NameWrike {
 		hierarchyOpts.IncludeParent = effectiveSettings.Providers.Wrike.IncludeParentContext
 		hierarchyOpts.IncludeSiblings = effectiveSettings.Providers.Wrike.IncludeSiblingContext
 	}

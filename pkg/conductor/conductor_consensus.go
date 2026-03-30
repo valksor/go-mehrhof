@@ -34,10 +34,7 @@ func (c *Conductor) runConsensusReview(ctx context.Context, prompt string) ([]fi
 		return nil, errors.New("no worker pool available")
 	}
 
-	minAgreement := cfg.MinAgreement
-	if minAgreement < 1 {
-		minAgreement = 1
-	}
+	minAgreement := max(cfg.MinAgreement, 1)
 
 	ctx, cancel := context.WithTimeout(ctx, consensusTimeout)
 	defer cancel()
@@ -161,9 +158,7 @@ func parseConsensusFindings(agentName, output string) []findings.Finding {
 
 	var result []findings.Finding
 
-	lines := strings.Split(output, "\n")
-
-	for _, line := range lines {
+	for line := range strings.SplitSeq(output, "\n") {
 		line = strings.TrimSpace(line)
 		if line == "" {
 			continue

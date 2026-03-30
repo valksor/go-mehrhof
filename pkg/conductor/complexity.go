@@ -1,6 +1,7 @@
 package conductor
 
 import (
+	"slices"
 	"strings"
 )
 
@@ -77,11 +78,8 @@ func isDefinitelyComplex(combinedText string, fileCount int, labels []string, ha
 	// Architectural labels indicate scope
 	complexLabels := []string{"architecture", "breaking-change", "migration", "refactor", "redesign", "epic"}
 	for _, label := range labels {
-		labelLower := strings.ToLower(label)
-		for _, cl := range complexLabels {
-			if labelLower == cl {
-				return true
-			}
+		if slices.Contains(complexLabels, strings.ToLower(label)) {
+			return true
 		}
 	}
 

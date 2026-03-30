@@ -739,11 +739,10 @@ func (c *Conductor) Delete(ctx context.Context, deleteBranch bool) error {
 // Returns empty strings if the format is not recognized.
 func parseOwnerRepo(externalID string) (string, string) {
 	// Format: owner/repo#number
-	hashIdx := strings.Index(externalID, "#")
-	if hashIdx < 0 {
+	repoPath, _, ok := strings.Cut(externalID, "#")
+	if !ok {
 		return "", ""
 	}
-	repoPath := externalID[:hashIdx]
 	parts := strings.SplitN(repoPath, "/", 2)
 	if len(parts) != 2 {
 		return "", ""

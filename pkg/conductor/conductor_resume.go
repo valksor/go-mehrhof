@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"strings"
 
 	"github.com/valksor/kvelmo/pkg/agent/recorder"
 )
@@ -85,20 +86,20 @@ func buildPriorContext(recordingPath, phase string) string {
 	}
 
 	// Build a summary of the agent's prior reasoning.
-	var summary string
-	summary += fmt.Sprintf("## Prior %s Phase Context\n\n", phase)
-	summary += "The following is a summary of the agent's previous reasoning during this phase:\n\n"
+	var sb strings.Builder
+	fmt.Fprintf(&sb, "## Prior %s Phase Context\n\n", phase)
+	sb.WriteString("The following is a summary of the agent's previous reasoning during this phase:\n\n")
 
 	for _, t := range sp.Thoughts {
 		switch t.Type {
 		case "decision":
-			summary += fmt.Sprintf("- Decision: %s\n", truncate(t.Content, 200))
+			fmt.Fprintf(&sb, "- Decision: %s\n", truncate(t.Content, 200))
 		case "reasoning":
-			summary += fmt.Sprintf("- Reasoning: %s\n", truncate(t.Content, 200))
+			fmt.Fprintf(&sb, "- Reasoning: %s\n", truncate(t.Content, 200))
 		}
 	}
 
-	return summary
+	return sb.String()
 }
 
 func truncate(s string, maxLen int) string {

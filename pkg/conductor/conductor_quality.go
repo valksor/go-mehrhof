@@ -324,10 +324,7 @@ func (c *Conductor) qualityGatePython(workDir string) error {
 	// Large projects can have thousands of .py files; ~100 files per batch is safe.
 	const batchSize = 100
 	for i := 0; i < len(pyFiles); i += batchSize {
-		end := i + batchSize
-		if end > len(pyFiles) {
-			end = len(pyFiles)
-		}
+		end := min(i+batchSize, len(pyFiles))
 		batch := pyFiles[i:end]
 
 		args := append([]string{"-m", "py_compile"}, batch...)

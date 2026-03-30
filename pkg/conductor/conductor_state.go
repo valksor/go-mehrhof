@@ -460,7 +460,7 @@ func taskStateToWorkUnit(ts *storage.TaskState) (State, *WorkUnit, []HistoryEntr
 		wu.Hierarchy = h
 	}
 
-	var history []HistoryEntry
+	history := make([]HistoryEntry, 0, len(ts.History))
 	for _, h := range ts.History {
 		history = append(history, HistoryEntry{
 			From:      State(h.From),
