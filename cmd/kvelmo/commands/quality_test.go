@@ -1,7 +1,6 @@
 package commands
 
 import (
-	"context"
 	"os"
 	"strings"
 	"testing"
@@ -41,8 +40,7 @@ func TestQualityRespondCommand_MustSpecifyYesOrNo(t *testing.T) {
 
 	// Start a worktree socket
 	wt := socket.NewWorktreeSocketSimple(sockPath, cwd)
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	ctx := t.Context()
 
 	startErr := make(chan error, 1)
 	go func() { startErr <- wt.Start(ctx) }()
@@ -103,8 +101,7 @@ func TestQualityRespondCommand_BothYesAndNo(t *testing.T) {
 
 	// Start a worktree socket
 	wt := socket.NewWorktreeSocketSimple(sockPath, cwd)
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	ctx := t.Context()
 
 	startErr := make(chan error, 1)
 	go func() { startErr <- wt.Start(ctx) }()
@@ -164,8 +161,7 @@ func TestQualityRespondCommand_WithSocket(t *testing.T) {
 
 	// Start a worktree socket
 	wt := socket.NewWorktreeSocketSimple(sockPath, cwd)
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	ctx := t.Context()
 
 	startErr := make(chan error, 1)
 	go func() { startErr <- wt.Start(ctx) }()

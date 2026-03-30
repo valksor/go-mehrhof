@@ -305,8 +305,8 @@ func parseDuration(s string) (time.Duration, error) {
 	var err error
 
 	// Handle day suffix
-	if strings.HasSuffix(s, "d") {
-		days, err := strconv.Atoi(strings.TrimSuffix(s, "d"))
+	if rest, found := strings.CutSuffix(s, "d"); found {
+		days, err := strconv.Atoi(rest)
 		if err != nil {
 			return 0, err
 		}

@@ -474,7 +474,7 @@ func buildContextItems() []conductor.ContextItem {
 // buildContextItemsFromFlags constructs ContextItems from file/symbol/commit flag slices.
 // Shared by start and quick commands to avoid divergence.
 func buildContextItemsFromFlags(files, symbols, commits []string) []conductor.ContextItem {
-	var items []conductor.ContextItem
+	items := make([]conductor.ContextItem, 0, len(files)+len(symbols)+len(commits))
 	for _, f := range files {
 		items = append(items, conductor.ContextItem{Type: conductor.ContextTypeFile, Ref: f})
 	}

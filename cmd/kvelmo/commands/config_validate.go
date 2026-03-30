@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"slices"
 
 	"github.com/spf13/cobra"
 
@@ -31,6 +32,12 @@ func init() {
 	configValidateCmd.Flags().BoolVar(&configValidateJSON, "json", false, "Output raw JSON")
 }
 
+const (
+	statusError   = "error"
+	statusOK      = "ok"
+	statusWarning = "warning"
+)
+
 type validateCheck struct {
 	Name   string `json:"name"`
 	Status string `json:"status"`
@@ -52,14 +59,14 @@ func runConfigValidate(_ *cobra.Command, _ []string) error {
 		result.Valid = false
 		result.Checks = append(result.Checks, validateCheck{
 			Name:   "Settings",
-			Status: "error",
+			Status: statusError,
 			Detail: settingsErr.Error(),
 			Fix:    "Run 'kvelmo config init' or fix YAML syntax in config file",
 		})
 	} else {
 		result.Checks = append(result.Checks, validateCheck{
 			Name:   "Settings",
-			Status: "ok",
+			Status: statusOK,
 			Detail: "valid",
 		})
 	}
@@ -67,15 +74,15 @@ func runConfigValidate(_ *cobra.Command, _ []string) error {
 	// Run preflight checks (git, agent CLIs).
 	preflight := agent.RunPreflight()
 	for _, c := range preflight.Checks {
-		status := "ok"
+		status := statusOK
 		switch c.Status {
 		case agent.CheckPassed:
 			// ok
 		case agent.CheckFailed:
-			status = "error"
+			status = statusError
 			result.Valid = false
 		case agent.CheckWarning:
-			status = "warning"
+			status = statusWarning
 		}
 		result.Checks = append(result.Checks, validateCheck{
 			Name:   c.Name,
@@ -100,13 +107,13 @@ func runConfigValidate(_ *cobra.Command, _ []string) error {
 		if token := detectExistingToken(p.envVar, settings.ScopeGlobal, ""); token != nil {
 			result.Checks = append(result.Checks, validateCheck{
 				Name:   p.name,
-				Status: "ok",
+				Status: statusOK,
 				Detail: "token configured",
 			})
 		} else {
 			result.Checks = append(result.Checks, validateCheck{
 				Name:   p.name,
-				Status: "warning",
+				Status: statusWarning,
 				Detail: "not configured",
 				Fix:    fmt.Sprintf("Set %s or run 'kvelmo provider login %s'", p.envVar, p.name),
 			})
@@ -116,14 +123,7 @@ func runConfigValidate(_ *cobra.Command, _ []string) error {
 	// Check agent default is valid if settings loaded.
 	if effective != nil && effective.Agent.Default != "" {
 		allowed := []string{"claude", "codex", "openai", "anthropic", "ollama"}
-		valid := false
-		for _, a := range allowed {
-			if effective.Agent.Default == a {
-				valid = true
-
-				break
-			}
-		}
+		valid := slices.Contains(allowed, effective.Agent.Default)
 		// Also allow custom agents.
 		if !valid {
 			if _, ok := effective.CustomAgents[effective.Agent.Default]; ok {
@@ -134,7 +134,7 @@ func runConfigValidate(_ *cobra.Command, _ []string) error {
 			result.Valid = false
 			result.Checks = append(result.Checks, validateCheck{
 				Name:   "agent.default",
-				Status: "error",
+				Status: statusError,
 				Detail: fmt.Sprintf("unknown agent %q", effective.Agent.Default),
 				Fix:    "Set agent.default to 'claude', 'codex', 'openai', 'anthropic', or 'ollama'",
 			})
@@ -168,9 +168,9 @@ func runConfigValidate(_ *cobra.Command, _ []string) error {
 	for _, c := range result.Checks {
 		symbol := "✓"
 		switch c.Status {
-		case "error":
+		case statusError:
 			symbol = "✗"
-		case "warning":
+		case statusWarning:
 			symbol = "⚠"
 		}
 
@@ -207,7 +207,7 @@ func runConfigValidate(_ *cobra.Command, _ []string) error {
 	} else {
 		fmt.Println("  ✗ Configuration has errors:")
 		for _, c := range result.Checks {
-			if c.Status == "error" && c.Fix != "" {
+			if c.Status == statusError && c.Fix != "" {
 				fmt.Printf("    • %s\n", c.Fix)
 			}
 		}

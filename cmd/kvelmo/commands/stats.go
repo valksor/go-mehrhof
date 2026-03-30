@@ -100,10 +100,7 @@ func runStatsHistory() error {
 
 	fmt.Printf("Metrics history: %d entries\n", len(result.Entries))
 	// Show last 5 entries as summary
-	start := len(result.Entries) - 5
-	if start < 0 {
-		start = 0
-	}
+	start := max(len(result.Entries)-5, 0)
 	for _, entry := range result.Entries[start:] {
 		var snap struct {
 			Timestamp string `json:"timestamp"`
@@ -236,10 +233,7 @@ func computeStats(tasks []storage.ArchivedTask) statsOutput {
 		out.AvgDuration = formatDuration(avg)
 	}
 
-	limit := 5
-	if len(tasks) < limit {
-		limit = len(tasks)
-	}
+	limit := min(5, len(tasks))
 	for _, t := range tasks[:limit] {
 		dur := t.CompletedAt.Sub(t.StartedAt)
 		title := t.Title

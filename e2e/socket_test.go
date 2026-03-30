@@ -21,7 +21,7 @@ func TestGlobalSocketE2E(t *testing.T) {
 	// Create and start global socket
 	gs := socket.NewGlobalSocket(sockPath)
 
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(t.Context())
 	defer cancel()
 
 	errCh := make(chan error, 1)
@@ -124,7 +124,7 @@ func TestWorktreeSocketE2E(t *testing.T) {
 	// Create worktree socket
 	ws := socket.NewWorktreeSocketSimple(sockPath, repoDir)
 
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(t.Context())
 	defer cancel()
 
 	errCh := make(chan error, 1)
@@ -209,8 +209,7 @@ func TestConcurrentClients(t *testing.T) {
 
 	gs := socket.NewGlobalSocket(sockPath)
 
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	ctx := t.Context()
 
 	go func() { _ = gs.Start(ctx) }()
 	time.Sleep(50 * time.Millisecond)
@@ -248,8 +247,7 @@ func TestProtocolErrors(t *testing.T) {
 
 	gs := socket.NewGlobalSocket(sockPath)
 
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	ctx := t.Context()
 
 	go func() { _ = gs.Start(ctx) }()
 	time.Sleep(50 * time.Millisecond)

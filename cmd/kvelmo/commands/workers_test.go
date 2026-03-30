@@ -1,7 +1,6 @@
 package commands
 
 import (
-	"context"
 	"strings"
 	"testing"
 	"time"
@@ -29,8 +28,7 @@ func TestWorkersCommand_EmptyPool(t *testing.T) {
 	sockPath := socket.GlobalSocketPath()
 
 	global := socket.NewGlobalSocket(sockPath)
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	ctx := t.Context()
 
 	go func() { _ = global.Start(ctx) }()
 	time.Sleep(50 * time.Millisecond)

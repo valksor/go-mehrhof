@@ -1,7 +1,6 @@
 package commands
 
 import (
-	"context"
 	"strings"
 	"testing"
 	"time"
@@ -33,8 +32,7 @@ func TestListCommand_EmptyProjects(t *testing.T) {
 	sockPath := socket.GlobalSocketPath()
 
 	global := socket.NewGlobalSocket(sockPath)
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	ctx := t.Context()
 
 	// Channel to capture start error
 	startErr := make(chan error, 1)

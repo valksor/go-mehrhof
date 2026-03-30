@@ -86,10 +86,7 @@ func printRecap(r socket.RecapResult) {
 	// Files changed
 	if len(r.FilesChanged) > 0 {
 		fmt.Printf("Files changed: %d\n", len(r.FilesChanged))
-		limit := len(r.FilesChanged)
-		if limit > 10 {
-			limit = 10
-		}
+		limit := min(len(r.FilesChanged), 10)
 		for _, f := range r.FilesChanged[:limit] {
 			fmt.Printf("  %s %s\n", fileStatusLabel(f.Status), f.Path)
 		}

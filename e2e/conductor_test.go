@@ -55,7 +55,7 @@ func TestFullConductorIntegration(t *testing.T) {
 		t.Fatalf("NewWorktreeSocket() error = %v", err)
 	}
 
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(t.Context())
 	defer cancel()
 
 	errCh := make(chan error, 1)

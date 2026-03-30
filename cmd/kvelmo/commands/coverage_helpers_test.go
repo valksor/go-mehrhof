@@ -164,6 +164,8 @@ func TestCompleteJobIDsWithArgsSkipsLookup(t *testing.T) {
 }
 
 func TestIsStaleSocket(t *testing.T) {
+	t.Parallel()
+
 	t.Run("missing path is not stale", func(t *testing.T) {
 		t.Parallel()
 

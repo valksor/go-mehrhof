@@ -1,7 +1,6 @@
 package commands
 
 import (
-	"context"
 	"os"
 	"strings"
 	"testing"
@@ -135,8 +134,7 @@ func TestRunQueueAdd_WithSocket(t *testing.T) {
 	sockPath := socket.WorktreeSocketPath(cwd)
 
 	wt := socket.NewWorktreeSocketSimple(sockPath, cwd)
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	ctx := t.Context()
 
 	startErr := make(chan error, 1)
 	go func() { startErr <- wt.Start(ctx) }()
@@ -191,8 +189,7 @@ func TestRunQueueRemove_WithSocket(t *testing.T) {
 	sockPath := socket.WorktreeSocketPath(cwd)
 
 	wt := socket.NewWorktreeSocketSimple(sockPath, cwd)
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	ctx := t.Context()
 
 	startErr := make(chan error, 1)
 	go func() { startErr <- wt.Start(ctx) }()
@@ -247,8 +244,7 @@ func TestRunQueueList_WithSocket(t *testing.T) {
 	sockPath := socket.WorktreeSocketPath(cwd)
 
 	wt := socket.NewWorktreeSocketSimple(sockPath, cwd)
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	ctx := t.Context()
 
 	startErr := make(chan error, 1)
 	go func() { startErr <- wt.Start(ctx) }()
@@ -303,8 +299,7 @@ func TestRunQueueReorder_WithSocket(t *testing.T) {
 	sockPath := socket.WorktreeSocketPath(cwd)
 
 	wt := socket.NewWorktreeSocketSimple(sockPath, cwd)
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	ctx := t.Context()
 
 	startErr := make(chan error, 1)
 	go func() { startErr <- wt.Start(ctx) }()

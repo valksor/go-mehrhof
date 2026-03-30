@@ -193,7 +193,7 @@ func runPipe(cmd *cobra.Command, args []string) error {
 			return fmt.Errorf("agent error: %s", event.Error)
 		case agent.EventAssistant, agent.EventToolUse, agent.EventToolResult,
 			agent.EventInit, agent.EventKeepAlive, agent.EventSubagent, agent.EventProgress,
-			agent.EventToolProgress, agent.EventInterrupted:
+			agent.EventToolProgress, agent.EventInterrupted, agent.EventPromptSuggestion:
 			// Not relevant to the pipe command; silently ignored.
 		}
 	}
