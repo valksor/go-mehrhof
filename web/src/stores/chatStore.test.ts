@@ -411,7 +411,7 @@ describe('chatStore', () => {
           { id: 'reject', label: 'Reject', type: 'reject' },
         ],
       })
-      await useChatStore.getState().handleAction(id, 'approve')
+      useChatStore.getState().handleAction(id, 'approve')
       const msg = useChatStore.getState().messages.find(m => m.id === id)
       expect(msg?.actions).toBeUndefined()
     })
@@ -423,7 +423,7 @@ describe('chatStore', () => {
         status: 'complete',
         actions: [{ id: 'approve', label: 'Approve', type: 'approve' }],
       })
-      await useChatStore.getState().handleAction(id, 'approve')
+      useChatStore.getState().handleAction(id, 'approve')
       const systemMsg = useChatStore.getState().messages.find(m => m.role === 'system')
       expect(systemMsg).toBeTruthy()
       expect(systemMsg?.content).toContain('Approve')
@@ -443,7 +443,7 @@ describe('chatStore', () => {
         status: 'complete',
         actions: [{ id: 'quality:prompt-1:yes', label: 'Yes, proceed', type: 'custom' }],
       })
-      await useChatStore.getState().handleAction(id, 'quality:prompt-1:yes')
+      useChatStore.getState().handleAction(id, 'quality:prompt-1:yes')
       expect(projectState.respondToPrompt).toHaveBeenCalledWith('prompt-1', true)
     })
 
@@ -461,7 +461,7 @@ describe('chatStore', () => {
         status: 'complete',
         actions: [{ id: 'quality:prompt-2:no', label: 'No, skip', type: 'custom' }],
       })
-      await useChatStore.getState().handleAction(id, 'quality:prompt-2:no')
+      useChatStore.getState().handleAction(id, 'quality:prompt-2:no')
       expect(projectState.respondToPrompt).toHaveBeenCalledWith('prompt-2', false)
     })
 
@@ -479,7 +479,7 @@ describe('chatStore', () => {
         status: 'complete',
         actions: [{ id: 'approve', label: 'Approve', type: 'approve' }],
       })
-      await useChatStore.getState().handleAction(id, 'approve')
+      useChatStore.getState().handleAction(id, 'approve')
       expect(projectState.review).toHaveBeenCalledWith({ approve: true })
     })
 
@@ -497,7 +497,7 @@ describe('chatStore', () => {
         status: 'complete',
         actions: [{ id: 'reject', label: 'Reject', type: 'reject' }],
       })
-      await useChatStore.getState().handleAction(id, 'reject')
+      useChatStore.getState().handleAction(id, 'reject')
       expect(projectState.review).toHaveBeenCalledWith({ reject: true })
     })
   })

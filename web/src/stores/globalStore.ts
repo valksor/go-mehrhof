@@ -261,7 +261,7 @@ export const useGlobalStore = create<GlobalState>()(
 
           const timeoutId = setTimeout(() => {
             set({ reconnectTimeoutId: null })
-            get().connect()
+            void get().connect()
           }, delay)
 
           set({
@@ -313,8 +313,8 @@ export const useGlobalStore = create<GlobalState>()(
           await get().loadWorkers()
           await get().loadActiveTasks()
           await get().loadAgentStatus()
-          get().loadHealth()
-          get().loadMetrics()
+          void get().loadHealth()
+          void get().loadMetrics()
         } catch (err) {
           set({
             connected: false,

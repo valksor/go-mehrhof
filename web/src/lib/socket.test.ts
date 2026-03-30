@@ -76,7 +76,7 @@ describe('SocketClient', () => {
 
   describe('connect', () => {
     it('creates WebSocket with correct URL', () => {
-      client.connect()
+      void client.connect()
       expect(getLatestWs().url).toBe('ws://test')
     })
 
@@ -146,12 +146,12 @@ describe('SocketClient', () => {
 
     it('increments request ID', async () => {
       // First call
-      client.call('test1')
+      void client.call('test1')
       const firstSent = getLatestWs().send.mock.calls[0][0]
       const firstId = JSON.parse(firstSent.replace('\n', '')).id
 
       // Second call
-      client.call('test2')
+      void client.call('test2')
       const secondSent = getLatestWs().send.mock.calls[1][0]
       const secondId = JSON.parse(secondSent.replace('\n', '')).id
 
@@ -278,7 +278,7 @@ describe('SocketClient', () => {
       getLatestWs().simulateClose()
 
       // Reconnect and send new message
-      client.connect()
+      void client.connect()
       getLatestWs().simulateOpen()
 
       // New message should work without old buffer

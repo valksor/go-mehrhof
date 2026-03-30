@@ -83,6 +83,7 @@ describe('themeStore', () => {
       useThemeStore.getState().setTheme('dark')
 
       // Check localStorage was called with correct key
+      // eslint-disable-next-line @typescript-eslint/unbound-method -- localStorage is mocked in vitest
       expect(localStorage.setItem).toHaveBeenCalledWith(
         'kvelmo-theme',
         expect.any(String)

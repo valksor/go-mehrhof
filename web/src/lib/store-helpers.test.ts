@@ -70,6 +70,7 @@ describe('asyncAction', () => {
 
   it('converts non-Error throws to string', async () => {
     const set = vi.fn()
+    // eslint-disable-next-line @typescript-eslint/only-throw-error -- intentionally testing non-Error throw handling
     await asyncAction(set, async () => { throw 'string error' }).catch(() => {})
     expect(set).toHaveBeenCalledWith({ error: 'string error' })
   })

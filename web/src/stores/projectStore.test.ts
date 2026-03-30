@@ -358,7 +358,7 @@ describe('projectStore', () => {
 
     it('clears reconnect timeout when present', () => {
       const clearTimeoutSpy = vi.spyOn(globalThis, 'clearTimeout')
-      const timeoutId = setTimeout(() => {}, 999999) as ReturnType<typeof setTimeout>
+      const timeoutId = setTimeout(() => {}, 999999)
       useProjectStore.setState({ reconnectTimeoutId: timeoutId })
       useProjectStore.getState().disconnect()
       expect(clearTimeoutSpy).toHaveBeenCalledWith(timeoutId)

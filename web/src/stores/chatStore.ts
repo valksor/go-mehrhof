@@ -399,7 +399,8 @@ export const useChatStore = create<ChatState>((set, get) => ({
     set({ messages: [], error: null, activeJobId: null })
   },
 
-  handleAction: async (messageId, actionId) => {
+  handleAction: (messageId, actionId) => {
+    void (async () => {
     const message = get().messages.find(m => m.id === messageId)
     if (!message) return
 
@@ -461,6 +462,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
     } else if (action.type === 'reject') {
       await useProjectStore.getState().review({ reject: true })
     }
+    })()
   },
 
   cancelOperation: () => {
@@ -473,7 +475,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
     if (activeJobId) {
       const worktreeId = useProjectStore.getState().worktreeId
       if (worktreeId) {
-        useGlobalStore.getState().stopChat(worktreeId, activeJobId)
+        void useGlobalStore.getState().stopChat(worktreeId, activeJobId)
       }
     }
     set({ isTyping: false, activeJobId: null })
@@ -490,7 +492,7 @@ useProjectStore.subscribe((state) => {
   if (worktreeId !== prevWorktreeId) {
     prevWorktreeId = worktreeId
     if (worktreeId) {
-      useChatStore.getState().loadHistory(worktreeId)
+      void useChatStore.getState().loadHistory(worktreeId)
     } else {
       useChatStore.setState({
         messages: [],

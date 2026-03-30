@@ -441,7 +441,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
           set({ reconnectTimeoutId: null })
           const wId = get().worktreeId
           if (wId) {
-            get().connect(wId)
+            void get().connect(wId)
           }
         }, delay)
 
@@ -515,9 +515,9 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
           get().appendOutput(`State: ${msg.state}`)
           debouncedRefresh()
           if (msg.state === 'planned') {
-            sendNotification('Planning Complete', 'Specification is ready for review')
+            void sendNotification('Planning Complete', 'Specification is ready for review')
           } else if (msg.state === 'implemented') {
-            sendNotification('Implementation Complete', 'Code is ready for review')
+            void sendNotification('Implementation Complete', 'Code is ready for review')
           }
         } else if (msg.type === 'task_abandoned' || msg.type === 'task_deleted' || msg.type === 'task_reset') {
           set({ state: msg.state || 'none' })
@@ -533,7 +533,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
         } else if (msg.type === 'job_completed') {
           get().appendOutput('Job completed')
           debouncedRefresh()
-          sendNotification('Task Completed', get().task?.title || 'Job finished successfully')
+          void sendNotification('Task Completed', get().task?.title || 'Job finished successfully')
         } else if (msg.type === 'phase_failure_classified') {
           const classified = msg as { failure_class?: FailureClass; failure_message?: string; message?: string; phase?: string }
           if (classified.failure_class) {
@@ -548,7 +548,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
         } else if (msg.type === 'job_failed') {
           get().appendOutput(`Job failed: ${msg.error || msg.content}`)
           set({ error: msg.error || 'Job failed' })
-          sendNotification('Task Failed', msg.error || 'A job has failed')
+          void sendNotification('Task Failed', msg.error || 'A job has failed')
         } else if (msg.type === 'screenshot_captured') {
           const screenshot = (msg as { data?: Screenshot }).data
           if (screenshot) {
@@ -595,11 +595,11 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
         } else if (msg.type === 'ci_fix_success') {
           set({ ciFixStatus: { active: false, result: 'success' } })
           get().appendOutput(msg.message || 'CI fix: pipeline passed')
-          sendNotification('CI Fix Success', 'Pipeline passed after fix')
+          void sendNotification('CI Fix Success', 'Pipeline passed after fix')
         } else if (msg.type === 'ci_fix_exhausted') {
           set({ ciFixStatus: { active: false, result: 'failed' } })
           get().appendOutput(msg.message || 'CI fix: all attempts exhausted')
-          sendNotification('CI Fix Failed', 'Pipeline still failing after all fix attempts')
+          void sendNotification('CI Fix Failed', 'Pipeline still failing after all fix attempts')
         } else if (msg.type === 'ci_fix_attempt_failed') {
           get().appendOutput(msg.message || 'CI fix: attempt failed, retrying...')
         } else if (msg.type === 'ci_fix_started') {
@@ -611,11 +611,11 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
         } else if (msg.type === 'autofix_success') {
           set({ autoFixStatus: { active: false, result: 'success' } })
           get().appendOutput(msg.message || 'Auto-fix: quality gate passed')
-          sendNotification('Auto-Fix Success', 'Quality gate passed after fix')
+          void sendNotification('Auto-Fix Success', 'Quality gate passed after fix')
         } else if (msg.type === 'autofix_exhausted') {
           set({ autoFixStatus: { active: false, result: 'failed' } })
           get().appendOutput(msg.message || 'Auto-fix: all attempts exhausted')
-          sendNotification('Auto-Fix Failed', 'Quality gate still failing after all fix attempts')
+          void sendNotification('Auto-Fix Failed', 'Quality gate still failing after all fix attempts')
         } else if (msg.type === 'autofix_job_failed') {
           get().appendOutput(msg.message || 'Auto-fix: fix job failed, retrying...')
         } else if (msg.type === 'autofix_started') {
@@ -653,9 +653,10 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
         } else if (msg.type === 'risk_evaluated') {
           try {
             const rawData = (msg as { data?: unknown }).data
-            const riskData = typeof rawData === 'string' ? JSON.parse(rawData) : rawData
+            const riskData: { score: number; factors: Record<string, number>; level: string } | null =
+              typeof rawData === 'string' ? JSON.parse(rawData) as { score: number; factors: Record<string, number>; level: string } : null
             if (riskData && typeof riskData.score === 'number') {
-              set({ riskScore: riskData as { score: number; factors: Record<string, number>; level: string } })
+              set({ riskScore: riskData })
               get().appendOutput(`Risk evaluated: ${riskData.score.toFixed(2)} (${riskData.level})`)
             }
           } catch {
@@ -688,7 +689,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
         }
       })
 
-      requestNotificationPermission()
+      void requestNotificationPermission()
 
       // Activate server-side event streaming. Pass last known seq so missed
       // events are replayed if this is a reconnect.

@@ -360,6 +360,7 @@ describe('layoutStore', () => {
   describe('persistence', () => {
     it('uses kvelmo-layout as storage key', () => {
       useLayoutStore.getState().toggleWidgetCollapsed('task')
+      // eslint-disable-next-line @typescript-eslint/unbound-method -- localStorage is mocked in vitest
       expect(localStorage.setItem).toHaveBeenCalledWith(
         'kvelmo-layout',
         expect.any(String)

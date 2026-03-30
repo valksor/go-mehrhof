@@ -87,7 +87,7 @@ function buildAgentGroups(fields: Field[]): FieldGroup[] {
     .filter(groupId => groups.has(groupId))
     .map(groupId => {
       const groupFields = groups.get(groupId)!
-      const meta = agentGroupMeta[groupId]!
+      const meta = agentGroupMeta[groupId]
 
       return {
         ...meta,

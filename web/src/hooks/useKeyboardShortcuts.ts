@@ -87,7 +87,7 @@ export function useKeyboardShortcuts() {
         if (selectedProject) {
           e.preventDefault()
           const { undo } = useProjectStore.getState()
-          undo()
+          void undo()
         }
         return
       }
@@ -98,7 +98,7 @@ export function useKeyboardShortcuts() {
         if (selectedProject) {
           e.preventDefault()
           const { redo } = useProjectStore.getState()
-          redo()
+          void redo()
         }
         return
       }
@@ -183,7 +183,7 @@ export function useKeyboardShortcuts() {
         e.preventDefault()
         chordKeyRef.current = null
         const { abort } = useProjectStore.getState()
-        abort()
+        void abort()
         return
       }
 
@@ -203,7 +203,7 @@ export function useKeyboardShortcuts() {
         e.preventDefault()
         chordKeyRef.current = null
         const { plan } = useProjectStore.getState()
-        plan()
+        void plan()
         return
       }
 
@@ -220,7 +220,7 @@ export function useKeyboardShortcuts() {
         e.preventDefault()
         chordKeyRef.current = null
         const { implement } = useProjectStore.getState()
-        implement()
+        void implement()
         return
       }
 
@@ -237,7 +237,7 @@ export function useKeyboardShortcuts() {
         e.preventDefault()
         chordKeyRef.current = null
         const { review } = useProjectStore.getState()
-        review({ approve: true })
+        void review({ approve: true })
         return
       }
 
@@ -271,7 +271,7 @@ export function useKeyboardShortcuts() {
         e.preventDefault()
         chordKeyRef.current = null
         const { stop } = useProjectStore.getState()
-        stop()
+        void stop()
         return
       }
 

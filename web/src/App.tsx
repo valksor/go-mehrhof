@@ -107,8 +107,8 @@ export default function App() {
 
   useEffect(() => {
     if (!DEMO_MODE) {
-      connect()
-      checkForUpdates()
+      void connect()
+      void checkForUpdates()
     }
   }, [connect])
 
@@ -138,7 +138,7 @@ export default function App() {
   useEffect(() => {
     if (DEMO_MODE) return
     if (selectedProject?.path) {
-      connectWorktree(selectedProject.path)
+      void connectWorktree(selectedProject.path)
     }
     return () => {
       disconnectWorktree()

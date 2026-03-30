@@ -146,11 +146,13 @@ describe('globalStore', () => {
     it('stores project id in sessionStorage', () => {
       const project = createMockProject({ id: 'proj-session' })
       useGlobalStore.getState().selectProject(project)
+      // eslint-disable-next-line @typescript-eslint/unbound-method -- sessionStorage is mocked in vitest
       expect(sessionStorage.setItem).toHaveBeenCalledWith('kvelmo-selectedProjectId', 'proj-session')
     })
 
     it('removes from sessionStorage when cleared', () => {
       useGlobalStore.getState().selectProject(null)
+      // eslint-disable-next-line @typescript-eslint/unbound-method -- sessionStorage is mocked in vitest
       expect(sessionStorage.removeItem).toHaveBeenCalledWith('kvelmo-selectedProjectId')
     })
 
@@ -246,7 +248,7 @@ describe('globalStore', () => {
 
     it('clears pending reconnect timeout', () => {
       const clearTimeoutSpy = vi.spyOn(globalThis, 'clearTimeout')
-      const id = setTimeout(() => {}, 999999) as ReturnType<typeof setTimeout>
+      const id = setTimeout(() => {}, 999999)
       useGlobalStore.setState({ reconnectTimeoutId: id })
       useGlobalStore.getState().disconnect()
       expect(clearTimeoutSpy).toHaveBeenCalledWith(id)
@@ -266,6 +268,7 @@ describe('globalStore', () => {
     it('uses kvelmo-global as storage key', () => {
       // Trigger a state change to exercise persist
       useGlobalStore.getState().selectProject(null)
+      // eslint-disable-next-line @typescript-eslint/unbound-method -- localStorage is mocked in vitest
       expect(localStorage.setItem).toHaveBeenCalledWith(
         'kvelmo-global',
         expect.any(String)
@@ -1061,7 +1064,7 @@ describe('globalStore', () => {
       client.subscribe((msg: unknown) => {
         const notification = msg as { method?: string }
         if (notification.method === 'task_state_changed') {
-          useGlobalStore.getState().loadActiveTasks()
+          void useGlobalStore.getState().loadActiveTasks()
         }
       })
 
@@ -1089,7 +1092,7 @@ describe('globalStore', () => {
       client.subscribe((msg: unknown) => {
         const notification = msg as { method?: string }
         if (notification.method === 'task_state_changed') {
-          useGlobalStore.getState().loadActiveTasks()
+          void useGlobalStore.getState().loadActiveTasks()
         }
       })
       injectClient(client)

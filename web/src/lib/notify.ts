@@ -5,7 +5,7 @@ export async function sendNotification(title: string, body: string) {
   try {
     if ('__TAURI__' in window) {
       const { sendNotification: tauriNotify } = await import('@tauri-apps/plugin-notification')
-      await tauriNotify({ title, body })
+      tauriNotify({ title, body })
       return
     }
 
