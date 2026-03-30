@@ -6,6 +6,8 @@ import (
 	"testing"
 )
 
+const testProjectDir = "/project"
+
 // stubLinter is a Linter implementation for testing Runner.Run error handling.
 type stubLinter struct {
 	name   string
@@ -111,7 +113,7 @@ func TestRunner_Run_MultipleLintersFirstErrors(t *testing.T) {
 
 func TestGolangCILintParseOutput_EmptyFilename(t *testing.T) {
 	g := NewGolangCILint()
-	baseDir := "/project"
+	baseDir := testProjectDir
 
 	// Issue with empty filename path — relPath should fall back to the empty string itself
 	output := []byte(`{
@@ -142,7 +144,7 @@ func TestGolangCILintParseOutput_EmptyFilename(t *testing.T) {
 
 func TestESLintParseOutput_EmptyFilePath(t *testing.T) {
 	e := NewESLint()
-	baseDir := "/project"
+	baseDir := testProjectDir
 
 	// filePath is empty string
 	output := []byte(`[

@@ -476,10 +476,7 @@ func (m *Model) outputHeight() int {
 	if m.layout == LayoutDashboard {
 		reserved += 3 // workers header + 2 worker rows
 	}
-	h := m.height - reserved
-	if h < 1 {
-		h = 1
-	}
+	h := max(m.height-reserved, 1)
 
 	return h
 }

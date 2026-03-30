@@ -9,6 +9,8 @@ import (
 	"github.com/valksor/kvelmo/pkg/meta"
 )
 
+const testBaseDir = "/test/base"
+
 func TestNewPathResolver(t *testing.T) {
 	t.Parallel()
 
@@ -49,7 +51,7 @@ func TestDefaultPathResolver(t *testing.T) {
 func TestPathResolver_GlobalSocketPath(t *testing.T) {
 	t.Parallel()
 
-	baseDir := "/test/base"
+	baseDir := testBaseDir
 	resolver := NewPathResolver(baseDir)
 
 	got := resolver.GlobalSocketPath()
@@ -63,7 +65,7 @@ func TestPathResolver_GlobalSocketPath(t *testing.T) {
 func TestPathResolver_GlobalLockPath(t *testing.T) {
 	t.Parallel()
 
-	baseDir := "/test/base"
+	baseDir := testBaseDir
 	resolver := NewPathResolver(baseDir)
 
 	got := resolver.GlobalLockPath()
@@ -103,7 +105,7 @@ func TestPathResolver_WorktreeSocketPath(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			baseDir := "/test/base"
+			baseDir := testBaseDir
 			resolver := NewPathResolver(baseDir)
 
 			got := resolver.WorktreeSocketPath(tt.worktreeDir)
@@ -122,7 +124,7 @@ func TestPathResolver_WorktreeSocketPath(t *testing.T) {
 func TestPathResolver_WorktreeSocketPath_Deterministic(t *testing.T) {
 	t.Parallel()
 
-	baseDir := "/test/base"
+	baseDir := testBaseDir
 	resolver := NewPathResolver(baseDir)
 	worktreeDir := "/Users/test/project"
 
@@ -138,7 +140,7 @@ func TestPathResolver_WorktreeSocketPath_Deterministic(t *testing.T) {
 func TestPathResolver_WorktreeSocketPath_UniqueHashes(t *testing.T) {
 	t.Parallel()
 
-	baseDir := "/test/base"
+	baseDir := testBaseDir
 	resolver := NewPathResolver(baseDir)
 
 	path1 := resolver.WorktreeSocketPath("/project/a")
@@ -152,7 +154,7 @@ func TestPathResolver_WorktreeSocketPath_UniqueHashes(t *testing.T) {
 func TestPathResolver_MemoryDir(t *testing.T) {
 	t.Parallel()
 
-	baseDir := "/test/base"
+	baseDir := testBaseDir
 	resolver := NewPathResolver(baseDir)
 
 	got := resolver.MemoryDir()
@@ -166,7 +168,7 @@ func TestPathResolver_MemoryDir(t *testing.T) {
 func TestPathResolver_ConfigPath(t *testing.T) {
 	t.Parallel()
 
-	baseDir := "/test/base"
+	baseDir := testBaseDir
 	resolver := NewPathResolver(baseDir)
 
 	got := resolver.ConfigPath()
@@ -180,7 +182,7 @@ func TestPathResolver_ConfigPath(t *testing.T) {
 func TestPathResolver_EnvPath(t *testing.T) {
 	t.Parallel()
 
-	baseDir := "/test/base"
+	baseDir := testBaseDir
 	resolver := NewPathResolver(baseDir)
 
 	got := resolver.EnvPath()

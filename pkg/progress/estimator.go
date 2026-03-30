@@ -63,10 +63,7 @@ func (e *Estimator) Get() Estimate {
 		}
 
 		remaining := e.meanDuration - elapsed
-		etaSeconds := int(remaining.Seconds())
-		if etaSeconds < 0 {
-			etaSeconds = 0
-		}
+		etaSeconds := max(int(remaining.Seconds()), 0)
 
 		return Estimate{
 			Percent:    percent,

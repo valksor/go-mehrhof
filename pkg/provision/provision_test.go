@@ -4,6 +4,7 @@ import (
 	"context"
 	"os"
 	"path/filepath"
+	"slices"
 	"testing"
 )
 
@@ -329,23 +330,15 @@ func writeFile(t *testing.T, path, content string) {
 func assertContains(t *testing.T, items []string, want string) {
 	t.Helper()
 
-	for _, item := range items {
-		if item == want {
-			return
-		}
+	if !slices.Contains(items, want) {
+		t.Errorf("slice %v does not contain %q", items, want)
 	}
-
-	t.Errorf("slice %v does not contain %q", items, want)
 }
 
 func assertNotContains(t *testing.T, items []string, notWant string) {
 	t.Helper()
 
-	for _, item := range items {
-		if item == notWant {
-			t.Errorf("slice %v should not contain %q", items, notWant)
-
-			return
-		}
+	if slices.Contains(items, notWant) {
+		t.Errorf("slice %v should not contain %q", items, notWant)
 	}
 }

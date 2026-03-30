@@ -82,5 +82,5 @@ type Event struct {
 	NodeID    string    `json:"node_id,omitempty"` // Graph node that produced this event
 	Content   string    `json:"content,omitempty"`
 	Data      any       `json:"data,omitempty"`
-	Timestamp time.Time `json:"timestamp,omitempty"`
+	Timestamp time.Time `json:"timestamp,omitzero"`
 }

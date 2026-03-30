@@ -98,7 +98,7 @@ func bestFuzzyMatch(query string, fields ...string) float64 {
 		}
 
 		// Compare against individual words in the field.
-		for _, word := range strings.Fields(fl) {
+		for word := range strings.FieldsSeq(fl) {
 			s = similarity(ql, word)
 			if s > best {
 				best = s

@@ -298,10 +298,7 @@ func (m *Metrics) Snapshot() Snapshot {
 			slices.Sort(sorted)
 
 			n := len(sorted)
-			p99Idx := int(math.Ceil(float64(n)*0.99)) - 1
-			if p99Idx < 0 {
-				p99Idx = 0
-			}
+			p99Idx := max(int(math.Ceil(float64(n)*0.99))-1, 0)
 			if p99Idx >= n {
 				p99Idx = n - 1
 			}

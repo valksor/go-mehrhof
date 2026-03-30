@@ -252,9 +252,7 @@ func (p *Pool) assignJob(job *Job) {
 	p.mu.Unlock()
 
 	// No worker available, re-queue after delay
-	p.wg.Add(1)
-	go func() {
-		defer p.wg.Done()
+	p.wg.Go(func() {
 		defer func() {
 			if r := recover(); r != nil {
 				slog.Error("job re-queue panic", "panic", r)
@@ -268,7 +266,7 @@ func (p *Pool) assignJob(job *Job) {
 			}
 		case <-p.ctx.Done():
 		}
-	}()
+	})
 }
 
 // executeWithAgent executes a job using an agent.

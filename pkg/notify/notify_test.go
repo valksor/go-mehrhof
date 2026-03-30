@@ -1,7 +1,6 @@
 package notify
 
 import (
-	"context"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -39,10 +38,7 @@ func TestNotifier_SendAndDispatch(t *testing.T) {
 
 	n := New(endpoints, false)
 
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	go n.Start(ctx)
+	go n.Start(t.Context())
 
 	payload := Payload{
 		Event:     "state_changed",
@@ -114,10 +110,7 @@ func TestNotifier_EventFilter(t *testing.T) {
 
 	n := New(endpoints, false)
 
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	go n.Start(ctx)
+	go n.Start(t.Context())
 
 	// Send state_changed — should be filtered out.
 	n.Send(Payload{
@@ -191,10 +184,7 @@ func TestNotifier_OnFailureOverride(t *testing.T) {
 
 	n := New(endpoints, true)
 
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	go n.Start(ctx)
+	go n.Start(t.Context())
 
 	n.Send(Payload{
 		Event:  "error",

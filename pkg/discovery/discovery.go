@@ -19,7 +19,7 @@ var makeTargetRe = regexp.MustCompile(`^([a-zA-Z0-9][a-zA-Z0-9_\-]*):(?:[^=]|$)`
 // Makefile targets, package.json scripts, Taskfile.yml tasks, and bin/ executables.
 // Results are formatted as ready-to-run commands (e.g. "make test", "bun run dev").
 func DiscoverTools(workDir string) []string {
-	var tools []string
+	tools := make([]string, 0, 32)
 	tools = append(tools, makeTargets(workDir)...)
 	tools = append(tools, packageJSONScripts(workDir)...)
 	tools = append(tools, taskfileTargets(workDir)...)

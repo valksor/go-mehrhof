@@ -30,7 +30,7 @@ type Variable struct {
 	Value       any       `json:"value"`
 	SetBy       string    `json:"set_by"`
 	Timestamp   time.Time `json:"timestamp"`
-	ExpiresAt   time.Time `json:"expires_at,omitempty"`   // Zero means no expiry
+	ExpiresAt   time.Time `json:"expires_at,omitzero"`    // Zero means no expiry
 	ExecutionID string    `json:"execution_id,omitempty"` // Scoped to a specific execution
 }
 

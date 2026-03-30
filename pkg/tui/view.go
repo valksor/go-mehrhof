@@ -280,13 +280,8 @@ func annotateOutputLines(lines []string) []string {
 // renderProgressBar returns a compact progress bar like "[████████░░] 72% ~1m30s".
 func renderProgressBar(percent float64, etaSeconds int, calibrated bool) string {
 	const barWidth = 10
-	filled := int(percent / 100 * float64(barWidth))
-	if filled > barWidth {
-		filled = barWidth
-	}
-	if filled < 0 {
-		filled = 0
-	}
+	filled := min(int(percent/100*float64(barWidth)), barWidth)
+	filled = max(filled, 0)
 
 	bar := strings.Repeat("\u2588", filled) + strings.Repeat("\u2591", barWidth-filled)
 	result := fmt.Sprintf("[%s] %d%%", bar, int(percent))

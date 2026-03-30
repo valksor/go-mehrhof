@@ -24,7 +24,7 @@ func NewWorktreeCreatorClient(globalSocketPath string) *WorktreeCreatorClient {
 }
 
 // GetOrCreateWorktreeSocket requests the primary instance to create a worktree socket.
-func (c *WorktreeCreatorClient) GetOrCreateWorktreeSocket(projectPath string) (interface{}, error) {
+func (c *WorktreeCreatorClient) GetOrCreateWorktreeSocket(projectPath string) (any, error) {
 	client, err := socket.NewClient(c.globalSocketPath, socket.WithTimeout(5*time.Second))
 	if err != nil {
 		return nil, fmt.Errorf("connect to global socket: %w", err)

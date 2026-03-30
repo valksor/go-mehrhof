@@ -84,10 +84,7 @@ func (s *Service) ProjectSummary(since time.Time) (map[string]int, error) {
 	if since.After(time.Now()) {
 		return make(map[string]int), nil
 	}
-	sinceD := time.Since(since)
-	if sinceD < 0 {
-		sinceD = 0
-	}
+	sinceD := max(time.Since(since), 0)
 
 	entries, err := s.activityLog.Query(activitylog.QueryOptions{
 		Since: sinceD,
@@ -120,8 +117,8 @@ func entryToActivity(e activitylog.Entry) Activity {
 
 // phaseFromMethod extracts the phase name from a method like "task.plan" -> "plan".
 func phaseFromMethod(method string) string {
-	if idx := strings.IndexByte(method, '.'); idx >= 0 {
-		return method[idx+1:]
+	if _, after, ok := strings.Cut(method, "."); ok {
+		return after
 	}
 
 	return method

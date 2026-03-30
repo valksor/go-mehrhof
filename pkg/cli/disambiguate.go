@@ -3,6 +3,7 @@ package cli
 import (
 	"fmt"
 	"os"
+	"slices"
 	"strings"
 
 	"github.com/spf13/cobra"
@@ -36,10 +37,8 @@ func DisambiguateCommand(root *cobra.Command, prefix string) (*cobra.Command, []
 		}
 
 		// Exact alias match
-		for _, alias := range cmd.Aliases {
-			if alias == prefix {
-				return cmd, nil
-			}
+		if slices.Contains(cmd.Aliases, prefix) {
+			return cmd, nil
 		}
 
 		// Prefix match on command name

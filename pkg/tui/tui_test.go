@@ -11,6 +11,8 @@ import (
 	"github.com/valksor/kvelmo/pkg/conductor"
 )
 
+const testChatPlaceholder = "Chat with agent..."
+
 func TestNewModel(t *testing.T) {
 	t.Run("sets cwd and layout", func(t *testing.T) {
 		m := NewModel("/tmp/proj", LayoutStacked)
@@ -59,8 +61,8 @@ func TestNewModel(t *testing.T) {
 
 	t.Run("chat input placeholder", func(t *testing.T) {
 		m := NewModel("/tmp/proj", LayoutStacked)
-		if m.chatInput.Placeholder != "Chat with agent..." {
-			t.Errorf("placeholder = %q, want %q", m.chatInput.Placeholder, "Chat with agent...")
+		if m.chatInput.Placeholder != testChatPlaceholder {
+			t.Errorf("placeholder = %q, want %q", m.chatInput.Placeholder, testChatPlaceholder)
 		}
 	})
 }

@@ -1,7 +1,6 @@
 package ratelimit
 
 import (
-	"context"
 	"sync"
 	"sync/atomic"
 	"testing"
@@ -144,10 +143,7 @@ func TestLimiterStartStop(t *testing.T) {
 	t.Parallel()
 
 	l := NewLimiter(10, 5)
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	l.Start(ctx)
+	l.Start(t.Context())
 
 	// Verify the limiter works while running.
 	if !l.Allow("test") {
@@ -190,17 +186,13 @@ func TestLimiterConcurrentAccess(t *testing.T) {
 	var allowed atomic.Int64
 
 	for range 10 {
-		wg.Add(1)
-
-		go func() {
-			defer wg.Done()
-
+		wg.Go(func() {
 			for range 50 {
 				if l.Allow("shared") {
 					allowed.Add(1)
 				}
 			}
-		}()
+		})
 	}
 
 	wg.Wait()

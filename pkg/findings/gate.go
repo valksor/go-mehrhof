@@ -17,7 +17,7 @@ type Blocker struct {
 
 // Evaluate runs all gate rules against the findings and returns any blockers.
 func Evaluate(gates []GateRule, findings []Finding) []Blocker {
-	var blockers []Blocker
+	blockers := make([]Blocker, 0, len(findings))
 	for _, gate := range gates {
 		blockers = append(blockers, gate.Evaluate(findings)...)
 	}

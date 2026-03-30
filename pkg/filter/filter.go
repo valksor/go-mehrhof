@@ -68,13 +68,8 @@ func (f *Filter[T]) Contains(accessor FieldAccessor[T], substr string) *Filter[T
 func (f *Filter[T]) In(accessor FieldAccessor[T], values ...any) *Filter[T] {
 	f.predicates = append(f.predicates, func(item T) bool {
 		val := accessor(item)
-		for _, v := range values {
-			if val == v {
-				return true
-			}
-		}
 
-		return false
+		return slices.Contains(values, val)
 	})
 
 	return f

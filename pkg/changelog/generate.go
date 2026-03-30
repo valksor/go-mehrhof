@@ -73,7 +73,7 @@ func GeneratePrompt(commits []CommitInfo, diff, diffStat, note string) string {
 	for _, c := range commits {
 		fmt.Fprintf(&b, "- %s %s (%s, %s)\n", c.SHA[:min(8, len(c.SHA))], c.Message, c.Author, c.Date)
 		if c.Body != "" {
-			for _, line := range strings.Split(c.Body, "\n") {
+			for line := range strings.SplitSeq(c.Body, "\n") {
 				fmt.Fprintf(&b, "  %s\n", line)
 			}
 		}
