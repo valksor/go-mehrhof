@@ -1,0 +1,439 @@
+import type { ChatCommand } from './chatCommandTypes'
+import { getState, isActive, worktreeClient, globalClient } from './chatCommandTypes'
+
+// ── Governance & Quality ──────────────────────────────────────────────────
+
+const governanceCommands: ChatCommand[] = [
+  {
+    name: '/approve',
+    description: 'Approve workflow transition',
+    isAvailable: () => getState().state === 'waiting',
+    execute: async () => {
+      const client = worktreeClient()
+      if (!client) return 'Not connected.'
+      await client.call('approve', {})
+      return 'Approved.'
+    },
+  },
+  {
+    name: '/checklist check',
+    description: 'Mark checklist item as checked',
+    isAvailable: () => isActive(),
+    execute: async (args) => {
+      const index = parseInt(args.trim(), 10)
+      if (isNaN(index)) return 'Usage: /checklist check <number>'
+      const client = worktreeClient()
+      if (!client) return 'Not connected.'
+      await client.call('review.checklist.check', { index })
+      return `Checklist item ${index} checked.`
+    },
+  },
+  {
+    name: '/checklist uncheck',
+    description: 'Unmark checklist item',
+    isAvailable: () => isActive(),
+    execute: async (args) => {
+      const index = parseInt(args.trim(), 10)
+      if (isNaN(index)) return 'Usage: /checklist uncheck <number>'
+      const client = worktreeClient()
+      if (!client) return 'Not connected.'
+      await client.call('review.checklist.uncheck', { index })
+      return `Checklist item ${index} unchecked.`
+    },
+  },
+  {
+    name: '/checklist',
+    description: 'Show review checklist',
+    isAvailable: () => isActive(),
+    execute: async () => {
+      const client = worktreeClient()
+      if (!client) return 'Not connected.'
+      const result = await client.call<{ items: Array<{ label: string; checked: boolean }> }>('review.checklist.get', {})
+      const items = result.items || []
+      if (items.length === 0) return 'No checklist items.'
+      return items.map((item, i) => `${item.checked ? '✓' : '☐'} ${i + 1}. ${item.label}`).join('\n')
+    },
+  },
+  {
+    name: '/quality',
+    description: 'Run code quality gates',
+    isAvailable: () => isActive(),
+    execute: async () => {
+      const client = worktreeClient()
+      if (!client) return 'Not connected.'
+      const result = await client.call<{ status: string; findings?: Array<{ message: string; severity: string }> }>('quality.respond', { action: 'run' })
+      if (!result.findings || result.findings.length === 0) return `Quality: ${result.status}`
+      return `Quality: ${result.status}\n` + result.findings.map(f => `[${f.severity}] ${f.message}`).join('\n')
+    },
+  },
+  {
+    name: '/ci',
+    description: 'Show CI pipeline status',
+    isAvailable: () => isActive(),
+    execute: async () => {
+      const client = worktreeClient()
+      if (!client) return 'Not connected.'
+      const result = await client.call<{ status: string; url?: string; checks?: Array<{ name: string; status: string }> }>('ci.status', {})
+      let out = `CI: ${result.status}`
+      if (result.url) out += ` (${result.url})`
+      if (result.checks && result.checks.length > 0) {
+        out += '\n' + result.checks.map(c => `${c.status === 'passed' ? '✓' : '✗'} ${c.name}`).join('\n')
+      }
+      return out
+    },
+  },
+  {
+    name: '/policy',
+    description: 'Check workflow policy compliance',
+    isAvailable: () => isActive(),
+    execute: async () => {
+      const client = worktreeClient()
+      if (!client) return 'Not connected.'
+      const result = await client.call<{ compliant: boolean; violations?: Array<{ rule: string; message: string }> }>('policy.check', {})
+      if (result.compliant) return 'Policy: compliant.'
+      const violations = result.violations || []
+      return 'Policy violations:\n' + violations.map(v => `  • ${v.rule}: ${v.message}`).join('\n')
+    },
+  },
+]
+
+// ── Files & Code ──────────────────────────────────────────────────────────
+
+const fileCommands: ChatCommand[] = [
+  {
+    name: '/files search',
+    description: 'Search project files',
+    isAvailable: () => true,
+    execute: async (args) => {
+      const pattern = args.trim()
+      if (!pattern) return 'Usage: /files search <pattern>'
+      const client = worktreeClient()
+      if (!client) return 'Not connected.'
+      const result = await client.call<{ files: string[] }>('files.search', { pattern })
+      const files = result.files || []
+      if (files.length === 0) return 'No matching files.'
+      return files.join('\n')
+    },
+  },
+  {
+    name: '/files',
+    description: 'List project files',
+    isAvailable: () => true,
+    execute: async (args) => {
+      const path = args.trim() || '.'
+      const client = worktreeClient()
+      if (!client) return 'Not connected.'
+      const result = await client.call<{ files: string[] }>('files.list', { path })
+      const files = result.files || []
+      if (files.length === 0) return 'No files.'
+      return files.join('\n')
+    },
+  },
+  {
+    name: '/git status',
+    description: 'Show git status',
+    isAvailable: () => true,
+    execute: async () => {
+      const client = worktreeClient()
+      if (!client) return 'Not connected.'
+      const result = await client.call<{ branch: string; has_changes: boolean; summary?: string }>('git.status', {})
+      let out = `Branch: ${result.branch}`
+      if (result.summary) out += '\n' + result.summary
+      else out += result.has_changes ? ' (has changes)' : ' (clean)'
+      return out
+    },
+  },
+  {
+    name: '/git log',
+    description: 'Show recent commits',
+    isAvailable: () => true,
+    execute: async () => {
+      const client = worktreeClient()
+      if (!client) return 'Not connected.'
+      const result = await client.call<{ entries: Array<{ sha: string; message: string }> }>('git.log', { limit: 10 })
+      const entries = result.entries || []
+      if (entries.length === 0) return 'No commits.'
+      return entries.map(e => `${e.sha.slice(0, 7)} ${e.message}`).join('\n')
+    },
+  },
+  {
+    name: '/codegraph search',
+    description: 'Search code symbols',
+    isAvailable: () => true,
+    execute: async (args) => {
+      const name = args.trim()
+      if (!name) return 'Usage: /codegraph search <symbol>'
+      const client = worktreeClient()
+      if (!client) return 'Not connected.'
+      const result = await client.call<{ symbols: Array<{ name: string; kind: string; file: string; line: number }> }>('codegraph.search', { name })
+      const symbols = result.symbols || []
+      if (symbols.length === 0) return 'No symbols found.'
+      return symbols.map(s => `${s.kind} ${s.name} — ${s.file}:${s.line}`).join('\n')
+    },
+  },
+]
+
+// ── Memory & Cache ────────────────────────────────────────────────────────
+
+const memoryCommands: ChatCommand[] = [
+  {
+    name: '/memory search',
+    description: 'Search semantic memory',
+    isAvailable: () => true,
+    execute: async (args) => {
+      const query = args.trim()
+      if (!query) return 'Usage: /memory search <query>'
+      const client = globalClient()
+      if (!client) return 'Not connected to global socket.'
+      const result = await client.call<{ results: Array<{ content: string; score: number }> }>('memory.search', { query, limit: 5 })
+      const results = result.results || []
+      if (results.length === 0) return 'No results.'
+      return results.map((r, i) => `${i + 1}. (${r.score.toFixed(2)}) ${r.content}`).join('\n')
+    },
+  },
+  {
+    name: '/memory stats',
+    description: 'Show memory store statistics',
+    isAvailable: () => true,
+    execute: async () => {
+      const client = globalClient()
+      if (!client) return 'Not connected to global socket.'
+      const result = await client.call<Record<string, unknown>>('memory.stats', {})
+      return JSON.stringify(result, null, 2)
+    },
+  },
+  {
+    name: '/cache stats',
+    description: 'Show response cache statistics',
+    isAvailable: () => true,
+    execute: async () => {
+      const client = worktreeClient()
+      if (!client) return 'Not connected.'
+      const result = await client.call<Record<string, unknown>>('cache.stats', {})
+      return JSON.stringify(result, null, 2)
+    },
+  },
+  {
+    name: '/cache clear',
+    description: 'Clear response cache',
+    isAvailable: () => true,
+    execute: async () => {
+      const client = worktreeClient()
+      if (!client) return 'Not connected.'
+      await client.call('cache.clear', {})
+      return 'Cache cleared.'
+    },
+  },
+]
+
+// ── Infrastructure & Utilities ────────────────────────────────────────────
+
+/** Parse "source..target [note]" into parts. */
+function parseChangelogArgs(args: string): { source: string; target: string; note: string } {
+  const input = args.trim()
+  const spaceIdx = input.indexOf(' ')
+  const refPart = spaceIdx === -1 ? input : input.slice(0, spaceIdx)
+  const note = spaceIdx === -1 ? '' : input.slice(spaceIdx + 1).trim()
+  const parts = refPart.split('..')
+  if (parts.length !== 2 || !parts[0] || !parts[1]) {
+    return { source: '', target: '', note: '' }
+  }
+  return { source: parts[0], target: parts[1], note }
+}
+
+const utilityCommands: ChatCommand[] = [
+  {
+    name: '/activity',
+    description: 'View RPC activity log',
+    isAvailable: () => true,
+    execute: async () => {
+      const client = globalClient()
+      if (!client) return 'Not connected to global socket.'
+      const result = await client.call<{ entries: Array<{ method: string; timestamp: string; duration_ms: number }> }>('activity.query', { limit: 20 })
+      const entries = result.entries || []
+      if (entries.length === 0) return 'No activity.'
+      return entries.map(e => `[${e.timestamp}] ${e.method} (${e.duration_ms}ms)`).join('\n')
+    },
+  },
+  {
+    name: '/audit',
+    description: 'View audit trail',
+    isAvailable: () => true,
+    execute: async () => {
+      const client = worktreeClient()
+      if (!client) return 'Not connected.'
+      const result = await client.call<{ entries: Array<{ action: string; timestamp: string; details?: string }> }>('task.export', { format: 'audit' })
+      return JSON.stringify(result, null, 2)
+    },
+  },
+  {
+    name: '/report',
+    description: 'Generate compliance report',
+    isAvailable: () => true,
+    execute: async () => {
+      const client = globalClient()
+      if (!client) return 'Not connected to global socket.'
+      const result = await client.call<{ report: string }>('report.generate', {})
+      return result.report || 'Report generated.'
+    },
+  },
+  {
+    name: '/backup',
+    description: 'Create state backup',
+    isAvailable: () => true,
+    execute: async () => {
+      const client = globalClient()
+      if (!client) return 'Not connected to global socket.'
+      const result = await client.call<{ path: string }>('backup.create', {})
+      return `Backup created: ${result.path}`
+    },
+  },
+  {
+    name: '/access',
+    description: 'List access tokens',
+    isAvailable: () => true,
+    execute: async () => {
+      const client = globalClient()
+      if (!client) return 'Not connected to global socket.'
+      const result = await client.call<{ tokens: Array<{ id: string; name: string; created: string }> }>('access.token.list', {})
+      const tokens = result.tokens || []
+      if (tokens.length === 0) return 'No access tokens.'
+      return tokens.map(t => `${t.id.slice(0, 8)} — ${t.name} (${t.created})`).join('\n')
+    },
+  },
+  {
+    name: '/changelog',
+    description: 'Generate changelog between git refs (source..target [note])',
+    isAvailable: () => true,
+    execute: async (args) => {
+      const { source, target, note } = parseChangelogArgs(args)
+      if (!source || !target) {
+        return 'Usage: /changelog <source>..<target> [note] (e.g. v1.0..v2.0 only frontend)'
+      }
+      const client = worktreeClient()
+      if (!client) return 'Not connected.'
+      const params: Record<string, unknown> = { source, target }
+      if (note) params.note = note
+      const result = await client.call<{ markdown: string }>('changelog.generate', params)
+      return result.markdown || `No commits between ${source} and ${target}`
+    },
+  },
+  {
+    name: '/changelog full',
+    description: 'Generate changelog with full descriptions',
+    isAvailable: () => true,
+    execute: async (args) => {
+      const { source, target, note } = parseChangelogArgs(args)
+      if (!source || !target) {
+        return 'Usage: /changelog full <source>..<target> [note]'
+      }
+      const client = worktreeClient()
+      if (!client) return 'Not connected.'
+      const params: Record<string, unknown> = { source, target, full: true }
+      if (note) params.note = note
+      const result = await client.call<{ markdown: string }>('changelog.generate', params)
+      return result.markdown || `No commits between ${source} and ${target}`
+    },
+  },
+  {
+    name: '/workers',
+    description: 'List worker pool',
+    isAvailable: () => true,
+    execute: async () => {
+      const client = globalClient()
+      if (!client) return 'Not connected to global socket.'
+      const result = await client.call<{ workers: Array<{ name: string; state: string }> }>('workers.list', {})
+      const workers = result.workers || []
+      if (workers.length === 0) return 'No workers.'
+      return workers.map(w => `${w.name} [${w.state}]`).join('\n')
+    },
+  },
+  {
+    name: '/discover',
+    description: 'Scan project for available commands',
+    isAvailable: () => true,
+    execute: async () => {
+      const client = worktreeClient()
+      if (!client) return 'Not connected.'
+      const result = await client.call<{ commands: Array<{ name: string; source: string }> }>('discovery.scan', {})
+      const commands = result.commands || []
+      if (commands.length === 0) return 'No project commands found.'
+      return commands.map(c => `[${c.source}] ${c.name}`).join('\n')
+    },
+  },
+  {
+    name: '/diagnose',
+    description: 'Run system diagnostics',
+    isAvailable: () => true,
+    execute: async () => {
+      const client = globalClient()
+      if (!client) return 'Not connected to global socket.'
+      const result = await client.call<{ checks: Array<{ name: string; status: string; detail?: string }> }>('system.diagnose', {})
+      const checks = result.checks || []
+      if (checks.length === 0) return 'Diagnostics: OK'
+      return checks.map(c => `${c.status === 'passed' ? '✓' : '✗'} ${c.name}${c.detail ? ': ' + c.detail : ''}`).join('\n')
+    },
+  },
+  {
+    name: '/security scan',
+    description: 'Run security scan',
+    isAvailable: () => true,
+    execute: async () => {
+      const client = globalClient()
+      if (!client) return 'Not connected to global socket.'
+      const result = await client.call<{ issues: Array<{ severity: string; message: string }> }>('security.scan', {})
+      const issues = result.issues || []
+      if (issues.length === 0) return 'No security issues found.'
+      return issues.map(i => `[${i.severity}] ${i.message}`).join('\n')
+    },
+  },
+  {
+    name: '/remote approve',
+    description: 'Approve pull request',
+    isAvailable: () => getState().state === 'submitted',
+    execute: async () => {
+      await getState().approveRemote()
+      return 'PR approved.'
+    },
+  },
+  {
+    name: '/remote merge',
+    description: 'Merge pull request',
+    isAvailable: () => getState().state === 'submitted',
+    execute: async () => {
+      await getState().mergeRemote()
+      return 'PR merged.'
+    },
+  },
+  {
+    name: '/onboarding reset',
+    description: 'Reset onboarding guide',
+    isAvailable: () => true,
+    execute: async () => {
+      const client = globalClient()
+      if (!client) return 'Not connected to global socket.'
+      await client.call('onboarding.reset', {})
+      return 'Onboarding reset. The guide will show again on next visit.'
+    },
+  },
+  {
+    name: '/config check',
+    description: 'Check configuration for drift',
+    isAvailable: () => true,
+    execute: async () => {
+      const client = globalClient()
+      if (!client) return 'Not connected to global socket.'
+      const result = await client.call<{ drifted: boolean; diffs?: Array<{ key: string; expected: string; actual: string }> }>('config.check', {})
+      if (!result.drifted) return 'Configuration: no drift detected.'
+      const diffs = result.diffs || []
+      return 'Configuration drift:\n' + diffs.map(d => `  ${d.key}: expected=${d.expected}, actual=${d.actual}`).join('\n')
+    },
+  },
+]
+
+export const infraCommands: ChatCommand[] = [
+  ...governanceCommands,
+  ...fileCommands,
+  ...memoryCommands,
+  ...utilityCommands,
+]

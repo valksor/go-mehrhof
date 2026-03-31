@@ -796,7 +796,7 @@ describe('info commands execution', () => {
 
   it('/show plan returns plan content', async () => {
     const cmd = COMMANDS.find(c => c.name === '/show plan')!
-    mockClientCall.mockResolvedValue({ specifications: [{ content: 'Plan step 1' }] })
+    mockClientCall.mockResolvedValue({ plans: [{ content: 'Plan step 1' }] })
     setState({ state: 'loaded', client: { call: mockClientCall } })
     expect(await cmd.execute('')).toBe('Plan step 1')
     expect(mockClientCall).toHaveBeenCalledWith('show.plan', {})
@@ -804,7 +804,7 @@ describe('info commands execution', () => {
 
   it('/show plan returns no plan when empty', async () => {
     const cmd = COMMANDS.find(c => c.name === '/show plan')!
-    mockClientCall.mockResolvedValue({ specifications: [] })
+    mockClientCall.mockResolvedValue({ plans: [] })
     setState({ state: 'loaded', client: { call: mockClientCall } })
     expect(await cmd.execute('')).toBe('No plan available.')
   })
