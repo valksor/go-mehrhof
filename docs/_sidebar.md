@@ -40,6 +40,11 @@
   - [Forks](/web-ui/forks.md)
   - [Task Groups](/web-ui/task-groups.md)
   - [Changelog](/web-ui/changelog.md)
+  - [Event Log](/web-ui/eventlog.md)
+  - [File Changes](/web-ui/file-changes.md)
+  - [Metrics](/web-ui/metrics.md)
+  - [PR Preview](/web-ui/pr-preview.md)
+  - [Quality Gates](/web-ui/quality.md)
   - [Settings](/web-ui/settings.md)
 
 - CLI Reference
