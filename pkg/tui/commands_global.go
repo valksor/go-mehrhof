@@ -19,6 +19,7 @@ var globalHandlers = map[string]globalHandler{
 	"/workers":          glWorkers,
 	"/memory search":    glMemorySearch,
 	"/memory stats":     glMemoryStats,
+	"/memory clear":     glMemoryClear,
 	"/group create":     glGroupCreate,
 	"/group list":       glGroupList,
 	"/group status":     glGroupStatus,
@@ -30,7 +31,12 @@ var globalHandlers = map[string]globalHandler{
 	"/report":           glReport,
 	"/backup":           glBackup,
 	"/restore":          glRestore,
+	"/access create":    glAccessCreate,
+	"/access revoke":    glAccessRevoke,
 	"/access":           glAccess,
+	"/logs":             glLogs,
+	"/workers add":      glWorkersAdd,
+	"/workers remove":   glWorkersRemove,
 	"/diagnose":         glDiagnose,
 	"/security scan":    glSecurityScan,
 	"/onboarding reset": glOnboardingReset,
@@ -141,6 +147,15 @@ func glMemoryStats(ctx context.Context, client *socket.Client, _ string) (string
 	}
 
 	return string(resp.Result), nil
+}
+
+func glMemoryClear(ctx context.Context, client *socket.Client, _ string) (string, error) {
+	_, err := client.Call(ctx, "memory.clear", nil)
+	if err != nil {
+		return "", fmt.Errorf("memory clear: %w", err)
+	}
+
+	return "Memory cleared.", nil
 }
 
 // ── Task Groups ─────────────────────────────────────────────────────────────
@@ -591,4 +606,103 @@ func glCatalogUse(ctx context.Context, client *socket.Client, args string) (stri
 	}
 
 	return fmt.Sprintf("Template %q (source: %s). Run from a project: /start %s", name, tmpl.Source, tmpl.Source), nil
+}
+
+// ── Access Token Management ────────────────────────────────────────────────
+
+func glAccessCreate(ctx context.Context, client *socket.Client, args string) (string, error) {
+	label := strings.TrimSpace(args)
+	if label == "" {
+		return "Usage: /access create <label>", nil
+	}
+	resp, err := client.Call(ctx, "access.token.create", json.RawMessage(mustJSON(map[string]string{"role": "operator", "label": label})))
+	if err != nil {
+		return "", fmt.Errorf("access token create: %w", err)
+	}
+	var result struct {
+		Token string `json:"token"`
+	}
+	if err := json.Unmarshal(resp.Result, &result); err != nil {
+		return "", fmt.Errorf("parse response: %w", err)
+	}
+
+	return fmt.Sprintf("Token created:\n%s\n\nSave this token — it cannot be shown again.", result.Token), nil
+}
+
+func glAccessRevoke(ctx context.Context, client *socket.Client, args string) (string, error) {
+	id := strings.TrimSpace(args)
+	if id == "" {
+		return "Usage: /access revoke <token-id>", nil
+	}
+	_, err := client.Call(ctx, "access.token.revoke", json.RawMessage(mustJSON(map[string]string{"id": id})))
+	if err != nil {
+		return "", fmt.Errorf("access token revoke: %w", err)
+	}
+
+	return fmt.Sprintf("Token %s revoked.", id), nil
+}
+
+// ── Worker Management ──────────────────────────────────────────────────────
+
+func glWorkersAdd(ctx context.Context, client *socket.Client, args string) (string, error) {
+	name := strings.TrimSpace(args)
+	if name == "" {
+		return "Usage: /workers add <agent-name>", nil
+	}
+	_, err := client.Call(ctx, "workers.add", json.RawMessage(mustJSON(map[string]string{"name": name})))
+	if err != nil {
+		return "", fmt.Errorf("workers add: %w", err)
+	}
+
+	return fmt.Sprintf("Worker %q added.", name), nil
+}
+
+func glWorkersRemove(ctx context.Context, client *socket.Client, args string) (string, error) {
+	name := strings.TrimSpace(args)
+	if name == "" {
+		return "Usage: /workers remove <worker-name>", nil
+	}
+	_, err := client.Call(ctx, "workers.remove", json.RawMessage(mustJSON(map[string]string{"name": name})))
+	if err != nil {
+		return "", fmt.Errorf("workers remove: %w", err)
+	}
+
+	return fmt.Sprintf("Worker %q removed.", name), nil
+}
+
+// ── Logs ────────────────────────────────────────────────────────────────────
+
+func glLogs(ctx context.Context, client *socket.Client, _ string) (string, error) {
+	resp, err := client.Call(ctx, "activity.query", json.RawMessage(mustJSON(map[string]int{"limit": 20})))
+	if err != nil {
+		return "", fmt.Errorf("logs: %w", err)
+	}
+	var result struct {
+		Entries []struct {
+			Timestamp string `json:"timestamp"`
+			Level     string `json:"level"`
+			Method    string `json:"method"`
+			Message   string `json:"message"`
+		} `json:"entries"`
+	}
+	if err := json.Unmarshal(resp.Result, &result); err != nil {
+		return "", fmt.Errorf("parse response: %w", err)
+	}
+	if len(result.Entries) == 0 {
+		return "No log entries.", nil
+	}
+	var lines []string
+	for _, e := range result.Entries {
+		level := e.Level
+		if level == "" {
+			level = "INFO"
+		}
+		msg := e.Message
+		if msg == "" {
+			msg = e.Method
+		}
+		lines = append(lines, fmt.Sprintf("[%s] [%s] %s", e.Timestamp, level, msg))
+	}
+
+	return strings.Join(lines, "\n"), nil
 }

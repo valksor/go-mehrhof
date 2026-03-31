@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/valksor/kvelmo/pkg/socket"
@@ -55,10 +56,11 @@ var worktreeHandlers = map[string]worktreeHandler{
 	"/tags":       wtTags,
 
 	// Queue
-	"/queue add":    wtQueueAdd,
-	"/queue remove": wtQueueRemove,
-	"/queue list":   wtQueueList,
-	"/queue":        wtQueueList,
+	"/queue add":     wtQueueAdd,
+	"/queue remove":  wtQueueRemove,
+	"/queue reorder": wtQueueReorder,
+	"/queue list":    wtQueueList,
+	"/queue":         wtQueueList,
 
 	// Forks
 	"/fork create":  wtForkCreate,
@@ -78,15 +80,22 @@ var worktreeHandlers = map[string]worktreeHandler{
 	"/audit":             wtAudit,
 
 	// Files & Code
-	"/files search":     wtFilesSearch,
-	"/files":            wtFiles,
-	"/git status":       wtGitStatus,
-	"/git log":          wtGitLog,
-	"/codegraph search": wtCodegraphSearch,
+	"/files search":      wtFilesSearch,
+	"/files":             wtFiles,
+	"/git status":        wtGitStatus,
+	"/git log":           wtGitLog,
+	"/codegraph callers": wtCodegraphCallers,
+	"/codegraph deps":    wtCodegraphDeps,
+	"/codegraph index":   wtCodegraphIndex,
+	"/codegraph stats":   wtCodegraphStats,
+	"/codegraph search":  wtCodegraphSearch,
 
 	// Cache
 	"/cache stats": wtCacheStats,
 	"/cache clear": wtCacheClear,
+
+	// Export
+	"/export": wtExport,
 
 	// Changelog
 	"/changelog":      wtChangelog,
@@ -511,6 +520,23 @@ func wtQueueRemove(ctx context.Context, client *socket.Client, args string, _ bo
 	return "Removed from queue.", nil
 }
 
+func wtQueueReorder(ctx context.Context, client *socket.Client, args string, _ bool) (string, error) {
+	parts := strings.SplitN(args, " ", 2)
+	if len(parts) != 2 {
+		return "Usage: /queue reorder <id> <position>", nil
+	}
+	position, err := strconv.Atoi(strings.TrimSpace(parts[1]))
+	if err != nil {
+		return "Position must be a number.", nil //nolint:nilerr // user input validation
+	}
+	_, err = client.Call(ctx, "queue.reorder", json.RawMessage(mustJSON(map[string]any{"id": parts[0], "position": position})))
+	if err != nil {
+		return "", fmt.Errorf("queue reorder: %w", err)
+	}
+
+	return fmt.Sprintf("Moved %s to position %d.", parts[0][:min(8, len(parts[0]))], position), nil
+}
+
 func wtQueueList(ctx context.Context, client *socket.Client, _ string, _ bool) (string, error) {
 	resp, err := client.Call(ctx, "queue.list", nil)
 	if err != nil {
@@ -600,37 +626,43 @@ func wtForkSelect(ctx context.Context, client *socket.Client, args string, _ boo
 
 // ── Governance ──────────────────────────────────────────────────────────────
 
-func wtApprove(ctx context.Context, client *socket.Client, _ string, _ bool) (string, error) {
-	_, err := client.Call(ctx, "approve", nil)
+func wtApprove(ctx context.Context, client *socket.Client, args string, _ bool) (string, error) {
+	event := strings.TrimSpace(args)
+	if event == "" {
+		return "Usage: /approve <event> (e.g. submit, implement)", nil
+	}
+	_, err := client.Call(ctx, "approve", json.RawMessage(mustJSON(map[string]string{"event": event})))
 	if err != nil {
 		return "", err
 	}
 
-	return "Approved.", nil
+	return "Approved: " + event, nil
 }
 
 func wtChecklistCheck(ctx context.Context, client *socket.Client, args string, _ bool) (string, error) {
-	if args == "" {
-		return "Usage: /checklist check <number>", nil
+	item := strings.TrimSpace(args)
+	if item == "" {
+		return "Usage: /checklist check <item-name>", nil
 	}
-	_, err := client.Call(ctx, "review.checklist.check", json.RawMessage(mustJSON(map[string]string{"index": args})))
+	_, err := client.Call(ctx, "review.checklist.check", json.RawMessage(mustJSON(map[string]string{"item": item})))
 	if err != nil {
 		return "", err
 	}
 
-	return fmt.Sprintf("Checklist item %s checked.", args), nil
+	return "Checked: " + item, nil
 }
 
 func wtChecklistUncheck(ctx context.Context, client *socket.Client, args string, _ bool) (string, error) {
-	if args == "" {
-		return "Usage: /checklist uncheck <number>", nil
+	item := strings.TrimSpace(args)
+	if item == "" {
+		return "Usage: /checklist uncheck <item-name>", nil
 	}
-	_, err := client.Call(ctx, "review.checklist.uncheck", json.RawMessage(mustJSON(map[string]string{"index": args})))
+	_, err := client.Call(ctx, "review.checklist.uncheck", json.RawMessage(mustJSON(map[string]string{"item": item})))
 	if err != nil {
 		return "", err
 	}
 
-	return fmt.Sprintf("Checklist item %s unchecked.", args), nil
+	return "Unchecked: " + item, nil
 }
 
 func wtChecklist(ctx context.Context, client *socket.Client, _ string, _ bool) (string, error) {
@@ -639,22 +671,24 @@ func wtChecklist(ctx context.Context, client *socket.Client, _ string, _ bool) (
 		return "", err
 	}
 	var result struct {
-		Items []struct {
-			Label   string `json:"label"`
-			Checked bool   `json:"checked"`
-		} `json:"items"`
+		Required []string `json:"required"`
+		Checked  []string `json:"checked"`
 	}
 	_ = json.Unmarshal(resp.Result, &result)
-	if len(result.Items) == 0 {
+	if len(result.Required) == 0 {
 		return "No checklist items.", nil
 	}
+	checkedSet := make(map[string]bool, len(result.Checked))
+	for _, c := range result.Checked {
+		checkedSet[c] = true
+	}
 	var lines []string
-	for i, item := range result.Items {
+	for i, item := range result.Required {
 		mark := "☐"
-		if item.Checked {
+		if checkedSet[item] {
 			mark = "✓"
 		}
-		lines = append(lines, fmt.Sprintf("%s %d. %s", mark, i+1, item.Label))
+		lines = append(lines, fmt.Sprintf("%s %d. %s", mark, i+1, item))
 	}
 
 	return strings.Join(lines, "\n"), nil
@@ -856,6 +890,82 @@ func wtGitLog(ctx context.Context, client *socket.Client, _ string, _ bool) (str
 	return strings.Join(lines, "\n"), nil
 }
 
+func wtCodegraphCallers(ctx context.Context, client *socket.Client, args string, _ bool) (string, error) {
+	if args == "" {
+		return "Usage: /codegraph callers <symbol>", nil
+	}
+	resp, err := client.Call(ctx, "codegraph.callers", json.RawMessage(mustJSON(map[string]string{"name": args})))
+	if err != nil {
+		return "", err
+	}
+	var result struct {
+		Callers []struct {
+			Name string `json:"name"`
+			File string `json:"file"`
+			Line int    `json:"line"`
+		} `json:"callers"`
+	}
+	_ = json.Unmarshal(resp.Result, &result)
+	if len(result.Callers) == 0 {
+		return "No callers found.", nil
+	}
+	var lines []string
+	for _, c := range result.Callers {
+		lines = append(lines, fmt.Sprintf("%s — %s:%d", c.Name, c.File, c.Line))
+	}
+
+	return strings.Join(lines, "\n"), nil
+}
+
+func wtCodegraphDeps(ctx context.Context, client *socket.Client, args string, _ bool) (string, error) {
+	if args == "" {
+		return "Usage: /codegraph deps <symbol>", nil
+	}
+	resp, err := client.Call(ctx, "codegraph.deps", json.RawMessage(mustJSON(map[string]string{"name": args})))
+	if err != nil {
+		return "", err
+	}
+	var result struct {
+		Deps []struct {
+			Name string `json:"name"`
+			Kind string `json:"kind"`
+			File string `json:"file"`
+		} `json:"deps"`
+	}
+	_ = json.Unmarshal(resp.Result, &result)
+	if len(result.Deps) == 0 {
+		return "No dependencies found.", nil
+	}
+	var lines []string
+	for _, d := range result.Deps {
+		lines = append(lines, fmt.Sprintf("%s %s — %s", d.Kind, d.Name, d.File))
+	}
+
+	return strings.Join(lines, "\n"), nil
+}
+
+func wtCodegraphIndex(ctx context.Context, client *socket.Client, _ string, _ bool) (string, error) {
+	resp, err := client.Call(ctx, "codegraph.index", nil)
+	if err != nil {
+		return "", err
+	}
+	var result struct {
+		Symbols int `json:"symbols"`
+	}
+	_ = json.Unmarshal(resp.Result, &result)
+
+	return fmt.Sprintf("Indexed %d symbols.", result.Symbols), nil
+}
+
+func wtCodegraphStats(ctx context.Context, client *socket.Client, _ string, _ bool) (string, error) {
+	resp, err := client.Call(ctx, "codegraph.stats", nil)
+	if err != nil {
+		return "", err
+	}
+
+	return string(resp.Result), nil
+}
+
 func wtCodegraphSearch(ctx context.Context, client *socket.Client, args string, _ bool) (string, error) {
 	if args == "" {
 		return "Usage: /codegraph search <symbol>", nil
@@ -902,6 +1012,32 @@ func wtCacheClear(ctx context.Context, client *socket.Client, _ string, _ bool) 
 	}
 
 	return "Cache cleared.", nil
+}
+
+// ── Export ──────────────────────────────────────────────────────────────────
+
+func wtExport(ctx context.Context, client *socket.Client, args string, _ bool) (string, error) {
+	format := strings.TrimSpace(args)
+	if format == "" {
+		format = "json"
+	}
+	resp, err := client.Call(ctx, "task.export", json.RawMessage(mustJSON(map[string]string{"format": format})))
+	if err != nil {
+		return "", err
+	}
+	var result struct {
+		Data string `json:"data"`
+		Path string `json:"path"`
+	}
+	_ = json.Unmarshal(resp.Result, &result)
+	if result.Path != "" {
+		return "Exported to " + result.Path, nil
+	}
+	if result.Data != "" {
+		return result.Data, nil
+	}
+
+	return "Export complete.", nil
 }
 
 // ── Changelog ───────────────────────────────────────────────────────────────

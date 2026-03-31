@@ -67,6 +67,7 @@ var commands = []tuiCommand{
 	{name: "/tags", description: "List tags", worktree: true},
 	{name: "/queue add", description: "Queue a task", worktree: true},
 	{name: "/queue remove", description: "Remove from queue", worktree: true},
+	{name: "/queue reorder", description: "Reorder queue", worktree: true},
 	{name: "/queue list", description: "List queue", worktree: true},
 	{name: "/queue", description: "List queue", worktree: true},
 	{name: "/fork create", description: "Create fork", worktree: true},
@@ -85,6 +86,8 @@ var commands = []tuiCommand{
 	{name: "/report", description: "Generate report", worktree: false},
 	{name: "/backup", description: "Create backup", worktree: false},
 	{name: "/restore", description: "Restore from backup", worktree: false},
+	{name: "/access create", description: "Create access token", worktree: false},
+	{name: "/access revoke", description: "Revoke access token", worktree: false},
 	{name: "/access", description: "List access tokens", worktree: false},
 
 	// Governance
@@ -102,17 +105,26 @@ var commands = []tuiCommand{
 	{name: "/files", description: "List files", worktree: true},
 	{name: "/git status", description: "Git status", worktree: true},
 	{name: "/git log", description: "Git log", worktree: true},
+	{name: "/codegraph callers", description: "Find callers of symbol", worktree: true},
+	{name: "/codegraph deps", description: "Find dependencies", worktree: true},
+	{name: "/codegraph index", description: "Index codebase", worktree: true},
+	{name: "/codegraph stats", description: "Code graph stats", worktree: true},
 	{name: "/codegraph search", description: "Search symbols", worktree: true},
 
 	// Memory & Cache
 	{name: "/memory search", description: "Search memory", worktree: false},
 	{name: "/memory stats", description: "Memory stats", worktree: false},
+	{name: "/memory clear", description: "Clear memory", worktree: false},
 	{name: "/cache stats", description: "Cache stats", worktree: true},
 	{name: "/cache clear", description: "Clear cache", worktree: true},
 
 	// Infrastructure
 	{name: "/changelog full", description: "Changelog with descriptions", worktree: true},
 	{name: "/changelog", description: "Generate changelog", worktree: true},
+	{name: "/export", description: "Export task data", worktree: true},
+	{name: "/logs", description: "View operation logs", worktree: false},
+	{name: "/workers add", description: "Add worker", worktree: false},
+	{name: "/workers remove", description: "Remove worker", worktree: false},
 	{name: "/workers", description: "List workers", worktree: false},
 	{name: "/discover", description: "Scan project commands", worktree: true},
 	{name: "/diagnose", description: "System diagnostics", worktree: false},
