@@ -8,7 +8,7 @@ package watchdog
 
 import (
 	"context"
-	"log"
+	"log/slog"
 	"os"
 	"runtime"
 	"time"
@@ -72,11 +72,10 @@ func Start(ctx context.Context, cfg Config) <-chan struct{} {
 				}
 
 				if len(samples) == cfg.WindowSize && isMonotonicallyGrowing(samples, cfg.ThresholdMB, cfg.NoiseMB) {
-					log.Printf(
-						"LEAK DETECTED: heap grew %.1f MB over %d samples (%.0f s window) — shutting down",
-						samples[len(samples)-1]-samples[0],
-						cfg.WindowSize,
-						cfg.Interval.Seconds()*float64(cfg.WindowSize),
+					slog.Error("LEAK DETECTED: heap grew monotonically — shutting down",
+						"growth_mb", samples[len(samples)-1]-samples[0],
+						"samples", cfg.WindowSize,
+						"window_seconds", cfg.Interval.Seconds()*float64(cfg.WindowSize),
 					)
 					os.Exit(1)
 				}

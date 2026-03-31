@@ -77,7 +77,7 @@ export function SimpleProjectView() {
   // Focus chat when waiting for input
   useEffect(() => {
     if (state === 'waiting') {
-      const chatInput = document.querySelector<HTMLElement>('[data-chat-input]')
+      const chatInput = chatRef.current?.querySelector<HTMLElement>('[data-chat-input]')
       chatInput?.focus()
     }
   }, [state])
@@ -101,7 +101,7 @@ export function SimpleProjectView() {
   }
 
   const handleRequestChanges = () => {
-    const chatInput = document.querySelector<HTMLElement>('[data-chat-input]')
+    const chatInput = chatRef.current?.querySelector<HTMLElement>('[data-chat-input]')
     chatInput?.focus()
   }
 
@@ -243,7 +243,7 @@ export function SimpleProjectView() {
           {state === 'loaded' && (
             <div className="text-center">
               <button
-                onClick={() => plan()}
+                onClick={() => void plan()}
                 disabled={loading}
                 className="btn btn-primary btn-lg"
               >
@@ -281,7 +281,7 @@ export function SimpleProjectView() {
               )}
               <div className="text-center">
                 <button
-                  onClick={() => implement()}
+                  onClick={() => void implement()}
                   disabled={loading}
                   className="btn btn-primary btn-lg"
                 >
@@ -295,7 +295,7 @@ export function SimpleProjectView() {
           {isActive && (
             <div className="text-center">
               <button
-                onClick={() => stop()}
+                onClick={() => void stop()}
                 className="btn btn-ghost btn-sm"
               >
                 Stop
@@ -352,7 +352,7 @@ export function SimpleProjectView() {
                 <p className="text-sm text-error bg-error/10 rounded-lg px-4 py-2">{error}</p>
               )}
               <button
-                onClick={() => retry()}
+                onClick={() => void retry()}
                 disabled={loading}
                 className="btn btn-warning"
               >
@@ -372,7 +372,7 @@ export function SimpleProjectView() {
           {state === 'paused' && (
             <div className="text-center">
               <button
-                onClick={() => retry()}
+                onClick={() => void retry()}
                 disabled={loading}
                 className="btn btn-primary"
               >

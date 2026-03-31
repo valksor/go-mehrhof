@@ -59,7 +59,7 @@ export function OnboardingGuide({ onDismiss }: OnboardingGuideProps) {
   useEffect(() => {
     if (!client) return
 
-    client.call<{ steps: Record<string, boolean> }>('onboarding.status', {})
+    void client.call<{ steps: Record<string, boolean> }>('onboarding.status', {})
       .then(result => {
         setStepStatus(result.steps || {})
       })
@@ -73,7 +73,7 @@ export function OnboardingGuide({ onDismiss }: OnboardingGuideProps) {
 
     setStepStatus(prev => ({ ...prev, [step.key]: true }))
     if (client) {
-      client.call('onboarding.complete', { step: step.key }).catch(() => {
+      void client.call('onboarding.complete', { step: step.key }).catch(() => {
         setStepStatus(prev => ({ ...prev, [step.key]: false }))
       })
     }
