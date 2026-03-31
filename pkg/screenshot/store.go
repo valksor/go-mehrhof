@@ -2,6 +2,7 @@ package screenshot
 
 import (
 	"bytes"
+	"cmp"
 	"encoding/json"
 	"fmt"
 	"image"
@@ -53,10 +54,7 @@ func (s *Store) Save(taskID string, data []byte, opts SaveOptions) (*Screenshot,
 	// Generate unique ID and filename
 	id := uuid.New().String()[:8]
 	timestamp := time.Now()
-	format := opts.Format
-	if format == "" {
-		format = FormatPNG
-	}
+	format := cmp.Or(opts.Format, FormatPNG)
 
 	filename := fmt.Sprintf("%s-%s.%s", timestamp.Format("20060102-150405"), id, format)
 	path := filepath.Join(dir, filename)

@@ -2,6 +2,7 @@ package provider
 
 import (
 	"bytes"
+	"cmp"
 	"context"
 	"encoding/base64"
 	"encoding/json"
@@ -22,10 +23,7 @@ type azureDevOpsClient struct {
 }
 
 func newAzureDevOpsClient(baseURL, org, project, token string) *azureDevOpsClient {
-	if baseURL == "" {
-		baseURL = "https://dev.azure.com"
-	}
-	baseURL = strings.TrimRight(baseURL, "/")
+	baseURL = strings.TrimRight(cmp.Or(baseURL, "https://dev.azure.com"), "/")
 
 	return &azureDevOpsClient{
 		httpClient: &http.Client{},

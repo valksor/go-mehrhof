@@ -2,8 +2,9 @@ package memory
 
 import (
 	"context"
+	"maps"
 	"math"
-	"sort"
+	"slices"
 	"strings"
 	"unicode"
 )
@@ -215,13 +216,7 @@ func filterStopwords(tokens []string) []string {
 // sortedVocabKeys returns vocab keys sorted for deterministic indexing.
 // Used only for testing / debugging.
 func sortedVocabKeys(vocab map[string]int) []string {
-	keys := make([]string, 0, len(vocab))
-	for k := range vocab {
-		keys = append(keys, k)
-	}
-	sort.Strings(keys)
-
-	return keys
+	return slices.Sorted(maps.Keys(vocab))
 }
 
 // ensure sortedVocabKeys is referenced to avoid linter complaints.

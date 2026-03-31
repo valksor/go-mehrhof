@@ -1,6 +1,7 @@
 package provider
 
 import (
+	"cmp"
 	"context"
 	"errors"
 	"fmt"
@@ -413,13 +414,8 @@ func (p *GitHubProvider) MergePR(ctx context.Context, taskID string, method stri
 		return err
 	}
 
-	// Default to rebase
-	if method == "" {
-		method = "rebase"
-	}
-
 	options := &github.PullRequestOptions{
-		MergeMethod: method,
+		MergeMethod: cmp.Or(method, "rebase"),
 	}
 
 	_, _, err = p.client.PullRequests.Merge(ctx, owner, repo, number, "", options)
@@ -476,20 +472,10 @@ func (p *GitHubProvider) ListTasks(ctx context.Context, opts ListOptions) (*List
 	}
 	owner, repo := parts[0], parts[1]
 
-	limit := opts.Limit
-	if limit == 0 {
-		limit = 30
-	}
-
-	state := opts.Status
-	if state == "" {
-		state = stateOpen
-	}
-
 	listOpts := &github.IssueListByRepoOptions{
-		State: state,
+		State: cmp.Or(opts.Status, stateOpen),
 		ListOptions: github.ListOptions{
-			PerPage: limit,
+			PerPage: cmp.Or(opts.Limit, 30),
 		},
 	}
 

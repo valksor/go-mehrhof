@@ -2,6 +2,7 @@ package findings
 
 import (
 	"fmt"
+	"maps"
 	"slices"
 	"strings"
 )
@@ -30,11 +31,7 @@ func DeduplicateFindings(groups map[string][]Finding) []Finding {
 	var order []string
 
 	// Sort agent names for deterministic processing order.
-	agentNames := make([]string, 0, len(groups))
-	for name := range groups {
-		agentNames = append(agentNames, name)
-	}
-	slices.Sort(agentNames)
+	agentNames := slices.Sorted(maps.Keys(groups))
 
 	for _, agentName := range agentNames {
 		agentFindings := groups[agentName]
@@ -78,13 +75,7 @@ func DeduplicateFindings(groups map[string][]Finding) []Finding {
 
 	for _, key := range order {
 		for _, m := range byKey[key] {
-			agents := make([]string, 0, len(m.detectedBy))
-
-			for a := range m.detectedBy {
-				agents = append(agents, a)
-			}
-
-			slices.Sort(agents)
+			agents := slices.Sorted(maps.Keys(m.detectedBy))
 
 			m.finding.DetectedBy = agents
 			result = append(result, m.finding)

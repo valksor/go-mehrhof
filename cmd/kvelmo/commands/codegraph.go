@@ -4,7 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"sort"
+	"maps"
+	"slices"
 	"time"
 
 	"github.com/spf13/cobra"
@@ -96,13 +97,10 @@ func runCodegraphStats(_ *cobra.Command, _ []string) error {
 	}
 
 	// Show breakdowns
-	keys := make([]string, 0, len(stats))
-	for k := range stats {
-		if k != "files" && k != "symbols" && k != "edges" {
-			keys = append(keys, k)
-		}
-	}
-	sort.Strings(keys)
+	keys := slices.Sorted(maps.Keys(stats))
+	keys = slices.DeleteFunc(keys, func(k string) bool {
+		return k == "files" || k == "symbols" || k == "edges"
+	})
 	if len(keys) > 0 {
 		fmt.Println("  Breakdown:")
 		for _, k := range keys {

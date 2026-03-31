@@ -26,7 +26,6 @@ all: build
 
 ## Full-stack quality checks (Go fmt/vet/lint + frontend lint/typecheck + Tauri fmt/clippy)
 quality:
-	go fmt ./...
 	@command -v goimports >/dev/null && find . -name '*.go' -not -path './.claude/*' -not -path './prototype/*' -not -path './vendor/*' -exec goimports -w {} + || true
 	@command -v gofumpt >/dev/null && find . -name '*.go' -not -path './.claude/*' -not -path './prototype/*' -not -path './vendor/*' -exec gofumpt -l -w {} + || true
 	go vet ./...

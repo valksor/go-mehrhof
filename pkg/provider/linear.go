@@ -8,8 +8,10 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
+	"maps"
 	"net/http"
 	"net/url"
+	"slices"
 	"strconv"
 	"strings"
 )
@@ -431,10 +433,7 @@ func (p *LinearProvider) AddLabels(ctx context.Context, id string, labels []stri
 		labelSet[id] = struct{}{}
 	}
 	// Convert set to slice
-	allIDs := make([]string, 0, len(labelSet))
-	for id := range labelSet {
-		allIDs = append(allIDs, id)
-	}
+	allIDs := slices.Collect(maps.Keys(labelSet))
 
 	mutation := `
 		mutation IssueUpdate($issueId: String!, $labelIds: [String!]!) {

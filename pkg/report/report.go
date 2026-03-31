@@ -2,6 +2,7 @@ package report
 
 import (
 	"fmt"
+	"maps"
 	"slices"
 	"strings"
 	"time"
@@ -138,11 +139,7 @@ func FormatMarkdown(r *Report) string {
 	if len(r.Tasks.ByState) > 0 {
 		b.WriteString("| State | Count |\n|-------|-------|\n")
 		// Sort states for deterministic output.
-		states := make([]string, 0, len(r.Tasks.ByState))
-		for s := range r.Tasks.ByState {
-			states = append(states, s)
-		}
-		slices.Sort(states)
+		states := slices.Sorted(maps.Keys(r.Tasks.ByState))
 		for _, state := range states {
 			fmt.Fprintf(&b, "| %s | %d |\n", state, r.Tasks.ByState[state])
 		}

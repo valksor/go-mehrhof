@@ -2,6 +2,7 @@ package metrics
 
 import (
 	"fmt"
+	"maps"
 	"slices"
 	"strings"
 )
@@ -47,11 +48,7 @@ func RenderPrometheus(snap Snapshot) string {
 	// Per-method RPC metrics
 	if len(snap.Methods) > 0 {
 		// Sort method names for stable output
-		methods := make([]string, 0, len(snap.Methods))
-		for name := range snap.Methods {
-			methods = append(methods, name)
-		}
-		slices.Sort(methods)
+		methods := slices.Sorted(maps.Keys(snap.Methods))
 
 		b = fmt.Appendf(b, "# HELP kvelmo_rpc_method_requests_total Total requests per RPC method.\n# TYPE kvelmo_rpc_method_requests_total counter\n")
 		for _, name := range methods {
@@ -77,11 +74,7 @@ func RenderPrometheus(snap Snapshot) string {
 
 	// Per-agent execution metrics
 	if len(snap.Agents) > 0 {
-		agentNames := make([]string, 0, len(snap.Agents))
-		for name := range snap.Agents {
-			agentNames = append(agentNames, name)
-		}
-		slices.Sort(agentNames)
+		agentNames := slices.Sorted(maps.Keys(snap.Agents))
 
 		b = fmt.Appendf(b, "# HELP kvelmo_agent_tokens_total Total tokens consumed per agent.\n# TYPE kvelmo_agent_tokens_total counter\n")
 		for _, name := range agentNames {

@@ -3,6 +3,7 @@ package policy
 import (
 	"context"
 	"fmt"
+	"maps"
 	"os/exec"
 	"slices"
 	"strconv"
@@ -35,14 +36,7 @@ func GetGuardrail(name string) (Guardrail, bool) {
 
 // ListGuardrails returns all registered guardrail names in sorted order.
 func ListGuardrails() []string {
-	names := make([]string, 0, len(guardrailRegistry))
-	for name := range guardrailRegistry {
-		names = append(names, name)
-	}
-
-	slices.Sort(names)
-
-	return names
+	return slices.Sorted(maps.Keys(guardrailRegistry))
 }
 
 // RequireSpec blocks phases that need specifications if none exist.
