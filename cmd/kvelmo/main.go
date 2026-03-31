@@ -226,6 +226,9 @@ func init() {
 	// Raw JSON-RPC access
 	rootCmd.AddCommand(commands.RPCCmd)
 
+	// Self-update
+	rootCmd.AddCommand(commands.UpgradeCmd)
+
 	// Hidden utilities
 	rootCmd.AddCommand(genManPagesCmd)
 

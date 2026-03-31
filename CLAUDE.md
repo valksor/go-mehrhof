@@ -169,6 +169,7 @@ Each transition creates a git checkpoint. `undo`/`redo` navigate between checkpo
 | `timeline/` | Activity timeline service over activitylog |
 | `trace/` | Distributed tracing |
 | `tui/` | Terminal UI (Bubbletea-based dashboard) |
+| `update/` | Self-update: GitHub release checker, minisign-verified downloader, atomic installer |
 | `varpool/` | Variable pool for inter-node context sharing during graph execution |
 | `watchdog/` | Background process monitoring |
 
@@ -315,6 +316,7 @@ Commands in `cmd/kvelmo/commands/`. Entry point: `serve` (global socket + web se
 - `pipe` - One-shot agent prompt (stdin/stdout, no server required)
 - `remote` - Remote PR operations (approve, merge)
 - `discover` - List available project commands (Makefile, package.json, Taskfile)
+- `upgrade` - Self-update binary from GitHub releases (`--nightly`, `--version`, `--check`)
 
 ## Code Style
 

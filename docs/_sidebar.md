@@ -101,6 +101,7 @@
     - [diagnose](/cli/diagnose.md)
     - [cleanup](/cli/cleanup.md)
     - [shutdown](/cli/shutdown.md)
+    - [upgrade](/cli/upgrade.md)
   - Utilities
     - [chat](/cli/chat.md)
     - [memory](/cli/memory.md)
@@ -174,6 +175,7 @@
   - [Web UI vs CLI](/guides/web-ui-vs-cli.md)
   - [Recovery](/guides/recovery.md)
   - [Windows WSL](/guides/windows-wsl.md)
+  - [Tauri Signing Setup](/guides/tauri-signing-setup.md)
 
 - Advanced
   - [Memory](/advanced/memory.md)

@@ -358,6 +358,9 @@ jobs:
             -   name: Build Tauri app
                 if: steps.check.outputs.proceed == 'true'
                 working-directory: web
+                env:
+                    TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+                    TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
                 run: cargo tauri build --target ${{ matrix.target }} --config '{"build":{"beforeBuildCommand":""}}'
 
             -   name: Upload to release (macOS)
