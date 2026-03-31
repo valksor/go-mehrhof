@@ -310,11 +310,16 @@ This is a minimal task for E2E testing. Just create the file with the specified 
 	// Setup worker pool with Claude
 	pool := setupWorkerPool(t, workDir)
 
-	// Create conductor
+	// Create conductor — disable external review to avoid interactive prompts in tests
 	effectiveSettings := &settings.Settings{
 		Providers: settings.ProviderSettings{
 			GitHub: settings.GitHubConfig{
 				Token: token,
+			},
+		},
+		Workflow: settings.WorkflowSettings{
+			ExternalReview: settings.ExternalReviewConfig{
+				Mode: settings.ExternalReviewNever,
 			},
 		},
 	}

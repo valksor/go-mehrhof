@@ -91,6 +91,8 @@ type Conductor struct {
 	autoFixLastErr   string                       // Auto-fix loop: last error message
 
 	// ── Quality & Progress ──────────────────────────────────────────────
+	qualityGateRunning  bool                              // Guard: true while quality gate is running under mu unlock
+	qualityGateDone     sync.WaitGroup                    // Signals when an in-flight quality gate finishes
 	adversarialFindings []findings.Finding                // Most recent adversarial review results
 	failclassHistory    *failclass.History                // Failure classification history across quality gate runs
 	responseCache       *respcache.Cache                  // Avoids redundant agent calls on identical prompts
@@ -149,11 +151,11 @@ type PhasePolicy struct {
 }
 
 // defaultPhasePolicies returns sensible defaults for each phase.
-// Plan and review failures require user attention; implement retries once;
+// Plan retries once on transient failure; review failures require user attention; implement retries twice;
 // simplify and optimize are optional and can be skipped on failure.
 func defaultPhasePolicies() map[string]PhasePolicy {
 	return map[string]PhasePolicy{
-		"plan":      {Policy: FailurePolicyFail},
+		"plan":      {Policy: FailurePolicyRetry, MaxRetries: 1, RetryDelay: 5 * time.Second},
 		"implement": {Policy: FailurePolicyRetry, MaxRetries: 2, RetryDelay: 5 * time.Second},
 		"simplify":  {Policy: FailurePolicySkip},
 		"optimize":  {Policy: FailurePolicySkip},

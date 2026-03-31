@@ -244,12 +244,20 @@ func messagesToFindings(messages []string) []findings.Finding {
 // runQualityGateAsync runs the quality gate in a background goroutine
 // and caches the result in WorkUnit. Called during Review() so the result
 // is ready by the time Submit() is called, avoiding a blocking wait.
+//
+// The guard fields qualityGateRunning and qualityGateDone coordinate with
+// Submit() so that concurrent callers wait for the result rather than
+// launching a second quality gate in parallel.
 func (c *Conductor) runQualityGateAsync() {
+	c.mu.Lock()
+	c.qualityGateRunning = true
+	c.qualityGateDone.Add(1)
+	c.mu.Unlock()
+
 	go func() {
 		defer func() {
 			if r := recover(); r != nil {
 				slog.Error("quality gate goroutine panicked", "panic", r)
-				// Update state to reflect failure
 				c.mu.Lock()
 				if c.workUnit != nil {
 					passed := false
@@ -258,6 +266,8 @@ func (c *Conductor) runQualityGateAsync() {
 					c.workUnit.UpdatedAt = time.Now()
 					c.persistState()
 				}
+				c.qualityGateRunning = false
+				c.qualityGateDone.Done()
 				c.mu.Unlock()
 			}
 		}()
@@ -268,6 +278,9 @@ func (c *Conductor) runQualityGateAsync() {
 		defer c.mu.Unlock()
 
 		if c.workUnit == nil {
+			c.qualityGateRunning = false
+			c.qualityGateDone.Done()
+
 			return
 		}
 
@@ -280,6 +293,9 @@ func (c *Conductor) runQualityGateAsync() {
 		}
 		c.workUnit.UpdatedAt = time.Now()
 		c.persistState()
+
+		c.qualityGateRunning = false
+		c.qualityGateDone.Done()
 
 		slog.Debug("quality gate completed async", "passed", passed, "error", c.workUnit.QualityGateError)
 	}()

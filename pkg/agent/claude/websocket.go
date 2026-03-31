@@ -39,9 +39,11 @@ type WebSocketConnection struct {
 	conn     *websocket.Conn
 	connMu   sync.Mutex
 
-	cmd    *exec.Cmd
-	cmdMu  sync.Mutex
-	cmdErr error
+	cmd             *exec.Cmd
+	cmdMu           sync.Mutex
+	cmdErr          error
+	lifecycleCtx    context.Context //nolint:containedctx // Process lifetime is decoupled from handshake context
+	lifecycleCancel context.CancelFunc
 
 	// Message channels
 	outgoing chan outgoingMessage
@@ -59,6 +61,7 @@ type WebSocketConnection struct {
 	connected    atomic.Bool
 	closed       atomic.Bool
 	closedOnce   sync.Once
+	connectMu    sync.Mutex // Guards Connect() against concurrent callers
 
 	// Subagent tracker for detecting Task tool calls
 	subagents *agent.SubagentTracker
@@ -184,9 +187,23 @@ func NewWebSocketConnection(cfg Config) *WebSocketConnection {
 
 // Connect starts the WebSocket server and launches Claude CLI.
 func (w *WebSocketConnection) Connect(ctx context.Context) error {
+	w.connectMu.Lock()
+	defer w.connectMu.Unlock()
+
+	if w.closed.Load() {
+		return errors.New("connection has been closed; create a new WebSocketConnection to reconnect")
+	}
+
+	if w.connected.Load() {
+		return nil
+	}
+
+	// Lifecycle context controls the process and connection lifetime.
+	// It is canceled only by Close(), not by the caller's handshake context.
+	w.lifecycleCtx, w.lifecycleCancel = context.WithCancel(context.Background())
 	w.done = make(chan struct{})
 	go func() {
-		<-ctx.Done()
+		<-w.lifecycleCtx.Done()
 		close(w.done)
 	}()
 
@@ -218,11 +235,11 @@ func (w *WebSocketConnection) Connect(ctx context.Context) error {
 		}
 	}()
 
-	// Start outgoing message sender
-	go w.sendLoop(ctx)
+	// Start outgoing message sender (uses lifecycle context, not handshake context)
+	go w.sendLoop(w.lifecycleCtx) //nolint:contextcheck // Must use lifecycle context, not handshake context
 
-	// Launch Claude CLI
-	if err := w.launchClaude(ctx); err != nil {
+	// Launch Claude CLI (uses lifecycle context for process lifetime)
+	if err := w.launchClaude(w.lifecycleCtx); err != nil { //nolint:contextcheck // Must use lifecycle context, not handshake context
 		_ = w.Close()
 
 		return err
@@ -784,6 +801,11 @@ func (w *WebSocketConnection) Close() error {
 	w.closedOnce.Do(func() {
 		w.closed.Store(true)
 		w.connected.Store(false)
+
+		// Cancel lifecycle context (stops sendLoop, closes done channel)
+		if w.lifecycleCancel != nil {
+			w.lifecycleCancel()
+		}
 
 		// Kill Claude process
 		w.cmdMu.Lock()

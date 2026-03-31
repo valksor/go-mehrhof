@@ -3,6 +3,7 @@ package agent
 import (
 	"errors"
 	"fmt"
+	"maps"
 	"slices"
 	"sync"
 )
@@ -93,13 +94,7 @@ func (r *Registry) List() []string {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
-	names := make([]string, 0, len(r.agents))
-	for name := range r.agents {
-		names = append(names, name)
-	}
-	slices.Sort(names)
-
-	return names
+	return slices.Sorted(maps.Keys(r.agents))
 }
 
 // Available returns names of agents that pass the Available() check.

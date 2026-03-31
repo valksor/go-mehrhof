@@ -5,6 +5,7 @@ package strategy
 
 import (
 	"context"
+	"maps"
 	"slices"
 	"sync"
 )
@@ -101,12 +102,5 @@ func List() []string {
 	mu.RLock()
 	defer mu.RUnlock()
 
-	names := make([]string, 0, len(strategies))
-	for name := range strategies {
-		names = append(names, name)
-	}
-
-	slices.Sort(names)
-
-	return names
+	return slices.Sorted(maps.Keys(strategies))
 }

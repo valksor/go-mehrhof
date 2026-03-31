@@ -91,7 +91,10 @@ func (c *CLIConnection) Connect(ctx context.Context) error {
 	}
 
 	args := c.buildArgs()
-	c.cmd = exec.CommandContext(ctx, c.config.Command[0], args...)
+	// Use Background context so the process lifetime is not tied to the
+	// caller's context (which may only gate the connection handshake).
+	// The process is killed explicitly by Close().
+	c.cmd = exec.CommandContext(context.Background(), c.config.Command[0], args...) //nolint:contextcheck // Process lifetime decoupled from handshake; killed by Close()
 
 	if c.config.WorkDir != "" {
 		c.cmd.Dir = c.config.WorkDir
