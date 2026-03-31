@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useScreenshotStore, Screenshot } from '../stores/screenshotStore'
+import { useScreenshotStore, type Screenshot } from '../stores/screenshotStore'
 import { useProjectStore } from '../stores/projectStore'
 import { ScreenshotThumbnail } from './ScreenshotThumbnail'
 import { ScreenshotModal } from './ScreenshotModal'

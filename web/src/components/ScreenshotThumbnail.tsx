@@ -1,4 +1,4 @@
-import { Screenshot, useScreenshotStore } from '../stores/screenshotStore'
+import { type Screenshot, useScreenshotStore } from '../stores/screenshotStore'
 import { useProjectStore } from '../stores/projectStore'
 
 interface ScreenshotThumbnailProps {

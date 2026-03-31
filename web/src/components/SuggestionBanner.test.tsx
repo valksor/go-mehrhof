@@ -63,17 +63,21 @@ describe('SuggestionBanner', () => {
     expect(mockCall).not.toHaveBeenCalled()
   })
 
-  it('fetches suggestions when loaded', () => {
+  it('fetches suggestions when loaded', async () => {
     mockState.state = 'loaded'
     mockCall.mockResolvedValue({ skip: null, agent: null })
-    render(<SuggestionBanner />)
+    await act(async () => {
+      render(<SuggestionBanner />)
+    })
     expect(mockCall).toHaveBeenCalledWith('suggestions.list', {})
   })
 
-  it('fetches suggestions when planned', () => {
+  it('fetches suggestions when planned', async () => {
     mockState.state = 'planned'
     mockCall.mockResolvedValue({ skip: null, agent: null })
-    render(<SuggestionBanner />)
+    await act(async () => {
+      render(<SuggestionBanner />)
+    })
     expect(mockCall).toHaveBeenCalledWith('suggestions.list', {})
   })
 

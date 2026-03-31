@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useProjectStore, QueuedTask } from '../stores/projectStore'
+import { useProjectStore, type QueuedTask } from '../stores/projectStore'
 import { EmptyState } from './EmptyState'
 
 export function TaskQueue() {

@@ -35,6 +35,9 @@ export function CodegraphPanel({ isOpen, onClose }: CodegraphPanelProps) {
   const [loading, setLoading] = useState(false)
   const [indexing, setIndexing] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [callers, setCallers] = useState<{ name: string; symbols: CodegraphSymbol[] } | null>(null)
+  const [deps, setDeps] = useState<{ pkg: string; dependencies: string[] } | null>(null)
+  const [drillLoading, setDrillLoading] = useState(false)
 
   const loadStats = useCallback(async () => {
     if (!client || !connected) return
@@ -83,6 +86,36 @@ export function CodegraphPanel({ isOpen, onClose }: CodegraphPanelProps) {
       setLoading(false)
     }
   }, [client, connected, searchQuery, usePattern])
+
+  const loadCallers = useCallback(async (name: string) => {
+    if (!client || !connected) return
+    setDrillLoading(true)
+    setError(null)
+    setDeps(null)
+    try {
+      const result = await client.call<{ callers: CodegraphSymbol[] }>('codegraph.callers', { name })
+      setCallers({ name, symbols: result.callers || [] })
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load callers')
+    } finally {
+      setDrillLoading(false)
+    }
+  }, [client, connected])
+
+  const loadDeps = useCallback(async (pkg: string) => {
+    if (!client || !connected) return
+    setDrillLoading(true)
+    setError(null)
+    setCallers(null)
+    try {
+      const result = await client.call<{ dependencies: string[] }>('codegraph.deps', { package: pkg })
+      setDeps({ pkg, dependencies: result.dependencies || [] })
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load dependencies')
+    } finally {
+      setDrillLoading(false)
+    }
+  }, [client, connected])
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
@@ -186,6 +219,7 @@ export function CodegraphPanel({ isOpen, onClose }: CodegraphPanelProps) {
                       <th>Name</th>
                       <th>File</th>
                       <th>Package</th>
+                      <th></th>
                     </tr>
                   </thead>
                   <tbody>
@@ -199,6 +233,30 @@ export function CodegraphPanel({ isOpen, onClose }: CodegraphPanelProps) {
                         <td className="font-mono text-xs font-medium">{s.name}</td>
                         <td className="font-mono text-xs">{s.file}:{s.line}</td>
                         <td className="text-xs">{s.package}</td>
+                        <td>
+                          <div className="flex gap-1">
+                            {(s.kind === 'function' || s.kind === 'method') && (
+                              <button
+                                className="btn btn-ghost btn-xs"
+                                onClick={() => void loadCallers(s.name)}
+                                disabled={drillLoading}
+                                title="Show callers"
+                              >
+                                Callers
+                              </button>
+                            )}
+                            {s.package && (
+                              <button
+                                className="btn btn-ghost btn-xs"
+                                onClick={() => void loadDeps(s.package)}
+                                disabled={drillLoading}
+                                title="Show package dependencies"
+                              >
+                                Deps
+                              </button>
+                            )}
+                          </div>
+                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -214,6 +272,52 @@ export function CodegraphPanel({ isOpen, onClose }: CodegraphPanelProps) {
             </div>
           )}
         </div>
+
+        {/* Callers drill-down */}
+        {callers && (
+          <div className="border-t border-base-300 pt-3">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-medium">
+                Callers of <code className="text-xs">{callers.name}</code>
+              </span>
+              <button className="btn btn-ghost btn-xs" onClick={() => setCallers(null)}>Close</button>
+            </div>
+            {callers.symbols.length === 0 ? (
+              <p className="text-xs text-base-content/50">No callers found</p>
+            ) : (
+              <ul className="space-y-1">
+                {callers.symbols.map(s => (
+                  <li key={s.id} className="flex items-center gap-2 text-xs">
+                    <span className={`badge badge-xs ${KIND_BADGE[s.kind] || 'badge-ghost'}`}>{s.kind}</span>
+                    <span className="font-mono font-medium">{s.name}</span>
+                    <span className="font-mono text-base-content/50">{s.file}:{s.line}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        )}
+
+        {/* Dependencies drill-down */}
+        {deps && (
+          <div className="border-t border-base-300 pt-3">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-medium">
+                Dependencies of <code className="text-xs">{deps.pkg}</code>
+              </span>
+              <button className="btn btn-ghost btn-xs" onClick={() => setDeps(null)}>Close</button>
+            </div>
+            {deps.dependencies.length === 0 ? (
+              <p className="text-xs text-base-content/50">No dependencies found</p>
+            ) : (
+              <ul className="space-y-0.5">
+                {deps.dependencies.map(d => (
+                  <li key={d} className="font-mono text-xs">{d}</li>
+                ))}
+              </ul>
+            )}
+          </div>
+        )}
       </div>
     </AccessibleModal>
   )

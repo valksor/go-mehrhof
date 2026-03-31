@@ -1,4 +1,4 @@
-import { useProjectStore, Review, ReviewDetail } from '../stores/projectStore'
+import { useProjectStore, type Review, type ReviewDetail } from '../stores/projectStore'
 import { useState, useEffect, useCallback, useRef } from 'react'
 
 interface ReviewPanelProps {
@@ -303,11 +303,29 @@ function StatusBadge({ approved }: { approved: boolean }) {
   )
 }
 
+interface RiskHistoryEntry {
+  timestamp: string
+  data?: { score?: number; level?: string }
+}
+
+interface AdversarialResults {
+  findings: string[]
+  count: number
+}
+
 function RiskGauge({ score, onEvaluate }: {
   score: { score: number; factors: Record<string, number>; level: string } | null
   onEvaluate: () => Promise<void>
 }) {
+  const client = useProjectStore(s => s.client)
+  const connected = useProjectStore(s => s.connected)
   const [loading, setLoading] = useState(false)
+  const [showHistory, setShowHistory] = useState(false)
+  const [history, setHistory] = useState<RiskHistoryEntry[] | null>(null)
+  const [historyLoading, setHistoryLoading] = useState(false)
+  const [historyError, setHistoryError] = useState(false)
+  const [adversarial, setAdversarial] = useState<AdversarialResults | null>(null)
+  const [adversarialLoading, setAdversarialLoading] = useState(false)
 
   const handleEvaluate = async () => {
     setLoading(true)
@@ -315,6 +333,47 @@ function RiskGauge({ score, onEvaluate }: {
       await onEvaluate()
     } finally {
       setLoading(false)
+    }
+  }
+
+  const loadHistory = useCallback(async () => {
+    if (!client || !connected) return
+    setHistoryLoading(true)
+    setHistoryError(false)
+    try {
+      const result = await client.call<{ entries: RiskHistoryEntry[] }>('risk.history', { limit: 10 })
+      setHistory(result.entries || [])
+    } catch {
+      setHistory([])
+      setHistoryError(true)
+    } finally {
+      setHistoryLoading(false)
+    }
+  }, [client, connected])
+
+  const [adversarialError, setAdversarialError] = useState(false)
+
+  const loadAdversarial = useCallback(async () => {
+    if (!client || !connected) return
+    setAdversarialLoading(true)
+    setAdversarialError(false)
+    try {
+      const result = await client.call<AdversarialResults>('adversarial.results', {})
+      setAdversarial(result)
+    } catch {
+      setAdversarial(null)
+      setAdversarialError(true)
+    } finally {
+      setAdversarialLoading(false)
+    }
+  }, [client, connected])
+
+  const handleToggleHistory = () => {
+    const next = !showHistory
+    setShowHistory(next)
+    if (next) {
+      void loadHistory()
+      void loadAdversarial()
     }
   }
 
@@ -359,6 +418,12 @@ function RiskGauge({ score, onEvaluate }: {
           >
             {loading ? <span className="loading loading-spinner loading-xs" /> : 'Re-evaluate'}
           </button>
+          <button
+            className="btn btn-xs btn-ghost"
+            onClick={handleToggleHistory}
+          >
+            {showHistory ? 'Hide Details' : 'Details'}
+          </button>
         </div>
       </div>
       <div className="w-full bg-base-300 rounded-full h-2">
@@ -372,6 +437,68 @@ function RiskGauge({ score, onEvaluate }: {
           {Object.entries(score.factors).map(([factor, value]) => (
             <span key={factor}>{factor.replace(/_/g, ' ')}: {(value).toFixed(2)}</span>
           ))}
+        </div>
+      )}
+
+      {/* Risk history & adversarial details */}
+      {showHistory && (
+        <div className="space-y-3 pt-2 border-t border-base-300">
+          {/* Risk history */}
+          <div>
+            <h4 className="text-xs font-medium text-base-content/60 mb-1">Risk History</h4>
+            {historyLoading ? (
+              <span className="loading loading-spinner loading-xs" />
+            ) : historyError ? (
+              <p className="text-xs text-error">Failed to load risk history</p>
+            ) : history && history.length > 0 ? (
+              <div className="space-y-1">
+                {history.map((entry, idx) => (
+                  <div key={`${entry.timestamp}-${idx}`} className="flex items-center justify-between text-xs">
+                    <span className="text-base-content/50">
+                      {new Date(entry.timestamp).toLocaleString()}
+                    </span>
+                    <span className={`font-mono ${
+                      entry.data?.level === 'high' ? 'text-error'
+                      : entry.data?.level === 'medium' ? 'text-warning'
+                      : 'text-success'
+                    }`}>
+                      {entry.data?.score?.toFixed(2) ?? '--'} ({entry.data?.level ?? '?'})
+                    </span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-xs text-base-content/40">No risk history</p>
+            )}
+          </div>
+
+          {/* Adversarial review results */}
+          <div>
+            <div className="flex items-center justify-between">
+              <h4 className="text-xs font-medium text-base-content/60">Adversarial Review</h4>
+              <button
+                className="btn btn-ghost btn-xs"
+                onClick={loadAdversarial}
+                disabled={adversarialLoading}
+              >
+                {adversarialLoading ? <span className="loading loading-spinner loading-xs" /> : 'Refresh'}
+              </button>
+            </div>
+            {adversarialLoading && !adversarial ? (
+              <span className="loading loading-spinner loading-xs" />
+            ) : adversarialError ? (
+              <p className="text-xs text-error mt-1">Failed to load adversarial results</p>
+            ) : adversarial && adversarial.count > 0 ? (
+              <div className="space-y-1 mt-1">
+                <p className="text-xs text-base-content/50">{adversarial.findings.length} finding{adversarial.findings.length !== 1 ? 's' : ''}</p>
+                {adversarial.findings.map((f, i) => (
+                  <div key={i} className="bg-error/10 rounded p-2 text-xs">{f}</div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-xs text-base-content/40 mt-1">No adversarial findings</p>
+            )}
+          </div>
         </div>
       )}
     </div>
