@@ -84,6 +84,7 @@ var commands = []tuiCommand{
 	{name: "/audit", description: "View audit trail", worktree: true},
 	{name: "/report", description: "Generate report", worktree: false},
 	{name: "/backup", description: "Create backup", worktree: false},
+	{name: "/restore", description: "Restore from backup", worktree: false},
 	{name: "/access", description: "List access tokens", worktree: false},
 
 	// Governance
@@ -120,6 +121,11 @@ var commands = []tuiCommand{
 	{name: "/remote merge", description: "Merge PR", worktree: true},
 	{name: "/onboarding reset", description: "Reset onboarding guide", worktree: false},
 	{name: "/config check", description: "Check config drift", worktree: false},
+	{name: "/config show", description: "Show effective config", worktree: false},
+	{name: "/config validate", description: "Validate config and agents", worktree: false},
+	{name: "/strategy", description: "List reasoning strategies", worktree: false},
+	{name: "/catalog use", description: "Use catalog template", worktree: false},
+	{name: "/catalog list", description: "List catalog templates", worktree: false},
 
 	// Modal-equivalent (execute directly in TUI)
 	{name: "/submit", description: "Submit PR", worktree: true},

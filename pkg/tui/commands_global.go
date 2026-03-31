@@ -29,11 +29,17 @@ var globalHandlers = map[string]globalHandler{
 	"/activity":         glActivity,
 	"/report":           glReport,
 	"/backup":           glBackup,
+	"/restore":          glRestore,
 	"/access":           glAccess,
 	"/diagnose":         glDiagnose,
 	"/security scan":    glSecurityScan,
 	"/onboarding reset": glOnboardingReset,
 	"/config check":     glConfigCheck,
+	"/config show":      glConfigShow,
+	"/config validate":  glConfigValidate,
+	"/strategy":         glStrategy,
+	"/catalog list":     glCatalogList,
+	"/catalog use":      glCatalogUse,
 }
 
 // ── Jobs & Metrics ──────────────────────────────────────────────────────────
@@ -442,4 +448,147 @@ func glConfigCheck(ctx context.Context, client *socket.Client, _ string) (string
 	}
 
 	return "Configuration drift:\n" + strings.Join(lines, "\n"), nil
+}
+
+func glConfigShow(ctx context.Context, client *socket.Client, _ string) (string, error) {
+	resp, err := client.Call(ctx, "settings.get", nil)
+	if err != nil {
+		return "", fmt.Errorf("settings get: %w", err)
+	}
+	var result struct {
+		Effective json.RawMessage `json:"effective"`
+	}
+	if err := json.Unmarshal(resp.Result, &result); err != nil {
+		return "", fmt.Errorf("parse response: %w", err)
+	}
+	out, err := json.MarshalIndent(result.Effective, "", "  ")
+	if err != nil {
+		return string(result.Effective), fmt.Errorf("format config: %w", err)
+	}
+
+	return string(out), nil
+}
+
+func glConfigValidate(ctx context.Context, client *socket.Client, _ string) (string, error) {
+	resp, err := client.Call(ctx, "config.validate", nil)
+	if err != nil {
+		return "", fmt.Errorf("config validate: %w", err)
+	}
+	var result struct {
+		Valid  bool `json:"valid"`
+		Checks []struct {
+			Name   string `json:"name"`
+			Status string `json:"status"`
+			Detail string `json:"detail"`
+			Fix    string `json:"fix"`
+		} `json:"checks"`
+	}
+	if err := json.Unmarshal(resp.Result, &result); err != nil {
+		return "", fmt.Errorf("parse response: %w", err)
+	}
+	var lines []string
+	for _, c := range result.Checks {
+		icon := "PASS"
+		switch c.Status {
+		case "warning":
+			icon = "WARN"
+		case "error":
+			icon = "FAIL"
+		}
+		line := fmt.Sprintf("  [%s] %s", icon, c.Name)
+		if c.Detail != "" {
+			line += " — " + c.Detail
+		}
+		if c.Fix != "" && c.Status != "ok" {
+			line += "\n         Fix: " + c.Fix
+		}
+		lines = append(lines, line)
+	}
+	header := "Configuration valid"
+	if !result.Valid {
+		header = "Configuration INVALID"
+	}
+
+	return header + ":\n" + strings.Join(lines, "\n"), nil
+}
+
+func glStrategy(ctx context.Context, client *socket.Client, _ string) (string, error) {
+	resp, err := client.Call(ctx, "strategy.list", nil)
+	if err != nil {
+		return "", fmt.Errorf("strategy list: %w", err)
+	}
+	var names []string
+	if err := json.Unmarshal(resp.Result, &names); err != nil {
+		return "", fmt.Errorf("parse response: %w", err)
+	}
+	if len(names) == 0 {
+		return "No strategies registered.", nil
+	}
+	var lines []string
+	for _, n := range names {
+		lines = append(lines, "  - "+n)
+	}
+
+	return "Available strategies:\n" + strings.Join(lines, "\n"), nil
+}
+
+func glRestore(ctx context.Context, client *socket.Client, args string) (string, error) {
+	archivePath := strings.TrimSpace(args)
+	if archivePath == "" {
+		return "Usage: /restore <archive-path>", nil
+	}
+	_, err := client.Call(ctx, "backup.restore", map[string]any{"archive_path": archivePath})
+	if err != nil {
+		return "", fmt.Errorf("restore: %w", err)
+	}
+
+	return "Restored from " + archivePath + ".", nil
+}
+
+func glCatalogList(ctx context.Context, client *socket.Client, _ string) (string, error) {
+	resp, err := client.Call(ctx, "catalog.list", nil)
+	if err != nil {
+		return "", fmt.Errorf("catalog list: %w", err)
+	}
+	var result struct {
+		Templates []struct {
+			Name        string `json:"name"`
+			Description string `json:"description"`
+		} `json:"templates"`
+	}
+	if err := json.Unmarshal(resp.Result, &result); err != nil {
+		return "", fmt.Errorf("parse response: %w", err)
+	}
+	if len(result.Templates) == 0 {
+		return "No templates in catalog.", nil
+	}
+	var lines []string
+	for _, t := range result.Templates {
+		lines = append(lines, fmt.Sprintf("  %s — %s", t.Name, t.Description))
+	}
+
+	return strings.Join(lines, "\n"), nil
+}
+
+func glCatalogUse(ctx context.Context, client *socket.Client, args string) (string, error) {
+	name := strings.TrimSpace(args)
+	if name == "" {
+		return "Usage: /catalog use <template-name>", nil
+	}
+	resp, err := client.Call(ctx, "catalog.get", map[string]any{"name": name})
+	if err != nil {
+		return "", fmt.Errorf("catalog get: %w", err)
+	}
+	var tmpl struct {
+		Name   string `json:"name"`
+		Source string `json:"source"`
+	}
+	if err := json.Unmarshal(resp.Result, &tmpl); err != nil {
+		return "", fmt.Errorf("parse response: %w", err)
+	}
+	if tmpl.Source == "" {
+		return fmt.Sprintf("Template %q has no source configured.", name), nil
+	}
+
+	return fmt.Sprintf("Template %q (source: %s). Run from a project: /start %s", name, tmpl.Source, tmpl.Source), nil
 }
