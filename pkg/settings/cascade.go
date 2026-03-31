@@ -1,8 +1,8 @@
 package settings
 
 import (
+	"maps"
 	"slices"
-	"sort"
 	"sync"
 )
 
@@ -90,13 +90,8 @@ func (r *CascadeResolver) GetResolved(key string, projectSettings, globalSetting
 // GetAllResolved returns all registered definitions with their resolved values and sources.
 func (r *CascadeResolver) GetAllResolved(projectSettings, globalSettings *Settings) []ResolvedSetting {
 	r.mu.RLock()
-	keys := make([]string, 0, len(r.definitions))
-	for k := range r.definitions {
-		keys = append(keys, k)
-	}
+	keys := slices.Sorted(maps.Keys(r.definitions))
 	r.mu.RUnlock()
-
-	sort.Strings(keys)
 
 	results := make([]ResolvedSetting, 0, len(keys))
 	for _, key := range keys {

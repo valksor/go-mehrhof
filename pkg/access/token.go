@@ -79,9 +79,14 @@ func (s *Store) Create(role Role, label string, expiry *time.Time) (string, erro
 		return "", fmt.Errorf("generate id: %w", err)
 	}
 
+	hash, err := s.hmacHash(sd.HMACKey, plaintext)
+	if err != nil {
+		return "", fmt.Errorf("hash token: %w", err)
+	}
+
 	token := Token{
 		ID:        hex.EncodeToString(idBytes),
-		Hash:      s.hmacHash(sd.HMACKey, plaintext),
+		Hash:      hash,
 		Role:      role,
 		Label:     label,
 		CreatedAt: time.Now().UTC(),
@@ -106,10 +111,22 @@ func (s *Store) Validate(plaintext string) (*Token, error) {
 		return nil, err
 	}
 
-	hash := s.hmacHash(sd.HMACKey, plaintext)
+	hash, err := s.hmacHash(sd.HMACKey, plaintext)
+	if err != nil {
+		return nil, fmt.Errorf("hash token: %w", err)
+	}
+
+	hashBytes, err := hex.DecodeString(hash)
+	if err != nil {
+		return nil, fmt.Errorf("decode computed hash: %w", err)
+	}
 
 	for i := range sd.Tokens {
-		if sd.Tokens[i].Hash == hash {
+		storedBytes, decErr := hex.DecodeString(sd.Tokens[i].Hash)
+		if decErr != nil {
+			continue // Skip malformed stored hashes
+		}
+		if hmac.Equal(storedBytes, hashBytes) {
 			if sd.Tokens[i].ExpiresAt != nil && sd.Tokens[i].ExpiresAt.Before(time.Now()) {
 				return nil, errors.New("token expired")
 			}
@@ -168,16 +185,16 @@ func (s *Store) List() ([]Token, error) {
 	return result, nil
 }
 
-func (s *Store) hmacHash(key, plaintext string) string {
+func (s *Store) hmacHash(key, plaintext string) (string, error) {
 	keyBytes, err := hex.DecodeString(key)
 	if err != nil {
-		keyBytes = []byte(key)
+		return "", fmt.Errorf("decode hmac key: %w", err)
 	}
 
 	mac := hmac.New(sha256.New, keyBytes)
 	mac.Write([]byte(plaintext))
 
-	return hex.EncodeToString(mac.Sum(nil))
+	return hex.EncodeToString(mac.Sum(nil)), nil
 }
 
 func (s *Store) load() (*storeData, error) {

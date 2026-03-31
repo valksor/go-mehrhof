@@ -69,7 +69,7 @@ func Save(path string, s *Settings) error {
 		return fmt.Errorf("marshal settings: %w", err)
 	}
 
-	if err := os.WriteFile(path, data, 0o644); err != nil {
+	if err := os.WriteFile(path, data, 0o600); err != nil {
 		return fmt.Errorf("write settings: %w", err)
 	}
 

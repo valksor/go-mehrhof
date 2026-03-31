@@ -10,6 +10,7 @@ import (
 	"os/user"
 	"path/filepath"
 	"runtime/debug"
+	"slices"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -87,23 +88,24 @@ func WithRateLimiter(rl *ratelimit.Limiter) ServerOption {
 }
 
 type Server struct {
-	path           string
-	listener       net.Listener
-	connHandlers   map[string]ConnHandler
-	handlers       map[string]Handler
-	mu             sync.RWMutex
-	conns          map[net.Conn]struct{}
-	connsMu        sync.Mutex
-	activeConns    atomic.Int32
-	shutdownCh     chan struct{}
-	isShutdown     atomic.Bool
-	shutdownOnce   sync.Once
-	rateLimiter    *ratelimit.Limiter
-	activityLogger ActivityLogger
-	metrics        *metrics.Metrics // nil means use metrics.Global()
-	drainTimeout   time.Duration    // 0 means use ShutdownTimeout
-	username       string           // Cached OS username for audit logging
-	middleware     []Middleware     // Middleware chain applied to every handler
+	path             string
+	listener         net.Listener
+	connHandlers     map[string]ConnHandler
+	handlers         map[string]Handler
+	mu               sync.RWMutex
+	conns            map[net.Conn]struct{}
+	connsMu          sync.Mutex
+	activeConns      atomic.Int32
+	shutdownCh       chan struct{}
+	isShutdown       atomic.Bool
+	shutdownOnce     sync.Once
+	rateLimiter      *ratelimit.Limiter
+	activityLogger   ActivityLogger
+	metrics          *metrics.Metrics // nil means use metrics.Global()
+	drainTimeout     time.Duration    // 0 means use ShutdownTimeout
+	username         string           // Cached OS username for audit logging
+	middleware       []Middleware     // Middleware chain applied to every handler
+	afterRecoveryPos int              // Next insertion position for UseAfterRecovery (tracks cursor)
 }
 
 // NewServer creates a new Unix domain socket server.
@@ -136,6 +138,7 @@ func NewServer(path string, opts ...ServerOption) *Server {
 		MetricsMiddleware(s.metrics),
 		ActivityLogMiddleware(func() ActivityLogger { return s.activityLogger }, false),
 	}
+	s.afterRecoveryPos = 1 // First insertion goes right after RecoveryMiddleware
 
 	return s
 }
@@ -152,6 +155,19 @@ func (s *Server) Use(mw ...Middleware) {
 	defer s.mu.Unlock()
 
 	s.middleware = append(s.middleware, mw...)
+}
+
+// UseAfterRecovery inserts middleware right after the Recovery middleware,
+// so it runs before rate limiting, metrics, and activity logging.
+// Multiple calls insert in order: first call goes to position 1,
+// second to position 2, etc.
+func (s *Server) UseAfterRecovery(mw ...Middleware) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	pos := min(s.afterRecoveryPos, len(s.middleware))
+	s.middleware = slices.Insert(s.middleware, pos, mw...)
+	s.afterRecoveryPos = pos + len(mw)
 }
 
 // getDrainTimeout returns the configured drain timeout, falling back to
@@ -359,8 +375,12 @@ func (s *Server) handleConn(ctx context.Context, conn net.Conn) {
 
 func (s *Server) dispatch(ctx context.Context, req *Request, _ net.Conn) *Response {
 	// The shutdown method is handled directly, outside the middleware chain,
-	// because it triggers server teardown.
+	// because it triggers server teardown. However, when auth middleware is
+	// active, validate the token before allowing shutdown.
 	if req.Method == "shutdown" {
+		if resp := s.checkShutdownAuth(ctx, req); resp != nil {
+			return resp
+		}
 		go s.initiateShutdown()
 		resp, _ := NewResultResponse(req.ID, map[string]bool{"ok": true})
 
@@ -430,6 +450,39 @@ func (s *Server) Broadcast(data []byte) {
 
 func (s *Server) Path() string {
 	return s.path
+}
+
+// checkShutdownAuth runs the auth middleware (if present) against the shutdown request.
+// Returns an error response if auth fails, or nil to proceed.
+func (s *Server) checkShutdownAuth(ctx context.Context, req *Request) *Response {
+	s.mu.RLock()
+	mw := make([]Middleware, len(s.middleware))
+	copy(mw, s.middleware)
+	s.mu.RUnlock()
+
+	// Walk the middleware chain looking for auth middleware by running
+	// the chain with a no-op terminal handler. If auth rejects, we get
+	// an error response back.
+	var authPassed bool
+	terminal := HandlerFunc(func(_ context.Context, _ *Request) *Response {
+		authPassed = true
+
+		return nil
+	})
+	chain := terminal
+	for i := len(mw) - 1; i >= 0; i-- {
+		chain = mw[i](chain)
+	}
+	resp := chain(ctx, req)
+	if !authPassed {
+		if resp != nil && resp.Error != nil {
+			return resp
+		}
+
+		return NewErrorResponse(req.ID, ErrCodeUnauthorized, "authentication required")
+	}
+
+	return nil
 }
 
 // Stop gracefully stops the server.

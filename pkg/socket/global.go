@@ -126,6 +126,13 @@ func NewGlobalSocketWithPool(path string, pool *worker.Pool) *GlobalSocket {
 	return g
 }
 
+// UseMiddleware inserts middleware after Recovery so it runs before
+// rate limiting, metrics, and activity logging. Use this for auth
+// middleware that should reject requests before they are logged.
+func (g *GlobalSocket) UseMiddleware(mw ...Middleware) {
+	g.server.UseAfterRecovery(mw...)
+}
+
 func (g *GlobalSocket) registerHandlers() {
 	// Ping
 	g.server.Handle("ping", g.handlePing)
