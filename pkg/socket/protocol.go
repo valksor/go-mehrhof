@@ -41,6 +41,7 @@ const (
 	ErrCodeMethodNotFound = -32601
 	ErrCodeInvalidParams  = -32602
 	ErrCodeInternal       = -32603
+	ErrCodeNotFound       = -32604
 	ErrCodeTimeout        = -32000
 	ErrCodeShuttingDown   = -32001
 	ErrCodeRateLimited    = -32002
