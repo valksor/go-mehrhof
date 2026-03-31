@@ -34,6 +34,7 @@ const CodegraphPanel = lazy(() => import('./CodegraphPanel').then(m => ({ defaul
 const ChangelogPanel = lazy(() => import('./ChangelogPanel').then(m => ({ default: m.ChangelogPanel })))
 const MetricsPanel = lazy(() => import('./MetricsPanel').then(m => ({ default: m.MetricsPanel })))
 const QualityPanel = lazy(() => import('./QualityPanel').then(m => ({ default: m.QualityPanel })))
+const EventLogPanel = lazy(() => import('./EventLogPanel').then(m => ({ default: m.EventLogPanel })))
 
 function ReviewIcon() {
   return (
@@ -86,6 +87,7 @@ export function ProjectView() {
   const [showChangelog, setShowChangelog] = useState(false)
   const [showMetrics, setShowMetrics] = useState(false)
   const [showQuality, setShowQuality] = useState(false)
+  const [showEventLog, setShowEventLog] = useState(false)
   const docsData = useDocsURL()
   const debugEnabled = useDebugStore(s => s.enabled)
   useKeyboardShortcuts() // Register keyboard shortcuts (overlay rendered in App.tsx)
@@ -226,6 +228,14 @@ export function ProjectView() {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
                     Quality Gates
+                  </button>
+                </li>
+                <li>
+                  <button role="menuitem" onClick={() => { setShowEventLog(true); (document.activeElement as HTMLElement)?.blur() }} className="text-xs gap-2">
+                    <svg aria-hidden="true" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    Event Log
                   </button>
                 </li>
               </ul>
@@ -409,6 +419,12 @@ export function ProjectView() {
           <QualityPanel
             isOpen={showQuality}
             onClose={() => setShowQuality(false)}
+          />
+        )}
+        {showEventLog && (
+          <EventLogPanel
+            isOpen={showEventLog}
+            onClose={() => setShowEventLog(false)}
           />
         )}
       </Suspense>

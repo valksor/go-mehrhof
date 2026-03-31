@@ -8,6 +8,7 @@ import { ThemeToggle } from './ThemeToggle'
 import { ActiveTasksWidget } from './ActiveTasksWidget'
 import { MetricsWidget } from './MetricsWidget'
 import { StatsWidget } from './StatsWidget'
+import { WorkersWidget } from './WorkersWidget'
 import { Onboarding } from './Onboarding'
 import { name } from '../meta'
 
@@ -480,11 +481,14 @@ export function GlobalView() {
       {/* Active Tasks Summary */}
       <ActiveTasksWidget />
 
-      {/* System Metrics & Stats */}
+      {/* System Metrics, Stats & Workers */}
       {!isSimple && connected && (
         <div className="max-w-2xl mx-auto mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
           <MetricsWidget />
           <StatsWidget />
+          <div className="sm:col-span-2">
+            <WorkersWidget />
+          </div>
         </div>
       )}
 
