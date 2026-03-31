@@ -186,7 +186,8 @@ Each transition creates a git checkpoint. `undo`/`redo` navigate between checkpo
 - `browserStore` - Playwright session state
 - `screenshotStore` - Screenshot selection and attachments
 - `themeStore` - Light/dark mode
-- `layoutStore` - Panels, widgets, tabs (13 tab types)
+- `layoutStore` - Panels, widgets, tabs (15 tab types)
+- `viewModeStore` - View mode (grid, list, etc.)
 - `debugStore` - Debug mode state and diagnostic helpers
 
 ## Key Patterns
@@ -221,6 +222,10 @@ Before deleting any logic flagged as "dead code," verify whether it is truly unu
 ## CLI Commands
 
 Commands in `cmd/kvelmo/commands/`. Entry point: `serve` (global socket + web server, port 6337).
+
+<!-- Surface parity note: these CLI commands are intentionally excluded from web chat -->
+<!-- completion, pipe, tui, serve, shutdown, cleanup, rpc, prompt, upgrade, tutorial, autostart -->
+<!-- start: complex input with file upload — handled by TaskPanel widget in web UI -->
 
 **Workflow progression:**
 - `start` - Load task and initialize worktree (accepts positional text arg; `--skip` for phase skipping; `--file`/`--symbol`/`--commit` for context attachment)
@@ -287,6 +292,7 @@ Commands in `cmd/kvelmo/commands/`. Entry point: `serve` (global socket + web se
 - `serve` - Start global socket + web server
 - `shutdown` - Gracefully stop the server
 - `cleanup` - Remove stale socket files
+- `autostart` - Auto-start worktree sockets when needed
 - `github`/`gitlab`/`linear`/`wrike`/`jira`/`azuredevops` - Provider commands (each has `login` subcommand)
 - `config test-provider` - Test a provider connection (verify token and reachability)
 
