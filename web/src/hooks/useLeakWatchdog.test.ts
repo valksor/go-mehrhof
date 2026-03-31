@@ -29,7 +29,7 @@ describe('useLeakWatchdog', () => {
     const onLeak = vi.fn()
     renderHook(() => useLeakWatchdog(onLeak))
     // Extract the callback passed to startBrowserLeakWatchdog
-    const registeredCallback = vi.mocked(startBrowserLeakWatchdog).mock.calls[0][0]
+    const registeredCallback = (startBrowserLeakWatchdog as ReturnType<typeof vi.fn>).mock.calls[0][0]
     registeredCallback(100)
     expect(onLeak).toHaveBeenCalledWith(100)
   })

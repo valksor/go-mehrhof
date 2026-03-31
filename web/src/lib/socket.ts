@@ -23,7 +23,11 @@ export class SocketClient {
   private onDisconnect?: () => void
   private buffer = '' // Buffer for fragmented messages
 
-  constructor(private url: string) {}
+  private url: string
+
+  constructor(url: string) {
+    this.url = url
+  }
 
   setOnDisconnect(handler: () => void) {
     this.onDisconnect = handler

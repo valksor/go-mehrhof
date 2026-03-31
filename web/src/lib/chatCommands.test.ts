@@ -396,22 +396,22 @@ describe('command execution', () => {
   })
 
   it('/update returns generated-specification message when content changes and regenerates', async () => {
-    const update = COMMANDS.find(c => c.name === '/update')!
-    vi.mocked(mockProjectState.update as () => Promise<unknown>).mockResolvedValue({ changed: true, specification_generated: true })
+    const update = COMMANDS.find(c => c.name === '/update')!;
+    (mockProjectState.update as ReturnType<typeof vi.fn>).mockResolvedValue({ changed: true, specification_generated: true })
 
     await expect(update.execute('')).resolves.toBe('Task updated from source — new specification generated.')
   })
 
   it('/update returns content-updated message when content changes without new specification', async () => {
-    const update = COMMANDS.find(c => c.name === '/update')!
-    vi.mocked(mockProjectState.update as () => Promise<unknown>).mockResolvedValue({ changed: true, specification_generated: false })
+    const update = COMMANDS.find(c => c.name === '/update')!;
+    (mockProjectState.update as ReturnType<typeof vi.fn>).mockResolvedValue({ changed: true, specification_generated: false })
 
     await expect(update.execute('')).resolves.toBe('Task content updated from source.')
   })
 
   it('/update returns already-up-to-date message when nothing changed', async () => {
-    const update = COMMANDS.find(c => c.name === '/update')!
-    vi.mocked(mockProjectState.update as () => Promise<unknown>).mockResolvedValue({ changed: false, specification_generated: false })
+    const update = COMMANDS.find(c => c.name === '/update')!;
+    (mockProjectState.update as ReturnType<typeof vi.fn>).mockResolvedValue({ changed: false, specification_generated: false })
 
     await expect(update.execute('')).resolves.toBe('Task is already up to date.')
   })
@@ -986,8 +986,8 @@ describe('org commands execution', () => {
   // /fork compare
   it('/fork compare returns JSON result', async () => {
     const cmd = COMMANDS.find(c => c.name === '/fork compare')!
-    setState({ state: 'loaded' })
-    vi.mocked(mockProjectState.compareForks as () => Promise<unknown>).mockResolvedValue({ winner: 'fork-a' })
+    setState({ state: 'loaded' });
+    (mockProjectState.compareForks as ReturnType<typeof vi.fn>).mockResolvedValue({ winner: 'fork-a' })
     const result = await cmd.execute('')
     expect(JSON.parse(result)).toEqual({ winner: 'fork-a' })
   })

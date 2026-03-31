@@ -610,10 +610,12 @@ describe('globalStore', () => {
     })
 
     it('does not throw when call rejects', async () => {
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
       const client = makeMockClient()
       client.call.mockRejectedValueOnce(new Error('server error'))
       injectClient(client)
       await expect(useGlobalStore.getState().loadWorkers()).resolves.not.toThrow()
+      warnSpy.mockRestore()
     })
 
     it('calls workers.list RPC method', async () => {
@@ -790,10 +792,12 @@ describe('globalStore', () => {
     })
 
     it('does not throw when call rejects', async () => {
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
       const client = makeMockClient()
       client.call.mockRejectedValueOnce(new Error('agent unavailable'))
       injectClient(client)
       await expect(useGlobalStore.getState().loadAgentStatus()).resolves.not.toThrow()
+      warnSpy.mockRestore()
     })
 
     it('calls agent.status RPC method', async () => {
@@ -844,10 +848,12 @@ describe('globalStore', () => {
     })
 
     it('does not throw when call rejects', async () => {
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
       const client = makeMockClient()
       client.call.mockRejectedValueOnce(new Error('tasks unavailable'))
       injectClient(client)
       await expect(useGlobalStore.getState().loadActiveTasks()).resolves.not.toThrow()
+      warnSpy.mockRestore()
     })
 
     it('calls tasks.list RPC method', async () => {
@@ -886,11 +892,13 @@ describe('globalStore', () => {
     })
 
     it('returns empty array when call rejects', async () => {
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
       const client = makeMockClient()
       client.call.mockRejectedValueOnce(new Error('search failed'))
       injectClient(client)
       const out = await useGlobalStore.getState().searchMemory('q')
       expect(out).toEqual([])
+      warnSpy.mockRestore()
     })
 
     it('calls memory.search with query and default limit', async () => {
@@ -961,10 +969,12 @@ describe('globalStore', () => {
     })
 
     it('does not throw when call rejects', async () => {
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
       const client = makeMockClient()
       client.call.mockRejectedValueOnce(new Error('memory locked'))
       injectClient(client)
       await expect(useGlobalStore.getState().clearMemory()).resolves.not.toThrow()
+      warnSpy.mockRestore()
     })
   })
 
@@ -1003,10 +1013,12 @@ describe('globalStore', () => {
     })
 
     it('does not throw when call rejects', async () => {
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
       const client = makeMockClient()
       client.call.mockRejectedValueOnce(new Error('jobs unavailable'))
       injectClient(client)
       await expect(useGlobalStore.getState().loadJobs()).resolves.not.toThrow()
+      warnSpy.mockRestore()
     })
   })
 
@@ -1037,11 +1049,13 @@ describe('globalStore', () => {
     })
 
     it('returns null when call rejects', async () => {
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
       const client = makeMockClient()
       client.call.mockRejectedValueOnce(new Error('not found'))
       injectClient(client)
       const result = await useGlobalStore.getState().loadJob('missing')
       expect(result).toBeNull()
+      warnSpy.mockRestore()
     })
   })
 

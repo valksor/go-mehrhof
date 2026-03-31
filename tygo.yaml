@@ -17,7 +17,9 @@ packages:
     # Only include API-relevant files, skip internal ones
     include_files:
       - "global.go"
+      - "global_projects.go"
       - "worktree.go"
+      - "worktree_checkpoint.go"
       - "memory.go"
       - "chat.go"
       - "protocol.go"

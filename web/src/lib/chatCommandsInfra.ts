@@ -429,6 +429,90 @@ const utilityCommands: ChatCommand[] = [
       return 'Configuration drift:\n' + diffs.map(d => `  ${d.key}: expected=${d.expected}, actual=${d.actual}`).join('\n')
     },
   },
+  {
+    name: '/config show',
+    description: 'Show effective configuration',
+    isAvailable: () => true,
+    execute: async () => {
+      const client = globalClient()
+      if (!client) return 'Not connected to global socket.'
+      const result = await client.call<{ effective: Record<string, unknown> }>('settings.get', {})
+      return JSON.stringify(result.effective, null, 2)
+    },
+  },
+  {
+    name: '/config validate',
+    description: 'Validate configuration and agent setup',
+    isAvailable: () => true,
+    execute: async () => {
+      const client = globalClient()
+      if (!client) return 'Not connected to global socket.'
+      const result = await client.call<{ valid: boolean; checks: Array<{ name: string; status: string; detail?: string; fix?: string }> }>('config.validate', {})
+      const lines = result.checks.map(c => {
+        const icon = c.status === 'ok' ? 'PASS' : c.status === 'warning' ? 'WARN' : 'FAIL'
+        let line = `  [${icon}] ${c.name}`
+        if (c.detail) line += ` — ${c.detail}`
+        if (c.fix && c.status !== 'ok') line += `\n         Fix: ${c.fix}`
+        return line
+      })
+      return `Configuration ${result.valid ? 'valid' : 'INVALID'}:\n${lines.join('\n')}`
+    },
+  },
+  {
+    name: '/strategy',
+    description: 'List available agent reasoning strategies',
+    isAvailable: () => true,
+    execute: async () => {
+      const client = globalClient()
+      if (!client) return 'Not connected to global socket.'
+      const names = await client.call<string[]>('strategy.list', {})
+      if (!names || names.length === 0) return 'No strategies registered.'
+      return 'Available strategies:\n' + names.map(n => `  - ${n}`).join('\n')
+    },
+  },
+  {
+    name: '/restore',
+    description: 'Restore from a backup archive',
+    isAvailable: () => true,
+    execute: async (args: string) => {
+      const archivePath = args.trim()
+      if (!archivePath) return 'Usage: /restore <archive-path>'
+      const client = globalClient()
+      if (!client) return 'Not connected to global socket.'
+      await client.call('backup.restore', { archive_path: archivePath })
+      return `Restored from ${archivePath}.`
+    },
+  },
+  {
+    name: '/catalog list',
+    description: 'List available task templates',
+    isAvailable: () => true,
+    execute: async () => {
+      const client = globalClient()
+      if (!client) return 'Not connected to global socket.'
+      const result = await client.call<{ templates: Array<{ name: string; description: string }> }>('catalog.list', {})
+      const templates = result.templates || []
+      if (templates.length === 0) return 'No templates in catalog.'
+      return templates.map(t => `  ${t.name} — ${t.description}`).join('\n')
+    },
+  },
+  {
+    name: '/catalog use',
+    description: 'Start a task from a catalog template',
+    isAvailable: () => true,
+    execute: async (args: string) => {
+      const name = args.trim()
+      if (!name) return 'Usage: /catalog use <template-name>'
+      const client = globalClient()
+      if (!client) return 'Not connected to global socket.'
+      const tmpl = await client.call<{ name: string; source: string }>('catalog.get', { name })
+      if (!tmpl.source) return `Template "${name}" has no source configured.`
+      const wtClient = worktreeClient()
+      if (!wtClient) return `Template "${name}" found (source: ${tmpl.source}). Connect to a project to start it.`
+      await wtClient.call('start', { source: tmpl.source })
+      return `Started task from template "${name}" (source: ${tmpl.source}).`
+    },
+  },
 ]
 
 export const infraCommands: ChatCommand[] = [

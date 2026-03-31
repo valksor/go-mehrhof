@@ -1,7 +1,6 @@
 import { create } from 'zustand'
 import { useGlobalStore } from './globalStore'
 import { useProjectStore } from './projectStore'
-import { cliCmd } from '../meta'
 import { chatEvents } from '../lib/events'
 
 export type MessageRole = 'user' | 'assistant' | 'system' | 'subagent' | 'permission'
@@ -171,7 +170,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
 
     const { isDisabled } = get()
     if (isDisabled) {
-      set({ error: `No active task. Start a task first with ${cliCmd('start')}.` })
+      set({ error: 'No active task. Load a task from the Task panel or run kvelmo start from the CLI.' })
       return
     }
 
