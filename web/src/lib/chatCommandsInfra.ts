@@ -8,11 +8,13 @@ const governanceCommands: ChatCommand[] = [
     name: '/approve',
     description: 'Approve workflow transition',
     isAvailable: () => getState().state === 'waiting',
-    execute: async () => {
+    execute: async (args) => {
+      const event = args.trim()
+      if (!event) return 'Usage: /approve <event> (e.g. submit, implement)'
       const client = worktreeClient()
       if (!client) return 'Not connected.'
-      await client.call('approve', {})
-      return 'Approved.'
+      await client.call('approve', { event })
+      return `Approved: ${event}`
     },
   },
   {
@@ -20,12 +22,12 @@ const governanceCommands: ChatCommand[] = [
     description: 'Mark checklist item as checked',
     isAvailable: () => isActive(),
     execute: async (args) => {
-      const index = parseInt(args.trim(), 10)
-      if (isNaN(index)) return 'Usage: /checklist check <number>'
+      const item = args.trim()
+      if (!item) return 'Usage: /checklist check <item-name>'
       const client = worktreeClient()
       if (!client) return 'Not connected.'
-      await client.call('review.checklist.check', { index })
-      return `Checklist item ${index} checked.`
+      await client.call('review.checklist.check', { item })
+      return `Checked: ${item}`
     },
   },
   {
@@ -33,12 +35,12 @@ const governanceCommands: ChatCommand[] = [
     description: 'Unmark checklist item',
     isAvailable: () => isActive(),
     execute: async (args) => {
-      const index = parseInt(args.trim(), 10)
-      if (isNaN(index)) return 'Usage: /checklist uncheck <number>'
+      const item = args.trim()
+      if (!item) return 'Usage: /checklist uncheck <item-name>'
       const client = worktreeClient()
       if (!client) return 'Not connected.'
-      await client.call('review.checklist.uncheck', { index })
-      return `Checklist item ${index} unchecked.`
+      await client.call('review.checklist.uncheck', { item })
+      return `Unchecked: ${item}`
     },
   },
   {
@@ -48,10 +50,11 @@ const governanceCommands: ChatCommand[] = [
     execute: async () => {
       const client = worktreeClient()
       if (!client) return 'Not connected.'
-      const result = await client.call<{ items: Array<{ label: string; checked: boolean }> }>('review.checklist.get', {})
-      const items = result.items || []
-      if (items.length === 0) return 'No checklist items.'
-      return items.map((item, i) => `${item.checked ? '✓' : '☐'} ${i + 1}. ${item.label}`).join('\n')
+      const result = await client.call<{ required: string[]; checked: string[] }>('review.checklist.get', {})
+      const required = result.required || []
+      if (required.length === 0) return 'No checklist items.'
+      const checkedSet = new Set(result.checked || [])
+      return required.map((item, i) => `${checkedSet.has(item) ? '✓' : '☐'} ${i + 1}. ${item}`).join('\n')
     },
   },
   {
@@ -171,6 +174,58 @@ const fileCommands: ChatCommand[] = [
       return symbols.map(s => `${s.kind} ${s.name} — ${s.file}:${s.line}`).join('\n')
     },
   },
+  {
+    name: '/codegraph callers',
+    description: 'Find callers of a symbol',
+    isAvailable: () => true,
+    execute: async (args) => {
+      const name = args.trim()
+      if (!name) return 'Usage: /codegraph callers <symbol>'
+      const client = worktreeClient()
+      if (!client) return 'Not connected.'
+      const result = await client.call<{ callers: Array<{ name: string; file: string; line: number }> }>('codegraph.callers', { name })
+      const callers = result.callers || []
+      if (callers.length === 0) return 'No callers found.'
+      return callers.map(c => `${c.name} — ${c.file}:${c.line}`).join('\n')
+    },
+  },
+  {
+    name: '/codegraph deps',
+    description: 'Find dependencies of a symbol',
+    isAvailable: () => true,
+    execute: async (args) => {
+      const name = args.trim()
+      if (!name) return 'Usage: /codegraph deps <symbol>'
+      const client = worktreeClient()
+      if (!client) return 'Not connected.'
+      const result = await client.call<{ deps: Array<{ name: string; kind: string; file: string }> }>('codegraph.deps', { name })
+      const deps = result.deps || []
+      if (deps.length === 0) return 'No dependencies found.'
+      return deps.map(d => `${d.kind} ${d.name} — ${d.file}`).join('\n')
+    },
+  },
+  {
+    name: '/codegraph index',
+    description: 'Index codebase for code graph',
+    isAvailable: () => true,
+    execute: async () => {
+      const client = worktreeClient()
+      if (!client) return 'Not connected.'
+      const result = await client.call<{ symbols: number }>('codegraph.index', {})
+      return `Indexed ${result.symbols ?? 0} symbols.`
+    },
+  },
+  {
+    name: '/codegraph stats',
+    description: 'Show code graph statistics',
+    isAvailable: () => true,
+    execute: async () => {
+      const client = worktreeClient()
+      if (!client) return 'Not connected.'
+      const result = await client.call<Record<string, unknown>>('codegraph.stats', {})
+      return JSON.stringify(result, null, 2)
+    },
+  },
 ]
 
 // ── Memory & Cache ────────────────────────────────────────────────────────
@@ -200,6 +255,17 @@ const memoryCommands: ChatCommand[] = [
       if (!client) return 'Not connected to global socket.'
       const result = await client.call<Record<string, unknown>>('memory.stats', {})
       return JSON.stringify(result, null, 2)
+    },
+  },
+  {
+    name: '/memory clear',
+    description: 'Clear all memory entries',
+    isAvailable: () => true,
+    execute: async () => {
+      const client = globalClient()
+      if (!client) return 'Not connected to global socket.'
+      await client.call('memory.clear', {})
+      return 'Memory cleared.'
     },
   },
   {
@@ -289,6 +355,58 @@ const utilityCommands: ChatCommand[] = [
     },
   },
   {
+    name: '/export',
+    description: 'Export task data',
+    isAvailable: () => isActive(),
+    execute: async (args) => {
+      const format = args.trim() || 'json'
+      const client = worktreeClient()
+      if (!client) return 'Not connected.'
+      const result = await client.call<{ data: string; path?: string }>('task.export', { format })
+      if (result.path) return `Exported to ${result.path}`
+      return result.data || 'Export complete.'
+    },
+  },
+  {
+    name: '/logs',
+    description: 'View operation logs',
+    isAvailable: () => true,
+    execute: async () => {
+      const client = globalClient()
+      if (!client) return 'Not connected to global socket.'
+      const result = await client.call<{ entries: Array<{ timestamp: string; level: string; message: string; method: string }> }>('activity.query', { limit: 20 })
+      const entries = result.entries || []
+      if (entries.length === 0) return 'No log entries.'
+      return entries.map(e => `[${e.timestamp}] [${e.level || 'INFO'}] ${e.message || e.method}`).join('\n')
+    },
+  },
+  {
+    name: '/access create',
+    description: 'Create a new operator access token',
+    isAvailable: () => true,
+    execute: async (args) => {
+      const label = args.trim()
+      if (!label) return 'Usage: /access create <label>'
+      const client = globalClient()
+      if (!client) return 'Not connected to global socket.'
+      const result = await client.call<{ token: string }>('access.token.create', { role: 'operator', label })
+      return `Token created:\n${result.token}\n\nSave this token — it cannot be shown again.`
+    },
+  },
+  {
+    name: '/access revoke',
+    description: 'Revoke an access token',
+    isAvailable: () => true,
+    execute: async (args) => {
+      const id = args.trim()
+      if (!id) return 'Usage: /access revoke <token-id>'
+      const client = globalClient()
+      if (!client) return 'Not connected to global socket.'
+      await client.call('access.token.revoke', { id })
+      return `Token ${id} revoked.`
+    },
+  },
+  {
     name: '/access',
     description: 'List access tokens',
     isAvailable: () => true,
@@ -333,6 +451,32 @@ const utilityCommands: ChatCommand[] = [
       if (note) params.note = note
       const result = await client.call<{ markdown: string }>('changelog.generate', params)
       return result.markdown || `No commits between ${source} and ${target}`
+    },
+  },
+  {
+    name: '/workers add',
+    description: 'Add a worker to the pool',
+    isAvailable: () => true,
+    execute: async (args) => {
+      const name = args.trim()
+      if (!name) return 'Usage: /workers add <agent-name>'
+      const client = globalClient()
+      if (!client) return 'Not connected to global socket.'
+      await client.call('workers.add', { name })
+      return `Worker "${name}" added.`
+    },
+  },
+  {
+    name: '/workers remove',
+    description: 'Remove a worker from the pool',
+    isAvailable: () => true,
+    execute: async (args) => {
+      const name = args.trim()
+      if (!name) return 'Usage: /workers remove <worker-name>'
+      const client = globalClient()
+      if (!client) return 'Not connected to global socket.'
+      await client.call('workers.remove', { name })
+      return `Worker "${name}" removed.`
     },
   },
   {

@@ -1256,63 +1256,63 @@ describe('governance commands execution', () => {
   it('/approve returns not connected when no client', async () => {
     const cmd = COMMANDS.find(c => c.name === '/approve')!
     setState({ state: 'waiting', client: null })
-    expect(await cmd.execute('')).toBe('Not connected.')
+    expect(await cmd.execute('submit')).toBe('Not connected.')
   })
 
-  it('/approve calls approve RPC', async () => {
+  it('/approve returns usage when no event', async () => {
+    const cmd = COMMANDS.find(c => c.name === '/approve')!
+    setState({ state: 'waiting' })
+    expect(await cmd.execute('')).toBe('Usage: /approve <event> (e.g. submit, implement)')
+  })
+
+  it('/approve calls approve RPC with event', async () => {
     const cmd = COMMANDS.find(c => c.name === '/approve')!
     mockClientCall.mockResolvedValue({})
     setState({ state: 'waiting', client: { call: mockClientCall } })
-    expect(await cmd.execute('')).toBe('Approved.')
-    expect(mockClientCall).toHaveBeenCalledWith('approve', {})
+    expect(await cmd.execute('submit')).toBe('Approved: submit')
+    expect(mockClientCall).toHaveBeenCalledWith('approve', { event: 'submit' })
   })
 
   // /checklist check
-  it('/checklist check returns usage when no index', async () => {
+  it('/checklist check returns usage when no item', async () => {
     const cmd = COMMANDS.find(c => c.name === '/checklist check')!
     setState({ state: 'loaded' })
-    expect(await cmd.execute('')).toBe('Usage: /checklist check <number>')
-  })
-
-  it('/checklist check returns usage for non-numeric arg', async () => {
-    const cmd = COMMANDS.find(c => c.name === '/checklist check')!
-    setState({ state: 'loaded' })
-    expect(await cmd.execute('abc')).toBe('Usage: /checklist check <number>')
+    expect(await cmd.execute('')).toBe('Usage: /checklist check <item-name>')
   })
 
   it('/checklist check returns not connected when no client', async () => {
     const cmd = COMMANDS.find(c => c.name === '/checklist check')!
     setState({ state: 'loaded', client: null })
-    expect(await cmd.execute('1')).toBe('Not connected.')
+    expect(await cmd.execute('tests-pass')).toBe('Not connected.')
   })
 
-  it('/checklist check calls review.checklist.check', async () => {
+  it('/checklist check calls review.checklist.check with item', async () => {
     const cmd = COMMANDS.find(c => c.name === '/checklist check')!
     mockClientCall.mockResolvedValue({})
     setState({ state: 'loaded', client: { call: mockClientCall } })
-    expect(await cmd.execute('3')).toBe('Checklist item 3 checked.')
-    expect(mockClientCall).toHaveBeenCalledWith('review.checklist.check', { index: 3 })
+    expect(await cmd.execute('tests-pass')).toBe('Checked: tests-pass')
+    expect(mockClientCall).toHaveBeenCalledWith('review.checklist.check', { item: 'tests-pass' })
   })
 
   // /checklist uncheck
-  it('/checklist uncheck returns usage when no index', async () => {
+  it('/checklist uncheck returns usage when no item', async () => {
     const cmd = COMMANDS.find(c => c.name === '/checklist uncheck')!
     setState({ state: 'loaded' })
-    expect(await cmd.execute('')).toBe('Usage: /checklist uncheck <number>')
+    expect(await cmd.execute('')).toBe('Usage: /checklist uncheck <item-name>')
   })
 
   it('/checklist uncheck returns not connected when no client', async () => {
     const cmd = COMMANDS.find(c => c.name === '/checklist uncheck')!
     setState({ state: 'loaded', client: null })
-    expect(await cmd.execute('2')).toBe('Not connected.')
+    expect(await cmd.execute('tests-pass')).toBe('Not connected.')
   })
 
-  it('/checklist uncheck calls review.checklist.uncheck', async () => {
+  it('/checklist uncheck calls review.checklist.uncheck with item', async () => {
     const cmd = COMMANDS.find(c => c.name === '/checklist uncheck')!
     mockClientCall.mockResolvedValue({})
     setState({ state: 'loaded', client: { call: mockClientCall } })
-    expect(await cmd.execute('2')).toBe('Checklist item 2 unchecked.')
-    expect(mockClientCall).toHaveBeenCalledWith('review.checklist.uncheck', { index: 2 })
+    expect(await cmd.execute('tests-pass')).toBe('Unchecked: tests-pass')
+    expect(mockClientCall).toHaveBeenCalledWith('review.checklist.uncheck', { item: 'tests-pass' })
   })
 
   // /checklist
@@ -1324,7 +1324,7 @@ describe('governance commands execution', () => {
 
   it('/checklist returns no items when empty', async () => {
     const cmd = COMMANDS.find(c => c.name === '/checklist')!
-    mockClientCall.mockResolvedValue({ items: [] })
+    mockClientCall.mockResolvedValue({ required: [] })
     setState({ state: 'loaded', client: { call: mockClientCall } })
     expect(await cmd.execute('')).toBe('No checklist items.')
   })
@@ -1332,15 +1332,13 @@ describe('governance commands execution', () => {
   it('/checklist returns formatted checked/unchecked items', async () => {
     const cmd = COMMANDS.find(c => c.name === '/checklist')!
     mockClientCall.mockResolvedValue({
-      items: [
-        { label: 'Tests pass', checked: true },
-        { label: 'Docs updated', checked: false },
-      ],
+      required: ['Tests pass', 'Docs updated'],
+      checked: ['Tests pass'],
     })
     setState({ state: 'loaded', client: { call: mockClientCall } })
     const result = await cmd.execute('')
-    expect(result).toContain('1. Tests pass')
-    expect(result).toContain('2. Docs updated')
+    expect(result).toContain('✓ 1. Tests pass')
+    expect(result).toContain('☐ 2. Docs updated')
     expect(mockClientCall).toHaveBeenCalledWith('review.checklist.get', {})
   })
 

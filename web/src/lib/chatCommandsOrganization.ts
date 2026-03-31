@@ -76,6 +76,20 @@ export const organizationCommands: ChatCommand[] = [
     execute: listQueue,
   },
   {
+    name: '/queue reorder',
+    description: 'Move a queued task to a new position',
+    isAvailable: () => true,
+    execute: async (args) => {
+      const parts = args.trim().split(/\s+/)
+      if (parts.length !== 2) return 'Usage: /queue reorder <id> <position>'
+      const [id, posStr] = parts
+      const position = parseInt(posStr, 10)
+      if (isNaN(position) || position < 1) return 'Position must be a positive number.'
+      await getState().reorderQueue(id, position)
+      return `Moved ${id} to position ${position}.`
+    },
+  },
+  {
     name: '/queue',
     description: 'List queued tasks',
     isAvailable: () => true,
