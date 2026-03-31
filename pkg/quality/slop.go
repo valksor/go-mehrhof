@@ -13,6 +13,8 @@ import (
 	"github.com/valksor/kvelmo/pkg/findings"
 )
 
+const slopCheckerName = "slop-detector"
+
 // SlopChecker detects low-quality AI-generated code patterns such as
 // boilerplate phrases, excessive comments, redundant error wrapping,
 // commented-out code blocks, and ignored errors without justification.
@@ -24,7 +26,7 @@ func NewSlopChecker() *SlopChecker {
 }
 
 // Name returns the checker name.
-func (s *SlopChecker) Name() string { return "slop-detector" }
+func (s *SlopChecker) Name() string { return slopCheckerName }
 
 // Check scans changed files in workDir for AI slop patterns and returns findings.
 func (s *SlopChecker) Check(ctx context.Context, workDir string) ([]findings.Finding, error) {
@@ -44,8 +46,8 @@ func (s *SlopChecker) Check(ctx context.Context, workDir string) ([]findings.Fin
 
 		absPath := filepath.Join(workDir, file)
 
-		info, statErr := os.Stat(absPath)
-		if statErr != nil || info.IsDir() {
+		info, statErr := os.Lstat(absPath)
+		if statErr != nil || info.IsDir() || info.Mode()&os.ModeSymlink != 0 {
 			continue
 		}
 
@@ -74,7 +76,7 @@ func changedFiles(ctx context.Context, workDir string) ([]string, error) {
 
 		output, err = cmd2.Output()
 		if err != nil {
-			return nil, fmt.Errorf("git diff: %w", err)
+			return nil, nil //nolint:nilerr // not a git repo or no git available — skip silently
 		}
 	}
 
@@ -83,9 +85,14 @@ func changedFiles(ctx context.Context, workDir string) ([]string, error) {
 	scanner := bufio.NewScanner(strings.NewReader(string(output)))
 	for scanner.Scan() {
 		line := strings.TrimSpace(scanner.Text())
-		if line != "" {
-			files = append(files, line)
+		if line == "" {
+			continue
 		}
+		// Reject absolute paths and traversal sequences from git output.
+		if filepath.IsAbs(line) || strings.Contains(line, "..") {
+			continue
+		}
+		files = append(files, line)
 	}
 
 	if err := scanner.Err(); err != nil {
@@ -142,6 +149,7 @@ func (s *SlopChecker) scanFile(relPath, absPath string) ([]findings.Finding, err
 	)
 
 	scanner := bufio.NewScanner(f)
+	scanner.Buffer(make([]byte, 0, 256*1024), 1024*1024) // handle minified files with long lines
 	lineNum := 0
 
 	for scanner.Scan() {
@@ -174,7 +182,7 @@ func (s *SlopChecker) scanFile(relPath, absPath string) ([]findings.Finding, err
 						Message:     fmt.Sprintf("AI boilerplate phrase %q in comment", phrase),
 						Remediation: "Remove conversational AI language from code comments",
 						Evidence:    trimmed,
-						Source:      "slop-detector",
+						Source:      slopCheckerName,
 					})
 
 					break // one finding per line
@@ -194,7 +202,7 @@ func (s *SlopChecker) scanFile(relPath, absPath string) ([]findings.Finding, err
 				Message:     "Redundant error wrapping with generic prefix",
 				Remediation: "Use a descriptive context prefix instead of 'error' or 'failed to fail'",
 				Evidence:    trimmed,
-				Source:      "slop-detector",
+				Source:      slopCheckerName,
 			})
 		}
 
@@ -210,7 +218,7 @@ func (s *SlopChecker) scanFile(relPath, absPath string) ([]findings.Finding, err
 				Message:     "Commented-out code should be removed",
 				Remediation: "Delete commented-out code; use version control to retrieve old code",
 				Evidence:    trimmed,
-				Source:      "slop-detector",
+				Source:      slopCheckerName,
 			})
 		}
 
@@ -237,7 +245,7 @@ func (s *SlopChecker) scanFile(relPath, absPath string) ([]findings.Finding, err
 					Message:     "Error assigned to blank identifier without justification comment",
 					Remediation: "Handle the error or add a justification comment explaining why it is safe to ignore",
 					Evidence:    trimmed,
-					Source:      "slop-detector",
+					Source:      slopCheckerName,
 				})
 			}
 		}
@@ -260,7 +268,7 @@ func (s *SlopChecker) scanFile(relPath, absPath string) ([]findings.Finding, err
 				Message: fmt.Sprintf("Excessive comment-to-code ratio: %.0f%% (%d/%d lines are comments)",
 					ratio*100, commentLines, totalLines),
 				Remediation: "Reduce unnecessary comments; code should be self-documenting where possible",
-				Source:      "slop-detector",
+				Source:      slopCheckerName,
 			})
 		}
 	}

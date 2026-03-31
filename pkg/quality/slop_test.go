@@ -10,8 +10,8 @@ import (
 
 func TestSlopCheckerName(t *testing.T) {
 	c := NewSlopChecker()
-	if c.Name() != "slop-detector" {
-		t.Errorf("Name() = %q, want %q", c.Name(), "slop-detector")
+	if c.Name() != slopCheckerName {
+		t.Errorf("Name() = %q, want %q", c.Name(), slopCheckerName)
 	}
 }
 
@@ -101,8 +101,8 @@ func TestSlopScanFileAIBoilerplate(t *testing.T) {
 				if f.Category != findings.CategoryQuality {
 					t.Errorf("category = %v, want quality", f.Category)
 				}
-				if f.Source != "slop-detector" {
-					t.Errorf("source = %q, want %q", f.Source, "slop-detector")
+				if f.Source != slopCheckerName {
+					t.Errorf("source = %q, want %q", f.Source, slopCheckerName)
 				}
 				if f.Severity != findings.SeverityMedium {
 					t.Errorf("severity = %v, want medium", f.Severity)

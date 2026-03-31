@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"strings"
 
+	"github.com/valksor/kvelmo/pkg/memory"
 	"github.com/valksor/kvelmo/pkg/storage"
 	"github.com/valksor/kvelmo/pkg/varpool"
 )
@@ -39,7 +40,7 @@ type PhaseContextProfile struct {
 	IncludeDiff         bool // current git diff
 	IncludeFindings     bool // quality gate findings
 	IncludeHierarchy    bool // parent/sibling tasks
-	IncludeMemory       bool // vector store retrieval (TODO: wire to memory.Store.Query)
+	IncludeMemory       bool // vector store retrieval for similar past context
 	IncludeContextItems bool // user-attached context references (@-mentions)
 	MaxTokenBudget      int  // soft cap for context assembly (0 = unlimited)
 }
@@ -73,6 +74,11 @@ func (c *Conductor) buildContextDeps() contextDeps {
 		}
 	}
 
+	// Attach memory store for semantic retrieval
+	if c.memoryIndexer != nil {
+		deps.MemoryStore = c.memoryIndexer.Store()
+	}
+
 	return deps
 }
 
@@ -82,12 +88,14 @@ func DefaultContextProfiles() map[string]PhaseContextProfile {
 		"plan": {
 			IncludeTask:         true,
 			IncludeHierarchy:    true,
+			IncludeMemory:       true,
 			IncludeContextItems: true,
 			MaxTokenBudget:      8000,
 		},
 		"implement": {
 			IncludeTaskSummary:  true,
 			IncludeSpecs:        true,
+			IncludeMemory:       true,
 			IncludeContextItems: true,
 			MaxTokenBudget:      12000,
 		},
@@ -114,8 +122,9 @@ func DefaultContextProfiles() map[string]PhaseContextProfile {
 // contextDeps provides optional dependencies for context assembly.
 // Fields are nil-safe — missing deps cause the corresponding section to be skipped.
 type contextDeps struct {
-	SpecContent string           // Pre-gathered specification content (from storage.GatherSpecificationsContent)
-	Resolver    *ContextResolver // Resolves ContextItems to content (nil = skip context items)
+	SpecContent string              // Pre-gathered specification content (from storage.GatherSpecificationsContent)
+	Resolver    *ContextResolver    // Resolves ContextItems to content (nil = skip context items)
+	MemoryStore *memory.VectorStore // Vector store for semantic memory retrieval (nil = skip memory)
 }
 
 // BuildPhaseContext assembles context for a phase based on its profile.
@@ -225,6 +234,38 @@ func BuildPhaseContext(ctx context.Context, profile PhaseContextProfile, wu *Wor
 		} else {
 			slog.Warn("context items attached but no resolver available — items will not be included in prompt",
 				"count", len(wu.ContextItems))
+		}
+	}
+
+	// Memory retrieval from vector store
+	if profile.IncludeMemory && dep.MemoryStore == nil {
+		slog.Debug("memory retrieval requested but no memory store available")
+	} else if profile.IncludeMemory && dep.MemoryStore != nil {
+		query := fmt.Sprintf("%s %s", wu.Title, wu.Description)
+		if runes := []rune(query); len(runes) > 512 {
+			query = string(runes[:512])
+		}
+		results, err := dep.MemoryStore.Search(ctx, query, memory.SearchOptions{
+			Limit:    5,
+			MinScore: 0.70,
+			DocumentTypes: []memory.DocumentType{
+				memory.TypeSpecification,
+				memory.TypeSolution,
+				memory.TypeDecision,
+			},
+		})
+		if err != nil {
+			slog.Warn("memory search failed", "error", err)
+		} else if len(results) > 0 {
+			var sb strings.Builder
+			for _, r := range results {
+				content := strings.NewReplacer("\r\n", " ", "\n", " ", "\r", " ").Replace(r.Document.Content)
+				if runes := []rune(content); len(runes) > 500 {
+					content = string(runes[:500]) + "..."
+				}
+				fmt.Fprintf(&sb, "- [%s] (%.0f%% match): %s\n", r.Document.Type, r.Score*100, content)
+			}
+			addSection("Related Memory", sb.String())
 		}
 	}
 

@@ -3,9 +3,16 @@ package quality
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/valksor/kvelmo/pkg/findings"
 )
+
+// PerCheckerTimeout is the maximum time any single checker gets before being
+// cancelled. This prevents a hung external tool from consuming the entire
+// quality-gate budget and starving subsequent checkers. Exported so callers
+// can scale the outer timeout proportionally (e.g., len(checkers) * PerCheckerTimeout).
+const PerCheckerTimeout = 60 * time.Second
 
 // Checker produces findings for a given work directory. Checkers represent
 // "what we check" -- they are independent of blocking decisions.
@@ -43,7 +50,9 @@ func RunGates(ctx context.Context, workDir string, checkers []Checker, gates []G
 		default:
 		}
 
-		found, err := c.Check(ctx, workDir)
+		checkerCtx, checkerCancel := context.WithTimeout(ctx, PerCheckerTimeout)
+		found, err := c.Check(checkerCtx, workDir)
+		checkerCancel()
 		if err != nil {
 			return nil, fmt.Errorf("checker %s: %w", c.Name(), err)
 		}
