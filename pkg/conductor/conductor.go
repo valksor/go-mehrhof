@@ -42,129 +42,71 @@ import (
 type Conductor struct {
 	mu sync.RWMutex
 
-	// Core components
+	// ── Core ────────────────────────────────────────────────────────────
 	machine    *Machine
 	worktree   string // Worktree path (current directory or git worktree)
 	pool       *worker.Pool
 	git        *git.Repository
 	providers  *provider.Registry
 	globalPath string
+	opts       Options
+	stdout     io.Writer
+	stderr     io.Writer
 
-	// Lifecycle context for background goroutines (watchJob, indexer)
-	// Cancelled when Close() is called
+	// ── Lifecycle ───────────────────────────────────────────────────────
 	lifecycleCtx    context.Context
 	lifecycleCancel context.CancelFunc
+	closeOnce       sync.Once
+	closed          atomic.Bool
 
-	// Close protection
-	closeOnce sync.Once
-	closed    atomic.Bool
+	// ── Task State ──────────────────────────────────────────────────────
+	workUnit          *WorkUnit
+	activeJobID       string           // ID of currently running job (for cancellation)
+	activeScheduler   *graph.Scheduler // Currently running graph scheduler (for node approvals)
+	phaseStartedAt    time.Time        // When the current phase started executing
+	specWatcher       *specWatcher     // Watches spec files for mid-execution changes
+	taskQueue         []*QueuedTask    // Pending tasks to auto-start after current finishes
+	autoAdvance       bool             // When true, plan_done → implement, implement_done → review
+	runtimeSkipPhases []string         // Per-invocation phase names to skip (merged with config)
+	dryRun            bool             // Simulates phases without agent execution
+	varPool           *varpool.Pool    // Sharing context between graph nodes
 
-	// Current task state
-	workUnit        *WorkUnit
-	activeJobID     string           // ID of currently running job (for cancellation)
-	activeScheduler *graph.Scheduler // Currently running graph scheduler (for node approvals)
-	phaseStartedAt  time.Time        // When the current phase started executing
-	specWatcher     *specWatcher     // Watches spec files for mid-execution changes
+	// ── Event System ────────────────────────────────────────────────────
+	events         chan ConductorEvent
+	eventsMu       sync.Mutex // Protects events channel send during close
+	listeners      []EventListener
+	listenersMu    sync.RWMutex         // Protects listeners (separate from mu to avoid deadlock in emit)
+	pendingPrompts map[string]chan bool // Blocking user prompts; key: UUID prompt ID; protected by c.mu
 
-	// Task queue (pending tasks to auto-start after current finishes)
-	taskQueue []*QueuedTask
+	// ── Strategy & Retry ────────────────────────────────────────────────
+	strategy         strategy.Strategy            // Agent strategy (default: "direct")
+	phaseStrategies  map[string]strategy.Strategy // Per-phase overrides take precedence
+	iterationCount   map[string]int               // phase → current iteration count
+	maxIterations    int                          // default 3
+	phasePolicies    map[string]PhasePolicy       // Per-phase failure policies (retry, skip, or fail)
+	retryCount       map[string]int               // phase → current retry count
+	router           PhaseRouter                  // Evaluates phase output and decides next action
+	lastFailureClass FailureClass                 // Classification of the most recent phase failure
+	autoFixAttempt   int                          // Auto-fix loop: current attempt
+	autoFixLastErr   string                       // Auto-fix loop: last error message
 
-	// Event streaming
-	events      chan ConductorEvent
-	eventsMu    sync.Mutex // Protects events channel send during close
-	listeners   []EventListener
-	listenersMu sync.RWMutex // Protects listeners (separate from mu to avoid deadlock in emit)
+	// ── Quality & Progress ──────────────────────────────────────────────
+	adversarialFindings []findings.Finding                // Most recent adversarial review results
+	failclassHistory    *failclass.History                // Failure classification history across quality gate runs
+	responseCache       *respcache.Cache                  // Avoids redundant agent calls on identical prompts
+	progressEstimator   *progress.Estimator               // Progress estimation for active phases
+	progressCalibrator  *progress.Calibrator              // Historical calibration for progress estimates
+	cachedSettings      atomic.Pointer[settings.Settings] // Lock-free cached settings
 
-	// pendingPrompts holds channels for blocking user prompts.
-	// Key: UUID prompt ID. Protected by c.mu.
-	pendingPrompts map[string]chan bool
-
-	// autoAdvance triggers automatic progression through phases when jobs complete.
-	// When true, plan_done → implement, implement_done → review.
-	autoAdvance bool
-
-	// runtimeSkipPhases holds per-invocation phase names to skip (merged with config).
-	runtimeSkipPhases []string
-
-	// Configuration
-	opts Options
-
-	// Output writers
-	stdout io.Writer
-	stderr io.Writer
-
-	// Memory indexer (optional, set via SetMemoryIndexer)
-	memoryIndexer *memory.Indexer
-
-	// Storage (optional, set via SetStore)
-	store *storage.Store
-
-	// Optional service integrations (set via SetNotifier, SetQualityRunner, SetMetricsRecorder)
-	notifier        Notifier
-	qualityRunner   QualityRunner
-	metricsRecorder MetricsRecorder
-
-	// Variable pool for sharing context between graph nodes
-	varPool *varpool.Pool
-
-	// Canary harness for credential sandboxing (nil when disabled)
-	canaryHarness *security.CanaryHarness
-
-	// Event log for orchestration state auditing (optional).
-	eventLog *eventlog.Log
-
-	// router evaluates phase output after completion and decides the next action
-	// (advance, retry, skip, or rollback). Initialized with DefaultRouter.
-	router PhaseRouter
-
-	// lastFailureClass records the classification of the most recent phase failure.
-	lastFailureClass FailureClass
-
-	// Auto-fix loop state: tracks the current attempt and last error.
-	autoFixAttempt int
-	autoFixLastErr string
-
-	// dryRun simulates phases without agent execution.
-	dryRun bool
-
-	// Agent strategy (default: "direct"). Per-phase overrides take precedence.
-	strategy        strategy.Strategy
-	phaseStrategies map[string]strategy.Strategy
-
-	// Iteration tracking for strategy evaluation (bounded re-submission).
-	// When a strategy's EvaluateOutput returns "needs_iteration", the phase
-	// is re-submitted up to maxIterations times before accepting the result.
-	iterationCount map[string]int // phase → current iteration count
-	maxIterations  int            // default 3
-
-	// Per-phase failure policies (retry, skip, or fail).
-	// Inspired by Dify/RAGFlow per-node error strategies.
-	phasePolicies map[string]PhasePolicy
-	retryCount    map[string]int // phase → current retry count
-
-	// Progress estimation for active phases.
-	progressEstimator  *progress.Estimator
-	progressCalibrator *progress.Calibrator
-
-	// Response cache for avoiding redundant agent calls on identical prompts.
-	responseCache *respcache.Cache
-
-	// failclassHistory persists failure classification history across quality gate runs
-	// within the same session, so that IsFlaky can detect recurring patterns.
-	failclassHistory *failclass.History
-
-	// Cached settings (loaded once, reused across phases).
-	// Uses atomic.Pointer for lock-free access to avoid deadlock when called
-	// from methods that already hold c.mu.
-	cachedSettings atomic.Pointer[settings.Settings]
-
-	// adversarialFindings stores the most recent adversarial review results.
-	adversarialFindings []findings.Finding
-
-	// taskGroupChecker is called during submit to verify cross-repo group readiness.
-	// When non-nil and sync_submit is enabled, it blocks submit until all group
-	// members reach the reviewing state. Set via SetTaskGroupChecker.
-	taskGroupChecker TaskGroupChecker
+	// ── Service Integrations (optional) ─────────────────────────────────
+	memoryIndexer    *memory.Indexer         // Set via SetMemoryIndexer
+	store            *storage.Store          // Set via SetStore
+	notifier         Notifier                // Set via SetNotifier
+	qualityRunner    QualityRunner           // Set via SetQualityRunner
+	metricsRecorder  MetricsRecorder         // Set via SetMetricsRecorder
+	canaryHarness    *security.CanaryHarness // Credential sandboxing (nil when disabled)
+	eventLog         *eventlog.Log           // Orchestration state auditing
+	taskGroupChecker TaskGroupChecker        // Cross-repo group readiness check during submit
 }
 
 // ConductorEvent represents an event emitted by the conductor.
