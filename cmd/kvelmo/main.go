@@ -177,9 +177,6 @@ func init() {
 	// Audit log
 	rootCmd.AddCommand(commands.AuditCmd)
 
-	// Access token management
-	rootCmd.AddCommand(commands.AccessCmd)
-
 	// CI pipeline status
 	rootCmd.AddCommand(commands.CICmd)
 

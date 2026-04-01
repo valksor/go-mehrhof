@@ -34,7 +34,6 @@
   - [Policy](/web-ui/policy.md)
   - [Hooks](/web-ui/hooks.md)
   - [Code Graph](/web-ui/codegraph.md)
-  - [Access Tokens](/web-ui/access.md)
   - [Logs](/web-ui/logs.md)
   - [Diagnose](/web-ui/diagnose.md)
   - [Forks](/web-ui/forks.md)
@@ -130,7 +129,6 @@
     - [test-provider](/cli/test-provider.md)
     - [--wait flag](/cli/wait.md)
   - Infrastructure
-    - [access](/cli/access.md)
     - [backup](/cli/backup.md)
     - [restore](/cli/restore.md)
     - [security](/cli/security.md)

@@ -14,37 +14,33 @@ type globalHandler func(ctx context.Context, client *socket.Client, args string)
 
 // globalHandlers maps command names to their handler functions.
 var globalHandlers = map[string]globalHandler{
-	"/jobs":             glJobs,
-	"/stats":            glStats,
-	"/workers":          glWorkers,
-	"/memory search":    glMemorySearch,
-	"/memory stats":     glMemoryStats,
-	"/memory clear":     glMemoryClear,
-	"/group create":     glGroupCreate,
-	"/group list":       glGroupList,
-	"/group status":     glGroupStatus,
-	"/group add":        glGroupAdd,
-	"/group submit":     glGroupSubmit,
-	"/group remove":     glGroupRemove,
-	"/batch":            glBatch,
-	"/activity":         glActivity,
-	"/report":           glReport,
-	"/backup":           glBackup,
-	"/restore":          glRestore,
-	"/access create":    glAccessCreate,
-	"/access revoke":    glAccessRevoke,
-	"/access":           glAccess,
-	"/logs":             glLogs,
-	"/workers add":      glWorkersAdd,
-	"/workers remove":   glWorkersRemove,
-	"/diagnose":         glDiagnose,
-	"/security scan":    glSecurityScan,
-	"/config check":     glConfigCheck,
-	"/config show":      glConfigShow,
-	"/config validate":  glConfigValidate,
-	"/strategy":         glStrategy,
-	"/catalog list":     glCatalogList,
-	"/catalog use":      glCatalogUse,
+	"/jobs":            glJobs,
+	"/stats":           glStats,
+	"/workers":         glWorkers,
+	"/memory search":   glMemorySearch,
+	"/memory stats":    glMemoryStats,
+	"/memory clear":    glMemoryClear,
+	"/group create":    glGroupCreate,
+	"/group list":      glGroupList,
+	"/group status":    glGroupStatus,
+	"/group add":       glGroupAdd,
+	"/group submit":    glGroupSubmit,
+	"/group remove":    glGroupRemove,
+	"/batch":           glBatch,
+	"/report":          glReport,
+	"/backup":          glBackup,
+	"/restore":         glRestore,
+	"/rpc-log":         glRPCLog,
+	"/workers add":     glWorkersAdd,
+	"/workers remove":  glWorkersRemove,
+	"/diagnose":        glDiagnose,
+	"/security scan":   glSecurityScan,
+	"/config check":    glConfigCheck,
+	"/config show":     glConfigShow,
+	"/config validate": glConfigValidate,
+	"/strategy":        glStrategy,
+	"/catalog list":    glCatalogList,
+	"/catalog use":     glCatalogUse,
 }
 
 // ── Jobs & Metrics ──────────────────────────────────────────────────────────
@@ -280,32 +276,6 @@ func glBatch(ctx context.Context, client *socket.Client, args string) (string, e
 	return fmt.Sprintf("Batch %s: %d/%d succeeded.", args, succeeded, result.Total), nil
 }
 
-func glActivity(ctx context.Context, client *socket.Client, _ string) (string, error) {
-	resp, err := client.Call(ctx, "activity.query", json.RawMessage(mustJSON(map[string]int{"limit": 20})))
-	if err != nil {
-		return "", fmt.Errorf("activity query: %w", err)
-	}
-	var result struct {
-		Entries []struct {
-			Method    string `json:"method"`
-			Timestamp string `json:"timestamp"`
-			Duration  int    `json:"duration_ms"`
-		} `json:"entries"`
-	}
-	if err := json.Unmarshal(resp.Result, &result); err != nil {
-		return "", fmt.Errorf("parse response: %w", err)
-	}
-	if len(result.Entries) == 0 {
-		return "No activity.", nil
-	}
-	var lines []string
-	for _, e := range result.Entries {
-		lines = append(lines, fmt.Sprintf("[%s] %s (%dms)", e.Timestamp, e.Method, e.Duration))
-	}
-
-	return strings.Join(lines, "\n"), nil
-}
-
 // ── Reports & Backup ────────────────────────────────────────────────────────
 
 func glReport(ctx context.Context, client *socket.Client, _ string) (string, error) {
@@ -339,32 +309,6 @@ func glBackup(ctx context.Context, client *socket.Client, _ string) (string, err
 	}
 
 	return "Backup created: " + result.Path, nil
-}
-
-func glAccess(ctx context.Context, client *socket.Client, _ string) (string, error) {
-	resp, err := client.Call(ctx, "access.token.list", nil)
-	if err != nil {
-		return "", fmt.Errorf("access token list: %w", err)
-	}
-	var result struct {
-		Tokens []struct {
-			ID      string `json:"id"`
-			Name    string `json:"name"`
-			Created string `json:"created"`
-		} `json:"tokens"`
-	}
-	if err := json.Unmarshal(resp.Result, &result); err != nil {
-		return "", fmt.Errorf("parse response: %w", err)
-	}
-	if len(result.Tokens) == 0 {
-		return "No access tokens.", nil
-	}
-	var lines []string
-	for _, t := range result.Tokens {
-		lines = append(lines, fmt.Sprintf("%s — %s (%s)", t.ID[:min(8, len(t.ID))], t.Name, t.Created))
-	}
-
-	return strings.Join(lines, "\n"), nil
 }
 
 // ── Diagnostics & Infrastructure ────────────────────────────────────────────
@@ -598,40 +542,6 @@ func glCatalogUse(ctx context.Context, client *socket.Client, args string) (stri
 	return fmt.Sprintf("Template %q (source: %s). Run from a project: /start %s", name, tmpl.Source, tmpl.Source), nil
 }
 
-// ── Access Token Management ────────────────────────────────────────────────
-
-func glAccessCreate(ctx context.Context, client *socket.Client, args string) (string, error) {
-	label := strings.TrimSpace(args)
-	if label == "" {
-		return "Usage: /access create <label>", nil
-	}
-	resp, err := client.Call(ctx, "access.token.create", json.RawMessage(mustJSON(map[string]string{"role": "operator", "label": label})))
-	if err != nil {
-		return "", fmt.Errorf("access token create: %w", err)
-	}
-	var result struct {
-		Token string `json:"token"`
-	}
-	if err := json.Unmarshal(resp.Result, &result); err != nil {
-		return "", fmt.Errorf("parse response: %w", err)
-	}
-
-	return fmt.Sprintf("Token created:\n%s\n\nSave this token — it cannot be shown again.", result.Token), nil
-}
-
-func glAccessRevoke(ctx context.Context, client *socket.Client, args string) (string, error) {
-	id := strings.TrimSpace(args)
-	if id == "" {
-		return "Usage: /access revoke <token-id>", nil
-	}
-	_, err := client.Call(ctx, "access.token.revoke", json.RawMessage(mustJSON(map[string]string{"id": id})))
-	if err != nil {
-		return "", fmt.Errorf("access token revoke: %w", err)
-	}
-
-	return fmt.Sprintf("Token %s revoked.", id), nil
-}
-
 // ── Worker Management ──────────────────────────────────────────────────────
 
 func glWorkersAdd(ctx context.Context, client *socket.Client, args string) (string, error) {
@@ -639,7 +549,7 @@ func glWorkersAdd(ctx context.Context, client *socket.Client, args string) (stri
 	if name == "" {
 		return "Usage: /workers add <agent-name>", nil
 	}
-	_, err := client.Call(ctx, "workers.add", json.RawMessage(mustJSON(map[string]string{"name": name})))
+	_, err := client.Call(ctx, "workers.add", json.RawMessage(mustJSON(map[string]string{"agent": name})))
 	if err != nil {
 		return "", fmt.Errorf("workers add: %w", err)
 	}
@@ -662,7 +572,7 @@ func glWorkersRemove(ctx context.Context, client *socket.Client, args string) (s
 
 // ── Logs ────────────────────────────────────────────────────────────────────
 
-func glLogs(ctx context.Context, client *socket.Client, _ string) (string, error) {
+func glRPCLog(ctx context.Context, client *socket.Client, _ string) (string, error) {
 	resp, err := client.Call(ctx, "activity.query", json.RawMessage(mustJSON(map[string]int{"limit": 20})))
 	if err != nil {
 		return "", fmt.Errorf("logs: %w", err)

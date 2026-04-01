@@ -16,7 +16,6 @@ import (
 	"time"
 
 	"github.com/spf13/cobra"
-	"github.com/valksor/kvelmo/pkg/access"
 	"github.com/valksor/kvelmo/pkg/activitylog"
 	"github.com/valksor/kvelmo/pkg/agent"
 	"github.com/valksor/kvelmo/pkg/agent/anthropic"
@@ -216,12 +215,6 @@ func runServe(cmd *cobra.Command, args []string) error {
 		// Create global socket with pool (before agent connection so the web server is available immediately)
 		globalSocket = socket.NewGlobalSocketWithPool(globalPath, pool)
 		poolCleaned = true // Pool is now managed by globalSocket
-
-		// Wire socket auth middleware when enabled in settings.
-		if effective != nil && effective.Security.SocketAuth {
-			globalSocket.UseMiddleware(socket.AuthMiddleware(access.New("")))
-			slog.Info("socket auth enabled")
-		}
 
 		go func() {
 			defer release()
@@ -508,8 +501,6 @@ func replaceOlderSocket(ctx context.Context, globalPath string) error {
 	fmt.Printf("Replacing older socket (running %s/%s, current %s/%s)\n",
 		info.Version, info.Commit, meta.Version, meta.Commit)
 
-	// Send graceful shutdown. When SocketAuth is enabled, create a short-lived
-	// token so the shutdown RPC passes authentication.
 	shutClient, err := socket.NewClient(globalPath, socket.WithTimeout(2*time.Second))
 	if err != nil {
 		// Can't connect — remove stale socket file
@@ -518,21 +509,9 @@ func replaceOlderSocket(ctx context.Context, globalPath string) error {
 		return nil
 	}
 
-	var shutdownParams map[string]any
-	if eff, _, _, _ := settings.LoadEffective(""); eff != nil && eff.Security.SocketAuth {
-		store := access.New("")
-		expiry := time.Now().Add(10 * time.Second)
-		token, createErr := store.Create(access.RoleOperator, "shutdown-handoff", &expiry)
-		if createErr != nil {
-			slog.Warn("could not create shutdown token, proceeding unauthenticated", "error", createErr)
-		} else {
-			shutdownParams = map[string]any{"_token": token}
-		}
-	}
-
 	shutCtx, shutCancel := context.WithTimeout(ctx, 2*time.Second)
 	defer shutCancel()
-	_, _ = shutClient.Call(shutCtx, "shutdown", shutdownParams)
+	_, _ = shutClient.Call(shutCtx, "shutdown", nil)
 	_ = shutClient.Close()
 
 	// Wait for socket file to disappear

@@ -399,7 +399,6 @@ type SecuritySettings struct {
 	CanaryEnabled    bool     `yaml:"canary_enabled,omitempty" json:"canary_enabled,omitempty" schema:"label=Canary Sandboxing;desc=Seed fake credentials in agent HOME to detect unauthorized file access;default=false"`
 	RedactionEnabled *bool    `yaml:"redaction_enabled,omitempty" json:"redaction_enabled,omitempty" schema:"label=Secret Redaction;desc=Automatically redact secrets from content sent to AI agents;default=true"`
 	RedactionExtra   []string `yaml:"redaction_extra,omitempty" json:"redaction_extra,omitempty" schema:"label=Extra Redaction Patterns;desc=Additional regex patterns to redact;type=tags;advanced"`
-	SocketAuth       bool     `yaml:"socket_auth,omitempty" json:"socket_auth,omitempty" schema:"label=Socket Auth;desc=Require access token for socket connections (tokens managed via kvelmo access);default=false;advanced"`
 }
 
 // WatchdogSettings configures the memory leak watchdog.

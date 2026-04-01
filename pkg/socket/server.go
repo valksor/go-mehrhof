@@ -127,6 +127,13 @@ func NewServer(path string, opts ...ServerOption) *Server {
 		opt(s)
 	}
 
+	// Register built-in shutdown handler so it goes through the middleware chain.
+	s.handlers["shutdown"] = func(_ context.Context, req *Request) (*Response, error) {
+		go s.initiateShutdown()
+
+		return NewResultResponse(req.ID, map[string]bool{"ok": true})
+	}
+
 	// Register default middleware in order: Recovery (outermost), Trace,
 	// RateLimit, Metrics, ActivityLog (innermost).
 	// ActivityLogMiddleware takes a function so that loggers set after
@@ -374,19 +381,6 @@ func (s *Server) handleConn(ctx context.Context, conn net.Conn) {
 }
 
 func (s *Server) dispatch(ctx context.Context, req *Request, _ net.Conn) *Response {
-	// The shutdown method is handled directly, outside the middleware chain,
-	// because it triggers server teardown. However, when auth middleware is
-	// active, validate the token before allowing shutdown.
-	if req.Method == "shutdown" {
-		if resp := s.checkShutdownAuth(ctx, req); resp != nil {
-			return resp
-		}
-		go s.initiateShutdown()
-		resp, _ := NewResultResponse(req.ID, map[string]bool{"ok": true})
-
-		return resp
-	}
-
 	// Look up the registered handler.
 	s.mu.RLock()
 	connHandler, hasConn := s.connHandlers[req.Method]
@@ -450,39 +444,6 @@ func (s *Server) Broadcast(data []byte) {
 
 func (s *Server) Path() string {
 	return s.path
-}
-
-// checkShutdownAuth runs the auth middleware (if present) against the shutdown request.
-// Returns an error response if auth fails, or nil to proceed.
-func (s *Server) checkShutdownAuth(ctx context.Context, req *Request) *Response {
-	s.mu.RLock()
-	mw := make([]Middleware, len(s.middleware))
-	copy(mw, s.middleware)
-	s.mu.RUnlock()
-
-	// Walk the middleware chain looking for auth middleware by running
-	// the chain with a no-op terminal handler. If auth rejects, we get
-	// an error response back.
-	var authPassed bool
-	terminal := HandlerFunc(func(_ context.Context, _ *Request) *Response {
-		authPassed = true
-
-		return nil
-	})
-	chain := terminal
-	for i := len(mw) - 1; i >= 0; i-- {
-		chain = mw[i](chain)
-	}
-	resp := chain(ctx, req)
-	if !authPassed {
-		if resp != nil && resp.Error != nil {
-			return resp
-		}
-
-		return NewErrorResponse(req.ID, ErrCodeUnauthorized, "authentication required")
-	}
-
-	return nil
 }
 
 // Stop gracefully stops the server.

@@ -309,19 +309,6 @@ function parseChangelogArgs(args: string): { source: string; target: string; not
 
 const utilityCommands: ChatCommand[] = [
   {
-    name: '/activity',
-    description: 'View RPC activity log',
-    isAvailable: () => true,
-    execute: async () => {
-      const client = globalClient()
-      if (!client) return 'Not connected to global socket.'
-      const result = await client.call<{ entries: Array<{ method: string; timestamp: string; duration_ms: number }> }>('activity.query', { limit: 20 })
-      const entries = result.entries || []
-      if (entries.length === 0) return 'No activity.'
-      return entries.map(e => `[${e.timestamp}] ${e.method} (${e.duration_ms}ms)`).join('\n')
-    },
-  },
-  {
     name: '/audit',
     description: 'View audit trail',
     isAvailable: () => true,
@@ -329,7 +316,9 @@ const utilityCommands: ChatCommand[] = [
       const client = worktreeClient()
       if (!client) return 'Not connected.'
       const result = await client.call<{ entries: Array<{ action: string; timestamp: string; details?: string }> }>('task.export', { format: 'audit' })
-      return JSON.stringify(result, null, 2)
+      const entries = result.entries || []
+      if (entries.length === 0) return 'No audit entries.'
+      return entries.map(e => `[${e.timestamp}] ${e.action}${e.details ? ' — ' + e.details : ''}`).join('\n')
     },
   },
   {
@@ -368,8 +357,8 @@ const utilityCommands: ChatCommand[] = [
     },
   },
   {
-    name: '/logs',
-    description: 'View operation logs',
+    name: '/rpc-log',
+    description: 'View RPC activity log',
     isAvailable: () => true,
     execute: async () => {
       const client = globalClient()
@@ -378,45 +367,6 @@ const utilityCommands: ChatCommand[] = [
       const entries = result.entries || []
       if (entries.length === 0) return 'No log entries.'
       return entries.map(e => `[${e.timestamp}] [${e.level || 'INFO'}] ${e.message || e.method}`).join('\n')
-    },
-  },
-  {
-    name: '/access create',
-    description: 'Create a new operator access token',
-    isAvailable: () => true,
-    execute: async (args) => {
-      const label = args.trim()
-      if (!label) return 'Usage: /access create <label>'
-      const client = globalClient()
-      if (!client) return 'Not connected to global socket.'
-      const result = await client.call<{ token: string }>('access.token.create', { role: 'operator', label })
-      return `Token created:\n${result.token}\n\nSave this token — it cannot be shown again.`
-    },
-  },
-  {
-    name: '/access revoke',
-    description: 'Revoke an access token',
-    isAvailable: () => true,
-    execute: async (args) => {
-      const id = args.trim()
-      if (!id) return 'Usage: /access revoke <token-id>'
-      const client = globalClient()
-      if (!client) return 'Not connected to global socket.'
-      await client.call('access.token.revoke', { id })
-      return `Token ${id} revoked.`
-    },
-  },
-  {
-    name: '/access',
-    description: 'List access tokens',
-    isAvailable: () => true,
-    execute: async () => {
-      const client = globalClient()
-      if (!client) return 'Not connected to global socket.'
-      const result = await client.call<{ tokens: Array<{ id: string; name: string; created: string }> }>('access.token.list', {})
-      const tokens = result.tokens || []
-      if (tokens.length === 0) return 'No access tokens.'
-      return tokens.map(t => `${t.id.slice(0, 8)} — ${t.name} (${t.created})`).join('\n')
     },
   },
   {
@@ -462,7 +412,7 @@ const utilityCommands: ChatCommand[] = [
       if (!name) return 'Usage: /workers add <agent-name>'
       const client = globalClient()
       if (!client) return 'Not connected to global socket.'
-      await client.call('workers.add', { name })
+      await client.call('workers.add', { agent: name })
       return `Worker "${name}" added.`
     },
   },

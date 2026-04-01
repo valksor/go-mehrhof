@@ -21,7 +21,6 @@ const BackupPanel = lazy(() => import('./BackupPanel').then(m => ({ default: m.B
 const ActivityPanel = lazy(() => import('./ActivityPanel').then(m => ({ default: m.ActivityPanel })))
 const SecurityPanel = lazy(() => import('./SecurityPanel').then(m => ({ default: m.SecurityPanel })))
 const CatalogPanel = lazy(() => import('./CatalogPanel').then(m => ({ default: m.CatalogPanel })))
-const AccessPanel = lazy(() => import('./AccessPanel').then(m => ({ default: m.AccessPanel })))
 const ReportPanel = lazy(() => import('./ReportPanel').then(m => ({ default: m.ReportPanel })))
 const ExportPanel = lazy(() => import('./ExportPanel').then(m => ({ default: m.ExportPanel })))
 const TaskGroupPanel = lazy(() => import('./TaskGroupPanel').then(m => ({ default: m.TaskGroupPanel })))
@@ -65,7 +64,6 @@ export function GlobalView() {
   const [showActivity, setShowActivity] = useState(false)
   const [showSecurity, setShowSecurity] = useState(false)
   const [showCatalog, setShowCatalog] = useState(false)
-  const [showAccess, setShowAccess] = useState(false)
   const [showReport, setShowReport] = useState(false)
   const [showExport, setShowExport] = useState(false)
   const [showTaskGroups, setShowTaskGroups] = useState(false)
@@ -346,19 +344,6 @@ export function GlobalView() {
           >
             <svg aria-hidden="true" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-            </svg>
-          </button>}
-
-          {/* Access tokens button */}
-          {!isSimple && <button
-            onClick={() => setShowAccess(true)}
-            disabled={!connected}
-            className="btn btn-ghost btn-sm btn-square hidden lg:inline-flex"
-            aria-label="Access Tokens"
-            title="Access Tokens"
-          >
-            <svg aria-hidden="true" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
             </svg>
           </button>}
 
@@ -696,12 +681,6 @@ export function GlobalView() {
           <CatalogPanel
             isOpen={showCatalog}
             onClose={() => setShowCatalog(false)}
-          />
-        )}
-        {showAccess && (
-          <AccessPanel
-            isOpen={showAccess}
-            onClose={() => setShowAccess(false)}
           />
         )}
         {showReport && (

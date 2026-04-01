@@ -260,11 +260,6 @@ func (g *GlobalSocket) registerHandlers() {
 	// Batch operations across worktrees
 	g.server.Handle("tasks.batch", g.handleBatch)
 
-	// Access token management
-	g.server.Handle("access.token.list", g.handleAccessTokenList)
-	g.server.Handle("access.token.create", g.handleAccessTokenCreate)
-	g.server.Handle("access.token.revoke", g.handleAccessTokenRevoke)
-
 	// Task groups (cross-repo coordination)
 	g.server.Handle("taskgroup.create", g.handleTaskGroupCreate)
 	g.server.Handle("taskgroup.list", g.handleTaskGroupList)

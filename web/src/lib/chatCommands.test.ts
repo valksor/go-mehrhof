@@ -1149,28 +1149,6 @@ describe('org commands execution', () => {
     expect(mockBatchAction).toHaveBeenCalledWith('plan')
   })
 
-  // /activity
-  it('/activity returns not connected when no global client', async () => {
-    const cmd = COMMANDS.find(c => c.name === '/activity')!
-    mockGlobalState.client = null
-    expect(await cmd.execute('')).toBe('Not connected to global socket.')
-  })
-
-  it('/activity returns formatted entries', async () => {
-    const cmd = COMMANDS.find(c => c.name === '/activity')!
-    mockClientCall.mockResolvedValue({ entries: [{ method: 'plan', timestamp: '2026-01-01', duration_ms: 42 }] })
-    mockGlobalState.client = { call: mockClientCall }
-    expect(await cmd.execute('')).toBe('[2026-01-01] plan (42ms)')
-    expect(mockClientCall).toHaveBeenCalledWith('activity.query', { limit: 20 })
-  })
-
-  it('/activity returns no activity when empty', async () => {
-    const cmd = COMMANDS.find(c => c.name === '/activity')!
-    mockClientCall.mockResolvedValue({ entries: [] })
-    mockGlobalState.client = { call: mockClientCall }
-    expect(await cmd.execute('')).toBe('No activity.')
-  })
-
   // /audit
   it('/audit returns not connected when no client', async () => {
     const cmd = COMMANDS.find(c => c.name === '/audit')!
@@ -1178,12 +1156,12 @@ describe('org commands execution', () => {
     expect(await cmd.execute('')).toBe('Not connected.')
   })
 
-  it('/audit returns JSON audit trail', async () => {
+  it('/audit returns formatted audit trail', async () => {
     const cmd = COMMANDS.find(c => c.name === '/audit')!
-    mockClientCall.mockResolvedValue({ entries: [{ action: 'plan', timestamp: '2026-01-01' }] })
+    mockClientCall.mockResolvedValue({ entries: [{ action: 'plan', timestamp: '2026-01-01', details: 'spec written' }] })
     setState({ client: { call: mockClientCall } })
     const result = await cmd.execute('')
-    expect(JSON.parse(result)).toEqual({ entries: [{ action: 'plan', timestamp: '2026-01-01' }] })
+    expect(result).toBe('[2026-01-01] plan — spec written')
     expect(mockClientCall).toHaveBeenCalledWith('task.export', { format: 'audit' })
   })
 
@@ -1224,27 +1202,6 @@ describe('org commands execution', () => {
     expect(mockClientCall).toHaveBeenCalledWith('backup.create', {})
   })
 
-  // /access
-  it('/access returns not connected when no global client', async () => {
-    const cmd = COMMANDS.find(c => c.name === '/access')!
-    mockGlobalState.client = null
-    expect(await cmd.execute('')).toBe('Not connected to global socket.')
-  })
-
-  it('/access returns formatted tokens', async () => {
-    const cmd = COMMANDS.find(c => c.name === '/access')!
-    mockClientCall.mockResolvedValue({ tokens: [{ id: 'tok12345678', name: 'dev-token', created: '2026-01-01' }] })
-    mockGlobalState.client = { call: mockClientCall }
-    expect(await cmd.execute('')).toBe('tok12345 — dev-token (2026-01-01)')
-    expect(mockClientCall).toHaveBeenCalledWith('access.token.list', {})
-  })
-
-  it('/access returns no tokens when empty', async () => {
-    const cmd = COMMANDS.find(c => c.name === '/access')!
-    mockClientCall.mockResolvedValue({ tokens: [] })
-    mockGlobalState.client = { call: mockClientCall }
-    expect(await cmd.execute('')).toBe('No access tokens.')
-  })
 })
 
 // ---------------------------------------------------------------------------
