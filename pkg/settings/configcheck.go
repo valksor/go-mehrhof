@@ -4,6 +4,7 @@ import (
 	"cmp"
 	"fmt"
 	"maps"
+	"reflect"
 	"slices"
 )
 
@@ -63,7 +64,7 @@ func checkDriftRecursive(prefix string, reference, actual map[string]any, drifts
 			continue
 		}
 
-		if fmt.Sprintf("%v", refVal) != fmt.Sprintf("%v", actVal) {
+		if !reflect.DeepEqual(refVal, actVal) {
 			*drifts = append(*drifts, ConfigDrift{
 				Path:        path,
 				Expected:    refVal,

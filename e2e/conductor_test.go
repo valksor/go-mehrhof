@@ -64,7 +64,7 @@ func TestFullConductorIntegration(t *testing.T) {
 	}()
 
 	// Wait for socket to be ready
-	time.Sleep(100 * time.Millisecond)
+	waitForSocketPath(t, sockPath, 2*time.Second)
 
 	// Connect client
 	client, err := socket.NewClient(sockPath, socket.WithTimeout(5*time.Second))

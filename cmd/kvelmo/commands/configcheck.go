@@ -48,7 +48,7 @@ func runConfigCheck(_ *cobra.Command, _ []string) error {
 
 	var result struct {
 		Drifts []settings.ConfigDrift `json:"drifts"`
-		Count  int                 `json:"count"`
+		Count  int                    `json:"count"`
 	}
 	if err := json.Unmarshal(resp.Result, &result); err != nil {
 		return fmt.Errorf("parse result: %w", err)
