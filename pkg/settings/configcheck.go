@@ -1,6 +1,4 @@
-// Package configcheck provides config drift detection by comparing
-// two settings configs field-by-field and reporting differences.
-package configcheck
+package settings
 
 import (
 	"cmp"
@@ -9,30 +7,30 @@ import (
 	"slices"
 )
 
-// Drift represents a single configuration difference between
+// ConfigDrift represents a single configuration difference between
 // a reference config and an actual config.
-type Drift struct {
+type ConfigDrift struct {
 	Path        string `json:"path"`
 	Expected    any    `json:"expected"`
 	Actual      any    `json:"actual"`
 	Description string `json:"description"`
 }
 
-// Check recursively compares two flat maps (from JSON-unmarshaled settings)
+// CheckConfigDrift recursively compares two maps (from JSON-unmarshaled settings)
 // and returns all differences. Keys in reference that are missing or differ
-// in actual are reported as Drift entries.
-func Check(reference, actual map[string]any) []Drift {
-	var drifts []Drift
-	checkRecursive("", reference, actual, &drifts)
+// in actual are reported as ConfigDrift entries.
+func CheckConfigDrift(reference, actual map[string]any) []ConfigDrift {
+	var drifts []ConfigDrift
+	checkDriftRecursive("", reference, actual, &drifts)
 
-	slices.SortFunc(drifts, func(a, b Drift) int {
+	slices.SortFunc(drifts, func(a, b ConfigDrift) int {
 		return cmp.Compare(a.Path, b.Path)
 	})
 
 	return drifts
 }
 
-func checkRecursive(prefix string, reference, actual map[string]any, drifts *[]Drift) {
+func checkDriftRecursive(prefix string, reference, actual map[string]any, drifts *[]ConfigDrift) {
 	keys := slices.Sorted(maps.Keys(reference))
 
 	for _, key := range keys {
@@ -45,7 +43,7 @@ func checkRecursive(prefix string, reference, actual map[string]any, drifts *[]D
 		actVal, exists := actual[key]
 
 		if !exists {
-			*drifts = append(*drifts, Drift{
+			*drifts = append(*drifts, ConfigDrift{
 				Path:        path,
 				Expected:    refVal,
 				Actual:      nil,
@@ -60,13 +58,13 @@ func checkRecursive(prefix string, reference, actual map[string]any, drifts *[]D
 		actMap, actIsMap := actVal.(map[string]any)
 
 		if refIsMap && actIsMap {
-			checkRecursive(path, refMap, actMap, drifts)
+			checkDriftRecursive(path, refMap, actMap, drifts)
 
 			continue
 		}
 
 		if fmt.Sprintf("%v", refVal) != fmt.Sprintf("%v", actVal) {
-			*drifts = append(*drifts, Drift{
+			*drifts = append(*drifts, ConfigDrift{
 				Path:        path,
 				Expected:    refVal,
 				Actual:      actVal,

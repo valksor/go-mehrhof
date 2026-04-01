@@ -7,8 +7,8 @@ import (
 	"time"
 
 	"github.com/spf13/cobra"
-	"github.com/valksor/kvelmo/pkg/configcheck"
 	"github.com/valksor/kvelmo/pkg/meta"
+	"github.com/valksor/kvelmo/pkg/settings"
 	"github.com/valksor/kvelmo/pkg/socket"
 )
 
@@ -47,7 +47,7 @@ func runConfigCheck(_ *cobra.Command, _ []string) error {
 	}
 
 	var result struct {
-		Drifts []configcheck.Drift `json:"drifts"`
+		Drifts []settings.ConfigDrift `json:"drifts"`
 		Count  int                 `json:"count"`
 	}
 	if err := json.Unmarshal(resp.Result, &result); err != nil {

@@ -129,7 +129,7 @@ Each transition creates a git checkpoint. `undo`/`redo` navigate between checkpo
 | `browser/` | Playwright automation for interactive testing |
 | `web/` | HTTP server + WebSocket proxy to sockets |
 | `memory/` | Vector store for semantic context search |
-| `settings/` | Configuration management |
+| `settings/` | Configuration management + drift detection |
 | `paths/` | Centralized path resolution |
 | `metrics/` | Observability (counters, latency) |
 | `security/` | Security scanning |
@@ -139,25 +139,20 @@ Each transition creates a git checkpoint. `undo`/`redo` navigate between checkpo
 | `backup/` | Backup and restore of kvelmo state |
 | `catalog/` | Task template library (built-in + custom) |
 | `changelog/` | Release changelog generation |
-| `changeset/` | Internal changeset tracking |
 | `ciwatch/` | CI pipeline status monitoring |
 | `cli/` | CLI framework utilities and output helpers |
 | `codegraph/` | Code symbol and relationship indexing (SQLite-backed) |
-| `configcheck/` | Configuration drift detection |
 | `discovery/` | Project command scanning (Makefile, package.json, Taskfile) |
 | `eventlog/` | Append-only JSONL event log for task lifecycle replay |
-| `failclass/` | Failure pattern classification (flaky vs genuine) for quality gate findings |
 | `filter/` | Generic type-safe in-memory filtering with predicates |
 | `findings/` | Unified finding model with gate rules and phase-aware quality profiles |
 | `graph/` | Dependency graph scheduling for parallel sub-tasks within phases |
 | `meta/` | Build metadata (version, commit, docs URL) |
 | `notify/` | Webhook notifications (Slack, generic) |
-| `onboarding/` | User onboarding workflows |
 | `page/` | Pagination primitives |
 | `policy/` | Workflow policy checking and validation |
-| `progress/` | Phase progress estimation with historical calibration and ETA |
 | `provision/` | Smart worktree provisioning (config copy, dependency symlinks) |
-| `quality/` | Code quality gate execution |
+| `quality/` | Code quality gate execution + failure classification |
 | `ratelimit/` | Rate limiting utilities |
 | `report/` | Compliance report generation |
 | `respcache/` | Semantic response cache for agent prompt deduplication |

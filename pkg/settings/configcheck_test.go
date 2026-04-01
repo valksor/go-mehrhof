@@ -1,10 +1,10 @@
-package configcheck
+package settings
 
 import (
 	"testing"
 )
 
-func TestCheck_NoDrift(t *testing.T) {
+func TestCheckConfigDrift_NoDrift(t *testing.T) {
 	ref := map[string]any{
 		"host": "localhost",
 		"port": 8080,
@@ -14,13 +14,13 @@ func TestCheck_NoDrift(t *testing.T) {
 		"port": 8080,
 	}
 
-	drifts := Check(ref, actual)
+	drifts := CheckConfigDrift(ref, actual)
 	if len(drifts) != 0 {
 		t.Fatalf("expected no drift, got %d: %+v", len(drifts), drifts)
 	}
 }
 
-func TestCheck_MissingKey(t *testing.T) {
+func TestCheckConfigDrift_MissingKey(t *testing.T) {
 	ref := map[string]any{
 		"host": "localhost",
 		"port": 8080,
@@ -29,7 +29,7 @@ func TestCheck_MissingKey(t *testing.T) {
 		"host": "localhost",
 	}
 
-	drifts := Check(ref, actual)
+	drifts := CheckConfigDrift(ref, actual)
 	if len(drifts) != 1 {
 		t.Fatalf("expected 1 drift, got %d: %+v", len(drifts), drifts)
 	}
@@ -43,7 +43,7 @@ func TestCheck_MissingKey(t *testing.T) {
 	}
 }
 
-func TestCheck_DifferentValue(t *testing.T) {
+func TestCheckConfigDrift_DifferentValue(t *testing.T) {
 	ref := map[string]any{
 		"host": "localhost",
 		"port": 8080,
@@ -53,7 +53,7 @@ func TestCheck_DifferentValue(t *testing.T) {
 		"port": 9090,
 	}
 
-	drifts := Check(ref, actual)
+	drifts := CheckConfigDrift(ref, actual)
 	if len(drifts) != 1 {
 		t.Fatalf("expected 1 drift, got %d: %+v", len(drifts), drifts)
 	}
@@ -71,7 +71,7 @@ func TestCheck_DifferentValue(t *testing.T) {
 	}
 }
 
-func TestCheck_NestedDrift(t *testing.T) {
+func TestCheckConfigDrift_NestedDrift(t *testing.T) {
 	ref := map[string]any{
 		"database": map[string]any{
 			"host": "db.local",
@@ -91,7 +91,7 @@ func TestCheck_NestedDrift(t *testing.T) {
 		},
 	}
 
-	drifts := Check(ref, actual)
+	drifts := CheckConfigDrift(ref, actual)
 	if len(drifts) != 2 {
 		t.Fatalf("expected 2 drifts, got %d: %+v", len(drifts), drifts)
 	}

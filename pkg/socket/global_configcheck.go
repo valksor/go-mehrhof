@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 
-	"github.com/valksor/kvelmo/pkg/configcheck"
 	"github.com/valksor/kvelmo/pkg/settings"
 )
 
@@ -33,7 +32,7 @@ func (g *GlobalSocket) handleConfigCheck(_ context.Context, req *Request) (*Resp
 		return NewErrorResponse(req.ID, ErrCodeInternal, "parse project: "+err.Error()), nil //nolint:nilerr // JSON-RPC error response
 	}
 
-	drifts := configcheck.Check(globalMap, projectMap)
+	drifts := settings.CheckConfigDrift(globalMap, projectMap)
 
 	return NewResultResponse(req.ID, map[string]any{
 		"drifts": drifts,
