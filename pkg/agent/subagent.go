@@ -1,6 +1,7 @@
 package agent
 
 import (
+	"log/slog"
 	"sync"
 	"time"
 
@@ -12,6 +13,7 @@ type SubagentTracker struct {
 	mu       sync.Mutex
 	pending  map[string]*pendingSubagent
 	eventsCh chan Event
+	doneCh   <-chan struct{} // Closed when the parent connection shuts down
 }
 
 type pendingSubagent struct {
@@ -22,6 +24,7 @@ type pendingSubagent struct {
 }
 
 // NewSubagentTracker creates a new tracker that sends events to the given channel.
+// Call SetDoneChannel after the connection's done channel is available.
 func NewSubagentTracker(eventsCh chan Event) *SubagentTracker {
 	return &SubagentTracker{
 		pending:  make(map[string]*pendingSubagent),
@@ -61,10 +64,11 @@ func (t *SubagentTracker) OnToolUse(toolCallID, toolName string, input map[strin
 		StartedAt:   now,
 	}
 	evCh := t.eventsCh // Capture under lock to avoid race with SetEventChannel
+	doneCh := t.doneCh
 	t.mu.Unlock()
 
 	// Emit started event (non-blocking to avoid deadlock if channel is full)
-	trySendEventTo(evCh, Event{
+	trySendEventTo(evCh, doneCh, Event{
 		Type:      EventSubagent,
 		Timestamp: now,
 		Subagent: &SubagentEvent{
@@ -88,6 +92,7 @@ func (t *SubagentTracker) OnToolResult(toolCallID string, success bool, errorMsg
 		delete(t.pending, toolCallID)
 	}
 	evCh := t.eventsCh // Capture under lock to avoid race with SetEventChannel
+	doneCh := t.doneCh
 	t.mu.Unlock()
 
 	if !ok {
@@ -104,8 +109,8 @@ func (t *SubagentTracker) OnToolResult(toolCallID string, success bool, errorMsg
 		exitReason = errorMsg
 	}
 
-	// Emit completion event (non-blocking to avoid deadlock if channel is full)
-	trySendEventTo(evCh, Event{
+	// Emit completion event (blocking with timeout to guarantee delivery)
+	trySendEventTo(evCh, doneCh, Event{
 		Type:      EventSubagent,
 		Timestamp: now,
 		Subagent: &SubagentEvent{
@@ -123,14 +128,36 @@ func (t *SubagentTracker) OnToolResult(toolCallID string, success bool, errorMsg
 	return true
 }
 
-// trySendEventTo attempts to send an event to the given channel without blocking.
-// Returns true if the event was sent, false if the channel was full.
+// trySendEventTo sends an event to the given channel.
+// Completion events use a blocking send with timeout to guarantee delivery
+// (matching trySendEvent policy in websocket.go). Started events use a
+// non-blocking send and are dropped if the channel is full.
 //
 //nolint:unparam // Return value reserved for future logging/metrics
-func trySendEventTo(ch chan Event, event Event) bool {
+func trySendEventTo(ch chan Event, done <-chan struct{}, event Event) bool {
+	isCompletion := event.Subagent != nil &&
+		(event.Subagent.Status == SubagentCompleted || event.Subagent.Status == SubagentFailed)
+
+	if isCompletion {
+		select {
+		case ch <- event:
+			return true
+		case <-done:
+			return false
+		case <-time.After(30 * time.Second):
+			slog.Error("subagent: completion event delivery timed out",
+				"subagent_id", event.Subagent.ID,
+				"status", string(event.Subagent.Status))
+
+			return false
+		}
+	}
+
 	select {
 	case ch <- event:
 		return true
+	case <-done:
+		return false
 	default:
 		metrics.Global().RecordEventDropped()
 
@@ -158,5 +185,12 @@ func (t *SubagentTracker) Clear() {
 func (t *SubagentTracker) SetEventChannel(ch chan Event) {
 	t.mu.Lock()
 	t.eventsCh = ch
+	t.mu.Unlock()
+}
+
+// SetDoneChannel updates the done channel used for backpressure timeouts.
+func (t *SubagentTracker) SetDoneChannel(done <-chan struct{}) {
+	t.mu.Lock()
+	t.doneCh = done
 	t.mu.Unlock()
 }

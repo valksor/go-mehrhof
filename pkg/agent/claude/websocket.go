@@ -65,6 +65,9 @@ type WebSocketConnection struct {
 
 	// Subagent tracker for detecting Task tool calls
 	subagents *agent.SubagentTracker
+
+	// Guards SendPrompt against concurrent callers
+	promptInFlight atomic.Bool
 }
 
 // Incoming message types from Claude CLI.
@@ -206,6 +209,7 @@ func (w *WebSocketConnection) Connect(ctx context.Context) error {
 		<-w.lifecycleCtx.Done()
 		close(w.done)
 	}()
+	w.subagents.SetDoneChannel(w.done)
 
 	// Create listener
 	addr := fmt.Sprintf("127.0.0.1:%d", w.port)
@@ -325,9 +329,9 @@ func (w *WebSocketConnection) launchClaude(ctx context.Context) error {
 		scanner := bufio.NewScanner(stdout)
 		for scanner.Scan() {
 			line := scanner.Text()
-			slog.Info("claude CLI stdout", "line", line)
+			slog.Debug("claude CLI stdout", "line", line)
 		}
-		slog.Info("claude CLI stdout closed")
+		slog.Debug("claude CLI stdout closed")
 	}()
 
 	// Log stderr in background
@@ -337,17 +341,19 @@ func (w *WebSocketConnection) launchClaude(ctx context.Context) error {
 			line := scanner.Text()
 			slog.Error("claude CLI stderr", "line", line)
 			if strings.TrimSpace(line) != "" {
-				w.events <- agent.Event{
+				w.trySendEvent(agent.Event{
 					Type:      agent.EventError,
 					Content:   line,
 					Timestamp: time.Now(),
-				}
+				})
 			}
 		}
 		slog.Info("claude CLI stderr closed")
 	}()
 
-	// Wait for process completion in background
+	// Wait for process completion in background.
+	// Cancel lifecycleCtx on unexpected exit to prevent goroutine leaks
+	// from the done-channel watcher spawned in Connect().
 	go func() {
 		err := w.cmd.Wait()
 		slog.Info("claude CLI exited", "error", err)
@@ -355,6 +361,9 @@ func (w *WebSocketConnection) launchClaude(ctx context.Context) error {
 		w.cmdErr = err
 		w.cmdMu.Unlock()
 		w.connected.Store(false)
+		if w.lifecycleCancel != nil {
+			w.lifecycleCancel()
+		}
 	}()
 
 	return nil
@@ -371,7 +380,7 @@ func (w *WebSocketConnection) buildArgs() []string {
 		"--include-partial-messages",
 		"--permission-mode", "bypassPermissions", // kvelmo manages permissions via KvelmoPermissionHandler
 	}
-	slog.Info("claude websocket buildArgs", "args", args)
+	slog.Debug("claude websocket buildArgs", "args", args)
 
 	// Add configured arguments
 	args = append(args, w.config.Args...)
@@ -450,9 +459,64 @@ func (w *WebSocketConnection) handleConnection(rw http.ResponseWriter, r *http.R
 				continue
 			}
 
-			slog.Info("claude websocket: parsed message", "type", msg.Type, "session_id", msg.SessionID)
+			slog.Debug("claude websocket: parsed message", "type", msg.Type, "session_id", msg.SessionID)
 			w.handleIncomingMessage(msg)
 		}
+	}
+}
+
+// trySendEvent sends an event to the events channel.
+// Terminal events (EventComplete, EventError) use a blocking send with timeout
+// to guarantee delivery — dropping them would hang SendPrompt goroutines.
+// Non-terminal events use a non-blocking send and are dropped if the channel is full.
+func (w *WebSocketConnection) trySendEvent(event agent.Event) {
+	if w.closed.Load() {
+		return
+	}
+	if event.Type == agent.EventComplete || event.Type == agent.EventError {
+		select {
+		case w.events <- event:
+		case <-w.done:
+		case <-time.After(30 * time.Second):
+			slog.Error("claude websocket: terminal event delivery timed out", "type", string(event.Type))
+		}
+
+		return
+	}
+	select {
+	case w.events <- event:
+	case <-w.done:
+	default:
+		slog.Warn("claude websocket: event dropped, channel full", "type", string(event.Type))
+	}
+}
+
+// trySendOutgoing sends a message on the outgoing channel.
+// Control responses (permission decisions) use a blocking send with timeout
+// because dropping them would leave Claude CLI waiting indefinitely.
+// Other messages use a non-blocking send.
+func (w *WebSocketConnection) trySendOutgoing(msg outgoingMessage) error {
+	if msg.Type == "control_response" {
+		select {
+		case w.outgoing <- msg:
+			return nil
+		case <-w.lifecycleCtx.Done():
+			return errors.New("connection closed")
+		case <-time.After(30 * time.Second):
+			slog.Error("claude websocket: control_response delivery timed out")
+
+			return errors.New("control response delivery timed out")
+		}
+	}
+	select {
+	case w.outgoing <- msg:
+		return nil
+	case <-w.lifecycleCtx.Done():
+		return errors.New("connection closed")
+	default:
+		slog.Warn("claude websocket: outgoing channel full, dropping message", "type", msg.Type)
+
+		return errors.New("outgoing channel full")
 	}
 }
 
@@ -469,11 +533,11 @@ func (w *WebSocketConnection) handleIncomingMessage(msg incomingMessage) {
 			w.sessionOnce.Do(func() {
 				close(w.sessionReady)
 			})
-			w.events <- agent.Event{
+			w.trySendEvent(agent.Event{
 				Type:      agent.EventInit,
 				Content:   "Session initialized: " + w.sessionID,
 				Timestamp: time.Now(),
-			}
+			})
 		}
 
 	case "stream_event":
@@ -481,21 +545,21 @@ func (w *WebSocketConnection) handleIncomingMessage(msg incomingMessage) {
 		if content == "" {
 			content = msg.Delta
 		}
-		w.events <- agent.Event{
+		w.trySendEvent(agent.Event{
 			Type:      agent.EventStream,
 			Content:   content,
 			Timestamp: time.Now(),
-		}
+		})
 
 	case "assistant":
 		if msg.Message != nil {
 			content := extractTextContent(msg.Message.Content)
 			if content != "" {
-				w.events <- agent.Event{
+				w.trySendEvent(agent.Event{
 					Type:      agent.EventAssistant,
 					Content:   content,
 					Timestamp: time.Now(),
-				}
+				})
 			}
 		}
 
@@ -526,27 +590,27 @@ func (w *WebSocketConnection) handleIncomingMessage(msg incomingMessage) {
 				_ = w.HandlePermission(req.ID, approved)
 			} else {
 				// Send event for external handling
-				w.events <- agent.Event{
+				w.trySendEvent(agent.Event{
 					Type:              agent.EventPermission,
 					PermissionRequest: &req,
 					Timestamp:         time.Now(),
-				}
+				})
 			}
 		}
 
 	case "result":
 		// Result uses subtype:"success" for success, or is_error:true for errors
 		if msg.Subtype == "success" && !msg.IsError {
-			w.events <- agent.Event{
+			w.trySendEvent(agent.Event{
 				Type:      agent.EventComplete,
 				Timestamp: time.Now(),
-			}
+			})
 		} else {
-			w.events <- agent.Event{
+			w.trySendEvent(agent.Event{
 				Type:      agent.EventError,
 				Error:     msg.Error,
 				Timestamp: time.Now(),
-			}
+			})
 		}
 
 	case "keep_alive":
@@ -559,17 +623,16 @@ func (w *WebSocketConnection) handleIncomingMessage(msg incomingMessage) {
 		}
 
 		toolCallID := msg.ID
-		if toolCallID == "" {
-			toolCallID = uuid.NewString()
+		if toolCallID != "" {
+			w.subagents.OnToolUse(toolCallID, msg.Name, input)
 		}
-		w.subagents.OnToolUse(toolCallID, msg.Name, input)
 
-		w.events <- agent.Event{
+		w.trySendEvent(agent.Event{
 			Type:      agent.EventToolUse,
 			Content:   msg.Name,
 			Data:      input,
 			Timestamp: time.Now(),
-		}
+		})
 
 	case "tool_result":
 		toolCallID := msg.ToolUseID
@@ -577,15 +640,15 @@ func (w *WebSocketConnection) handleIncomingMessage(msg incomingMessage) {
 			w.subagents.OnToolResult(toolCallID, !msg.IsError, msg.Error)
 		}
 
-		w.events <- agent.Event{
+		w.trySendEvent(agent.Event{
 			Type:      agent.EventToolResult,
 			Content:   msg.Result,
 			Timestamp: time.Now(),
-		}
+		})
 
 	case "tool_progress":
 		// Tool execution heartbeat - shows elapsed time for long-running tools
-		w.events <- agent.Event{
+		w.trySendEvent(agent.Event{
 			Type:      agent.EventToolProgress,
 			Timestamp: time.Now(),
 			Data: map[string]any{
@@ -593,7 +656,7 @@ func (w *WebSocketConnection) handleIncomingMessage(msg incomingMessage) {
 				"tool_name":       msg.ToolName,
 				"elapsed_seconds": msg.ElapsedTimeSeconds,
 			},
-		}
+		})
 
 	case "streamlined_text":
 		// Simplified text output mode (Claude v2.1.81+)
@@ -602,29 +665,29 @@ func (w *WebSocketConnection) handleIncomingMessage(msg incomingMessage) {
 			content = msg.Delta
 		}
 		if content != "" {
-			w.events <- agent.Event{
+			w.trySendEvent(agent.Event{
 				Type:      agent.EventStream,
 				Content:   content,
 				Timestamp: time.Now(),
-			}
+			})
 		}
 
 	case "streamlined_tool_use_summary":
 		// Compact tool usage summary (e.g., "Read 2 files, wrote 1 file")
-		w.events <- agent.Event{
+		w.trySendEvent(agent.Event{
 			Type:      agent.EventToolUse,
 			Content:   msg.Content,
 			Timestamp: time.Now(),
-		}
+		})
 
 	case "prompt_suggestion":
-		w.events <- agent.Event{
+		w.trySendEvent(agent.Event{
 			Type:      agent.EventPromptSuggestion,
 			Timestamp: time.Now(),
 			Data: map[string]any{
 				"suggestions": msg.Suggestions,
 			},
-		}
+		})
 
 	default:
 		slog.Debug("claude websocket: unhandled message type", "type", msg.Type)
@@ -672,7 +735,7 @@ func (w *WebSocketConnection) sendLoop(ctx context.Context) {
 			if w.conn != nil {
 				data, err := json.Marshal(msg)
 				if err == nil {
-					slog.Info("claude websocket: sending message", "type", msg.Type, "len", len(data), "data", string(data))
+					slog.Debug("claude websocket: sending message", "type", msg.Type, "len", len(data), "data", string(data))
 					data = append(data, '\n')
 					_ = w.conn.Write(ctx, websocket.MessageText, data)
 				}
@@ -691,11 +754,17 @@ func (w *WebSocketConnection) Connected() bool {
 
 // SendPrompt sends a user prompt and returns the event stream.
 func (w *WebSocketConnection) SendPrompt(ctx context.Context, prompt string) (<-chan agent.Event, error) {
+	if !w.promptInFlight.CompareAndSwap(false, true) {
+		return nil, errors.New("another prompt is already in flight")
+	}
+
 	if w.sessionID == "" {
+		w.promptInFlight.Store(false)
+
 		return nil, errors.New("not connected (no session)")
 	}
 
-	w.outgoing <- outgoingMessage{
+	if err := w.trySendOutgoing(outgoingMessage{
 		Type:      "user",
 		SessionID: w.sessionID,
 		Message: &struct {
@@ -705,23 +774,51 @@ func (w *WebSocketConnection) SendPrompt(ctx context.Context, prompt string) (<-
 			Role:    "user",
 			Content: prompt,
 		},
+	}); err != nil {
+		w.promptInFlight.Store(false)
+
+		return nil, fmt.Errorf("send prompt: %w", err)
 	}
 
 	// Return filtered event stream
 	filtered := make(chan agent.Event, 100)
 	go func() {
 		defer close(filtered)
+		defer w.promptInFlight.Store(false)
+
+		// drainStale discards buffered events so the next SendPrompt starts clean.
+		drainStale := func() {
+			for {
+				select {
+				case _, ok := <-w.events:
+					if !ok {
+						return
+					}
+				default:
+					return
+				}
+			}
+		}
+
 		for {
 			select {
 			case event, ok := <-w.events:
 				if !ok {
 					return
 				}
-				filtered <- event
+				select {
+				case filtered <- event:
+				case <-ctx.Done():
+					drainStale()
+
+					return
+				}
 				if event.Type == agent.EventComplete || event.Type == agent.EventError {
 					return
 				}
 			case <-ctx.Done():
+				drainStale()
+
 				return
 			}
 		}
@@ -756,17 +853,16 @@ func (w *WebSocketConnection) HandlePermission(requestID string, approved bool) 
 		}
 	}
 
-	slog.Info("claude websocket: sending control_response", "request_id", requestID, "behavior", inner.Behavior)
-	w.outgoing <- outgoingMessage{
+	slog.Debug("claude websocket: sending control_response", "request_id", requestID, "behavior", inner.Behavior)
+
+	return w.trySendOutgoing(outgoingMessage{
 		Type: "control_response",
 		Response: &controlResponsePayload{
 			Subtype:   "success",
 			RequestID: requestID,
 			Response:  inner,
 		},
-	}
-
-	return nil
+	})
 }
 
 // Interrupt sends an interrupt control request to abort the current agent turn.
@@ -776,22 +872,24 @@ func (w *WebSocketConnection) Interrupt() error {
 	}
 
 	requestID := uuid.NewString()
-	slog.Info("claude websocket: sending interrupt", "request_id", requestID)
+	slog.Debug("claude websocket: sending interrupt", "request_id", requestID)
 
-	w.outgoing <- outgoingMessage{
+	if err := w.trySendOutgoing(outgoingMessage{
 		Type:      "control_request",
 		RequestID: requestID,
 		Request: &controlRequestPayload{
 			Subtype: "interrupt",
 		},
+	}); err != nil {
+		return fmt.Errorf("send interrupt: %w", err)
 	}
 
 	// Emit interrupted event
-	w.events <- agent.Event{
+	w.trySendEvent(agent.Event{
 		Type:      agent.EventInterrupted,
 		Content:   "Agent turn interrupted",
 		Timestamp: time.Now(),
-	}
+	})
 
 	return nil
 }
