@@ -1,9 +1,9 @@
-package failclass
+package quality
 
 import "github.com/valksor/kvelmo/pkg/findings"
 
-// Classification is an alias for findings.Classification.
-type Classification = findings.Classification
+// FailClassification is an alias for findings.Classification.
+type FailClassification = findings.Classification
 
 const (
 	ClassFlaky        = findings.ClassificationFlaky
@@ -11,23 +11,23 @@ const (
 	ClassIntermittent = findings.ClassificationIntermittent
 )
 
-// Classifier annotates findings with failure pattern classifications.
-type Classifier struct {
-	patterns []Pattern
-	history  *History
+// FailClassifier annotates findings with failure pattern classifications.
+type FailClassifier struct {
+	patterns []FailPattern
+	history  *FailHistory
 }
 
-// New creates a Classifier with default patterns and optional history.
-func New(history *History) *Classifier {
-	return &Classifier{
-		patterns: DefaultPatterns(),
+// NewFailClassifier creates a FailClassifier with default patterns and optional history.
+func NewFailClassifier(history *FailHistory) *FailClassifier {
+	return &FailClassifier{
+		patterns: DefaultFailPatterns(),
 		history:  history,
 	}
 }
 
 // Classify annotates each finding's Classification field based on message pattern
 // matching and historical frequency. Returns the same slice with Classification set.
-func (c *Classifier) Classify(ff []findings.Finding) []findings.Finding {
+func (c *FailClassifier) Classify(ff []findings.Finding) []findings.Finding {
 	for i := range ff {
 		ff[i].Classification = string(c.classify(&ff[i]))
 	}
@@ -36,7 +36,7 @@ func (c *Classifier) Classify(ff []findings.Finding) []findings.Finding {
 }
 
 // classify determines the classification for a single finding.
-func (c *Classifier) classify(f *findings.Finding) Classification {
+func (c *FailClassifier) classify(f *findings.Finding) FailClassification {
 	// Check history first: if a rule is historically flaky, classify as flaky
 	// regardless of message content.
 	if c.history != nil && f.Rule != "" && c.history.IsFlaky(f.Rule) {
@@ -54,8 +54,8 @@ func (c *Classifier) classify(f *findings.Finding) Classification {
 	return ClassGenuine
 }
 
-// Stats returns classification statistics.
-type Stats struct {
+// FailClassifierStats returns classification statistics.
+type FailClassifierStats struct {
 	Total        int `json:"total"`
 	Flaky        int `json:"flaky"`
 	Genuine      int `json:"genuine"`
@@ -64,8 +64,8 @@ type Stats struct {
 }
 
 // Stats returns classification statistics for the given findings.
-func (c *Classifier) Stats(ff []findings.Finding) Stats {
-	s := Stats{Total: len(ff)}
+func (c *FailClassifier) Stats(ff []findings.Finding) FailClassifierStats {
+	s := FailClassifierStats{Total: len(ff)}
 
 	for _, f := range ff {
 		switch findings.Classification(f.Classification) {

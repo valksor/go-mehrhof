@@ -20,12 +20,11 @@ import (
 	"github.com/google/uuid"
 	"github.com/valksor/kvelmo/pkg/agent/strategy"
 	"github.com/valksor/kvelmo/pkg/eventlog"
-	"github.com/valksor/kvelmo/pkg/failclass"
 	"github.com/valksor/kvelmo/pkg/findings"
 	"github.com/valksor/kvelmo/pkg/git"
 	"github.com/valksor/kvelmo/pkg/graph"
+	"github.com/valksor/kvelmo/pkg/quality"
 	"github.com/valksor/kvelmo/pkg/memory"
-	"github.com/valksor/kvelmo/pkg/progress"
 	"github.com/valksor/kvelmo/pkg/provider"
 	"github.com/valksor/kvelmo/pkg/respcache"
 	"github.com/valksor/kvelmo/pkg/security"
@@ -94,10 +93,10 @@ type Conductor struct {
 	qualityGateRunning  bool                              // Guard: true while quality gate is running under mu unlock
 	qualityGateDone     sync.WaitGroup                    // Signals when an in-flight quality gate finishes
 	adversarialFindings []findings.Finding                // Most recent adversarial review results
-	failclassHistory    *failclass.History                // Failure classification history across quality gate runs
+	failclassHistory    *quality.FailHistory               // Failure classification history across quality gate runs
 	responseCache       *respcache.Cache                  // Avoids redundant agent calls on identical prompts
-	progressEstimator   *progress.Estimator               // Progress estimation for active phases
-	progressCalibrator  *progress.Calibrator              // Historical calibration for progress estimates
+	progressEstimator   *ProgressEstimator                // Progress estimation for active phases
+	progressCalibrator  *ProgressCalibrator               // Historical calibration for progress estimates
 	cachedSettings      atomic.Pointer[settings.Settings] // Lock-free cached settings
 
 	// ── Service Integrations (optional) ─────────────────────────────────
@@ -335,7 +334,7 @@ func New(opts ...Option) (*Conductor, error) {
 		retryCount:         make(map[string]int),
 		dryRun:             options.DryRun,
 		router:             NewDefaultRouter(),
-		progressCalibrator: progress.NewCalibrator(),
+		progressCalibrator: NewProgressCalibrator(),
 	}
 	c.cachedSettings.Store(effectiveSettings) // Cache pre-loaded settings (atomic)
 	c.loadPhasePoliciesFromSettings()
@@ -859,7 +858,7 @@ func NewConductor(cfg ConductorConfig) *Conductor {
 		phasePolicies:      defaultPhasePolicies(),
 		retryCount:         make(map[string]int),
 		router:             NewDefaultRouter(),
-		progressCalibrator: progress.NewCalibrator(),
+		progressCalibrator: NewProgressCalibrator(),
 	}
 
 	// Set worktree path - prefer explicit config, fallback to repo path

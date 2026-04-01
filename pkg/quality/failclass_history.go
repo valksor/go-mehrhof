@@ -1,39 +1,39 @@
-package failclass
+package quality
 
 import "sync"
 
-// History tracks failure frequency per rule to detect flaky patterns over time.
-type History struct {
+// FailHistory tracks failure frequency per rule to detect flaky patterns over time.
+type FailHistory struct {
 	mu      sync.Mutex
-	records map[string]*RuleRecord // key: rule name
-	window  int                    // max entries per rule
+	records map[string]*FailRuleRecord // key: rule name
+	window  int                        // max entries per rule
 }
 
-// RuleRecord tracks recent outcomes for a single rule.
-type RuleRecord struct {
+// FailRuleRecord tracks recent outcomes for a single rule.
+type FailRuleRecord struct {
 	Outcomes []bool // true=passed, false=failed
 }
 
-// NewHistory creates a History with the given window size.
-func NewHistory(window int) *History {
+// NewFailHistory creates a FailHistory with the given window size.
+func NewFailHistory(window int) *FailHistory {
 	if window < 1 {
 		window = 10
 	}
 
-	return &History{
-		records: make(map[string]*RuleRecord),
+	return &FailHistory{
+		records: make(map[string]*FailRuleRecord),
 		window:  window,
 	}
 }
 
 // Record adds an outcome for a rule.
-func (h *History) Record(rule string, passed bool) {
+func (h *FailHistory) Record(rule string, passed bool) {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 
 	rec, ok := h.records[rule]
 	if !ok {
-		rec = &RuleRecord{}
+		rec = &FailRuleRecord{}
 		h.records[rule] = rec
 	}
 
@@ -44,7 +44,7 @@ func (h *History) Record(rule string, passed bool) {
 }
 
 // IsFlaky returns true if a rule fails more than 60% of the time in its window.
-func (h *History) IsFlaky(rule string) bool {
+func (h *FailHistory) IsFlaky(rule string) bool {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 

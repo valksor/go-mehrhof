@@ -9,7 +9,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/valksor/kvelmo/pkg/failclass"
 	"github.com/valksor/kvelmo/pkg/findings"
 	"github.com/valksor/kvelmo/pkg/quality"
 	"github.com/valksor/kvelmo/pkg/security"
@@ -190,12 +189,12 @@ func (c *Conductor) applyFailureClassification(_ context.Context, filtered []fin
 	// across quality gate runs within the same session.
 	c.mu.Lock()
 	if c.failclassHistory == nil {
-		c.failclassHistory = failclass.NewHistory(window)
+		c.failclassHistory = quality.NewFailHistory(window)
 	}
 	history := c.failclassHistory
 	c.mu.Unlock()
 
-	classifier := failclass.New(history)
+	classifier := quality.NewFailClassifier(history)
 	classified := classifier.Classify(filtered)
 
 	stats := classifier.Stats(classified)
@@ -216,7 +215,7 @@ func (c *Conductor) applyFailureClassification(_ context.Context, filtered []fin
 	// Return only genuine and intermittent findings.
 	var genuine []findings.Finding
 	for _, f := range classified {
-		if f.Classification != string(failclass.ClassFlaky) {
+		if f.Classification != string(quality.ClassFlaky) {
 			genuine = append(genuine, f)
 		}
 	}

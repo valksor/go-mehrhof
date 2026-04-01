@@ -1,4 +1,4 @@
-package failclass
+package quality
 
 import (
 	"testing"
@@ -9,7 +9,7 @@ import (
 func TestClassify_TimeoutIsFlaky(t *testing.T) {
 	t.Parallel()
 
-	c := New(nil)
+	c := NewFailClassifier(nil)
 	ff := []findings.Finding{
 		{Message: "context deadline exceeded", Rule: "test_timeout"},
 	}
@@ -23,7 +23,7 @@ func TestClassify_TimeoutIsFlaky(t *testing.T) {
 func TestClassify_LintErrorIsGenuine(t *testing.T) {
 	t.Parallel()
 
-	c := New(nil)
+	c := NewFailClassifier(nil)
 	ff := []findings.Finding{
 		{Message: "unused variable x", Rule: "lint_unused"},
 	}
@@ -37,7 +37,7 @@ func TestClassify_LintErrorIsGenuine(t *testing.T) {
 func TestClassify_EADDRINUSEIsFlaky(t *testing.T) {
 	t.Parallel()
 
-	c := New(nil)
+	c := NewFailClassifier(nil)
 	ff := []findings.Finding{
 		{Message: "bind: address already in use", Rule: "test_bind"},
 	}
@@ -51,7 +51,7 @@ func TestClassify_EADDRINUSEIsFlaky(t *testing.T) {
 func TestClassify_UnknownIsGenuine(t *testing.T) {
 	t.Parallel()
 
-	c := New(nil)
+	c := NewFailClassifier(nil)
 	ff := []findings.Finding{
 		{Message: "some completely unknown error pattern xyz123", Rule: "unknown_rule"},
 	}
@@ -65,14 +65,14 @@ func TestClassify_UnknownIsGenuine(t *testing.T) {
 func TestClassify_HistoryOverridesPattern(t *testing.T) {
 	t.Parallel()
 
-	h := NewHistory(5)
+	h := NewFailHistory(5)
 	// Record mostly failures for this rule (4/5 = 80% > 60%)
 	for range 4 {
 		h.Record("my_rule", false)
 	}
 	h.Record("my_rule", true)
 
-	c := New(h)
+	c := NewFailClassifier(h)
 	ff := []findings.Finding{
 		{Message: "perfectly normal error message", Rule: "my_rule"},
 	}
@@ -83,10 +83,10 @@ func TestClassify_HistoryOverridesPattern(t *testing.T) {
 	}
 }
 
-func TestStats_CountsCorrectly(t *testing.T) {
+func TestFailClassifierStats_CountsCorrectly(t *testing.T) {
 	t.Parallel()
 
-	c := New(nil)
+	c := NewFailClassifier(nil)
 	ff := []findings.Finding{
 		{Classification: string(ClassFlaky)},
 		{Classification: string(ClassFlaky)},
@@ -113,13 +113,13 @@ func TestStats_CountsCorrectly(t *testing.T) {
 	}
 }
 
-func TestPatterns_AllMatch(t *testing.T) {
+func TestFailPatterns_AllMatch(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
 		name    string
 		input   string
-		wantCls Classification
+		wantCls FailClassification
 	}{
 		{"timeout", "operation timeout after 30s", ClassFlaky},
 		{"deadline_exceeded", "context deadline exceeded", ClassFlaky},
@@ -139,7 +139,7 @@ func TestPatterns_AllMatch(t *testing.T) {
 		{"genuine_lint", "unused import fmt", ClassGenuine},
 	}
 
-	c := New(nil)
+	c := NewFailClassifier(nil)
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
@@ -147,20 +147,20 @@ func TestPatterns_AllMatch(t *testing.T) {
 			ff := []findings.Finding{{Message: tt.input}}
 			result := c.Classify(ff)
 
-			if Classification(result[0].Classification) != tt.wantCls {
+			if FailClassification(result[0].Classification) != tt.wantCls {
 				t.Errorf("input %q: expected %s, got %s", tt.input, tt.wantCls, result[0].Classification)
 			}
 		})
 	}
 }
 
-func TestHistory_IsFlaky(t *testing.T) {
+func TestFailHistory_IsFlaky(t *testing.T) {
 	t.Parallel()
 
 	t.Run("empty history is not flaky", func(t *testing.T) {
 		t.Parallel()
 
-		h := NewHistory(10)
+		h := NewFailHistory(10)
 		if h.IsFlaky("unknown_rule") {
 			t.Error("expected empty history to not be flaky")
 		}
@@ -169,7 +169,7 @@ func TestHistory_IsFlaky(t *testing.T) {
 	t.Run("mostly passing is not flaky", func(t *testing.T) {
 		t.Parallel()
 
-		h := NewHistory(10)
+		h := NewFailHistory(10)
 		for range 8 {
 			h.Record("rule", true)
 		}
@@ -184,7 +184,7 @@ func TestHistory_IsFlaky(t *testing.T) {
 	t.Run("mostly failing is flaky", func(t *testing.T) {
 		t.Parallel()
 
-		h := NewHistory(5)
+		h := NewFailHistory(5)
 		h.Record("rule", false)
 		h.Record("rule", false)
 		h.Record("rule", false)
@@ -199,7 +199,7 @@ func TestHistory_IsFlaky(t *testing.T) {
 	t.Run("window truncation", func(t *testing.T) {
 		t.Parallel()
 
-		h := NewHistory(3)
+		h := NewFailHistory(3)
 		// Old failures
 		h.Record("rule", false)
 		h.Record("rule", false)

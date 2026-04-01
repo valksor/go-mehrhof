@@ -3,8 +3,8 @@ package socket
 import (
 	"context"
 
-	"github.com/valksor/kvelmo/pkg/failclass"
 	"github.com/valksor/kvelmo/pkg/findings"
+	"github.com/valksor/kvelmo/pkg/quality"
 )
 
 // handleFailclassStats returns failure classification statistics for the current
@@ -16,7 +16,7 @@ func (w *WorktreeSocket) handleFailclassStats(_ context.Context, req *Request) (
 
 	wu := w.conductor.WorkUnit()
 	if wu == nil {
-		return NewResultResponse(req.ID, failclass.Stats{})
+		return NewResultResponse(req.ID, quality.FailClassifierStats{})
 	}
 
 	// Build findings from the quality gate error if present.
@@ -29,7 +29,7 @@ func (w *WorktreeSocket) handleFailclassStats(_ context.Context, req *Request) (
 		})
 	}
 
-	classifier := failclass.New(nil)
+	classifier := quality.NewFailClassifier(nil)
 	classified := classifier.Classify(ff)
 	stats := classifier.Stats(classified)
 
