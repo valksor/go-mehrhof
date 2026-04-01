@@ -800,7 +800,29 @@ func wtAudit(ctx context.Context, client *socket.Client, _ string, _ bool) (stri
 		return "", err
 	}
 
-	return string(resp.Result), nil
+	var result struct {
+		Entries []struct {
+			Action    string `json:"action"`
+			Timestamp string `json:"timestamp"`
+			Details   string `json:"details"`
+		} `json:"entries"`
+	}
+	if err := json.Unmarshal(resp.Result, &result); err != nil {
+		return string(resp.Result), nil //nolint:nilerr // Fallback to raw JSON on parse failure
+	}
+	if len(result.Entries) == 0 {
+		return "No audit entries.", nil
+	}
+	var lines []string
+	for _, e := range result.Entries {
+		line := fmt.Sprintf("[%s] %s", e.Timestamp, e.Action)
+		if e.Details != "" {
+			line += " — " + e.Details
+		}
+		lines = append(lines, line)
+	}
+
+	return strings.Join(lines, "\n"), nil
 }
 
 // ── Files & Code ────────────────────────────────────────────────────────────

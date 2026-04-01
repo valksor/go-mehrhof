@@ -123,6 +123,16 @@ export const organizationCommands: ChatCommand[] = [
     isAvailable: () => isActive(),
     execute: async () => {
       const result = await getState().compareForks()
+      if (!result) return 'No comparison data.'
+      if (Array.isArray(result)) {
+        return (result as Record<string, unknown>[]).map(r => {
+          const id = typeof r.id === 'string' ? r.id.slice(0, 8) : '?'
+          const label = typeof r.label === 'string' ? r.label : 'unknown'
+          const state = typeof r.state === 'string' ? r.state : '?'
+          const summary = typeof r.summary === 'string' ? r.summary : 'no summary'
+          return `${id} — ${label} [${state}]: ${summary}`
+        }).join('\n')
+      }
       return JSON.stringify(result, null, 2)
     },
   },

@@ -37,7 +37,7 @@ export const controlCommands: ChatCommand[] = [
     description: 'Abort current operation',
     isAvailable: () => {
       const s = getState().state
-      return s !== 'none' && s !== 'submitted'
+      return s !== 'none' && s !== 'loaded' && s !== 'submitted'
     },
     execute: async () => {
       await getState().abort()
