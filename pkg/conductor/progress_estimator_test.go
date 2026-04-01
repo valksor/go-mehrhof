@@ -1,11 +1,11 @@
-package progress
+package conductor
 
 import (
 	"testing"
 	"time"
 )
 
-func TestEstimator_CalibratedProgress(t *testing.T) {
+func TestProgressEstimator_CalibratedProgress(t *testing.T) {
 	tests := []struct {
 		name         string
 		meanDuration time.Duration
@@ -38,7 +38,7 @@ func TestEstimator_CalibratedProgress(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			e := NewEstimator(tt.meanDuration)
+			e := NewProgressEstimator(tt.meanDuration)
 			e.mu.Lock()
 			e.startTime = time.Now().Add(-tt.elapsed)
 			e.mu.Unlock()
@@ -54,7 +54,7 @@ func TestEstimator_CalibratedProgress(t *testing.T) {
 	}
 }
 
-func TestEstimator_UncalibratedProgress(t *testing.T) {
+func TestProgressEstimator_UncalibratedProgress(t *testing.T) {
 	tests := []struct {
 		name       string
 		signals    int
@@ -83,7 +83,7 @@ func TestEstimator_UncalibratedProgress(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			e := NewEstimator(0) // uncalibrated
+			e := NewProgressEstimator(0) // uncalibrated
 			for range tt.signals {
 				e.Signal()
 			}
@@ -102,7 +102,7 @@ func TestEstimator_UncalibratedProgress(t *testing.T) {
 	}
 }
 
-func TestEstimator_CappedAt95(t *testing.T) {
+func TestProgressEstimator_CappedAt95(t *testing.T) {
 	tests := []struct {
 		name         string
 		meanDuration time.Duration
@@ -122,7 +122,7 @@ func TestEstimator_CappedAt95(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			e := NewEstimator(tt.meanDuration)
+			e := NewProgressEstimator(tt.meanDuration)
 			e.mu.Lock()
 			e.startTime = time.Now().Add(-tt.elapsed)
 			e.mu.Unlock()
@@ -136,7 +136,7 @@ func TestEstimator_CappedAt95(t *testing.T) {
 
 	// Uncalibrated cap at 90
 	t.Run("uncalibrated capped at 90", func(t *testing.T) {
-		e := NewEstimator(0)
+		e := NewProgressEstimator(0)
 		for range 100 {
 			e.Signal()
 		}
@@ -147,9 +147,9 @@ func TestEstimator_CappedAt95(t *testing.T) {
 	})
 }
 
-func TestEstimator_ETADecreases(t *testing.T) {
+func TestProgressEstimator_ETADecreases(t *testing.T) {
 	meanDuration := 10 * time.Second
-	e := NewEstimator(meanDuration)
+	e := NewProgressEstimator(meanDuration)
 
 	// At start, ETA should be close to full duration.
 	e.mu.Lock()
@@ -168,8 +168,8 @@ func TestEstimator_ETADecreases(t *testing.T) {
 	}
 }
 
-func TestEstimator_Reset(t *testing.T) {
-	e := NewEstimator(5 * time.Second)
+func TestProgressEstimator_Reset(t *testing.T) {
+	e := NewProgressEstimator(5 * time.Second)
 	for range 10 {
 		e.Signal()
 	}
@@ -200,7 +200,7 @@ func TestEstimator_Reset(t *testing.T) {
 	}
 }
 
-func TestCalibrator_MeanDuration(t *testing.T) {
+func TestProgressCalibrator_MeanDuration(t *testing.T) {
 	tests := []struct {
 		name      string
 		durations []time.Duration
@@ -225,7 +225,7 @@ func TestCalibrator_MeanDuration(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			c := NewCalibrator()
+			c := NewProgressCalibrator()
 			for _, d := range tt.durations {
 				c.Add("plan", d)
 			}
@@ -237,8 +237,8 @@ func TestCalibrator_MeanDuration(t *testing.T) {
 	}
 }
 
-func TestCalibrator_EmptyReturnsZero(t *testing.T) {
-	c := NewCalibrator()
+func TestProgressCalibrator_EmptyReturnsZero(t *testing.T) {
+	c := NewProgressCalibrator()
 	got := c.MeanDuration("implement")
 	if got != 0 {
 		t.Errorf("MeanDuration = %v, want 0", got)

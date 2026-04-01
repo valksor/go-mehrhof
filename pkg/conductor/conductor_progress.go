@@ -3,7 +3,6 @@ package conductor
 import (
 	"time"
 
-	"github.com/valksor/kvelmo/pkg/progress"
 	"github.com/valksor/kvelmo/pkg/settings"
 )
 
@@ -41,7 +40,7 @@ func (c *Conductor) initProgressEstimator(phase string) {
 	}
 
 	if c.progressEstimator == nil {
-		c.progressEstimator = progress.NewEstimator(meanDuration)
+		c.progressEstimator = NewProgressEstimator(meanDuration)
 	} else {
 		c.progressEstimator.Reset(meanDuration)
 	}
@@ -72,7 +71,7 @@ func (c *Conductor) SignalProgress() {
 
 // GetProgressEstimate returns the current progress estimate, or nil if
 // no phase is active or estimation is disabled.
-func (c *Conductor) GetProgressEstimate() *progress.Estimate {
+func (c *Conductor) GetProgressEstimate() *ProgressEstimate {
 	c.mu.RLock()
 	est := c.progressEstimator
 	c.mu.RUnlock()

@@ -1,4 +1,4 @@
-package changeset
+package conductor
 
 import (
 	"strings"
@@ -76,7 +76,7 @@ func TestExtractDecisions_LimitTo20(t *testing.T) {
 	}
 }
 
-func TestFormatMarkdown(t *testing.T) {
+func TestFormatDecisionsMarkdown(t *testing.T) {
 	decisions := []KeyDecision{
 		{
 			Tool:      "write_file",
@@ -90,7 +90,7 @@ func TestFormatMarkdown(t *testing.T) {
 		},
 	}
 
-	result := FormatMarkdown(decisions, "3 files changed, 120 insertions(+), 5 deletions(-)")
+	result := FormatDecisionsMarkdown(decisions, "3 files changed, 120 insertions(+), 5 deletions(-)")
 
 	if !strings.Contains(result, "<details>") {
 		t.Error("expected collapsible details tag")
@@ -113,7 +113,7 @@ func TestFormatMarkdown(t *testing.T) {
 	}
 
 	// Test empty decisions.
-	empty := FormatMarkdown(nil, "")
+	empty := FormatDecisionsMarkdown(nil, "")
 	if !strings.Contains(empty, "No key decisions recorded") {
 		t.Error("expected no decisions message for empty input")
 	}

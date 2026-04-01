@@ -1,6 +1,4 @@
-// Package changeset generates AI decision summaries for pull requests
-// by extracting key decisions from agent recorder logs.
-package changeset
+package conductor
 
 import (
 	"fmt"
@@ -18,7 +16,7 @@ type KeyDecision struct {
 
 // ExtractDecisions scans recorder records (each is a map from JSONL)
 // and extracts tool_use events with their file targets and descriptions.
-// Returns up to 20 most significant decisions.
+// Returns up to 20 decisions in encounter order.
 func ExtractDecisions(records []map[string]any) []KeyDecision {
 	var decisions []KeyDecision
 
@@ -61,9 +59,9 @@ func ExtractDecisions(records []map[string]any) []KeyDecision {
 	return decisions
 }
 
-// FormatMarkdown formats decisions as a collapsible markdown section
+// FormatDecisionsMarkdown formats decisions as a collapsible markdown section
 // suitable for PR descriptions.
-func FormatMarkdown(decisions []KeyDecision, diffStat string) string {
+func FormatDecisionsMarkdown(decisions []KeyDecision, diffStat string) string {
 	var b strings.Builder
 
 	b.WriteString("<details>\n")
@@ -73,10 +71,13 @@ func FormatMarkdown(decisions []KeyDecision, diffStat string) string {
 		b.WriteString("No key decisions recorded.\n")
 	} else {
 		for i, d := range decisions {
-			fmt.Fprintf(&b, "%d. **%s**", i+1, d.Tool)
-
-			if d.Action != "" {
-				fmt.Fprintf(&b, " - %s", d.Action)
+			if d.Tool != "" {
+				fmt.Fprintf(&b, "%d. **%s**", i+1, d.Tool)
+				if d.Action != "" {
+					fmt.Fprintf(&b, " - %s", d.Action)
+				}
+			} else {
+				fmt.Fprintf(&b, "%d. **%s**", i+1, d.Action)
 			}
 
 			b.WriteString("\n")

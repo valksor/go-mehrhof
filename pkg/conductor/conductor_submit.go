@@ -15,7 +15,6 @@ import (
 
 	"github.com/valksor/kvelmo/pkg/agent/recorder"
 	"github.com/valksor/kvelmo/pkg/changelog"
-	"github.com/valksor/kvelmo/pkg/changeset"
 	"github.com/valksor/kvelmo/pkg/git"
 	"github.com/valksor/kvelmo/pkg/memory"
 	"github.com/valksor/kvelmo/pkg/policy"
@@ -912,18 +911,18 @@ func buildPRDescriptionWithDecisions(description string, specCount, checkpointCo
 	if ctx != nil {
 		recordings = ctx.Recordings
 	}
-	decisions := changeset.ExtractDecisions(recordings)
+	decisions := ExtractDecisions(recordings)
 	if len(decisions) == 0 {
 		return base
 	}
 
-	aiSection := changeset.FormatMarkdown(decisions, diffStat)
+	aiSection := FormatDecisionsMarkdown(decisions, diffStat)
 
 	return base + "\n" + aiSection
 }
 
 // loadRecordingsFlat reads recording JSONL files from phase metrics and flattens
-// them into the format expected by changeset.ExtractDecisions.
+// them into the format expected by ExtractDecisions.
 // Uses streaming reader to avoid loading entire files into memory.
 // Caps at maxRecordsPerFile records per file and maxTotalRecords total.
 func loadRecordingsFlat(phaseMetrics map[string]*PhaseMetrics) []map[string]any {
