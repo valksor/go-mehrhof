@@ -203,14 +203,12 @@ func TestBinaryPath(t *testing.T) {
 }
 
 func TestNewChecker(t *testing.T) {
-	ctx := context.Background()
-
-	checker := NewChecker(ctx, "", "valksor", "kvelmo")
+	checker := NewChecker("", "valksor", "kvelmo")
 	if checker == nil {
 		t.Fatal("NewChecker() returned nil")
 	}
 
-	checker = NewChecker(ctx, "", "", "")
+	checker = NewChecker("", "", "")
 	if checker == nil {
 		t.Fatal("NewChecker() with empty strings returned nil")
 	}
@@ -540,7 +538,7 @@ func newTestChecker(t *testing.T, handler http.HandlerFunc) (*Checker, func()) {
 	t.Helper()
 
 	server := httptest.NewServer(handler)
-	checker := NewChecker(context.Background(), "", "valksor", "kvelmo")
+	checker := NewChecker("", "valksor", "kvelmo")
 	baseURL, err := url.Parse(server.URL + "/")
 	if err != nil {
 		server.Close()

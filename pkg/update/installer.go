@@ -1,6 +1,7 @@
 package update
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -20,21 +21,23 @@ func NewInstaller() *Installer {
 func (i *Installer) Install(downloadedPath string) error {
 	self, err := os.Executable()
 	if err != nil {
-		return fmt.Errorf("%w: get executable path: %w", ErrInstallFailed, err)
+		return fmt.Errorf("get executable path: %w", errors.Join(ErrInstallFailed, err))
 	}
 
 	// Resolve symlinks so we replace the actual binary, not the symlink itself.
 	self, err = filepath.EvalSymlinks(self)
 	if err != nil {
-		return fmt.Errorf("%w: resolve symlinks: %w", ErrInstallFailed, err)
+		return fmt.Errorf("resolve symlinks: %w", errors.Join(ErrInstallFailed, err))
 	}
 
 	if err := os.Chmod(downloadedPath, 0o755); err != nil {
-		return fmt.Errorf("%w: chmod failed: %w", ErrInstallFailed, err)
+		return fmt.Errorf("chmod failed: %w", errors.Join(ErrInstallFailed, err))
 	}
 
 	if err := os.Rename(downloadedPath, self); err != nil {
-		return fmt.Errorf("%w: rename failed: %w", ErrInstallFailed, err)
+		_ = os.Remove(downloadedPath)
+
+		return fmt.Errorf("rename failed: %w", errors.Join(ErrInstallFailed, err))
 	}
 
 	return nil
@@ -72,12 +75,12 @@ func (i *Installer) IsWritable() (bool, error) {
 	dir := filepath.Dir(self)
 	tmpFile, err := os.CreateTemp(dir, ".kvelmo-update-test-")
 	if err != nil {
-		//nolint:nilerr // Can't create temp file = dir not writable
 		return false, nil
 	}
 
+	name := tmpFile.Name()
+	defer func() { _ = os.Remove(name) }()
 	_ = tmpFile.Close()
-	_ = os.Remove(tmpFile.Name())
 
 	return true, nil
 }

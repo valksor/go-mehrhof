@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -13,6 +14,9 @@ import (
 
 	"github.com/jedisct1/go-minisign"
 )
+
+// maxBinarySize is the maximum allowed binary download size (500 MB).
+const maxBinarySize = 500 << 20
 
 // Downloader downloads release binaries and verifies checksums.
 type Downloader struct {
@@ -39,7 +43,7 @@ func (d *Downloader) SetStageDir(dir string) {
 func (d *Downloader) Download(ctx context.Context, url, expectedChecksum string) (string, error) {
 	tmpFile, err := os.CreateTemp(d.stageDir, "kvelmo-update-*.bin")
 	if err != nil {
-		return "", fmt.Errorf("%w: create temp file: %w", ErrDownloadFailed, err)
+		return "", errors.Join(ErrDownloadFailed, fmt.Errorf("create temp file: %w", err))
 	}
 	tmpPath := tmpFile.Name()
 	defer func() { _ = tmpFile.Close() }()
@@ -48,14 +52,14 @@ func (d *Downloader) Download(ctx context.Context, url, expectedChecksum string)
 	if err != nil {
 		_ = os.Remove(tmpPath)
 
-		return "", fmt.Errorf("%w: create request: %w", ErrDownloadFailed, err)
+		return "", errors.Join(ErrDownloadFailed, fmt.Errorf("create request: %w", err))
 	}
 
 	resp, err := d.client.Do(req)
 	if err != nil {
 		_ = os.Remove(tmpPath)
 
-		return "", fmt.Errorf("%w: %w", ErrDownloadFailed, err)
+		return "", errors.Join(ErrDownloadFailed, fmt.Errorf("http request: %w", err))
 	}
 	defer func() { _ = resp.Body.Close() }()
 
@@ -68,11 +72,18 @@ func (d *Downloader) Download(ctx context.Context, url, expectedChecksum string)
 	hasher := sha256.New()
 	writer := io.MultiWriter(tmpFile, hasher)
 
-	_, err = io.Copy(writer, resp.Body)
+	// Limit download to maxBinarySize+1 so we can detect truncation.
+	n, err := io.Copy(writer, io.LimitReader(resp.Body, maxBinarySize+1))
 	if err != nil {
 		_ = os.Remove(tmpPath)
 
-		return "", fmt.Errorf("%w: %w", ErrDownloadFailed, err)
+		return "", errors.Join(ErrDownloadFailed, fmt.Errorf("download binary: %w", err))
+	}
+
+	if n > maxBinarySize {
+		_ = os.Remove(tmpPath)
+
+		return "", fmt.Errorf("binary exceeds %d bytes: %w", maxBinarySize, ErrDownloadFailed)
 	}
 
 	if expectedChecksum != "" {
@@ -110,14 +121,14 @@ func (d *Downloader) DownloadWithSignature(
 
 	checksumsPath, err := d.downloadFile(ctx, checksumsURL, "kvelmo-checksums-*.txt")
 	if err != nil {
-		return "", result, fmt.Errorf("%w: could not download checksums file: %w", ErrDownloadFailed, err)
+		return "", result, errors.Join(ErrDownloadFailed, fmt.Errorf("could not download checksums file: %w", err))
 	}
 	defer func() { _ = os.Remove(checksumsPath) }()
 
 	signaturePath, err := d.downloadFile(ctx, signatureURL, "kvelmo-sig-*.minisig")
 	if err != nil {
 		if requireSignature {
-			return "", result, fmt.Errorf("%w: signature file not available: %w", ErrSignatureVerificationFailed, err)
+			return "", result, errors.Join(ErrSignatureVerificationFailed, fmt.Errorf("signature file not available: %w", err))
 		}
 		result.SignatureSkipped = true
 		result.SignatureError = fmt.Sprintf("signature file not available: %v", err)
@@ -132,7 +143,7 @@ func (d *Downloader) DownloadWithSignature(
 
 	checksum, err := FindChecksumInFile(checksumsPath, assetName)
 	if err != nil {
-		return "", result, fmt.Errorf("%w: %w", ErrChecksumFailed, err)
+		return "", result, errors.Join(ErrChecksumFailed, fmt.Errorf("find checksum: %w", err))
 	}
 
 	path, err := d.Download(ctx, binaryURL, checksum)
@@ -261,17 +272,17 @@ func GetAssetName() string {
 func VerifyMinisign(content, signature []byte, publicKeyStr string) error {
 	publicKey, err := minisign.NewPublicKey(publicKeyStr)
 	if err != nil {
-		return fmt.Errorf("%w: invalid public key: %w", ErrSignatureVerificationFailed, err)
+		return errors.Join(ErrSignatureVerificationFailed, fmt.Errorf("invalid public key: %w", err))
 	}
 
 	sig, err := minisign.DecodeSignature(string(signature))
 	if err != nil {
-		return fmt.Errorf("%w: invalid signature format: %w", ErrSignatureVerificationFailed, err)
+		return errors.Join(ErrSignatureVerificationFailed, fmt.Errorf("invalid signature format: %w", err))
 	}
 
 	valid, err := publicKey.Verify(content, sig)
 	if err != nil {
-		return fmt.Errorf("%w: verification error: %w", ErrSignatureVerificationFailed, err)
+		return errors.Join(ErrSignatureVerificationFailed, fmt.Errorf("verification error: %w", err))
 	}
 	if !valid {
 		return fmt.Errorf("%w: signature does not match content", ErrSignatureVerificationFailed)

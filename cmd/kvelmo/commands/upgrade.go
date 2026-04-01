@@ -76,7 +76,7 @@ func runUpgrade(cmd *cobra.Command, _ []string) error {
 	ctx, cancel := context.WithTimeout(cmd.Context(), 30*time.Second)
 	defer cancel()
 
-	checker := update.NewChecker(ctx, token, "valksor", "kvelmo")
+	checker := update.NewChecker(token, "valksor", "kvelmo")
 
 	status, err := checker.Check(ctx, opts)
 	if err != nil {
@@ -200,7 +200,7 @@ func runUpgrade(cmd *cobra.Command, _ []string) error {
 	if verifyResult.SignatureVerified {
 		fmt.Println("✓ Signature verified")
 	} else if verifyResult.SignatureSkipped {
-		fmt.Println("⚠ Signature not available — proceeding (--skip-verify)")
+		fmt.Println("⚠ Signature verification skipped (--skip-verify)")
 	}
 	if verifyResult.ChecksumVerified {
 		fmt.Println("✓ Checksum verified")
@@ -226,10 +226,14 @@ func runUpgrade(cmd *cobra.Command, _ []string) error {
 
 // releaseURLs returns the checksums and signature URLs for a release.
 func releaseURLs(status *update.UpdateStatus) (string, string) {
-	tag := status.LatestVersion
-	baseURL := "https://github.com/valksor/kvelmo/releases/download/" + tag
+	// Derive base URL from the asset URL to support repo transfers/mirrors.
+	// AssetURL format: https://github.com/<owner>/<repo>/releases/download/<tag>/<asset>
+	base := status.AssetURL
+	if i := strings.LastIndex(base, "/"); i > 0 {
+		base = base[:i]
+	}
 
-	return baseURL + "/checksums.txt", baseURL + "/checksums.txt.minisig"
+	return base + "/checksums.txt", base + "/checksums.txt.minisig"
 }
 
 // resolveGitHubToken loads the GitHub token from .env files.

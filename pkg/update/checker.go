@@ -24,11 +24,11 @@ type Checker struct {
 
 // NewChecker creates a new update checker.
 // If token is empty, unauthenticated requests are used (subject to rate limits).
-func NewChecker(ctx context.Context, token, owner, repo string) *Checker {
+func NewChecker(token, owner, repo string) *Checker {
 	var ghClient *github.Client
 	if token != "" {
 		ts := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: token})
-		httpClient := oauth2.NewClient(context.Background(), ts) //nolint:contextcheck // Token source must outlive individual Check() calls
+		httpClient := oauth2.NewClient(context.Background(), ts)
 		ghClient = github.NewClient(httpClient)
 	} else {
 		ghClient = github.NewClient(nil)
@@ -118,6 +118,9 @@ func (c *Checker) Check(ctx context.Context, opts CheckOptions) (*UpdateStatus, 
 }
 
 func (c *Checker) findLatestRelease(ctx context.Context, includeNightly bool, owner, repo string) (*github.RepositoryRelease, error) {
+	// Fetch the 30 most recent releases (single page). If the latest stable
+	// release is buried under 30+ pre-releases, it will not be found.
+	// Pagination can be added if nightly release cadence grows beyond this.
 	releases, _, err := c.ghClient.Repositories.ListReleases(ctx, owner, repo, &github.ListOptions{
 		PerPage: 30,
 	})
