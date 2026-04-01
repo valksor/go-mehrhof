@@ -98,7 +98,13 @@ func (c *Conductor) runAdversarialReview(ctx context.Context) ([]findings.Findin
 				opts.Agent = agentName
 			}
 
-			job, err := pool.SubmitWithOptions(worker.JobTypeReview, workDir, prompt, opts)
+			var job *worker.Job
+			var err error
+			if cached, ok := c.lookupResponseCache(prompt); ok {
+				job, err = pool.SubmitCached(worker.JobTypeReview, workDir, prompt, cached, opts)
+			} else {
+				job, err = pool.SubmitWithOptions(worker.JobTypeReview, workDir, prompt, opts)
+			}
 			results[idx] = personaResult{persona: p.Name, job: job, err: err}
 		}(i, persona)
 	}

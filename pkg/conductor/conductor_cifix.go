@@ -196,7 +196,13 @@ func (c *Conductor) attemptCIFix(ctx context.Context, ciLogs string, attempt int
 	workDir := c.getWorkDir()
 	c.mu.Unlock()
 
-	job, err := pool.SubmitWithOptions(worker.JobTypeImplement, workDir, prompt, opts)
+	var job *worker.Job
+	var err error
+	if cached, ok := c.lookupResponseCache(prompt); ok {
+		job, err = pool.SubmitCached(worker.JobTypeImplement, workDir, prompt, cached, opts)
+	} else {
+		job, err = pool.SubmitWithOptions(worker.JobTypeImplement, workDir, prompt, opts)
+	}
 	if err != nil {
 		return fmt.Errorf("submit CI fix job: %w", err)
 	}

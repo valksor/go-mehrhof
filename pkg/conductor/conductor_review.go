@@ -88,7 +88,13 @@ Go through each file that was modified and ensure:
 4. No obvious bugs or edge cases are missed
 Commit your fixes with meaningful commit messages.`
 
-		job, err := pool.Submit(worker.JobTypeImplement, workDir, fixPrompt)
+		var job *worker.Job
+		var err error
+		if cached, ok := c.lookupResponseCache(fixPrompt); ok {
+			job, err = pool.SubmitCached(worker.JobTypeImplement, workDir, fixPrompt, cached, nil)
+		} else {
+			job, err = pool.Submit(worker.JobTypeImplement, workDir, fixPrompt)
+		}
 		if err != nil {
 			c.mu.Lock()
 			if dispatchErr := c.machine.Dispatch(ctx, EventError); dispatchErr != nil {
@@ -239,11 +245,23 @@ func (c *Conductor) runSpecAlignmentCheckAsync(lifecycleCtx context.Context, wor
 
 Output your review as markdown. Start with a summary line: "Spec alignment: X of Y items implemented" followed by details.`, specContent, diff)
 
-	job, err := pool.Submit(worker.JobTypeReview, workDir, prompt)
-	if err != nil {
-		slog.Warn("spec alignment check failed to submit", "error", err)
+	var job *worker.Job
+	if cached, ok := c.lookupResponseCache(prompt); ok {
+		j, submitErr := pool.SubmitCached(worker.JobTypeReview, workDir, prompt, cached, nil)
+		if submitErr != nil {
+			slog.Warn("spec alignment check failed to submit (cached)", "error", submitErr)
 
-		return
+			return
+		}
+		job = j
+	} else {
+		j, submitErr := pool.Submit(worker.JobTypeReview, workDir, prompt)
+		if submitErr != nil {
+			slog.Warn("spec alignment check failed to submit", "error", submitErr)
+
+			return
+		}
+		job = j
 	}
 
 	c.mu.Lock()

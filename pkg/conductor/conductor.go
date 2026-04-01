@@ -23,9 +23,9 @@ import (
 	"github.com/valksor/kvelmo/pkg/findings"
 	"github.com/valksor/kvelmo/pkg/git"
 	"github.com/valksor/kvelmo/pkg/graph"
-	"github.com/valksor/kvelmo/pkg/quality"
 	"github.com/valksor/kvelmo/pkg/memory"
 	"github.com/valksor/kvelmo/pkg/provider"
+	"github.com/valksor/kvelmo/pkg/quality"
 	"github.com/valksor/kvelmo/pkg/respcache"
 	"github.com/valksor/kvelmo/pkg/security"
 	"github.com/valksor/kvelmo/pkg/settings"
@@ -90,10 +90,9 @@ type Conductor struct {
 	autoFixLastErr   string                       // Auto-fix loop: last error message
 
 	// ── Quality & Progress ──────────────────────────────────────────────
-	qualityGateRunning  bool                              // Guard: true while quality gate is running under mu unlock
-	qualityGateDone     sync.WaitGroup                    // Signals when an in-flight quality gate finishes
+	qualityGateCh       chan struct{}                     // Closed when an in-flight quality gate finishes; nil when idle
 	adversarialFindings []findings.Finding                // Most recent adversarial review results
-	failclassHistory    *quality.FailHistory               // Failure classification history across quality gate runs
+	failclassHistory    *quality.FailHistory              // Failure classification history across quality gate runs
 	responseCache       *respcache.Cache                  // Avoids redundant agent calls on identical prompts
 	progressEstimator   *ProgressEstimator                // Progress estimation for active phases
 	progressCalibrator  *ProgressCalibrator               // Historical calibration for progress estimates
@@ -876,7 +875,9 @@ func NewConductor(cfg ConductorConfig) *Conductor {
 	// Register post-transition hook listener
 	c.setupPostHooks()
 
-	// Load auto_advance from effective settings (can still be overridden via SetAutoAdvance)
+	// Apply user-configured phase policies, strategies, and auto_advance.
+	c.loadPhasePoliciesFromSettings()
+	c.loadStrategiesFromSettings()
 	if s := c.getEffectiveSettings(); s != nil {
 		if settings.BoolValue(s.Workflow.AutoAdvance, false) {
 			c.autoAdvance = true

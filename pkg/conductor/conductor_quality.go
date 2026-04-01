@@ -244,13 +244,12 @@ func messagesToFindings(messages []string) []findings.Finding {
 // and caches the result in WorkUnit. Called during Review() so the result
 // is ready by the time Submit() is called, avoiding a blocking wait.
 //
-// The guard fields qualityGateRunning and qualityGateDone coordinate with
-// Submit() so that concurrent callers wait for the result rather than
-// launching a second quality gate in parallel.
+// The qualityGateCh channel coordinates with Submit() so that concurrent
+// callers wait for the result rather than launching a second quality gate.
+// A fresh channel is created per run and closed on completion.
 func (c *Conductor) runQualityGateAsync() {
 	c.mu.Lock()
-	c.qualityGateRunning = true
-	c.qualityGateDone.Add(1)
+	c.qualityGateCh = make(chan struct{})
 	c.mu.Unlock()
 
 	go func() {
@@ -265,8 +264,7 @@ func (c *Conductor) runQualityGateAsync() {
 					c.workUnit.UpdatedAt = time.Now()
 					c.persistState()
 				}
-				c.qualityGateRunning = false
-				c.qualityGateDone.Done()
+				close(c.qualityGateCh)
 				c.mu.Unlock()
 			}
 		}()
@@ -277,8 +275,7 @@ func (c *Conductor) runQualityGateAsync() {
 		defer c.mu.Unlock()
 
 		if c.workUnit == nil {
-			c.qualityGateRunning = false
-			c.qualityGateDone.Done()
+			close(c.qualityGateCh)
 
 			return
 		}
@@ -293,8 +290,7 @@ func (c *Conductor) runQualityGateAsync() {
 		c.workUnit.UpdatedAt = time.Now()
 		c.persistState()
 
-		c.qualityGateRunning = false
-		c.qualityGateDone.Done()
+		close(c.qualityGateCh)
 
 		slog.Debug("quality gate completed async", "passed", passed, "error", c.workUnit.QualityGateError)
 	}()

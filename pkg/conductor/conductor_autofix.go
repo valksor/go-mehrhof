@@ -71,7 +71,13 @@ func (c *Conductor) runQualityAutoFix(ctx context.Context, qualityErr error) err
 		workDir := c.getWorkDir()
 		c.mu.Unlock()
 
-		job, err := pool.SubmitWithOptions(worker.JobTypeImplement, workDir, prompt, opts)
+		var job *worker.Job
+		var err error
+		if cached, ok := c.lookupResponseCache(prompt); ok {
+			job, err = pool.SubmitCached(worker.JobTypeImplement, workDir, prompt, cached, opts)
+		} else {
+			job, err = pool.SubmitWithOptions(worker.JobTypeImplement, workDir, prompt, opts)
+		}
 		if err != nil {
 			c.clearAutoFixState()
 

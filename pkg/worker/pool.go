@@ -526,7 +526,7 @@ func (p *Pool) executeSimulatedJob(ctx context.Context, job *Job, worker *Worker
 	job.Status = JobStatusDone
 	now := time.Now()
 	job.CompletedAt = &now
-	job.Result = fmt.Sprintf("Simulated %s result for: %s", job.Type, job.Prompt[:minInt(50, len(job.Prompt))])
+	job.Result = fmt.Sprintf("Simulated %s result for: %s", job.Type, job.Prompt[:min(50, len(job.Prompt))])
 	worker.Status = StatusAvailable
 	worker.CurrentJob = ""
 	p.mu.Unlock()
@@ -617,6 +617,64 @@ func (p *Pool) SubmitWithOptions(jobType JobType, worktreeID, prompt string, opt
 	case <-p.ctx.Done():
 		return nil, errors.New("pool stopped")
 	}
+
+	return job, nil
+}
+
+// SubmitCached creates a job that is immediately completed with a cached result.
+// The job goes through the normal stream/event pipeline so downstream watchers
+// (checkpoints, metrics, strategy evaluation) work unchanged.
+func (p *Pool) SubmitCached(jobType JobType, worktreeID, prompt, cachedResult string, opts *JobOptions) (*Job, error) {
+	now := time.Now()
+	job := &Job{
+		ID:          uuid.New().String()[:8],
+		Type:        jobType,
+		WorktreeID:  worktreeID,
+		Prompt:      prompt,
+		Status:      JobStatusDone,
+		CreatedAt:   now,
+		StartedAt:   &now,
+		CompletedAt: &now,
+		Result:      cachedResult,
+	}
+
+	if opts != nil {
+		job.WorkDir = opts.WorkDir
+		job.Environment = opts.Environment
+		job.Metadata = opts.Metadata
+		if opts.Agent != "" {
+			if job.Metadata == nil {
+				job.Metadata = make(map[string]any)
+			}
+			job.Metadata["agent_override"] = opts.Agent
+		}
+	}
+
+	if job.Metadata == nil {
+		job.Metadata = make(map[string]any)
+	}
+	job.Metadata["cached"] = true
+
+	p.mu.Lock()
+	p.jobs[job.ID] = job
+	p.mu.Unlock()
+
+	metrics.Global().RecordJobSubmitted()
+
+	// Create stream and immediately send completion events.
+	// The goroutine closes the channel but does NOT call closeStream (which
+	// removes it from the map) — that would race with callers of Stream().
+	// Instead, the stream is cleaned up lazily by RemoveJob or pool shutdown.
+	stream := make(chan Event, 10)
+	p.streamsMu.Lock()
+	p.streams[job.ID] = stream
+	p.streamsMu.Unlock()
+
+	stream <- Event{Type: "stream", JobID: job.ID, Content: cachedResult, Timestamp: now}
+	stream <- Event{Type: "complete", JobID: job.ID, Timestamp: now}
+	stream <- Event{Type: "job_completed", JobID: job.ID, Content: "Job completed", Timestamp: now}
+	close(stream)
+	metrics.Global().RecordJobCompleted()
 
 	return job, nil
 }
@@ -851,9 +909,10 @@ func (p *Pool) RemoveWorker(id string) error {
 }
 
 // ListWorkers returns all workers.
+// Uses full Lock because it may update worker status from agent connection state.
 func (p *Pool) ListWorkers() []*Worker {
-	p.mu.RLock()
-	defer p.mu.RUnlock()
+	p.mu.Lock()
+	defer p.mu.Unlock()
 
 	workers := make([]*Worker, 0, len(p.workers))
 
@@ -983,14 +1042,6 @@ type PoolStats struct {
 	InProgressJobs   int `json:"in_progress_jobs"`
 	CompletedJobs    int `json:"completed_jobs"`
 	FailedJobs       int `json:"failed_jobs"`
-}
-
-func minInt(a, b int) int {
-	if a < b {
-		return a
-	}
-
-	return b
 }
 
 // executeDryRunJob completes a job immediately without spawning an agent.

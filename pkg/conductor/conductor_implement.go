@@ -109,7 +109,14 @@ func (c *Conductor) Implement(ctx context.Context) (string, error) {
 		implJobType = worker.JobTypeDryRun
 	}
 	opts := c.buildJobOptionsForPhase("implement")
-	job, err := c.pool.SubmitWithOptions(implJobType, c.getWorkDir(), prompt, opts)
+
+	var job *worker.Job
+	var err error
+	if cached, ok := c.lookupResponseCache(prompt); ok {
+		job, err = c.pool.SubmitCached(implJobType, c.getWorkDir(), prompt, cached, opts)
+	} else {
+		job, err = c.pool.SubmitWithOptions(implJobType, c.getWorkDir(), prompt, opts)
+	}
 	if err != nil {
 		// Rollback state
 		_ = c.machine.Dispatch(ctx, EventError)
@@ -199,7 +206,14 @@ func (c *Conductor) Optimize(ctx context.Context) (string, error) {
 	}
 	prompt := c.applyStrategy(ctx, "optimize", c.buildOptimizePrompt())
 	opts := c.buildJobOptionsForPhase("optimize")
-	job, err := c.pool.SubmitWithOptions(optJobType, c.getWorkDir(), prompt, opts)
+
+	var job *worker.Job
+	var err error
+	if cached, ok := c.lookupResponseCache(prompt); ok {
+		job, err = c.pool.SubmitCached(optJobType, c.getWorkDir(), prompt, cached, opts)
+	} else {
+		job, err = c.pool.SubmitWithOptions(optJobType, c.getWorkDir(), prompt, opts)
+	}
 	if err != nil {
 		// Rollback state
 		_ = c.machine.Dispatch(ctx, EventError)
@@ -289,7 +303,14 @@ func (c *Conductor) Simplify(ctx context.Context) (string, error) {
 	}
 	prompt := c.applyStrategy(ctx, "simplify", c.buildSimplifyPrompt())
 	opts := c.buildJobOptionsForPhase("simplify")
-	job, err := c.pool.SubmitWithOptions(simJobType, c.getWorkDir(), prompt, opts)
+
+	var job *worker.Job
+	var err error
+	if cached, ok := c.lookupResponseCache(prompt); ok {
+		job, err = c.pool.SubmitCached(simJobType, c.getWorkDir(), prompt, cached, opts)
+	} else {
+		job, err = c.pool.SubmitWithOptions(simJobType, c.getWorkDir(), prompt, opts)
+	}
 	if err != nil {
 		// Rollback state
 		_ = c.machine.Dispatch(ctx, EventError)

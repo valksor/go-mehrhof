@@ -77,15 +77,15 @@ func TestStats_WithQueuedJob(t *testing.T) {
 	}
 }
 
-func TestMinInt(t *testing.T) {
+func TestMinBuiltin(t *testing.T) {
 	tests := []struct{ a, b, want int }{
 		{3, 5, 3},
 		{5, 3, 3},
 		{4, 4, 4},
 	}
 	for _, tt := range tests {
-		if got := minInt(tt.a, tt.b); got != tt.want {
-			t.Errorf("minInt(%d, %d) = %d, want %d", tt.a, tt.b, got, tt.want)
+		if got := min(tt.a, tt.b); got != tt.want {
+			t.Errorf("min(%d, %d) = %d, want %d", tt.a, tt.b, got, tt.want)
 		}
 	}
 }

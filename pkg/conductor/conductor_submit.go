@@ -191,10 +191,11 @@ func (c *Conductor) Submit(ctx context.Context, deleteBranch bool) error {
 			return fmt.Errorf("quality gate failed: %s", errMsg)
 		}
 		slog.Info("submit: quality gate passed (cached)")
-	} else if c.qualityGateRunning {
+	} else if c.qualityGateCh != nil {
 		// Another goroutine is already running the quality gate; wait for its result.
+		ch := c.qualityGateCh
 		c.mu.Unlock()
-		c.qualityGateDone.Wait()
+		<-ch
 		c.mu.Lock()
 		if c.workUnit.QualityGatePassed == nil || !*c.workUnit.QualityGatePassed {
 			errMsg := c.workUnit.QualityGateError
@@ -206,15 +207,13 @@ func (c *Conductor) Submit(ctx context.Context, deleteBranch bool) error {
 	} else {
 		// No cached result - run synchronously (Review was skipped or old state).
 		// Unlock before calling runQualityGate — it acquires its own locks internally.
-		// Set guard flag to prevent concurrent runs.
-		c.qualityGateRunning = true
-		c.qualityGateDone.Add(1)
+		// Create a channel so concurrent callers can wait on this run.
+		c.qualityGateCh = make(chan struct{})
 		slog.Info("submit: running quality gate synchronously")
 		c.mu.Unlock()
 		err := c.runQualityGate(ctx)
 		c.mu.Lock()
-		c.qualityGateRunning = false
-		c.qualityGateDone.Done() // Must be called under mu so waiters see the state write above
+		close(c.qualityGateCh)
 		if err != nil {
 			c.mu.Unlock()
 

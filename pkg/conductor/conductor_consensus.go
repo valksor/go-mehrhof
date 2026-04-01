@@ -61,6 +61,7 @@ func (c *Conductor) runConsensusReview(ctx context.Context, prompt string) ([]fi
 				Agent:   name,
 			}
 
+			// Skip response cache for consensus — each agent must produce an independent opinion.
 			job, err := pool.SubmitWithOptions(worker.JobTypeReview, workDir, prompt, opts)
 			results[idx] = agentResult{agent: name, job: job, err: err}
 		}(i, agentName)

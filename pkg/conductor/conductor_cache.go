@@ -66,6 +66,21 @@ func (c *Conductor) ClearResponseCache() {
 	}
 }
 
+// lookupResponseCache checks the cache for a matching prompt.
+// Returns (response, true) on cache hit, ("", false) on miss or if caching is disabled.
+func (c *Conductor) lookupResponseCache(prompt string) (string, bool) {
+	if c.responseCache == nil {
+		return "", false
+	}
+
+	response, ok := c.responseCache.Get(prompt)
+	if ok {
+		slog.Debug("response cache hit, skipping agent call")
+	}
+
+	return response, ok
+}
+
 // storeResponseCache stores a prompt-response pair in the cache.
 // No-op if caching is disabled.
 func (c *Conductor) storeResponseCache(prompt, response, phase string) {
