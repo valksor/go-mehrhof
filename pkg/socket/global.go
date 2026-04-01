@@ -238,11 +238,6 @@ func (g *GlobalSocket) registerHandlers() {
 	g.server.Handle("recordings.list", g.handleRecordingsList)
 	g.server.Handle("recordings.view", g.handleRecordingsView)
 
-	// Onboarding
-	g.server.Handle("onboarding.status", g.handleOnboardingStatus)
-	g.server.Handle("onboarding.complete", g.handleOnboardingComplete)
-	g.server.Handle("onboarding.reset", g.handleOnboardingReset)
-
 	// Backup
 	g.server.Handle("backup.create", g.handleBackupCreate)
 	g.server.Handle("backup.list", g.handleBackupList)

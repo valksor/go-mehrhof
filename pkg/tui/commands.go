@@ -131,7 +131,6 @@ var commands = []tuiCommand{
 	{name: "/security scan", description: "Security scan", worktree: false},
 	{name: "/remote approve", description: "Approve PR", worktree: true},
 	{name: "/remote merge", description: "Merge PR", worktree: true},
-	{name: "/onboarding reset", description: "Reset onboarding guide", worktree: false},
 	{name: "/config check", description: "Check config drift", worktree: false},
 	{name: "/config show", description: "Show effective config", worktree: false},
 	{name: "/config validate", description: "Validate config and agents", worktree: false},

@@ -550,27 +550,16 @@ const utilityCommands: ChatCommand[] = [
     },
   },
   {
-    name: '/onboarding reset',
-    description: 'Reset onboarding guide',
-    isAvailable: () => true,
-    execute: async () => {
-      const client = globalClient()
-      if (!client) return 'Not connected to global socket.'
-      await client.call('onboarding.reset', {})
-      return 'Onboarding reset. The guide will show again on next visit.'
-    },
-  },
-  {
     name: '/config check',
     description: 'Check configuration for drift',
     isAvailable: () => true,
     execute: async () => {
       const client = globalClient()
       if (!client) return 'Not connected to global socket.'
-      const result = await client.call<{ drifted: boolean; diffs?: Array<{ key: string; expected: string; actual: string }> }>('config.check', {})
-      if (!result.drifted) return 'Configuration: no drift detected.'
-      const diffs = result.diffs || []
-      return 'Configuration drift:\n' + diffs.map(d => `  ${d.key}: expected=${d.expected}, actual=${d.actual}`).join('\n')
+      const result = await client.call<{ drifts: Array<{ path: string; expected: unknown; actual: unknown }>; count: number }>('config.check', {})
+      if (result.count === 0) return 'Configuration: no drift detected.'
+      const drifts = result.drifts || []
+      return 'Configuration drift:\n' + drifts.map(d => `  ${d.path}: expected=${String(d.expected)}, actual=${String(d.actual)}`).join('\n')
     },
   },
   {

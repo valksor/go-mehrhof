@@ -1815,21 +1815,6 @@ describe('infra commands execution', () => {
     expect(await cmd.execute('')).toBe('PR approved.')
   })
 
-  // /onboarding reset
-  it('/onboarding reset returns not connected when no global client', async () => {
-    const cmd = COMMANDS.find(c => c.name === '/onboarding reset')!
-    mockGlobalState.client = null
-    expect(await cmd.execute('')).toBe('Not connected to global socket.')
-  })
-
-  it('/onboarding reset calls onboarding.reset', async () => {
-    const cmd = COMMANDS.find(c => c.name === '/onboarding reset')!
-    mockClientCall.mockResolvedValue({})
-    mockGlobalState.client = { call: mockClientCall }
-    expect(await cmd.execute('')).toBe('Onboarding reset. The guide will show again on next visit.')
-    expect(mockClientCall).toHaveBeenCalledWith('onboarding.reset', {})
-  })
-
   // /config check
   it('/config check returns not connected when no global client', async () => {
     const cmd = COMMANDS.find(c => c.name === '/config check')!
@@ -1839,7 +1824,7 @@ describe('infra commands execution', () => {
 
   it('/config check returns no drift when clean', async () => {
     const cmd = COMMANDS.find(c => c.name === '/config check')!
-    mockClientCall.mockResolvedValue({ drifted: false })
+    mockClientCall.mockResolvedValue({ drifts: [], count: 0 })
     mockGlobalState.client = { call: mockClientCall }
     expect(await cmd.execute('')).toBe('Configuration: no drift detected.')
     expect(mockClientCall).toHaveBeenCalledWith('config.check', {})
@@ -1848,8 +1833,8 @@ describe('infra commands execution', () => {
   it('/config check returns drift details', async () => {
     const cmd = COMMANDS.find(c => c.name === '/config check')!
     mockClientCall.mockResolvedValue({
-      drifted: true,
-      diffs: [{ key: 'agent.model', expected: 'claude-4', actual: 'claude-3' }],
+      drifts: [{ path: 'agent.model', expected: 'claude-4', actual: 'claude-3' }],
+      count: 1,
     })
     mockGlobalState.client = { call: mockClientCall }
     const result = await cmd.execute('')

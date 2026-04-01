@@ -39,7 +39,6 @@ var globalHandlers = map[string]globalHandler{
 	"/workers remove":   glWorkersRemove,
 	"/diagnose":         glDiagnose,
 	"/security scan":    glSecurityScan,
-	"/onboarding reset": glOnboardingReset,
 	"/config check":     glConfigCheck,
 	"/config show":      glConfigShow,
 	"/config validate":  glConfigValidate,
@@ -429,37 +428,28 @@ func glSecurityScan(ctx context.Context, client *socket.Client, _ string) (strin
 	return strings.Join(lines, "\n"), nil
 }
 
-func glOnboardingReset(ctx context.Context, client *socket.Client, _ string) (string, error) {
-	_, err := client.Call(ctx, "onboarding.reset", nil)
-	if err != nil {
-		return "", fmt.Errorf("onboarding reset: %w", err)
-	}
-
-	return "Onboarding reset. The guide will show again on next visit.", nil
-}
-
 func glConfigCheck(ctx context.Context, client *socket.Client, _ string) (string, error) {
 	resp, err := client.Call(ctx, "config.check", nil)
 	if err != nil {
 		return "", fmt.Errorf("config check: %w", err)
 	}
 	var result struct {
-		Drifted bool `json:"drifted"`
-		Diffs   []struct {
-			Key      string `json:"key"`
-			Expected string `json:"expected"`
-			Actual   string `json:"actual"`
-		} `json:"diffs"`
+		Drifts []struct {
+			Path     string `json:"path"`
+			Expected any    `json:"expected"`
+			Actual   any    `json:"actual"`
+		} `json:"drifts"`
+		Count int `json:"count"`
 	}
 	if err := json.Unmarshal(resp.Result, &result); err != nil {
 		return "", fmt.Errorf("parse response: %w", err)
 	}
-	if !result.Drifted {
+	if result.Count == 0 {
 		return "Configuration: no drift detected.", nil
 	}
 	var lines []string
-	for _, d := range result.Diffs {
-		lines = append(lines, fmt.Sprintf("  %s: expected=%s, actual=%s", d.Key, d.Expected, d.Actual))
+	for _, d := range result.Drifts {
+		lines = append(lines, fmt.Sprintf("  %s: expected=%v, actual=%v", d.Path, d.Expected, d.Actual))
 	}
 
 	return "Configuration drift:\n" + strings.Join(lines, "\n"), nil
