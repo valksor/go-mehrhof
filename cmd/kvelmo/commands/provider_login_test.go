@@ -6,63 +6,27 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/valksor/kvelmo/pkg/paths"
 	"github.com/valksor/kvelmo/pkg/provider"
 	"github.com/valksor/kvelmo/pkg/settings"
 )
 
-func TestReadEnvVar(t *testing.T) {
-	dir := t.TempDir()
-	envFile := filepath.Join(dir, ".env")
+func TestDetectExistingToken_FromEnvFile(t *testing.T) {
+	// Set up a temp base dir with a .env file containing the token
+	tmpDir := t.TempDir()
+	paths.SetPaths(paths.NewPathResolver(tmpDir))
+	t.Cleanup(paths.ResetForTesting)
 
-	content := `# Comment line
-GITHUB_TOKEN=ghp_test123
-GITLAB_TOKEN="glpat-quoted"
-EMPTY_LINE=
-
-WRIKE_TOKEN='single-quoted'
-NO_EQUALS
-`
-	if err := os.WriteFile(envFile, []byte(content), 0o644); err != nil {
-		t.Fatalf("write env file: %v", err)
+	if err := os.WriteFile(filepath.Join(tmpDir, ".env"), []byte("TEST_TOKEN_DETECT=secret-value-123\n"), 0o600); err != nil {
+		t.Fatalf("write .env: %v", err)
 	}
 
-	tests := []struct {
-		name string
-		key  string
-		want string
-	}{
-		{"plain value", "GITHUB_TOKEN", "ghp_test123"},
-		{"double quoted", "GITLAB_TOKEN", "glpat-quoted"},
-		{"single quoted", "WRIKE_TOKEN", "single-quoted"},
-		{"empty value", "EMPTY_LINE", ""},
-		{"missing key", "NONEXISTENT", ""},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got := readEnvVar(envFile, tt.key)
-			if got != tt.want {
-				t.Errorf("readEnvVar(%q) = %q, want %q", tt.key, got, tt.want)
-			}
-		})
-	}
-}
-
-func TestReadEnvVar_FileNotFound(t *testing.T) {
-	got := readEnvVar("/nonexistent/path/.env", "KEY")
-	if got != "" {
-		t.Errorf("readEnvVar(nonexistent) = %q, want empty", got)
-	}
-}
-
-func TestDetectExistingToken_FromEnv(t *testing.T) {
-	t.Setenv("TEST_TOKEN_DETECT", "secret-value-123")
 	result := detectExistingToken("TEST_TOKEN_DETECT", settings.ScopeGlobal, "")
 	if result == nil {
-		t.Fatal("expected non-nil tokenSource from env var")
+		t.Fatal("expected non-nil tokenSource from .env file")
 	}
-	if result.Source != "TEST_TOKEN_DETECT environment variable" {
-		t.Errorf("source = %q, want %q", result.Source, "TEST_TOKEN_DETECT environment variable")
+	if !strings.Contains(result.Source, ".env") && !strings.Contains(result.Source, tmpDir) {
+		t.Errorf("source = %q, want path containing .env or tmpDir", result.Source)
 	}
 }
 

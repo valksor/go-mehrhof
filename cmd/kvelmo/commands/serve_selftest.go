@@ -2,7 +2,6 @@ package commands
 
 import (
 	"log/slog"
-	"os"
 	"os/exec"
 
 	"github.com/valksor/kvelmo/pkg/settings"
@@ -24,24 +23,13 @@ func checkProviderTokens() {
 	tokens := []string{"GITHUB_TOKEN", "GITLAB_TOKEN", "WRIKE_TOKEN", "LINEAR_TOKEN"}
 	hasAny := false
 
-	for _, t := range tokens {
-		if os.Getenv(t) != "" {
-			hasAny = true
+	// Check .env files for provider tokens
+	if env, err := settings.LoadEnvMap(""); err == nil {
+		for _, t := range tokens {
+			if env.Get(t) != "" {
+				hasAny = true
 
-			break
-		}
-	}
-
-	// Also try loading from .env files
-	if !hasAny {
-		env, err := settings.LoadEnvMap("")
-		if err == nil {
-			for _, t := range tokens {
-				if env.Get(t) != "" {
-					hasAny = true
-
-					break
-				}
+				break
 			}
 		}
 	}

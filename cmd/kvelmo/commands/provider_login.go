@@ -31,75 +31,32 @@ type tokenSource struct {
 
 // detectExistingToken checks if a token is already configured.
 func detectExistingToken(envVar string, scope settings.Scope, projectRoot string) *tokenSource {
-	// Check system environment variable
-	if val := os.Getenv(envVar); val != "" {
+	// Load env map to check .env files
+	root := ""
+	if scope == settings.ScopeProject {
+		root = projectRoot
+	}
+	envMap, err := settings.LoadEnvMap(root)
+	if err != nil {
+		return nil
+	}
+
+	if val := envMap.Get(envVar); val != "" {
+		// Determine source path for display
+		var envPath string
+		if scope == settings.ScopeProject && projectRoot != "" {
+			envPath = settings.ProjectEnvPath(projectRoot)
+		} else {
+			envPath, _ = settings.GlobalEnvPath()
+		}
+
 		return &tokenSource{
-			Source: envVar + " environment variable",
+			Source: envPath,
 			Value:  settings.MaskToken(val),
 		}
 	}
 
-	// Check the appropriate .env file based on scope
-	var envPath string
-	if scope == settings.ScopeProject && projectRoot != "" {
-		envPath = settings.ProjectEnvPath(projectRoot)
-	} else {
-		var err error
-		envPath, err = settings.GlobalEnvPath()
-		if err != nil {
-			return nil
-		}
-	}
-
-	// Read and check .env file
-	if token := readEnvVar(envPath, envVar); token != "" {
-		return &tokenSource{
-			Source: envPath,
-			Value:  settings.MaskToken(token),
-		}
-	}
-
 	return nil
-}
-
-// readEnvVar reads a single environment variable from a .env file.
-func readEnvVar(path, key string) string {
-	file, err := os.Open(path)
-	if err != nil {
-		return ""
-	}
-	defer func() { _ = file.Close() }()
-
-	scanner := bufio.NewScanner(file)
-	for scanner.Scan() {
-		line := strings.TrimSpace(scanner.Text())
-		if line == "" || strings.HasPrefix(line, "#") {
-			continue
-		}
-		idx := strings.Index(line, "=")
-		if idx <= 0 {
-			continue
-		}
-		if strings.TrimSpace(line[:idx]) == key {
-			value := strings.TrimSpace(line[idx+1:])
-			// Remove surrounding quotes
-			if len(value) >= 2 {
-				if (value[0] == '"' && value[len(value)-1] == '"') ||
-					(value[0] == '\'' && value[len(value)-1] == '\'') {
-					value = value[1 : len(value)-1]
-				}
-			}
-
-			return value
-		}
-	}
-
-	// Check for scanner errors (I/O failures)
-	if err := scanner.Err(); err != nil {
-		return ""
-	}
-
-	return ""
 }
 
 // readToken reads a token from stdin, using secure input when available.
