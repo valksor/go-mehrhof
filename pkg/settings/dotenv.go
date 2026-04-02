@@ -50,7 +50,7 @@ func SaveEnvVar(scope Scope, projectRoot, key, value string) error {
 func saveEnvVarToFile(path, key, value string) error {
 	// Ensure directory exists
 	dir := filepath.Dir(path)
-	if err := os.MkdirAll(dir, 0o755); err != nil {
+	if err := os.MkdirAll(dir, 0o700); err != nil {
 		return fmt.Errorf("create env dir: %w", err)
 	}
 
@@ -122,6 +122,14 @@ func InjectEnvVars(s *Settings, env EnvMap) {
 	if token := env.Get("LINEAR_TOKEN"); token != "" {
 		s.Providers.Linear.Token = token
 	}
+
+	// Agent API keys
+	if key := env.Get("ANTHROPIC_API_KEY"); key != "" {
+		s.Agent.Anthropic.APIKey = key
+	}
+	if key := env.Get("OPENAI_API_KEY"); key != "" {
+		s.Agent.OpenAI.APIKey = key
+	}
 }
 
 // MaskToken masks a token for display purposes.
@@ -158,6 +166,10 @@ func MaskSettings(s *Settings) *Settings {
 	masked.Providers.GitLab.Token = MaskToken(s.Providers.GitLab.Token)
 	masked.Providers.Wrike.Token = MaskToken(s.Providers.Wrike.Token)
 	masked.Providers.Linear.Token = MaskToken(s.Providers.Linear.Token)
+
+	// Mask agent API keys
+	masked.Agent.Anthropic.APIKey = MaskToken(s.Agent.Anthropic.APIKey)
+	masked.Agent.OpenAI.APIKey = MaskToken(s.Agent.OpenAI.APIKey)
 
 	return &masked
 }

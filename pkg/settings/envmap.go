@@ -78,8 +78,14 @@ func loadEnvFileInto(path string, env EnvMap) error {
 
 		// Remove surrounding quotes if present
 		if len(value) >= 2 {
-			if (value[0] == '"' && value[len(value)-1] == '"') ||
-				(value[0] == '\'' && value[len(value)-1] == '\'') {
+			if value[0] == '"' && value[len(value)-1] == '"' {
+				value = value[1 : len(value)-1]
+				// Process escape sequences in double-quoted values
+				value = strings.ReplaceAll(value, `\n`, "\n")
+				value = strings.ReplaceAll(value, `\t`, "\t")
+				value = strings.ReplaceAll(value, `\\`, `\`)
+			} else if value[0] == '\'' && value[len(value)-1] == '\'' {
+				// Single-quoted values are literal (no escape processing)
 				value = value[1 : len(value)-1]
 			}
 		}
