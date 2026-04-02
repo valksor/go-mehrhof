@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"os"
 	"slices"
 	"strings"
 
@@ -253,12 +252,7 @@ func (g *GlobalSocket) handleConfigValidate(_ context.Context, req *Request) (*R
 	envMap, envMapErr := settings.LoadEnvMap("")
 
 	for _, p := range providerChecks {
-		hasToken := os.Getenv(p.envVar) != ""
-		if !hasToken && envMapErr == nil {
-			if val, ok := envMap[p.envVar]; ok && val != "" {
-				hasToken = true
-			}
-		}
+		hasToken := envMapErr == nil && envMap.Get(p.envVar) != ""
 		if hasToken {
 			res.Checks = append(res.Checks, check{
 				Name:   p.name,

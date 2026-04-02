@@ -2,7 +2,7 @@ package socket
 
 import (
 	"context"
-	"os"
+	"log/slog"
 
 	"github.com/valksor/kvelmo/pkg/agent"
 	"github.com/valksor/kvelmo/pkg/settings"
@@ -59,18 +59,14 @@ func (g *GlobalSocket) handleDiagnose(_ context.Context, req *Request) (*Respons
 		{"Wrike", "WRIKE_TOKEN"},
 	}
 
-	envMap, _ := settings.LoadEnvMap("")
+	envMap, envErr := settings.LoadEnvMap("")
+	if envErr != nil {
+		slog.Warn("diagnose: failed to load .env", "error", envErr)
+	}
 
 	providers := make([]diagnoseProviderResult, 0, len(providerChecks))
 	for _, p := range providerChecks {
-		configured := false
-		if val := os.Getenv(p.envVar); val != "" {
-			configured = true
-		} else if envMap != nil {
-			if val, ok := envMap[p.envVar]; ok && val != "" {
-				configured = true
-			}
-		}
+		configured := envMap.Get(p.envVar) != ""
 
 		providers = append(providers, diagnoseProviderResult{
 			Name:       p.name,

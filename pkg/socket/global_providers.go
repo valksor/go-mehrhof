@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
-	"os"
 	"slices"
 	"strings"
 	"time"
@@ -148,19 +147,15 @@ func resolveProviderToken(providerName string) string {
 		return ""
 	}
 
-	// Check system environment variable
-	if val := os.Getenv(envVar); val != "" {
-		return val
+	// Check .env files (global and project)
+	envMap, err := settings.LoadEnvMap("")
+	if err != nil {
+		slog.Warn("resolveProviderToken: failed to load .env", "error", err)
+
+		return ""
 	}
 
-	// Check global .env file
-	if envMap, err := settings.LoadEnvMap(""); err == nil {
-		if val, ok := envMap[envVar]; ok && val != "" {
-			return val
-		}
-	}
-
-	return ""
+	return envMap.Get(envVar)
 }
 
 // testProviderToken makes a lightweight API call to verify a token is valid.

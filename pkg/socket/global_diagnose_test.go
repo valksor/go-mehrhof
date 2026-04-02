@@ -3,7 +3,11 @@ package socket
 import (
 	"context"
 	"encoding/json"
+	"os"
+	"path/filepath"
 	"testing"
+
+	"github.com/valksor/kvelmo/pkg/paths"
 )
 
 // ============================================================
@@ -91,10 +95,9 @@ func TestGlobalHandleDiagnose_UnconfiguredProvidersAreNotIssues(t *testing.T) {
 	ctx := context.Background()
 	g := newTestGlobalSocket(t)
 
-	// Clear env vars to ensure providers are unconfigured
-	for _, envVar := range []string{"GITHUB_TOKEN", "GITLAB_TOKEN", "LINEAR_TOKEN", "WRIKE_TOKEN"} {
-		t.Setenv(envVar, "")
-	}
+	// Redirect global config to an empty temp dir so LoadEnvMap finds no .env file
+	paths.SetPaths(paths.NewPathResolver(t.TempDir()))
+	t.Cleanup(paths.ResetForTesting)
 
 	resp, err := g.handleDiagnose(ctx, &Request{ID: "1"})
 	if err != nil {
@@ -117,11 +120,18 @@ func TestGlobalHandleDiagnose_UnconfiguredProvidersAreNotIssues(t *testing.T) {
 	}
 }
 
-func TestGlobalHandleDiagnose_ProviderConfiguredWithEnvVar(t *testing.T) {
+func TestGlobalHandleDiagnose_ProviderConfiguredWithEnvFile(t *testing.T) {
 	ctx := context.Background()
 	g := newTestGlobalSocket(t)
 
-	t.Setenv("GITHUB_TOKEN", "test-token-value")
+	// Set up a temp base dir with a .env file containing the token
+	tmpDir := t.TempDir()
+	paths.SetPaths(paths.NewPathResolver(tmpDir))
+	t.Cleanup(paths.ResetForTesting)
+
+	if err := os.WriteFile(filepath.Join(tmpDir, ".env"), []byte("GITHUB_TOKEN=test-token-value\n"), 0o600); err != nil {
+		t.Fatalf("write .env: %v", err)
+	}
 
 	resp, err := g.handleDiagnose(ctx, &Request{ID: "1"})
 	if err != nil {
