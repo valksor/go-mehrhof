@@ -167,4 +167,139 @@ describe('ReviewPanel', () => {
     const { getByText } = render(<ReviewPanel />)
     expect(getByText('No issues found')).toBeInTheDocument()
   })
+
+  it('calls loadReview when a history item is clicked', async () => {
+    mockState.reviews = [
+      makeReview({ number: 1, message: 'First review' }),
+      makeReview({ number: 2, message: 'Second review' }),
+    ]
+    mockLoadReview.mockResolvedValue({ number: 1, timestamp: '2026-04-01T12:00:00Z', approved: true, message: 'ok', content: '', findings: [] })
+    const { getByText } = render(<ReviewPanel />)
+    // Wait for initial auto-load to settle
+    await vi.waitFor(() => expect(mockLoadReview).toHaveBeenCalled())
+    mockLoadReview.mockClear()
+    // Click on the history item for review #1
+    getByText('Review #1').click()
+    expect(mockLoadReview).toHaveBeenCalledWith(1)
+  })
+
+  it('shows findings from loaded review detail', async () => {
+    mockLoadReview.mockResolvedValue({
+      number: 1,
+      timestamp: '2026-04-01T12:00:00Z',
+      approved: false,
+      message: 'Issues found',
+      content: '',
+      findings: ['[HIGH] SQL injection risk', 'Missing validation'],
+    })
+    mockState.reviews = [makeReview({ number: 1, approved: false, message: 'Issues found' })]
+    const { getByText } = render(<ReviewPanel />)
+    await vi.waitFor(() => {
+      expect(getByText('Findings (2)')).toBeInTheDocument()
+    })
+    expect(getByText('SQL injection risk')).toBeInTheDocument()
+  })
+
+  it('displays findings grouped by persona when tagged', async () => {
+    mockLoadReview.mockResolvedValue({
+      number: 1,
+      timestamp: '2026-04-01T12:00:00Z',
+      approved: false,
+      message: 'Review',
+      content: '',
+      findings: ['[security] XSS vulnerability', '[performance] Slow query', 'General issue'],
+    })
+    mockState.reviews = [makeReview({ number: 1, approved: false })]
+    const { getByText } = render(<ReviewPanel />)
+    await vi.waitFor(() => {
+      expect(getByText('Security (1)')).toBeInTheDocument()
+    })
+    expect(getByText('Performance (1)')).toBeInTheDocument()
+    expect(getByText('General (1)')).toBeInTheDocument()
+  })
+
+  it('shows error state when loadReview fails', async () => {
+    mockLoadReview.mockRejectedValue(new Error('Network error'))
+    mockState.reviews = [makeReview({ number: 1 })]
+    const { getByText } = render(<ReviewPanel />)
+    await vi.waitFor(() => {
+      expect(getByText('Network error')).toBeInTheDocument()
+    })
+  })
+
+  it('shows risk score with medium level', () => {
+    mockState.reviews = [makeReview()]
+    mockState.riskScore = { score: 0.65, factors: { complexity: 0.4 }, level: 'medium' }
+    const { getByText } = render(<ReviewPanel />)
+    expect(getByText('0.65 (medium)')).toBeInTheDocument()
+    expect(getByText('complexity: 0.40')).toBeInTheDocument()
+  })
+
+  it('shows risk score with high level', () => {
+    mockState.reviews = [makeReview()]
+    mockState.riskScore = { score: 0.9, factors: {}, level: 'high' }
+    const { getByText } = render(<ReviewPanel />)
+    expect(getByText('0.90 (high)')).toBeInTheDocument()
+  })
+
+  it('calls evaluateRisk when Evaluate button is clicked', () => {
+    mockState.reviews = [makeReview()]
+    mockEvaluateRisk.mockResolvedValue(undefined)
+    const { getByText } = render(<ReviewPanel />)
+    getByText('Evaluate').click()
+    expect(mockEvaluateRisk).toHaveBeenCalled()
+  })
+
+  it('calls evaluateRisk when Re-evaluate button is clicked', () => {
+    mockState.reviews = [makeReview()]
+    mockState.riskScore = { score: 0.5, factors: {}, level: 'medium' }
+    mockEvaluateRisk.mockResolvedValue(undefined)
+    const { getByText } = render(<ReviewPanel />)
+    getByText('Re-evaluate').click()
+    expect(mockEvaluateRisk).toHaveBeenCalled()
+  })
+
+  it('shows Details button when risk score exists', () => {
+    mockState.reviews = [makeReview()]
+    mockState.riskScore = { score: 0.3, factors: {}, level: 'low' }
+    const { getByText } = render(<ReviewPanel />)
+    expect(getByText('Details')).toBeInTheDocument()
+  })
+
+  it('shows finding with severity badge and classification', async () => {
+    mockLoadReview.mockResolvedValue({
+      number: 1,
+      timestamp: '2026-04-01T12:00:00Z',
+      approved: false,
+      message: 'Review',
+      content: '',
+      findings: ['[CRITICAL] Memory leak detected {genuine}'],
+    })
+    mockState.reviews = [makeReview({ number: 1, approved: false })]
+    const { getByText } = render(<ReviewPanel />)
+    await vi.waitFor(() => {
+      expect(getByText('critical')).toBeInTheDocument()
+    })
+    expect(getByText('genuine')).toBeInTheDocument()
+    expect(getByText('Memory leak detected')).toBeInTheDocument()
+  })
+
+  it('renders multiple pending node approvals', () => {
+    mockState.reviews = [makeReview()]
+    mockState.pendingNodeApprovals = [
+      { nodeId: 'node-a', message: 'Check A' },
+      { nodeId: 'node-b', message: 'Check B' },
+    ]
+    const { getByText } = render(<ReviewPanel />)
+    expect(getByText('Pending Approvals (2)')).toBeInTheDocument()
+    expect(getByText('node-a')).toBeInTheDocument()
+    expect(getByText('node-b')).toBeInTheDocument()
+  })
+
+  it('does not show pending approvals section when empty', () => {
+    mockState.reviews = [makeReview()]
+    mockState.pendingNodeApprovals = []
+    const { queryByText } = render(<ReviewPanel />)
+    expect(queryByText(/Pending Approvals/)).not.toBeInTheDocument()
+  })
 })

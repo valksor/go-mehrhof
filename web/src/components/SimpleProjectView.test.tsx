@@ -1,4 +1,4 @@
-import { render } from '@testing-library/react'
+import { render, fireEvent } from '@testing-library/react'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { SimpleProjectView } from './SimpleProjectView'
 
@@ -221,5 +221,209 @@ describe('SimpleProjectView', () => {
     mockProjectState.state = 'planning'
     const { getByText } = render(<SimpleProjectView />)
     expect(getByText('Planning...')).toBeInTheDocument()
+  })
+
+  it('calls plan when Make a Plan is clicked', () => {
+    mockProjectState.state = 'loaded'
+    const { getByText } = render(<SimpleProjectView />)
+    getByText('Make a Plan').click()
+    expect(mockPlan).toHaveBeenCalled()
+  })
+
+  it('calls implement when Build is clicked', () => {
+    mockProjectState.state = 'planned'
+    const { getByText } = render(<SimpleProjectView />)
+    getByText('Build').click()
+    expect(mockImplement).toHaveBeenCalled()
+  })
+
+  it('calls stop when Stop is clicked', () => {
+    mockProjectState.state = 'implementing'
+    const { getByText } = render(<SimpleProjectView />)
+    getByText('Stop').click()
+    expect(mockStop).toHaveBeenCalled()
+  })
+
+  it('calls retry when Try Again is clicked', () => {
+    mockProjectState.state = 'failed'
+    const { getByText } = render(<SimpleProjectView />)
+    getByText('Try Again').click()
+    expect(mockRetry).toHaveBeenCalled()
+  })
+
+  it('calls retry when Resume is clicked in paused state', () => {
+    mockProjectState.state = 'paused'
+    const { getByText } = render(<SimpleProjectView />)
+    getByText('Resume').click()
+    expect(mockRetry).toHaveBeenCalled()
+  })
+
+  it('calls start when Start is clicked with input', async () => {
+    mockProjectState.state = 'none'
+    mockStart.mockResolvedValue(undefined)
+    const { getByText, getByLabelText } = render(<SimpleProjectView />)
+    const input = getByLabelText(/Enter a GitHub issue URL/)
+    fireEvent.change(input, { target: { value: 'Fix the login bug' } })
+    getByText('Start').click()
+    expect(mockStart).toHaveBeenCalledWith('Fix the login bug')
+  })
+
+  it('calls finish and navigates back when Finish & Return is clicked', async () => {
+    mockProjectState.state = 'submitted'
+    mockFinish.mockResolvedValue(true)
+    const { getByText } = render(<SimpleProjectView />)
+    getByText('Finish & Return').click()
+    await vi.waitFor(() => {
+      expect(mockFinish).toHaveBeenCalled()
+      expect(mockSelectProject).toHaveBeenCalledWith(null)
+    })
+  })
+
+  it('does not navigate back if finish returns falsy', async () => {
+    mockProjectState.state = 'submitted'
+    mockFinish.mockResolvedValue(null)
+    const { getByText } = render(<SimpleProjectView />)
+    getByText('Finish & Return').click()
+    await vi.waitFor(() => {
+      expect(mockFinish).toHaveBeenCalled()
+    })
+    expect(mockSelectProject).not.toHaveBeenCalled()
+  })
+
+  it('shows error message in none state when error exists', () => {
+    mockProjectState.state = 'none'
+    mockProjectState.error = 'Invalid task source'
+    const { getByText } = render(<SimpleProjectView />)
+    expect(getByText('Invalid task source')).toBeInTheDocument()
+  })
+
+  it('calls start on Ctrl+Enter in task input', () => {
+    mockProjectState.state = 'none'
+    mockStart.mockResolvedValue(undefined)
+    const { getByLabelText } = render(<SimpleProjectView />)
+    const input = getByLabelText(/Enter a GitHub issue URL/)
+    fireEvent.change(input, { target: { value: 'task description' } })
+    fireEvent.keyDown(input, { key: 'Enter', ctrlKey: true })
+    expect(mockStart).toHaveBeenCalledWith('task description')
+  })
+
+  it('calls start on Meta+Enter in task input', () => {
+    mockProjectState.state = 'none'
+    mockStart.mockResolvedValue(undefined)
+    const { getByLabelText } = render(<SimpleProjectView />)
+    const input = getByLabelText(/Enter a GitHub issue URL/)
+    fireEvent.change(input, { target: { value: 'task description' } })
+    fireEvent.keyDown(input, { key: 'Enter', metaKey: true })
+    expect(mockStart).toHaveBeenCalledWith('task description')
+  })
+
+  it('shows Browse files button and toggles file picker', async () => {
+    mockProjectState.state = 'none'
+    mockListFiles.mockResolvedValue([{ path: 'README.md' }, { path: 'task.md' }])
+    const { getByText } = render(<SimpleProjectView />)
+    getByText('Browse files').click()
+    await vi.waitFor(() => {
+      expect(mockListFiles).toHaveBeenCalled()
+    })
+  })
+
+  it('hides file picker when Browse files clicked again', async () => {
+    mockProjectState.state = 'none'
+    mockListFiles.mockResolvedValue([{ path: 'README.md' }])
+    const { getByText } = render(<SimpleProjectView />)
+    // Open
+    getByText('Browse files').click()
+    await vi.waitFor(() => {
+      expect(getByText('README.md')).toBeInTheDocument()
+    })
+    // Close
+    getByText('Hide').click()
+    await vi.waitFor(() => {
+      expect(() => getByText('README.md')).toThrow()
+    })
+  })
+
+  it('sets task source when file is selected from picker', async () => {
+    mockProjectState.state = 'none'
+    mockListFiles.mockResolvedValue([{ path: 'task.md' }])
+    const { getByText, getByLabelText } = render(<SimpleProjectView />)
+    getByText('Browse files').click()
+    await vi.waitFor(() => {
+      expect(getByText('task.md')).toBeInTheDocument()
+    })
+    getByText('task.md').click()
+    await vi.waitFor(() => {
+      const input = getByLabelText(/Enter a GitHub issue URL/) as HTMLTextAreaElement
+      expect(input.value).toBe('file:task.md')
+    })
+  })
+
+  it('shows PR link when output contains pull request URL', () => {
+    mockProjectState.state = 'submitted'
+    mockProjectState.output = ['Creating PR...', 'PR created: https://github.com/org/repo/pull/123']
+    const { getByText } = render(<SimpleProjectView />)
+    expect(getByText('View Pull Request')).toBeInTheDocument()
+  })
+
+  it('shows fallback text when no PR URL in output', () => {
+    mockProjectState.state = 'submitted'
+    mockProjectState.output = ['Done']
+    const { getByText } = render(<SimpleProjectView />)
+    expect(getByText(/PR was created/)).toBeInTheDocument()
+  })
+
+  it('shows all status labels for each state', () => {
+    const stateLabels: Record<string, string> = {
+      loaded: 'Task loaded',
+      implementing: 'Writing code...',
+      implemented: 'Code complete',
+      simplifying: 'Cleaning up code...',
+      optimizing: 'Improving code quality...',
+      reviewing: 'AI is reviewing...',
+      submitted: 'PR submitted!',
+      failed: 'Something went wrong',
+      waiting: 'Waiting for your input',
+      paused: 'Paused',
+    }
+    for (const [state, label] of Object.entries(stateLabels)) {
+      mockProjectState.state = state
+      const { getByText, unmount } = render(<SimpleProjectView />)
+      expect(getByText(new RegExp(label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')))).toBeInTheDocument()
+      unmount()
+    }
+  })
+
+  it('shows Stop button during simplifying state', () => {
+    mockProjectState.state = 'simplifying'
+    const { getByText } = render(<SimpleProjectView />)
+    expect(getByText('Stop')).toBeInTheDocument()
+  })
+
+  it('shows Stop button during optimizing state', () => {
+    mockProjectState.state = 'optimizing'
+    const { getByText } = render(<SimpleProjectView />)
+    expect(getByText('Stop')).toBeInTheDocument()
+  })
+
+  it('shows Stop button during reviewing state', () => {
+    mockProjectState.state = 'reviewing'
+    const { getByText } = render(<SimpleProjectView />)
+    expect(getByText('Stop')).toBeInTheDocument()
+  })
+
+  it('uses "Project" as fallback name when no path', () => {
+    mockGlobalState.selectedProject = null
+    const { getByText } = render(<SimpleProjectView />)
+    expect(getByText('Project')).toBeInTheDocument()
+  })
+
+  it('disables Start button when loading', () => {
+    mockProjectState.state = 'none'
+    mockProjectState.loading = true
+    const { container } = render(<SimpleProjectView />)
+    // When loading, the button shows a spinner instead of "Start" text
+    // Find the primary button in the task input area
+    const submitBtn = container.querySelector('button.btn-primary') as HTMLButtonElement
+    expect(submitBtn).toBeDisabled()
   })
 })

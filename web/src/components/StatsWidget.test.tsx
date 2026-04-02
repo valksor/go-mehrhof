@@ -230,4 +230,134 @@ describe('StatsWidget', () => {
     const { getByText } = render(<StatsWidget />)
     expect(getByText('Clear')).toBeInTheDocument()
   })
+
+  it('calls clearCache when Clear button is clicked', () => {
+    mockProjectState.connected = true
+    mockProjectState.cacheStats = {
+      enabled: true,
+      entries: 5,
+      hits: 1,
+      misses: 1,
+      hit_rate: 0.5,
+      tokens_saved: 100,
+    }
+    const { getByText } = render(<StatsWidget />)
+    getByText('Clear').click()
+    expect(mockClearCache).toHaveBeenCalled()
+  })
+
+  it('calls loadCacheStats on Refresh click', () => {
+    mockProjectState.connected = true
+    const { getByText } = render(<StatsWidget />)
+    getByText('Refresh').click()
+    expect(mockLoadCacheStats).toHaveBeenCalled()
+  })
+
+  it('shows "--" for cache hit rate when no hits or misses', () => {
+    mockProjectState.connected = true
+    mockProjectState.cacheStats = {
+      enabled: true,
+      entries: 0,
+      hits: 0,
+      misses: 0,
+      hit_rate: 0,
+      tokens_saved: 0,
+    }
+    const { getAllByText } = render(<StatsWidget />)
+    // Hit rate should show "--"
+    const dashes = getAllByText('--')
+    expect(dashes.length).toBeGreaterThanOrEqual(1)
+  })
+
+  it('does not show Clear button when cache has zero entries', () => {
+    mockProjectState.connected = true
+    mockProjectState.cacheStats = {
+      enabled: true,
+      entries: 0,
+      hits: 0,
+      misses: 0,
+      hit_rate: 0,
+      tokens_saved: 0,
+    }
+    const { queryByText } = render(<StatsWidget />)
+    expect(queryByText('Clear')).not.toBeInTheDocument()
+  })
+
+  it('shows tokens consumed when present in metrics', () => {
+    mockState.metrics = {
+      jobs_completed: 5,
+      jobs_failed: 0,
+      avg_latency_ms: 10,
+      tokens_consumed: 50000,
+    }
+    const { getByText } = render(<StatsWidget />)
+    expect(getByText('Tokens Used')).toBeInTheDocument()
+    expect(getByText('50,000')).toBeInTheDocument()
+  })
+
+  it('does not show tokens consumed when zero', () => {
+    mockState.metrics = {
+      jobs_completed: 5,
+      jobs_failed: 0,
+      avg_latency_ms: 10,
+      tokens_consumed: 0,
+    }
+    const { queryByText } = render(<StatsWidget />)
+    expect(queryByText('Tokens Used')).not.toBeInTheDocument()
+  })
+
+  it('shows correct total active tasks count', () => {
+    mockState.activeTasks = [
+      { state: 'implementing' },
+      { state: 'planning' },
+      { state: 'loaded' },
+    ]
+    const { getByText } = render(<StatsWidget />)
+    // Active Tasks value should show 3
+    expect(getByText('3')).toBeInTheDocument()
+  })
+
+  it('applies badge-secondary class to submitted tasks', () => {
+    mockState.activeTasks = [{ state: 'submitted' }]
+    const { getByText } = render(<StatsWidget />)
+    expect(getByText('1 submitted').className).toContain('badge-secondary')
+  })
+
+  it('applies badge-primary class to planned tasks', () => {
+    mockState.activeTasks = [{ state: 'planned' }]
+    const { getByText } = render(<StatsWidget />)
+    expect(getByText('1 planned').className).toContain('badge-primary')
+  })
+
+  it('applies badge-info class to loaded tasks', () => {
+    mockState.activeTasks = [{ state: 'loaded' }]
+    const { getByText } = render(<StatsWidget />)
+    expect(getByText('1 loaded').className).toContain('badge-info')
+  })
+
+  it('sorts tasks by state count descending', () => {
+    mockState.activeTasks = [
+      { state: 'loaded' },
+      { state: 'implementing' },
+      { state: 'implementing' },
+      { state: 'implementing' },
+    ]
+    const { container } = render(<StatsWidget />)
+    const badges = container.querySelectorAll('.badge')
+    // implementing (3) should come before loaded (1)
+    expect(badges[0].textContent).toContain('3 implementing')
+    expect(badges[1].textContent).toContain('1 loaded')
+  })
+
+  it('calls loadCacheStats on mount when project connected', () => {
+    mockProjectState.connected = true
+    render(<StatsWidget />)
+    expect(mockLoadCacheStats).toHaveBeenCalled()
+  })
+
+  it('does not call loadCacheStats on mount when project disconnected', () => {
+    mockProjectState.connected = false
+    render(<StatsWidget />)
+    expect(mockLoadCacheStats).not.toHaveBeenCalled()
+  })
 })
