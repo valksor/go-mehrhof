@@ -2,15 +2,6 @@ package quality
 
 import "github.com/valksor/kvelmo/pkg/findings"
 
-// FailClassification is an alias for findings.Classification.
-type FailClassification = findings.Classification
-
-const (
-	ClassFlaky        = findings.ClassificationFlaky
-	ClassGenuine      = findings.ClassificationGenuine
-	ClassIntermittent = findings.ClassificationIntermittent
-)
-
 // FailClassifier annotates findings with failure pattern classifications.
 type FailClassifier struct {
 	patterns []FailPattern
@@ -36,11 +27,11 @@ func (c *FailClassifier) Classify(ff []findings.Finding) []findings.Finding {
 }
 
 // classify determines the classification for a single finding.
-func (c *FailClassifier) classify(f *findings.Finding) FailClassification {
+func (c *FailClassifier) classify(f *findings.Finding) findings.Classification {
 	// Check history first: if a rule is historically flaky, classify as flaky
 	// regardless of message content.
 	if c.history != nil && f.Rule != "" && c.history.IsFlaky(f.Rule) {
-		return ClassFlaky
+		return findings.ClassificationFlaky
 	}
 
 	// Match against known patterns.
@@ -51,7 +42,7 @@ func (c *FailClassifier) classify(f *findings.Finding) FailClassification {
 	}
 
 	// Default: genuine failure.
-	return ClassGenuine
+	return findings.ClassificationGenuine
 }
 
 // FailClassifierStats returns classification statistics.
@@ -69,11 +60,11 @@ func (c *FailClassifier) Stats(ff []findings.Finding) FailClassifierStats {
 
 	for _, f := range ff {
 		switch findings.Classification(f.Classification) {
-		case ClassFlaky:
+		case findings.ClassificationFlaky:
 			s.Flaky++
-		case ClassGenuine:
+		case findings.ClassificationGenuine:
 			s.Genuine++
-		case ClassIntermittent:
+		case findings.ClassificationIntermittent:
 			s.Intermittent++
 		default:
 			s.Unclassified++

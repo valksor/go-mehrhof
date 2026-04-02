@@ -15,7 +15,7 @@ func TestClassify_TimeoutIsFlaky(t *testing.T) {
 	}
 	result := c.Classify(ff)
 
-	if result[0].Classification != string(ClassFlaky) {
+	if result[0].Classification != string(findings.ClassificationFlaky) {
 		t.Errorf("expected flaky, got %s", result[0].Classification)
 	}
 }
@@ -29,7 +29,7 @@ func TestClassify_LintErrorIsGenuine(t *testing.T) {
 	}
 	result := c.Classify(ff)
 
-	if result[0].Classification != string(ClassGenuine) {
+	if result[0].Classification != string(findings.ClassificationGenuine) {
 		t.Errorf("expected genuine, got %s", result[0].Classification)
 	}
 }
@@ -43,7 +43,7 @@ func TestClassify_EADDRINUSEIsFlaky(t *testing.T) {
 	}
 	result := c.Classify(ff)
 
-	if result[0].Classification != string(ClassFlaky) {
+	if result[0].Classification != string(findings.ClassificationFlaky) {
 		t.Errorf("expected flaky, got %s", result[0].Classification)
 	}
 }
@@ -57,7 +57,7 @@ func TestClassify_UnknownIsGenuine(t *testing.T) {
 	}
 	result := c.Classify(ff)
 
-	if result[0].Classification != string(ClassGenuine) {
+	if result[0].Classification != string(findings.ClassificationGenuine) {
 		t.Errorf("expected genuine, got %s", result[0].Classification)
 	}
 }
@@ -78,7 +78,7 @@ func TestClassify_HistoryOverridesPattern(t *testing.T) {
 	}
 	result := c.Classify(ff)
 
-	if result[0].Classification != string(ClassFlaky) {
+	if result[0].Classification != string(findings.ClassificationFlaky) {
 		t.Errorf("expected flaky from history, got %s", result[0].Classification)
 	}
 }
@@ -88,10 +88,10 @@ func TestFailClassifierStats_CountsCorrectly(t *testing.T) {
 
 	c := NewFailClassifier(nil)
 	ff := []findings.Finding{
-		{Classification: string(ClassFlaky)},
-		{Classification: string(ClassFlaky)},
-		{Classification: string(ClassGenuine)},
-		{Classification: string(ClassIntermittent)},
+		{Classification: string(findings.ClassificationFlaky)},
+		{Classification: string(findings.ClassificationFlaky)},
+		{Classification: string(findings.ClassificationGenuine)},
+		{Classification: string(findings.ClassificationIntermittent)},
 		{Classification: ""},
 	}
 	s := c.Stats(ff)
@@ -119,24 +119,24 @@ func TestFailPatterns_AllMatch(t *testing.T) {
 	tests := []struct {
 		name    string
 		input   string
-		wantCls FailClassification
+		wantCls findings.Classification
 	}{
-		{"timeout", "operation timeout after 30s", ClassFlaky},
-		{"deadline_exceeded", "context deadline exceeded", ClassFlaky},
-		{"eaddrinuse", "listen tcp :8080: bind: address already in use", ClassFlaky},
-		{"eaddrinuse_literal", "EADDRINUSE", ClassFlaky},
-		{"econnrefused", "dial tcp 127.0.0.1:3000: connect: connection refused", ClassFlaky},
-		{"econnrefused_literal", "ECONNREFUSED", ClassFlaky},
-		{"connection_reset", "read: connection reset by peer", ClassFlaky},
-		{"race_detected", "WARNING: DATA RACE", ClassFlaky},
-		{"race_detected_lower", "race detected", ClassFlaky},
-		{"file_locked", "file is locked by another process", ClassFlaky},
-		{"port_in_use", "port already in use", ClassFlaky},
-		{"dns_failure", "temporary failure in name resolution", ClassFlaky},
-		{"tls_handshake", "TLS handshake timeout", ClassFlaky},
-		{"context_canceled", "context canceled", ClassIntermittent},
-		{"signal_killed", "signal: killed", ClassIntermittent},
-		{"genuine_lint", "unused import fmt", ClassGenuine},
+		{"timeout", "operation timeout after 30s", findings.ClassificationFlaky},
+		{"deadline_exceeded", "context deadline exceeded", findings.ClassificationFlaky},
+		{"eaddrinuse", "listen tcp :8080: bind: address already in use", findings.ClassificationFlaky},
+		{"eaddrinuse_literal", "EADDRINUSE", findings.ClassificationFlaky},
+		{"econnrefused", "dial tcp 127.0.0.1:3000: connect: connection refused", findings.ClassificationFlaky},
+		{"econnrefused_literal", "ECONNREFUSED", findings.ClassificationFlaky},
+		{"connection_reset", "read: connection reset by peer", findings.ClassificationFlaky},
+		{"race_detected", "WARNING: DATA RACE", findings.ClassificationFlaky},
+		{"race_detected_lower", "race detected", findings.ClassificationFlaky},
+		{"file_locked", "file is locked by another process", findings.ClassificationFlaky},
+		{"port_in_use", "port already in use", findings.ClassificationFlaky},
+		{"dns_failure", "temporary failure in name resolution", findings.ClassificationFlaky},
+		{"tls_handshake", "TLS handshake timeout", findings.ClassificationFlaky},
+		{"context_canceled", "context canceled", findings.ClassificationIntermittent},
+		{"signal_killed", "signal: killed", findings.ClassificationIntermittent},
+		{"genuine_lint", "unused import fmt", findings.ClassificationGenuine},
 	}
 
 	c := NewFailClassifier(nil)
@@ -147,7 +147,7 @@ func TestFailPatterns_AllMatch(t *testing.T) {
 			ff := []findings.Finding{{Message: tt.input}}
 			result := c.Classify(ff)
 
-			if FailClassification(result[0].Classification) != tt.wantCls {
+			if findings.Classification(result[0].Classification) != tt.wantCls {
 				t.Errorf("input %q: expected %s, got %s", tt.input, tt.wantCls, result[0].Classification)
 			}
 		})
