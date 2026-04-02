@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { COPY_FEEDBACK_MS } from '../lib/constants'
 import { useProjectStore } from '../stores/projectStore'
 import { AccessibleModal } from './ui/AccessibleModal'
 
@@ -42,7 +43,7 @@ export function ChangelogPanel({ isOpen, onClose }: ChangelogPanelProps) {
     try {
       await navigator.clipboard.writeText(content)
       setCopied(true)
-      setTimeout(() => setCopied(false), 2000)
+      setTimeout(() => setCopied(false), COPY_FEEDBACK_MS)
     } catch (err) {
       console.error('Failed to copy to clipboard:', err)
     }

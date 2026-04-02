@@ -1,5 +1,6 @@
 import { useState, useCallback, type ReactNode } from 'react'
 import Markdown from 'react-markdown'
+import { COPY_FEEDBACK_MS } from '../lib/constants'
 import { ScreenshotBadge } from './ScreenshotBadge'
 
 interface ChatMessageContentProps {
@@ -13,7 +14,7 @@ function CodeBlock({ children, language, isUser }: { children: string; language?
   const handleCopy = useCallback(() => {
     void navigator.clipboard.writeText(children).then(() => {
       setCopied(true)
-      setTimeout(() => setCopied(false), 1500)
+      setTimeout(() => setCopied(false), COPY_FEEDBACK_MS)
     })
   }, [children])
 

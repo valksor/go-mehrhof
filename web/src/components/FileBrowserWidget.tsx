@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback, useRef, useMemo } from 'react'
+import { SEARCH_DEBOUNCE_MS } from '../lib/constants'
 import { useProjectStore, type BrowseEntry } from '../stores/projectStore'
 import { useGlobalStore } from '../stores/globalStore'
 import { useLayoutStore } from '../stores/layoutStore'
@@ -60,7 +61,7 @@ export function FileBrowserWidget() {
   }, [globalClient, globalConnected, task?.worktreePath, currentPath])
 
   const debouncedSearch = useMemo(
-    () => debounce((query: string) => performSearch(query), 300),
+    () => debounce((query: string) => performSearch(query), SEARCH_DEBOUNCE_MS),
     [performSearch]
   )
 

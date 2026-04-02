@@ -1,4 +1,5 @@
 import { useState, useMemo, useRef, useCallback, useEffect } from 'react'
+import { CONTEXT_SEARCH_DELAY_MS } from '../lib/constants'
 import { useProjectStore } from '../stores/projectStore'
 import { FilePicker } from './FilePicker'
 import type { FailureClass } from '../lib/events'
@@ -141,7 +142,7 @@ export function TaskWidget({ embedded = false }: TaskWidgetProps) {
 
   useEffect(() => {
     if (!showAtMenu || !atQuery || !atMode) return
-    const timer = setTimeout(() => searchContext(atMode, atQuery), 150)
+    const timer = setTimeout(() => searchContext(atMode, atQuery), CONTEXT_SEARCH_DELAY_MS)
     return () => clearTimeout(timer)
   }, [atQuery, atMode, showAtMenu, searchContext])
 

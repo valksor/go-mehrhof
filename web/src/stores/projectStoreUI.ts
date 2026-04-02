@@ -1,4 +1,5 @@
 import type { StateCreator } from 'zustand'
+import { REFRESH_DEBOUNCE_MS, STORE_DEBOUNCE_MS } from '../lib/constants'
 import { SocketClient } from '../lib/socket'
 import { debounce } from '../lib/debounce'
 import { reconnectDelay } from '../lib/reconnect'
@@ -98,8 +99,8 @@ export const createUISlice: StateCreator<ProjectState, [], [], UISlice> = (set, 
       })
 
       // Create debounced refresh to prevent RPC flood on rapid event streams
-      const debouncedRefresh = debounce(() => get().refreshStatus(), 300)
-      const debouncedLoadQueue = debounce(() => get().loadQueue(), 500)
+      const debouncedRefresh = debounce(() => get().refreshStatus(), REFRESH_DEBOUNCE_MS)
+      const debouncedLoadQueue = debounce(() => get().loadQueue(), STORE_DEBOUNCE_MS)
 
       // Progress estimation polling (3s interval, only during active phases)
       progressInterval = setInterval(async () => {

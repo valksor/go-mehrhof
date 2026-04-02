@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
+import { STORE_DEBOUNCE_MS } from '../lib/constants'
 import { SocketClient } from '../lib/socket'
 import { debounce } from '../lib/debounce'
 import { reconnectDelay } from '../lib/reconnect'
@@ -281,8 +282,8 @@ export const useGlobalStore = create<GlobalState>()(
           get().unsubscribeSocket?.()
 
           // Create debounced loaders to prevent RPC flood on rapid state changes
-          const debouncedLoadTasks = debounce(() => get().loadActiveTasks(), 500)
-          const debouncedLoadWorkers = debounce(() => get().loadWorkers(), 500)
+          const debouncedLoadTasks = debounce(() => get().loadActiveTasks(), STORE_DEBOUNCE_MS)
+          const debouncedLoadWorkers = debounce(() => get().loadWorkers(), STORE_DEBOUNCE_MS)
 
           // Subscribe to server-pushed notifications (e.g., task_state_changed)
           const unsubscribe = client.subscribe((msg: unknown) => {

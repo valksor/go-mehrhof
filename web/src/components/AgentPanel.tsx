@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from 'react'
+import { WORKER_POLL_MS, STRATEGY_POLL_MS } from '../lib/constants'
 import { useGlobalStore } from '../stores/globalStore'
 import { Widget } from './Widget'
 
@@ -68,8 +69,8 @@ export function AgentPanel() {
     if (!connected) return
     void fetchWorkers()
     void fetchStrategies()
-    const interval = setInterval(fetchWorkers, 3000)
-    const strategyInterval = setInterval(fetchStrategies, 30000)
+    const interval = setInterval(fetchWorkers, WORKER_POLL_MS)
+    const strategyInterval = setInterval(fetchStrategies, STRATEGY_POLL_MS)
     return () => {
       clearInterval(interval)
       clearInterval(strategyInterval)

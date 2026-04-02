@@ -13,12 +13,14 @@ Project values override global values.
 
 ## Supported Variables
 
-| Variable       | Description      |
-|----------------|------------------|
-| `GITHUB_TOKEN` | GitHub API token |
-| `GITLAB_TOKEN` | GitLab API token |
-| `LINEAR_TOKEN` | Linear API token |
-| `WRIKE_TOKEN`  | Wrike API token  |
+| Variable             | Description           |
+|----------------------|-----------------------|
+| `GITHUB_TOKEN`       | GitHub API token      |
+| `GITLAB_TOKEN`       | GitLab API token      |
+| `LINEAR_TOKEN`       | Linear API token      |
+| `WRIKE_TOKEN`        | Wrike API token       |
+| `ANTHROPIC_API_KEY`  | Anthropic API key     |
+| `OPENAI_API_KEY`     | OpenAI API key        |
 
 ## Setting Variables
 
@@ -63,4 +65,9 @@ Configuration sources are applied in this order (later overrides earlier):
 
 - Never commit `.env` files to version control (add to `.gitignore`)
 - Use file permissions to protect tokens: `.env` files are created with mode `0600`
-- For CI/CD, inject tokens into `.env` files before running kvelmo
+- For CI/CD, inject tokens into `.env` files before running kvelmo:
+  ```bash
+  mkdir -p ~/.valksor/kvelmo
+  echo "GITHUB_TOKEN=$GITHUB_TOKEN" >> ~/.valksor/kvelmo/.env
+  chmod 600 ~/.valksor/kvelmo/.env
+  ```

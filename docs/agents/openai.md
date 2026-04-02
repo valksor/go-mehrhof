@@ -4,10 +4,10 @@ The OpenAI agent uses OpenAI's chat completions API for AI-assisted development.
 
 ## Prerequisites
 
-Set your API key:
+Add your API key to the global `.env` file (`~/.valksor/kvelmo/.env`):
 
-```bash
-export OPENAI_API_KEY="sk-..."
+```
+OPENAI_API_KEY=sk-...
 ```
 
 ## Configuration
@@ -69,14 +69,15 @@ OpenAI supports the same standard tools as other agents:
 
 ## Troubleshooting
 
-### "OPENAI_API_KEY not set"
+### "OPENAI_API_KEY not configured"
 
-Set the environment variable:
-```bash
-export OPENAI_API_KEY="sk-..."
+Add the key to your `.env` file:
+```
+# ~/.valksor/kvelmo/.env
+OPENAI_API_KEY=sk-...
 ```
 
-The API key can only be set via environment variable, not in `kvelmo.yaml`.
+The API key is loaded from `.env` files, not from shell environment variables or `kvelmo.yaml`.
 
 ## Related
 

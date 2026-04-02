@@ -22,14 +22,16 @@ API tokens and credentials are stored separately in `.env` files:
 
 ## Environment Variables
 
-These environment variables can be set instead of (or in addition to) configuration files:
+These variables are configured in `.env` files (see locations above), not as shell environment variables:
 
-| Variable       | Description                                          |
-|----------------|------------------------------------------------------|
-| `GITHUB_TOKEN` | GitHub personal access token (requires `repo` scope) |
-| `GITLAB_TOKEN` | GitLab personal access token (requires `api` scope)  |
-| `WRIKE_TOKEN`  | Wrike API token                                      |
-| `LINEAR_TOKEN` | Linear API token (see format notes below)            |
+| Variable             | Description                                          |
+|----------------------|------------------------------------------------------|
+| `GITHUB_TOKEN`       | GitHub personal access token (requires `repo` scope) |
+| `GITLAB_TOKEN`       | GitLab personal access token (requires `api` scope)  |
+| `WRIKE_TOKEN`        | Wrike API token                                      |
+| `LINEAR_TOKEN`       | Linear API token (see format notes below)            |
+| `ANTHROPIC_API_KEY`  | Anthropic API key                                    |
+| `OPENAI_API_KEY`     | OpenAI API key                                       |
 
 ### Linear Token Format
 
@@ -229,11 +231,11 @@ custom_agents:
     description: "Claude with Opus model"
     args: ["--model", "opus"]
     # env:
-    #   If ANTHROPIC_API_KEY is already in your shell environment, omit this entirely.
-    #   The subprocess inherits the parent environment automatically.
+    #   Add ANTHROPIC_API_KEY to your .env file (~/.valksor/kvelmo/.env).
+    #   API keys are loaded from .env files, not shell environment variables.
 ```
 
-> **Security:** Do not store API keys as literal values in settings files. Settings are stored in plaintext at `~/.valksor/kvelmo/kvelmo.yaml` or `.valksor/kvelmo.yaml`. If you need to override an API key for a custom agent, set it in your shell environment instead.
+> **Security:** Do not store API keys as literal values in settings files. Settings are stored in plaintext at `~/.valksor/kvelmo/kvelmo.yaml` or `.valksor/kvelmo.yaml`. Add API keys to your `.env` file (`~/.valksor/kvelmo/.env`) instead.
 
 | Key           | Type     | Required | Description                                 |
 |---------------|----------|----------|---------------------------------------------|
@@ -322,10 +324,7 @@ echo "GITHUB_TOKEN=ghp_xxx" >> ~/.valksor/kvelmo/.env
 echo "GITHUB_TOKEN=ghp_yyy" >> .valksor/.env
 ```
 
-Or set as environment variables:
-```bash
-export GITHUB_TOKEN=ghp_xxx
-```
+Tokens are loaded from `.env` files only, not from shell environment variables.
 
 ### Permission Errors
 

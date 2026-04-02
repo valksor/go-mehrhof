@@ -1,5 +1,6 @@
-import { useGlobalStore } from '../stores/globalStore'
 import { useEffect } from 'react'
+import { WORKER_STATS_POLL_MS } from '../lib/constants'
+import { useGlobalStore } from '../stores/globalStore'
 
 interface WorkersWidgetProps {
   embedded?: boolean
@@ -15,7 +16,7 @@ export function WorkersWidget({ embedded = false }: WorkersWidgetProps) {
     const interval = setInterval(() => {
       void loadWorkers()
       void loadWorkerStats()
-    }, 5000)
+    }, WORKER_STATS_POLL_MS)
 
     return () => clearInterval(interval)
   }, [connected, loadWorkers, loadWorkerStats])
