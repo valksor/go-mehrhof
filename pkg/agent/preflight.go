@@ -5,10 +5,11 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"os"
 	"os/exec"
 	"strings"
 	"time"
+
+	"github.com/valksor/kvelmo/pkg/settings"
 )
 
 // CheckStatus represents the result of a single preflight check.
@@ -126,6 +127,15 @@ func RunPreflight() *PreflightResult {
 
 	// Check API agents (only report if configured — skip unconfigured to avoid noise)
 	apiAgentAvailable := false
+	envMap, envErr := settings.LoadEnvMap("")
+	if envErr != nil {
+		result.Checks = append(result.Checks, CheckResult{
+			Name:   "env",
+			Status: CheckWarning,
+			Detail: "failed to load .env: " + envErr.Error(),
+			Fix:    "Check that ~/.valksor/kvelmo/.env exists and has correct permissions (0600)",
+		})
+	}
 	for _, check := range []struct {
 		name   string
 		envVar string
@@ -133,7 +143,7 @@ func RunPreflight() *PreflightResult {
 		{"openai", "OPENAI_API_KEY"},
 		{"anthropic", "ANTHROPIC_API_KEY"},
 	} {
-		if os.Getenv(check.envVar) != "" {
+		if envMap.Get(check.envVar) != "" {
 			result.Checks = append(result.Checks, CheckResult{
 				Name:   check.name,
 				Status: CheckPassed,

@@ -10,7 +10,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"os"
 	"slices"
 	"strings"
 
@@ -21,7 +20,7 @@ const defaultBaseURL = "https://api.openai.com"
 
 // Config holds OpenAI-specific configuration.
 type Config struct {
-	APIKey  string // API key (falls back to OPENAI_API_KEY env var)
+	APIKey  string // API key (injected from .env via settings.InjectEnvVars)
 	BaseURL string // API base URL (default: https://api.openai.com)
 	Model   string // Model name (default: gpt-4o)
 }
@@ -61,7 +60,7 @@ func (p *Provider) Name() string {
 // Available checks if the API key is configured.
 func (p *Provider) Available() error {
 	if p.resolveAPIKey() == "" {
-		return errors.New("openai: OPENAI_API_KEY not set")
+		return errors.New("openai: OPENAI_API_KEY not configured — add it to ~/.valksor/kvelmo/.env")
 	}
 
 	return nil
@@ -210,11 +209,7 @@ func ParseOpenAIStream(ctx context.Context, body io.ReadCloser) <-chan apiagent.
 }
 
 func (p *Provider) resolveAPIKey() string {
-	if p.config.APIKey != "" {
-		return p.config.APIKey
-	}
-
-	return os.Getenv("OPENAI_API_KEY")
+	return p.config.APIKey
 }
 
 // ConvertMessages converts neutral messages to OpenAI format.

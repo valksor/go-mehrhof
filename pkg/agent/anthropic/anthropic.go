@@ -9,7 +9,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"os"
 	"strings"
 
 	"github.com/valksor/kvelmo/pkg/agent/apiagent"
@@ -19,7 +18,7 @@ const defaultBaseURL = "https://api.anthropic.com"
 
 // Config holds Anthropic-specific configuration.
 type Config struct {
-	APIKey  string // API key (falls back to ANTHROPIC_API_KEY env var)
+	APIKey  string // API key (injected from .env via settings.InjectEnvVars)
 	BaseURL string // API base URL (default: https://api.anthropic.com)
 	Model   string // Model name (default: claude-sonnet-4-20250514)
 }
@@ -59,7 +58,7 @@ func (p *Provider) Name() string {
 // Available checks if the API key is configured.
 func (p *Provider) Available() error {
 	if p.resolveAPIKey() == "" {
-		return errors.New("anthropic: ANTHROPIC_API_KEY not set")
+		return errors.New("anthropic: ANTHROPIC_API_KEY not configured — add it to ~/.valksor/kvelmo/.env")
 	}
 
 	return nil
@@ -253,11 +252,7 @@ func (p *Provider) ParseStream(ctx context.Context, body io.ReadCloser) (<-chan 
 }
 
 func (p *Provider) resolveAPIKey() string {
-	if p.config.APIKey != "" {
-		return p.config.APIKey
-	}
-
-	return os.Getenv("ANTHROPIC_API_KEY")
+	return p.config.APIKey
 }
 
 // convertMessage converts a neutral message to Anthropic format.

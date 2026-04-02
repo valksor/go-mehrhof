@@ -33,9 +33,8 @@ func TestParseStreamText(t *testing.T) {
 	}))
 	defer server.Close()
 
-	t.Setenv("ANTHROPIC_API_KEY", "test-key")
-
 	provider := anthropic.NewProvider(anthropic.Config{
+		APIKey:  "test-key",
 		BaseURL: server.URL,
 	})
 
@@ -99,9 +98,7 @@ func TestParseStreamToolUse(t *testing.T) {
 	}))
 	defer server.Close()
 
-	t.Setenv("ANTHROPIC_API_KEY", "test-key")
-
-	provider := anthropic.NewProvider(anthropic.Config{BaseURL: server.URL})
+	provider := anthropic.NewProvider(anthropic.Config{APIKey: "test-key", BaseURL: server.URL})
 	cfg := &apiagent.APIConfig{BaseURL: server.URL, Model: "test", MaxTokens: 1024}
 
 	req, err := provider.BuildRequest(context.Background(), cfg, []apiagent.Message{
@@ -154,8 +151,6 @@ func TestProviderName(t *testing.T) {
 }
 
 func TestProviderAvailableNoKey(t *testing.T) {
-	t.Setenv("ANTHROPIC_API_KEY", "")
-
 	p := anthropic.NewProvider(anthropic.Config{})
 	if err := p.Available(); err == nil {
 		t.Error("expected error when API key not set")
@@ -163,9 +158,7 @@ func TestProviderAvailableNoKey(t *testing.T) {
 }
 
 func TestProviderAvailableWithKey(t *testing.T) {
-	t.Setenv("ANTHROPIC_API_KEY", "test-key")
-
-	p := anthropic.NewProvider(anthropic.Config{})
+	p := anthropic.NewProvider(anthropic.Config{APIKey: "test-key"})
 	if err := p.Available(); err != nil {
 		t.Errorf("unexpected error: %v", err)
 	}

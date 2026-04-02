@@ -122,9 +122,6 @@ func TestProviderName(t *testing.T) {
 }
 
 func TestProviderAvailableNoKey(t *testing.T) {
-	// Ensure env var is not set for this test
-	t.Setenv("OPENAI_API_KEY", "")
-
 	p := openai.NewProvider(openai.Config{})
 	if err := p.Available(); err == nil {
 		t.Error("expected error when API key not set")
@@ -132,9 +129,7 @@ func TestProviderAvailableNoKey(t *testing.T) {
 }
 
 func TestProviderAvailableWithKey(t *testing.T) {
-	t.Setenv("OPENAI_API_KEY", "test-key")
-
-	p := openai.NewProvider(openai.Config{})
+	p := openai.NewProvider(openai.Config{APIKey: "test-key"})
 	if err := p.Available(); err != nil {
 		t.Errorf("unexpected error: %v", err)
 	}
