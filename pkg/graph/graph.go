@@ -101,6 +101,7 @@ type Graph struct {
 	Nodes     map[NodeID]*Node
 	edges     []Edge            // derived from node DependsOn
 	failEdges map[NodeID]NodeID // source → fail-branch target
+	depCounts map[NodeID]int    // cached transitive dependent counts
 }
 
 // New creates an empty graph.
@@ -201,6 +202,42 @@ func (g *Graph) Dependents(id NodeID) []NodeID {
 	return deps
 }
 
+// TransitiveDepCount returns how many nodes transitively depend on the given node.
+// Computed during Validate() and cached. Returns 0 for unknown/leaf nodes.
+func (g *Graph) TransitiveDepCount(id NodeID) int {
+	return g.depCounts[id]
+}
+
+// computeDepCounts calculates transitive dependent counts for all nodes.
+// Builds a reverse adjacency map once, then BFS-counts reachable descendants
+// per node in O(N * (N + E)) total with O(1) per-edge lookups.
+func (g *Graph) computeDepCounts() {
+	g.depCounts = make(map[NodeID]int, len(g.Nodes))
+
+	// Build reverse adjacency map (node → direct dependents) once.
+	reverse := make(map[NodeID][]NodeID, len(g.Nodes))
+	for _, node := range g.Nodes {
+		for _, dep := range node.DependsOn {
+			reverse[dep] = append(reverse[dep], node.ID)
+		}
+	}
+
+	for id := range g.Nodes {
+		visited := make(map[NodeID]bool)
+		queue := append([]NodeID(nil), reverse[id]...)
+		for len(queue) > 0 {
+			cur := queue[0]
+			queue = queue[1:]
+			if visited[cur] {
+				continue
+			}
+			visited[cur] = true
+			queue = append(queue, reverse[cur]...)
+		}
+		g.depCounts[id] = len(visited)
+	}
+}
+
 // Validate checks the graph for errors:
 //   - All DependsOn references point to existing nodes
 //   - No cycles exist
@@ -270,6 +307,7 @@ func (g *Graph) Validate() error {
 	}
 
 	g.buildEdges()
+	g.computeDepCounts()
 
 	return nil
 }

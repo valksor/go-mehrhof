@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"slices"
 	"strings"
 	"sync"
 	"time"
@@ -237,9 +238,18 @@ func (s *Scheduler) run(ctx context.Context, opts JobOpts) {
 }
 
 // enqueueReady finds pending nodes whose dependencies are satisfied and dispatches them.
+// Nodes are prioritized by transitive dependent count (critical path first).
 func (s *Scheduler) enqueueReady(ctx context.Context, opts JobOpts) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+
+	// First pass: resolve frozen/skipped nodes and collect dispatch candidates.
+	type candidate struct {
+		id   NodeID
+		node *Node
+	}
+
+	var candidates []candidate
 
 	for _, id := range s.graph.NodeIDs() {
 		if s.state.Get(id) != StatePending {
@@ -287,31 +297,46 @@ func (s *Scheduler) enqueueReady(ctx context.Context, opts JobOpts) {
 			continue
 		}
 
-		// Check parallel limit.
+		candidates = append(candidates, candidate{id: id, node: node})
+	}
+
+	// Sort by transitive dependent count (descending) — critical path first.
+	// Ties broken by node ID for determinism.
+	slices.SortFunc(candidates, func(a, b candidate) int {
+		ac, bc := s.graph.TransitiveDepCount(a.id), s.graph.TransitiveDepCount(b.id)
+		if ac != bc {
+			return bc - ac // higher count first (descending)
+		}
+
+		return strings.Compare(string(a.id), string(b.id))
+	})
+
+	// Second pass: dispatch up to maxParallel.
+	for _, c := range candidates {
 		if s.running >= s.maxParallel {
 			break
 		}
 
-		if err := s.state.Transition(id, StateQueued); err != nil {
-			slog.Error("graph: failed to queue node", "node", id, "error", err)
+		if err := s.state.Transition(c.id, StateQueued); err != nil {
+			slog.Error("graph: failed to queue node", "node", c.id, "error", err)
 
 			continue
 		}
 
 		s.emit(SchedulerEvent{
 			Type:      EventNodeQueued,
-			NodeID:    id,
-			NodeLabel: node.Label,
+			NodeID:    c.id,
+			NodeLabel: c.node.Label,
 		})
 
 		// Approval gate: wait for human decision before dispatching.
-		if node.RequiresApproval {
-			s.waitForApproval(ctx, id, node, opts)
+		if c.node.RequiresApproval {
+			s.waitForApproval(ctx, c.id, c.node, opts)
 
 			continue
 		}
 
-		s.dispatchNode(ctx, id, node, opts)
+		s.dispatchNode(ctx, c.id, c.node, opts)
 	}
 }
 

@@ -179,6 +179,77 @@ func TestNodeIDs(t *testing.T) {
 	}
 }
 
+func TestTransitiveDepCount(t *testing.T) {
+	// Diamond: A→B, A→C, B→D, C→D
+	g := New()
+	_ = g.AddNode(&Node{ID: "A", JobType: worker.JobTypeImplement, Prompt: "a"})
+	_ = g.AddNode(&Node{ID: "B", JobType: worker.JobTypeImplement, Prompt: "b", DependsOn: []NodeID{"A"}})
+	_ = g.AddNode(&Node{ID: "C", JobType: worker.JobTypeImplement, Prompt: "c", DependsOn: []NodeID{"A"}})
+	_ = g.AddNode(&Node{ID: "D", JobType: worker.JobTypeImplement, Prompt: "d", DependsOn: []NodeID{"B", "C"}})
+
+	if err := g.Validate(); err != nil {
+		t.Fatal(err)
+	}
+
+	tests := []struct {
+		id   NodeID
+		want int
+	}{
+		{"A", 3}, // A → B, C, D
+		{"B", 1}, // B → D
+		{"C", 1}, // C → D
+		{"D", 0}, // leaf
+	}
+
+	for _, tt := range tests {
+		if got := g.TransitiveDepCount(tt.id); got != tt.want {
+			t.Errorf("TransitiveDepCount(%q) = %d, want %d", tt.id, got, tt.want)
+		}
+	}
+}
+
+func TestTransitiveDepCountLinear(t *testing.T) {
+	// Chain: A→B→C→D
+	g := New()
+	_ = g.AddNode(&Node{ID: "A", JobType: worker.JobTypeImplement, Prompt: "a"})
+	_ = g.AddNode(&Node{ID: "B", JobType: worker.JobTypeImplement, Prompt: "b", DependsOn: []NodeID{"A"}})
+	_ = g.AddNode(&Node{ID: "C", JobType: worker.JobTypeImplement, Prompt: "c", DependsOn: []NodeID{"B"}})
+	_ = g.AddNode(&Node{ID: "D", JobType: worker.JobTypeImplement, Prompt: "d", DependsOn: []NodeID{"C"}})
+
+	if err := g.Validate(); err != nil {
+		t.Fatal(err)
+	}
+
+	tests := []struct {
+		id   NodeID
+		want int
+	}{
+		{"A", 3},
+		{"B", 2},
+		{"C", 1},
+		{"D", 0},
+	}
+
+	for _, tt := range tests {
+		if got := g.TransitiveDepCount(tt.id); got != tt.want {
+			t.Errorf("TransitiveDepCount(%q) = %d, want %d", tt.id, got, tt.want)
+		}
+	}
+}
+
+func TestTransitiveDepCountSingleNode(t *testing.T) {
+	g := New()
+	_ = g.AddNode(&Node{ID: "solo", JobType: worker.JobTypeImplement, Prompt: "s"})
+
+	if err := g.Validate(); err != nil {
+		t.Fatal(err)
+	}
+
+	if got := g.TransitiveDepCount("solo"); got != 0 {
+		t.Errorf("TransitiveDepCount(solo) = %d, want 0", got)
+	}
+}
+
 func contains(s, substr string) bool {
 	return len(s) >= len(substr) && searchSubstring(s, substr)
 }
