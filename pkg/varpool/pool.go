@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 	"slices"
+	"strings"
 	"sync"
 	"time"
 )
@@ -480,6 +481,156 @@ func (p *Pool) ListScope(scope string) []Variable {
 	})
 
 	return result
+}
+
+// SummaryOption configures Summary() output.
+type SummaryOption func(*summaryConfig)
+
+type summaryConfig struct {
+	includeSystem bool
+	maxBytes      int
+	maxValueLen   int
+}
+
+// WithSystemVars includes sys.* variables in the summary (excluded by default).
+func WithSystemVars() SummaryOption {
+	return func(c *summaryConfig) { c.includeSystem = true }
+}
+
+// WithMaxBytes limits total summary size in bytes.
+func WithMaxBytes(n int) SummaryOption {
+	return func(c *summaryConfig) { c.maxBytes = n }
+}
+
+// WithMaxValueLen limits individual value display length.
+func WithMaxValueLen(n int) SummaryOption {
+	return func(c *summaryConfig) { c.maxValueLen = n }
+}
+
+// Summary generates a concise markdown digest of pool state, grouped by scope.
+// System variables (sys.*) and internal keys (starting with _) are excluded by default.
+// Expired variables are skipped.
+func (p *Pool) Summary(opts ...SummaryOption) string {
+	cfg := summaryConfig{maxValueLen: 200, maxBytes: 4096}
+	for _, o := range opts {
+		o(&cfg)
+	}
+
+	p.mu.RLock()
+	defer p.mu.RUnlock()
+
+	now := time.Now()
+
+	// Group variables by scope prefix.
+	groups := make(map[string][]Variable)
+
+	for _, v := range p.vars {
+		if !v.ExpiresAt.IsZero() && v.ExpiresAt.Before(now) {
+			continue
+		}
+
+		scope, _ := splitScope(v.Name)
+
+		if scope == ScopeSystem && !cfg.includeSystem {
+			continue
+		}
+
+		if len(v.Name) > 0 && v.Name[0] == '_' {
+			continue
+		}
+
+		groups[scope] = append(groups[scope], v)
+	}
+
+	if len(groups) == 0 {
+		return ""
+	}
+
+	// Sort scope names for deterministic output.
+	scopes := make([]string, 0, len(groups))
+	for s := range groups {
+		scopes = append(scopes, s)
+	}
+
+	slices.Sort(scopes)
+
+	var b strings.Builder
+	b.WriteString("\n## Shared Context\n")
+
+	for _, scope := range scopes {
+		vars := groups[scope]
+
+		slices.SortFunc(vars, func(a, bv Variable) int {
+			return strings.Compare(a.Name, bv.Name)
+		})
+
+		header := scope
+		if header == "" {
+			header = "general"
+		}
+
+		b.WriteString("\n### ")
+		b.WriteString(header)
+		b.WriteString("\n")
+
+		for _, v := range vars {
+			_, key := splitScope(v.Name)
+			val := formatValue(v.Value, cfg.maxValueLen)
+
+			entry := "- **" + key + "**: " + val + "\n"
+
+			if cfg.maxBytes > 0 && b.Len()+len(entry) > cfg.maxBytes {
+				b.WriteString("\n_(truncated)_\n")
+
+				return b.String()
+			}
+
+			b.WriteString(entry)
+		}
+	}
+
+	return b.String()
+}
+
+// splitScope separates "scope.key" into its parts. Returns ("", name) for unscoped keys.
+// For multi-dot names like "plan.sub.detail", returns ("plan", "sub.detail") — only the
+// first dot is used as the scope boundary.
+func splitScope(name string) (string, string) {
+	if before, after, ok := strings.Cut(name, "."); ok {
+		return before, after
+	}
+
+	return "", name
+}
+
+// formatValue converts a variable value to a display string, truncating if needed.
+// Values are sanitized: leading/trailing newlines are stripped to prevent markdown injection.
+// Truncation respects UTF-8 rune boundaries.
+func formatValue(value any, maxLen int) string {
+	var s string
+
+	switch v := value.(type) {
+	case string:
+		s = v
+	default:
+		data, err := json.Marshal(v)
+		if err != nil {
+			s = fmt.Sprintf("%v", v)
+		} else {
+			s = string(data)
+		}
+	}
+
+	s = strings.TrimSpace(s)
+
+	if maxLen > 0 {
+		runes := []rune(s)
+		if len(runes) > maxLen {
+			return string(runes[:maxLen]) + "…"
+		}
+	}
+
+	return s
 }
 
 func detectType(value any) VarType {

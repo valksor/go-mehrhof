@@ -1,7 +1,9 @@
 package varpool
 
 import (
+	"fmt"
 	"path/filepath"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -476,5 +478,114 @@ func TestConcurrentAccess(t *testing.T) {
 
 	if p.Len() != 1 {
 		t.Fatalf("expected 1 key, got %d", p.Len())
+	}
+}
+
+func TestSummaryEmpty(t *testing.T) {
+	p := New()
+	if got := p.Summary(); got != "" {
+		t.Errorf("Summary() on empty pool = %q, want empty", got)
+	}
+}
+
+func TestSummaryGroupsByScope(t *testing.T) {
+	p := New()
+	p.SetScoped(ScopePlan, "spec", "Build a widget", "planner")
+	p.SetScoped(ScopeImplement, "files", "main.go", "implementer")
+
+	got := p.Summary()
+
+	if !strings.Contains(got, "### plan") {
+		t.Error("Summary missing plan scope header")
+	}
+	if !strings.Contains(got, "### implement") {
+		t.Error("Summary missing implement scope header")
+	}
+	if !strings.Contains(got, "**spec**") {
+		t.Error("Summary missing spec key")
+	}
+	if !strings.Contains(got, "**files**") {
+		t.Error("Summary missing files key")
+	}
+}
+
+func TestSummaryExcludesSystem(t *testing.T) {
+	p := New()
+	p.SetScoped(ScopeSystem, "task_id", "abc123", "system")
+	p.SetScoped(ScopePlan, "spec", "test", "planner")
+
+	// Default: excludes system.
+	got := p.Summary()
+	if strings.Contains(got, "task_id") {
+		t.Error("Summary should exclude sys.* vars by default")
+	}
+	if !strings.Contains(got, "spec") {
+		t.Error("Summary should include non-system vars")
+	}
+
+	// WithSystemVars: includes system.
+	got = p.Summary(WithSystemVars())
+	if !strings.Contains(got, "task_id") {
+		t.Error("Summary with WithSystemVars() should include sys.* vars")
+	}
+}
+
+func TestSummaryExcludesInternal(t *testing.T) {
+	p := New()
+	p.Set("_graph_partial_results_plan", "cached", "system")
+	p.SetScoped(ScopePlan, "spec", "test", "planner")
+
+	got := p.Summary()
+	if strings.Contains(got, "_graph_partial") {
+		t.Error("Summary should exclude keys starting with _")
+	}
+	if !strings.Contains(got, "spec") {
+		t.Error("Summary should include normal keys")
+	}
+}
+
+func TestSummaryExcludesExpired(t *testing.T) {
+	p := New()
+	p.SetWithTTL("temp_val", "gone", "test", 1*time.Millisecond) // expires almost immediately
+	time.Sleep(5 * time.Millisecond)                             // wait for expiry
+	p.SetScoped(ScopePlan, "spec", "stays", "planner")
+
+	got := p.Summary()
+	if strings.Contains(got, "temp_val") {
+		t.Error("Summary should exclude expired vars")
+	}
+	if !strings.Contains(got, "stays") {
+		t.Error("Summary should include non-expired vars")
+	}
+}
+
+func TestSummaryTruncatesLongValues(t *testing.T) {
+	p := New()
+	longVal := strings.Repeat("x", 300)
+	p.SetScoped(ScopePlan, "big", longVal, "test")
+
+	got := p.Summary(WithMaxValueLen(50))
+	if strings.Contains(got, longVal) {
+		t.Error("Summary should truncate long values")
+	}
+	if !strings.Contains(got, "…") {
+		t.Error("Summary should end truncated values with …")
+	}
+}
+
+func TestSummaryMaxBytes(t *testing.T) {
+	p := New()
+	for i := range 100 {
+		p.SetScoped(ScopePlan, fmt.Sprintf("var_%03d", i), strings.Repeat("v", 50), "test")
+	}
+
+	got := p.Summary(WithMaxBytes(500))
+	// Pre-check content fits: entries stop before exceeding maxBytes.
+	// Only the truncation marker "\n_(truncated)_\n" (16 bytes) is appended after.
+	if len(got) > 500+16 {
+		t.Errorf("Summary exceeded maxBytes + marker overhead: got %d bytes", len(got))
+	}
+	if !strings.Contains(got, "_(truncated)_") {
+		t.Error("Summary should indicate truncation")
 	}
 }
