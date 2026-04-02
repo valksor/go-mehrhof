@@ -215,7 +215,7 @@ func (c *Conductor) applyFailureClassification(_ context.Context, filtered []fin
 	// Return only genuine and intermittent findings.
 	var genuine []findings.Finding
 	for _, f := range classified {
-		if f.Classification != string(quality.ClassFlaky) {
+		if f.Classification != string(findings.ClassificationFlaky) {
 			genuine = append(genuine, f)
 		}
 	}
