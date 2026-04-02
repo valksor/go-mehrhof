@@ -70,6 +70,21 @@ const initialState = {
   error: null,
   taskQueue: [],
   qualityPrompt: null,
+  phaseError: null,
+  phaseMetrics: null,
+  needsRecovery: null,
+  skipPhases: [] as string[],
+  tags: [] as string[],
+  pendingNodeApprovals: [] as Array<{ nodeId: string; message: string }>,
+  riskScore: null,
+  ciFixStatus: null,
+  autoFixStatus: null,
+  phaseProgress: null,
+  forks: [],
+  recap: null,
+  cacheStats: null,
+  dryRunMode: false,
+  prBodyOverride: null,
 }
 
 // Helper to create a fully typed mock SocketClient
@@ -2039,6 +2054,925 @@ describe('projectStore', () => {
     })
   })
 
+  // ─── stop ──────────────────────────────────────────────────────────────────
+
+  describe('stop', () => {
+    it('calls client.call("stop") and refreshes status', async () => {
+      const client = makeClientWithAutoRefresh()
+      client.call.mockImplementation((method: string) => {
+        if (method === 'stop') return Promise.resolve({ status: 'ok', state: 'loaded' })
+        if (method === 'status') return Promise.resolve({ state: 'loaded', path: '/proj' })
+        if (method === 'checkpoints') return Promise.resolve({ checkpoints: [], redo_stack: [] })
+        if (method === 'git.status') return Promise.resolve({ branch: 'main', has_changes: false, files: [] })
+        if (method === 'review.list') return Promise.resolve({ reviews: [] })
+        return Promise.resolve({})
+      })
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      useProjectStore.setState({ client: client as any, connected: true })
+
+      await useProjectStore.getState().stop()
+
+      expect(client.call).toHaveBeenCalledWith('stop', {})
+      expect(useProjectStore.getState().state).toBe('loaded')
+      expect(useProjectStore.getState().loading).toBe(false)
+    })
+
+    it('is a no-op without client', async () => {
+      await useProjectStore.getState().stop()
+      expect(useProjectStore.getState().state).toBe('none')
+    })
+
+    it('sets error on failure', async () => {
+      const client = makeMockClient()
+      client.call.mockRejectedValue(new Error('Stop failed'))
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      useProjectStore.setState({ client: client as any, connected: true })
+
+      await useProjectStore.getState().stop()
+
+      expect(useProjectStore.getState().error).toBe('Stop failed')
+      expect(useProjectStore.getState().loading).toBe(false)
+    })
+  })
+
+  // ─── retry ─────────────────────────────────────────────────────────────────
+
+  describe('retry', () => {
+    it('retries the inferred phase when state is failed', async () => {
+      const client = makeMockClient()
+      const callSequence: string[] = []
+      client.call.mockImplementation((method: string) => {
+        callSequence.push(method)
+        if (method === 'status') {
+          // First call returns failed with implement error
+          if (callSequence.filter(m => m === 'status').length === 1) {
+            return Promise.resolve({ state: 'failed', last_error: 'implement phase failed' })
+          }
+          // Subsequent calls (from refreshStatus) return implementing
+          return Promise.resolve({ state: 'implementing', path: '/proj' })
+        }
+        if (method === 'reset') return Promise.resolve({ status: 'ok', state: 'loaded' })
+        if (method === 'implement') return Promise.resolve({ status: 'ok', state: 'implementing', job_id: 'j1' })
+        if (method === 'checkpoints') return Promise.resolve({ checkpoints: [], redo_stack: [] })
+        if (method === 'git.status') return Promise.resolve({ branch: 'main', has_changes: false, files: [] })
+        if (method === 'review.list') return Promise.resolve({ reviews: [] })
+        return Promise.resolve({})
+      })
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      useProjectStore.setState({ client: client as any, connected: true })
+
+      await useProjectStore.getState().retry()
+
+      expect(client.call).toHaveBeenCalledWith('status', {})
+      expect(client.call).toHaveBeenCalledWith('reset', {})
+      expect(client.call).toHaveBeenCalledWith('implement', {})
+      expect(useProjectStore.getState().loading).toBe(false)
+    })
+
+    it('infers plan phase from error message', async () => {
+      const client = makeMockClient()
+      client.call.mockImplementation((method: string) => {
+        if (method === 'status') return Promise.resolve({ state: 'failed', last_error: 'plan phase failed' })
+        if (method === 'reset') return Promise.resolve({ status: 'ok', state: 'loaded' })
+        if (method === 'plan') return Promise.resolve({ status: 'ok', state: 'planning', job_id: 'j2' })
+        if (method === 'checkpoints') return Promise.resolve({ checkpoints: [], redo_stack: [] })
+        if (method === 'git.status') return Promise.resolve({ branch: 'main', has_changes: false, files: [] })
+        if (method === 'review.list') return Promise.resolve({ reviews: [] })
+        return Promise.resolve({})
+      })
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      useProjectStore.setState({ client: client as any, connected: true })
+
+      await useProjectStore.getState().retry()
+
+      expect(client.call).toHaveBeenCalledWith('plan', {})
+    })
+
+    it('infers simplify phase from error message', async () => {
+      const client = makeMockClient()
+      client.call.mockImplementation((method: string) => {
+        if (method === 'status') return Promise.resolve({ state: 'failed', last_error: 'simplify error' })
+        if (method === 'reset') return Promise.resolve({ status: 'ok', state: 'loaded' })
+        if (method === 'simplify') return Promise.resolve({ status: 'ok', state: 'simplifying', job_id: 'j3' })
+        if (method === 'checkpoints') return Promise.resolve({ checkpoints: [], redo_stack: [] })
+        if (method === 'git.status') return Promise.resolve({ branch: 'main', has_changes: false, files: [] })
+        if (method === 'review.list') return Promise.resolve({ reviews: [] })
+        return Promise.resolve({})
+      })
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      useProjectStore.setState({ client: client as any, connected: true })
+
+      await useProjectStore.getState().retry()
+
+      expect(client.call).toHaveBeenCalledWith('simplify', {})
+    })
+
+    it('infers optimize phase from error message', async () => {
+      const client = makeMockClient()
+      client.call.mockImplementation((method: string) => {
+        if (method === 'status') return Promise.resolve({ state: 'failed', last_error: 'optimize failed' })
+        if (method === 'reset') return Promise.resolve({ status: 'ok', state: 'loaded' })
+        if (method === 'optimize') return Promise.resolve({ status: 'ok', state: 'optimizing', job_id: 'j4' })
+        if (method === 'checkpoints') return Promise.resolve({ checkpoints: [], redo_stack: [] })
+        if (method === 'git.status') return Promise.resolve({ branch: 'main', has_changes: false, files: [] })
+        if (method === 'review.list') return Promise.resolve({ reviews: [] })
+        return Promise.resolve({})
+      })
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      useProjectStore.setState({ client: client as any, connected: true })
+
+      await useProjectStore.getState().retry()
+
+      expect(client.call).toHaveBeenCalledWith('optimize', {})
+    })
+
+    it('defaults to plan phase when error does not match', async () => {
+      const client = makeMockClient()
+      client.call.mockImplementation((method: string) => {
+        if (method === 'status') return Promise.resolve({ state: 'failed', last_error: 'unknown error' })
+        if (method === 'reset') return Promise.resolve({ status: 'ok', state: 'loaded' })
+        if (method === 'plan') return Promise.resolve({ status: 'ok', state: 'planning', job_id: 'j5' })
+        if (method === 'checkpoints') return Promise.resolve({ checkpoints: [], redo_stack: [] })
+        if (method === 'git.status') return Promise.resolve({ branch: 'main', has_changes: false, files: [] })
+        if (method === 'review.list') return Promise.resolve({ reviews: [] })
+        return Promise.resolve({})
+      })
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      useProjectStore.setState({ client: client as any, connected: true })
+
+      await useProjectStore.getState().retry()
+
+      expect(client.call).toHaveBeenCalledWith('plan', {})
+    })
+
+    it('sets error when state is not failed', async () => {
+      const client = makeMockClient()
+      client.call.mockImplementation((method: string) => {
+        if (method === 'status') return Promise.resolve({ state: 'loaded' })
+        return Promise.resolve({})
+      })
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      useProjectStore.setState({ client: client as any, connected: true })
+
+      await useProjectStore.getState().retry()
+
+      expect(useProjectStore.getState().error).toBe("Retry requires failed state, currently 'loaded'")
+      expect(useProjectStore.getState().loading).toBe(false)
+    })
+
+    it('is a no-op without client', async () => {
+      await useProjectStore.getState().retry()
+      expect(useProjectStore.getState().state).toBe('none')
+    })
+
+    it('sets error on RPC failure', async () => {
+      const client = makeMockClient()
+      client.call.mockRejectedValue(new Error('Network error'))
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      useProjectStore.setState({ client: client as any, connected: true })
+
+      await useProjectStore.getState().retry()
+
+      expect(useProjectStore.getState().error).toBe('Network error')
+      expect(useProjectStore.getState().loading).toBe(false)
+    })
+  })
+
+  // ─── quickStart ────────────────────────────────────────────────────────────
+
+  describe('quickStart', () => {
+    it('calls start with auto_advance and skip_phases', async () => {
+      const client = makeClientWithAutoRefresh()
+      client.call.mockImplementation((method: string, params?: Record<string, unknown>) => {
+        if (method === 'start') {
+          expect(params).toEqual({ source: 'github:repo#1', auto_advance: true, skip_phases: ['plan'] })
+          return Promise.resolve({ status: 'ok', state: 'implementing' })
+        }
+        if (method === 'status') return Promise.resolve({ state: 'implementing', path: '/proj' })
+        if (method === 'checkpoints') return Promise.resolve({ checkpoints: [], redo_stack: [] })
+        if (method === 'git.status') return Promise.resolve({ branch: 'main', has_changes: false, files: [] })
+        if (method === 'review.list') return Promise.resolve({ reviews: [] })
+        return Promise.resolve({})
+      })
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      useProjectStore.setState({ client: client as any, connected: true })
+
+      await useProjectStore.getState().quickStart('github:repo#1')
+
+      expect(client.call).toHaveBeenCalledWith('start', { source: 'github:repo#1', auto_advance: true, skip_phases: ['plan'] })
+      expect(useProjectStore.getState().state).toBe('implementing')
+      expect(useProjectStore.getState().loading).toBe(false)
+    })
+
+    it('is a no-op without client', async () => {
+      await useProjectStore.getState().quickStart('github:repo#1')
+      expect(useProjectStore.getState().state).toBe('none')
+    })
+
+    it('sets error on failure', async () => {
+      const client = makeMockClient()
+      client.call.mockRejectedValue(new Error('Quick start failed'))
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      useProjectStore.setState({ client: client as any, connected: true })
+
+      await useProjectStore.getState().quickStart('github:repo#1')
+
+      expect(useProjectStore.getState().error).toBe('Quick start failed')
+      expect(useProjectStore.getState().loading).toBe(false)
+    })
+  })
+
+  // ─── approveTransition ─────────────────────────────────────────────────────
+
+  describe('approveTransition', () => {
+    it('calls client.call("approve") with event', async () => {
+      const client = makeMockClient()
+      client.call.mockResolvedValue({})
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      useProjectStore.setState({ client: client as any, connected: true })
+
+      await useProjectStore.getState().approveTransition('implement')
+
+      expect(client.call).toHaveBeenCalledWith('approve', { event: 'implement' })
+      expect(useProjectStore.getState().loading).toBe(false)
+    })
+
+    it('is a no-op without client', async () => {
+      await useProjectStore.getState().approveTransition('implement')
+      expect(useProjectStore.getState().state).toBe('none')
+    })
+
+    it('sets error on failure', async () => {
+      const client = makeMockClient()
+      client.call.mockRejectedValue(new Error('Approval failed'))
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      useProjectStore.setState({ client: client as any, connected: true })
+
+      await useProjectStore.getState().approveTransition('implement')
+
+      expect(useProjectStore.getState().error).toBe('Approval failed')
+      expect(useProjectStore.getState().loading).toBe(false)
+    })
+  })
+
+  // ─── approveNode ───────────────────────────────────────────────────────────
+
+  describe('approveNode', () => {
+    it('calls client.call("approve.node") and removes from pendingNodeApprovals', async () => {
+      const client = makeMockClient()
+      client.call.mockResolvedValue({})
+      useProjectStore.setState({
+        client: client as never,
+        connected: true,
+        pendingNodeApprovals: [
+          { nodeId: 'n1', message: 'Approve me' },
+          { nodeId: 'n2', message: 'Approve me too' },
+        ],
+      })
+
+      await useProjectStore.getState().approveNode('n1')
+
+      expect(client.call).toHaveBeenCalledWith('approve.node', { node_id: 'n1' })
+      expect(useProjectStore.getState().pendingNodeApprovals).toEqual([{ nodeId: 'n2', message: 'Approve me too' }])
+      expect(useProjectStore.getState().loading).toBe(false)
+    })
+
+    it('is a no-op without client', async () => {
+      await useProjectStore.getState().approveNode('n1')
+      expect(useProjectStore.getState().state).toBe('none')
+    })
+
+    it('sets error on failure', async () => {
+      const client = makeMockClient()
+      client.call.mockRejectedValue(new Error('Node approval failed'))
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      useProjectStore.setState({ client: client as any, connected: true })
+
+      await useProjectStore.getState().approveNode('n1')
+
+      expect(useProjectStore.getState().error).toBe('Node approval failed')
+      expect(useProjectStore.getState().loading).toBe(false)
+    })
+  })
+
+  // ─── rejectNode ────────────────────────────────────────────────────────────
+
+  describe('rejectNode', () => {
+    it('calls client.call("approve.node") with reject=true and removes from pendingNodeApprovals', async () => {
+      const client = makeMockClient()
+      client.call.mockResolvedValue({})
+      useProjectStore.setState({
+        client: client as never,
+        connected: true,
+        pendingNodeApprovals: [
+          { nodeId: 'n1', message: 'Reject me' },
+          { nodeId: 'n2', message: 'Keep me' },
+        ],
+      })
+
+      await useProjectStore.getState().rejectNode('n1')
+
+      expect(client.call).toHaveBeenCalledWith('approve.node', { node_id: 'n1', reject: true })
+      expect(useProjectStore.getState().pendingNodeApprovals).toEqual([{ nodeId: 'n2', message: 'Keep me' }])
+      expect(useProjectStore.getState().loading).toBe(false)
+    })
+
+    it('is a no-op without client', async () => {
+      await useProjectStore.getState().rejectNode('n1')
+      expect(useProjectStore.getState().state).toBe('none')
+    })
+
+    it('sets error on failure', async () => {
+      const client = makeMockClient()
+      client.call.mockRejectedValue(new Error('Node rejection failed'))
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      useProjectStore.setState({ client: client as any, connected: true })
+
+      await useProjectStore.getState().rejectNode('n1')
+
+      expect(useProjectStore.getState().error).toBe('Node rejection failed')
+      expect(useProjectStore.getState().loading).toBe(false)
+    })
+  })
+
+  // ─── loadTags ──────────────────────────────────────────────────────────────
+
+  describe('loadTags', () => {
+    it('calls client.call("task.tag") with action list and sets tags', async () => {
+      const client = makeMockClient()
+      client.call.mockResolvedValue({ tags: ['bug', 'urgent'] })
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      useProjectStore.setState({ client: client as any, connected: true })
+
+      await useProjectStore.getState().loadTags()
+
+      expect(client.call).toHaveBeenCalledWith('task.tag', { action: 'list' })
+      expect(useProjectStore.getState().tags).toEqual(['bug', 'urgent'])
+    })
+
+    it('is a no-op without client', async () => {
+      await useProjectStore.getState().loadTags()
+      // tags should remain default (empty array from initial state setup)
+    })
+
+    it('silently handles errors', async () => {
+      const client = makeMockClient()
+      client.call.mockRejectedValue(new Error('Tags not available'))
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      useProjectStore.setState({ client: client as any, connected: true })
+
+      await useProjectStore.getState().loadTags()
+
+      // Should not set error — silently caught
+      expect(useProjectStore.getState().error).toBeNull()
+    })
+  })
+
+  // ─── addTag ────────────────────────────────────────────────────────────────
+
+  describe('addTag', () => {
+    it('calls client.call("task.tag") with action add and updates tags', async () => {
+      const client = makeMockClient()
+      client.call.mockResolvedValue({ tags: ['bug', 'urgent'] })
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      useProjectStore.setState({ client: client as any, connected: true })
+
+      await useProjectStore.getState().addTag('urgent')
+
+      expect(client.call).toHaveBeenCalledWith('task.tag', { action: 'add', tags: ['urgent'] })
+      expect(useProjectStore.getState().tags).toEqual(['bug', 'urgent'])
+    })
+
+    it('is a no-op without client', async () => {
+      await useProjectStore.getState().addTag('bug')
+    })
+
+    it('sets error on failure', async () => {
+      const client = makeMockClient()
+      client.call.mockRejectedValue(new Error('Failed to add tag'))
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      useProjectStore.setState({ client: client as any, connected: true })
+
+      await useProjectStore.getState().addTag('bug')
+
+      expect(useProjectStore.getState().error).toBe('Failed to add tag')
+    })
+  })
+
+  // ─── removeTag ─────────────────────────────────────────────────────────────
+
+  describe('removeTag', () => {
+    it('calls client.call("task.tag") with action remove and updates tags', async () => {
+      const client = makeMockClient()
+      client.call.mockResolvedValue({ tags: ['bug'] })
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      useProjectStore.setState({ client: client as any, connected: true, tags: ['bug', 'urgent'] })
+
+      await useProjectStore.getState().removeTag('urgent')
+
+      expect(client.call).toHaveBeenCalledWith('task.tag', { action: 'remove', tags: ['urgent'] })
+      expect(useProjectStore.getState().tags).toEqual(['bug'])
+    })
+
+    it('is a no-op without client', async () => {
+      await useProjectStore.getState().removeTag('bug')
+    })
+
+    it('sets error on failure', async () => {
+      const client = makeMockClient()
+      client.call.mockRejectedValue(new Error('Failed to remove tag'))
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      useProjectStore.setState({ client: client as any, connected: true })
+
+      await useProjectStore.getState().removeTag('bug')
+
+      expect(useProjectStore.getState().error).toBe('Failed to remove tag')
+    })
+  })
+
+  // ─── loadRecap ─────────────────────────────────────────────────────────────
+
+  describe('loadRecap', () => {
+    it('calls client.call("recap") and sets recap', async () => {
+      const client = makeMockClient()
+      const recapData = { summary: 'Task recap', phases: [] }
+      client.call.mockResolvedValue(recapData)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      useProjectStore.setState({ client: client as any, connected: true })
+
+      await useProjectStore.getState().loadRecap()
+
+      expect(client.call).toHaveBeenCalledWith('recap', {})
+      expect(useProjectStore.getState().recap).toEqual(recapData)
+    })
+
+    it('is a no-op without client', async () => {
+      await useProjectStore.getState().loadRecap()
+      expect(useProjectStore.getState().recap).toBeNull()
+    })
+
+    it('silently handles errors', async () => {
+      const client = makeMockClient()
+      client.call.mockRejectedValue(new Error('Recap not available'))
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      useProjectStore.setState({ client: client as any, connected: true })
+
+      await useProjectStore.getState().loadRecap()
+
+      expect(useProjectStore.getState().error).toBeNull()
+    })
+  })
+
+  // ─── evaluateRisk ──────────────────────────────────────────────────────────
+
+  describe('evaluateRisk', () => {
+    it('calls client.call("risk.evaluate") and sets riskScore', async () => {
+      const client = makeMockClient()
+      const riskData = { score: 0.75, factors: { complexity: 0.5 }, level: 'high' }
+      client.call.mockResolvedValue(riskData)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      useProjectStore.setState({ client: client as any, connected: true })
+
+      await useProjectStore.getState().evaluateRisk()
+
+      expect(client.call).toHaveBeenCalledWith('risk.evaluate', {})
+      expect(useProjectStore.getState().riskScore).toEqual(riskData)
+    })
+
+    it('is a no-op without client', async () => {
+      await useProjectStore.getState().evaluateRisk()
+      expect(useProjectStore.getState().riskScore).toBeNull()
+    })
+
+    it('silently handles errors', async () => {
+      const client = makeMockClient()
+      client.call.mockRejectedValue(new Error('Risk not available'))
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      useProjectStore.setState({ client: client as any, connected: true })
+
+      await useProjectStore.getState().evaluateRisk()
+
+      expect(useProjectStore.getState().error).toBeNull()
+    })
+  })
+
+  // ─── loadCacheStats ────────────────────────────────────────────────────────
+
+  describe('loadCacheStats', () => {
+    it('calls client.call("cache.stats") and sets cacheStats', async () => {
+      const client = makeMockClient()
+      const stats = { hits: 10, misses: 5, size: 1024 }
+      client.call.mockResolvedValue(stats)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      useProjectStore.setState({ client: client as any, connected: true })
+
+      await useProjectStore.getState().loadCacheStats()
+
+      expect(client.call).toHaveBeenCalledWith('cache.stats', {})
+      expect(useProjectStore.getState().cacheStats).toEqual(stats)
+    })
+
+    it('is a no-op without client', async () => {
+      await useProjectStore.getState().loadCacheStats()
+      expect(useProjectStore.getState().cacheStats).toBeNull()
+    })
+
+    it('silently handles errors', async () => {
+      const client = makeMockClient()
+      client.call.mockRejectedValue(new Error('Cache not available'))
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      useProjectStore.setState({ client: client as any, connected: true })
+
+      await useProjectStore.getState().loadCacheStats()
+
+      expect(useProjectStore.getState().error).toBeNull()
+    })
+  })
+
+  // ─── clearCache ────────────────────────────────────────────────────────────
+
+  describe('clearCache', () => {
+    it('calls cache.clear then reloads cache stats', async () => {
+      const client = makeMockClient()
+      const callSequence: string[] = []
+      client.call.mockImplementation((method: string) => {
+        callSequence.push(method)
+        if (method === 'cache.clear') return Promise.resolve({})
+        if (method === 'cache.stats') return Promise.resolve({ hits: 0, misses: 0, size: 0 })
+        return Promise.resolve({})
+      })
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      useProjectStore.setState({ client: client as any, connected: true })
+
+      await useProjectStore.getState().clearCache()
+
+      expect(client.call).toHaveBeenCalledWith('cache.clear', {})
+      expect(client.call).toHaveBeenCalledWith('cache.stats', {})
+      // cache.clear must be called before cache.stats
+      expect(callSequence.indexOf('cache.clear')).toBeLessThan(callSequence.indexOf('cache.stats'))
+    })
+
+    it('is a no-op without client', async () => {
+      await useProjectStore.getState().clearCache()
+    })
+
+    it('sets error on failure', async () => {
+      const client = makeMockClient()
+      client.call.mockRejectedValue(new Error('Cache clear failed'))
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      useProjectStore.setState({ client: client as any, connected: true })
+
+      await useProjectStore.getState().clearCache()
+
+      expect(useProjectStore.getState().error).toBe('Cache clear failed')
+    })
+  })
+
+  // ─── createFork ────────────────────────────────────────────────────────────
+
+  describe('createFork', () => {
+    it('calls fork.create and then listForks', async () => {
+      const client = makeMockClient()
+      const forkInfo = { id: 'f1', label: 'Alternative A', branch: 'fork-a' }
+      client.call.mockImplementation((method: string) => {
+        if (method === 'fork.create') return Promise.resolve(forkInfo)
+        if (method === 'fork.list') return Promise.resolve({ forks: [forkInfo] })
+        return Promise.resolve({})
+      })
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      useProjectStore.setState({ client: client as any, connected: true })
+
+      const result = await useProjectStore.getState().createFork('Alternative A')
+
+      expect(client.call).toHaveBeenCalledWith('fork.create', { label: 'Alternative A' })
+      expect(client.call).toHaveBeenCalledWith('fork.list', {})
+      expect(result).toEqual(forkInfo)
+      expect(useProjectStore.getState().forks).toEqual([forkInfo])
+    })
+
+    it('returns null without client', async () => {
+      const result = await useProjectStore.getState().createFork('test')
+      expect(result).toBeNull()
+    })
+
+    it('sets error on failure and returns null', async () => {
+      const client = makeMockClient()
+      client.call.mockRejectedValue(new Error('Failed to create fork'))
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      useProjectStore.setState({ client: client as any, connected: true })
+
+      const result = await useProjectStore.getState().createFork('test')
+
+      expect(result).toBeNull()
+      expect(useProjectStore.getState().error).toBe('Failed to create fork')
+    })
+  })
+
+  // ─── listForks ─────────────────────────────────────────────────────────────
+
+  describe('listForks', () => {
+    it('calls fork.list and sets forks', async () => {
+      const client = makeMockClient()
+      const forks = [{ id: 'f1', label: 'Fork A', branch: 'fork-a' }]
+      client.call.mockResolvedValue({ forks })
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      useProjectStore.setState({ client: client as any, connected: true })
+
+      await useProjectStore.getState().listForks()
+
+      expect(client.call).toHaveBeenCalledWith('fork.list', {})
+      expect(useProjectStore.getState().forks).toEqual(forks)
+    })
+
+    it('is a no-op without client', async () => {
+      await useProjectStore.getState().listForks()
+    })
+
+    it('sets error on failure', async () => {
+      const client = makeMockClient()
+      client.call.mockRejectedValue(new Error('Failed to list forks'))
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      useProjectStore.setState({ client: client as any, connected: true })
+
+      await useProjectStore.getState().listForks()
+
+      expect(useProjectStore.getState().error).toBe('Failed to list forks')
+    })
+  })
+
+  // ─── compareForks ──────────────────────────────────────────────────────────
+
+  describe('compareForks', () => {
+    it('calls fork.compare and returns result', async () => {
+      const client = makeMockClient()
+      const comparison = { winner: 'f1', scores: { f1: 85, f2: 72 } }
+      client.call.mockResolvedValue(comparison)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      useProjectStore.setState({ client: client as any, connected: true })
+
+      const result = await useProjectStore.getState().compareForks()
+
+      expect(client.call).toHaveBeenCalledWith('fork.compare', {})
+      expect(result).toEqual(comparison)
+    })
+
+    it('returns null without client', async () => {
+      const result = await useProjectStore.getState().compareForks()
+      expect(result).toBeNull()
+    })
+
+    it('sets error on failure and returns null', async () => {
+      const client = makeMockClient()
+      client.call.mockRejectedValue(new Error('Failed to compare forks'))
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      useProjectStore.setState({ client: client as any, connected: true })
+
+      const result = await useProjectStore.getState().compareForks()
+
+      expect(result).toBeNull()
+      expect(useProjectStore.getState().error).toBe('Failed to compare forks')
+    })
+  })
+
+  // ─── selectFork ────────────────────────────────────────────────────────────
+
+  describe('selectFork', () => {
+    it('calls fork.select, then listForks and refreshStatus', async () => {
+      const client = makeMockClient()
+      const forks = [{ id: 'f1', label: 'Fork A', branch: 'fork-a', selected: true }]
+      client.call.mockImplementation((method: string) => {
+        if (method === 'fork.select') return Promise.resolve({})
+        if (method === 'fork.list') return Promise.resolve({ forks })
+        if (method === 'status') return Promise.resolve({ state: 'loaded', path: '/proj' })
+        if (method === 'checkpoints') return Promise.resolve({ checkpoints: [], redo_stack: [] })
+        if (method === 'git.status') return Promise.resolve({ branch: 'fork-a', has_changes: false, files: [] })
+        if (method === 'review.list') return Promise.resolve({ reviews: [] })
+        return Promise.resolve({})
+      })
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      useProjectStore.setState({ client: client as any, connected: true })
+
+      await useProjectStore.getState().selectFork('f1')
+
+      expect(client.call).toHaveBeenCalledWith('fork.select', { fork_id: 'f1' })
+      expect(client.call).toHaveBeenCalledWith('fork.list', {})
+      expect(useProjectStore.getState().forks).toEqual(forks)
+    })
+
+    it('is a no-op without client', async () => {
+      await useProjectStore.getState().selectFork('f1')
+    })
+
+    it('sets error on failure', async () => {
+      const client = makeMockClient()
+      client.call.mockRejectedValue(new Error('Failed to select fork'))
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      useProjectStore.setState({ client: client as any, connected: true })
+
+      await useProjectStore.getState().selectFork('f1')
+
+      expect(useProjectStore.getState().error).toBe('Failed to select fork')
+    })
+  })
+
+  // ─── previewCheckpoint ─────────────────────────────────────────────────────
+
+  describe('previewCheckpoint', () => {
+    it('calls checkpoint.preview and returns result', async () => {
+      const client = makeMockClient()
+      const preview = { diff: 'diff content', stat: '1 file changed' }
+      client.call.mockResolvedValue(preview)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      useProjectStore.setState({ client: client as any, connected: true })
+
+      const result = await useProjectStore.getState().previewCheckpoint('abc123')
+
+      expect(client.call).toHaveBeenCalledWith('checkpoint.preview', { sha: 'abc123' })
+      expect(result).toEqual(preview)
+    })
+
+    it('returns null without client', async () => {
+      const result = await useProjectStore.getState().previewCheckpoint('abc123')
+      expect(result).toBeNull()
+    })
+
+    it('returns null on failure', async () => {
+      const client = makeMockClient()
+      client.call.mockRejectedValue(new Error('Preview failed'))
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      useProjectStore.setState({ client: client as any, connected: true })
+
+      const result = await useProjectStore.getState().previewCheckpoint('abc123')
+
+      expect(result).toBeNull()
+    })
+  })
+
+  // ─── loadSpec ──────────────────────────────────────────────────────────────
+
+  describe('loadSpec', () => {
+    it('calls show.spec and returns specifications', async () => {
+      const client = makeMockClient()
+      const specs = [{ title: 'Spec 1', content: 'spec content' }]
+      client.call.mockResolvedValue({ specifications: specs })
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      useProjectStore.setState({ client: client as any, connected: true })
+
+      const result = await useProjectStore.getState().loadSpec()
+
+      expect(client.call).toHaveBeenCalledWith('show.spec', {})
+      expect(result).toEqual(specs)
+    })
+
+    it('returns empty array without client', async () => {
+      const result = await useProjectStore.getState().loadSpec()
+      expect(result).toEqual([])
+    })
+
+    it('returns empty array on failure', async () => {
+      const client = makeMockClient()
+      client.call.mockRejectedValue(new Error('Spec not available'))
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      useProjectStore.setState({ client: client as any, connected: true })
+
+      const result = await useProjectStore.getState().loadSpec()
+
+      expect(result).toEqual([])
+    })
+  })
+
+  // ─── loadPlan ──────────────────────────────────────────────────────────────
+
+  describe('loadPlan', () => {
+    it('calls show.plan and returns specifications', async () => {
+      const client = makeMockClient()
+      const plans = [{ title: 'Plan 1', content: 'plan content' }]
+      client.call.mockResolvedValue({ specifications: plans })
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      useProjectStore.setState({ client: client as any, connected: true })
+
+      const result = await useProjectStore.getState().loadPlan()
+
+      expect(client.call).toHaveBeenCalledWith('show.plan', {})
+      expect(result).toEqual(plans)
+    })
+
+    it('returns empty array without client', async () => {
+      const result = await useProjectStore.getState().loadPlan()
+      expect(result).toEqual([])
+    })
+
+    it('returns empty array on failure', async () => {
+      const client = makeMockClient()
+      client.call.mockRejectedValue(new Error('Plan not available'))
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      useProjectStore.setState({ client: client as any, connected: true })
+
+      const result = await useProjectStore.getState().loadPlan()
+
+      expect(result).toEqual([])
+    })
+  })
+
+  // ─── getGitDiffAgainst ─────────────────────────────────────────────────────
+
+  describe('getGitDiffAgainst', () => {
+    it('calls git.diff_against with ref and stat params', async () => {
+      const client = makeMockClient()
+      client.call.mockResolvedValue({ diff: 'diff against main' })
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      useProjectStore.setState({ client: client as any, connected: true })
+
+      const result = await useProjectStore.getState().getGitDiffAgainst('main', true)
+
+      expect(client.call).toHaveBeenCalledWith('git.diff_against', { ref: 'main', stat: true })
+      expect(result).toBe('diff against main')
+    })
+
+    it('defaults stat to false', async () => {
+      const client = makeMockClient()
+      client.call.mockResolvedValue({ diff: 'diff content' })
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      useProjectStore.setState({ client: client as any, connected: true })
+
+      await useProjectStore.getState().getGitDiffAgainst('develop')
+
+      expect(client.call).toHaveBeenCalledWith('git.diff_against', { ref: 'develop', stat: false })
+    })
+
+    it('returns empty string without client', async () => {
+      const result = await useProjectStore.getState().getGitDiffAgainst('main')
+      expect(result).toBe('')
+    })
+
+    it('returns empty string on failure', async () => {
+      const client = makeMockClient()
+      client.call.mockRejectedValue(new Error('Diff failed'))
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      useProjectStore.setState({ client: client as any, connected: true })
+
+      const result = await useProjectStore.getState().getGitDiffAgainst('main')
+
+      expect(result).toBe('')
+    })
+  })
+
+  // ─── toggleDryRun ──────────────────────────────────────────────────────────
+
+  describe('toggleDryRun', () => {
+    it('toggles dryRunMode from false to true', () => {
+      useProjectStore.setState({ dryRunMode: false })
+
+      useProjectStore.getState().toggleDryRun()
+
+      expect(useProjectStore.getState().dryRunMode).toBe(true)
+    })
+
+    it('toggles dryRunMode from true to false', () => {
+      useProjectStore.setState({ dryRunMode: true })
+
+      useProjectStore.getState().toggleDryRun()
+
+      expect(useProjectStore.getState().dryRunMode).toBe(false)
+    })
+
+    it('toggles back and forth', () => {
+      useProjectStore.setState({ dryRunMode: false })
+
+      useProjectStore.getState().toggleDryRun()
+      expect(useProjectStore.getState().dryRunMode).toBe(true)
+
+      useProjectStore.getState().toggleDryRun()
+      expect(useProjectStore.getState().dryRunMode).toBe(false)
+    })
+  })
+
+  // ─── setPrBodyOverride ─────────────────────────────────────────────────────
+
+  describe('setPrBodyOverride', () => {
+    it('sets prBodyOverride to a string', () => {
+      useProjectStore.getState().setPrBodyOverride('Custom PR body')
+
+      expect(useProjectStore.getState().prBodyOverride).toBe('Custom PR body')
+    })
+
+    it('sets prBodyOverride to null', () => {
+      useProjectStore.setState({ prBodyOverride: 'existing' })
+
+      useProjectStore.getState().setPrBodyOverride(null)
+
+      expect(useProjectStore.getState().prBodyOverride).toBeNull()
+    })
+
+    it('overwrites existing value', () => {
+      useProjectStore.setState({ prBodyOverride: 'old body' })
+
+      useProjectStore.getState().setPrBodyOverride('new body')
+
+      expect(useProjectStore.getState().prBodyOverride).toBe('new body')
+    })
+  })
+
   // ─── event handler (subscribe callback) ────────────────────────────────────
 
   describe('subscribe event handler', () => {
@@ -2265,6 +3199,188 @@ describe('projectStore', () => {
       // No seq field — should not be deduplicated
       fire({ type: 'job_output', content: 'no seq line' })
       expect(useProjectStore.getState().output.length).toBeGreaterThan(prevOutputLen)
+    })
+
+    it('phase_failure_classified sets phaseError', async () => {
+      const { fire } = await setupWithSubscribe()
+      fire({
+        type: 'phase_failure_classified',
+        failure_class: 'quality_gate',
+        failure_message: 'Lint errors found',
+        phase: 'implement',
+        seq: 200,
+      })
+      expect(useProjectStore.getState().phaseError).toEqual({
+        message: 'Lint errors found',
+        class: 'quality_gate',
+        phase: 'implement',
+      })
+    })
+
+    it('worktree_provisioned appends output with summary', async () => {
+      const { fire } = await setupWithSubscribe()
+      const prevOutputLen = useProjectStore.getState().output.length
+      fire({
+        type: 'worktree_provisioned',
+        data: { files_copied: ['a.ts', 'b.ts'], symlinks_created: ['node_modules'], commands_run: ['bun install'] },
+        seq: 201,
+      })
+      expect(useProjectStore.getState().output.length).toBeGreaterThan(prevOutputLen)
+      const last = useProjectStore.getState().output.at(-1)!
+      expect(last).toContain('Worktree provisioned')
+      expect(last).toContain('2 files copied')
+      expect(last).toContain('1 symlinks')
+      expect(last).toContain('1 commands')
+    })
+
+    it('warning event appends output with warning prefix', async () => {
+      const { fire } = await setupWithSubscribe()
+      const prevOutputLen = useProjectStore.getState().output.length
+      fire({ type: 'warning', message: 'Disk space low', seq: 202 })
+      expect(useProjectStore.getState().output.length).toBeGreaterThan(prevOutputLen)
+      const last = useProjectStore.getState().output.at(-1)!
+      expect(last).toContain('Disk space low')
+    })
+
+    it('error event appends output and sets error state', async () => {
+      const { fire } = await setupWithSubscribe()
+      fire({ type: 'error', error: 'Something broke', seq: 203 })
+      const last = useProjectStore.getState().output.at(-1)!
+      expect(last).toContain('Something broke')
+      expect(useProjectStore.getState().error).toBe('Something broke')
+    })
+
+    it('error event uses message when error field is absent', async () => {
+      const { fire } = await setupWithSubscribe()
+      fire({ type: 'error', message: 'Fallback message', seq: 204 })
+      const last = useProjectStore.getState().output.at(-1)!
+      expect(last).toContain('Fallback message')
+      expect(useProjectStore.getState().error).toBe('Fallback message')
+    })
+
+    it('ci_fix_watching sets ciFixStatus to active', async () => {
+      const { fire } = await setupWithSubscribe()
+      fire({ type: 'ci_fix_watching', data: { attempt: 1, max_attempts: 3 }, message: 'Watching CI...', seq: 205 })
+      expect(useProjectStore.getState().ciFixStatus).toEqual({ active: true, attempt: 1, maxAttempts: 3 })
+    })
+
+    it('ci_fix_success sets ciFixStatus to success', async () => {
+      const { fire } = await setupWithSubscribe()
+      fire({ type: 'ci_fix_success', message: 'CI passed', seq: 206 })
+      expect(useProjectStore.getState().ciFixStatus).toEqual({ active: false, result: 'success' })
+    })
+
+    it('ci_fix_exhausted sets ciFixStatus to failed', async () => {
+      const { fire } = await setupWithSubscribe()
+      fire({ type: 'ci_fix_exhausted', message: 'All attempts used', seq: 207 })
+      expect(useProjectStore.getState().ciFixStatus).toEqual({ active: false, result: 'failed' })
+    })
+
+    it('autofix_attempt sets autoFixStatus to active', async () => {
+      const { fire } = await setupWithSubscribe()
+      fire({ type: 'autofix_attempt', data: { attempt: 2, max_attempts: 5 }, message: 'Fixing...', seq: 208 })
+      expect(useProjectStore.getState().autoFixStatus).toEqual({ active: true, attempt: 2, maxAttempts: 5 })
+    })
+
+    it('autofix_success sets autoFixStatus to success', async () => {
+      const { fire } = await setupWithSubscribe()
+      fire({ type: 'autofix_success', message: 'Quality gate passed', seq: 209 })
+      expect(useProjectStore.getState().autoFixStatus).toEqual({ active: false, result: 'success' })
+    })
+
+    it('autofix_exhausted sets autoFixStatus to failed', async () => {
+      const { fire } = await setupWithSubscribe()
+      fire({ type: 'autofix_exhausted', message: 'All fix attempts used', seq: 210 })
+      expect(useProjectStore.getState().autoFixStatus).toEqual({ active: false, result: 'failed' })
+    })
+
+    it('node_approval_required adds to pendingNodeApprovals', async () => {
+      const { fire } = await setupWithSubscribe()
+      fire({ type: 'node_approval_required', node_id: 'node-1', message: 'Approve this node', seq: 211 })
+      expect(useProjectStore.getState().pendingNodeApprovals).toEqual([
+        { nodeId: 'node-1', message: 'Approve this node' },
+      ])
+    })
+
+    it('node_approval_required deduplicates by nodeId', async () => {
+      const { fire } = await setupWithSubscribe()
+      fire({ type: 'node_approval_required', node_id: 'node-1', message: 'First', seq: 212 })
+      fire({ type: 'node_approval_required', node_id: 'node-1', message: 'Updated', seq: 213 })
+      const approvals = useProjectStore.getState().pendingNodeApprovals
+      expect(approvals.length).toBe(1)
+      expect(approvals[0]).toEqual({ nodeId: 'node-1', message: 'Updated' })
+    })
+
+    it('node_completed removes from pendingNodeApprovals', async () => {
+      const { fire } = await setupWithSubscribe()
+      // Add a node first
+      fire({ type: 'node_approval_required', node_id: 'node-1', message: 'Approve', seq: 214 })
+      expect(useProjectStore.getState().pendingNodeApprovals.length).toBe(1)
+
+      // Complete the node
+      fire({ type: 'node_completed', node_id: 'node-1', seq: 215 })
+      expect(useProjectStore.getState().pendingNodeApprovals.length).toBe(0)
+    })
+
+    it('risk_evaluated sets riskScore from object data', async () => {
+      const { fire } = await setupWithSubscribe()
+      fire({
+        type: 'risk_evaluated',
+        data: { score: 0.65, factors: { complexity: 0.3 }, level: 'medium' },
+        seq: 216,
+      })
+      expect(useProjectStore.getState().riskScore).toEqual({ score: 0.65, factors: { complexity: 0.3 }, level: 'medium' })
+    })
+
+    it('risk_evaluated sets riskScore from string data', async () => {
+      const { fire } = await setupWithSubscribe()
+      fire({
+        type: 'risk_evaluated',
+        data: JSON.stringify({ score: 0.9, factors: { size: 0.8 }, level: 'high' }),
+        seq: 217,
+      })
+      expect(useProjectStore.getState().riskScore).toEqual({ score: 0.9, factors: { size: 0.8 }, level: 'high' })
+    })
+
+    it('spec_changed appends output', async () => {
+      const { fire } = await setupWithSubscribe()
+      const prevOutputLen = useProjectStore.getState().output.length
+      fire({ type: 'spec_changed', message: 'Spec updated by agent', seq: 218 })
+      expect(useProjectStore.getState().output.length).toBeGreaterThan(prevOutputLen)
+      const last = useProjectStore.getState().output.at(-1)!
+      expect(last).toContain('Spec updated by agent')
+    })
+
+    it('consensus_review_complete appends output', async () => {
+      const { fire } = await setupWithSubscribe()
+      const prevOutputLen = useProjectStore.getState().output.length
+      fire({ type: 'consensus_review_complete', message: 'Review consensus reached', seq: 219 })
+      expect(useProjectStore.getState().output.length).toBeGreaterThan(prevOutputLen)
+      const last = useProjectStore.getState().output.at(-1)!
+      expect(last).toContain('Review consensus reached')
+    })
+
+    it('router_decision appends output with detail', async () => {
+      const { fire } = await setupWithSubscribe()
+      const prevOutputLen = useProjectStore.getState().output.length
+      fire({
+        type: 'router_decision',
+        data: { action: 'retry', reason: 'quality gate failed', attempt: 1, max_retries: 3 },
+        seq: 220,
+      })
+      expect(useProjectStore.getState().output.length).toBeGreaterThan(prevOutputLen)
+      const last = useProjectStore.getState().output.at(-1)!
+      expect(last).toContain('Router: retry')
+      expect(last).toContain('quality gate failed')
+    })
+
+    it('router_decision uses message when data is absent', async () => {
+      const { fire } = await setupWithSubscribe()
+      const prevOutputLen = useProjectStore.getState().output.length
+      fire({ type: 'router_decision', message: 'Router decision made', seq: 221 })
+      expect(useProjectStore.getState().output.length).toBeGreaterThan(prevOutputLen)
+      const last = useProjectStore.getState().output.at(-1)!
+      expect(last).toContain('Router decision made')
     })
   })
 })

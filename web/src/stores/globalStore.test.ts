@@ -4,6 +4,8 @@ import {
   type AgentStatus,
   type Job,
   type MemoryResult,
+  type TaskGroup,
+  type TimedSnapshot,
 } from './globalStore'
 import type { WorktreeInfo, WorkerInfo } from '../types/socket'
 
@@ -49,6 +51,9 @@ describe('globalStore', () => {
       workerStats: null,
       memoryStats: null,
       jobs: [],
+      taskGroups: [],
+      metrics: null,
+      metricsHistory: [],
       agentStatus: null,
       selectedProjectId: null,
       selectedProject: null,
@@ -1055,6 +1060,273 @@ describe('globalStore', () => {
       injectClient(client)
       const result = await useGlobalStore.getState().loadJob('missing')
       expect(result).toBeNull()
+      warnSpy.mockRestore()
+    })
+  })
+
+  // ---------------------------------------------------------------------------
+  // loadMetricsHistory
+  // ---------------------------------------------------------------------------
+
+  describe('loadMetricsHistory', () => {
+    it('sets metricsHistory when enabled is true', async () => {
+      const entries: TimedSnapshot[] = [
+        { timestamp: '2026-01-01T00:00:00Z', jobs_submitted: 5, jobs_completed: 3, jobs_failed: 1, jobs_in_progress: 1, rpc_requests: 20, rpc_errors: 0, agent_connects: 2, events_dropped: 0 },
+        { timestamp: '2026-01-01T01:00:00Z', jobs_submitted: 8, jobs_completed: 6, jobs_failed: 1, jobs_in_progress: 1, rpc_requests: 35, rpc_errors: 1, agent_connects: 3, events_dropped: 0 },
+      ]
+      const client = makeMockClient(() => ({ entries, enabled: true }))
+      injectClient(client)
+      await useGlobalStore.getState().loadMetricsHistory()
+      expect(client.call).toHaveBeenCalledWith('metrics.history', {})
+      expect(useGlobalStore.getState().metricsHistory).toEqual(entries)
+    })
+
+    it('does not set metricsHistory when enabled is false', async () => {
+      const entries: TimedSnapshot[] = [
+        { timestamp: '2026-01-01T00:00:00Z', jobs_submitted: 5, jobs_completed: 3, jobs_failed: 1, jobs_in_progress: 1, rpc_requests: 20, rpc_errors: 0, agent_connects: 2, events_dropped: 0 },
+      ]
+      const client = makeMockClient(() => ({ entries, enabled: false }))
+      injectClient(client)
+      await useGlobalStore.getState().loadMetricsHistory()
+      expect(client.call).toHaveBeenCalledWith('metrics.history', {})
+      expect(useGlobalStore.getState().metricsHistory).toEqual([])
+    })
+
+    it('does nothing without a client', async () => {
+      await useGlobalStore.getState().loadMetricsHistory()
+      expect(useGlobalStore.getState().metricsHistory).toEqual([])
+    })
+
+    it('silently handles errors', async () => {
+      const client = makeMockClient()
+      client.call.mockRejectedValueOnce(new Error('metrics unavailable'))
+      injectClient(client)
+      await useGlobalStore.getState().loadMetricsHistory()
+      expect(useGlobalStore.getState().metricsHistory).toEqual([])
+    })
+  })
+
+  // ---------------------------------------------------------------------------
+  // loadTaskGroups
+  // ---------------------------------------------------------------------------
+
+  describe('loadTaskGroups', () => {
+    const sampleGroup: TaskGroup = {
+      id: 'tg-1',
+      label: 'Release v2',
+      tasks: [{ project_dir: '/proj', task_id: 'task-1', state: 'loaded' }],
+      status: 'pending',
+      created_at: '2026-01-01T00:00:00Z',
+      updated_at: '2026-01-01T00:00:00Z',
+    }
+
+    it('sets taskGroups on success', async () => {
+      const client = makeMockClient(() => ({ groups: [sampleGroup] }))
+      injectClient(client)
+      await useGlobalStore.getState().loadTaskGroups()
+      expect(client.call).toHaveBeenCalledWith('taskgroup.list', {})
+      expect(useGlobalStore.getState().taskGroups).toEqual([sampleGroup])
+    })
+
+    it('defaults to empty array when groups is missing', async () => {
+      const client = makeMockClient(() => ({}))
+      injectClient(client)
+      await useGlobalStore.getState().loadTaskGroups()
+      expect(useGlobalStore.getState().taskGroups).toEqual([])
+    })
+
+    it('does nothing without a client', async () => {
+      await useGlobalStore.getState().loadTaskGroups()
+      expect(useGlobalStore.getState().taskGroups).toEqual([])
+    })
+
+    it('handles errors gracefully', async () => {
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
+      const client = makeMockClient()
+      client.call.mockRejectedValueOnce(new Error('rpc fail'))
+      injectClient(client)
+      await useGlobalStore.getState().loadTaskGroups()
+      expect(useGlobalStore.getState().taskGroups).toEqual([])
+      warnSpy.mockRestore()
+    })
+  })
+
+  // ---------------------------------------------------------------------------
+  // createTaskGroup
+  // ---------------------------------------------------------------------------
+
+  describe('createTaskGroup', () => {
+    const createdGroup: TaskGroup = {
+      id: 'tg-new',
+      label: 'New Group',
+      tasks: [],
+      status: 'pending',
+      created_at: '2026-04-01T00:00:00Z',
+      updated_at: '2026-04-01T00:00:00Z',
+    }
+
+    it('calls taskgroup.create and reloads groups', async () => {
+      const client = makeMockClient((method: string) => {
+        if (method === 'taskgroup.create') return createdGroup
+        if (method === 'taskgroup.list') return { groups: [createdGroup] }
+        return {}
+      })
+      injectClient(client)
+      const result = await useGlobalStore.getState().createTaskGroup('New Group')
+      expect(client.call).toHaveBeenCalledWith('taskgroup.create', { label: 'New Group' })
+      expect(result).toEqual(createdGroup)
+      expect(useGlobalStore.getState().taskGroups).toEqual([createdGroup])
+    })
+
+    it('returns null without a client', async () => {
+      const result = await useGlobalStore.getState().createTaskGroup('No Client')
+      expect(result).toBeNull()
+    })
+
+    it('returns null on error', async () => {
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
+      const client = makeMockClient()
+      client.call.mockRejectedValueOnce(new Error('create failed'))
+      injectClient(client)
+      const result = await useGlobalStore.getState().createTaskGroup('Fail')
+      expect(result).toBeNull()
+      warnSpy.mockRestore()
+    })
+  })
+
+  // ---------------------------------------------------------------------------
+  // addTaskToGroup
+  // ---------------------------------------------------------------------------
+
+  describe('addTaskToGroup', () => {
+    it('calls taskgroup.add with correct params and reloads', async () => {
+      const client = makeMockClient((method: string) => {
+        if (method === 'taskgroup.list') return { groups: [] }
+        return {}
+      })
+      injectClient(client)
+      await useGlobalStore.getState().addTaskToGroup('tg-1', 'task-42', '/projects/foo')
+      expect(client.call).toHaveBeenCalledWith('taskgroup.add', {
+        id: 'tg-1',
+        task_id: 'task-42',
+        project_dir: '/projects/foo',
+        state: 'loaded',
+      })
+      // Should also call loadTaskGroups
+      expect(client.call).toHaveBeenCalledWith('taskgroup.list', {})
+    })
+
+    it('does nothing without a client', async () => {
+      await useGlobalStore.getState().addTaskToGroup('tg-1', 'task-1', '/proj')
+      expect(useGlobalStore.getState().taskGroups).toEqual([])
+    })
+
+    it('handles errors gracefully', async () => {
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
+      const client = makeMockClient()
+      client.call.mockRejectedValueOnce(new Error('add failed'))
+      injectClient(client)
+      await useGlobalStore.getState().addTaskToGroup('tg-1', 'task-1', '/proj')
+      warnSpy.mockRestore()
+    })
+  })
+
+  // ---------------------------------------------------------------------------
+  // submitTaskGroup
+  // ---------------------------------------------------------------------------
+
+  describe('submitTaskGroup', () => {
+    it('calls taskgroup.submit and reloads groups', async () => {
+      const client = makeMockClient((method: string) => {
+        if (method === 'taskgroup.list') return { groups: [] }
+        return {}
+      })
+      injectClient(client)
+      await useGlobalStore.getState().submitTaskGroup('tg-1')
+      expect(client.call).toHaveBeenCalledWith('taskgroup.submit', { id: 'tg-1' })
+      expect(client.call).toHaveBeenCalledWith('taskgroup.list', {})
+    })
+
+    it('does nothing without a client', async () => {
+      await useGlobalStore.getState().submitTaskGroup('tg-1')
+      expect(useGlobalStore.getState().taskGroups).toEqual([])
+    })
+
+    it('handles errors gracefully', async () => {
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
+      const client = makeMockClient()
+      client.call.mockRejectedValueOnce(new Error('submit failed'))
+      injectClient(client)
+      await useGlobalStore.getState().submitTaskGroup('tg-1')
+      warnSpy.mockRestore()
+    })
+  })
+
+  // ---------------------------------------------------------------------------
+  // getTaskGroupStatus
+  // ---------------------------------------------------------------------------
+
+  describe('getTaskGroupStatus', () => {
+    const statusGroup: TaskGroup = {
+      id: 'tg-1',
+      label: 'Status Group',
+      tasks: [{ project_dir: '/proj', task_id: 'task-1', state: 'implementing' }],
+      status: 'in_progress',
+      created_at: '2026-01-01T00:00:00Z',
+      updated_at: '2026-04-01T00:00:00Z',
+    }
+
+    it('returns task group status', async () => {
+      const client = makeMockClient(() => statusGroup)
+      injectClient(client)
+      const result = await useGlobalStore.getState().getTaskGroupStatus('tg-1')
+      expect(client.call).toHaveBeenCalledWith('taskgroup.status', { id: 'tg-1' })
+      expect(result).toEqual(statusGroup)
+    })
+
+    it('returns null without a client', async () => {
+      const result = await useGlobalStore.getState().getTaskGroupStatus('tg-1')
+      expect(result).toBeNull()
+    })
+
+    it('returns null on error', async () => {
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
+      const client = makeMockClient()
+      client.call.mockRejectedValueOnce(new Error('status failed'))
+      injectClient(client)
+      const result = await useGlobalStore.getState().getTaskGroupStatus('tg-1')
+      expect(result).toBeNull()
+      warnSpy.mockRestore()
+    })
+  })
+
+  // ---------------------------------------------------------------------------
+  // removeTaskGroup
+  // ---------------------------------------------------------------------------
+
+  describe('removeTaskGroup', () => {
+    it('calls taskgroup.remove and reloads groups', async () => {
+      const client = makeMockClient((method: string) => {
+        if (method === 'taskgroup.list') return { groups: [] }
+        return {}
+      })
+      injectClient(client)
+      await useGlobalStore.getState().removeTaskGroup('tg-1')
+      expect(client.call).toHaveBeenCalledWith('taskgroup.remove', { id: 'tg-1' })
+      expect(client.call).toHaveBeenCalledWith('taskgroup.list', {})
+    })
+
+    it('does nothing without a client', async () => {
+      await useGlobalStore.getState().removeTaskGroup('tg-1')
+      expect(useGlobalStore.getState().taskGroups).toEqual([])
+    })
+
+    it('handles errors gracefully', async () => {
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
+      const client = makeMockClient()
+      client.call.mockRejectedValueOnce(new Error('remove failed'))
+      injectClient(client)
+      await useGlobalStore.getState().removeTaskGroup('tg-1')
       warnSpy.mockRestore()
     })
   })
