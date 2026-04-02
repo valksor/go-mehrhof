@@ -530,10 +530,10 @@ func (c *Conductor) resolveStrategy(phase string) strategy.Strategy {
 func (c *Conductor) applyStrategy(ctx context.Context, phase, prompt string) string {
 	s := c.resolveStrategy(phase)
 
-	vars := make(map[string]string)
+	var varSummary string
 	if c.varPool != nil {
-		for _, v := range c.varPool.List() {
-			vars[v.Name] = fmt.Sprintf("%v", v.Value)
+		if summary := c.varPool.Summary(); summary != "" {
+			varSummary = "\n" + summary
 		}
 	}
 
@@ -556,10 +556,9 @@ func (c *Conductor) applyStrategy(ctx context.Context, phase, prompt string) str
 	}
 
 	return s.BuildPrompt(strategy.Input{
-		Task:      prompt,
-		Phase:     phase,
-		Variables: vars,
-		Context:   phaseContext,
+		Task:    prompt,
+		Phase:   phase,
+		Context: phaseContext + varSummary,
 	})
 }
 

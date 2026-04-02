@@ -13,10 +13,9 @@ import (
 // Input provides context for prompt construction.
 type Input struct {
 	Task        string
-	Context     string            // Accumulated context (specs, prior output)
-	Variables   map[string]string // From variable pool
-	Phase       string            // Current phase name
-	Constraints []string          // Quality requirements, style guides
+	Context     string   // Accumulated context (specs, prior output, shared variable summary)
+	Phase       string   // Current phase name
+	Constraints []string // Quality requirements, style guides
 }
 
 // Output captures the evaluated result of agent execution.
