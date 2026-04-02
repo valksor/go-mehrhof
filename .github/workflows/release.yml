@@ -52,6 +52,8 @@ jobs:
         if: >-
             !contains(github.event.release.name, '[docs only]') &&
             !contains(github.event.release.body, '[docs only]')
+        outputs:
+            desktop_version: ${{ steps.version.outputs.desktop_version }}
         env:
             RELEASE_TAG: ${{ github.event.release.tag_name }}
         steps:
@@ -130,6 +132,16 @@ jobs:
                     GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
                     GORELEASER_CURRENT_TAG: ${{ !github.event.release.prerelease && github.event.release.tag_name || '' }}
                     MINISIGN_PASSWORD: ${{ secrets.MINISIGN_PASSWORD }}
+
+            -   name: Extract desktop version
+                id: version
+                run: |
+                    if [ -f dist/metadata.json ]; then
+                        VERSION=$(jq -r '.version' dist/metadata.json)
+                    else
+                        VERSION="${RELEASE_TAG#v}"
+                    fi
+                    echo "desktop_version=$VERSION" >> "$GITHUB_OUTPUT"
 
             -   name: Restore release title
                 env:
@@ -329,24 +341,17 @@ jobs:
             -   name: Set version in tauri.conf.json (Unix)
                 if: steps.check.outputs.proceed == 'true' && matrix.platform != 'windows'
                 working-directory: web/src-tauri
-                run: |
-                    VERSION="${RELEASE_TAG#v}"
-                    if [ "$VERSION" = "nightly" ]; then
-                        VERSION="0.$(date +%-y).$(date +%-m%d)"
-                    fi
-                    bun x json -I -f tauri.conf.json -e "this.version='$VERSION'"
+                env:
+                    DESKTOP_VERSION: ${{ needs.build.outputs.desktop_version }}
+                run: bun x json -I -f tauri.conf.json -e "this.version='$DESKTOP_VERSION'"
 
             -   name: Set version in tauri.conf.json (Windows)
                 if: steps.check.outputs.proceed == 'true' && matrix.platform == 'windows'
                 working-directory: web/src-tauri
                 shell: pwsh
-                run: |
-                    $VERSION = $env:RELEASE_TAG -replace '^v', ''
-                    if ($VERSION -eq 'nightly') {
-                        $d = Get-Date
-                        $VERSION = "0.$($d.Year % 100).$($d.Month * 100 + $d.Day)"
-                    }
-                    bun x json -I -f tauri.conf.json -e "this.version='$VERSION'"
+                env:
+                    DESKTOP_VERSION: ${{ needs.build.outputs.desktop_version }}
+                run: bun x json -I -f tauri.conf.json -e "this.version='$env:DESKTOP_VERSION'"
 
             -   name: Download pre-built web dist
                 if: steps.check.outputs.proceed == 'true'
