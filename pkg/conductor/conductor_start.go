@@ -119,7 +119,7 @@ func (c *Conductor) Start(ctx context.Context, sourceRef string) error {
 		useWorktree := settings.BoolValue(effectiveSettings.Workflow.UseWorktreeIsolation, true)
 		if useWorktree {
 			// Create isolated git worktree from the local base branch.
-			wtBasePath := filepath.Join(c.git.Path(), ".kvelmo", "worktrees")
+			wtBasePath := filepath.Join(filepath.Dir(c.git.Path()), ".kvelmo-worktrees")
 			wt, wtErr := c.git.CreateTaskWorktree(ctx, c.workUnit.ID, wtBasePath, baseBranch)
 			if wtErr != nil {
 				slog.Warn("worktree isolation failed, falling back to branch", "error", wtErr)

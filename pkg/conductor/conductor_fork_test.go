@@ -106,7 +106,7 @@ func TestFork_CreatesWorktreeAndBranch(t *testing.T) {
 	}
 
 	// Verify worktree directory exists
-	expectedDir := filepath.Join(filepath.Dir(dir), ".kvelmo-forks", "test-task-1-approach-a")
+	expectedDir := filepath.Join(filepath.Dir(dir), ".kvelmo-worktrees", "test-task-1-fork-approach-a")
 	if info.WorktreeDir != expectedDir {
 		t.Errorf("expected worktree dir %q, got %q", expectedDir, info.WorktreeDir)
 	}

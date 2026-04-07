@@ -36,7 +36,6 @@ func (c *Conductor) Fork(ctx context.Context, label string) (*ForkInfo, error) {
 	c.mu.Lock()
 	wu := c.workUnit
 	repo := c.git
-	worktree := c.worktree
 	c.mu.Unlock()
 
 	if wu == nil {
@@ -68,7 +67,7 @@ func (c *Conductor) Fork(ctx context.Context, label string) (*ForkInfo, error) {
 
 	forkID := uuid.New().String()[:8]
 	branchName := fmt.Sprintf("kvelmo-fork/%s/%s", wu.ID, safeLabel)
-	worktreeDir := filepath.Join(filepath.Dir(worktree), ".kvelmo-forks", fmt.Sprintf("%s-%s", wu.ID, safeLabel))
+	worktreeDir := filepath.Join(filepath.Dir(repo.Path()), ".kvelmo-worktrees", fmt.Sprintf("%s-fork-%s", wu.ID, safeLabel))
 
 	// Create worktree with new branch from current SHA
 	if err := repo.AddWorktree(ctx, worktreeDir, branchName, true, sha); err != nil {
