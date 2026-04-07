@@ -54,3 +54,5 @@ CLAUDE.local.md
 .claude/backups/
 .claude/hooks/__counter
 __NEEDS_ONBOARD
+
+.claude/settings.local.json
