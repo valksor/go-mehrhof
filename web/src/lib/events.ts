@@ -1,4 +1,4 @@
-import type { TaskState } from '../types/socket'
+import type { State } from '../types/conductor'
 
 // ---------------------------------------------------------------------------
 // Worktree event payloads (conductor events forwarded via stream.subscribe)
@@ -13,7 +13,7 @@ interface BaseEvent {
 /** State machine transition. */
 export interface StateChangedEvent extends BaseEvent {
   type: 'state_changed'
-  state: TaskState
+  state: State
   message?: string
 }
 
@@ -76,7 +76,7 @@ export interface TaskLifecycleEvent extends BaseEvent {
     | 'task_submitted'
     | 'task_updated'
     | 'task_finished'
-  state?: TaskState
+  state?: State
   message?: string
 }
 
@@ -89,7 +89,7 @@ export interface PhaseStartedEvent extends BaseEvent {
     | 'simplifying_started'
     | 'review_started'
     | 'review_fix_started'
-  state?: TaskState
+  state?: State
   job_id?: string
   message?: string
 }
@@ -157,14 +157,14 @@ export interface PhaseControlEvent extends BaseEvent {
     | 'iteration_retry'
     | 'auto_advance'
     | 'auto_advance_failed'
-  state?: TaskState
+  state?: State
   message?: string
 }
 
 /** PR events. */
 export interface PREvent extends BaseEvent {
   type: 'pr_approved' | 'pr_merged'
-  state?: TaskState
+  state?: State
   message?: string
   data?: unknown
 }
@@ -172,7 +172,7 @@ export interface PREvent extends BaseEvent {
 /** Approval events. */
 export interface ApprovalEvent extends BaseEvent {
   type: 'approval_required' | 'transition_approved'
-  state?: TaskState
+  state?: State
   message?: string
 }
 
@@ -347,7 +347,7 @@ export type ChatEventType = ChatEvent['type']
 // Global socket notifications (JSON-RPC notifications, not events)
 // ---------------------------------------------------------------------------
 
-export interface TaskStateChangedNotification {
+export interface StateChangedNotification {
   method: 'task_state_changed'
   params?: { project_path?: string; state?: string }
 }
