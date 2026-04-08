@@ -107,6 +107,21 @@ kvelmo tui
 - **Not only a shortcut to PRs**; it also handles the operational edges around agent work
 - **Not limited to a single agent**; Claude, Codex, and custom agents can all participate
 
+## Licensing and Third-Party Tools
+
+kvelmo does not modify, patch, bundle, or redistribute any agent CLI. It invokes
+locally installed binaries as subprocesses through their documented interfaces —
+the same way a shell script or CI pipeline would.
+
+| Tool | License | Binary invocation status |
+|------|---------|--------------------------|
+| **Claude Code** | Proprietary (Anthropic) | Designed for programmatic use. The `--print` and `--output-format stream-json` flags exist for exactly this purpose, and Anthropic's own Agent SDK uses the same subprocess pattern. Consumer ToS explicitly exempts the CLI from the prohibition on automated access. |
+| **Codex CLI** | Apache 2.0 (OpenAI) | Open source. Subprocess invocation, wrapping, and modification are all permitted by the license. |
+| **Custom agents** | Varies | Any CLI exposing a supported protocol can participate. |
+
+kvelmo itself is [BSD 3-Clause](LICENSE). Users install and authenticate agent
+CLIs independently — kvelmo does not ship them.
+
 ## Key Capabilities
 
 | Capability | What It Covers |
