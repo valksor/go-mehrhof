@@ -171,12 +171,19 @@ web-test:
 	cd web && bun run test:run
 
 ## Frontend e2e tests (demo mode, no backend needed)
-web-e2e:
-	cd web && bun run test:e2e
+web-e2e: web-e2e-install
+	cd web && VITE_WATCH_POLLING=1 bun run test:e2e
 
 ## Frontend e2e tests with UI (interactive debugging)
-web-e2e-ui:
-	cd web && bun run test:e2e:ui
+web-e2e-ui: web-e2e-install
+	cd web && VITE_WATCH_POLLING=1 bun run test:e2e:ui
+
+## Install Playwright browsers if missing (prerequisite for web-e2e targets)
+web-e2e-install:
+	@if [ ! -x "$$HOME/.cache/ms-playwright/chromium_headless_shell-1217/chrome-headless-shell-linux64/chrome-headless-shell" ]; then \
+		echo "Installing Playwright chromium..."; \
+		cd web && bunx playwright install chromium; \
+	fi
 
 # ──────────────────────────────────────────────────────────────────────────────
 # Desktop (Tauri)

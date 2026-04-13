@@ -26,6 +26,28 @@ export default defineConfig({
   server: {
     port: 5173,
     strictPort: false, // Allow fallback to the next available port
+    // Chokidar opens an fd per watched file. Without aggressive ignoring the
+    // repo blows past the default ulimit -n and the dev server dies with
+    // EMFILE during startup. Set VITE_WATCH_POLLING=1 to bypass fs.watch
+    // entirely (slower, used by make web-e2e on systems with tight fd caps).
+    watch: {
+      usePolling: process.env.VITE_WATCH_POLLING === '1',
+      ignored: [
+        '**/node_modules/**',
+        '**/dist/**',
+        '**/.git/**',
+        '**/build/**',
+        '**/target/**',
+        '**/prototype/**',
+        '**/src-tauri/target/**',
+        '**/src-tauri/gen/**',
+        '**/coverage/**',
+        '**/playwright-report/**',
+        '**/test-results/**',
+        '**/.playwright-cli/**',
+        '**/.playwright-mcp/**',
+      ],
+    },
     proxy: {
       '/api': {
         target: backendUrl,
