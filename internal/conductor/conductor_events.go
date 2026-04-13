@@ -6,7 +6,7 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/valksor/kvelmo/pkg/metrics"
+	"github.com/valksor/kvelmo/metrics"
 )
 
 // Internal methods
@@ -78,12 +78,15 @@ func (c *Conductor) emit(e ConductorEvent) {
 		return
 	}
 	e.Timestamp = time.Now()
-	// Send to channel (non-blocking)
+	// Send to channel (non-blocking). The events channel is an optional
+	// subscription API for callers that prefer channel semantics over
+	// AddListener; in deployments where no one reads c.events the channel
+	// saturates quickly. Drops are counted via metrics but not logged —
+	// listeners still receive every event, so a full channel is not a fault.
 	select {
 	case c.events <- e:
 	default:
 		metrics.Global().RecordEventDropped()
-		slog.Warn("conductor event dropped", "type", e.Type)
 	}
 	c.eventsMu.Unlock()
 
