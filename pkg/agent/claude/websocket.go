@@ -287,6 +287,11 @@ func (w *WebSocketConnection) handleConnection(rw http.ResponseWriter, r *http.R
 		return
 	}
 
+	// Raise read limit from the library default (32 KB). Agent output — especially
+	// simplify/optimize passes — regularly emits multi-megabyte messages; 32 KB
+	// causes the connection to die mid-stream and strands the phase in progress.
+	conn.SetReadLimit(32 * 1024 * 1024) // 32 MiB
+
 	w.connMu.Lock()
 	w.conn = conn
 	w.connMu.Unlock()
