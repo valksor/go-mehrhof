@@ -15,7 +15,7 @@ import (
 	"time"
 
 	"github.com/coder/websocket"
-	"github.com/valksor/kvelmo/pkg/agent"
+	"github.com/valksor/kvelmo/agent"
 )
 
 // localAcceptOptions restricts WebSocket connections to localhost only.
@@ -72,16 +72,19 @@ type incomingMessage struct {
 	Type string `json:"type"`
 
 	// system/init fields
-	SessionID    string   `json:"session_id,omitempty"`
-	Capabilities []string `json:"capabilities,omitempty"`
-	Tools        []struct {
-		Name        string `json:"name"`
-		Description string `json:"description"`
-	} `json:"tools,omitempty"`
+	SessionID string `json:"session_id,omitempty"`
 
-	// stream_event fields
+	// stream_event fields — current Claude CLI nests text deltas in
+	// event.delta.text; older versions used top-level content/delta.
 	Content string `json:"content,omitempty"`
 	Delta   string `json:"delta,omitempty"`
+	Event   *struct {
+		Type  string `json:"type,omitempty"` // e.g. "content_block_delta"
+		Delta *struct {
+			Type string `json:"type,omitempty"` // e.g. "text_delta"
+			Text string `json:"text,omitempty"`
+		} `json:"delta,omitempty"`
+	} `json:"event,omitempty"`
 
 	// assistant fields
 	Message *struct {

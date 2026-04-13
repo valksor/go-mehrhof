@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/valksor/kvelmo/pkg/agent"
+	"github.com/valksor/kvelmo/agent"
 )
 
 // --- CancelJob edge cases ---
@@ -600,10 +600,14 @@ done:
 func TestExecuteWithAgent_ChannelClosedWithoutCompletion(t *testing.T) {
 	pool := newTestPool(t)
 
-	// Agent sends stream events but no EventComplete or EventError
+	// Agent sends a stream event and a redundant assistant event (mirroring
+	// how the Claude websocket adapter delivers the same text twice: as
+	// streaming deltas and again as a final assistant message). The pool
+	// must not double-count — streams are the canonical form and the
+	// assistant fallback is ignored whenever any stream content arrived.
 	ag := newTestableAgent("no-complete", withEvents([]agent.Event{
 		{Type: agent.EventStream, Content: "partial output"},
-		{Type: agent.EventAssistant, Content: " with assistant"},
+		{Type: agent.EventAssistant, Content: "partial output"},
 	}))
 
 	pool.mu.Lock()
@@ -638,8 +642,8 @@ done:
 	if got.Status != JobStatusDone {
 		t.Errorf("Status = %q, want %q (should complete when channel closes)", got.Status, JobStatusDone)
 	}
-	if got.Result != "partial output with assistant" {
-		t.Errorf("Result = %q, want 'partial output with assistant'", got.Result)
+	if got.Result != "partial output" {
+		t.Errorf("Result = %q, want 'partial output'", got.Result)
 	}
 }
 

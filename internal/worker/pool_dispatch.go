@@ -7,9 +7,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/valksor/kvelmo/pkg/agent"
-	"github.com/valksor/kvelmo/pkg/agent/recorder"
-	"github.com/valksor/kvelmo/pkg/metrics"
+	"github.com/valksor/kvelmo/agent"
+	"github.com/valksor/kvelmo/agent/recorder"
+	"github.com/valksor/kvelmo/metrics"
 )
 
 // dispatcher assigns jobs to available workers.
@@ -264,8 +264,20 @@ func (p *Pool) executeWithAgent(ctx context.Context, job *Job, w *Worker) {
 		return
 	}
 
-	// Forward agent events to job stream
+	// Forward agent events to job stream.
+	//
+	// Result accumulation strategy: prefer streaming deltas, since they are
+	// the canonical token-by-token form of the agent's output. Only fall
+	// back to EventAssistant when no stream content has arrived — this
+	// handles adapters that deliver the full message in one event without
+	// streaming. The two forms must never both be accumulated for the same
+	// turn: Claude's websocket adapter, for example, emits both a series of
+	// stream deltas AND a final EventAssistant carrying the same text, so
+	// writing both would double every character and put heavy allocation
+	// pressure on strings.Builder for long responses.
 	var result strings.Builder
+	var assistantFallback string
+	var streamReceived bool
 	for agentEvent := range eventCh {
 		// Record the event if recording is active
 		if rec != nil {
@@ -282,13 +294,30 @@ func (p *Pool) executeWithAgent(ctx context.Context, job *Job, w *Worker) {
 		}
 		p.emitEvent(job.ID, workerEvent)
 
-		// Accumulate content for result
-		if agentEvent.Type == agent.EventStream || agentEvent.Type == agent.EventAssistant {
-			result.WriteString(agentEvent.Content)
+		switch agentEvent.Type {
+		case agent.EventStream:
+			if agentEvent.Content != "" {
+				streamReceived = true
+				result.WriteString(agentEvent.Content)
+			}
+		case agent.EventAssistant:
+			if agentEvent.Content != "" {
+				assistantFallback = agentEvent.Content
+			}
+		case agent.EventToolUse, agent.EventToolResult, agent.EventPermission,
+			agent.EventComplete, agent.EventError, agent.EventInit,
+			agent.EventKeepAlive, agent.EventSubagent, agent.EventProgress,
+			agent.EventToolProgress, agent.EventInterrupted,
+			agent.EventPromptSuggestion:
+			// Other event types are forwarded to the job stream above but
+			// do not contribute to the accumulated result text.
 		}
 
 		// Handle completion
 		if agentEvent.Type == agent.EventComplete {
+			if !streamReceived && assistantFallback != "" {
+				result.WriteString(assistantFallback)
+			}
 			p.mu.Lock()
 			job.Status = JobStatusDone
 			now := time.Now()
@@ -351,6 +380,9 @@ func (p *Pool) executeWithAgent(ctx context.Context, job *Job, w *Worker) {
 	}
 
 	// Channel closed without explicit completion - mark as complete
+	if !streamReceived && assistantFallback != "" {
+		result.WriteString(assistantFallback)
+	}
 	p.mu.Lock()
 	if job.Status == JobStatusInProgress {
 		job.Status = JobStatusDone

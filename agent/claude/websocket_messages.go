@@ -11,7 +11,7 @@ import (
 
 	"github.com/coder/websocket"
 	"github.com/google/uuid"
-	"github.com/valksor/kvelmo/pkg/agent"
+	"github.com/valksor/kvelmo/agent"
 )
 
 // trySendEvent sends an event to the events channel.
@@ -111,15 +111,25 @@ func (w *WebSocketConnection) handleIncomingMessage(msg incomingMessage) {
 		}
 
 	case "stream_event":
-		content := msg.Content
-		if content == "" {
+		// Current Claude CLI delivers text deltas nested as
+		// event.delta.text (type "text_delta"). Fall back to the legacy
+		// top-level content/delta fields if the nested path is absent.
+		var content string
+		switch {
+		case msg.Event != nil && msg.Event.Delta != nil && msg.Event.Delta.Text != "":
+			content = msg.Event.Delta.Text
+		case msg.Content != "":
+			content = msg.Content
+		default:
 			content = msg.Delta
 		}
-		w.trySendEvent(agent.Event{
-			Type:      agent.EventStream,
-			Content:   content,
-			Timestamp: time.Now(),
-		})
+		if content != "" {
+			w.trySendEvent(agent.Event{
+				Type:      agent.EventStream,
+				Content:   content,
+				Timestamp: time.Now(),
+			})
+		}
 
 	case "assistant":
 		if msg.Message != nil {

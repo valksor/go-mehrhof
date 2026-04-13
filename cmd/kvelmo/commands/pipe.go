@@ -13,16 +13,16 @@ import (
 	"time"
 
 	"github.com/spf13/cobra"
-	"github.com/valksor/kvelmo/pkg/agent"
-	"github.com/valksor/kvelmo/pkg/agent/anthropic"
-	"github.com/valksor/kvelmo/pkg/agent/apiagent"
-	"github.com/valksor/kvelmo/pkg/agent/claude"
-	"github.com/valksor/kvelmo/pkg/agent/codex"
-	"github.com/valksor/kvelmo/pkg/agent/ollama"
-	"github.com/valksor/kvelmo/pkg/agent/openai"
-	"github.com/valksor/kvelmo/pkg/agent/replay"
-	"github.com/valksor/kvelmo/pkg/meta"
-	"github.com/valksor/kvelmo/pkg/settings"
+	"github.com/valksor/kvelmo/agent"
+	"github.com/valksor/kvelmo/agent/anthropic"
+	"github.com/valksor/kvelmo/agent/apiagent"
+	"github.com/valksor/kvelmo/agent/claude"
+	"github.com/valksor/kvelmo/agent/codex"
+	"github.com/valksor/kvelmo/agent/ollama"
+	"github.com/valksor/kvelmo/agent/openai"
+	"github.com/valksor/kvelmo/agent/replay"
+	"github.com/valksor/kvelmo/meta"
+	"github.com/valksor/kvelmo/settings"
 )
 
 var PipeCmd = &cobra.Command{
@@ -176,26 +176,47 @@ func runPipe(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("send prompt: %w", err)
 	}
 
+	// Streams are preferred (token-by-token). If no stream content arrives,
+	// fall back to printing the full assistant message so short or cached
+	// responses still reach stdout.
+	var streamPrinted bool
+	var assistantFallback string
+
 	for event := range events {
 		switch event.Type {
 		case agent.EventStream:
-			fmt.Print(event.Content)
+			if event.Content != "" {
+				streamPrinted = true
+				fmt.Print(event.Content)
+			}
+		case agent.EventAssistant:
+			if event.Content != "" {
+				assistantFallback = event.Content
+			}
 		case agent.EventPermission:
 			if event.PermissionRequest != nil {
 				approved := agent.DefaultPermissionHandler(*event.PermissionRequest)
 				_ = ag.HandlePermission(event.PermissionRequest.ID, approved)
 			}
 		case agent.EventComplete:
+			if !streamPrinted && assistantFallback != "" {
+				fmt.Print(assistantFallback)
+			}
 			fmt.Println()
 
 			return nil
 		case agent.EventError:
 			return fmt.Errorf("agent error: %s", event.Error)
-		case agent.EventAssistant, agent.EventToolUse, agent.EventToolResult,
+		case agent.EventToolUse, agent.EventToolResult,
 			agent.EventInit, agent.EventKeepAlive, agent.EventSubagent, agent.EventProgress,
 			agent.EventToolProgress, agent.EventInterrupted, agent.EventPromptSuggestion:
 			// Not relevant to the pipe command; silently ignored.
 		}
+	}
+
+	if !streamPrinted && assistantFallback != "" {
+		fmt.Print(assistantFallback)
+		fmt.Println()
 	}
 
 	return nil
