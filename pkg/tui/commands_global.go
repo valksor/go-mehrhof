@@ -41,6 +41,12 @@ var globalHandlers = map[string]globalHandler{
 	"/strategy":        glStrategy,
 	"/catalog list":    glCatalogList,
 	"/catalog use":     glCatalogUse,
+	// Parity additions — surface CLI-only commands in chat/TUI.
+	"/agent":               glAgent,
+	"/projects":            glProjectsList,
+	"/projects unregister": glProjectsUnregister,
+	"/recordings":          glRecordings,
+	"/notify test":         glNotifyTest,
 }
 
 // ── Jobs & Metrics ──────────────────────────────────────────────────────────

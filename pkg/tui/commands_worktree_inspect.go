@@ -458,12 +458,30 @@ func wtRemoteMerge(ctx context.Context, client *socket.Client, _ string, _ bool)
 // ── Discover ────────────────────────────────────────────────────────────────
 
 func wtDiscover(ctx context.Context, client *socket.Client, _ string, _ bool) (string, error) {
-	resp, err := client.Call(ctx, "project.discover", nil)
+	resp, err := client.Call(ctx, "discovery.scan", nil)
 	if err != nil {
 		return "", err
 	}
 
-	return string(resp.Result), nil
+	var result struct {
+		Commands []string `json:"commands"`
+		Count    int      `json:"count"`
+	}
+	if err := json.Unmarshal(resp.Result, &result); err != nil {
+		return "", fmt.Errorf("parse result: %w", err)
+	}
+
+	if result.Count == 0 {
+		return "No project commands discovered.", nil
+	}
+
+	var sb strings.Builder
+	fmt.Fprintf(&sb, "Discovered commands (%d)\n\n", result.Count)
+	for _, cmd := range result.Commands {
+		fmt.Fprintf(&sb, "  %s\n", cmd)
+	}
+
+	return strings.TrimRight(sb.String(), "\n"), nil
 }
 
 // ── Chat-based ──────────────────────────────────────────────────────────────

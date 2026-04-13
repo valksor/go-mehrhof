@@ -132,6 +132,13 @@ var commands = []tuiCommand{
 	{name: "/strategy", description: "List reasoning strategies", worktree: false},
 	{name: "/catalog use", description: "Use catalog template", worktree: false},
 	{name: "/catalog list", description: "List catalog templates", worktree: false},
+	{name: "/agent", description: "Show agent status and health", worktree: false},
+	{name: "/projects unregister", description: "Unregister a project", worktree: false},
+	{name: "/projects", description: "List registered projects", worktree: false},
+	{name: "/hooks", description: "List configured workflow hooks", worktree: true},
+	{name: "/recordings", description: "List session recordings", worktree: false},
+	{name: "/screenshots", description: "List screenshots for the current task", worktree: true},
+	{name: "/notify test", description: "Send a test webhook notification", worktree: false},
 
 	// Modal-equivalent (execute directly in TUI)
 	{name: "/submit", description: "Submit PR", worktree: true},

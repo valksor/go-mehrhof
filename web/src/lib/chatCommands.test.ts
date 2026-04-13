@@ -1701,15 +1701,15 @@ describe('infra commands execution', () => {
 
   it('/discover returns formatted commands', async () => {
     const cmd = COMMANDS.find(c => c.name === '/discover')!
-    mockClientCall.mockResolvedValue({ commands: [{ name: 'make build', source: 'Makefile' }] })
+    mockClientCall.mockResolvedValue({ commands: ['make build', 'bun run dev'], count: 2 })
     setState({ client: { call: mockClientCall } })
-    expect(await cmd.execute('')).toBe('[Makefile] make build')
+    expect(await cmd.execute('')).toBe('Discovered commands (2)\n\n  make build\n  bun run dev')
     expect(mockClientCall).toHaveBeenCalledWith('discovery.scan', {})
   })
 
   it('/discover returns no commands when empty', async () => {
     const cmd = COMMANDS.find(c => c.name === '/discover')!
-    mockClientCall.mockResolvedValue({ commands: [] })
+    mockClientCall.mockResolvedValue({ commands: [], count: 0 })
     setState({ client: { call: mockClientCall } })
     expect(await cmd.execute('')).toBe('No project commands found.')
   })

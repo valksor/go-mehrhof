@@ -475,6 +475,7 @@ func TestGlobalHandlerArgValidation(t *testing.T) {
 		{"/group submit (no args)", globalHandlers["/group submit"], "Usage: /group submit"},
 		{"/group remove (no args)", globalHandlers["/group remove"], "Usage: /group remove"},
 		{"/batch (no args)", globalHandlers["/batch"], "Usage: /batch"},
+		{"/projects unregister (no args)", globalHandlers["/projects unregister"], "Usage: /projects unregister"},
 	}
 
 	for _, tt := range tests {

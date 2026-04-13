@@ -623,13 +623,13 @@ describe('utility commands execution', () => {
   })
 
   it('/discover returns formatted commands', async () => {
-    mockClientCall.mockResolvedValue({ commands: [{ name: 'make build', source: 'Makefile' }] })
+    mockClientCall.mockResolvedValue({ commands: ['make build', 'bun run dev'], count: 2 })
     setState({ client: { call: mockClientCall } })
-    expect(await findCmd('/discover').execute('')).toBe('[Makefile] make build')
+    expect(await findCmd('/discover').execute('')).toBe('Discovered commands (2)\n\n  make build\n  bun run dev')
   })
 
   it('/discover returns no commands when empty', async () => {
-    mockClientCall.mockResolvedValue({ commands: [] })
+    mockClientCall.mockResolvedValue({ commands: [], count: 0 })
     setState({ client: { call: mockClientCall } })
     expect(await findCmd('/discover').execute('')).toBe('No project commands found.')
   })
@@ -780,5 +780,230 @@ describe('utility commands execution', () => {
     mockClientCall.mockResolvedValue({ entries: [] })
     mockGlobalState.client = { call: mockClientCall }
     expect(await findCmd('/rpc-log').execute('')).toBe('No log entries.')
+  })
+})
+
+// ---------------------------------------------------------------------------
+// Parity additions — surfaces CLI-only commands in chat
+// ---------------------------------------------------------------------------
+
+describe('parity commands execution', () => {
+  // /agent
+  it('/agent returns not connected when no global client', async () => {
+    mockGlobalState.client = null
+    expect(await findCmd('/agent').execute('')).toBe('Not connected to global socket.')
+  })
+
+  it('/agent reports available agent with checks (all three OK statuses)', async () => {
+    mockClientCall.mockResolvedValue({
+      agent_available: true,
+      simulation_mode: false,
+      checks: [
+        { name: 'claude', status: 'ok', detail: 'v4.6' },
+        { name: 'git', status: 'pass' },
+        { name: 'ollama', status: 'passed', detail: 'reachable' },
+      ],
+    })
+    mockGlobalState.client = { call: mockClientCall }
+    const result = await findCmd('/agent').execute('')
+    expect(result).toContain('Agent: available')
+    expect(result).toContain('claude: OK (v4.6)')
+    expect(result).toContain('git: OK')
+    expect(result).toContain('ollama: OK (reachable)')
+    expect(mockClientCall).toHaveBeenCalledWith('agent.status', {})
+  })
+
+  it('/agent reports simulation mode when no agent', async () => {
+    mockClientCall.mockResolvedValue({
+      agent_available: false,
+      simulation_mode: true,
+      checks: [],
+    })
+    mockGlobalState.client = { call: mockClientCall }
+    expect(await findCmd('/agent').execute('')).toBe('Agent: simulation mode')
+  })
+
+  it('/agent reports not available when neither flag set', async () => {
+    mockClientCall.mockResolvedValue({
+      agent_available: false,
+      simulation_mode: false,
+      checks: [{ name: 'probe', status: 'error', detail: 'timeout' }],
+    })
+    mockGlobalState.client = { call: mockClientCall }
+    const result = await findCmd('/agent').execute('')
+    expect(result).toContain('Agent: not available')
+    expect(result).toContain('probe: error (timeout)')
+  })
+
+  // /projects
+  it('/projects returns not connected when no global client', async () => {
+    mockGlobalState.client = null
+    expect(await findCmd('/projects').execute('')).toBe('Not connected to global socket.')
+  })
+
+  it('/projects returns no projects when empty', async () => {
+    mockClientCall.mockResolvedValue({ projects: [] })
+    mockGlobalState.client = { call: mockClientCall }
+    expect(await findCmd('/projects').execute('')).toBe('No projects registered.')
+  })
+
+  it('/projects returns formatted list with name preferred over path', async () => {
+    mockClientCall.mockResolvedValue({
+      projects: [
+        { id: 'abcdef1234567890', name: 'kvelmo', path: '/workspace/kvelmo' },
+        { id: 'fedcba0987654321', path: '/workspace/other' },
+      ],
+    })
+    mockGlobalState.client = { call: mockClientCall }
+    const result = await findCmd('/projects').execute('')
+    expect(result).toContain('abcdef12 kvelmo')
+    expect(result).toContain('fedcba09 /workspace/other')
+    expect(mockClientCall).toHaveBeenCalledWith('projects.list', {})
+  })
+
+  // /projects unregister
+  it('/projects unregister returns usage when no id', async () => {
+    expect(await findCmd('/projects unregister').execute('')).toBe('Usage: /projects unregister <id>')
+  })
+
+  it('/projects unregister returns not connected when no global client', async () => {
+    mockGlobalState.client = null
+    expect(await findCmd('/projects unregister').execute('abc123')).toBe('Not connected to global socket.')
+  })
+
+  it('/projects unregister calls projects.unregister', async () => {
+    mockClientCall.mockResolvedValue({})
+    mockGlobalState.client = { call: mockClientCall }
+    expect(await findCmd('/projects unregister').execute('abc123')).toBe('Project abc123 unregistered.')
+    expect(mockClientCall).toHaveBeenCalledWith('projects.unregister', { id: 'abc123' })
+  })
+
+  // /hooks (worktree-scoped, requires active state)
+  it('/hooks is unavailable when not active', () => {
+    setState({ state: 'none' })
+    expect(findCmd('/hooks').isAvailable()).toBe(false)
+  })
+
+  it('/hooks is available when active', () => {
+    setState({ state: 'loaded' })
+    expect(findCmd('/hooks').isAvailable()).toBe(true)
+  })
+
+  it('/hooks returns not connected when no worktree client', async () => {
+    setState({ state: 'loaded', client: null })
+    expect(await findCmd('/hooks').execute('')).toBe('Not connected.')
+  })
+
+  it('/hooks returns no hooks when empty', async () => {
+    mockClientCall.mockResolvedValue({ hooks: [] })
+    setState({ state: 'loaded', client: { call: mockClientCall } })
+    expect(await findCmd('/hooks').execute('')).toBe('No hooks configured.')
+  })
+
+  it('/hooks returns formatted hooks by event', async () => {
+    mockClientCall.mockResolvedValue({
+      hooks: [
+        { event: 'pre-plan', command: 'echo planning' },
+        { event: 'post-submit', command: 'notify slack' },
+      ],
+    })
+    setState({ state: 'loaded', client: { call: mockClientCall } })
+    const result = await findCmd('/hooks').execute('')
+    expect(result).toContain('pre-plan: echo planning')
+    expect(result).toContain('post-submit: notify slack')
+  })
+
+  it('/hooks falls back to name when event missing', async () => {
+    mockClientCall.mockResolvedValue({ hooks: [{ name: 'my-hook', command: 'run' }] })
+    setState({ state: 'loaded', client: { call: mockClientCall } })
+    expect(await findCmd('/hooks').execute('')).toBe('my-hook: run')
+  })
+
+  // /recordings
+  it('/recordings returns not connected when no global client', async () => {
+    mockGlobalState.client = null
+    expect(await findCmd('/recordings').execute('')).toBe('Not connected to global socket.')
+  })
+
+  it('/recordings returns no recordings when empty', async () => {
+    mockClientCall.mockResolvedValue({ recordings: [] })
+    mockGlobalState.client = { call: mockClientCall }
+    expect(await findCmd('/recordings').execute('')).toBe('No recordings.')
+  })
+
+  it('/recordings returns formatted list with id, path, and timestamp', async () => {
+    mockClientCall.mockResolvedValue({
+      recordings: [
+        { id: 'rec11111234567890', path: '/rec/a.jsonl', created_at: '2026-01-15T10:00:00Z' },
+        { path: '/rec/b.jsonl' },
+      ],
+    })
+    mockGlobalState.client = { call: mockClientCall }
+    const result = await findCmd('/recordings').execute('')
+    expect(result).toContain('rec11111')
+    expect(result).toContain('/rec/a.jsonl')
+    expect(result).toContain('(2026-01-15T10:00:00Z)')
+    expect(result).toContain('/rec/b.jsonl')
+  })
+
+  // /screenshots (worktree-scoped, requires active state)
+  it('/screenshots is unavailable when not active', () => {
+    setState({ state: 'none' })
+    expect(findCmd('/screenshots').isAvailable()).toBe(false)
+  })
+
+  it('/screenshots is available when active', () => {
+    setState({ state: 'loaded' })
+    expect(findCmd('/screenshots').isAvailable()).toBe(true)
+  })
+
+  it('/screenshots returns not connected when no worktree client', async () => {
+    setState({ state: 'loaded', client: null })
+    expect(await findCmd('/screenshots').execute('')).toBe('Not connected.')
+  })
+
+  it('/screenshots returns no screenshots when empty', async () => {
+    mockClientCall.mockResolvedValue({ screenshots: [] })
+    setState({ state: 'loaded', client: { call: mockClientCall } })
+    expect(await findCmd('/screenshots').execute('')).toBe('No screenshots.')
+  })
+
+  it('/screenshots returns formatted list', async () => {
+    mockClientCall.mockResolvedValue({
+      screenshots: [
+        { id: 'shot1234', path: '/shots/a.png' },
+        { path: '/shots/b.png' },
+      ],
+    })
+    setState({ state: 'loaded', client: { call: mockClientCall } })
+    const result = await findCmd('/screenshots').execute('')
+    expect(result).toContain('shot1234')
+    expect(result).toContain('/shots/a.png')
+    expect(result).toContain('/shots/b.png')
+  })
+
+  // /notify test
+  it('/notify test returns not connected when no global client', async () => {
+    mockGlobalState.client = null
+    expect(await findCmd('/notify test').execute('')).toBe('Not connected to global socket.')
+  })
+
+  it('/notify test reports delivered count when sent', async () => {
+    mockClientCall.mockResolvedValue({ sent: 2 })
+    mockGlobalState.client = { call: mockClientCall }
+    expect(await findCmd('/notify test').execute('')).toBe('Notification test sent (2 delivered).')
+    expect(mockClientCall).toHaveBeenCalledWith('notify.test', {})
+  })
+
+  it('/notify test reports message when not sent', async () => {
+    mockClientCall.mockResolvedValue({ sent: 0, message: 'no webhooks configured' })
+    mockGlobalState.client = { call: mockClientCall }
+    expect(await findCmd('/notify test').execute('')).toBe('Notification test: no webhooks configured')
+  })
+
+  it('/notify test reports generic complete when no detail', async () => {
+    mockClientCall.mockResolvedValue({})
+    mockGlobalState.client = { call: mockClientCall }
+    expect(await findCmd('/notify test').execute('')).toBe('Notification test complete.')
   })
 })

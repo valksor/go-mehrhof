@@ -309,6 +309,121 @@ function parseChangelogArgs(args: string): { source: string; target: string; not
 
 const utilityCommands: ChatCommand[] = [
   {
+    name: '/agent',
+    description: 'Show agent status and health',
+    isAvailable: () => true,
+    execute: async () => {
+      const client = globalClient()
+      if (!client) return 'Not connected to global socket.'
+      const result = await client.call<{
+        agent_available: boolean
+        simulation_mode: boolean
+        checks: Array<{ name: string; status: string; detail?: string }>
+      }>('agent.status', {})
+      const lines: string[] = []
+      if (result.agent_available) {
+        lines.push('Agent: available')
+      } else if (result.simulation_mode) {
+        lines.push('Agent: simulation mode')
+      } else {
+        lines.push('Agent: not available')
+      }
+      for (const c of result.checks || []) {
+        const ok = c.status === 'ok' || c.status === 'pass' || c.status === 'passed'
+        const status = ok ? 'OK' : c.status
+        lines.push(`  ${c.name}: ${status}${c.detail ? ` (${c.detail})` : ''}`)
+      }
+      return lines.join('\n')
+    },
+  },
+  {
+    name: '/projects unregister',
+    description: 'Unregister a project',
+    isAvailable: () => true,
+    execute: async (args) => {
+      const id = args.trim()
+      if (!id) return 'Usage: /projects unregister <id>'
+      const client = globalClient()
+      if (!client) return 'Not connected to global socket.'
+      await client.call('projects.unregister', { id })
+      return `Project ${id} unregistered.`
+    },
+  },
+  {
+    name: '/projects',
+    description: 'List registered projects',
+    isAvailable: () => true,
+    execute: async () => {
+      const client = globalClient()
+      if (!client) return 'Not connected to global socket.'
+      const result = await client.call<{
+        projects: Array<{ id: string; path?: string; name?: string }>
+      }>('projects.list', {})
+      const projects = result.projects || []
+      if (projects.length === 0) return 'No projects registered.'
+      return projects.map(p => `${p.id.slice(0, 8)} ${p.name || p.path || ''}`).join('\n')
+    },
+  },
+  {
+    name: '/hooks',
+    description: 'List configured workflow hooks',
+    isAvailable: () => isActive(),
+    execute: async () => {
+      const client = worktreeClient()
+      if (!client) return 'Not connected.'
+      const result = await client.call<{
+        hooks: Array<{ event?: string; command?: string; name?: string }>
+      }>('hooks.list', {})
+      const hooks = result.hooks || []
+      if (hooks.length === 0) return 'No hooks configured.'
+      return hooks.map(h => `${h.event || h.name || '?'}: ${h.command || ''}`).join('\n')
+    },
+  },
+  {
+    name: '/recordings',
+    description: 'List session recordings',
+    isAvailable: () => true,
+    execute: async () => {
+      const client = globalClient()
+      if (!client) return 'Not connected to global socket.'
+      const result = await client.call<{
+        recordings: Array<{ path?: string; id?: string; created_at?: string }>
+      }>('recordings.list', {})
+      const recordings = result.recordings || []
+      if (recordings.length === 0) return 'No recordings.'
+      return recordings
+        .map(r => `${r.id ? r.id.slice(0, 8) + ' ' : ''}${r.path || ''}${r.created_at ? ` (${r.created_at})` : ''}`)
+        .join('\n')
+    },
+  },
+  {
+    name: '/screenshots',
+    description: 'List screenshots for the current task',
+    isAvailable: () => isActive(),
+    execute: async () => {
+      const client = worktreeClient()
+      if (!client) return 'Not connected.'
+      const result = await client.call<{
+        screenshots: Array<{ id?: string; path?: string; created_at?: string }>
+      }>('screenshots.list', {})
+      const screenshots = result.screenshots || []
+      if (screenshots.length === 0) return 'No screenshots.'
+      return screenshots.map(s => `${s.id ? s.id.slice(0, 8) + ' ' : ''}${s.path || ''}`).join('\n')
+    },
+  },
+  {
+    name: '/notify test',
+    description: 'Send a test webhook notification',
+    isAvailable: () => true,
+    execute: async () => {
+      const client = globalClient()
+      if (!client) return 'Not connected to global socket.'
+      const result = await client.call<{ sent?: number; message?: string }>('notify.test', {})
+      if (result.sent && result.sent > 0) return `Notification test sent (${result.sent} delivered).`
+      return result.message ? `Notification test: ${result.message}` : 'Notification test complete.'
+    },
+  },
+  {
     name: '/audit',
     description: 'View audit trail',
     isAvailable: () => true,
@@ -449,10 +564,10 @@ const utilityCommands: ChatCommand[] = [
     execute: async () => {
       const client = worktreeClient()
       if (!client) return 'Not connected.'
-      const result = await client.call<{ commands: Array<{ name: string; source: string }> }>('discovery.scan', {})
+      const result = await client.call<{ commands: string[]; count: number }>('discovery.scan', {})
       const commands = result.commands || []
       if (commands.length === 0) return 'No project commands found.'
-      return commands.map(c => `[${c.source}] ${c.name}`).join('\n')
+      return `Discovered commands (${commands.length})\n\n` + commands.map(c => `  ${c}`).join('\n')
     },
   },
   {

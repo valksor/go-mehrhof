@@ -107,6 +107,10 @@ var worktreeHandlers = map[string]worktreeHandler{
 
 	// Chat-based
 	"/explain": wtExplain,
+
+	// Parity additions
+	"/hooks":       wtHooks,
+	"/screenshots": wtScreenshots,
 }
 
 // ── Workflow ────────────────────────────────────────────────────────────────
