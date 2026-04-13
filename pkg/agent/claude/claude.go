@@ -173,8 +173,6 @@ func (a *Agent) SendPrompt(ctx context.Context, prompt string) (<-chan agent.Eve
 		}
 
 		return a.cli.SendPrompt(ctx, prompt)
-	case agent.ModeAPI:
-		return nil, errors.New("ModeAPI not yet implemented")
 	default:
 		return nil, errors.New("not connected")
 	}

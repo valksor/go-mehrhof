@@ -282,7 +282,6 @@ type ConnectionMode string
 const (
 	ModeWebSocket ConnectionMode = "websocket" // WebSocket server mode
 	ModeCLI       ConnectionMode = "cli"       // CLI subprocess mode
-	ModeAPI       ConnectionMode = "api"       // Direct API mode
 )
 
 // Config holds common agent configuration.
