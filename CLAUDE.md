@@ -192,7 +192,7 @@ Go: Return errors, wrap with context (`fmt.Errorf("action: %w", err)`)
 ### Configuration
 - Global config: `~/.valksor/kvelmo/kvelmo.yaml` (managed by `pkg/settings/`)
 - CLI: `kvelmo config show|init|set`
-- Environment: `KVELMO_SOCKET_DIR`, `GITHUB_TOKEN`, etc.
+- Environment: `KVELMO_HOME` (overrides `~/.valksor/kvelmo`), `GITHUB_TOKEN`, etc.
 
 ### Testing
 - Table-driven tests using `testing.T`
