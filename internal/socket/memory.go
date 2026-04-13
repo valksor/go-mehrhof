@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 	"sync"
 
-	"github.com/valksor/kvelmo/pkg/memory"
+	"github.com/valksor/kvelmo/internal/memory"
 )
 
 // memoryState lazily creates and caches the global memory adapter.
@@ -198,11 +198,12 @@ func (g *GlobalSocket) handleMemoryOutcomes(ctx context.Context, req *Request) (
 		}
 	}
 
+	var docs []*memory.Document
 	if params.TaskID == "" {
-		return NewErrorResponse(req.ID, ErrCodeInvalidParams, "task_id is required"), nil
+		docs = adapter.Store().GetAllDocuments(ctx)
+	} else {
+		docs = adapter.Store().GetDocumentsForTask(ctx, params.TaskID)
 	}
-
-	docs := adapter.Store().GetDocumentsForTask(ctx, params.TaskID)
 	result := memoryOutcomesResult{
 		Documents: make([]memoryOutcomeDoc, len(docs)),
 		Total:     len(docs),

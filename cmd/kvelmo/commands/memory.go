@@ -38,10 +38,13 @@ var memoryClearCmd = &cobra.Command{
 }
 
 var memoryOutcomesCmd = &cobra.Command{
-	Use:   "outcomes",
-	Short: "Show task outcome statistics from memory",
-	Long:  "Display aggregated outcome data (success rates, CI pass rates) from stored task memories.",
-	RunE:  runMemoryOutcomes,
+	Use:   "outcomes [task-id]",
+	Short: "Show task outcome documents from memory",
+	Long: "Display outcome documents from the semantic memory store. " +
+		"With no argument, returns every stored document across all tasks. " +
+		"With a task id, returns only that task's documents.",
+	Args: cobra.MaximumNArgs(1),
+	RunE: runMemoryOutcomes,
 }
 
 var (
@@ -189,11 +192,16 @@ func runMemoryClear(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func runMemoryOutcomes(_ *cobra.Command, _ []string) error {
+func runMemoryOutcomes(_ *cobra.Command, args []string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), defaultTimeout)
 	defer cancel()
 
-	resp, err := callGlobal(ctx, "memory.outcomes", nil)
+	var params map[string]any
+	if len(args) == 1 {
+		params = map[string]any{"task_id": args[0]}
+	}
+
+	resp, err := callGlobal(ctx, "memory.outcomes", params)
 	if err != nil {
 		return fmt.Errorf("memory.outcomes: %w", err)
 	}

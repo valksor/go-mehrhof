@@ -108,3 +108,19 @@ func (vs *VectorStore) GetDocumentsForTask(_ context.Context, taskID string) []*
 
 	return results
 }
+
+// GetAllDocuments returns every stored document across all tasks.
+// Used when the caller wants a cross-task outcome summary rather than a
+// single task's documents.
+func (vs *VectorStore) GetAllDocuments(_ context.Context) []*Document {
+	vs.mu.RLock()
+	defer vs.mu.RUnlock()
+
+	results := make([]*Document, 0, len(vs.documents))
+	for _, doc := range vs.documents {
+		cp := *doc
+		results = append(results, &cp)
+	}
+
+	return results
+}
