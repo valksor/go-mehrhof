@@ -24,6 +24,7 @@ vendor/
 
 # Runtime
 *.out
+tea_debug.log
 .claude/worktrees/
 .playwright-cli/
 .playwright-mcp/
