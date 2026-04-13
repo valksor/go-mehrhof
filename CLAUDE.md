@@ -134,7 +134,6 @@ Each transition creates a git checkpoint. `undo`/`redo` navigate between checkpo
 | `metrics/` | Observability (counters, latency) |
 | `security/` | Security scanning |
 | `screenshot/` | Screenshot capture and storage |
-| `access/` | Socket access token management |
 | `activitylog/` | RPC activity logging and querying |
 | `backup/` | Backup and restore of kvelmo state |
 | `catalog/` | Task template library (built-in + custom) |
@@ -300,7 +299,6 @@ Commands in `cmd/kvelmo/commands/`. Entry point: `serve` (global socket + web se
 
 **Infrastructure:**
 - `backup`/`restore` - State backup and restore
-- `access` - Socket access token management
 - `security` - Security scanning (secrets, dependencies)
 - `notify` - Webhook notification testing
 - `hooks` - List configured workflow hooks
