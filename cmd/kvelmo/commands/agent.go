@@ -85,7 +85,7 @@ func runAgentStatus(_ *cobra.Command, _ []string) error {
 
 	for _, c := range result.Checks {
 		status := "OK"
-		if c.Status != "ok" && c.Status != "pass" {
+		if c.Status != "ok" && c.Status != "pass" && c.Status != "passed" {
 			status = c.Status
 		}
 		fmt.Printf("  %-20s %s", c.Name, status)
