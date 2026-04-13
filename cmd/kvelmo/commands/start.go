@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
+	"net/http"
+	_ "net/http/pprof" //nolint:gosec // opt-in via KVELMO_PPROF_ADDR, not exposed by default
 	"os"
 	"os/exec"
 	"os/signal"
@@ -15,17 +17,17 @@ import (
 	"time"
 
 	"github.com/spf13/cobra"
-	"github.com/valksor/kvelmo/pkg/agent"
-	"github.com/valksor/kvelmo/pkg/agent/anthropic"
-	"github.com/valksor/kvelmo/pkg/agent/apiagent"
-	"github.com/valksor/kvelmo/pkg/agent/claude"
-	"github.com/valksor/kvelmo/pkg/agent/codex"
-	"github.com/valksor/kvelmo/pkg/agent/ollama"
-	"github.com/valksor/kvelmo/pkg/agent/openai"
-	"github.com/valksor/kvelmo/pkg/meta"
-	"github.com/valksor/kvelmo/pkg/settings"
-	"github.com/valksor/kvelmo/pkg/socket"
-	"github.com/valksor/kvelmo/pkg/worker"
+	"github.com/valksor/kvelmo/agent"
+	"github.com/valksor/kvelmo/agent/anthropic"
+	"github.com/valksor/kvelmo/agent/apiagent"
+	"github.com/valksor/kvelmo/agent/claude"
+	"github.com/valksor/kvelmo/agent/codex"
+	"github.com/valksor/kvelmo/agent/ollama"
+	"github.com/valksor/kvelmo/agent/openai"
+	"github.com/valksor/kvelmo/internal/socket"
+	"github.com/valksor/kvelmo/internal/worker"
+	"github.com/valksor/kvelmo/meta"
+	"github.com/valksor/kvelmo/settings"
 )
 
 var (
@@ -255,6 +257,18 @@ func runInBackground(cwd, wtPath string) error {
 func runInForeground(cwd, globalPath, wtPath string) error {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
+
+	// Optional pprof HTTP endpoint for profiling leaks during long-running
+	// foreground sessions. Enabled only when KVELMO_PPROF_ADDR is set, so
+	// production is unaffected. Example: KVELMO_PPROF_ADDR=127.0.0.1:6060.
+	if addr := os.Getenv("KVELMO_PPROF_ADDR"); addr != "" {
+		go func() {
+			slog.Info("pprof listening", "addr", addr)
+			if err := http.ListenAndServe(addr, nil); err != nil { //nolint:gosec // opt-in profiling endpoint
+				slog.Warn("pprof server exited", "error", err)
+			}
+		}()
+	}
 
 	sigCh := make(chan os.Signal, 1)
 	signal.Notify(sigCh, syscall.SIGINT, syscall.SIGTERM)

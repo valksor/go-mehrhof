@@ -8,9 +8,11 @@ package watchdog
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	"os"
 	"runtime"
+	"runtime/pprof"
 	"time"
 )
 
@@ -72,10 +74,19 @@ func Start(ctx context.Context, cfg Config) <-chan struct{} {
 				}
 
 				if len(samples) == cfg.WindowSize && isMonotonicallyGrowing(samples, cfg.ThresholdMB, cfg.NoiseMB) {
+					profilePath := fmt.Sprintf("/tmp/kvelmo-leak-%d.pprof", time.Now().Unix())
+					if f, err := os.Create(profilePath); err == nil {
+						runtime.GC()
+						if werr := pprof.WriteHeapProfile(f); werr != nil {
+							slog.Warn("leak: failed to write heap profile", "error", werr)
+						}
+						_ = f.Close()
+					}
 					slog.Error("LEAK DETECTED: heap grew monotonically — shutting down",
 						"growth_mb", samples[len(samples)-1]-samples[0],
 						"samples", cfg.WindowSize,
 						"window_seconds", cfg.Interval.Seconds()*float64(cfg.WindowSize),
+						"heap_profile", profilePath,
 					)
 					os.Exit(1)
 				}
