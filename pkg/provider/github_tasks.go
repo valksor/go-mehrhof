@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/google/go-github/v67/github"
 )
@@ -212,6 +213,10 @@ func (p *GitHubProvider) ApprovePR(ctx context.Context, taskID string, comment s
 // MergePR merges a pull request using the specified method.
 // The taskID should be in format "owner/repo#number".
 // Method should be one of: "merge", "squash", "rebase" (default: "rebase").
+//
+// Retries up to 3 times with exponential backoff when GitHub returns HTTP 405
+// "Base branch was modified" — a well-known transient response where the API's
+// merge-readiness view lags behind actual branch state.
 func (p *GitHubProvider) MergePR(ctx context.Context, taskID string, method string) error {
 	owner, repo, number, err := parseGitHubIDFull(taskID)
 	if err != nil {
@@ -222,12 +227,45 @@ func (p *GitHubProvider) MergePR(ctx context.Context, taskID string, method stri
 		MergeMethod: cmp.Or(method, "rebase"),
 	}
 
-	_, _, err = p.client.PullRequests.Merge(ctx, owner, repo, number, "", options)
-	if err != nil {
-		return fmt.Errorf("merge pull request: %w", err)
+	const maxAttempts = 3
+	backoff := 2 * time.Second
+	for attempt := 1; attempt <= maxAttempts; attempt++ {
+		_, _, err = p.client.PullRequests.Merge(ctx, owner, repo, number, "", options)
+		if err == nil {
+			return nil
+		}
+		if !isTransientMergeError(err) || attempt == maxAttempts {
+			return fmt.Errorf("merge pull request: %w", err)
+		}
+		slog.Warn("merge PR transient failure, retrying",
+			"attempt", attempt, "max", maxAttempts, "backoff", backoff, "error", err)
+		select {
+		case <-ctx.Done():
+			return fmt.Errorf("merge pull request: %w", ctx.Err())
+		case <-time.After(backoff):
+		}
+		backoff *= 2
 	}
 
-	return nil
+	return fmt.Errorf("merge pull request: %w", err)
+}
+
+// isTransientMergeError reports whether a GitHub merge error is transient and
+// worth retrying. GitHub returns HTTP 405 with "Base branch was modified" when
+// its internal merge-readiness state is stale, even though nothing was actually
+// modified. Retrying after a short delay typically succeeds.
+func isTransientMergeError(err error) bool {
+	if err == nil {
+		return false
+	}
+	var ghErr *github.ErrorResponse
+	if errors.As(err, &ghErr) && ghErr.Response != nil {
+		if ghErr.Response.StatusCode == http.StatusMethodNotAllowed {
+			return strings.Contains(ghErr.Message, "Base branch was modified")
+		}
+	}
+
+	return false
 }
 
 // GetBranchProtection returns GitHub branch protection rules.
