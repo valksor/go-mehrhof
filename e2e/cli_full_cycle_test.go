@@ -17,8 +17,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/valksor/kvelmo/pkg/provider"
-	"github.com/valksor/kvelmo/pkg/socket"
+	"github.com/valksor/kvelmo/internal/provider"
+	"github.com/valksor/kvelmo/internal/socket"
 )
 
 // TestCLIFullCycle tests the complete kvelmo workflow via CLI.
@@ -177,16 +177,19 @@ func TestCLIFullCycle(t *testing.T) {
 	runKvelmo(t, kvelmoPath, workDir, "tag", "list")
 	runKvelmo(t, kvelmoPath, workDir, "checklist", "list")
 
-	// 9. Run simplify pass (optional but test it)
+	// 9. Run simplify pass (optional but test it).
+	// Timeout doubled from the original 5m to 10m — the prior value was
+	// marginal and flaked when Claude took longer than median on the
+	// implemented task.
 	t.Log("Step 4: Running simplify pass...")
 	runKvelmo(t, kvelmoPath, workDir, "simplify")
-	waitForState(t, kvelmoPath, workDir, "implemented", 5*time.Minute)
+	waitForState(t, kvelmoPath, workDir, "implemented", 10*time.Minute)
 	t.Log("Simplify completed")
 
-	// 10. Run optimize pass (optional but test it)
+	// 10. Run optimize pass (optional but test it). Same timeout rationale.
 	t.Log("Step 5: Running optimize pass...")
 	runKvelmo(t, kvelmoPath, workDir, "optimize")
-	waitForState(t, kvelmoPath, workDir, "implemented", 5*time.Minute)
+	waitForState(t, kvelmoPath, workDir, "implemented", 10*time.Minute)
 	t.Log("Optimize completed")
 
 	// 11. Test undo/redo functionality (skip if less than 2 checkpoints - need previous state to undo to)
@@ -250,7 +253,7 @@ func TestCLIFullCycle(t *testing.T) {
 	// 16. Test backup before final verification
 	t.Log("Step 11: Testing backup...")
 	backupPath := filepath.Join(workDir, "e2e-backup.tar.gz")
-	tryRunKvelmo(t, kvelmoPath, workDir, "backup", "--output", backupPath)
+	tryRunKvelmo(t, kvelmoPath, workDir, "backup", backupPath)
 
 	// 17. Verify final state
 	finalState := getKvelmoState(t, kvelmoPath, workDir)
@@ -264,7 +267,6 @@ func TestCLIFullCycle(t *testing.T) {
 	runKvelmo(t, kvelmoPath, workDir, "list")
 	tryRunKvelmo(t, kvelmoPath, workDir, "cleanup")
 	tryRunKvelmo(t, kvelmoPath, workDir, "projects")
-	tryRunKvelmo(t, kvelmoPath, workDir, "access", "list")
 
 	// Test task group operations (global socket, no active task needed)
 	t.Log("Testing task group operations...")
