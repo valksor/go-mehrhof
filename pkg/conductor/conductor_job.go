@@ -3,6 +3,7 @@ package conductor
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log/slog"
 	"slices"
@@ -244,6 +245,15 @@ func (c *Conductor) watchJob(ctx context.Context, jobID string, completionEvent 
 				// and optionally copy to the repo
 				if completionEvent == EventPlanDone {
 					c.detectSpecificationFiles()
+					if len(c.workUnit.Specifications) == 0 {
+						err := errors.New("plan phase produced no specification file (agent did not write required deliverable)")
+						c.emitEnrichedError(err, "plan")
+						_ = c.machine.Dispatch(ctx, EventError)
+						c.persistState()
+						c.mu.Unlock()
+
+						return
+					}
 					c.copySpecsToRepo()
 					c.copyPlanToRepo()
 					c.commitRepoSpecs(ctx)

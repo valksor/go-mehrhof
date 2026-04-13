@@ -2,6 +2,7 @@ package conductor
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"strings"
@@ -192,6 +193,15 @@ func (c *Conductor) handleGraphCompletion(ctx context.Context, sched *graph.Sche
 	// Success path — same as watchJob completion.
 	if completionEvent == EventPlanDone {
 		c.detectSpecificationFiles()
+		if len(c.workUnit.Specifications) == 0 {
+			err := errors.New("plan phase produced no specification file (agent did not write required deliverable)")
+			c.emitEnrichedError(err, "plan")
+			_ = c.machine.Dispatch(ctx, EventError)
+			c.persistState()
+			c.mu.Unlock()
+
+			return
+		}
 		c.copySpecsToRepo()
 		c.copyPlanToRepo()
 		c.commitRepoSpecs(ctx)
