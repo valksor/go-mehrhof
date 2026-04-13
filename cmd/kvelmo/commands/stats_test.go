@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/valksor/kvelmo/pkg/storage"
+	"github.com/valksor/kvelmo/internal/storage"
 )
 
 func TestComputeStats(t *testing.T) {

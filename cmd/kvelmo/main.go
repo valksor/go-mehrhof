@@ -11,9 +11,9 @@ import (
 	"github.com/spf13/cobra/doc"
 
 	"github.com/valksor/kvelmo/cmd/kvelmo/commands"
-	"github.com/valksor/kvelmo/pkg/cli"
-	"github.com/valksor/kvelmo/pkg/meta"
-	"github.com/valksor/kvelmo/pkg/watchdog"
+	"github.com/valksor/kvelmo/internal/cli"
+	"github.com/valksor/kvelmo/internal/watchdog"
+	"github.com/valksor/kvelmo/meta"
 )
 
 var rootCmd = &cobra.Command{

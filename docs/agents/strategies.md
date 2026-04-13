@@ -63,7 +63,7 @@ type Strategy interface {
 
 ## Creating a Custom Strategy
 
-1. Create a Go file in `pkg/agent/strategy/`:
+1. Create a Go file in `agent/strategy/`:
 
 ```go
 package strategy

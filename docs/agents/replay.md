@@ -12,7 +12,7 @@ When kvelmo records an agent session (via the recorder subsystem), the replay ag
 
 ## How It Works
 
-1. An agent session is recorded to a JSONL file via `pkg/agent/recorder`
+1. An agent session is recorded to a JSONL file via `agent/recorder`
 2. The replay agent reads the recording file
 3. When asked to run a task, it replays the recorded responses in order instead of calling a live model
 4. Timing is preserved from the original recording for realistic playback

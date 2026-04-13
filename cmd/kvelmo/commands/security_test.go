@@ -3,8 +3,8 @@ package commands
 import (
 	"testing"
 
-	"github.com/valksor/kvelmo/pkg/meta"
-	"github.com/valksor/kvelmo/pkg/security"
+	"github.com/valksor/kvelmo/internal/security"
+	"github.com/valksor/kvelmo/meta"
 )
 
 func TestSecurityCommand(t *testing.T) {

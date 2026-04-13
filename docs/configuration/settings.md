@@ -105,7 +105,7 @@ workflow:
     required_phases:            # Phases that cannot be skipped
       - review
     sensitive_paths:            # Files requiring mandatory review
-      - "pkg/auth/*"
+      - "internal/auth/*"
     approval_required:          # Transitions requiring explicit human approval
       submit: true
     review_checklist:           # Items to check before review completes
@@ -113,7 +113,7 @@ workflow:
       - performance
       - tests
     doc_requirements:           # Require doc updates when code changes
-      - trigger: "pkg/api/*"
+      - trigger: "internal/api/*"
         requires: "docs/api/*"
 
 watchdog:

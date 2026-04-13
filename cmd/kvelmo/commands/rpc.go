@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/spf13/cobra"
-	"github.com/valksor/kvelmo/pkg/socket"
+	"github.com/valksor/kvelmo/internal/socket"
 )
 
 var rpcGlobal bool

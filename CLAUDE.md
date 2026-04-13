@@ -87,7 +87,7 @@ make prototype-unlock   # Unlock prototype directory
 - Worktree: `<project>/.kvelmo/worktree.sock` (one per project)
 - Protocol: JSON-RPC 2.0
 
-### Task Lifecycle (`pkg/conductor/`)
+### Task Lifecycle (`internal/conductor/`)
 
 **The workflow kvelmo orchestrates:**
 
@@ -115,13 +115,26 @@ States: `none`, `loaded`, `planning`, `planned`, `implementing`, `implemented`, 
 
 Each transition creates a git checkpoint. `undo`/`redo` navigate between checkpoints.
 
-### Package Index (`pkg/`)
+### Package Layout
+
+kvelmo splits its Go packages into a **public API surface** (hoisted to the module root, importable by external Go programs via `kvelmo pipe` and similar adapters) and **private orchestration** (under `internal/`, compiler-enforced private). The old `pkg/` directory no longer exists.
+
+**Public API (module root) — reusable adapters, config, and metadata:**
+
+| Package | Purpose |
+|---------|---------|
+| `agent/` | AI agent interface and adapters (`claude`, `codex`, `anthropic`, `apiagent`, `openai`, `ollama`, `custom`, `replay`); sub-packages: `permission` (tool approval), `recorder` (session recording), `strategy` (reasoning strategies), `agenttest` (test helpers) |
+| `settings/` | Configuration management + drift detection |
+| `metrics/` | Observability (counters, latency) |
+| `meta/` | Build metadata (version, commit, docs URL) |
+| `paths/` | Centralized path resolution |
+
+**Private (`internal/`) — orchestration machinery, not importable outside the module:**
 
 | Package | Purpose |
 |---------|---------|
 | `socket/` | Unix domain socket servers (global + per-worktree) |
 | `conductor/` | Task state machine and lifecycle transitions |
-| `agent/` | AI agent interface (claude, codex, custom); sub-packages: `permission` (tool approval), `recorder` (session recording), `strategy` (reasoning strategies) |
 | `worker/` | Concurrent job execution pool |
 | `provider/` | Task sources (github, gitlab, linear, wrike, jira, azuredevops, file) |
 | `storage/` | Persistence for tasks, plans, reviews, chat |
@@ -129,9 +142,6 @@ Each transition creates a git checkpoint. `undo`/`redo` navigate between checkpo
 | `browser/` | Playwright automation for interactive testing |
 | `web/` | HTTP server + WebSocket proxy to sockets |
 | `memory/` | Vector store for semantic context search |
-| `settings/` | Configuration management + drift detection |
-| `paths/` | Centralized path resolution |
-| `metrics/` | Observability (counters, latency) |
 | `security/` | Security scanning |
 | `screenshot/` | Screenshot capture and storage |
 | `activitylog/` | RPC activity logging and querying |
@@ -146,7 +156,6 @@ Each transition creates a git checkpoint. `undo`/`redo` navigate between checkpo
 | `filter/` | Generic type-safe in-memory filtering with predicates |
 | `findings/` | Unified finding model with gate rules and phase-aware quality profiles |
 | `graph/` | Dependency graph scheduling for parallel sub-tasks within phases |
-| `meta/` | Build metadata (version, commit, docs URL) |
 | `notify/` | Webhook notifications (Slack, generic) |
 | `page/` | Pagination primitives |
 | `policy/` | Workflow policy checking and validation |
@@ -190,13 +199,13 @@ Each transition creates a git checkpoint. `undo`/`redo` navigate between checkpo
 Go: Return errors, wrap with context (`fmt.Errorf("action: %w", err)`)
 
 ### Configuration
-- Global config: `~/.valksor/kvelmo/kvelmo.yaml` (managed by `pkg/settings/`)
+- Global config: `~/.valksor/kvelmo/kvelmo.yaml` (managed by `settings/`)
 - CLI: `kvelmo config show|init|set`
 - Environment: `KVELMO_HOME` (overrides `~/.valksor/kvelmo`), `GITHUB_TOKEN`, etc.
 
 ### Testing
 - Table-driven tests using `testing.T`
-- Benchmark tests in `pkg/socket/bench_test.go`
+- Benchmark tests in `internal/socket/bench_test.go`
 - Frontend: Add `?demo` URL param for UI testing without backend
 - **Never accept test failures.** If a test fails, fix it. No exceptions. Never rationalize failures as "pre-existing" or "not my problem."
 

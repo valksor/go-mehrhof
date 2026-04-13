@@ -7,10 +7,10 @@ import (
 	"time"
 
 	"github.com/spf13/cobra"
-	"github.com/valksor/kvelmo/pkg/agent"
-	"github.com/valksor/kvelmo/pkg/meta"
-	"github.com/valksor/kvelmo/pkg/settings"
-	"github.com/valksor/kvelmo/pkg/socket"
+	"github.com/valksor/kvelmo/agent"
+	"github.com/valksor/kvelmo/internal/socket"
+	"github.com/valksor/kvelmo/meta"
+	"github.com/valksor/kvelmo/settings"
 )
 
 var (

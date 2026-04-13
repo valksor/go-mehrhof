@@ -10,7 +10,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/valksor/kvelmo/pkg/socket"
+	"github.com/valksor/kvelmo/internal/socket"
 )
 
 func TestFullConductorIntegration(t *testing.T) {

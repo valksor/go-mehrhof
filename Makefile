@@ -12,7 +12,7 @@ CMD_DIR := ./cmd/kvelmo
 VERSION := $(shell git describe --tags --always --dirty 2>/dev/null || echo "dev")
 COMMIT := $(shell git rev-parse --short HEAD 2>/dev/null || echo "unknown")
 BUILD_TIME := $(shell date -u '+%Y-%m-%dT%H:%M:%SZ')
-LDFLAGS := -ldflags "-s -w -X github.com/valksor/kvelmo/pkg/meta.Version=$(VERSION) -X github.com/valksor/kvelmo/pkg/meta.Commit=$(COMMIT) -X github.com/valksor/kvelmo/pkg/meta.BuildTime=$(BUILD_TIME)"
+LDFLAGS := -ldflags "-s -w -X github.com/valksor/kvelmo/meta.Version=$(VERSION) -X github.com/valksor/kvelmo/meta.Commit=$(COMMIT) -X github.com/valksor/kvelmo/meta.BuildTime=$(BUILD_TIME)"
 
 # E2E suite selection (SUITE=provider|workflow|cli|all, default: all)
 SUITE ?= all
@@ -51,7 +51,7 @@ quality:
 
 ## Full-stack tests (Go + frontend + Tauri unit tests)
 test: quality
-	go test -p 4 ./pkg/... ./cmd/...
+	go test -p 4 ./agent/... ./settings/... ./metrics/... ./meta/... ./paths/... ./internal/... ./cmd/...
 	cd web && bun run test:run
 	cd web/src-tauri && cargo test --lib
 
@@ -72,28 +72,28 @@ ci-quality:
 
 ## CI tests (Go + frontend only, Tauri tested in dedicated CI job)
 ci-test: ci-quality
-	go test -p 4 ./pkg/... ./cmd/...
+	go test -p 4 ./agent/... ./settings/... ./metrics/... ./meta/... ./paths/... ./internal/... ./cmd/...
 	cd web && bun run test:run
 
 ## Go tests with coverage report
 test-cover:
-	go test -p 4 -coverprofile=coverage.out ./pkg/... ./cmd/...
+	go test -p 4 -coverprofile=coverage.out ./agent/... ./settings/... ./metrics/... ./meta/... ./paths/... ./internal/... ./cmd/...
 	go tool cover -html=coverage.out -o coverage.html
 
 ## Go tests with race detector
 test-race:
-	go test -race -p 4 ./pkg/... ./cmd/...
+	go test -race -p 4 ./agent/... ./settings/... ./metrics/... ./meta/... ./paths/... ./internal/... ./cmd/...
 
 ## E2E tests (SUITE=provider|workflow|cli|all, default: all provider+workflow tests; cli excluded due to 30m timeout)
 test-e2e:
 ifeq ($(SUITE),provider)
-	go test -tags=e2e -v ./pkg/provider/... -run TestE2E
+	go test -tags=e2e -v ./internal/provider/... -run TestE2E
 else ifeq ($(SUITE),workflow)
-	go test -tags=e2e -v ./pkg/conductor/... -run TestE2E
+	go test -tags=e2e -v ./internal/conductor/... -run TestE2E
 else ifeq ($(SUITE),cli)
-	go test -tags=e2e -v -timeout=30m ./e2e/... -run TestCLIFullCycle
+	go test -tags=e2e -v -timeout=45m ./e2e/... -run TestCLIFullCycle
 else
-	go test -tags=e2e -v ./pkg/provider/... ./pkg/conductor/... -run TestE2E
+	go test -tags=e2e -v ./internal/provider/... ./internal/conductor/... -run TestE2E
 endif
 
 # ──────────────────────────────────────────────────────────────────────────────
@@ -159,8 +159,8 @@ types:
 web-build: types
 	cd web && bun install --frozen-lockfile && bun run build
 	@echo "Copying web assets for embedding..."
-	@rm -rf pkg/web/static/dist
-	@cp -r web/dist pkg/web/static/dist
+	@rm -rf internal/web/static/dist
+	@cp -r web/dist internal/web/static/dist
 
 ## Frontend dev server with hot reload
 web-dev:

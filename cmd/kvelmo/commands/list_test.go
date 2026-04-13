@@ -5,9 +5,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/valksor/kvelmo/pkg/meta"
-	"github.com/valksor/kvelmo/pkg/socket"
-	"github.com/valksor/kvelmo/pkg/testutil"
+	"github.com/valksor/kvelmo/internal/socket"
+	"github.com/valksor/kvelmo/internal/testutil"
+	"github.com/valksor/kvelmo/meta"
 )
 
 func TestListCommand_NoSocket(t *testing.T) {

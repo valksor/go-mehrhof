@@ -9,8 +9,8 @@ import (
 	"time"
 
 	"github.com/spf13/cobra"
-	"github.com/valksor/kvelmo/pkg/meta"
-	"github.com/valksor/kvelmo/pkg/socket"
+	"github.com/valksor/kvelmo/internal/socket"
+	"github.com/valksor/kvelmo/meta"
 )
 
 const defaultExplainPrompt = "Explain what you did in the last action, why you made those choices, and any assumptions or constraints you encountered."

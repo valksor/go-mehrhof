@@ -4,9 +4,9 @@
  * so these are maintained manually and imported via tygo frontmatter.
  *
  * Source structs:
- *   - conductor.ContextItem  → pkg/conductor/context.go
- *   - conductor.PhaseMetrics → pkg/conductor/state.go
- *   - git.FileStatus         → pkg/git/git.go
+ *   - conductor.ContextItem  → internal/conductor/context.go
+ *   - conductor.PhaseMetrics → internal/conductor/state.go
+ *   - git.FileStatus         → internal/git/git.go
  */
 
 /** Lightweight reference to contextual information attached to a task. */

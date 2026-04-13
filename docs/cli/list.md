@@ -80,7 +80,7 @@ kvelmo list search "auth"
 kvelmo list history --since 2026-01-01 --state finished
 
 # Filter by file touched
-kvelmo list history --file "pkg/auth"
+kvelmo list history --file "internal/auth"
 ```
 
 ## Related

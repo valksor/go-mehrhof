@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/spf13/cobra"
-	"github.com/valksor/kvelmo/pkg/cli"
+	"github.com/valksor/kvelmo/internal/cli"
 )
 
 var CodegraphCmd = &cobra.Command{

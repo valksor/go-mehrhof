@@ -87,7 +87,7 @@ make prototype-unlock   # Unlock prototype directory
 - Worktree: `<project>/.kvelmo/worktree.sock` (one per project)
 - Protocol: JSON-RPC 2.0
 
-### Task Lifecycle (`pkg/conductor/`)
+### Task Lifecycle (`internal/conductor/`)
 
 **The workflow kvelmo orchestrates:**
 
@@ -115,7 +115,7 @@ States: `none`, `loaded`, `planning`, `planned`, `implementing`, `implemented`, 
 
 Each transition creates a git checkpoint. `undo`/`redo` navigate between checkpoints.
 
-### Package Index (`pkg/`)
+### Package Index (`internal/`)
 
 | Package | Purpose |
 |---------|---------|
@@ -190,13 +190,13 @@ Each transition creates a git checkpoint. `undo`/`redo` navigate between checkpo
 Go: Return errors, wrap with context (`fmt.Errorf("action: %w", err)`)
 
 ### Configuration
-- Global config: `~/.valksor/kvelmo/kvelmo.yaml` (managed by `pkg/settings/`)
+- Global config: `~/.valksor/kvelmo/kvelmo.yaml` (managed by `settings/`)
 - CLI: `kvelmo config show|init|set`
 - Environment: `KVELMO_SOCKET_DIR`, `GITHUB_TOKEN`, etc.
 
 ### Testing
 - Table-driven tests using `testing.T`
-- Benchmark tests in `pkg/socket/bench_test.go`
+- Benchmark tests in `internal/socket/bench_test.go`
 - Frontend: Add `?demo` URL param for UI testing without backend
 - **Never accept test failures.** If a test fails, fix it. No exceptions. Never rationalize failures as "pre-existing" or "not my problem."
 

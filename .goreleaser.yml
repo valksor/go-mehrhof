@@ -26,9 +26,9 @@ builds:
             - -trimpath
         ldflags:
             - -s -w
-            - -X github.com/valksor/kvelmo/pkg/meta.Version={{.Version}}
-            - -X github.com/valksor/kvelmo/pkg/meta.Commit={{.ShortCommit}}
-            - -X github.com/valksor/kvelmo/pkg/meta.BuildTime={{.Date}}
+            - -X github.com/valksor/kvelmo/meta.Version={{.Version}}
+            - -X github.com/valksor/kvelmo/meta.Commit={{.ShortCommit}}
+            - -X github.com/valksor/kvelmo/meta.BuildTime={{.Date}}
 
 # Binary-only releases (no tarballs)
 archives:

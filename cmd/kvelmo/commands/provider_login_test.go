@@ -6,9 +6,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/valksor/kvelmo/pkg/paths"
-	"github.com/valksor/kvelmo/pkg/provider"
-	"github.com/valksor/kvelmo/pkg/settings"
+	"github.com/valksor/kvelmo/internal/provider"
+	"github.com/valksor/kvelmo/paths"
+	"github.com/valksor/kvelmo/settings"
 )
 
 func TestDetectExistingToken_FromEnvFile(t *testing.T) {

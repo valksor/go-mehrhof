@@ -1,5 +1,5 @@
 packages:
-  - path: "github.com/valksor/kvelmo/pkg/socket"
+  - path: "github.com/valksor/kvelmo/internal/socket"
     output_path: "web/src/types/socket.ts"
     frontmatter: |
       import type { ContextItem, PhaseMetrics } from './shared'
@@ -24,7 +24,7 @@ packages:
       - "memory.go"
       - "chat.go"
       - "protocol.go"
-  - path: "github.com/valksor/kvelmo/pkg/conductor"
+  - path: "github.com/valksor/kvelmo/internal/conductor"
     output_path: "web/src/types/conductor.ts"
     type_mappings:
       time.Time: "string"

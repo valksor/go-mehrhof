@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/spf13/cobra"
-	"github.com/valksor/kvelmo/pkg/security"
+	"github.com/valksor/kvelmo/internal/security"
 )
 
 // SecurityCmd is the root command for security subcommands.

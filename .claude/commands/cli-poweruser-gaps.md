@@ -155,16 +155,16 @@ This command is part of a family of 10 persona-specific gap analyses:
 
 All personas share these 10 core systems. When recommending features, these must not be removed, narrowed, or domain-specific without cross-persona review:
 
-1. **Socket layer** (`pkg/socket/` — global + worktree sockets)
-2. **State machine** (`pkg/conductor/` — lifecycle states, guards, transitions)
-3. **Agent interface** (`pkg/agent/` — WebSocket + CLI modes)
-4. **Worker pool** (`pkg/worker/` — job queue, event streaming)
-5. **Providers** (`pkg/provider/` — GitHub, GitLab, Wrike, Linear, file)
-6. **Storage** (`pkg/storage/` — tasks, chats, plans, reviews)
-7. **Git integration** (`pkg/git/` — checkpoints, undo/redo)
+1. **Socket layer** (`internal/socket/` — global + worktree sockets)
+2. **State machine** (`internal/conductor/` — lifecycle states, guards, transitions)
+3. **Agent interface** (`agent/` — WebSocket + CLI modes)
+4. **Worker pool** (`internal/worker/` — job queue, event streaming)
+5. **Providers** (`internal/provider/` — GitHub, GitLab, Wrike, Linear, file)
+6. **Storage** (`internal/storage/` — tasks, chats, plans, reviews)
+7. **Git integration** (`internal/git/` — checkpoints, undo/redo)
 8. **Web UI** (`web/` — React 19, stores, real-time updates)
 9. **CLI commands** (`cmd/kvelmo/commands/`)
-10. **Memory system** (`pkg/memory/` — embeddings, semantic search)
+10. **Memory system** (`internal/memory/` — embeddings, semantic search)
 
 ### Critical Rules
 
@@ -172,13 +172,13 @@ All personas share these 10 core systems. When recommending features, these must
 2. **Domain-agnostic core**: Features benefiting one persona should work for all unless explicitly domain-specific.
 3. **Check the siblings**: Before recommending a feature, verify it doesn't break other personas' workflows.
 4. **Full-stack implementation** — every recommended feature MUST be wired per the tiered parity model. The architecture is hub-and-spoke: Go package implements logic, Socket RPC exposes it, then surfaces consume it. For each new feature, specify:
-   - **Go package** (`pkg/<feature>/`) + handler wiring
+   - **Go package** (`internal/<feature>/`) + handler wiring
    - **Socket RPC method** registered in socket server (the hub that surfaces call into)
    - **CLI command** in `cmd/kvelmo/commands/` — calls socket RPC (or bypasses it for some commands); required for all features (the superset)
    - **Web chat** — calls socket RPC via WebSocket; required unless inherently CLI-only
    - **Web UI panel/button** — calls socket RPC via WebSocket; for common workflows; input/output flows through chat
    - **Web UI store** update in `web/src/stores/` (if panel/button needed)
-   - **TUI** in `pkg/tui/` — must match web chat 1:1
+   - **TUI** in `internal/tui/` — must match web chat 1:1
    - **App** — wraps web surface; verify works in Tauri desktop context
    - A feature without a CLI path is not complete. A feature in CLI but not web chat is a gap (unless CLI-only by nature).
 5. **Name by function, not domain** — packages, RPC methods, CLI commands, and frontend components must be named for what they DO, not which persona inspired them. Litmus test: "Would a user from a DIFFERENT persona find this name sensible?" Domain-specific terminology belongs in help text and documentation, NOT in code identifiers.

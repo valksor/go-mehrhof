@@ -11,9 +11,9 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/valksor/kvelmo/pkg/cli"
-	"github.com/valksor/kvelmo/pkg/conductor"
-	"github.com/valksor/kvelmo/pkg/socket"
+	"github.com/valksor/kvelmo/internal/cli"
+	"github.com/valksor/kvelmo/internal/conductor"
+	"github.com/valksor/kvelmo/internal/socket"
 )
 
 // waitForJob connects to the worktree socket, subscribes to the event stream,

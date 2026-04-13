@@ -12,9 +12,9 @@ import (
 	"time"
 
 	"github.com/spf13/cobra"
-	"github.com/valksor/kvelmo/pkg/meta"
-	"github.com/valksor/kvelmo/pkg/settings"
-	"github.com/valksor/kvelmo/pkg/testutil"
+	"github.com/valksor/kvelmo/internal/testutil"
+	"github.com/valksor/kvelmo/meta"
+	"github.com/valksor/kvelmo/settings"
 )
 
 func TestParseFlexibleTime(t *testing.T) {

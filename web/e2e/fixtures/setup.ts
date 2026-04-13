@@ -30,7 +30,7 @@ export interface TestFixture {
 
 /**
  * Compute the worktree socket path for a given project directory.
- * Mirrors the Go implementation in pkg/socket/paths.go
+ * Mirrors the Go implementation in internal/socket/paths.go
  */
 function getWorktreeSocketPath(projectDir: string): string {
   // Must use realpathSync to resolve symlinks (e.g., /var -> /private/var on macOS)

@@ -55,7 +55,7 @@ make ci
 ```
 
 **Run checks for what you changed:**
-- Go code (`cmd/`, `pkg/`, `*.go`): `make quality`
+- Go code (`cmd/`, `internal/`, `*.go`): `make quality`
 - Web frontend (`web/`): `cd web && bun run build`
 - Docs only (`*.md`): No checks required
 
@@ -76,7 +76,7 @@ import (
 
     "github.com/spf13/cobra"  // third-party
 
-    "github.com/valksor/kvelmo/pkg/conductor"  // local
+    "github.com/valksor/kvelmo/internal/conductor"  // local
 )
 ```
 
@@ -176,8 +176,8 @@ handlers_review.go    // Review handlers
 
 **During development:** Run targeted tests for changed packages:
 ```bash
-go test ./pkg/socket/...           # Test a package
-go test -run TestName ./pkg/...    # Test specific function
+go test ./internal/socket/...           # Test a package
+go test -run TestName ./internal/...    # Test specific function
 ```
 
 **Before committing:** Run the full test suite:

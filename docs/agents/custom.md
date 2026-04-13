@@ -48,7 +48,7 @@ const (
 Register your agent in the registry:
 
 ```go
-import "github.com/valksor/kvelmo/pkg/agent"
+import "github.com/valksor/kvelmo/agent"
 
 func init() {
     agent.Register("myagent", NewMyAgent)

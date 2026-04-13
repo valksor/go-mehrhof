@@ -4,7 +4,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/valksor/kvelmo/pkg/testutil"
+	"github.com/valksor/kvelmo/internal/testutil"
 )
 
 func TestStartCommand_NotGitRepository(t *testing.T) {

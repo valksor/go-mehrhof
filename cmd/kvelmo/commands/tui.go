@@ -7,8 +7,8 @@ import (
 	tea "charm.land/bubbletea/v2"
 	"github.com/spf13/cobra"
 
-	"github.com/valksor/kvelmo/pkg/settings"
-	"github.com/valksor/kvelmo/pkg/tui"
+	"github.com/valksor/kvelmo/internal/tui"
+	"github.com/valksor/kvelmo/settings"
 )
 
 // TuiCmd opens the interactive terminal UI for the current project.

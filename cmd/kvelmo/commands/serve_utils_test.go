@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/valksor/kvelmo/pkg/meta"
+	"github.com/valksor/kvelmo/meta"
 )
 
 // ─── capitalize ──────────────────────────────────────────────────────────────

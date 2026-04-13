@@ -8,9 +8,9 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/valksor/kvelmo/pkg/agent"
-	"github.com/valksor/kvelmo/pkg/cli"
-	"github.com/valksor/kvelmo/pkg/settings"
+	"github.com/valksor/kvelmo/agent"
+	"github.com/valksor/kvelmo/internal/cli"
+	"github.com/valksor/kvelmo/settings"
 )
 
 var configValidateJSON bool

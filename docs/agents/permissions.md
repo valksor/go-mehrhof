@@ -66,7 +66,7 @@ The permission system is built into the agent interface and applies automaticall
 For custom agents, implement danger detection by calling the `permission.DetectDanger()` function:
 
 ```go
-import "github.com/valksor/kvelmo/pkg/agent/permission"
+import "github.com/valksor/kvelmo/agent/permission"
 
 result := permission.DetectDanger("bash", map[string]any{
     "command": "rm -rf /tmp/build",

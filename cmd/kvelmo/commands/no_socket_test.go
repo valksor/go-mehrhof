@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/spf13/cobra"
-	"github.com/valksor/kvelmo/pkg/meta"
+	"github.com/valksor/kvelmo/meta"
 )
 
 // noSocketWorktreeTest verifies that a command returns an error when no worktree socket is running.

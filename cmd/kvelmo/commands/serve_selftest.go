@@ -4,7 +4,7 @@ import (
 	"log/slog"
 	"os/exec"
 
-	"github.com/valksor/kvelmo/pkg/settings"
+	"github.com/valksor/kvelmo/settings"
 )
 
 // runStartupChecks performs non-blocking health checks at startup.

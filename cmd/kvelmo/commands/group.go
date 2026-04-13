@@ -10,9 +10,9 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/valksor/kvelmo/pkg/meta"
-	"github.com/valksor/kvelmo/pkg/socket"
-	"github.com/valksor/kvelmo/pkg/taskgroup"
+	"github.com/valksor/kvelmo/internal/socket"
+	"github.com/valksor/kvelmo/internal/taskgroup"
+	"github.com/valksor/kvelmo/meta"
 )
 
 // GroupCmd is the top-level command for cross-repo task group management.

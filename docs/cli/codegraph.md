@@ -32,7 +32,7 @@ kvelmo codegraph <subcommand>
 kvelmo codegraph index
 
 # Index a specific directory
-kvelmo codegraph index ./pkg/conductor
+kvelmo codegraph index ./internal/conductor
 
 # Show indexing statistics
 kvelmo codegraph stats

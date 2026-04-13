@@ -12,17 +12,17 @@ import (
 	"time"
 
 	"github.com/spf13/cobra"
-	"github.com/valksor/kvelmo/pkg/agent"
-	"github.com/valksor/kvelmo/pkg/agent/anthropic"
-	"github.com/valksor/kvelmo/pkg/agent/apiagent"
-	"github.com/valksor/kvelmo/pkg/agent/claude"
-	"github.com/valksor/kvelmo/pkg/agent/codex"
-	"github.com/valksor/kvelmo/pkg/agent/ollama"
-	"github.com/valksor/kvelmo/pkg/agent/openai"
-	"github.com/valksor/kvelmo/pkg/changelog"
-	"github.com/valksor/kvelmo/pkg/git"
-	"github.com/valksor/kvelmo/pkg/settings"
-	"github.com/valksor/kvelmo/pkg/socket"
+	"github.com/valksor/kvelmo/agent"
+	"github.com/valksor/kvelmo/agent/anthropic"
+	"github.com/valksor/kvelmo/agent/apiagent"
+	"github.com/valksor/kvelmo/agent/claude"
+	"github.com/valksor/kvelmo/agent/codex"
+	"github.com/valksor/kvelmo/agent/ollama"
+	"github.com/valksor/kvelmo/agent/openai"
+	"github.com/valksor/kvelmo/internal/changelog"
+	"github.com/valksor/kvelmo/internal/git"
+	"github.com/valksor/kvelmo/internal/socket"
+	"github.com/valksor/kvelmo/settings"
 )
 
 // errNoSocket signals that the worktree socket is unavailable, triggering standalone fallback.

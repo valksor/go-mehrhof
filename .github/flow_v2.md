@@ -145,7 +145,7 @@ github.com/valksor/kvelmo/
 │   └── kvelmo/
 │       └── main.go              # Single binary entry point
 │
-├── pkg/
+├── internal/
 │   ├── conductor/               # State machine, workflow orchestration
 │   │   ├── conductor.go         # Core orchestrator
 │   │   ├── state.go             # State definitions
@@ -433,7 +433,7 @@ All three run simultaneously!
 ### WebSocket-First Architecture
 
 ```go
-// pkg/worker/worker.go
+// internal/worker/worker.go
 type Worker struct {
     ID       string
     Model    string        // "opus", "sonnet", etc.
@@ -452,7 +452,7 @@ type Job struct {
     Output    chan Event    // Streaming output
 }
 
-// pkg/worker/pool.go
+// internal/worker/pool.go
 type Pool struct {
     workers  []*Worker
     queue    chan *Job
@@ -496,7 +496,7 @@ claude --sdk-url ws://localhost:8765 --print \
 **Worker Implementation:**
 
 ```go
-// pkg/worker/websocket.go
+// internal/worker/websocket.go
 type WebSocketWorker struct {
     port      int
     server    *http.Server
@@ -735,31 +735,31 @@ kvelmo disconnect              # Stop current worktree socket, unregister from g
 ## Implementation Phases
 
 ### Phase 1: Core Socket Infrastructure
-1. pkg/socket - Server, client, protocol (JSON-RPC + NDJSON)
+1. internal/socket - Server, client, protocol (JSON-RPC + NDJSON)
 2. Global socket plus worktree socket lifecycle
 3. cmd/kvelmo - Binary with socket discovery
 4. Minimal CLI: `init`, `status`, `disconnect`
 
 ### Phase 2: Worker Pool + Agent Integration
-1. pkg/worker - Pool, workers, job queue
-2. pkg/agent - WebSocket connection layer
+1. internal/worker - Pool, workers, job queue
+2. agent - WebSocket connection layer
 3. Claude agent (WebSocket-first, binary fallback)
 4. Worker roles: Planner (Opus), Implementer (Sonnet)
 5. Planning workflow: `plan` command
 
 ### Phase 2.5: Conductor + State Machine
-1. pkg/conductor - State machine (Task: None → Loaded → Planning → ...)
+1. internal/conductor - State machine (Task: None → Loaded → Planning → ...)
 2. Integration with the worker pool (submit jobs, receive results)
 3. State transitions trigger git operations
 
 ### Phase 3: Git Operations
-1. pkg/git - Branch, checkpoint, worktree
+1. internal/git - Branch, checkpoint, worktree
 2. Undo/redo navigation
 3. Integration with state transitions
 
 ### Phase 4: Provider Integration
-1. pkg/provider - Interface
-2. pkg/file, pkg/github, pkg/gitlab, pkg/wrike
+1. internal/provider - Interface
+2. internal/file, internal/github, internal/gitlab, internal/wrike
 3. `start --from` sources
 
 ### Phase 5: Web UI
@@ -770,9 +770,9 @@ kvelmo disconnect              # Stop current worktree socket, unregister from g
 
 ### Phase 6: Desktop + Polish
 1. desktop/ - Tauri wrapper
-2. Security scanning (pkg/security)
-3. Quality checks (pkg/quality)
-4. Browser automation (pkg/browser with Playwright)
+2. Security scanning (internal/security)
+3. Quality checks (internal/quality)
+4. Browser automation (internal/browser with Playwright)
 
 ---
 
@@ -789,7 +789,7 @@ github.com/valksor/kvelmo/
 │   └── ...
 │
 ├── cmd/kvelmo/                # NEW entry point
-├── pkg/                         # NEW architecture
+├── internal/                         # NEW architecture
 └── web/                         # NEW web UI
 ```
 
@@ -804,7 +804,7 @@ github.com/valksor/kvelmo/
 ## Key Files to Port/Reference
 
 From **prototype/** (go-mehrhof):
-- `prototype/internal/conductor/conductor.go` → Simplified into `pkg/conductor/`
+- `prototype/internal/conductor/conductor.go` → Simplified into `internal/conductor/`
 - `prototype/internal/workflow/machine.go` → State machine logic
 - `prototype/internal/agent/claude/claude.go` → WebSocket implementation reference
 - `prototype/internal/vcs/git.go` → Git operations

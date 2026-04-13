@@ -8,8 +8,8 @@ import (
 	"os/exec"
 	"time"
 
-	"github.com/valksor/kvelmo/pkg/meta"
-	"github.com/valksor/kvelmo/pkg/socket"
+	"github.com/valksor/kvelmo/internal/socket"
+	"github.com/valksor/kvelmo/meta"
 )
 
 // isTestBinary reports whether the current process is a Go test binary.

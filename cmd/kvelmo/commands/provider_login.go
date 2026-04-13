@@ -14,13 +14,13 @@ import (
 	"time"
 
 	"github.com/spf13/cobra"
-	"github.com/valksor/kvelmo/pkg/meta"
-	"github.com/valksor/kvelmo/pkg/provider"
-	"github.com/valksor/kvelmo/pkg/settings"
+	"github.com/valksor/kvelmo/internal/provider"
+	"github.com/valksor/kvelmo/meta"
+	"github.com/valksor/kvelmo/settings"
 	"golang.org/x/term"
 )
 
-// providerLoginConfigs is the canonical provider login configuration from pkg/provider.
+// providerLoginConfigs is the canonical provider login configuration from internal/provider.
 var providerLoginConfigs = provider.LoginConfigs
 
 // tokenSource represents where a token value was found.

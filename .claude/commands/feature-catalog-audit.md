@@ -23,15 +23,15 @@ kvelmo has 5 user-facing surfaces with a **tiered parity model** (not flat 1:1):
 
 ## Phase 1: Package-to-Surface Mapping
 
-For each package in `pkg/`:
+For each package in `internal/`:
 
 1. Read the package's exported API (service structs, public methods)
 2. Check if it has:
    - **CLI command(s)** in `cmd/kvelmo/commands/`
-   - **Socket RPC method(s)** registered in `pkg/socket/`
+   - **Socket RPC method(s)** registered in `internal/socket/`
    - **Web Chat** coverage (can the action be invoked via chat?)
    - **Web UI** coverage in `web/src/` (dedicated panels/buttons for common actions)
-   - **TUI** coverage in `pkg/tui/` (mirrors web chat)
+   - **TUI** coverage in `internal/tui/` (mirrors web chat)
 3. Assess whether the package SHOULD have user-facing surface (some packages like `paths/` are internal-only)
 
 Report gaps per the tiered parity model above — not every surface needs every feature, but the hierarchy must hold.
@@ -134,7 +134,7 @@ Check that `docs/` stays in sync with the actual codebase. Stale or missing docs
 
 Verify these sections in `CLAUDE.md` match reality:
 
-1. **Package Index table** — every row in the `pkg/` table should correspond to an actual directory in `pkg/`. Flag packages listed but missing, or packages that exist but aren't listed
+1. **Package Index table** — every row in the `internal/` table should correspond to an actual directory in `internal/`. Flag packages listed but missing, or packages that exist but aren't listed
 2. **CLI Commands section** — commands mentioned should exist in `cmd/kvelmo/commands/`. Flag stale or missing entries
 3. **Build & Development Commands** — verify `Makefile` targets listed actually exist in the `Makefile`
 
@@ -146,8 +146,8 @@ Verify these sections in `CLAUDE.md` match reality:
 
 ### 5d. Provider & Agent Docs
 
-1. Compare `docs/providers/` pages against implementations in `pkg/provider/`
-2. Compare `docs/agents/` pages against implementations in `pkg/agent/`
+1. Compare `docs/providers/` pages against implementations in `internal/provider/`
+2. Compare `docs/agents/` pages against implementations in `agent/`
 3. Flag doc pages for unimplemented providers/agents, or implementations without docs
 
 ### 5e. Sidebar Sync
@@ -177,7 +177,7 @@ For each gap found:
 
 ## Summary Checklist
 
-- [ ] All `pkg/` packages assessed for user-facing surface
+- [ ] All `internal/` packages assessed for user-facing surface
 - [ ] All socket RPC methods have callers (CLI, web chat, or web UI)
 - [ ] CLI covers all features (the superset)
 - [ ] Web chat has full parity to CLI (minus known CLI-only exclusions)

@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/valksor/kvelmo/pkg/conductor"
+	"github.com/valksor/kvelmo/internal/conductor"
 )
 
 // buildContextItems constructs ContextItems from CLI flags.

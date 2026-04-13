@@ -31,10 +31,10 @@ kvelmo diff --stat
 ## Output
 
 ```diff
-diff --git a/pkg/auth/middleware.go b/pkg/auth/middleware.go
+diff --git a/internal/auth/middleware.go b/internal/auth/middleware.go
 index abc123..def456 100644
---- a/pkg/auth/middleware.go
-+++ b/pkg/auth/middleware.go
+--- a/internal/auth/middleware.go
++++ b/internal/auth/middleware.go
 @@ -15,6 +15,12 @@ func AuthMiddleware(next http.Handler) http.Handler {
 +    // Validate JWT token
 +    token := r.Header.Get("Authorization")

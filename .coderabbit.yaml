@@ -29,31 +29,31 @@ reviews:
         - **Dead code vs unimplemented code**: Do NOT flag code as "dead" or suggest deleting it just because nothing calls it yet. Code may be scaffolding for features not yet wired up. Only flag code as dead if you can confirm it was previously used and is now unreachable — not simply because it lacks callers today.
         - Target platform is Linux/macOS only. Windows builds are not needed. Desktop app on Windows uses Tauri + WSL (Go always runs on Linux). Do not suggest Windows-specific changes or build constraints.
 
-    - path: "pkg/socket/**"
+    - path: "internal/socket/**"
       instructions: |
         Unix domain socket servers using JSON-RPC 2.0 protocol.
         Two socket types: global (`~/.valksor/kvelmo/global.sock`) and per-worktree (`<project>/.kvelmo/worktree.sock`).
         This dual-socket pattern is intentional architecture — do not suggest consolidating into one.
         Unix-only. Do NOT suggest Windows build constraints or Windows compatibility.
 
-    - path: "pkg/conductor/**"
+    - path: "internal/conductor/**"
       instructions: |
         Task lifecycle state machine orchestrating AI agent work in external projects.
         States: none → loaded → planning → planned → implementing → implemented → simplifying → optimizing → reviewing → submitted → waiting → paused → failed.
         Each transition creates a git checkpoint. undo/redo navigate between checkpoints.
         The state machine complexity is intentional — do not suggest simplifying the state graph.
 
-    - path: "pkg/graph/**"
+    - path: "internal/graph/**"
       instructions: |
         Dependency graph scheduler for parallel sub-task execution within phases.
-        Uses varpool (`pkg/varpool/`) for inter-node context sharing during graph execution.
+        Uses varpool (`internal/varpool/`) for inter-node context sharing during graph execution.
         The scheduling complexity (topological sort, parallel execution, dependency tracking) is intentional.
         Do not suggest simplifying the graph scheduler.
 
-    - path: "pkg/varpool/**"
+    - path: "internal/varpool/**"
       instructions: |
         Variable pool for inter-node context sharing during graph execution.
-        Tightly coupled with `pkg/graph/` by design. Do not suggest decoupling.
+        Tightly coupled with `internal/graph/` by design. Do not suggest decoupling.
 
     - path: "cmd/kvelmo/commands/**"
       instructions: |

@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/spf13/cobra"
-	"github.com/valksor/kvelmo/pkg/meta"
+	"github.com/valksor/kvelmo/meta"
 )
 
 var TutorialCmd = &cobra.Command{

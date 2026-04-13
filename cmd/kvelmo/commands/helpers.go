@@ -8,8 +8,8 @@ import (
 	"os"
 	"time"
 
-	"github.com/valksor/kvelmo/pkg/meta"
-	"github.com/valksor/kvelmo/pkg/socket"
+	"github.com/valksor/kvelmo/internal/socket"
+	"github.com/valksor/kvelmo/meta"
 )
 
 // defaultTimeout is the standard timeout for CLI socket operations.

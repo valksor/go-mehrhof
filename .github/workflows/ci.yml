@@ -108,7 +108,7 @@ jobs:
                     bun run build
 
             -   name: Copy web assets for embedding
-                run: cp -r web/dist pkg/web/static/dist
+                run: cp -r web/dist internal/web/static/dist
 
             -   name: Verify dependencies
                 run: |
