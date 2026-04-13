@@ -109,9 +109,16 @@ kvelmo tui
 
 ## Licensing and Third-Party Tools
 
+kvelmo itself is [BSD 3-Clause](LICENSE). There are two separate licensing
+questions — the **agent CLIs** kvelmo subprocess-invokes, and the **libraries**
+kvelmo links against. Both are covered below.
+
+### Agent CLIs (subprocess-invoked, not bundled)
+
 kvelmo does not modify, patch, bundle, or redistribute any agent CLI. It invokes
 locally installed binaries as subprocesses through their documented interfaces —
-the same way a shell script or CI pipeline would.
+the same way a shell script or CI pipeline would. Users install and authenticate
+agent CLIs independently.
 
 | Tool | License | Binary invocation status |
 |------|---------|--------------------------|
@@ -119,8 +126,25 @@ the same way a shell script or CI pipeline would.
 | **Codex CLI** | Apache 2.0 (OpenAI) | Open source. Subprocess invocation, wrapping, and modification are all permitted by the license. |
 | **Custom agents** | Varies | Any CLI exposing a supported protocol can participate. |
 
-kvelmo itself is [BSD 3-Clause](LICENSE). Users install and authenticate agent
-CLIs independently — kvelmo does not ship them.
+### Linked dependencies (Go, frontend, Rust/Tauri)
+
+Every linked dependency across all three ecosystems is permissively licensed —
+MIT, Apache 2.0, BSD-2/3-Clause, ISC, MPL 2.0, or OFL 1.1. No GPL, AGPL, SSPL,
+or BUSL code is pulled in. The only LGPL touch is `webkit2gtk` on Linux via
+Tauri, which is dynamically linked against the system library (the standard
+Tauri pattern, compatible with BSD distribution).
+
+This is enforced automatically by `make quality`, which runs:
+
+- `go-licenses check ./... --disallowed_types=forbidden,restricted` — blocks
+  GPL/AGPL/LGPL Go dependencies. Install: `go install github.com/google/go-licenses@latest`
+- `cargo deny check licenses sources` — blocks non-allowlisted Rust crates
+  (allowlist in [`web/src-tauri/deny.toml`](web/src-tauri/deny.toml)). Install:
+  `cargo install cargo-deny --locked`
+
+Both checks are skipped with a notice if the tools aren't installed, so they
+don't block local development — but when present, a license regression fails
+the build loudly.
 
 ## Key Capabilities
 
