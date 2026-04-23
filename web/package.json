@@ -33,7 +33,7 @@
     "react": "^19.2.5",
     "react-diff-viewer-continued": "^4.2.0",
     "react-dom": "^19.2.5",
-    "react-hook-form": "^7.72.1",
+    "react-hook-form": "^7.73.1",
     "react-markdown": "^10.1.0",
     "tailwind-merge": "^3.5.0",
     "zod": "^4.3.6",
