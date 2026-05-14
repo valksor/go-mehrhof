@@ -33,7 +33,7 @@ jobs:
 
             -   name: Deploy docs (nightly)
                 if: github.event.release.prerelease
-                uses: cloudflare/wrangler-action@v3
+                uses: cloudflare/wrangler-action@v4
                 with:
                     apiToken: ${{ secrets.CF_API_TOKEN }}
                     wranglerVersion: '4'
@@ -41,7 +41,7 @@ jobs:
 
             -   name: Deploy docs (latest)
                 if: ${{ !github.event.release.prerelease }}
-                uses: cloudflare/wrangler-action@v3
+                uses: cloudflare/wrangler-action@v4
                 with:
                     apiToken: ${{ secrets.CF_API_TOKEN }}
                     wranglerVersion: '4'
