@@ -31,6 +31,7 @@ export function FileBrowserWidget() {
   const searchRequestId = useRef(0)
   const hasSearchQuery = searchQuery.trim().length > 0
 
+  // eslint-disable-next-line react-hooks/preserve-manual-memoization -- React Compiler cannot prove memoization for this cancellable-search useCallback; ref access (searchRequestId) is inside an async path, not during render
   const performSearch = useCallback(async (query: string) => {
     if (!globalClient || !globalConnected || !query.trim()) {
       setSearchResults([])
@@ -61,6 +62,7 @@ export function FileBrowserWidget() {
   }, [globalClient, globalConnected, task?.worktreePath, currentPath])
 
   const debouncedSearch = useMemo(
+    // eslint-disable-next-line react-hooks/refs -- debounce wraps performSearch which touches searchRequestId.current; the ref read is in the async callback fired by the debounce timer, not during render
     () => debounce((query: string) => performSearch(query), SEARCH_DEBOUNCE_MS),
     [performSearch]
   )

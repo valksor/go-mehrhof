@@ -53,6 +53,7 @@ export function CatalogPanel({ isOpen, onClose }: CatalogPanelProps) {
   // Auto-load when panel opens
   useEffect(() => {
     if (isOpen && connected) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- load/poll idiom: setState lives in the async callback, not synchronous in the effect body
       void loadTemplates()
       setView('list')
       setSelectedTemplate(null)

@@ -83,6 +83,7 @@ export function TaskHistory() {
 
   // Trigger search when filters change.
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- load/poll idiom: setState lives in the async callback, not synchronous in the effect body
     handleSearch(searchQuery)
   }, [handleSearch, searchQuery])
 

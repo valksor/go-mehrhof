@@ -26,6 +26,7 @@ export function Settings({ isOpen, onClose, defaultScope }: SettingsProps) {
   // Reset scope when modal opens
   useEffect(() => {
     if (isOpen) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- load/poll idiom: setState lives in the async callback, not synchronous in the effect body
       setScope(defaultScope ?? (selectedProject ? 'project' : 'global'))
     }
   }, [isOpen, defaultScope, selectedProject])
@@ -60,6 +61,7 @@ export function Settings({ isOpen, onClose, defaultScope }: SettingsProps) {
   }, [client, isOpen, selectedProject])
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- load/poll idiom: setState lives in the async callback, not synchronous in the effect body
     void loadSettings()
   }, [loadSettings])
 

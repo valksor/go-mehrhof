@@ -43,7 +43,7 @@ const makeClient = (overrides: Record<string, ReturnType<typeof vi.fn>> = {}) =>
 })
 
 const setClient = (client: ReturnType<typeof makeClient> | null) => {
-  (mockGlobalStore.getState as ReturnType<typeof vi.fn>).mockReturnValue({ client } as never)
+  (mockGlobalStore.getState as ReturnType<typeof vi.fn>).mockReturnValue({ client })
 }
 
 const setWorktreeId = (id: string | null) => {
@@ -51,7 +51,7 @@ const setWorktreeId = (id: string | null) => {
     worktreeId: id,
     respondToPrompt: vi.fn(),
     review: vi.fn(),
-  } as never)
+  })
 }
 
 const initialState = {
@@ -435,7 +435,7 @@ describe('chatStore', () => {
         respondToPrompt: vi.fn().mockResolvedValue(undefined),
         review: vi.fn(),
       }
-      ;(mockProjectStore.getState as ReturnType<typeof vi.fn>).mockReturnValue(projectState as never)
+      ;(mockProjectStore.getState as ReturnType<typeof vi.fn>).mockReturnValue(projectState)
 
       const id = useChatStore.getState().addMessage({
         role: 'system',
@@ -453,7 +453,7 @@ describe('chatStore', () => {
         respondToPrompt: vi.fn().mockResolvedValue(undefined),
         review: vi.fn(),
       }
-      ;(mockProjectStore.getState as ReturnType<typeof vi.fn>).mockReturnValue(projectState as never)
+      ;(mockProjectStore.getState as ReturnType<typeof vi.fn>).mockReturnValue(projectState)
 
       const id = useChatStore.getState().addMessage({
         role: 'system',
@@ -471,7 +471,7 @@ describe('chatStore', () => {
         respondToPrompt: vi.fn(),
         review: vi.fn().mockResolvedValue(undefined),
       }
-      ;(mockProjectStore.getState as ReturnType<typeof vi.fn>).mockReturnValue(projectState as never)
+      ;(mockProjectStore.getState as ReturnType<typeof vi.fn>).mockReturnValue(projectState)
 
       const id = useChatStore.getState().addMessage({
         role: 'assistant',
@@ -489,7 +489,7 @@ describe('chatStore', () => {
         respondToPrompt: vi.fn(),
         review: vi.fn().mockResolvedValue(undefined),
       }
-      ;(mockProjectStore.getState as ReturnType<typeof vi.fn>).mockReturnValue(projectState as never)
+      ;(mockProjectStore.getState as ReturnType<typeof vi.fn>).mockReturnValue(projectState)
 
       const id = useChatStore.getState().addMessage({
         role: 'assistant',

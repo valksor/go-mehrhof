@@ -72,6 +72,7 @@ export function RecordingsPanel({ isOpen, onClose }: RecordingsPanelProps) {
   // Load recordings when panel opens
   useEffect(() => {
     if (isOpen && connected) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- load/poll idiom: setState lives in the async callback, not synchronous in the effect body
       void loadRecordings()
     }
   }, [isOpen, connected, loadRecordings])

@@ -57,6 +57,7 @@ export function BackupPanel({ isOpen, onClose }: BackupPanelProps) {
   // Load backups when panel opens
   useEffect(() => {
     if (isOpen && connected) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- load/poll idiom: setState lives in the async callback, not synchronous in the effect body
       void loadBackups()
     }
   }, [isOpen, connected, loadBackups])

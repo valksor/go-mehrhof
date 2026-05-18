@@ -70,6 +70,7 @@ export function DiagnosePanel({ isOpen, onClose }: DiagnosePanelProps) {
 
   useEffect(() => {
     if (isOpen && connected) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- load/poll idiom: setState lives in the async callback, not synchronous in the effect body
       void runDiagnose()
     }
   }, [isOpen, connected, runDiagnose])

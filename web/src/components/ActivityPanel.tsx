@@ -147,6 +147,7 @@ export function ActivityPanel({ isOpen, onClose }: ActivityPanelProps) {
   // Auto-load when panel opens or filters change
   useEffect(() => {
     if (isOpen && connected) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- load/poll idiom: setState lives in the async callback, not synchronous in the effect body
       void loadActivity()
     }
   }, [isOpen, connected, loadActivity])

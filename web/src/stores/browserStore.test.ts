@@ -22,7 +22,7 @@ const makeClient = (overrides: Record<string, ReturnType<typeof vi.fn>> = {}) =>
 })
 
 const setClient = (client: ReturnType<typeof makeClient> | null) => {
-  (mockGlobalStore.getState as ReturnType<typeof vi.fn>).mockReturnValue({ client } as never)
+  (mockGlobalStore.getState as ReturnType<typeof vi.fn>).mockReturnValue({ client })
 }
 
 const makeBrowserStatus = (overrides: Partial<BrowserStatus> = {}): BrowserStatus => ({

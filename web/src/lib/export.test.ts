@@ -31,7 +31,7 @@ describe('downloadJSON', () => {
 
   it('sets the download filename', () => {
     const fakeAnchor = { href: '', download: '', click: vi.fn() }
-    createElementSpy.mockReturnValue(fakeAnchor as unknown as HTMLElement)
+    createElementSpy.mockReturnValue(fakeAnchor)
     downloadJSON({ a: 1 }, 'my-data.json')
     expect(fakeAnchor.download).toBe('my-data.json')
   })

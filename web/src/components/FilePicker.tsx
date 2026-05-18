@@ -69,6 +69,7 @@ export function FilePicker({ isOpen, onClose, onSelect, startPath }: FilePickerP
 
   useEffect(() => {
     if (isOpen) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- load/poll idiom: setState lives in the async callback, not synchronous in the effect body
       void browse(startPath)
     }
   }, [isOpen, browse, startPath])
