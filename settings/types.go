@@ -59,6 +59,21 @@ type AgentSettings struct {
 	OpenAI    OpenAIAgentConfig    `yaml:"openai,omitempty" json:"openai,omitzero"`
 	Anthropic AnthropicAgentConfig `yaml:"anthropic,omitempty" json:"anthropic,omitzero"`
 	Ollama    OllamaAgentConfig    `yaml:"ollama,omitempty" json:"ollama,omitzero"`
+
+	// ClaudeMCP configures the claude-mcp adapter (interactive TUI + MCP).
+	ClaudeMCP ClaudeMCPAgentConfig `yaml:"claude_mcp,omitempty" json:"claude_mcp,omitzero"`
+}
+
+// ClaudeMCPAgentConfig configures the claude-mcp adapter. See
+// docs/agents/claude-mcp.md for the full rationale and trade-offs. Only
+// applied when agent.default is "claude-mcp" (or a custom agent extends it).
+type ClaudeMCPAgentConfig struct {
+	Model                string   `yaml:"model,omitempty" json:"model,omitempty" schema:"label=Model;desc=Model alias (sonnet, opus) or full model ID;placeholder=sonnet"`
+	PermissionMode       string   `yaml:"permission_mode,omitempty" json:"permission_mode,omitempty" schema:"label=Permission Mode;desc=Claude --permission-mode value;options=acceptEdits|auto|bypassPermissions|dontAsk|default;default=acceptEdits"`
+	ExtraArgs            []string `yaml:"extra_args,omitempty" json:"extra_args,omitempty" schema:"label=Extra Args;desc=Additional CLI flags appended to claude invocation;type=tags;advanced"`
+	SystemPromptOverride string   `yaml:"system_prompt_override,omitempty" json:"system_prompt_override,omitempty" schema:"label=System Prompt Override;desc=Replaces the default kvelmo orchestration prompt (rarely needed);advanced"`
+	MCPServerCommand     []string `yaml:"mcp_server_command,omitempty" json:"mcp_server_command,omitempty" schema:"label=MCP Server Command;desc=Command claude spawns as MCP server. Default rewrites bare 'kvelmo' to the running binary's absolute path;type=tags;advanced"`
+	StrictMCPConfig      *bool    `yaml:"strict_mcp_config,omitempty" json:"strict_mcp_config,omitempty" schema:"label=Strict MCP Config;desc=Add --strict-mcp-config (ignore user-global MCP servers);default=true;advanced"`
 }
 
 // ConsensusConfig configures multi-agent consensus review.

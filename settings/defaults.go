@@ -15,8 +15,25 @@ func BoolValue(p *bool, defaultVal bool) bool {
 func DefaultSettings() *Settings {
 	return &Settings{
 		Agent: AgentSettings{
-			Default: "claude",
-			Allowed: []string{"claude", "codex"},
+			// Default to claude-mcp because the older "claude" adapter uses
+			// `claude --print --sdk-url ws://127.0.0.1:<port>` and Anthropic
+			// has locked --sdk-url down to their own backend, so it now fails
+			// immediately with: "host '127.0.0.1' is not an approved Anthropic
+			// endpoint. This flag is reserved for Remote Control worker
+			// processes connecting to Anthropic's backend."
+			//
+			// claude-mcp spawns claude in interactive TUI mode under a PTY
+			// with --mcp-config instead, which (a) works on the current
+			// claude CLI and (b) keeps usage on the Max subscription after
+			// the 2026-06-15 Agent SDK credit split.
+			//
+			// The "claude" adapter is still registered so custom agents like
+			// glm that `extends: claude` (typically via a proxy such as
+			// Claude Code Router that accepts --sdk-url) keep working
+			// unchanged — but no one should select "claude" as the default
+			// for vanilla Anthropic claude any more.
+			Default: "claude-mcp",
+			Allowed: []string{"claude", "claude-mcp", "codex"},
 		},
 		Providers: ProviderSettings{
 			Default: "github",

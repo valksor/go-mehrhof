@@ -123,7 +123,7 @@ kvelmo splits its Go packages into a **public API surface** (hoisted to the modu
 
 | Package | Purpose |
 |---------|---------|
-| `agent/` | AI agent interface and adapters (`claude`, `codex`, `anthropic`, `apiagent`, `openai`, `ollama`, `custom`, `replay`); sub-packages: `permission` (tool approval), `recorder` (session recording), `strategy` (reasoning strategies), `agenttest` (test helpers) |
+| `agent/` | AI agent interface and adapters (`claude`, `claudemcp`, `codex`, `anthropic`, `apiagent`, `openai`, `ollama`, `custom`, `replay`); sub-packages: `permission` (tool approval), `recorder` (session recording), `strategy` (reasoning strategies), `agenttest` (test helpers). **Default agent is `claudemcp`** — the legacy `claude` adapter uses `--print --sdk-url` which Anthropic has restricted (fails with "host 127.0.0.1 is not an approved Anthropic endpoint"). `claudemcp` spawns claude in interactive TUI under a PTY with `--mcp-config` instead, which works on the current CLI **and** preserves Max-subscription billing after the 2026-06-15 Agent SDK credit split. The legacy `claude` adapter is retained because custom agents that `extends: claude` typically route through a proxy (Claude Code Router etc.) that still accepts `--sdk-url`. See `docs/agents/claude-mcp.md`. |
 | `settings/` | Configuration management + drift detection |
 | `metrics/` | Observability (counters, latency) |
 | `meta/` | Build metadata (version, commit, docs URL) |

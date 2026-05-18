@@ -115,13 +115,26 @@ States: `none`, `loaded`, `planning`, `planned`, `implementing`, `implemented`, 
 
 Each transition creates a git checkpoint. `undo`/`redo` navigate between checkpoints.
 
-### Package Index (`internal/`)
+### Package Layout
+
+kvelmo splits its Go packages into a **public API surface** (hoisted to the module root, importable by external Go programs via `kvelmo pipe` and similar adapters) and **private orchestration** (under `internal/`, compiler-enforced private). The old `pkg/` directory no longer exists.
+
+**Public API (module root) — reusable adapters, config, and metadata:**
+
+| Package | Purpose |
+|---------|---------|
+| `agent/` | AI agent interface and adapters (`claude`, `claudemcp`, `codex`, `anthropic`, `apiagent`, `openai`, `ollama`, `custom`, `replay`); sub-packages: `permission` (tool approval), `recorder` (session recording), `strategy` (reasoning strategies), `agenttest` (test helpers). `claudemcp` runs claude in interactive TUI under a PTY with a kvelmo MCP server wired in via `--mcp-config` — billing workaround active **from 2026-06-15** (Agent SDK credit split). See `docs/agents/claude-mcp.md`. |
+| `settings/` | Configuration management + drift detection |
+| `metrics/` | Observability (counters, latency) |
+| `meta/` | Build metadata (version, commit, docs URL) |
+| `paths/` | Centralized path resolution |
+
+**Private (`internal/`) — orchestration machinery, not importable outside the module:**
 
 | Package | Purpose |
 |---------|---------|
 | `socket/` | Unix domain socket servers (global + per-worktree) |
 | `conductor/` | Task state machine and lifecycle transitions |
-| `agent/` | AI agent interface (claude, codex, custom); sub-packages: `permission` (tool approval), `recorder` (session recording), `strategy` (reasoning strategies) |
 | `worker/` | Concurrent job execution pool |
 | `provider/` | Task sources (github, gitlab, linear, wrike, jira, azuredevops, file) |
 | `storage/` | Persistence for tasks, plans, reviews, chat |
@@ -129,12 +142,8 @@ Each transition creates a git checkpoint. `undo`/`redo` navigate between checkpo
 | `browser/` | Playwright automation for interactive testing |
 | `web/` | HTTP server + WebSocket proxy to sockets |
 | `memory/` | Vector store for semantic context search |
-| `settings/` | Configuration management + drift detection |
-| `paths/` | Centralized path resolution |
-| `metrics/` | Observability (counters, latency) |
 | `security/` | Security scanning |
 | `screenshot/` | Screenshot capture and storage |
-| `access/` | Socket access token management |
 | `activitylog/` | RPC activity logging and querying |
 | `backup/` | Backup and restore of kvelmo state |
 | `catalog/` | Task template library (built-in + custom) |
@@ -147,7 +156,6 @@ Each transition creates a git checkpoint. `undo`/`redo` navigate between checkpo
 | `filter/` | Generic type-safe in-memory filtering with predicates |
 | `findings/` | Unified finding model with gate rules and phase-aware quality profiles |
 | `graph/` | Dependency graph scheduling for parallel sub-tasks within phases |
-| `meta/` | Build metadata (version, commit, docs URL) |
 | `notify/` | Webhook notifications (Slack, generic) |
 | `page/` | Pagination primitives |
 | `policy/` | Workflow policy checking and validation |
@@ -181,7 +189,8 @@ Each transition creates a git checkpoint. `undo`/`redo` navigate between checkpo
 - `browserStore` - Playwright session state
 - `screenshotStore` - Screenshot selection and attachments
 - `themeStore` - Light/dark mode
-- `layoutStore` - Panels, widgets, tabs (13 tab types)
+- `layoutStore` - Panels, widgets, tabs (15 tab types)
+- `viewModeStore` - View mode (grid, list, etc.)
 - `debugStore` - Debug mode state and diagnostic helpers
 
 ## Key Patterns
@@ -192,7 +201,7 @@ Go: Return errors, wrap with context (`fmt.Errorf("action: %w", err)`)
 ### Configuration
 - Global config: `~/.valksor/kvelmo/kvelmo.yaml` (managed by `settings/`)
 - CLI: `kvelmo config show|init|set`
-- Environment: `KVELMO_SOCKET_DIR`, `GITHUB_TOKEN`, etc.
+- Environment: `KVELMO_HOME` (overrides `~/.valksor/kvelmo`), `GITHUB_TOKEN`, etc.
 
 ### Testing
 - Table-driven tests using `testing.T`
@@ -216,6 +225,10 @@ Before deleting any logic flagged as "dead code," verify whether it is truly unu
 ## CLI Commands
 
 Commands in `cmd/kvelmo/commands/`. Entry point: `serve` (global socket + web server, port 6337).
+
+<!-- Surface parity note: these CLI commands are intentionally excluded from web chat -->
+<!-- completion, pipe, tui, serve, shutdown, cleanup, rpc, prompt, upgrade, tutorial, autostart -->
+<!-- start: complex input with file upload — handled by TaskPanel widget in web UI -->
 
 **Workflow progression:**
 - `start` - Load task and initialize worktree (accepts positional text arg; `--skip` for phase skipping; `--file`/`--symbol`/`--commit` for context attachment)
@@ -282,6 +295,7 @@ Commands in `cmd/kvelmo/commands/`. Entry point: `serve` (global socket + web se
 - `serve` - Start global socket + web server
 - `shutdown` - Gracefully stop the server
 - `cleanup` - Remove stale socket files
+- `autostart` - Auto-start worktree sockets when needed
 - `github`/`gitlab`/`linear`/`wrike`/`jira`/`azuredevops` - Provider commands (each has `login` subcommand)
 - `config test-provider` - Test a provider connection (verify token and reachability)
 
@@ -294,7 +308,6 @@ Commands in `cmd/kvelmo/commands/`. Entry point: `serve` (global socket + web se
 
 **Infrastructure:**
 - `backup`/`restore` - State backup and restore
-- `access` - Socket access token management
 - `security` - Security scanning (secrets, dependencies)
 - `notify` - Webhook notification testing
 - `hooks` - List configured workflow hooks
