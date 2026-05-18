@@ -1,5 +1,24 @@
-// Package claude implements the Claude AI agent.
-// Supports WebSocket (primary) and CLI (fallback) connection modes.
+// Package claude implements the Claude AI agent over the Agent SDK protocol
+// (`claude --print --sdk-url ws://127.0.0.1:<port>`).
+//
+// **WARNING — broken against the current Anthropic `claude` CLI.**
+// Anthropic has restricted `--sdk-url` to their own backend; spawning the
+// adapter against the official binary now fails immediately with:
+//
+//	Error: --sdk-url rejected: host "127.0.0.1" is not an approved
+//	Anthropic endpoint. This flag is reserved for Remote Control worker
+//	processes connecting to Anthropic's backend.
+//
+// This adapter is kept (not deleted) because custom agents such as `glm`
+// that `extends: claude` route through a proxy (Claude Code Router or
+// similar) which still accepts `--sdk-url`. Those proxy-based extensions
+// continue to work via this code path.
+//
+// New default agent is `claude-mcp` (see agent/claudemcp/). For vanilla
+// Anthropic claude, use that adapter — it spawns claude in interactive TUI
+// mode under a PTY with `--mcp-config` instead, which (a) works on the
+// current claude CLI and (b) keeps usage on the Max subscription after the
+// 2026-06-15 Agent SDK credit split.
 package claude
 
 import (
