@@ -16,9 +16,26 @@ jobs:
             -   name: Checkout code
                 uses: actions/checkout@v6
 
+            -   name: Detect [docs only] marker
+                id: docs_only
+                # Opt-in marker. Authors append `[docs only]` to the commit
+                # message when they want to skip binary/desktop builds AND
+                # the CI build+test run, keeping only the docs deploy.
+                # Reads only local git state (no GitHub event context is
+                # interpolated into shell).
+                run: |
+                    msg=$(git log -1 --format=%B HEAD)
+                    if printf '%s' "$msg" | grep -qF '[docs only]'; then
+                        echo "Explicit [docs only] marker in commit message."
+                        echo "docs_only=true" >> "$GITHUB_OUTPUT"
+                    else
+                        echo "docs_only=false" >> "$GITHUB_OUTPUT"
+                    fi
+
             -   name: Nightly Release
                 env:
                     GH_TOKEN: ${{ secrets.GH_TOKEN }}
+                    DOCS_ONLY: ${{ steps.docs_only.outputs.docs_only }}
                 run: |
                     # Delete the previous nightly release if it exists
                     gh release delete nightly --yes || true
@@ -41,5 +58,13 @@ jobs:
                     # Ensure the tag is fully pushed and recognized by GitHub
                     sleep 5
 
+                    # Build the release notes. Append [docs only] when the
+                    # push only changed documentation so release.yml's
+                    # binary/desktop jobs (which guard on release.body) skip.
+                    notes="latest master branch build"
+                    if [ "$DOCS_ONLY" = "true" ]; then
+                        notes="$notes [docs only]"
+                    fi
+
                     # Create a new nightly release, explicitly targeting the latest commit
-                    gh release create nightly --notes "latest master branch build" --title "nightly" --target $LATEST_COMMIT --prerelease
+                    gh release create nightly --notes "$notes" --title "nightly" --target $LATEST_COMMIT --prerelease
