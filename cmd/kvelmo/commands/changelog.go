@@ -16,6 +16,7 @@ import (
 	"github.com/valksor/kvelmo/agent/anthropic"
 	"github.com/valksor/kvelmo/agent/apiagent"
 	"github.com/valksor/kvelmo/agent/claude"
+	"github.com/valksor/kvelmo/agent/claudesdk"
 	"github.com/valksor/kvelmo/agent/codex"
 	"github.com/valksor/kvelmo/agent/ollama"
 	"github.com/valksor/kvelmo/agent/openai"
@@ -272,8 +273,17 @@ func resolveChangelogAgent(cwd string) (agent.Agent, error) {
 	if err := claude.RegisterWithPermissionHandler(reg, agent.KvelmoPermissionHandler); err != nil {
 		slog.Debug("claude agent not available", "error", err)
 	}
+	// claude-sdk: WebSocket Agent SDK variant, broken on the official
+	// Anthropic CLI (--sdk-url rejected). See agent/claudesdk/.
+	if err := claudesdk.RegisterWithPermissionHandler(reg, agent.KvelmoPermissionHandler); err != nil {
+		slog.Debug("claude-sdk agent not available", "error", err)
+	}
 	if err := codex.RegisterWithPermissionHandler(reg, agent.KvelmoPermissionHandler); err != nil {
 		slog.Debug("codex agent not available", "error", err)
+	}
+	// claude-mcp is the default agent — must be registered here too.
+	if err := registerClaudeMCP(reg, effective); err != nil {
+		slog.Debug("claude-mcp agent not available", "error", err)
 	}
 
 	apiCfg := apiagent.DefaultAPIConfig()

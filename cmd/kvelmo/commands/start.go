@@ -21,7 +21,7 @@ import (
 	"github.com/valksor/kvelmo/agent/anthropic"
 	"github.com/valksor/kvelmo/agent/apiagent"
 	"github.com/valksor/kvelmo/agent/claude"
-	"github.com/valksor/kvelmo/agent/claudemcp"
+	"github.com/valksor/kvelmo/agent/claudesdk"
 	"github.com/valksor/kvelmo/agent/codex"
 	"github.com/valksor/kvelmo/agent/ollama"
 	"github.com/valksor/kvelmo/agent/openai"
@@ -309,6 +309,12 @@ func runInForeground(cwd, globalPath, wtPath string) error {
 	if err := claude.RegisterWithPermissionHandler(registry, agent.KvelmoPermissionHandler); err != nil {
 		slog.Debug("claude agent not available", "error", err)
 	}
+	// claude-sdk is registered but broken on the official Anthropic CLI
+	// (--sdk-url is rejected). Retained for proxy setups that accept the
+	// flag (Claude Code Router and similar). See agent/claudesdk/.
+	if err := claudesdk.RegisterWithPermissionHandler(registry, agent.KvelmoPermissionHandler); err != nil {
+		slog.Debug("claude-sdk agent not available", "error", err)
+	}
 	if err := codex.RegisterWithPermissionHandler(registry, agent.KvelmoPermissionHandler); err != nil {
 		slog.Debug("codex agent not available", "error", err)
 	}
@@ -484,31 +490,6 @@ func loadTaskViaRPC(socketPath, source string) error {
 	return nil
 }
 
-// registerClaudeMCP registers the claude-mcp adapter with user yaml settings
-// applied. The bare default is used when no settings are loaded.
-func registerClaudeMCP(registry *agent.Registry, effective *settings.Settings) error {
-	cfg := claudemcp.DefaultConfig()
-	if effective != nil {
-		s := effective.Agent.ClaudeMCP
-		if s.Model != "" {
-			cfg.Model = s.Model
-		}
-		if s.PermissionMode != "" {
-			cfg.PermissionMode = s.PermissionMode
-		}
-		if len(s.ExtraArgs) > 0 {
-			cfg.Args = append(append([]string(nil), cfg.Args...), s.ExtraArgs...)
-		}
-		if s.SystemPromptOverride != "" {
-			cfg.SystemPromptOverride = s.SystemPromptOverride
-		}
-		if len(s.MCPServerCommand) > 0 {
-			cfg.MCPServerCommand = append([]string(nil), s.MCPServerCommand...)
-		}
-		if s.StrictMCPConfig != nil {
-			cfg.StrictMCPConfig = *s.StrictMCPConfig
-		}
-	}
-
-	return registry.Register(claudemcp.NewWithConfig(cfg))
-}
+// (registerClaudeMCP moved to agent_registry.go so serve, changelog, pipe
+// can call the same helper. Omitting claudemcp from any registration site
+// breaks the default `agent.default: claude-mcp` config.)

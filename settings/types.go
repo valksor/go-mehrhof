@@ -43,8 +43,8 @@ type TUISettings struct {
 
 // AgentSettings configures AI agent behavior.
 type AgentSettings struct {
-	Default       string                 `yaml:"default,omitempty" json:"default,omitempty" schema:"label=Default Agent;desc=Agent used when none specified;options=claude|codex|openai|anthropic|ollama"`
-	Allowed       []string               `yaml:"allowed,omitempty" json:"allowed,omitempty" schema:"label=Allowed Agents;desc=Agents permitted for this project;type=multiselect;options=claude|codex|openai|anthropic|ollama"`
+	Default       string                 `yaml:"default,omitempty" json:"default,omitempty" schema:"label=Default Agent;desc=Agent used when none specified;options=claude|claude-mcp|claude-sdk|codex|openai|anthropic|ollama"`
+	Allowed       []string               `yaml:"allowed,omitempty" json:"allowed,omitempty" schema:"label=Allowed Agents;desc=Agents permitted for this project;type=multiselect;options=claude|claude-mcp|claude-sdk|codex|openai|anthropic|ollama"`
 	Strategy      string                 `yaml:"strategy,omitempty" json:"strategy,omitempty" schema:"label=Default Strategy;desc=Agent reasoning strategy (direct = pass-through, iterative = self-review loop);options=direct|iterative;default=direct"`
 	PhaseStrategy map[string]string      `yaml:"phase_strategy,omitempty" json:"phase_strategy,omitempty" schema:"label=Per-Phase Strategy;desc=Override strategy per phase (e.g. plan: iterative);type=keyvalue;advanced"`
 	PhaseAgent    map[string]string      `yaml:"phase_agent,omitempty" json:"phase_agent,omitempty" schema:"label=Per-Phase Agent;desc=Override agent per phase (e.g. plan: gemini, implement: claude);type=keyvalue;advanced"`
@@ -94,7 +94,7 @@ type ResponseCacheSettings struct {
 // Custom agents are stored in settings.yaml under custom_agents map.
 // They automatically appear in agent selection dropdowns in the UI.
 type CustomAgent struct {
-	Extends     string            `yaml:"extends" json:"extends" schema:"label=Base Agent;desc=Agent to wrap;options=claude|codex|openai|anthropic|ollama;required"`
+	Extends     string            `yaml:"extends" json:"extends" schema:"label=Base Agent;desc=Agent to wrap;options=claude|claude-mcp|claude-sdk|codex|openai|anthropic|ollama;required"`
 	Description string            `yaml:"description,omitempty" json:"description,omitempty" schema:"label=Description;desc=Human-readable description"`
 	Args        []string          `yaml:"args,omitempty" json:"args,omitempty" schema:"label=CLI Arguments;desc=Additional arguments passed to agent;type=tags"`
 	Env         map[string]string `yaml:"env,omitempty" json:"env,omitempty" schema:"label=Environment;desc=Environment variables for this agent;type=keyvalue"`

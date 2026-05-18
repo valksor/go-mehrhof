@@ -39,7 +39,7 @@ func (s *Settings) Validate() []string {
 
 	// Agent settings
 	if s.Agent.Default != "" {
-		validAgents := []string{"claude", "claude-mcp", "codex", "custom"}
+		validAgents := []string{"claude", "claude-mcp", "claude-sdk", "codex", "custom"}
 		found := slices.Contains(validAgents, s.Agent.Default)
 		// Also check custom agents
 		if !found {
@@ -48,7 +48,7 @@ func (s *Settings) Validate() []string {
 			}
 		}
 		if !found {
-			issues = append(issues, fmt.Sprintf("agent.default %q is not a recognized agent (valid: claude, claude-mcp, codex, custom, or a custom agent name)", s.Agent.Default))
+			issues = append(issues, fmt.Sprintf("agent.default %q is not a recognized agent (valid: claude, claude-mcp, claude-sdk, codex, custom, or a custom agent name)", s.Agent.Default))
 		}
 	}
 

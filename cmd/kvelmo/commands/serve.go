@@ -17,6 +17,7 @@ import (
 	"github.com/valksor/kvelmo/agent/anthropic"
 	"github.com/valksor/kvelmo/agent/apiagent"
 	"github.com/valksor/kvelmo/agent/claude"
+	"github.com/valksor/kvelmo/agent/claudesdk"
 	"github.com/valksor/kvelmo/agent/codex"
 	"github.com/valksor/kvelmo/agent/ollama"
 	"github.com/valksor/kvelmo/agent/openai"
@@ -147,12 +148,25 @@ func runServe(cmd *cobra.Command, args []string) error {
 		if err := claude.RegisterWithPermissionHandler(registry, agent.KvelmoPermissionHandler); err != nil {
 			slog.Debug("claude agent not available", "error", err)
 		}
+		// claude-sdk is registered but broken on the official Anthropic CLI
+		// (--sdk-url is rejected). Retained for proxy setups that accept the
+		// flag (Claude Code Router and similar). See agent/claudesdk/.
+		if err := claudesdk.RegisterWithPermissionHandler(registry, agent.KvelmoPermissionHandler); err != nil {
+			slog.Debug("claude-sdk agent not available", "error", err)
+		}
 		if err := codex.RegisterWithPermissionHandler(registry, agent.KvelmoPermissionHandler); err != nil {
 			slog.Debug("codex agent not available", "error", err)
 		}
 
 		// Apply agent.default from settings
 		effective, _, _, _ := settings.LoadEffective("")
+
+		// claude-mcp is the default agent — must be registered here too,
+		// not just in start.go, or `agent.default: claude-mcp` fails to
+		// resolve when the worker pool is built from this entry point.
+		if err := registerClaudeMCP(registry, effective); err != nil {
+			slog.Debug("claude-mcp agent not available", "error", err)
+		}
 
 		// Register API-based agents from settings
 		if effective != nil {

@@ -15,25 +15,36 @@ func BoolValue(p *bool, defaultVal bool) bool {
 func DefaultSettings() *Settings {
 	return &Settings{
 		Agent: AgentSettings{
-			// Default to claude-mcp because the older "claude" adapter uses
-			// `claude --print --sdk-url ws://127.0.0.1:<port>` and Anthropic
-			// has locked --sdk-url down to their own backend, so it now fails
-			// immediately with: "host '127.0.0.1' is not an approved Anthropic
-			// endpoint. This flag is reserved for Remote Control worker
-			// processes connecting to Anthropic's backend."
+			// Default to claude-mcp. Background, in three parts:
 			//
-			// claude-mcp spawns claude in interactive TUI mode under a PTY
-			// with --mcp-config instead, which (a) works on the current
-			// claude CLI and (b) keeps usage on the Max subscription after
-			// the 2026-06-15 Agent SDK credit split.
+			// 1. The legacy "claude" adapter was dual-mode (WebSocket Agent
+			//    SDK + CLI fallback). It was split into two single-mode
+			//    adapters after claude CLI 2.1.121 made the SDK WebSocket
+			//    transport nonfunctional:
+			//      - "claude"     → agent/claude/    (plain `claude --print`)
+			//      - "claude-sdk" → agent/claudesdk/ (WebSocket --sdk-url)
+			// 2. The "claude-sdk" path is broken on the official Anthropic
+			//    CLI since 2.1.121: --sdk-url is restricted to Anthropic's
+			//    own backend and the spawned process exits with: "host
+			//    '127.0.0.1' is not an approved Anthropic endpoint. This
+			//    flag is reserved for Remote Control worker processes
+			//    connecting to Anthropic's backend." Whether the
+			//    restriction will be lifted is unknown — it is a separate
+			//    issue from the 2026-06-15 billing change. The adapter is
+			//    still registered because some proxy setups (Claude Code
+			//    Router etc.) accept --sdk-url and may still need this path.
+			// 3. The "claude" (plain CLI) path works today and is what
+			//    custom agents like `glm extends: claude` actually use via
+			//    their proxy. Its billing classification is `claude -p`, so
+			//    the 2026-06-15 Agent SDK credit-pool split applies even
+			//    though the SDK transport is not used.
 			//
-			// The "claude" adapter is still registered so custom agents like
-			// glm that `extends: claude` (typically via a proxy such as
-			// Claude Code Router that accepts --sdk-url) keep working
-			// unchanged — but no one should select "claude" as the default
-			// for vanilla Anthropic claude any more.
+			// claude-mcp wins as the default because it (a) works on the
+			// current claude CLI and (b) preserves Max-subscription billing
+			// after the 2026-06-15 Agent SDK credit-pool split. It spawns
+			// claude in interactive TUI mode under a PTY with --mcp-config.
 			Default: "claude-mcp",
-			Allowed: []string{"claude", "claude-mcp", "codex"},
+			Allowed: []string{"claude", "claude-sdk", "claude-mcp", "codex"},
 		},
 		Providers: ProviderSettings{
 			Default: "github",
