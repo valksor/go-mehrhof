@@ -382,13 +382,13 @@ func (c *Conductor) resolveNextPhase(completedEvent Event, skipPhases []string) 
 	var candidates []string
 	switch completedEvent { //nolint:exhaustive // only specific done events trigger auto-advance
 	case EventPlanDone:
-		candidates = []string{"implement"}
+		candidates = []string{PhaseImplement}
 	case EventImplementDone:
-		candidates = []string{"simplify", "optimize", "review"}
+		candidates = []string{PhaseSimplify, PhaseOptimize, PhaseReview}
 	case EventSimplifyDone:
-		candidates = []string{"optimize", "review"}
+		candidates = []string{PhaseOptimize, PhaseReview}
 	case EventOptimizeDone:
-		candidates = []string{"review"}
+		candidates = []string{PhaseReview}
 	default:
 		return ""
 	}
@@ -406,13 +406,13 @@ func (c *Conductor) resolveNextPhase(completedEvent Event, skipPhases []string) 
 func (c *Conductor) dispatchAutoAdvance(ctx context.Context, phase string) {
 	var err error
 	switch phase {
-	case "implement":
+	case PhaseImplement:
 		_, err = c.Implement(ctx)
-	case "simplify":
+	case PhaseSimplify:
 		_, err = c.Simplify(ctx)
-	case "optimize":
+	case PhaseOptimize:
 		_, err = c.Optimize(ctx)
-	case "review":
+	case PhaseReview:
 		err = c.Review(ctx, false)
 	default:
 		return

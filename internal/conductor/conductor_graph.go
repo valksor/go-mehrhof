@@ -2,7 +2,6 @@ package conductor
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"log/slog"
 	"strings"
@@ -190,25 +189,18 @@ func (c *Conductor) handleGraphCompletion(ctx context.Context, sched *graph.Sche
 	}
 	commitValParams := c.prepareCommitValidation(preJobCheckpoint)
 
-	// Success path — same as watchJob completion.
-	if completionEvent == EventPlanDone {
-		c.detectSpecificationFiles()
-		if len(c.workUnit.Specifications) == 0 {
-			err := errors.New("plan phase produced no specification file (agent did not write required deliverable)")
-			c.emitEnrichedError(err, "plan")
-			_ = c.machine.Dispatch(ctx, EventError)
-			c.persistState()
-			c.mu.Unlock()
+	// Success path — same as watchJob completion. The post-phase side effects
+	// (spec detection, spec/plan repo copy, completion checkpoint) live in
+	// finalizePhaseLocked so the MCP-driven adapter (agent/claudemcp) can
+	// reuse them via the exported Conductor.FinalizePhase wrapper.
+	if err := c.finalizePhaseLocked(ctx, completionEvent); err != nil {
+		c.emitEnrichedError(err, phaseLabelFromEvent(completionEvent))
+		_ = c.machine.Dispatch(ctx, EventError)
+		c.persistState()
+		c.mu.Unlock()
 
-			return
-		}
-		c.copySpecsToRepo()
-		c.copyPlanToRepo()
-		c.commitRepoSpecs(ctx)
+		return
 	}
-
-	// Create completion checkpoint.
-	c.createCompletionCheckpoint(ctx, completionEvent)
 
 	// Evaluate output via strategy (collect all node results as output).
 	var combinedOutput string

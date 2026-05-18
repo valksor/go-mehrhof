@@ -281,6 +281,17 @@ func (w *WorktreeSocket) registerHandlers() {
 	w.server.Handle("show.spec", w.handleShowSpec)
 	w.server.Handle("show.plan", w.handleShowSpec) // plan output is stored as specifications
 
+	// MCP-facing surface — consumed by the kvelmo MCP server (cmd/kvelmo/commands/mcp.go)
+	// which exposes these as MCP tools to interactive Claude Code sessions
+	// launched by the claudemcp adapter.
+	w.server.Handle("mcp.task.get", w.handleMCPTaskGet)
+	w.server.Handle("mcp.task.specifications", w.handleMCPSpecifications)
+	w.server.Handle("mcp.files.read", w.handleMCPFileRead)
+	w.server.Handle("mcp.artifacts.save", w.handleMCPArtifactsSave)
+	w.server.Handle("mcp.checkpoints.create", w.handleMCPCheckpoint)
+	w.server.Handle("mcp.signal.complete", w.handleMCPSignalComplete)
+	w.server.Handle("mcp.signal.failure", w.handleMCPSignalFailure)
+
 	// Screenshots
 	w.server.Handle("screenshots.list", w.handleScreenshotsList)
 	w.server.Handle("screenshots.get", w.handleScreenshotsGet)
