@@ -2,27 +2,27 @@
 
 The `claude-mcp` agent runs an **interactive Claude Code session** under a pseudo-terminal, wired to a kvelmo-served MCP server. The orchestration logic that other adapters drive through `claude --print` lives in MCP tools that the running Claude Code session calls into.
 
-## Why it exists
+## Why it's the default
 
-**Two reasons, both already affecting users today:**
+`claude-mcp` is the only claude adapter that **(a)** works against the current Anthropic CLI **and** **(b)** preserves Max-subscription billing after the 2026-06-15 policy change. The other two are partial solutions:
 
-**1. The legacy `claude` adapter is broken on the current CLI.** It spawns `claude --print --sdk-url ws://127.0.0.1:<port>` and Anthropic has restricted `--sdk-url`:
+- The plain [`claude`](/agents/claude.md) adapter works today but its billing classification (`claude -p`) means it falls into Anthropic's new $200/mo Agent SDK credit pool after 2026-06-15.
+- The [`claude-sdk`](/agents/claude-sdk.md) adapter is broken on the current CLI — Anthropic restricted `--sdk-url` to their own backend in claude 2.1.121. This is a separate issue from the 2026-06-15 billing change.
 
-```
-Error: --sdk-url rejected: host "127.0.0.1" is not an approved Anthropic
-endpoint. This flag is reserved for Remote Control worker processes
-connecting to Anthropic's backend.
-```
-
-The Agent SDK path no longer works for kvelmo. `claude-mcp` is the only working path for vanilla Anthropic claude right now.
-
-**2. Coming 2026-06-15: the Agent SDK billing split.** Anthropic is moving all `claude --print` and Agent SDK usage off Max subscription limits and onto a separate $200/mo "Agent SDK credit" pool. The `claude-mcp` adapter keeps the spawned `claude` in **interactive TUI mode** (which Anthropic still bills against the subscription) and gives the model the kvelmo workflow as MCP tools it can call. Even if the SDK adapter weren't already broken, this billing change would make `claude-mcp` the right path for anyone on a Max plan.
+`claude-mcp` sidesteps both by keeping the spawned `claude` in **interactive TUI mode** (which Anthropic still bills against the subscription) and giving the model the kvelmo workflow as MCP tools it can call.
 
 > Anthropic has not contractually committed to keeping third-party-launched TUI sessions on the subscription. They could fingerprint and reclassify. Treat this as a best-effort path, not a guarantee.
 
 ## Default agent
 
-As of this release, `agent.default` defaults to `claude-mcp`. A fresh kvelmo install will use this adapter automatically — no yaml override required. Set `agent.default: claude` in your config only if you have a custom agent extending the legacy SDK path (e.g. through a proxy like Claude Code Router); otherwise stay on the default.
+As of this release, `agent.default` defaults to `claude-mcp`. A fresh kvelmo install will use this adapter automatically — no yaml override required.
+
+Set `agent.default` to something other than `claude-mcp` only if:
+
+- You want the plain CLI path → `agent.default: claude` (works on current CLI; bills credit pool post-June-15)
+- You have a custom agent extending the WebSocket SDK path via a proxy (Claude Code Router etc.) → `agent.default: claude-sdk` or `extends: claude-sdk` on the custom agent
+
+`extends: claude` is for proxy-backed custom agents that speak stream-json over stdio — e.g. a custom agent routing through [Claude Code Router](https://github.com/musistudio/claude-code-router) to a non-Anthropic provider (Z.ai's GLM, OpenAI, etc.).
 
 ## How it works
 
