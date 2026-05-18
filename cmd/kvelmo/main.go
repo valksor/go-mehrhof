@@ -102,6 +102,7 @@ func init() {
 	rootCmd.AddCommand(commands.ScreenshotsCmd)
 	rootCmd.AddCommand(commands.MemoryCmd)
 	rootCmd.AddCommand(commands.ShowCmd)
+	rootCmd.AddCommand(commands.MCPCmd)
 
 	// Core feature commands
 	rootCmd.AddCommand(commands.AbandonCmd)
