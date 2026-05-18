@@ -49,10 +49,14 @@ func TestConnected_NewAgent(t *testing.T) {
 	}
 }
 
-func TestMode_NewAgent(t *testing.T) {
+func TestMode_AlwaysCLI(t *testing.T) {
+	// Post-split: this adapter is single-mode CLI. Mode() always returns
+	// agent.ModeCLI regardless of connection state. The legacy dual-mode
+	// behaviour was split when claude CLI 2.1.121 made the WebSocket SDK
+	// path nonfunctional; the WebSocket half moved to agent/claudesdk/.
 	a := claude.New()
-	if a.Mode() != "" {
-		t.Errorf("Mode() = %q, want empty string for unconnected agent", a.Mode())
+	if a.Mode() != agent.ModeCLI {
+		t.Errorf("Mode() = %q, want %q", a.Mode(), agent.ModeCLI)
 	}
 }
 

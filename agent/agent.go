@@ -286,7 +286,14 @@ const (
 
 // Config holds common agent configuration.
 type Config struct {
-	// Connection preferences
+	// Connection preferences.
+	//
+	// PreferWebSocket is honoured only by the legacy dual-mode codex
+	// adapter. The claude family is single-mode: agent/claude/ always uses
+	// CLI, agent/claudesdk/ always uses WebSocket, agent/claudemcp/ always
+	// uses PTY+MCP. Setting PreferWebSocket for any of those is a no-op.
+	// The claude family was split when claude CLI 2.1.121 made the SDK
+	// WebSocket transport nonfunctional on the official binary.
 	PreferWebSocket bool              // Try WebSocket first (default: true)
 	WebSocketPort   int               // Port for WebSocket server (default: 0 = auto)
 	Command         []string          // CLI command (e.g., ["claude"], ["codex"])

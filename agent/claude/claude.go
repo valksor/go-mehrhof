@@ -1,24 +1,34 @@
-// Package claude implements the Claude AI agent over the Agent SDK protocol
-// (`claude --print --sdk-url ws://127.0.0.1:<port>`).
+// Package claude implements the plain CLI variant of the Claude adapter:
+// it spawns `claude --print` with stream-json over stdin/stdout. No
+// `--sdk-url`, no `--mcp-config`, no PTY — just the binary in print mode.
 //
-// **WARNING — broken against the current Anthropic `claude` CLI.**
-// Anthropic has restricted `--sdk-url` to their own backend; spawning the
-// adapter against the official binary now fails immediately with:
+// Status: works on the current Anthropic claude CLI. Billing
+// classification: `claude -p` (Agent SDK by Anthropic's terminology),
+// which means the 2026-06-15 policy change — Anthropic moving Agent SDK
+// usage off Max subscription limits onto a new $200/mo credit pool —
+// applies to this path. Today (before the change) it still bills the
+// subscription. Mechanically the spawn is unchanged either way; only the
+// upstream billing classification shifts.
 //
-//	Error: --sdk-url rejected: host "127.0.0.1" is not an approved
-//	Anthropic endpoint. This flag is reserved for Remote Control worker
-//	processes connecting to Anthropic's backend.
+// Sibling adapters:
 //
-// This adapter is kept (not deleted) because custom agents such as `glm`
-// that `extends: claude` route through a proxy (Claude Code Router or
-// similar) which still accepts `--sdk-url`. Those proxy-based extensions
-// continue to work via this code path.
+//   - `agent/claudesdk/` (registered as `claude-sdk`) — the WebSocket
+//     Agent SDK variant (`claude --sdk-url ws://...`). **Broken** on the
+//     official Anthropic CLI since version 2.1.121 because Anthropic
+//     restricted `--sdk-url` to their own backend. Whether the restriction
+//     will be lifted (e.g. coinciding with the 2026-06-15 billing
+//     reorganisation) is unknown. Retained for proxy setups (Claude Code
+//     Router and similar) that still accept the flag.
+//   - `agent/claudemcp/` (registered as `claude-mcp`, the default) —
+//     spawns claude in interactive TUI mode under a PTY with
+//     `--mcp-config`. Works today **and** preserves Max-subscription
+//     billing after the 2026-06-15 credit-pool split.
 //
-// New default agent is `claude-mcp` (see agent/claudemcp/). For vanilla
-// Anthropic claude, use that adapter — it spawns claude in interactive TUI
-// mode under a PTY with `--mcp-config` instead, which (a) works on the
-// current claude CLI and (b) keeps usage on the Max subscription after the
-// 2026-06-15 Agent SDK credit split.
+// Custom agents that `extends: claude` (e.g. the user's `glm` routing
+// through Claude Code Router) inherit this CLI behaviour. After the split
+// of the legacy dual-mode adapter, those extensions now use the CLI path
+// exclusively — no more silent WebSocket attempt + fallback on every
+// spawn.
 package claude
 
 import (
@@ -35,25 +45,23 @@ import (
 
 const AgentName = "claude"
 
-// Agent wraps the Claude CLI with WebSocket and CLI modes.
+// Agent is the CLI-only Claude adapter. It always operates via a single
+// CLIConnection — there is no mode field, no fallback path, no `--sdk-url`
+// attempt. The legacy dual-mode behaviour was split when claude CLI
+// 2.1.121 made the WebSocket SDK path nonfunctional on the official
+// binary; the WebSocket half moved to `agent/claudesdk/`.
 type Agent struct {
 	config Config
-	mode   agent.ConnectionMode
 
-	// WebSocket mode
-	ws *WebSocketConnection
-
-	// CLI mode
 	cli *CLIConnection
-
-	mu sync.RWMutex
+	mu  sync.RWMutex
 }
 
 // Config holds Claude agent configuration.
 type Config struct {
 	agent.Config
 
-	// Model to use (e.g., "claude-3-opus", "claude-3-sonnet")
+	// Model to use (e.g., "claude-3-opus", "claude-3-sonnet").
 	Model string
 }
 
@@ -84,158 +92,94 @@ func NewWithConfig(cfg Config) *Agent {
 		cfg.PermissionHandler = agent.DefaultPermissionHandler
 	}
 
-	return &Agent{
-		config: cfg,
-	}
+	return &Agent{config: cfg}
 }
 
 // Name returns the agent identifier.
-func (a *Agent) Name() string {
-	return AgentName
-}
+func (a *Agent) Name() string { return AgentName }
 
-// Available checks if the Claude CLI is installed.
+// Available checks if the Claude CLI is installed and runnable.
 func (a *Agent) Available() error {
 	binary := a.config.Command[0]
 	path, err := agent.ResolveCommandPath(binary)
 	if err != nil {
 		return fmt.Errorf("claude CLI not found: %w", err)
 	}
-
-	// Verify it runs
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-
-	cmd := exec.CommandContext(ctx, path, "--version")
-	if err := cmd.Run(); err != nil {
+	if err := exec.CommandContext(ctx, path, "--version").Run(); err != nil {
 		return fmt.Errorf("claude CLI not working: %w", err)
 	}
 
 	return nil
 }
 
-// Connect establishes connection. Tries WebSocket first, falls back to CLI.
+// Connect spawns `claude --print` with stream-json. Always CLI mode —
+// the agent.Config.PreferWebSocket flag is ignored here (it is consumed
+// only by the legacy dual-mode codex adapter; the WebSocket variant of
+// claude now lives in agent/claudesdk/).
 func (a *Agent) Connect(ctx context.Context) error {
 	a.mu.Lock()
 	defer a.mu.Unlock()
 
-	// Already connected?
-	if a.ws != nil && a.ws.Connected() {
-		return nil
-	}
 	if a.cli != nil && a.cli.Connected() {
 		return nil
 	}
 
-	// Try WebSocket first if preferred
-	if a.config.PreferWebSocket {
-		ws := NewWebSocketConnection(a.config)
-		if err := ws.Connect(ctx); err == nil {
-			a.ws = ws
-			a.mode = agent.ModeWebSocket
-
-			return nil
-		}
-		// WebSocket failed, try CLI
-	}
-
-	// Fallback to CLI
 	cli := NewCLIConnection(a.config)
 	if err := cli.Connect(ctx); err != nil {
-		return fmt.Errorf("connect failed (both WebSocket and CLI): %w", err)
+		return fmt.Errorf("claude connect: %w", err)
 	}
-
 	a.cli = cli
-	a.mode = agent.ModeCLI
 
 	return nil
 }
 
-// Connected returns true if the agent is connected.
+// Connected reports whether the CLI subprocess is running.
 func (a *Agent) Connected() bool {
 	a.mu.RLock()
 	defer a.mu.RUnlock()
-
-	if a.ws != nil {
-		return a.ws.Connected()
-	}
-	if a.cli != nil {
-		return a.cli.Connected()
+	if a.cli == nil {
+		return false
 	}
 
-	return false
+	return a.cli.Connected()
 }
 
-// Mode returns the current connection mode.
-func (a *Agent) Mode() agent.ConnectionMode {
-	a.mu.RLock()
-	defer a.mu.RUnlock()
+// Mode always returns agent.ModeCLI for this single-mode adapter.
+// Retained for callers that introspect; not part of the agent.Agent
+// interface.
+func (a *Agent) Mode() agent.ConnectionMode { return agent.ModeCLI }
 
-	return a.mode
-}
-
-// SendPrompt sends a prompt and returns streaming events.
+// SendPrompt forwards to the CLI connection.
 func (a *Agent) SendPrompt(ctx context.Context, prompt string) (<-chan agent.Event, error) {
 	a.mu.RLock()
 	defer a.mu.RUnlock()
-
-	switch a.mode {
-	case agent.ModeWebSocket:
-		if a.ws == nil {
-			return nil, errors.New("websocket not connected")
-		}
-
-		return a.ws.SendPrompt(ctx, prompt)
-	case agent.ModeCLI:
-		if a.cli == nil {
-			return nil, errors.New("cli not connected")
-		}
-
-		return a.cli.SendPrompt(ctx, prompt)
-	default:
-		return nil, errors.New("not connected")
+	if a.cli == nil {
+		return nil, errors.New("claude: not connected")
 	}
+
+	return a.cli.SendPrompt(ctx, prompt)
 }
 
-// HandlePermission responds to a permission request.
-func (a *Agent) HandlePermission(requestID string, approved bool) error {
-	a.mu.RLock()
-	defer a.mu.RUnlock()
+// HandlePermission is a no-op in CLI mode (the stream-json protocol does
+// not surface tool-approval round-trips — claude self-handles them
+// according to the --permission-mode flag).
+func (a *Agent) HandlePermission(_ string, _ bool) error { return nil }
 
-	if a.mode == agent.ModeWebSocket && a.ws != nil {
-		return a.ws.HandlePermission(requestID, approved)
-	}
-	// CLI mode doesn't support interactive permission handling
-	return nil
-}
+// Interrupt is a no-op in CLI mode (would require killing the
+// subprocess; not currently wired).
+func (a *Agent) Interrupt() error { return nil }
 
-// Interrupt aborts the current agent turn.
-func (a *Agent) Interrupt() error {
-	a.mu.RLock()
-	defer a.mu.RUnlock()
-
-	if a.mode == agent.ModeWebSocket && a.ws != nil {
-		return a.ws.Interrupt()
-	}
-	// CLI mode doesn't support interrupt (would need to kill process)
-	return nil
-}
-
-// Close closes the connection.
+// Close tears down the CLI subprocess.
 func (a *Agent) Close() error {
 	a.mu.Lock()
 	defer a.mu.Unlock()
-
-	var err error
-	if a.ws != nil {
-		err = a.ws.Close()
-		a.ws = nil
+	if a.cli == nil {
+		return nil
 	}
-	if a.cli != nil {
-		err = a.cli.Close()
-		a.cli = nil
-	}
-	a.mode = ""
+	err := a.cli.Close()
+	a.cli = nil
 
 	return err
 }
@@ -243,10 +187,6 @@ func (a *Agent) Close() error {
 // WithEnv returns a new Agent with an added environment variable.
 func (a *Agent) WithEnv(key, value string) agent.Agent {
 	newCfg := a.config
-	if newCfg.Environment == nil {
-		newCfg.Environment = make(map[string]string)
-	}
-	// Copy existing env
 	env := make(map[string]string, len(a.config.Environment)+1)
 	maps.Copy(env, a.config.Environment)
 	env[key] = value
@@ -258,10 +198,7 @@ func (a *Agent) WithEnv(key, value string) agent.Agent {
 // WithArgs returns a new Agent with additional CLI arguments.
 func (a *Agent) WithArgs(args ...string) agent.Agent {
 	newCfg := a.config
-	newArgs := make([]string, len(a.config.Args)+len(args))
-	copy(newArgs, a.config.Args)
-	copy(newArgs[len(a.config.Args):], args)
-	newCfg.Args = newArgs
+	newCfg.Args = append(append([]string(nil), a.config.Args...), args...)
 
 	return NewWithConfig(newCfg)
 }
@@ -299,11 +236,10 @@ func (a *Agent) WithPermissionHandler(handler agent.PermissionHandler) *Agent {
 }
 
 // Register adds the Claude agent to a registry with default config.
-func Register(r *agent.Registry) error {
-	return r.Register(New())
-}
+func Register(r *agent.Registry) error { return r.Register(New()) }
 
-// RegisterWithPermissionHandler adds the Claude agent with a custom permission handler.
+// RegisterWithPermissionHandler adds the Claude agent with a custom
+// permission handler.
 func RegisterWithPermissionHandler(r *agent.Registry, handler agent.PermissionHandler) error {
 	cfg := agent.DefaultConfig()
 	cfg.Command = []string{"claude"}

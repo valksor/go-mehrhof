@@ -1,4 +1,4 @@
-package claude
+package claudesdk
 
 import (
 	"context"
@@ -249,10 +249,16 @@ func (w *WebSocketConnection) Connect(ctx context.Context) error {
 		return err
 	}
 
-	// Wait for WebSocket connection
+	// Wait for WebSocket connection. Include <-w.done so an early child exit
+	// (e.g. the official Anthropic CLI rejecting --sdk-url) surfaces in
+	// milliseconds instead of waiting the full 30-second timeout.
 	select {
 	case <-w.ready:
 		// WebSocket connected, now wait for session initialization
+	case <-w.done:
+		_ = w.Close()
+
+		return earlyExitError(w, "before WebSocket connection")
 	case <-time.After(30 * time.Second):
 		_ = w.Close()
 
@@ -263,12 +269,17 @@ func (w *WebSocketConnection) Connect(ctx context.Context) error {
 		return ctx.Err()
 	}
 
-	// Wait for session initialization (system message with session_id)
+	// Wait for session initialization (system message with session_id).
+	// Same early-exit handling as above.
 	select {
 	case <-w.sessionReady:
 		w.connected.Store(true)
 
 		return nil
+	case <-w.done:
+		_ = w.Close()
+
+		return earlyExitError(w, "before session initialization")
 	case <-time.After(30 * time.Second):
 		_ = w.Close()
 
@@ -278,6 +289,20 @@ func (w *WebSocketConnection) Connect(ctx context.Context) error {
 
 		return ctx.Err()
 	}
+}
+
+// earlyExitError formats a friendlier error when the child claude process
+// exits before completing the handshake (the common case on the official
+// Anthropic CLI which rejects --sdk-url with a clear stderr message).
+func earlyExitError(w *WebSocketConnection, phase string) error {
+	w.cmdMu.Lock()
+	cmdErr := w.cmdErr
+	w.cmdMu.Unlock()
+	if cmdErr != nil {
+		return fmt.Errorf("claude exited %s: %w (most common cause: this Anthropic CLI build rejects --sdk-url — use the `claude` or `claude-mcp` adapter instead)", phase, cmdErr)
+	}
+
+	return fmt.Errorf("claude exited %s without error code (most common cause: this Anthropic CLI build rejects --sdk-url — use the `claude` or `claude-mcp` adapter instead)", phase)
 }
 
 // handleConnection handles incoming WebSocket connections from Claude CLI.

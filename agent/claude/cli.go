@@ -202,9 +202,21 @@ func (c *CLIConnection) readOutput() {
 		c.handleMessage(msg)
 	}
 
-	// Scanner done - close events
-	if !c.closed.Load() {
-		close(c.events)
+	// Scanner done — close the current events channel so any consumer
+	// ranging over it unblocks. The previous guard (skip close when
+	// c.closed is true) assumed Close() would close events; it didn't,
+	// leaking the consumer goroutine when Close fired before the scanner
+	// drained.
+	//
+	// Acquire c.cmdMu around the read because SendPrompt writes c.events
+	// under the same mutex when a new prompt allocates a fresh channel.
+	// Without this, the field read in `close(c.events)` races against
+	// SendPrompt's replacement.
+	c.cmdMu.Lock()
+	events := c.events
+	c.cmdMu.Unlock()
+	if events != nil {
+		close(events)
 	}
 }
 
