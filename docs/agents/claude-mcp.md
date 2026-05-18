@@ -1,28 +1,26 @@
-# claude-mcp agent
+# claude-mcp Agent
 
-The `claude-mcp` agent runs an **interactive Claude Code session** under a pseudo-terminal, wired to a kvelmo-served MCP server. The orchestration logic that other adapters drive through `claude --print` lives in MCP tools that the running Claude Code session calls into.
+**Default adapter.** Spawns `claude` in interactive TUI mode under a PTY with `--mcp-config` pointing at a kvelmo-served MCP server. The model drives kvelmo workflows by calling the `kvelmo_*` MCP tools.
 
-## Why it's the default
-
-`claude-mcp` is the only claude adapter that **(a)** works against the current Anthropic CLI **and** **(b)** preserves Max-subscription billing after the 2026-06-15 policy change. The other two are partial solutions:
-
-- The plain [`claude`](/agents/claude.md) adapter works today but its billing classification (`claude -p`) means it falls into Anthropic's new $200/mo Agent SDK credit pool after 2026-06-15.
-- The [`claude-sdk`](/agents/claude-sdk.md) adapter is broken on the current CLI — Anthropic restricted `--sdk-url` to their own backend in claude 2.1.121. This is a separate issue from the 2026-06-15 billing change.
-
-`claude-mcp` sidesteps both by keeping the spawned `claude` in **interactive TUI mode** (which Anthropic still bills against the subscription) and giving the model the kvelmo workflow as MCP tools it can call.
+| | |
+|---|---|
+| **Mechanism** | Interactive TUI under PTY + `--mcp-config` |
+| **Works today** | Yes |
+| **Billing today** | Max subscription |
+| **Billing after 2026-06-15** | Max subscription (TUI mode is the only path that doesn't reclassify under Anthropic's billing change) |
 
 > Anthropic has not contractually committed to keeping third-party-launched TUI sessions on the subscription. They could fingerprint and reclassify. Treat this as a best-effort path, not a guarantee.
 
-## Default agent
+## The other two claude variants
 
-As of this release, `agent.default` defaults to `claude-mcp`. A fresh kvelmo install will use this adapter automatically — no yaml override required.
+| Adapter | What it does | Billing |
+|---|---|---|
+| [`claude`](/agents/claude.md) | Plain `claude --print` over stdin/stdout. Works today. | Sub today; **$200/mo credit pool after 2026-06-15** (Anthropic's `claude -p` reclassification) |
+| [`claude-sdk`](/agents/claude-sdk.md) | WebSocket Agent SDK (`--sdk-url`). **Broken** on the official CLI since 2.1.121. | — |
 
-Set `agent.default` to something other than `claude-mcp` only if:
+## Configuration
 
-- You want the plain CLI path → `agent.default: claude` (works on current CLI; bills credit pool post-June-15)
-- You have a custom agent extending the WebSocket SDK path via a proxy (Claude Code Router etc.) → `agent.default: claude-sdk` or `extends: claude-sdk` on the custom agent
-
-`extends: claude` is for proxy-backed custom agents that speak stream-json over stdio — e.g. a custom agent routing through [Claude Code Router](https://github.com/musistudio/claude-code-router) to a non-Anthropic provider (Z.ai's GLM, OpenAI, etc.).
+`agent.default` defaults to `claude-mcp` out of the box. No yaml override required.
 
 ## How it works
 

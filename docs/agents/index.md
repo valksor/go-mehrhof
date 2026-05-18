@@ -8,9 +8,9 @@ kvelmo does not replace them. It coordinates them through task state, permission
 
 | Agent | Description |
 |-------|-------------|
-| [Claude](/agents/claude.md) | Plain `claude --print` over stdin/stdout. Works today; billing classification is `claude -p` so the 2026-06-15 credit-pool split applies. Used by proxy-backed extensions like `glm extends: claude`. |
-| [Claude (MCP)](/agents/claude-mcp.md) | **Default.** Interactive TUI under PTY + `--mcp-config`. Preserves Max-subscription billing after 2026-06-15. |
-| [Claude (SDK)](/agents/claude-sdk.md) | WebSocket Agent SDK (`--sdk-url`). **Broken on the official Anthropic CLI** as of writing — restriction was introduced in version 2.1.121 with no indication of when (or whether) it will be lifted. Retained for proxy setups. |
+| [Claude](/agents/claude.md) | Binary use (`claude --print`). Works today; after 2026-06-15 consumes the new $200/mo Agent SDK credit pool. |
+| [Claude (MCP)](/agents/claude-mcp.md) | **Default.** Interactive TUI + MCP. Works with Max subscription. |
+| [Claude (SDK)](/agents/claude-sdk.md) | WebSocket Agent SDK (`--sdk-url`). **Broken** on the official Anthropic CLI since 2.1.121. |
 | [Codex](/agents/codex.md) | Codex-based local agent path |
 | [Custom](/agents/custom.md) | Custom integration path |
 | [Ollama](/agents/ollama.md) | Local model integration |
