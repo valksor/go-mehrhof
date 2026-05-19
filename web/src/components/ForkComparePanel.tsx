@@ -44,18 +44,19 @@ export function ForkComparePanel() {
     setLoading(false)
   }, [compareForks])
 
-  const handleSelect = useCallback(async (forkId: string) => {
-    setSelecting(forkId)
-    await selectFork(forkId)
-    setSelecting(null)
-  }, [selectFork])
+  const handleSelect = useCallback(
+    async (forkId: string) => {
+      setSelecting(forkId)
+      await selectFork(forkId)
+      setSelecting(null)
+    },
+    [selectFork],
+  )
 
   return (
     <div className="p-4 space-y-4">
       <h3 className="text-lg font-semibold">Conversation Forks</h3>
-      <p className="text-sm opacity-70">
-        Create parallel implementation approaches and compare them side by side.
-      </p>
+      <p className="text-sm opacity-70">Create parallel implementation approaches and compare them side by side.</p>
 
       {/* Create fork */}
       <div className="flex gap-2">
@@ -67,11 +68,7 @@ export function ForkComparePanel() {
           onChange={(e) => setNewLabel(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && handleCreate()}
         />
-        <button
-          className="btn btn-primary btn-sm"
-          onClick={handleCreate}
-          disabled={creating || !newLabel.trim()}
-        >
+        <button className="btn btn-primary btn-sm" onClick={handleCreate} disabled={creating || !newLabel.trim()}>
           {creating ? 'Creating...' : 'Create Fork'}
         </button>
       </div>
@@ -116,11 +113,7 @@ export function ForkComparePanel() {
             </table>
           </div>
 
-          <button
-            className="btn btn-outline btn-sm"
-            onClick={handleCompare}
-            disabled={loading || forks.length < 2}
-          >
+          <button className="btn btn-outline btn-sm" onClick={handleCompare} disabled={loading || forks.length < 2}>
             {loading ? 'Comparing...' : 'Compare Forks'}
           </button>
 

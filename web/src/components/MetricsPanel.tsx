@@ -22,12 +22,15 @@ interface MetricsData {
   permissions_approved: number
   permissions_denied: number
   tokens_consumed: number
-  agents?: Record<string, {
-    tokens: number
-    requests: number
-    errors: number
-    avg_latency_ms: number
-  }>
+  agents?: Record<
+    string,
+    {
+      tokens: number
+      requests: number
+      errors: number
+      avg_latency_ms: number
+    }
+  >
 }
 
 function pct(num: number, den: number): string {
@@ -81,7 +84,12 @@ export function MetricsPanel({ isOpen, onClose }: MetricsPanelProps) {
               <span className="loading loading-spinner loading-xs"></span>
             ) : (
               <svg aria-hidden="true" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                />
               </svg>
             )}
             Refresh
@@ -129,7 +137,9 @@ export function MetricsPanel({ isOpen, onClose }: MetricsPanelProps) {
                   </div>
                   <div className="stat py-3 px-4">
                     <div className="stat-title text-xs">Success Rate</div>
-                    <div className="stat-value text-2xl">{pct(metrics.jobs_completed, metrics.jobs_completed + metrics.jobs_failed)}</div>
+                    <div className="stat-value text-2xl">
+                      {pct(metrics.jobs_completed, metrics.jobs_completed + metrics.jobs_failed)}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -168,8 +178,12 @@ export function MetricsPanel({ isOpen, onClose }: MetricsPanelProps) {
                   </div>
                   <div className="stat py-3 px-4">
                     <div className="stat-title text-xs">Permissions</div>
-                    <div className="stat-value text-2xl">{metrics.permissions_approved + metrics.permissions_denied}</div>
-                    <div className="stat-desc">{metrics.permissions_approved} approved, {metrics.permissions_denied} denied</div>
+                    <div className="stat-value text-2xl">
+                      {metrics.permissions_approved + metrics.permissions_denied}
+                    </div>
+                    <div className="stat-desc">
+                      {metrics.permissions_approved} approved, {metrics.permissions_denied} denied
+                    </div>
                   </div>
                   <div className="stat py-3 px-4">
                     <div className="stat-title text-xs">Events Dropped</div>
@@ -199,7 +213,9 @@ export function MetricsPanel({ isOpen, onClose }: MetricsPanelProps) {
                             <td className="font-mono text-xs">{name}</td>
                             <td className="text-right">{data.tokens.toLocaleString()}</td>
                             <td className="text-right">{data.requests}</td>
-                            <td className="text-right">{data.errors > 0 ? <span className="text-error">{data.errors}</span> : '0'}</td>
+                            <td className="text-right">
+                              {data.errors > 0 ? <span className="text-error">{data.errors}</span> : '0'}
+                            </td>
                             <td className="text-right">{data.avg_latency_ms}ms</td>
                           </tr>
                         ))}

@@ -139,7 +139,7 @@ describe('MetricsWidget', () => {
     // Sparkline SVGs rendered (one per series)
     const svgs = document.querySelectorAll('svg')
     expect(svgs.length).toBe(4)
-    svgs.forEach(svg => {
+    svgs.forEach((svg) => {
       expect(svg.querySelector('polyline')).toBeTruthy()
     })
   })
@@ -174,7 +174,7 @@ describe('MetricsWidget', () => {
     render(<MetricsWidget />)
     const rows = document.querySelectorAll('tbody tr')
     expect(rows.length).toBe(3)
-    const names = Array.from(rows).map(r => r.querySelector('td')?.textContent)
+    const names = Array.from(rows).map((r) => r.querySelector('td')?.textContent)
     expect(names).toEqual(['high', 'mid', 'low'])
   })
 

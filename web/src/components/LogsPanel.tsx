@@ -44,7 +44,7 @@ export function LogsPanel({ isOpen, onClose }: LogsPanelProps) {
       setHistoryLoading(true)
       try {
         const result = await client.call<{ messages: HistoryMessage[]; task_id: string }>('chat.history', {
-          worktree_id: worktreeId
+          worktree_id: worktreeId,
         })
         if (!cancelled) setHistory(result.messages || [])
       } catch {
@@ -55,17 +55,23 @@ export function LogsPanel({ isOpen, onClose }: LogsPanelProps) {
     }
 
     void fetchHistory()
-    return () => { cancelled = true }
+    return () => {
+      cancelled = true
+    }
   }, [isOpen, tab, client, worktreeId])
 
   if (!isOpen) return null
 
   const roleBadge = (role: string) => {
     switch (role) {
-      case 'user': return 'badge-primary'
-      case 'assistant': return 'badge-secondary'
-      case 'system': return 'badge-ghost'
-      default: return 'badge-ghost'
+      case 'user':
+        return 'badge-primary'
+      case 'assistant':
+        return 'badge-secondary'
+      case 'system':
+        return 'badge-ghost'
+      default:
+        return 'badge-ghost'
     }
   }
 
@@ -75,26 +81,24 @@ export function LogsPanel({ isOpen, onClose }: LogsPanelProps) {
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-base-300">
           <div className="flex items-center gap-2">
-            <svg aria-hidden="true" className="w-5 h-5 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg
+              aria-hidden="true"
+              className="w-5 h-5 text-primary"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h7" />
             </svg>
             <h2 className="text-lg font-semibold text-base-content">Logs</h2>
           </div>
           <div className="flex items-center gap-2">
             {tab === 'output' && (
-              <button
-                onClick={clearOutput}
-                className="btn btn-ghost btn-sm"
-                disabled={output.length === 0}
-              >
+              <button onClick={clearOutput} className="btn btn-ghost btn-sm" disabled={output.length === 0}>
                 Clear
               </button>
             )}
-            <button
-              onClick={onClose}
-              className="btn btn-ghost btn-sm btn-square"
-              aria-label="Close"
-            >
+            <button onClick={onClose} className="btn btn-ghost btn-sm btn-square" aria-label="Close">
               <svg aria-hidden="true" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
@@ -125,12 +129,22 @@ export function LogsPanel({ isOpen, onClose }: LogsPanelProps) {
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-auto p-4 bg-base-200" role="tabpanel" aria-label={tab === 'output' ? 'Live Output' : 'Chat History'}>
+        <div
+          className="flex-1 overflow-auto p-4 bg-base-200"
+          role="tabpanel"
+          aria-label={tab === 'output' ? 'Live Output' : 'Chat History'}
+        >
           {tab === 'output' ? (
             // Live output (existing behavior)
             output.length === 0 ? (
               <div className="text-center py-8 text-base-content/50">
-                <svg aria-hidden="true" className="w-12 h-12 mx-auto mb-3 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg
+                  aria-hidden="true"
+                  className="w-12 h-12 mx-auto mb-3 opacity-50"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 6h16M4 12h16M4 18h7" />
                 </svg>
                 <p>No output yet</p>
@@ -145,10 +159,10 @@ export function LogsPanel({ isOpen, onClose }: LogsPanelProps) {
                       line.toLowerCase().includes('error') || line.toLowerCase().includes('failed')
                         ? 'text-error'
                         : line.toLowerCase().includes('warning')
-                        ? 'text-warning'
-                        : line.toLowerCase().includes('completed') || line.toLowerCase().includes('success')
-                        ? 'text-success'
-                        : ''
+                          ? 'text-warning'
+                          : line.toLowerCase().includes('completed') || line.toLowerCase().includes('success')
+                            ? 'text-success'
+                            : ''
                     }`}
                   >
                     <span className="text-base-content/40 select-none mr-2">{String(i + 1).padStart(3)}</span>
@@ -158,42 +172,49 @@ export function LogsPanel({ isOpen, onClose }: LogsPanelProps) {
                 <div ref={logsEndRef} />
               </pre>
             )
+          ) : // Chat history (matches CLI `logs` command data source)
+          historyLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <span className="loading loading-spinner loading-lg text-primary"></span>
+            </div>
+          ) : history.length === 0 ? (
+            <div className="text-center py-8 text-base-content/50">
+              <svg
+                aria-hidden="true"
+                className="w-12 h-12 mx-auto mb-3 opacity-50"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={1.5}
+                  d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"
+                />
+              </svg>
+              <p>No chat history</p>
+              <p className="text-sm mt-1">History appears after agent interactions</p>
+            </div>
           ) : (
-            // Chat history (matches CLI `logs` command data source)
-            historyLoading ? (
-              <div className="flex items-center justify-center py-12">
-                <span className="loading loading-spinner loading-lg text-primary"></span>
-              </div>
-            ) : history.length === 0 ? (
-              <div className="text-center py-8 text-base-content/50">
-                <svg aria-hidden="true" className="w-12 h-12 mx-auto mb-3 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
-                </svg>
-                <p>No chat history</p>
-                <p className="text-sm mt-1">History appears after agent interactions</p>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {history.map((msg) => (
-                  <div key={msg.id} className="rounded-lg bg-base-100 p-3 border border-base-300">
-                    <div className="flex items-center gap-2 mb-1.5">
-                      <span className={`badge badge-xs ${roleBadge(msg.role)}`}>{msg.role}</span>
-                      {msg.timestamp && (
-                        <span className="text-xs text-base-content/40">
-                          {new Date(msg.timestamp).toLocaleTimeString()}
-                        </span>
-                      )}
-                      {msg.job_id && (
-                        <span className="text-xs text-base-content/30 font-mono">job:{msg.job_id.slice(0, 8)}</span>
-                      )}
-                    </div>
-                    <p className="text-sm text-base-content/80 whitespace-pre-wrap leading-relaxed">
-                      {msg.content}
-                    </p>
+            <div className="space-y-3">
+              {history.map((msg) => (
+                <div key={msg.id} className="rounded-lg bg-base-100 p-3 border border-base-300">
+                  <div className="flex items-center gap-2 mb-1.5">
+                    <span className={`badge badge-xs ${roleBadge(msg.role)}`}>{msg.role}</span>
+                    {msg.timestamp && (
+                      <span className="text-xs text-base-content/40">
+                        {new Date(msg.timestamp).toLocaleTimeString()}
+                      </span>
+                    )}
+                    {msg.job_id && (
+                      <span className="text-xs text-base-content/30 font-mono">job:{msg.job_id.slice(0, 8)}</span>
+                    )}
                   </div>
-                ))}
-              </div>
-            )
+                  <p className="text-sm text-base-content/80 whitespace-pre-wrap leading-relaxed">{msg.content}</p>
+                </div>
+              ))}
+            </div>
           )}
         </div>
 
@@ -202,10 +223,7 @@ export function LogsPanel({ isOpen, onClose }: LogsPanelProps) {
           <span className="text-xs text-base-content/50">
             {tab === 'output' ? 'Real-time output from current session' : 'Full chat history for current task'}
           </span>
-          <button
-            onClick={onClose}
-            className="btn btn-primary btn-sm"
-          >
+          <button onClick={onClose} className="btn btn-primary btn-sm">
             Close
           </button>
         </div>

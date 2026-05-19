@@ -29,12 +29,12 @@ function HistoryView({ entries }: { entries: TimedSnapshot[] }) {
 
   return (
     <div className="grid grid-cols-2 gap-2 text-sm">
-      {series.map(s => (
+      {series.map((s) => (
         <div key={s.key}>
           <span className="opacity-60">{s.label}</span>
           <div className="flex items-center">
             <span className="font-mono">{entries[entries.length - 1][s.key]}</span>
-            <Sparkline data={entries.map(e => e[s.key])} color={s.color} />
+            <Sparkline data={entries.map((e) => e[s.key])} color={s.color} />
           </div>
         </div>
       ))}
@@ -43,10 +43,10 @@ function HistoryView({ entries }: { entries: TimedSnapshot[] }) {
 }
 
 export function MetricsWidget() {
-  const metrics = useGlobalStore(s => s.metrics)
-  const metricsHistory = useGlobalStore(s => s.metricsHistory)
-  const loadMetrics = useGlobalStore(s => s.loadMetrics)
-  const loadMetricsHistory = useGlobalStore(s => s.loadMetricsHistory)
+  const metrics = useGlobalStore((s) => s.metrics)
+  const metricsHistory = useGlobalStore((s) => s.metricsHistory)
+  const loadMetrics = useGlobalStore((s) => s.loadMetrics)
+  const loadMetricsHistory = useGlobalStore((s) => s.loadMetricsHistory)
   const [showHistory, setShowHistory] = useState(false)
 
   if (!metrics) {
@@ -54,7 +54,9 @@ export function MetricsWidget() {
       <div className="card bg-base-200 p-4">
         <h3 className="font-semibold mb-2">System Metrics</h3>
         <p className="text-sm opacity-60">No metrics available</p>
-        <button className="btn btn-xs btn-ghost mt-2" onClick={loadMetrics}>Refresh</button>
+        <button className="btn btn-xs btn-ghost mt-2" onClick={loadMetrics}>
+          Refresh
+        </button>
       </div>
     )
   }
@@ -72,15 +74,15 @@ export function MetricsWidget() {
       <div className="flex items-center justify-between mb-3">
         <h3 className="font-semibold">System Metrics</h3>
         <div className="flex gap-1">
-          <button
-            className={`btn btn-xs ${showHistory ? 'btn-primary' : 'btn-ghost'}`}
-            onClick={handleToggle}
-          >
+          <button className={`btn btn-xs ${showHistory ? 'btn-primary' : 'btn-ghost'}`} onClick={handleToggle}>
             History
           </button>
           <button
             className="btn btn-xs btn-ghost"
-            onClick={() => { void loadMetrics(); if (showHistory) void loadMetricsHistory() }}
+            onClick={() => {
+              void loadMetrics()
+              if (showHistory) void loadMetricsHistory()
+            }}
           >
             Refresh
           </button>
@@ -150,7 +152,9 @@ export function MetricsWidget() {
                       <td className="text-right font-mono">{stats.requests ?? 0}</td>
                       <td className="text-right font-mono">{(stats.tokens ?? 0).toLocaleString()}</td>
                       <td className="text-right font-mono">{(stats.avg_latency_ms ?? 0).toFixed(0)}ms</td>
-                      <td className="text-right font-mono">{(stats.errors ?? 0) > 0 ? <span className="text-error">{stats.errors}</span> : '0'}</td>
+                      <td className="text-right font-mono">
+                        {(stats.errors ?? 0) > 0 ? <span className="text-error">{stats.errors}</span> : '0'}
+                      </td>
                     </tr>
                   ))}
               </tbody>

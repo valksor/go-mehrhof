@@ -67,10 +67,7 @@ describe('FileChangesPanel', () => {
   })
 
   it('renders section headers for file groups', () => {
-    mockProjectState.fileChanges = [
-      makeChange('src/new.ts', 'added'),
-      makeChange('src/edit.ts', 'modified'),
-    ]
+    mockProjectState.fileChanges = [makeChange('src/new.ts', 'added'), makeChange('src/edit.ts', 'modified')]
     const { getByText } = render(<FileChangesPanel />)
     expect(getByText('Added')).toBeInTheDocument()
     expect(getByText('Modified')).toBeInTheDocument()
@@ -87,11 +84,13 @@ describe('FileChangesPanel', () => {
     mockProjectState.fileChanges = [makeChange('src/main.ts', 'modified')]
     const { getByText } = render(<FileChangesPanel />)
     getByText('main.ts').closest('button')?.click()
-    expect(mockOpenTab).toHaveBeenCalledWith(expect.objectContaining({
-      id: 'diff-src/main.ts',
-      type: 'diff',
-      title: 'main.ts',
-    }))
+    expect(mockOpenTab).toHaveBeenCalledWith(
+      expect.objectContaining({
+        id: 'diff-src/main.ts',
+        type: 'diff',
+        title: 'main.ts',
+      }),
+    )
   })
 
   it('has a Diff stat button', () => {

@@ -29,19 +29,29 @@ function OutcomeBadges({ outcome }: { outcome?: DocumentOutcome }) {
   return (
     <div className="flex items-center gap-1 flex-wrap">
       {outcome.success === true && (
-        <span className="badge badge-xs badge-success" title="Task succeeded">pass</span>
+        <span className="badge badge-xs badge-success" title="Task succeeded">
+          pass
+        </span>
       )}
       {outcome.success === false && (
-        <span className="badge badge-xs badge-error" title="Task failed">fail</span>
+        <span className="badge badge-xs badge-error" title="Task failed">
+          fail
+        </span>
       )}
       {outcome.pr_merged && (
-        <span className="badge badge-xs badge-info" title="PR was merged">merged</span>
+        <span className="badge badge-xs badge-info" title="PR was merged">
+          merged
+        </span>
       )}
       {outcome.ci_passed_first_try && (
-        <span className="badge badge-xs badge-success badge-outline" title="CI passed on first try">CI ok</span>
+        <span className="badge badge-xs badge-success badge-outline" title="CI passed on first try">
+          CI ok
+        </span>
       )}
       {outcome.human_changes_needed && (
-        <span className="badge badge-xs badge-warning" title="Required human changes">human edit</span>
+        <span className="badge badge-xs badge-warning" title="Required human changes">
+          human edit
+        </span>
       )}
     </div>
   )
@@ -115,7 +125,7 @@ export function MemoryPanel({ isOpen, onClose }: MemoryPanelProps) {
       return new Date(dateStr).toLocaleDateString(undefined, {
         month: 'short',
         day: 'numeric',
-        year: 'numeric'
+        year: 'numeric',
       })
     } catch {
       return dateStr
@@ -155,7 +165,12 @@ export function MemoryPanel({ isOpen, onClose }: MemoryPanelProps) {
             onBlur={() => setClearConfirm(false)}
           >
             <svg aria-hidden="true" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+              />
             </svg>
             {clearConfirm ? 'Confirm Clear' : 'Clear Memory'}
           </button>
@@ -166,22 +181,23 @@ export function MemoryPanel({ isOpen, onClose }: MemoryPanelProps) {
           <input
             type="text"
             value={query}
-            onChange={e => setQuery(e.target.value)}
+            onChange={(e) => setQuery(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="Search memory..."
             aria-label="Search memory"
             className="input input-bordered flex-1"
           />
-          <button
-            onClick={handleSearch}
-            disabled={loading || !query.trim()}
-            className="btn btn-primary"
-          >
+          <button onClick={handleSearch} disabled={loading || !query.trim()} className="btn btn-primary">
             {loading ? (
               <span className="loading loading-spinner loading-sm"></span>
             ) : (
               <svg aria-hidden="true" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                />
               </svg>
             )}
             Search
@@ -192,7 +208,12 @@ export function MemoryPanel({ isOpen, onClose }: MemoryPanelProps) {
         {error && (
           <div className="alert alert-error py-2 mb-4">
             <svg aria-hidden="true" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
             </svg>
             <span className="text-sm">{error}</span>
           </div>
@@ -202,8 +223,19 @@ export function MemoryPanel({ isOpen, onClose }: MemoryPanelProps) {
         <div className="flex-1 overflow-y-auto">
           {!searched ? (
             <div className="text-center py-12 text-base-content/50">
-              <svg aria-hidden="true" className="w-12 h-12 mx-auto mb-3 opacity-30" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+              <svg
+                aria-hidden="true"
+                className="w-12 h-12 mx-auto mb-3 opacity-30"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={1.5}
+                  d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"
+                />
               </svg>
               <p>Enter a search query to explore agent memory</p>
               <p className="text-xs mt-2 text-base-content/40">Memory is populated when tasks complete</p>
@@ -214,14 +246,27 @@ export function MemoryPanel({ isOpen, onClose }: MemoryPanelProps) {
             </div>
           ) : results.length === 0 ? (
             <div className="text-center py-12 text-base-content/50">
-              <svg aria-hidden="true" className="w-10 h-10 mx-auto mb-3 opacity-30" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              <svg
+                aria-hidden="true"
+                className="w-10 h-10 mx-auto mb-3 opacity-30"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={1.5}
+                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                />
               </svg>
               <p>No results found for "{query}"</p>
             </div>
           ) : (
             <div className="space-y-3">
-              <p className="text-xs text-base-content/50">{results.length} result{results.length !== 1 ? 's' : ''} found</p>
+              <p className="text-xs text-base-content/50">
+                {results.length} result{results.length !== 1 ? 's' : ''} found
+              </p>
               {results.map((r) => (
                 <div key={r.id} className="p-4 rounded-lg bg-base-200 border border-base-300">
                   <div className="flex items-center justify-between gap-2 mb-2">
@@ -230,18 +275,14 @@ export function MemoryPanel({ isOpen, onClose }: MemoryPanelProps) {
                         {TYPE_LABELS[r.type] || r.type}
                       </span>
                       {r.task_id && (
-                        <span className="text-xs text-base-content/50 font-mono">
-                          task: {r.task_id.slice(0, 8)}
-                        </span>
+                        <span className="text-xs text-base-content/50 font-mono">task: {r.task_id.slice(0, 8)}</span>
                       )}
                       <OutcomeBadges outcome={r.outcome} />
                     </div>
                     <div className="flex items-center gap-2 flex-shrink-0">
                       <span
                         className={`text-xs font-semibold ${
-                          r.score >= 0.8 ? 'text-success' :
-                          r.score >= 0.5 ? 'text-warning' :
-                          'text-base-content/50'
+                          r.score >= 0.8 ? 'text-success' : r.score >= 0.5 ? 'text-warning' : 'text-base-content/50'
                         }`}
                         title="Relevance score"
                       >

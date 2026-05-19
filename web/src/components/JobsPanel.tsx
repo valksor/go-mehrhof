@@ -26,7 +26,7 @@ export function JobsPanel() {
       setLoadingId(job.id)
       const detail = await loadJob(job.id)
       if (detail) {
-        setJobDetail(prev => ({ ...prev, [job.id]: detail }))
+        setJobDetail((prev) => ({ ...prev, [job.id]: detail }))
       }
       setLoadingId(null)
     }
@@ -38,7 +38,7 @@ export function JobsPanel() {
         month: 'short',
         day: 'numeric',
         hour: '2-digit',
-        minute: '2-digit'
+        minute: '2-digit',
       })
     } catch {
       return dateStr
@@ -47,25 +47,35 @@ export function JobsPanel() {
 
   const statusBadgeClass = (status: string) => {
     switch (status) {
-      case 'completed': return 'badge-success'
+      case 'completed':
+        return 'badge-success'
       case 'running':
-      case 'in_progress': return 'badge-warning'
-      case 'failed': return 'badge-error'
+      case 'in_progress':
+        return 'badge-warning'
+      case 'failed':
+        return 'badge-error'
       case 'queued':
-      case 'pending': return 'badge-info'
-      default: return 'badge-ghost'
+      case 'pending':
+        return 'badge-info'
+      default:
+        return 'badge-ghost'
     }
   }
 
   const statusDotClass = (status: string) => {
     switch (status) {
-      case 'completed': return 'bg-success'
+      case 'completed':
+        return 'bg-success'
       case 'running':
-      case 'in_progress': return 'bg-warning animate-pulse'
-      case 'failed': return 'bg-error'
+      case 'in_progress':
+        return 'bg-warning animate-pulse'
+      case 'failed':
+        return 'bg-error'
       case 'queued':
-      case 'pending': return 'bg-info'
-      default: return 'bg-base-content/30'
+      case 'pending':
+        return 'bg-info'
+      default:
+        return 'bg-base-content/30'
     }
   }
 
@@ -86,17 +96,16 @@ export function JobsPanel() {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h16M4 18h16" />
           </svg>
           Jobs
-          {jobs.length > 0 && (
-            <span className="badge badge-sm badge-ghost">{jobs.length}</span>
-          )}
+          {jobs.length > 0 && <span className="badge badge-sm badge-ghost">{jobs.length}</span>}
         </h3>
-        <button
-          onClick={loadJobs}
-          className="btn btn-ghost btn-xs btn-square"
-          title="Refresh jobs"
-        >
+        <button onClick={loadJobs} className="btn btn-ghost btn-xs btn-square" title="Refresh jobs">
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+            />
           </svg>
         </button>
       </div>
@@ -104,7 +113,11 @@ export function JobsPanel() {
       {/* Job list */}
       <div className="flex-1 overflow-auto p-3">
         {jobs.length === 0 ? (
-          <EmptyState title="No jobs found" description="Jobs will appear here when tasks are planned or implemented" icon="📝" />
+          <EmptyState
+            title="No jobs found"
+            description="Jobs will appear here when tasks are planned or implemented"
+            icon="📝"
+          />
         ) : (
           <div className="space-y-1.5">
             {jobs.map((job) => {
@@ -113,10 +126,7 @@ export function JobsPanel() {
               const detail = jobDetail[job.id]
 
               return (
-                <div
-                  key={job.id}
-                  className="rounded-lg bg-base-200 border border-transparent overflow-hidden"
-                >
+                <div key={job.id} className="rounded-lg bg-base-200 border border-transparent overflow-hidden">
                   {/* Row — click to expand */}
                   <button
                     className="w-full px-3 py-2.5 text-left hover:bg-base-300/50 transition-colors"
@@ -130,9 +140,7 @@ export function JobsPanel() {
                           <span className="font-mono text-xs text-base-content/70 truncate">
                             {job.id.slice(0, 12)}...
                           </span>
-                          <span className={`badge badge-xs ${statusBadgeClass(job.status)}`}>
-                            {job.status}
-                          </span>
+                          <span className={`badge badge-xs ${statusBadgeClass(job.status)}`}>{job.status}</span>
                         </div>
                         <div className="flex items-center gap-3 text-xs text-base-content/50">
                           <span className="capitalize">{job.type}</span>
@@ -180,7 +188,9 @@ export function JobsPanel() {
                             </div>
                             {detail.updated_at && (
                               <div>
-                                <span className="text-base-content/50 uppercase tracking-wide font-semibold">Updated</span>
+                                <span className="text-base-content/50 uppercase tracking-wide font-semibold">
+                                  Updated
+                                </span>
                                 <p className="text-base-content/80">{formatDate(detail.updated_at)}</p>
                               </div>
                             )}
@@ -188,14 +198,18 @@ export function JobsPanel() {
 
                           {detail.worktree_id && (
                             <div>
-                              <span className="text-base-content/50 uppercase tracking-wide font-semibold">Worktree</span>
+                              <span className="text-base-content/50 uppercase tracking-wide font-semibold">
+                                Worktree
+                              </span>
                               <p className="font-mono text-base-content/80 break-all">{detail.worktree_id}</p>
                             </div>
                           )}
 
                           {detail.error && (
                             <div>
-                              <span className="text-base-content/50 uppercase tracking-wide font-semibold text-error">Error</span>
+                              <span className="text-base-content/50 uppercase tracking-wide font-semibold text-error">
+                                Error
+                              </span>
                               <p className="text-error/80 whitespace-pre-wrap">{detail.error}</p>
                             </div>
                           )}

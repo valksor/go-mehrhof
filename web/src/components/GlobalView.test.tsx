@@ -57,17 +57,93 @@ vi.mock('./WorkersWidget', () => ({ WorkersWidget: () => null }))
 vi.mock('./Onboarding', () => ({ Onboarding: () => null }))
 
 // Mock lazy-loaded panel components
-vi.mock('./Settings', () => ({ Settings: ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) => isOpen ? <div data-testid="settings-panel"><button onClick={onClose}>Close</button></div> : null }))
-vi.mock('./MemoryPanel', () => ({ MemoryPanel: ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) => isOpen ? <div data-testid="memory-panel"><button onClick={onClose}>Close</button></div> : null }))
-vi.mock('./DiagnosePanel', () => ({ DiagnosePanel: ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) => isOpen ? <div data-testid="diagnose-panel"><button onClick={onClose}>Close</button></div> : null }))
-vi.mock('./RecordingsPanel', () => ({ RecordingsPanel: ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) => isOpen ? <div data-testid="recordings-panel"><button onClick={onClose}>Close</button></div> : null }))
-vi.mock('./BackupPanel', () => ({ BackupPanel: ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) => isOpen ? <div data-testid="backup-panel"><button onClick={onClose}>Close</button></div> : null }))
-vi.mock('./ActivityPanel', () => ({ ActivityPanel: ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) => isOpen ? <div data-testid="activity-panel"><button onClick={onClose}>Close</button></div> : null }))
-vi.mock('./SecurityPanel', () => ({ SecurityPanel: ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) => isOpen ? <div data-testid="security-panel"><button onClick={onClose}>Close</button></div> : null }))
-vi.mock('./CatalogPanel', () => ({ CatalogPanel: ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) => isOpen ? <div data-testid="catalog-panel"><button onClick={onClose}>Close</button></div> : null }))
-vi.mock('./ReportPanel', () => ({ ReportPanel: ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) => isOpen ? <div data-testid="report-panel"><button onClick={onClose}>Close</button></div> : null }))
-vi.mock('./ExportPanel', () => ({ ExportPanel: ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) => isOpen ? <div data-testid="export-panel"><button onClick={onClose}>Close</button></div> : null }))
-vi.mock('./TaskGroupPanel', () => ({ TaskGroupPanel: ({ onClose }: { onClose: () => void }) => <div data-testid="taskgroup-panel"><button onClick={onClose}>Close</button></div> }))
+vi.mock('./Settings', () => ({
+  Settings: ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) =>
+    isOpen ? (
+      <div data-testid="settings-panel">
+        <button onClick={onClose}>Close</button>
+      </div>
+    ) : null,
+}))
+vi.mock('./MemoryPanel', () => ({
+  MemoryPanel: ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) =>
+    isOpen ? (
+      <div data-testid="memory-panel">
+        <button onClick={onClose}>Close</button>
+      </div>
+    ) : null,
+}))
+vi.mock('./DiagnosePanel', () => ({
+  DiagnosePanel: ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) =>
+    isOpen ? (
+      <div data-testid="diagnose-panel">
+        <button onClick={onClose}>Close</button>
+      </div>
+    ) : null,
+}))
+vi.mock('./RecordingsPanel', () => ({
+  RecordingsPanel: ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) =>
+    isOpen ? (
+      <div data-testid="recordings-panel">
+        <button onClick={onClose}>Close</button>
+      </div>
+    ) : null,
+}))
+vi.mock('./BackupPanel', () => ({
+  BackupPanel: ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) =>
+    isOpen ? (
+      <div data-testid="backup-panel">
+        <button onClick={onClose}>Close</button>
+      </div>
+    ) : null,
+}))
+vi.mock('./ActivityPanel', () => ({
+  ActivityPanel: ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) =>
+    isOpen ? (
+      <div data-testid="activity-panel">
+        <button onClick={onClose}>Close</button>
+      </div>
+    ) : null,
+}))
+vi.mock('./SecurityPanel', () => ({
+  SecurityPanel: ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) =>
+    isOpen ? (
+      <div data-testid="security-panel">
+        <button onClick={onClose}>Close</button>
+      </div>
+    ) : null,
+}))
+vi.mock('./CatalogPanel', () => ({
+  CatalogPanel: ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) =>
+    isOpen ? (
+      <div data-testid="catalog-panel">
+        <button onClick={onClose}>Close</button>
+      </div>
+    ) : null,
+}))
+vi.mock('./ReportPanel', () => ({
+  ReportPanel: ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) =>
+    isOpen ? (
+      <div data-testid="report-panel">
+        <button onClick={onClose}>Close</button>
+      </div>
+    ) : null,
+}))
+vi.mock('./ExportPanel', () => ({
+  ExportPanel: ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) =>
+    isOpen ? (
+      <div data-testid="export-panel">
+        <button onClick={onClose}>Close</button>
+      </div>
+    ) : null,
+}))
+vi.mock('./TaskGroupPanel', () => ({
+  TaskGroupPanel: ({ onClose }: { onClose: () => void }) => (
+    <div data-testid="taskgroup-panel">
+      <button onClick={onClose}>Close</button>
+    </div>
+  ),
+}))
 
 describe('GlobalView', () => {
   beforeEach(() => {
@@ -177,9 +253,7 @@ describe('GlobalView', () => {
 
   // --- taskByPath useMemo ---
   it('shows task title on project card when activeTasks has a matching task', () => {
-    mockGlobalState.projects = [
-      { id: 'p1', path: '/home/user/alpha', state: 'implementing' },
-    ]
+    mockGlobalState.projects = [{ id: 'p1', path: '/home/user/alpha', state: 'implementing' }]
     mockGlobalState.activeTasks = [
       { path: '/home/user/alpha', state: 'implementing', task_title: 'Build feature X', source: 'github#42' },
     ]
@@ -189,23 +263,15 @@ describe('GlobalView', () => {
   })
 
   it('shows "No active task" when task state is "none"', () => {
-    mockGlobalState.projects = [
-      { id: 'p1', path: '/home/user/alpha', state: 'none' },
-    ]
-    mockGlobalState.activeTasks = [
-      { path: '/home/user/alpha', state: 'none', task_title: 'Should not show' },
-    ]
+    mockGlobalState.projects = [{ id: 'p1', path: '/home/user/alpha', state: 'none' }]
+    mockGlobalState.activeTasks = [{ path: '/home/user/alpha', state: 'none', task_title: 'Should not show' }]
     const { getByText } = render(<GlobalView />)
     expect(getByText('No active task')).toBeInTheDocument()
   })
 
   it('shows "No active task" when task state is "submitted"', () => {
-    mockGlobalState.projects = [
-      { id: 'p1', path: '/home/user/alpha', state: 'submitted' },
-    ]
-    mockGlobalState.activeTasks = [
-      { path: '/home/user/alpha', state: 'submitted', task_title: 'PR sent' },
-    ]
+    mockGlobalState.projects = [{ id: 'p1', path: '/home/user/alpha', state: 'submitted' }]
+    mockGlobalState.activeTasks = [{ path: '/home/user/alpha', state: 'submitted', task_title: 'PR sent' }]
     const { getByText } = render(<GlobalView />)
     expect(getByText('No active task')).toBeInTheDocument()
   })
@@ -257,12 +323,8 @@ describe('GlobalView', () => {
     window.confirm = vi.fn(() => true)
     window.alert = vi.fn()
     mockBatchAction.mockResolvedValue({ succeeded: 3, total: 5 })
-    mockGlobalState.activeTasks = [
-      { path: '/home/user/alpha', state: 'implementing' },
-    ]
-    mockGlobalState.projects = [
-      { id: 'p1', path: '/home/user/alpha', state: 'implementing' },
-    ]
+    mockGlobalState.activeTasks = [{ path: '/home/user/alpha', state: 'implementing' }]
+    mockGlobalState.projects = [{ id: 'p1', path: '/home/user/alpha', state: 'implementing' }]
     const { getByText } = render(<GlobalView />)
     // Open the batch dropdown and click "plan"
     await act(async () => {
@@ -275,12 +337,8 @@ describe('GlobalView', () => {
 
   it('does not run batch action when confirm is cancelled', async () => {
     window.confirm = vi.fn(() => false)
-    mockGlobalState.activeTasks = [
-      { path: '/home/user/alpha', state: 'implementing' },
-    ]
-    mockGlobalState.projects = [
-      { id: 'p1', path: '/home/user/alpha', state: 'implementing' },
-    ]
+    mockGlobalState.activeTasks = [{ path: '/home/user/alpha', state: 'implementing' }]
+    mockGlobalState.projects = [{ id: 'p1', path: '/home/user/alpha', state: 'implementing' }]
     const { getByText } = render(<GlobalView />)
     await act(async () => {
       fireEvent.click(getByText('plan'))
@@ -293,12 +351,8 @@ describe('GlobalView', () => {
     window.confirm = vi.fn(() => true)
     window.alert = vi.fn()
     mockBatchAction.mockRejectedValue(new Error('Network error'))
-    mockGlobalState.activeTasks = [
-      { path: '/home/user/alpha', state: 'implementing' },
-    ]
-    mockGlobalState.projects = [
-      { id: 'p1', path: '/home/user/alpha', state: 'implementing' },
-    ]
+    mockGlobalState.activeTasks = [{ path: '/home/user/alpha', state: 'implementing' }]
+    mockGlobalState.projects = [{ id: 'p1', path: '/home/user/alpha', state: 'implementing' }]
     const { getByText } = render(<GlobalView />)
     await act(async () => {
       fireEvent.click(getByText('implement'))
@@ -350,9 +404,7 @@ describe('GlobalView', () => {
   // --- handleRemoveProject ---
   it('removes project when confirmed', async () => {
     window.confirm = vi.fn(() => true)
-    mockGlobalState.projects = [
-      { id: 'p1', path: '/home/user/alpha' },
-    ]
+    mockGlobalState.projects = [{ id: 'p1', path: '/home/user/alpha' }]
     const { getByLabelText } = render(<GlobalView />)
     await act(async () => {
       fireEvent.click(getByLabelText('Remove alpha'))
@@ -363,9 +415,7 @@ describe('GlobalView', () => {
 
   it('does not remove project when confirm is cancelled', async () => {
     window.confirm = vi.fn(() => false)
-    mockGlobalState.projects = [
-      { id: 'p1', path: '/home/user/alpha' },
-    ]
+    mockGlobalState.projects = [{ id: 'p1', path: '/home/user/alpha' }]
     const { getByLabelText } = render(<GlobalView />)
     await act(async () => {
       fireEvent.click(getByLabelText('Remove alpha'))
@@ -375,20 +425,14 @@ describe('GlobalView', () => {
 
   // --- hasActiveProjects ---
   it('shows batch actions dropdown when there are active tasks', () => {
-    mockGlobalState.activeTasks = [
-      { path: '/home/user/alpha', state: 'implementing' },
-    ]
-    mockGlobalState.projects = [
-      { id: 'p1', path: '/home/user/alpha', state: 'implementing' },
-    ]
+    mockGlobalState.activeTasks = [{ path: '/home/user/alpha', state: 'implementing' }]
+    mockGlobalState.projects = [{ id: 'p1', path: '/home/user/alpha', state: 'implementing' }]
     const { getByLabelText } = render(<GlobalView />)
     expect(getByLabelText('Batch Actions')).toBeInTheDocument()
   })
 
   it('hides batch actions dropdown when no active tasks', () => {
-    mockGlobalState.activeTasks = [
-      { path: '/home/user/alpha', state: 'none' },
-    ]
+    mockGlobalState.activeTasks = [{ path: '/home/user/alpha', state: 'none' }]
     const { queryByLabelText } = render(<GlobalView />)
     expect(queryByLabelText('Batch Actions')).not.toBeInTheDocument()
   })
@@ -648,9 +692,7 @@ describe('GlobalView', () => {
 
   // --- selectProject ---
   it('calls selectProject when a project card is clicked', () => {
-    mockGlobalState.projects = [
-      { id: 'p1', path: '/home/user/alpha' },
-    ]
+    mockGlobalState.projects = [{ id: 'p1', path: '/home/user/alpha' }]
     const { getByText } = render(<GlobalView />)
     fireEvent.click(getByText('alpha'))
     expect(mockSelectProject).toHaveBeenCalledWith({ id: 'p1', path: '/home/user/alpha' })
@@ -658,9 +700,7 @@ describe('GlobalView', () => {
 
   // --- queue_count display ---
   it('shows queued count when task has queue_count', () => {
-    mockGlobalState.projects = [
-      { id: 'p1', path: '/home/user/alpha', state: 'implementing' },
-    ]
+    mockGlobalState.projects = [{ id: 'p1', path: '/home/user/alpha', state: 'implementing' }]
     mockGlobalState.activeTasks = [
       { path: '/home/user/alpha', state: 'implementing', task_title: 'Task', queue_count: 3 },
     ]
@@ -693,12 +733,8 @@ describe('GlobalView', () => {
     window.confirm = vi.fn(() => true)
     window.alert = vi.fn()
     mockBatchAction.mockResolvedValue({ succeeded: 1, total: 1 })
-    mockGlobalState.activeTasks = [
-      { path: '/home/user/alpha', state: 'planned' },
-    ]
-    mockGlobalState.projects = [
-      { id: 'p1', path: '/home/user/alpha', state: 'planned' },
-    ]
+    mockGlobalState.activeTasks = [{ path: '/home/user/alpha', state: 'planned' }]
+    mockGlobalState.projects = [{ id: 'p1', path: '/home/user/alpha', state: 'planned' }]
     const { getByLabelText, getByText } = render(<GlobalView />)
     // Set state filter
     fireEvent.change(getByLabelText('Filter by state'), { target: { value: 'planned' } })

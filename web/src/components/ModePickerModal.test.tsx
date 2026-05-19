@@ -11,10 +11,7 @@ vi.mock('../stores/viewModeStore', () => {
     setIsFirstVisit: (...args: unknown[]) => mockSetIsFirstVisit(...args),
   }
   return {
-    useViewModeStore: Object.assign(
-      () => store,
-      { getState: () => store },
-    ),
+    useViewModeStore: Object.assign(() => store, { getState: () => store }),
   }
 })
 

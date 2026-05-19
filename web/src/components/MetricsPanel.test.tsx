@@ -48,17 +48,13 @@ describe('MetricsPanel', () => {
   })
 
   it('does not render when closed', () => {
-    const { queryByRole } = render(
-      <MetricsPanel isOpen={false} onClose={vi.fn()} />,
-    )
+    const { queryByRole } = render(<MetricsPanel isOpen={false} onClose={vi.fn()} />)
     expect(queryByRole('dialog')).not.toBeInTheDocument()
   })
 
   it('renders modal with title when open', async () => {
     mockCall.mockResolvedValueOnce(fullMetrics)
-    const { getByText } = render(
-      <MetricsPanel isOpen={true} onClose={vi.fn()} />,
-    )
+    const { getByText } = render(<MetricsPanel isOpen={true} onClose={vi.fn()} />)
     expect(getByText('Metrics')).toBeInTheDocument()
     await waitFor(() => {
       expect(mockCall).toHaveBeenCalledWith('metrics', {})
@@ -67,25 +63,19 @@ describe('MetricsPanel', () => {
 
   it('shows loading spinner while fetching', () => {
     mockCall.mockReturnValue(new Promise(() => {}))
-    const { container } = render(
-      <MetricsPanel isOpen={true} onClose={vi.fn()} />,
-    )
+    const { container } = render(<MetricsPanel isOpen={true} onClose={vi.fn()} />)
     expect(container.querySelector('.loading-spinner')).toBeInTheDocument()
   })
 
   it('shows empty state when no metrics', async () => {
     mockCall.mockResolvedValueOnce(null)
-    const { findByText } = render(
-      <MetricsPanel isOpen={true} onClose={vi.fn()} />,
-    )
+    const { findByText } = render(<MetricsPanel isOpen={true} onClose={vi.fn()} />)
     expect(await findByText('No metrics available')).toBeInTheDocument()
   })
 
   it('shows job stats', async () => {
     mockCall.mockResolvedValueOnce(fullMetrics)
-    const { findByText } = render(
-      <MetricsPanel isOpen={true} onClose={vi.fn()} />,
-    )
+    const { findByText } = render(<MetricsPanel isOpen={true} onClose={vi.fn()} />)
     expect(await findByText('20')).toBeInTheDocument()
     expect(await findByText('9')).toBeInTheDocument()
     expect(await findByText('1')).toBeInTheDocument()
@@ -94,9 +84,7 @@ describe('MetricsPanel', () => {
 
   it('shows success rate', async () => {
     mockCall.mockResolvedValueOnce(fullMetrics)
-    const { findByText } = render(
-      <MetricsPanel isOpen={true} onClose={vi.fn()} />,
-    )
+    const { findByText } = render(<MetricsPanel isOpen={true} onClose={vi.fn()} />)
     expect(await findByText('90.0%')).toBeInTheDocument()
   })
 
@@ -107,17 +95,13 @@ describe('MetricsPanel', () => {
       jobs_failed: 0,
     }
     mockCall.mockResolvedValueOnce(zeroMetrics)
-    const { findByText } = render(
-      <MetricsPanel isOpen={true} onClose={vi.fn()} />,
-    )
+    const { findByText } = render(<MetricsPanel isOpen={true} onClose={vi.fn()} />)
     expect(await findByText('—')).toBeInTheDocument()
   })
 
   it('shows RPC stats', async () => {
     mockCall.mockResolvedValueOnce(fullMetrics)
-    const { findByText } = render(
-      <MetricsPanel isOpen={true} onClose={vi.fn()} />,
-    )
+    const { findByText } = render(<MetricsPanel isOpen={true} onClose={vi.fn()} />)
     expect(await findByText('500')).toBeInTheDocument()
     expect(await findByText('25')).toBeInTheDocument()
     expect(await findByText('12.3ms')).toBeInTheDocument()
@@ -126,17 +110,13 @@ describe('MetricsPanel', () => {
 
   it('shows error rate', async () => {
     mockCall.mockResolvedValueOnce(fullMetrics)
-    const { findByText } = render(
-      <MetricsPanel isOpen={true} onClose={vi.fn()} />,
-    )
+    const { findByText } = render(<MetricsPanel isOpen={true} onClose={vi.fn()} />)
     expect(await findByText('5.0% error rate')).toBeInTheDocument()
   })
 
   it('shows agent stats', async () => {
     mockCall.mockResolvedValueOnce(fullMetrics)
-    const { findByText, findAllByText } = render(
-      <MetricsPanel isOpen={true} onClose={vi.fn()} />,
-    )
+    const { findByText, findAllByText } = render(<MetricsPanel isOpen={true} onClose={vi.fn()} />)
     expect(await findByText('12,345')).toBeInTheDocument()
     expect(await findByText('35')).toBeInTheDocument()
     expect(await findByText('30 approved, 5 denied')).toBeInTheDocument()
@@ -147,9 +127,7 @@ describe('MetricsPanel', () => {
 
   it('shows per-agent breakdown table', async () => {
     mockCall.mockResolvedValueOnce(fullMetrics)
-    const { findByText } = render(
-      <MetricsPanel isOpen={true} onClose={vi.fn()} />,
-    )
+    const { findByText } = render(<MetricsPanel isOpen={true} onClose={vi.fn()} />)
     expect(await findByText('Per-Agent Breakdown')).toBeInTheDocument()
     expect(await findByText('claude')).toBeInTheDocument()
     expect(await findByText('codex')).toBeInTheDocument()
@@ -163,34 +141,26 @@ describe('MetricsPanel', () => {
     const noAgents = { ...fullMetrics }
     delete (noAgents as Record<string, unknown>).agents
     mockCall.mockResolvedValueOnce(noAgents)
-    const { findByText, queryByText } = render(
-      <MetricsPanel isOpen={true} onClose={vi.fn()} />,
-    )
+    const { findByText, queryByText } = render(<MetricsPanel isOpen={true} onClose={vi.fn()} />)
     await findByText('Jobs')
     expect(queryByText('Per-Agent Breakdown')).not.toBeInTheDocument()
   })
 
   it('shows error on RPC failure', async () => {
     mockCall.mockRejectedValueOnce(new Error('Connection lost'))
-    const { findByText } = render(
-      <MetricsPanel isOpen={true} onClose={vi.fn()} />,
-    )
+    const { findByText } = render(<MetricsPanel isOpen={true} onClose={vi.fn()} />)
     expect(await findByText('Connection lost')).toBeInTheDocument()
   })
 
   it('shows generic error for non-Error', async () => {
     mockCall.mockRejectedValueOnce('something went wrong')
-    const { findByText } = render(
-      <MetricsPanel isOpen={true} onClose={vi.fn()} />,
-    )
+    const { findByText } = render(<MetricsPanel isOpen={true} onClose={vi.fn()} />)
     expect(await findByText('Failed to load metrics')).toBeInTheDocument()
   })
 
   it('refresh button triggers reload', async () => {
     mockCall.mockResolvedValueOnce(fullMetrics)
-    const { getByLabelText } = render(
-      <MetricsPanel isOpen={true} onClose={vi.fn()} />,
-    )
+    const { getByLabelText } = render(<MetricsPanel isOpen={true} onClose={vi.fn()} />)
 
     await waitFor(() => {
       expect(mockCall).toHaveBeenCalledTimes(1)
@@ -217,9 +187,7 @@ describe('MetricsPanel', () => {
   it('calls onClose when close button clicked', async () => {
     mockCall.mockResolvedValueOnce(fullMetrics)
     const onClose = vi.fn()
-    const { getByLabelText, findByText } = render(
-      <MetricsPanel isOpen={true} onClose={onClose} />,
-    )
+    const { getByLabelText, findByText } = render(<MetricsPanel isOpen={true} onClose={onClose} />)
     await findByText('Jobs')
     getByLabelText('Close dialog').click()
     expect(onClose).toHaveBeenCalledOnce()
