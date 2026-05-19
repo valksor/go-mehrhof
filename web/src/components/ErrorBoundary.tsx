@@ -46,25 +46,17 @@ export class ErrorBoundary extends Component<Props, State> {
           </p>
           {import.meta.env.DEV && this.state.error && (
             <details className="text-left w-full max-w-lg">
-              <summary className="cursor-pointer text-sm text-base-content/40">
-                Stack trace
-              </summary>
+              <summary className="cursor-pointer text-sm text-base-content/40">Stack trace</summary>
               <pre className="text-xs bg-base-200 p-3 rounded mt-2 overflow-auto max-h-48">
                 {this.state.error.stack}
               </pre>
             </details>
           )}
           <div className="flex gap-2 justify-center mt-4">
-            <button
-              className="btn btn-sm btn-outline"
-              onClick={this.handleReset}
-            >
+            <button className="btn btn-sm btn-outline" onClick={this.handleReset}>
               Try again
             </button>
-            <button
-              className="btn btn-sm btn-primary"
-              onClick={this.handleReload}
-            >
+            <button className="btn btn-sm btn-primary" onClick={this.handleReload}>
               Reload Page
             </button>
           </div>

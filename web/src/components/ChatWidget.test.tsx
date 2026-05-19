@@ -25,8 +25,7 @@ vi.mock('../stores/globalStore', () => ({
 
 vi.mock('../stores/projectStore', () => ({
   useProjectStore: Object.assign(
-    (selector?: (s: Record<string, unknown>) => unknown) =>
-      selector ? selector(mockProjectState) : mockProjectState,
+    (selector?: (s: Record<string, unknown>) => unknown) => (selector ? selector(mockProjectState) : mockProjectState),
     { getState: () => mockProjectState },
   ),
 }))
@@ -294,43 +293,62 @@ describe('ChatWidget', () => {
   })
 
   it('renders subagent messages with started status', () => {
-    mockChatState.messages = [makeMessage({
-      role: 'subagent' as UIChatMessage['role'],
-      content: '',
-      subagent: { subagentId: 'sa-1', status: 'started', type: 'planner', description: 'Planning task' },
-    })]
+    mockChatState.messages = [
+      makeMessage({
+        role: 'subagent' as UIChatMessage['role'],
+        content: '',
+        subagent: { subagentId: 'sa-1', status: 'started', type: 'planner', description: 'Planning task' },
+      }),
+    ]
     const { getByText } = render(<ChatWidget />)
     expect(getByText('planner')).toBeInTheDocument()
   })
 
   it('renders subagent completed status with duration', () => {
-    mockChatState.messages = [makeMessage({
-      role: 'subagent' as UIChatMessage['role'],
-      content: '',
-      subagent: { subagentId: 'sa-2', status: 'completed', type: 'builder', description: 'Building code', duration: 3500 },
-    })]
+    mockChatState.messages = [
+      makeMessage({
+        role: 'subagent' as UIChatMessage['role'],
+        content: '',
+        subagent: {
+          subagentId: 'sa-2',
+          status: 'completed',
+          type: 'builder',
+          description: 'Building code',
+          duration: 3500,
+        },
+      }),
+    ]
     const { getByText } = render(<ChatWidget />)
     expect(getByText('builder')).toBeInTheDocument()
     expect(getByText('(3.5s)')).toBeInTheDocument()
   })
 
   it('renders permission message with danger styling', () => {
-    mockChatState.messages = [makeMessage({
-      role: 'permission' as UIChatMessage['role'],
-      content: '',
-      permission: { requestId: 'perm-1', tool: 'file_write', dangerLevel: 'dangerous', dangerReason: 'Writes to system files' },
-    })]
+    mockChatState.messages = [
+      makeMessage({
+        role: 'permission' as UIChatMessage['role'],
+        content: '',
+        permission: {
+          requestId: 'perm-1',
+          tool: 'file_write',
+          dangerLevel: 'dangerous',
+          dangerReason: 'Writes to system files',
+        },
+      }),
+    ]
     const { getByText } = render(<ChatWidget />)
     expect(getByText('Permission: file_write')).toBeInTheDocument()
     expect(getByText(/Writes to system files/)).toBeInTheDocument()
   })
 
   it('renders permission message with safe level', () => {
-    mockChatState.messages = [makeMessage({
-      role: 'permission' as UIChatMessage['role'],
-      content: '',
-      permission: { requestId: 'perm-2', tool: 'read_file', dangerLevel: 'safe', dangerReason: '' },
-    })]
+    mockChatState.messages = [
+      makeMessage({
+        role: 'permission' as UIChatMessage['role'],
+        content: '',
+        permission: { requestId: 'perm-2', tool: 'read_file', dangerLevel: 'safe', dangerReason: '' },
+      }),
+    ]
     const { getByText } = render(<ChatWidget />)
     expect(getByText('Permission: read_file')).toBeInTheDocument()
   })
@@ -342,14 +360,16 @@ describe('ChatWidget', () => {
   })
 
   it('renders action buttons on system messages', () => {
-    mockChatState.messages = [makeMessage({
-      role: 'system',
-      content: 'Approve changes?',
-      actions: [
-        { id: 'approve', label: 'Approve', type: 'approve' },
-        { id: 'reject', label: 'Reject', type: 'reject' },
-      ],
-    })]
+    mockChatState.messages = [
+      makeMessage({
+        role: 'system',
+        content: 'Approve changes?',
+        actions: [
+          { id: 'approve', label: 'Approve', type: 'approve' },
+          { id: 'reject', label: 'Reject', type: 'reject' },
+        ],
+      }),
+    ]
     const { getByText } = render(<ChatWidget />)
     expect(getByText('Approve')).toBeInTheDocument()
     expect(getByText('Reject')).toBeInTheDocument()
@@ -369,11 +389,13 @@ describe('ChatWidget', () => {
   })
 
   it('renders action buttons on assistant messages', () => {
-    mockChatState.messages = [makeMessage({
-      role: 'assistant',
-      content: 'Result',
-      actions: [{ id: 'retry', label: 'Retry', type: 'custom' }],
-    })]
+    mockChatState.messages = [
+      makeMessage({
+        role: 'assistant',
+        content: 'Result',
+        actions: [{ id: 'retry', label: 'Retry', type: 'custom' }],
+      }),
+    ]
     const { getByText } = render(<ChatWidget />)
     expect(getByText('Retry')).toBeInTheDocument()
   })
@@ -438,9 +460,7 @@ describe('ChatWidget', () => {
   })
 
   it('selects command on Tab key in autocomplete', () => {
-    mockGetAvailableCommands.mockReturnValue([
-      { name: '/plan', description: 'Plan', isAvailable: () => true },
-    ])
+    mockGetAvailableCommands.mockReturnValue([{ name: '/plan', description: 'Plan', isAvailable: () => true }])
     const { getByRole } = render(<ChatWidget />)
     const input = getByRole('combobox', { name: 'Message' }) as HTMLTextAreaElement
     fireEvent.change(input, { target: { value: '/p', selectionStart: 2 } })
@@ -458,7 +478,7 @@ describe('ChatWidget', () => {
     fireEvent.submit(input.closest('form')!)
     await vi.waitFor(() => {
       expect(mockAddMessage).toHaveBeenCalledWith(
-        expect.objectContaining({ content: expect.stringContaining('Unknown command') })
+        expect.objectContaining({ content: expect.stringContaining('Unknown command') }),
       )
     })
   })
@@ -487,13 +507,18 @@ describe('ChatWidget', () => {
     fireEvent.submit(input.closest('form')!)
     await vi.waitFor(() => {
       expect(mockAddMessage).toHaveBeenCalledWith(
-        expect.objectContaining({ content: expect.stringContaining('not available') })
+        expect.objectContaining({ content: expect.stringContaining('not available') }),
       )
     })
   })
 
   it('executes action command successfully', async () => {
-    const mockCmd = { name: '/plan', description: 'Plan', isAvailable: () => true, execute: vi.fn().mockResolvedValue('Plan created') }
+    const mockCmd = {
+      name: '/plan',
+      description: 'Plan',
+      isAvailable: () => true,
+      execute: vi.fn().mockResolvedValue('Plan created'),
+    }
     mockParseCommand.mockReturnValue({ type: 'action', command: mockCmd, args: '', input: '/plan' })
     const { getByRole } = render(<ChatWidget />)
     const input = getByRole('combobox', { name: 'Message' })
@@ -503,13 +528,18 @@ describe('ChatWidget', () => {
     await vi.waitFor(() => {
       expect(mockCmd.execute).toHaveBeenCalledWith('')
       expect(mockAddMessage).toHaveBeenCalledWith(
-        expect.objectContaining({ content: expect.stringContaining('Running /plan') })
+        expect.objectContaining({ content: expect.stringContaining('Running /plan') }),
       )
     })
   })
 
   it('shows error when action command fails', async () => {
-    const mockCmd = { name: '/plan', description: 'Plan', isAvailable: () => true, execute: vi.fn().mockRejectedValue(new Error('RPC failed')) }
+    const mockCmd = {
+      name: '/plan',
+      description: 'Plan',
+      isAvailable: () => true,
+      execute: vi.fn().mockRejectedValue(new Error('RPC failed')),
+    }
     mockParseCommand.mockReturnValue({ type: 'action', command: mockCmd, args: '', input: '/plan' })
     const { getByRole } = render(<ChatWidget />)
     const input = getByRole('combobox', { name: 'Message' })
@@ -518,7 +548,7 @@ describe('ChatWidget', () => {
     fireEvent.submit(input.closest('form')!)
     await vi.waitFor(() => {
       expect(mockAddMessage).toHaveBeenCalledWith(
-        expect.objectContaining({ content: expect.stringContaining('RPC failed'), status: 'error' })
+        expect.objectContaining({ content: expect.stringContaining('RPC failed'), status: 'error' }),
       )
     })
   })
@@ -533,7 +563,7 @@ describe('ChatWidget', () => {
     fireEvent.submit(input.closest('form')!)
     await vi.waitFor(() => {
       expect(mockAddMessage).toHaveBeenCalledWith(
-        expect.objectContaining({ content: expect.stringContaining('not available') })
+        expect.objectContaining({ content: expect.stringContaining('not available') }),
       )
     })
   })

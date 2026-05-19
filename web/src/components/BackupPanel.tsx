@@ -81,24 +81,27 @@ export function BackupPanel({ isOpen, onClose }: BackupPanelProps) {
     }
   }, [client, loadBackups])
 
-  const handleRestore = useCallback(async (archivePath: string) => {
-    if (!client) return
+  const handleRestore = useCallback(
+    async (archivePath: string) => {
+      if (!client) return
 
-    setRestoring(archivePath)
-    setError(null)
-    setRestoreResult(null)
+      setRestoring(archivePath)
+      setError(null)
+      setRestoreResult(null)
 
-    try {
-      const result = await client.call<RestoreResult>('backup.restore', {
-        archive_path: archivePath,
-      })
-      setRestoreResult(result)
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to restore backup')
-    } finally {
-      setRestoring(null)
-    }
-  }, [client])
+      try {
+        const result = await client.call<RestoreResult>('backup.restore', {
+          archive_path: archivePath,
+        })
+        setRestoreResult(result)
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to restore backup')
+      } finally {
+        setRestoring(null)
+      }
+    },
+    [client],
+  )
 
   const formatBytes = (bytes: number) => {
     if (bytes === 0) return '0 B'
@@ -127,19 +130,18 @@ export function BackupPanel({ isOpen, onClose }: BackupPanelProps) {
       <div className="max-h-[70vh] flex flex-col">
         {/* Create backup button */}
         <div className="flex items-center justify-between mb-4">
-          <p className="text-sm text-base-content/60">
-            Create and manage backups of kvelmo state
-          </p>
-          <button
-            onClick={handleCreate}
-            disabled={creating || !connected}
-            className="btn btn-primary btn-sm"
-          >
+          <p className="text-sm text-base-content/60">Create and manage backups of kvelmo state</p>
+          <button onClick={handleCreate} disabled={creating || !connected} className="btn btn-primary btn-sm">
             {creating ? (
               <span className="loading loading-spinner loading-sm"></span>
             ) : (
               <svg aria-hidden="true" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+                />
               </svg>
             )}
             Create Backup
@@ -155,7 +157,9 @@ export function BackupPanel({ isOpen, onClose }: BackupPanelProps) {
             <div className="text-sm">
               <p className="font-medium">Backup created successfully</p>
               <p className="text-xs opacity-80 font-mono mt-1">{lastResult.path}</p>
-              <p className="text-xs opacity-80">{formatBytes(lastResult.size)} ({lastResult.files} files)</p>
+              <p className="text-xs opacity-80">
+                {formatBytes(lastResult.size)} ({lastResult.files} files)
+              </p>
             </div>
           </div>
         )}
@@ -169,7 +173,10 @@ export function BackupPanel({ isOpen, onClose }: BackupPanelProps) {
             <div className="text-sm">
               <p className="font-medium">Backup restored successfully</p>
               <p className="text-xs opacity-80 font-mono mt-1">{restoreResult.target}</p>
-              <p className="text-xs opacity-80">{restoreResult.files} files, {restoreResult.dirs} directories{restoreResult.skipped > 0 ? `, ${restoreResult.skipped} skipped` : ''}</p>
+              <p className="text-xs opacity-80">
+                {restoreResult.files} files, {restoreResult.dirs} directories
+                {restoreResult.skipped > 0 ? `, ${restoreResult.skipped} skipped` : ''}
+              </p>
             </div>
           </div>
         )}
@@ -178,7 +185,12 @@ export function BackupPanel({ isOpen, onClose }: BackupPanelProps) {
         {error && (
           <div className="alert alert-error py-2 mb-4">
             <svg aria-hidden="true" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
             </svg>
             <span className="text-sm">{error}</span>
           </div>
@@ -193,8 +205,19 @@ export function BackupPanel({ isOpen, onClose }: BackupPanelProps) {
             </div>
           ) : backups.length === 0 ? (
             <div className="text-center py-8 text-base-content/50">
-              <svg aria-hidden="true" className="w-10 h-10 mx-auto mb-3 opacity-30" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z" />
+              <svg
+                aria-hidden="true"
+                className="w-10 h-10 mx-auto mb-3 opacity-30"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={1.5}
+                  d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z"
+                />
               </svg>
               <p>No backups found</p>
               <p className="text-xs mt-2 text-base-content/40">Click "Create Backup" to create your first backup</p>
@@ -217,8 +240,19 @@ export function BackupPanel({ isOpen, onClose }: BackupPanelProps) {
                         {restoring === b.path ? (
                           <span className="loading loading-spinner loading-xs"></span>
                         ) : (
-                          <svg aria-hidden="true" className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                          <svg
+                            aria-hidden="true"
+                            className="w-3 h-3"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+                            />
                           </svg>
                         )}
                         Restore

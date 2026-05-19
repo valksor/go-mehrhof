@@ -117,7 +117,12 @@ export function EventLogPanel({ isOpen, onClose }: EventLogPanelProps) {
               <span className="loading loading-spinner loading-xs" />
             ) : (
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                />
               </svg>
             )}
           </button>
@@ -139,21 +144,22 @@ export function EventLogPanel({ isOpen, onClose }: EventLogPanelProps) {
           ) : (
             <div className="space-y-1">
               {entries.map((entry, idx) => (
-                <div key={`${entry.timestamp}-${entry.type}-${idx}`} className="flex items-start gap-3 px-2 py-1.5 hover:bg-base-200 rounded">
+                <div
+                  key={`${entry.timestamp}-${entry.type}-${idx}`}
+                  className="flex items-start gap-3 px-2 py-1.5 hover:bg-base-200 rounded"
+                >
                   <span className="text-xs text-base-content/50 whitespace-nowrap font-mono mt-0.5">
                     {new Date(entry.timestamp).toLocaleTimeString()}
                   </span>
-                  <span className={`badge badge-xs ${EVENT_TYPE_COLORS[entry.type] || 'badge-ghost'} whitespace-nowrap mt-0.5`}>
+                  <span
+                    className={`badge badge-xs ${EVENT_TYPE_COLORS[entry.type] || 'badge-ghost'} whitespace-nowrap mt-0.5`}
+                  >
                     {entry.type.replace(/_/g, ' ')}
                   </span>
                   {entry.phase && (
-                    <span className="text-xs text-base-content/60 whitespace-nowrap mt-0.5">
-                      [{entry.phase}]
-                    </span>
+                    <span className="text-xs text-base-content/60 whitespace-nowrap mt-0.5">[{entry.phase}]</span>
                   )}
-                  <span className="text-sm flex-1 min-w-0 break-words">
-                    {entry.message || entry.type}
-                  </span>
+                  <span className="text-sm flex-1 min-w-0 break-words">{entry.message || entry.type}</span>
                 </div>
               ))}
             </div>

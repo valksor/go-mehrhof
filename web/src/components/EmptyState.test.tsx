@@ -9,9 +9,7 @@ describe('EmptyState', () => {
   })
 
   it('renders description when provided', () => {
-    const { getByText } = render(
-      <EmptyState title="No items" description="Try adding some" />,
-    )
+    const { getByText } = render(<EmptyState title="No items" description="Try adding some" />)
     expect(getByText('Try adding some')).toBeInTheDocument()
   })
 
@@ -22,9 +20,7 @@ describe('EmptyState', () => {
   })
 
   it('renders icon when provided', () => {
-    const { getByText } = render(
-      <EmptyState title="Empty" icon="📭" />,
-    )
+    const { getByText } = render(<EmptyState title="Empty" icon="📭" />)
     expect(getByText('📭')).toBeInTheDocument()
   })
 

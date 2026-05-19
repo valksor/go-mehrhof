@@ -21,27 +21,23 @@ function CodeBlock({ children, language, isUser }: { children: string; language?
   return (
     <div className="my-2 -mx-1 relative group">
       <div className="flex items-center justify-between mb-1">
-        {language && (
-          <span className="text-[10px] uppercase tracking-wide opacity-60">
-            {language}
-          </span>
-        )}
+        {language && <span className="text-[10px] uppercase tracking-wide opacity-60">{language}</span>}
         <button
           type="button"
           onClick={handleCopy}
           className={`text-[10px] px-1.5 py-0.5 rounded transition-opacity ${
-            isUser
-              ? 'bg-primary-content/20 hover:bg-primary-content/30'
-              : 'bg-base-300 hover:bg-base-content/20'
+            isUser ? 'bg-primary-content/20 hover:bg-primary-content/30' : 'bg-base-300 hover:bg-base-content/20'
           } opacity-0 group-hover:opacity-100 ${copied ? 'opacity-100' : ''} ml-auto`}
           aria-label="Copy code"
         >
           {copied ? 'Copied!' : 'Copy'}
         </button>
       </div>
-      <pre className={`p-2 rounded text-xs overflow-x-auto ${
-        isUser ? 'bg-primary-content/10' : 'bg-neutral text-neutral-content'
-      }`}>
+      <pre
+        className={`p-2 rounded text-xs overflow-x-auto ${
+          isUser ? 'bg-primary-content/10' : 'bg-neutral text-neutral-content'
+        }`}
+      >
         <code>{children}</code>
       </pre>
     </div>
@@ -92,9 +88,7 @@ export function ChatMessageContent({ content, isUser }: ChatMessageContentProps)
           )
         }
         // Render text segments through react-markdown
-        return (
-          <MarkdownSegment key={`md-${i}`} text={segment.value} isUser={isUser} />
-        )
+        return <MarkdownSegment key={`md-${i}`} text={segment.value} isUser={isUser} />
       })}
     </div>
   )
@@ -123,18 +117,12 @@ function MarkdownSegment({ text, isUser }: { text: string; isUser: boolean }) {
 
           // Check if this is a multi-line code block without a language
           if (codeString.includes('\n')) {
-            return (
-              <CodeBlock isUser={isUser}>
-                {codeString.trim()}
-              </CodeBlock>
-            )
+            return <CodeBlock isUser={isUser}>{codeString.trim()}</CodeBlock>
           }
 
           // Inline code
           return (
-            <code className={`px-1 rounded text-xs ${
-              isUser ? 'bg-primary-content/10' : 'bg-base-300'
-            }`}>
+            <code className={`px-1 rounded text-xs ${isUser ? 'bg-primary-content/10' : 'bg-base-300'}`}>
               {children}
             </code>
           )
@@ -183,9 +171,11 @@ function MarkdownSegment({ text, isUser }: { text: string; isUser: boolean }) {
         // Blockquote
         blockquote({ children }) {
           return (
-            <blockquote className={`border-l-2 pl-2 my-1 opacity-80 ${
-              isUser ? 'border-primary-content/40' : 'border-base-content/40'
-            }`}>
+            <blockquote
+              className={`border-l-2 pl-2 my-1 opacity-80 ${
+                isUser ? 'border-primary-content/40' : 'border-base-content/40'
+              }`}
+            >
               {children}
             </blockquote>
           )

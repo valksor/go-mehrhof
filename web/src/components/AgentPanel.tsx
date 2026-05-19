@@ -102,10 +102,14 @@ export function AgentPanel() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'available': return 'badge-success'
-      case 'working': return 'badge-warning'
-      case 'disconnected': return 'badge-error'
-      default: return 'badge-ghost'
+      case 'available':
+        return 'badge-success'
+      case 'working':
+        return 'badge-warning'
+      case 'disconnected':
+        return 'badge-error'
+      default:
+        return 'badge-ghost'
     }
   }
 
@@ -115,7 +119,12 @@ export function AgentPanel() {
       title="Agents"
       icon={
         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+          />
         </svg>
       }
     >
@@ -123,21 +132,13 @@ export function AgentPanel() {
         {/* Stats bar */}
         {stats && (
           <div className="flex gap-2 text-xs flex-wrap">
-            <span className="badge badge-sm badge-outline">
-              {stats.total_workers} workers
-            </span>
-            <span className="badge badge-sm badge-success badge-outline">
-              {stats.available_workers} available
-            </span>
+            <span className="badge badge-sm badge-outline">{stats.total_workers} workers</span>
+            <span className="badge badge-sm badge-success badge-outline">{stats.available_workers} available</span>
             {stats.working_workers > 0 && (
-              <span className="badge badge-sm badge-warning badge-outline">
-                {stats.working_workers} working
-              </span>
+              <span className="badge badge-sm badge-warning badge-outline">{stats.working_workers} working</span>
             )}
             {stats.queued_jobs > 0 && (
-              <span className="badge badge-sm badge-info badge-outline">
-                {stats.queued_jobs} queued
-              </span>
+              <span className="badge badge-sm badge-info badge-outline">{stats.queued_jobs} queued</span>
             )}
           </div>
         )}
@@ -145,9 +146,13 @@ export function AgentPanel() {
         {/* Available reasoning strategies (read-only, configured per-task via settings) */}
         {strategies.length > 0 && (
           <div className="flex gap-2 text-xs flex-wrap">
-            <span className="text-base-content/60" title="Agent reasoning strategies (configure via settings or CLI)">Strategies:</span>
-            {strategies.map(s => (
-              <span key={s} className="badge badge-sm badge-outline capitalize" title={`${s} strategy`}>{s}</span>
+            <span className="text-base-content/60" title="Agent reasoning strategies (configure via settings or CLI)">
+              Strategies:
+            </span>
+            {strategies.map((s) => (
+              <span key={s} className="badge badge-sm badge-outline capitalize" title={`${s} strategy`}>
+                {s}
+              </span>
             ))}
           </div>
         )}
@@ -171,25 +176,18 @@ export function AgentPanel() {
         {/* Worker list */}
         {workers.length > 0 && (
           <div className="space-y-2">
-            {workers.map(worker => (
-              <div
-                key={worker.id}
-                className="p-2 rounded-lg bg-base-100 border border-base-300 group"
-              >
+            {workers.map((worker) => (
+              <div key={worker.id} className="p-2 rounded-lg bg-base-100 border border-base-300 group">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <span className="text-lg">🤖</span>
                     <div>
                       <span className="font-mono text-sm">{worker.id}</span>
-                      <span className="text-xs text-base-content/60 ml-2 capitalize">
-                        {worker.agent_name}
-                      </span>
+                      <span className="text-xs text-base-content/60 ml-2 capitalize">{worker.agent_name}</span>
                     </div>
                   </div>
                   <div className="flex items-center gap-1">
-                    <span className={`badge badge-sm ${getStatusColor(worker.status)}`}>
-                      {worker.status}
-                    </span>
+                    <span className={`badge badge-sm ${getStatusColor(worker.status)}`}>{worker.status}</span>
                     {!worker.is_default && (
                       <button
                         onClick={() => handleRemoveWorker(worker.id)}
@@ -209,9 +207,7 @@ export function AgentPanel() {
                     Job: <code className="text-primary">{worker.current_job}</code>
                   </div>
                 )}
-                {worker.status === 'working' && (
-                  <progress className="progress progress-primary w-full h-1 mt-1" />
-                )}
+                {worker.status === 'working' && <progress className="progress progress-primary w-full h-1 mt-1" />}
               </div>
             ))}
           </div>
@@ -225,24 +221,17 @@ export function AgentPanel() {
               onChange={(e) => setNewAgent(e.target.value)}
               className="select select-sm select-bordered w-full"
             >
-              {AGENT_OPTIONS.map(agent => (
+              {AGENT_OPTIONS.map((agent) => (
                 <option key={agent.value} value={agent.value}>
                   {agent.label}
                 </option>
               ))}
             </select>
             <div className="flex gap-2">
-              <button
-                onClick={handleAddWorker}
-                className="btn btn-sm btn-primary flex-1"
-                disabled={!connected}
-              >
+              <button onClick={handleAddWorker} className="btn btn-sm btn-primary flex-1" disabled={!connected}>
                 Add
               </button>
-              <button
-                onClick={() => setShowAddForm(false)}
-                className="btn btn-sm btn-ghost"
-              >
+              <button onClick={() => setShowAddForm(false)} className="btn btn-sm btn-ghost">
                 Cancel
               </button>
             </div>

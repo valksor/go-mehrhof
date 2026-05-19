@@ -63,21 +63,24 @@ export function CatalogPanel({ isOpen, onClose }: CatalogPanelProps) {
     }
   }, [isOpen, connected, loadTemplates])
 
-  const handleSelectTemplate = useCallback(async (template: Template) => {
-    if (!client || !connected) return
+  const handleSelectTemplate = useCallback(
+    async (template: Template) => {
+      if (!client || !connected) return
 
-    setDetailLoading(true)
-    setView('detail')
+      setDetailLoading(true)
+      setView('detail')
 
-    try {
-      const result = await client.call<Template>('catalog.get', { name: template.name })
-      setSelectedTemplate(result)
-    } catch {
-      setSelectedTemplate(template)
-    } finally {
-      setDetailLoading(false)
-    }
-  }, [client, connected])
+      try {
+        const result = await client.call<Template>('catalog.get', { name: template.name })
+        setSelectedTemplate(result)
+      } catch {
+        setSelectedTemplate(template)
+      } finally {
+        setDetailLoading(false)
+      }
+    },
+    [client, connected],
+  )
 
   const handleBack = () => {
     setView('list')
@@ -126,7 +129,7 @@ export function CatalogPanel({ isOpen, onClose }: CatalogPanelProps) {
               <input
                 type="text"
                 value={importPath}
-                onChange={e => {
+                onChange={(e) => {
                   setImportPath(e.target.value)
                   setImportSuccess(false)
                   setImportError(null)
@@ -145,7 +148,12 @@ export function CatalogPanel({ isOpen, onClose }: CatalogPanelProps) {
                   <span className="loading loading-spinner loading-xs"></span>
                 ) : (
                   <svg aria-hidden="true" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"
+                    />
                   </svg>
                 )}
                 Import
@@ -172,15 +180,26 @@ export function CatalogPanel({ isOpen, onClose }: CatalogPanelProps) {
                 </div>
               ) : templates.length === 0 ? (
                 <div className="text-center py-12 text-base-content/50">
-                  <svg aria-hidden="true" className="w-10 h-10 mx-auto mb-3 opacity-30" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                  <svg
+                    aria-hidden="true"
+                    className="w-10 h-10 mx-auto mb-3 opacity-30"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={1.5}
+                      d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
+                    />
                   </svg>
                   <p>No templates available</p>
                   <p className="text-xs mt-2 text-base-content/40">Import a template file to get started</p>
                 </div>
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {templates.map(template => (
+                  {templates.map((template) => (
                     <button
                       key={template.name}
                       onClick={() => handleSelectTemplate(template)}
@@ -191,8 +210,10 @@ export function CatalogPanel({ isOpen, onClose }: CatalogPanelProps) {
                         <p className="text-xs text-base-content/60 line-clamp-2">{template.description}</p>
                         {template.tags.length > 0 && (
                           <div className="flex flex-wrap gap-1 mt-2">
-                            {template.tags.map(tag => (
-                              <span key={tag} className="badge badge-sm badge-ghost">{tag}</span>
+                            {template.tags.map((tag) => (
+                              <span key={tag} className="badge badge-sm badge-ghost">
+                                {tag}
+                              </span>
                             ))}
                           </div>
                         )}
@@ -239,8 +260,10 @@ export function CatalogPanel({ isOpen, onClose }: CatalogPanelProps) {
                   <div>
                     <div className="text-xs text-base-content/50 mb-2">Tags</div>
                     <div className="flex flex-wrap gap-1.5">
-                      {selectedTemplate.tags.map(tag => (
-                        <span key={tag} className="badge badge-sm badge-outline">{tag}</span>
+                      {selectedTemplate.tags.map((tag) => (
+                        <span key={tag} className="badge badge-sm badge-outline">
+                          {tag}
+                        </span>
                       ))}
                     </div>
                   </div>

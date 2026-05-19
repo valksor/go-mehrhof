@@ -18,7 +18,7 @@ describe('ErrorBoundary', () => {
     const { getByText } = render(
       <ErrorBoundary>
         <p>All good</p>
-      </ErrorBoundary>
+      </ErrorBoundary>,
     )
     expect(getByText('All good')).toBeInTheDocument()
   })
@@ -27,7 +27,7 @@ describe('ErrorBoundary', () => {
     const { getByText } = render(
       <ErrorBoundary>
         <ThrowingChild message="kaboom" />
-      </ErrorBoundary>
+      </ErrorBoundary>,
     )
     expect(getByText('Something went wrong')).toBeInTheDocument()
     expect(getByText('kaboom')).toBeInTheDocument()
@@ -37,7 +37,7 @@ describe('ErrorBoundary', () => {
     const { getByText, queryByText } = render(
       <ErrorBoundary fallback={<p>Custom fallback</p>}>
         <ThrowingChild message="kaboom" />
-      </ErrorBoundary>
+      </ErrorBoundary>,
     )
     expect(getByText('Custom fallback')).toBeInTheDocument()
     expect(queryByText('Something went wrong')).not.toBeInTheDocument()
@@ -48,7 +48,7 @@ describe('ErrorBoundary', () => {
     render(
       <ErrorBoundary onError={onError}>
         <ThrowingChild message="test error" />
-      </ErrorBoundary>
+      </ErrorBoundary>,
     )
     expect(onError).toHaveBeenCalledOnce()
     expect(onError.mock.calls[0][0]).toBeInstanceOf(Error)
@@ -59,7 +59,7 @@ describe('ErrorBoundary', () => {
     const { getByText } = render(
       <ErrorBoundary>
         <ThrowingChild message="err" />
-      </ErrorBoundary>
+      </ErrorBoundary>,
     )
     expect(getByText('Try again')).toBeInTheDocument()
     expect(getByText('Reload Page')).toBeInTheDocument()
@@ -69,7 +69,7 @@ describe('ErrorBoundary', () => {
     const { getByText } = render(
       <ErrorBoundary>
         <ThrowingChild message="err" />
-      </ErrorBoundary>
+      </ErrorBoundary>,
     )
     // Verify the Try again button exists and is a clickable button
     const btn = getByText('Try again')
@@ -89,7 +89,7 @@ describe('ErrorBoundary', () => {
     const { getByText } = render(
       <ErrorBoundary>
         <ThrowingChild message="err" />
-      </ErrorBoundary>
+      </ErrorBoundary>,
     )
     getByText('Reload Page').click()
     expect(reloadMock).toHaveBeenCalledOnce()
@@ -109,7 +109,7 @@ describe('ErrorBoundary', () => {
     const { getByText } = render(
       <ErrorBoundary>
         <ThrowNull />
-      </ErrorBoundary>
+      </ErrorBoundary>,
     )
     expect(getByText('An unexpected error occurred')).toBeInTheDocument()
   })

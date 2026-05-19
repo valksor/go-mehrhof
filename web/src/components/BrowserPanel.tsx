@@ -20,8 +20,10 @@ function ConsolePanel() {
     }
   }, [getConsole])
 
-  // eslint-disable-next-line react-hooks/set-state-in-effect -- load/poll idiom: setState lives in the async callback, not synchronous in the effect body
-  useEffect(() => { void refresh() }, [refresh])
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- load/poll idiom: setState lives in the async callback, not synchronous in the effect body
+    void refresh()
+  }, [refresh])
 
   const typeColor: Record<string, string> = {
     error: 'text-error',
@@ -70,8 +72,10 @@ function NetworkPanel() {
     }
   }, [getNetwork])
 
-  // eslint-disable-next-line react-hooks/set-state-in-effect -- load/poll idiom: setState lives in the async callback, not synchronous in the effect body
-  useEffect(() => { void refresh() }, [refresh])
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- load/poll idiom: setState lives in the async callback, not synchronous in the effect body
+    void refresh()
+  }, [refresh])
 
   return (
     <div>
@@ -115,11 +119,35 @@ function NetworkPanel() {
 
 export function BrowserPanel() {
   const {
-    status, loading, error, lastResult, currentUrl, currentTitle,
-    checkStatus, install, navigate, back, forward, reload,
-    click, type, fill, select, hover, focus, press, scroll, wait,
-    dialog, upload, screenshot, snapshot, pdf, eval: evalJs,
-    clearError, clearResult
+    status,
+    loading,
+    error,
+    lastResult,
+    currentUrl,
+    currentTitle,
+    checkStatus,
+    install,
+    navigate,
+    back,
+    forward,
+    reload,
+    click,
+    type,
+    fill,
+    select,
+    hover,
+    focus,
+    press,
+    scroll,
+    wait,
+    dialog,
+    upload,
+    screenshot,
+    snapshot,
+    pdf,
+    eval: evalJs,
+    clearError,
+    clearResult,
   } = useBrowserStore()
 
   const [activeCategory, setActiveCategory] = useState<ActionCategory>('navigate')
@@ -179,17 +207,16 @@ export function BrowserPanel() {
     return (
       <div className="h-full flex flex-col items-center justify-center p-6 text-center">
         <svg className="w-16 h-16 text-base-content/30 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={1.5}
+            d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"
+          />
         </svg>
         <h3 className="text-lg font-semibold mb-2">Browser Runtime Not Installed</h3>
-        <p className="text-sm text-base-content/60 mb-4">
-          Install the browser runtime to enable automation features.
-        </p>
-        <button
-          onClick={install}
-          disabled={loading}
-          className="btn btn-primary"
-        >
+        <p className="text-sm text-base-content/60 mb-4">Install the browser runtime to enable automation features.</p>
+        <button onClick={install} disabled={loading} className="btn btn-primary">
           {loading ? (
             <>
               <span className="loading loading-spinner loading-sm"></span>
@@ -198,7 +225,12 @@ export function BrowserPanel() {
           ) : (
             <>
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+                />
               </svg>
               Install Browser Runtime
             </>
@@ -226,7 +258,12 @@ export function BrowserPanel() {
           </button>
           <button onClick={reload} disabled={loading} className="btn btn-ghost btn-xs btn-square" title="Reload">
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+              />
             </svg>
           </button>
 
@@ -302,10 +339,17 @@ export function BrowserPanel() {
         {error && (
           <div className="alert alert-error py-2">
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
             </svg>
             <span className="text-sm">{error}</span>
-            <button onClick={clearError} className="btn btn-ghost btn-xs">Dismiss</button>
+            <button onClick={clearError} className="btn btn-ghost btn-xs">
+              Dismiss
+            </button>
           </div>
         )}
 
@@ -316,7 +360,9 @@ export function BrowserPanel() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
             </svg>
             <span className="text-sm">Action completed successfully</span>
-            <button onClick={clearResult} className="btn btn-ghost btn-xs">Dismiss</button>
+            <button onClick={clearResult} className="btn btn-ghost btn-xs">
+              Dismiss
+            </button>
           </div>
         )}
 
@@ -386,11 +432,7 @@ export function BrowserPanel() {
                   placeholder="document.title"
                   className="textarea textarea-bordered textarea-sm w-full h-20 font-mono text-xs"
                 />
-                <button
-                  onClick={handleEval}
-                  disabled={loading || !jsCode}
-                  className="btn btn-sm w-full"
-                >
+                <button onClick={handleEval} disabled={loading || !jsCode} className="btn btn-sm w-full">
                   Execute
                 </button>
                 {evalResult && (
@@ -646,8 +688,18 @@ export function BrowserPanel() {
                     className="btn btn-sm flex-1"
                   >
                     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"
+                      />
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"
+                      />
                     </svg>
                     Capture
                   </button>
@@ -666,11 +718,7 @@ export function BrowserPanel() {
               <div className="card-body p-3">
                 <h4 className="card-title text-sm">Accessibility Snapshot</h4>
                 <p className="text-xs text-base-content/60 mb-2">Get page structure as accessibility tree</p>
-                <button
-                  onClick={handleSnapshot}
-                  disabled={loading}
-                  className="btn btn-sm w-full"
-                >
+                <button onClick={handleSnapshot} disabled={loading} className="btn btn-sm w-full">
                   Get Snapshot
                 </button>
                 {snapshotResult && (
@@ -685,13 +733,14 @@ export function BrowserPanel() {
               <div className="card-body p-3">
                 <h4 className="card-title text-sm">Generate PDF</h4>
                 <div className="flex gap-2">
-                  <button
-                    onClick={() => handleAction(() => pdf())}
-                    disabled={loading}
-                    className="btn btn-sm flex-1"
-                  >
+                  <button onClick={() => handleAction(() => pdf())} disabled={loading} className="btn btn-sm flex-1">
                     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"
+                      />
                     </svg>
                     A4 Portrait
                   </button>
@@ -708,13 +757,9 @@ export function BrowserPanel() {
           </div>
         )}
 
-        {activeCategory === 'console' && (
-          <ConsolePanel />
-        )}
+        {activeCategory === 'console' && <ConsolePanel />}
 
-        {activeCategory === 'network' && (
-          <NetworkPanel />
-        )}
+        {activeCategory === 'network' && <NetworkPanel />}
       </div>
 
       {/* Loading indicator */}
@@ -728,8 +773,7 @@ export function BrowserPanel() {
       {/* Status bar */}
       <div className="flex-shrink-0 border-t border-base-300 p-2 text-xs text-base-content/60 flex items-center justify-between">
         <span>
-          {status?.config?.browser || 'chromium'} |
-          {status?.config?.headless ? ' headless' : ' headed'}
+          {status?.config?.browser || 'chromium'} |{status?.config?.headless ? ' headless' : ' headed'}
         </span>
         <span>{status?.version || 'Unknown version'}</span>
       </div>

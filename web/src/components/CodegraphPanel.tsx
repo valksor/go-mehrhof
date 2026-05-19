@@ -59,7 +59,7 @@ export function CodegraphPanel({ isOpen, onClose }: CodegraphPanelProps) {
 
     try {
       const result = await client.call<{ files: number; symbols: number; edges: number }>('codegraph.index', {})
-      setStats(prev => ({ ...(prev ?? {}), files: result.files, symbols: result.symbols, edges: result.edges }))
+      setStats((prev) => ({ ...(prev ?? {}), files: result.files, symbols: result.symbols, edges: result.edges }))
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Indexing failed')
     } finally {
@@ -87,41 +87,50 @@ export function CodegraphPanel({ isOpen, onClose }: CodegraphPanelProps) {
     }
   }, [client, connected, searchQuery, usePattern])
 
-  const loadCallers = useCallback(async (name: string) => {
-    if (!client || !connected) return
-    setDrillLoading(true)
-    setError(null)
-    setDeps(null)
-    try {
-      const result = await client.call<{ callers: CodegraphSymbol[] }>('codegraph.callers', { name })
-      setCallers({ name, symbols: result.callers || [] })
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load callers')
-    } finally {
-      setDrillLoading(false)
-    }
-  }, [client, connected])
+  const loadCallers = useCallback(
+    async (name: string) => {
+      if (!client || !connected) return
+      setDrillLoading(true)
+      setError(null)
+      setDeps(null)
+      try {
+        const result = await client.call<{ callers: CodegraphSymbol[] }>('codegraph.callers', { name })
+        setCallers({ name, symbols: result.callers || [] })
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to load callers')
+      } finally {
+        setDrillLoading(false)
+      }
+    },
+    [client, connected],
+  )
 
-  const loadDeps = useCallback(async (pkg: string) => {
-    if (!client || !connected) return
-    setDrillLoading(true)
-    setError(null)
-    setCallers(null)
-    try {
-      const result = await client.call<{ dependencies: string[] }>('codegraph.deps', { package: pkg })
-      setDeps({ pkg, dependencies: result.dependencies || [] })
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load dependencies')
-    } finally {
-      setDrillLoading(false)
-    }
-  }, [client, connected])
+  const loadDeps = useCallback(
+    async (pkg: string) => {
+      if (!client || !connected) return
+      setDrillLoading(true)
+      setError(null)
+      setCallers(null)
+      try {
+        const result = await client.call<{ dependencies: string[] }>('codegraph.deps', { package: pkg })
+        setDeps({ pkg, dependencies: result.dependencies || [] })
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to load dependencies')
+      } finally {
+        setDrillLoading(false)
+      }
+    },
+    [client, connected],
+  )
 
-  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      void searchSymbols()
-    }
-  }, [searchSymbols])
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (e.key === 'Enter') {
+        void searchSymbols()
+      }
+    },
+    [searchSymbols],
+  )
 
   return (
     <AccessibleModal isOpen={isOpen} onClose={onClose} title="Code Graph" size="4xl">
@@ -138,17 +147,17 @@ export function CodegraphPanel({ isOpen, onClose }: CodegraphPanelProps) {
               <span className="loading loading-spinner loading-xs"></span>
             ) : (
               <svg aria-hidden="true" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4" />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4"
+                />
               </svg>
             )}
             Index
           </button>
-          <button
-            onClick={loadStats}
-            disabled={!connected}
-            className="btn btn-ghost btn-sm"
-            aria-label="Refresh stats"
-          >
+          <button onClick={loadStats} disabled={!connected} className="btn btn-ghost btn-sm" aria-label="Refresh stats">
             Stats
           </button>
 
@@ -168,7 +177,7 @@ export function CodegraphPanel({ isOpen, onClose }: CodegraphPanelProps) {
             className="input input-sm input-bordered flex-1"
             placeholder="Search symbol name..."
             value={searchQuery}
-            onChange={e => setSearchQuery(e.target.value)}
+            onChange={(e) => setSearchQuery(e.target.value)}
             onKeyDown={handleKeyDown}
             aria-label="Symbol search"
           />
@@ -177,7 +186,7 @@ export function CodegraphPanel({ isOpen, onClose }: CodegraphPanelProps) {
               type="checkbox"
               className="checkbox checkbox-xs"
               checked={usePattern}
-              onChange={e => setUsePattern(e.target.checked)}
+              onChange={(e) => setUsePattern(e.target.checked)}
             />
             <span>Pattern</span>
           </label>
@@ -191,7 +200,12 @@ export function CodegraphPanel({ isOpen, onClose }: CodegraphPanelProps) {
               <span className="loading loading-spinner loading-xs"></span>
             ) : (
               <svg aria-hidden="true" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                />
               </svg>
             )}
           </button>
@@ -223,15 +237,15 @@ export function CodegraphPanel({ isOpen, onClose }: CodegraphPanelProps) {
                     </tr>
                   </thead>
                   <tbody>
-                    {symbols.map(s => (
+                    {symbols.map((s) => (
                       <tr key={s.id}>
                         <td>
-                          <span className={`badge badge-sm ${KIND_BADGE[s.kind] || 'badge-ghost'}`}>
-                            {s.kind}
-                          </span>
+                          <span className={`badge badge-sm ${KIND_BADGE[s.kind] || 'badge-ghost'}`}>{s.kind}</span>
                         </td>
                         <td className="font-mono text-xs font-medium">{s.name}</td>
-                        <td className="font-mono text-xs">{s.file}:{s.line}</td>
+                        <td className="font-mono text-xs">
+                          {s.file}:{s.line}
+                        </td>
                         <td className="text-xs">{s.package}</td>
                         <td>
                           <div className="flex gap-1">
@@ -263,13 +277,27 @@ export function CodegraphPanel({ isOpen, onClose }: CodegraphPanelProps) {
                 </table>
               </div>
             </>
-          ) : !loading && !error && (
-            <div className="text-center py-12 text-base-content/50">
-              <svg aria-hidden="true" className="w-10 h-10 mx-auto mb-3 opacity-30" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4" />
-              </svg>
-              <p>Index your project to explore code symbols</p>
-            </div>
+          ) : (
+            !loading &&
+            !error && (
+              <div className="text-center py-12 text-base-content/50">
+                <svg
+                  aria-hidden="true"
+                  className="w-10 h-10 mx-auto mb-3 opacity-30"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={1.5}
+                    d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4"
+                  />
+                </svg>
+                <p>Index your project to explore code symbols</p>
+              </div>
+            )
           )}
         </div>
 
@@ -280,17 +308,21 @@ export function CodegraphPanel({ isOpen, onClose }: CodegraphPanelProps) {
               <span className="text-sm font-medium">
                 Callers of <code className="text-xs">{callers.name}</code>
               </span>
-              <button className="btn btn-ghost btn-xs" onClick={() => setCallers(null)}>Close</button>
+              <button className="btn btn-ghost btn-xs" onClick={() => setCallers(null)}>
+                Close
+              </button>
             </div>
             {callers.symbols.length === 0 ? (
               <p className="text-xs text-base-content/50">No callers found</p>
             ) : (
               <ul className="space-y-1">
-                {callers.symbols.map(s => (
+                {callers.symbols.map((s) => (
                   <li key={s.id} className="flex items-center gap-2 text-xs">
                     <span className={`badge badge-xs ${KIND_BADGE[s.kind] || 'badge-ghost'}`}>{s.kind}</span>
                     <span className="font-mono font-medium">{s.name}</span>
-                    <span className="font-mono text-base-content/50">{s.file}:{s.line}</span>
+                    <span className="font-mono text-base-content/50">
+                      {s.file}:{s.line}
+                    </span>
                   </li>
                 ))}
               </ul>
@@ -305,14 +337,18 @@ export function CodegraphPanel({ isOpen, onClose }: CodegraphPanelProps) {
               <span className="text-sm font-medium">
                 Dependencies of <code className="text-xs">{deps.pkg}</code>
               </span>
-              <button className="btn btn-ghost btn-xs" onClick={() => setDeps(null)}>Close</button>
+              <button className="btn btn-ghost btn-xs" onClick={() => setDeps(null)}>
+                Close
+              </button>
             </div>
             {deps.dependencies.length === 0 ? (
               <p className="text-xs text-base-content/50">No dependencies found</p>
             ) : (
               <ul className="space-y-0.5">
-                {deps.dependencies.map(d => (
-                  <li key={d} className="font-mono text-xs">{d}</li>
+                {deps.dependencies.map((d) => (
+                  <li key={d} className="font-mono text-xs">
+                    {d}
+                  </li>
                 ))}
               </ul>
             )}

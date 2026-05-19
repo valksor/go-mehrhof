@@ -7,7 +7,8 @@ import { ChatMessageContent } from './ChatMessage'
 import { downloadJSON } from '../lib/export'
 import { parseCommand, getAvailableCommands, type ChatCommand, type ModalCommandDef } from '../lib/chatCommands'
 
-const TASK_URL_PATTERN = /^https?:\/\/(github\.com|gitlab\.com)\/[\w.-]+\/[\w.-]+\/(issues|pull|merge_requests)\/\d+\/?$/
+const TASK_URL_PATTERN =
+  /^https?:\/\/(github\.com|gitlab\.com)\/[\w.-]+\/[\w.-]+\/(issues|pull|merge_requests)\/\d+\/?$/
 const SOURCE_SHORTHAND_PATTERN = /^(github|gitlab|linear|jira|wrike):\S+$/
 
 interface FileEntry {
@@ -49,8 +50,8 @@ export function ChatWidget({ embedded = false, onModalCommand }: ChatWidgetProps
     return getAvailableCommands(autocompleteQuery)
   }, [autocompleteMode, autocompleteQuery])
 
-  const autocompleteCount = autocompleteMode === 'file' ? fileResults.length
-    : autocompleteMode === 'command' ? commandResults.length : 0
+  const autocompleteCount =
+    autocompleteMode === 'file' ? fileResults.length : autocompleteMode === 'command' ? commandResults.length : 0
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
@@ -66,27 +67,30 @@ export function ChatWidget({ embedded = false, onModalCommand }: ChatWidgetProps
   }, [input])
 
   // Search files for autocomplete
-  const searchFiles = useCallback(async (query: string) => {
-    if (!client || !connected || query.length < 1) {
-      setFileResults([])
-      return
-    }
+  const searchFiles = useCallback(
+    async (query: string) => {
+      if (!client || !connected || query.length < 1) {
+        setFileResults([])
+        return
+      }
 
-    setAutocompleteLoading(true)
-    try {
-      const result = await client.call<{ entries: FileEntry[] }>('files.search', {
-        query,
-        max_results: 10
-      })
-      setFileResults(result.entries || [])
-      setAutocompleteIndex(0)
-    } catch (err) {
-      console.error('File search failed:', err)
-      setFileResults([])
-    } finally {
-      setAutocompleteLoading(false)
-    }
-  }, [client, connected])
+      setAutocompleteLoading(true)
+      try {
+        const result = await client.call<{ entries: FileEntry[] }>('files.search', {
+          query,
+          max_results: 10,
+        })
+        setFileResults(result.entries || [])
+        setAutocompleteIndex(0)
+      } catch (err) {
+        console.error('File search failed:', err)
+        setFileResults([])
+      } finally {
+        setAutocompleteLoading(false)
+      }
+    },
+    [client, connected],
+  )
 
   // Debounced file search
   useEffect(() => {
@@ -256,7 +260,7 @@ export function ChatWidget({ embedded = false, onModalCommand }: ChatWidgetProps
     // Regular message
     let message = input
     if (attachedIds.length > 0) {
-      const refs = attachedIds.map(id => formatScreenshotRef(id)).join(' ')
+      const refs = attachedIds.map((id) => formatScreenshotRef(id)).join(' ')
       message = `${input}\n\n${refs}`
     }
     void sendMessage(message)
@@ -270,12 +274,12 @@ export function ChatWidget({ embedded = false, onModalCommand }: ChatWidgetProps
     if (autocompleteMode && autocompleteCount > 0) {
       if (e.key === 'ArrowDown') {
         e.preventDefault()
-        setAutocompleteIndex(i => Math.min(i + 1, autocompleteCount - 1))
+        setAutocompleteIndex((i) => Math.min(i + 1, autocompleteCount - 1))
         return
       }
       if (e.key === 'ArrowUp') {
         e.preventDefault()
-        setAutocompleteIndex(i => Math.max(i - 1, 0))
+        setAutocompleteIndex((i) => Math.max(i - 1, 0))
         return
       }
       if (e.key === 'Tab' || (e.key === 'Enter' && autocompleteMode === 'command' && commandResults.length > 0)) {
@@ -307,14 +311,25 @@ export function ChatWidget({ embedded = false, onModalCommand }: ChatWidgetProps
       <div className="flex-1 overflow-y-auto p-3 space-y-4">
         {messages.length === 0 ? (
           <div className="h-full flex flex-col items-center justify-center text-base-content/50">
-            <svg aria-hidden="true" className="w-12 h-12 mb-3 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+            <svg
+              aria-hidden="true"
+              className="w-12 h-12 mb-3 opacity-50"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={1.5}
+                d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+              />
             </svg>
             <p className="text-sm">Start a conversation</p>
             <p className="text-xs mt-1 opacity-70">Type @ to mention files, / for commands</p>
           </div>
         ) : (
-          messages.map(message => (
+          messages.map((message) => (
             <MessageBubble
               key={message.id}
               message={message}
@@ -331,9 +346,18 @@ export function ChatWidget({ embedded = false, onModalCommand }: ChatWidgetProps
             </div>
             <div className="bg-base-200 rounded-lg px-3 py-2">
               <div className="flex gap-1">
-                <span className="w-2 h-2 bg-base-content/40 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                <span className="w-2 h-2 bg-base-content/40 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                <span className="w-2 h-2 bg-base-content/40 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                <span
+                  className="w-2 h-2 bg-base-content/40 rounded-full animate-bounce"
+                  style={{ animationDelay: '0ms' }}
+                />
+                <span
+                  className="w-2 h-2 bg-base-content/40 rounded-full animate-bounce"
+                  style={{ animationDelay: '150ms' }}
+                />
+                <span
+                  className="w-2 h-2 bg-base-content/40 rounded-full animate-bounce"
+                  style={{ animationDelay: '300ms' }}
+                />
               </div>
             </div>
           </div>
@@ -348,13 +372,10 @@ export function ChatWidget({ embedded = false, onModalCommand }: ChatWidgetProps
         {attachedIds.length > 0 && (
           <div className="flex flex-wrap items-center gap-2 mb-2 p-2 bg-base-200 rounded-lg">
             <span className="text-xs text-base-content/60">Attached:</span>
-            {attachedIds.map(id => {
+            {attachedIds.map((id) => {
               const screenshot = getScreenshotById(id)
               return (
-                <span
-                  key={id}
-                  className="badge badge-sm badge-primary gap-1"
-                >
+                <span key={id} className="badge badge-sm badge-primary gap-1">
                   {screenshot?.id || id.slice(0, 6)}
                   <button
                     type="button"
@@ -369,11 +390,7 @@ export function ChatWidget({ embedded = false, onModalCommand }: ChatWidgetProps
                 </span>
               )
             })}
-            <button
-              type="button"
-              onClick={clearAttached}
-              className="btn btn-ghost btn-xs text-base-content/60"
-            >
+            <button type="button" onClick={clearAttached} className="btn btn-ghost btn-xs text-base-content/60">
               Clear all
             </button>
           </div>
@@ -396,12 +413,12 @@ export function ChatWidget({ embedded = false, onModalCommand }: ChatWidgetProps
                 aria-haspopup="listbox"
                 aria-expanded={autocompleteMode !== null}
                 aria-controls="chat-autocomplete"
-                aria-activedescendant={autocompleteMode && autocompleteCount > 0 ? `autocomplete-item-${autocompleteIndex}` : undefined}
+                aria-activedescendant={
+                  autocompleteMode && autocompleteCount > 0 ? `autocomplete-item-${autocompleteIndex}` : undefined
+                }
               />
               {input.length > 0 && (
-                <span className="absolute right-2 bottom-2 text-xs text-base-content/40">
-                  {input.length}
-                </span>
+                <span className="absolute right-2 bottom-2 text-xs text-base-content/40">{input.length}</span>
               )}
 
               {/* Autocomplete dropdown */}
@@ -427,28 +444,27 @@ export function ChatWidget({ embedded = false, onModalCommand }: ChatWidgetProps
                           No files found for &quot;{autocompleteQuery}&quot;
                         </div>
                       )}
-                      {!autocompleteLoading && fileResults.map((file, index) => (
-                        <button
-                          key={file.path}
-                          id={`autocomplete-item-${index}`}
-                          type="button"
-                          role="option"
-                          aria-selected={index === autocompleteIndex}
-                          className={`w-full px-3 py-2 text-left text-sm flex items-center gap-2 hover:bg-base-300 transition-colors ${
-                            index === autocompleteIndex ? 'bg-primary/20' : ''
-                          }`}
-                          onClick={() => insertFileReference(file)}
-                          onMouseEnter={() => setAutocompleteIndex(index)}
-                        >
-                          <span className="text-base-content/60">
-                            {file.is_dir ? 'D' : 'F'}
-                          </span>
-                          <span className="flex-1 truncate">
-                            <span className="font-medium">{file.name}</span>
-                            <span className="text-base-content/50 ml-2 text-xs">{file.rel_path}</span>
-                          </span>
-                        </button>
-                      ))}
+                      {!autocompleteLoading &&
+                        fileResults.map((file, index) => (
+                          <button
+                            key={file.path}
+                            id={`autocomplete-item-${index}`}
+                            type="button"
+                            role="option"
+                            aria-selected={index === autocompleteIndex}
+                            className={`w-full px-3 py-2 text-left text-sm flex items-center gap-2 hover:bg-base-300 transition-colors ${
+                              index === autocompleteIndex ? 'bg-primary/20' : ''
+                            }`}
+                            onClick={() => insertFileReference(file)}
+                            onMouseEnter={() => setAutocompleteIndex(index)}
+                          >
+                            <span className="text-base-content/60">{file.is_dir ? 'D' : 'F'}</span>
+                            <span className="flex-1 truncate">
+                              <span className="font-medium">{file.name}</span>
+                              <span className="text-base-content/50 ml-2 text-xs">{file.rel_path}</span>
+                            </span>
+                          </button>
+                        ))}
                     </>
                   )}
 
@@ -456,9 +472,7 @@ export function ChatWidget({ embedded = false, onModalCommand }: ChatWidgetProps
                   {autocompleteMode === 'command' && (
                     <>
                       {commandResults.length === 0 && autocompleteQuery && (
-                        <div className="px-3 py-2 text-sm text-base-content/60">
-                          No matching commands
-                        </div>
+                        <div className="px-3 py-2 text-sm text-base-content/60">No matching commands</div>
                       )}
                       {commandResults.map((cmd, index) => (
                         <button
@@ -500,32 +514,34 @@ export function ChatWidget({ embedded = false, onModalCommand }: ChatWidgetProps
                 <span className="loading loading-spinner loading-sm" aria-hidden="true" />
               ) : (
                 <svg aria-hidden="true" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"
+                  />
                 </svg>
               )}
             </button>
           </div>
         </form>
 
-        {input.trim() && !input.trim().startsWith('/') && (TASK_URL_PATTERN.test(input.trim()) || SOURCE_SHORTHAND_PATTERN.test(input.trim())) && (
-          <div className="text-xs text-info px-2 py-1">
-            Task source detected — press Enter to load as task
-          </div>
-        )}
+        {input.trim() &&
+          !input.trim().startsWith('/') &&
+          (TASK_URL_PATTERN.test(input.trim()) || SOURCE_SHORTHAND_PATTERN.test(input.trim())) && (
+            <div className="text-xs text-info px-2 py-1">Task source detected — press Enter to load as task</div>
+          )}
 
         {/* Quick actions */}
         <div className="flex gap-2 mt-2">
           {messages.length > 0 && (
             <>
-              <button
-                onClick={clearMessages}
-                className="btn btn-ghost btn-xs text-base-content/60"
-              >
+              <button onClick={clearMessages} className="btn btn-ghost btn-xs text-base-content/60">
                 Clear chat
               </button>
               <button
                 onClick={() => {
-                  const exportData = messages.map(m => ({
+                  const exportData = messages.map((m) => ({
                     role: m.role,
                     content: m.content,
                     timestamp: m.timestamp.toISOString(),
@@ -553,8 +569,19 @@ export function ChatWidget({ embedded = false, onModalCommand }: ChatWidgetProps
       <div className="card-body p-0 h-full">
         <div className="flex items-center justify-between px-4 py-3 border-b border-base-300">
           <h2 className="card-title text-base flex items-center gap-2">
-            <svg aria-hidden="true" className="w-5 h-5 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+            <svg
+              aria-hidden="true"
+              className="w-5 h-5 text-primary"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+              />
             </svg>
             Chat
           </h2>
@@ -586,14 +613,12 @@ const MessageBubble = memo(function MessageBubble({ message, onAction }: Message
           {/* Actions on system messages (quality gates, workflow actions) */}
           {message.actions && message.actions.length > 0 && (
             <div className="flex gap-2 mt-2 justify-center">
-              {message.actions.map(action => (
+              {message.actions.map((action) => (
                 <button
                   key={action.id}
                   onClick={() => onAction(action.id)}
                   className={`btn btn-xs ${
-                    action.type === 'approve' ? 'btn-success' :
-                    action.type === 'reject' ? 'btn-error' :
-                    'btn-ghost'
+                    action.type === 'approve' ? 'btn-success' : action.type === 'reject' ? 'btn-error' : 'btn-ghost'
                   }`}
                 >
                   {action.label}
@@ -610,12 +635,13 @@ const MessageBubble = memo(function MessageBubble({ message, onAction }: Message
   if (isSubagent && message.subagent) {
     const { status, type, description, duration } = message.subagent
     const icon = status === 'started' ? '▶' : status === 'completed' ? '✓' : '✗'
-    const bgColor = status === 'started' ? 'bg-info/20 border-info/30'
-      : status === 'completed' ? 'bg-success/20 border-success/30'
-      : 'bg-error/20 border-error/30'
-    const textColor = status === 'started' ? 'text-info'
-      : status === 'completed' ? 'text-success'
-      : 'text-error'
+    const bgColor =
+      status === 'started'
+        ? 'bg-info/20 border-info/30'
+        : status === 'completed'
+          ? 'bg-success/20 border-success/30'
+          : 'bg-error/20 border-error/30'
+    const textColor = status === 'started' ? 'text-info' : status === 'completed' ? 'text-success' : 'text-error'
 
     return (
       <div className="flex justify-center">
@@ -634,20 +660,20 @@ const MessageBubble = memo(function MessageBubble({ message, onAction }: Message
   // Permission messages: show with danger styling
   if (isPermission && message.permission) {
     const { tool, dangerLevel, dangerReason } = message.permission
-    const bgColor = dangerLevel === 'dangerous' ? 'bg-error/20 border-error/40'
-      : dangerLevel === 'caution' ? 'bg-warning/20 border-warning/40'
-      : 'bg-base-200 border-base-300'
-    const iconColor = dangerLevel === 'dangerous' ? 'text-error'
-      : dangerLevel === 'caution' ? 'text-warning'
-      : 'text-base-content/50'
+    const bgColor =
+      dangerLevel === 'dangerous'
+        ? 'bg-error/20 border-error/40'
+        : dangerLevel === 'caution'
+          ? 'bg-warning/20 border-warning/40'
+          : 'bg-base-200 border-base-300'
+    const iconColor =
+      dangerLevel === 'dangerous' ? 'text-error' : dangerLevel === 'caution' ? 'text-warning' : 'text-base-content/50'
 
     return (
       <div className="flex justify-center">
         <div className={`text-xs px-3 py-1.5 rounded-lg border ${bgColor} max-w-[90%] sm:max-w-md`}>
           <div className="flex items-center gap-2">
-            <span className={iconColor}>
-              {dangerLevel === 'safe' ? '🔒' : '⚠️'}
-            </span>
+            <span className={iconColor}>{dangerLevel === 'safe' ? '🔒' : '⚠️'}</span>
             <span className="font-medium">Permission: {tool}</span>
           </div>
           {dangerLevel !== 'safe' && dangerReason && (
@@ -663,21 +689,21 @@ const MessageBubble = memo(function MessageBubble({ message, onAction }: Message
   return (
     <div className={`flex items-start gap-2 ${isUser ? 'flex-row-reverse' : ''}`}>
       {/* Avatar */}
-      <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-medium flex-shrink-0 ${
-        isUser
-          ? 'bg-primary text-primary-content'
-          : 'bg-secondary text-secondary-content'
-      }`}>
+      <div
+        className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-medium flex-shrink-0 ${
+          isUser ? 'bg-primary text-primary-content' : 'bg-secondary text-secondary-content'
+        }`}
+      >
         {isUser ? 'You' : 'AI'}
       </div>
 
       {/* Content */}
       <div className={`flex flex-col gap-1 max-w-[95%] sm:max-w-[80%] ${isUser ? 'items-end' : 'items-start'}`}>
-        <div className={`rounded-lg px-3 py-2 ${
-          isUser
-            ? 'bg-primary text-primary-content'
-            : 'bg-base-200 text-base-content'
-        }`}>
+        <div
+          className={`rounded-lg px-3 py-2 ${
+            isUser ? 'bg-primary text-primary-content' : 'bg-base-200 text-base-content'
+          }`}
+        >
           <ChatMessageContent content={message.content} isUser={isUser} />
 
           {message.status === 'streaming' && (
@@ -688,14 +714,12 @@ const MessageBubble = memo(function MessageBubble({ message, onAction }: Message
         {/* Actions */}
         {message.actions && message.actions.length > 0 && (
           <div className="flex gap-2 mt-1">
-            {message.actions.map(action => (
+            {message.actions.map((action) => (
               <button
                 key={action.id}
                 onClick={() => onAction(action.id)}
                 className={`btn btn-xs ${
-                  action.type === 'approve' ? 'btn-success' :
-                  action.type === 'reject' ? 'btn-error' :
-                  'btn-ghost'
+                  action.type === 'approve' ? 'btn-success' : action.type === 'reject' ? 'btn-error' : 'btn-ghost'
                 }`}
               >
                 {action.label}
@@ -712,4 +736,3 @@ const MessageBubble = memo(function MessageBubble({ message, onAction }: Message
     </div>
   )
 })
-

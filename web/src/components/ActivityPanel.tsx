@@ -17,7 +17,7 @@ interface ActivityEntry {
   user_id?: string
   task_id?: string
   agent_model?: string
-  description?: string  // Present in timeline mode
+  description?: string // Present in timeline mode
 }
 
 interface AuditTask {
@@ -80,11 +80,11 @@ export function ActivityPanel({ isOpen, onClose }: ActivityPanelProps) {
         let filtered = result.activity || []
 
         if (errorsOnly) {
-          filtered = filtered.filter(e => e.error !== '')
+          filtered = filtered.filter((e) => e.error !== '')
         }
         if (methodFilter.trim()) {
           const search = methodFilter.trim().toLowerCase()
-          filtered = filtered.filter(e => e.method.toLowerCase().includes(search))
+          filtered = filtered.filter((e) => e.method.toLowerCase().includes(search))
         }
 
         setEntries(filtered)
@@ -93,18 +93,19 @@ export function ActivityPanel({ isOpen, onClose }: ActivityPanelProps) {
         const isTimeline = viewMode === 'timeline'
         const result = await client.call<{ entries: ActivityEntry[]; count: number; enabled: boolean }>(
           'activity.query',
-          { since: timeRange, limit: 100, timeline: isTimeline }
+          { since: timeRange, limit: 100, timeline: isTimeline },
         )
         let filtered = result.entries || []
 
         if (errorsOnly) {
-          filtered = filtered.filter(e => e.error !== '')
+          filtered = filtered.filter((e) => e.error !== '')
         }
         if (methodFilter.trim()) {
           const filterText = methodFilter.trim().toLowerCase()
-          filtered = filtered.filter(e =>
-            e.method.toLowerCase().includes(filterText) ||
-            (isTimeline && e.description?.toLowerCase().includes(filterText))
+          filtered = filtered.filter(
+            (e) =>
+              e.method.toLowerCase().includes(filterText) ||
+              (isTimeline && e.description?.toLowerCase().includes(filterText)),
           )
         }
 
@@ -205,12 +206,14 @@ export function ActivityPanel({ isOpen, onClose }: ActivityPanelProps) {
         <div className="flex flex-wrap items-center gap-2 mb-4">
           <select
             value={timeRange}
-            onChange={e => setTimeRange(e.target.value as TimeRange)}
+            onChange={(e) => setTimeRange(e.target.value as TimeRange)}
             className="select select-bordered select-sm"
             aria-label="Time range"
           >
-            {(Object.keys(TIME_RANGE_LABELS) as TimeRange[]).map(key => (
-              <option key={key} value={key}>{TIME_RANGE_LABELS[key]}</option>
+            {(Object.keys(TIME_RANGE_LABELS) as TimeRange[]).map((key) => (
+              <option key={key} value={key}>
+                {TIME_RANGE_LABELS[key]}
+              </option>
             ))}
           </select>
 
@@ -218,7 +221,7 @@ export function ActivityPanel({ isOpen, onClose }: ActivityPanelProps) {
             <input
               type="checkbox"
               checked={errorsOnly}
-              onChange={e => setErrorsOnly(e.target.checked)}
+              onChange={(e) => setErrorsOnly(e.target.checked)}
               className="checkbox checkbox-sm checkbox-error"
             />
             <span className="text-sm">Errors only</span>
@@ -227,7 +230,7 @@ export function ActivityPanel({ isOpen, onClose }: ActivityPanelProps) {
           <input
             type="text"
             value={methodFilter}
-            onChange={e => setMethodFilter(e.target.value)}
+            onChange={(e) => setMethodFilter(e.target.value)}
             placeholder="Filter by method..."
             aria-label="Filter by method"
             className="input input-bordered input-sm flex-1 min-w-[140px]"
@@ -243,7 +246,12 @@ export function ActivityPanel({ isOpen, onClose }: ActivityPanelProps) {
               <span className="loading loading-spinner loading-xs"></span>
             ) : (
               <svg aria-hidden="true" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                />
               </svg>
             )}
             Refresh
@@ -259,12 +267,19 @@ export function ActivityPanel({ isOpen, onClose }: ActivityPanelProps) {
               <span className="loading loading-spinner loading-xs"></span>
             ) : (
               <svg aria-hidden="true" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                />
               </svg>
             )}
             Export
           </button>
-          <a ref={downloadRef} className="hidden" href="data:" download aria-hidden="true" tabIndex={-1}>download</a>
+          <a ref={downloadRef} className="hidden" href="data:" download aria-hidden="true" tabIndex={-1}>
+            download
+          </a>
         </div>
 
         {/* Error */}
@@ -282,8 +297,19 @@ export function ActivityPanel({ isOpen, onClose }: ActivityPanelProps) {
             </div>
           ) : entries.length === 0 ? (
             <div className="text-center py-12 text-base-content/50">
-              <svg aria-hidden="true" className="w-10 h-10 mx-auto mb-3 opacity-30" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+              <svg
+                aria-hidden="true"
+                className="w-10 h-10 mx-auto mb-3 opacity-30"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={1.5}
+                  d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+                />
               </svg>
               <p>No activity entries</p>
             </div>
@@ -294,7 +320,7 @@ export function ActivityPanel({ isOpen, onClose }: ActivityPanelProps) {
                 <div className="mb-4 p-3 rounded-lg bg-base-200 border border-base-300">
                   <h4 className="text-sm font-medium mb-2">Active Tasks ({auditTasks.length})</h4>
                   <div className="space-y-1">
-                    {auditTasks.map(t => (
+                    {auditTasks.map((t) => (
                       <div key={t.id} className="flex items-center justify-between text-xs">
                         <span className="font-mono truncate flex-1">{t.id}</span>
                         <span className="badge badge-xs badge-ghost ml-2">{t.state}</span>
@@ -323,25 +349,19 @@ export function ActivityPanel({ isOpen, onClose }: ActivityPanelProps) {
                       const hasError = entry.error !== ''
                       return (
                         <tr key={`${entry.correlation_id}-${i}`} className={hasError ? 'text-error' : ''}>
-                          <td className="font-mono text-xs whitespace-nowrap">
-                            {formatTimestamp(entry.timestamp)}
-                          </td>
+                          <td className="font-mono text-xs whitespace-nowrap">{formatTimestamp(entry.timestamp)}</td>
                           {viewMode === 'audit' && (
-                            <td className="text-xs whitespace-nowrap">
-                              {entry.user_id || '-'}
-                            </td>
+                            <td className="text-xs whitespace-nowrap">{entry.user_id || '-'}</td>
                           )}
                           <td className={`text-xs ${viewMode === 'timeline' ? '' : 'font-mono'}`}>
-                            {viewMode === 'timeline'
-                              ? entry.description || entry.method
-                              : entry.method}
+                            {viewMode === 'timeline' ? entry.description || entry.method : entry.method}
                           </td>
-                          <td className="text-right text-xs whitespace-nowrap">
-                            {formatDuration(entry.duration_ms)}
-                          </td>
+                          <td className="text-right text-xs whitespace-nowrap">{formatDuration(entry.duration_ms)}</td>
                           <td>
                             {hasError ? (
-                              <span className="badge badge-sm badge-error" title={entry.error}>ERR</span>
+                              <span className="badge badge-sm badge-error" title={entry.error}>
+                                ERR
+                              </span>
                             ) : (
                               <span className="badge badge-sm badge-success">OK</span>
                             )}

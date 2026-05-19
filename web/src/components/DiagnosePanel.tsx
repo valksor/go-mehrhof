@@ -89,7 +89,12 @@ export function DiagnosePanel({ isOpen, onClose }: DiagnosePanelProps) {
         {error && (
           <div className="alert alert-error py-2 mb-4">
             <svg aria-hidden="true" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
             </svg>
             <span className="text-sm">{error}</span>
           </div>
@@ -108,9 +113,16 @@ export function DiagnosePanel({ isOpen, onClose }: DiagnosePanelProps) {
             ) : (
               <div className="alert alert-warning py-2 mb-4">
                 <svg aria-hidden="true" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                  />
                 </svg>
-                <span className="text-sm">{data.issues?.length} issue{data.issues && data.issues.length !== 1 ? 's' : ''} found</span>
+                <span className="text-sm">
+                  {data.issues?.length} issue{data.issues && data.issues.length !== 1 ? 's' : ''} found
+                </span>
               </div>
             )}
 
@@ -131,9 +143,7 @@ export function DiagnosePanel({ isOpen, onClose }: DiagnosePanelProps) {
                     {c.detail && c.status === 'passed' && (
                       <p className="text-xs text-base-content/50 mt-0.5">{c.detail}</p>
                     )}
-                    {c.fix && (
-                      <p className="text-xs text-warning mt-0.5">{c.fix}</p>
-                    )}
+                    {c.fix && <p className="text-xs text-warning mt-0.5">{c.fix}</p>}
                   </div>
                 </div>
               ))}
@@ -179,13 +189,14 @@ export function DiagnosePanel({ isOpen, onClose }: DiagnosePanelProps) {
 
             {/* Re-run button */}
             <div className="flex justify-end">
-              <button
-                onClick={runDiagnose}
-                disabled={loading}
-                className="btn btn-ghost btn-sm"
-              >
+              <button onClick={runDiagnose} disabled={loading} className="btn btn-ghost btn-sm">
                 <svg aria-hidden="true" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                  />
                 </svg>
                 Re-run
               </button>

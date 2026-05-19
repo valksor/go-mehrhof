@@ -36,13 +36,13 @@ export function ActiveTasksWidget({ onSelectProject }: ActiveTasksWidgetProps) {
     void loadActiveTasks()
   }, [connected, loadActiveTasks])
 
-  const active = activeTasks.filter(t => stateIsActive(t.state))
+  const active = activeTasks.filter((t) => stateIsActive(t.state))
 
   if (active.length === 0) return null
 
   const handleClick = (task: TaskListSummary) => {
     // Select project by path (strict matching to avoid cross-project task display)
-    const project = projects.find(p => p.path === task.path)
+    const project = projects.find((p) => p.path === task.path)
     if (project) {
       selectProject(project)
     } else if (onSelectProject) {
@@ -62,7 +62,7 @@ export function ActiveTasksWidget({ onSelectProject }: ActiveTasksWidgetProps) {
         </h2>
 
         <div className="space-y-2 mt-2">
-          {active.map(task => (
+          {active.map((task) => (
             <button
               key={task.id}
               onClick={() => handleClick(task)}
@@ -86,17 +86,19 @@ export function ActiveTasksWidget({ onSelectProject }: ActiveTasksWidgetProps) {
                 </div>
                 <div className="flex items-center gap-1 flex-shrink-0">
                   {task.pending_prompt_id && (
-                    <span className="badge badge-xs badge-accent" title="Waiting for input">prompt</span>
+                    <span className="badge badge-xs badge-accent" title="Waiting for input">
+                      prompt
+                    </span>
                   )}
                   {task.last_failure_class === 'hard_stop' && (
-                    <span className="badge badge-xs badge-error" title={task.last_error || 'Blocked'}>blocked</span>
+                    <span className="badge badge-xs badge-error" title={task.last_error || 'Blocked'}>
+                      blocked
+                    </span>
                   )}
                   {task.queue_count != null && task.queue_count > 0 && (
                     <span className="badge badge-xs badge-outline">+{task.queue_count}</span>
                   )}
-                  <span className={`badge badge-sm ${STATE_BADGE[task.state] || 'badge-ghost'}`}>
-                    {task.state}
-                  </span>
+                  <span className={`badge badge-sm ${STATE_BADGE[task.state] || 'badge-ghost'}`}>{task.state}</span>
                 </div>
               </div>
             </button>

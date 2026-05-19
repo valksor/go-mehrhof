@@ -27,10 +27,11 @@ export function ChangelogPanel({ isOpen, onClose }: ChangelogPanelProps) {
     setContent('')
 
     try {
-      const result = await client.call<{ markdown: string; entries: unknown[] }>(
-        'changelog.generate',
-        { source, target, full }
-      )
+      const result = await client.call<{ markdown: string; entries: unknown[] }>('changelog.generate', {
+        source,
+        target,
+        full,
+      })
       setContent(result.markdown || '')
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to generate changelog')
@@ -57,7 +58,7 @@ export function ChangelogPanel({ isOpen, onClose }: ChangelogPanelProps) {
           <input
             type="text"
             value={source}
-            onChange={e => setSource(e.target.value)}
+            onChange={(e) => setSource(e.target.value)}
             placeholder="Source (tag, branch, SHA)"
             className="input input-bordered input-sm w-48"
             aria-label="Source ref"
@@ -66,7 +67,7 @@ export function ChangelogPanel({ isOpen, onClose }: ChangelogPanelProps) {
           <input
             type="text"
             value={target}
-            onChange={e => setTarget(e.target.value)}
+            onChange={(e) => setTarget(e.target.value)}
             placeholder="Target (tag, branch, SHA)"
             className="input input-bordered input-sm w-48"
             aria-label="Target ref"
@@ -76,7 +77,7 @@ export function ChangelogPanel({ isOpen, onClose }: ChangelogPanelProps) {
             <input
               type="checkbox"
               checked={full}
-              onChange={e => setFull(e.target.checked)}
+              onChange={(e) => setFull(e.target.checked)}
               className="checkbox checkbox-sm"
             />
             <span className="label-text text-xs">Full descriptions</span>
@@ -91,25 +92,37 @@ export function ChangelogPanel({ isOpen, onClose }: ChangelogPanelProps) {
               <span className="loading loading-spinner loading-xs"></span>
             ) : (
               <svg aria-hidden="true" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"
+                />
               </svg>
             )}
             Generate
           </button>
 
           {content && (
-            <button
-              className="btn btn-sm btn-ghost"
-              onClick={copyToClipboard}
-              aria-label="Copy to clipboard"
-            >
+            <button className="btn btn-sm btn-ghost" onClick={copyToClipboard} aria-label="Copy to clipboard">
               {copied ? (
-                <svg aria-hidden="true" className="w-4 h-4 text-success" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg
+                  aria-hidden="true"
+                  className="w-4 h-4 text-success"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                 </svg>
               ) : (
                 <svg aria-hidden="true" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
+                  />
                 </svg>
               )}
               {copied ? 'Copied!' : 'Copy'}
@@ -131,13 +144,22 @@ export function ChangelogPanel({ isOpen, onClose }: ChangelogPanelProps) {
               <span className="loading loading-spinner loading-lg text-primary"></span>
             </div>
           ) : content ? (
-            <pre className="text-xs whitespace-pre-wrap font-mono bg-base-200 p-3 rounded-lg">
-              {content}
-            </pre>
+            <pre className="text-xs whitespace-pre-wrap font-mono bg-base-200 p-3 rounded-lg">{content}</pre>
           ) : (
             <div className="text-center py-12 text-base-content/50">
-              <svg aria-hidden="true" className="w-10 h-10 mx-auto mb-3 opacity-30" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+              <svg
+                aria-hidden="true"
+                className="w-10 h-10 mx-auto mb-3 opacity-30"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={1.5}
+                  d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+                />
               </svg>
               <p>Enter source and target refs, then click Generate.</p>
             </div>

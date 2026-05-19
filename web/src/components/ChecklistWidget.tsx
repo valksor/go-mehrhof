@@ -12,7 +12,7 @@ interface ChecklistWidgetProps {
 
 export function ChecklistWidget({ embedded = false }: ChecklistWidgetProps) {
   const { connected, state } = useProjectStore()
-  const client = useProjectStore(s => s.client)
+  const client = useProjectStore((s) => s.client)
   const [items, setItems] = useState<ChecklistItem[]>([])
   const [loading, setLoading] = useState(false)
   const [toggleIndex, setToggleIndex] = useState<number | null>(null)
@@ -52,7 +52,7 @@ export function ChecklistWidget({ embedded = false }: ChecklistWidgetProps) {
 
   if (state !== 'reviewing' && state !== 'implemented') return null
 
-  const checkedCount = items.filter(i => i.checked).length
+  const checkedCount = items.filter((i) => i.checked).length
   const totalCount = items.length
 
   const content = (
@@ -60,11 +60,7 @@ export function ChecklistWidget({ embedded = false }: ChecklistWidgetProps) {
       {/* Progress indicator */}
       {totalCount > 0 && (
         <div className="flex items-center gap-2">
-          <progress
-            className="progress progress-primary flex-1"
-            value={checkedCount}
-            max={totalCount}
-          />
+          <progress className="progress progress-primary flex-1" value={checkedCount} max={totalCount} />
           <span className="text-xs text-base-content/60 font-mono whitespace-nowrap">
             {checkedCount}/{totalCount}
           </span>
@@ -84,7 +80,9 @@ export function ChecklistWidget({ embedded = false }: ChecklistWidgetProps) {
                   onChange={() => toggleItem(index, item.checked)}
                   disabled={loading && toggleIndex === index}
                 />
-                <span className={`text-sm leading-relaxed ${item.checked ? 'line-through text-base-content/50' : 'text-base-content'}`}>
+                <span
+                  className={`text-sm leading-relaxed ${item.checked ? 'line-through text-base-content/50' : 'text-base-content'}`}
+                >
                   {item.text}
                 </span>
               </label>
@@ -110,7 +108,9 @@ export function ChecklistWidget({ embedded = false }: ChecklistWidgetProps) {
         <h2 className="card-title text-base-content flex items-center gap-2">
           Review Checklist
           {totalCount > 0 && (
-            <span className="badge badge-sm badge-ghost">{checkedCount}/{totalCount}</span>
+            <span className="badge badge-sm badge-ghost">
+              {checkedCount}/{totalCount}
+            </span>
           )}
         </h2>
         {content}
