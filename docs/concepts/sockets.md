@@ -27,6 +27,7 @@ kvelmo uses Unix domain sockets for inter-process communication. This enables re
 A single instance at `~/.valksor/kvelmo/global.sock`.
 
 **Responsibilities:**
+
 - Project registry management
 - Worker pool coordination
 - Job queue management
@@ -39,6 +40,7 @@ A single instance at `~/.valksor/kvelmo/global.sock`.
 One per project at `<project>/.kvelmo/worktree.sock`.
 
 **Responsibilities:**
+
 - Task state machine
 - Git operations (branches, checkpoints)
 - Specification management
@@ -92,6 +94,7 @@ Communication uses JSON-RPC 2.0 over Unix domain sockets.
 The worktree socket supports event streaming for real-time updates:
 
 ### Agent Events
+
 - `token` — Agent output token
 - `tool_call` — Agent called a tool
 - `tool_result` — Tool returned a result
@@ -99,6 +102,7 @@ The worktree socket supports event streaming for real-time updates:
 - `completion` — Agent completed
 
 ### State Events
+
 - `state_change` — Task state changed
 - `checkpoint` — Checkpoint created
 
@@ -114,7 +118,7 @@ The worktree socket supports event streaming for real-time updates:
 ### Compared to HTTP
 
 | Aspect     | Sockets    | HTTP                   |
-|------------|------------|------------------------|
+| ---------- | ---------- | ---------------------- |
 | Latency    | ~1ms       | ~10ms                  |
 | Connection | Persistent | Per-request            |
 | Streaming  | Native     | Requires SSE/WebSocket |
@@ -123,7 +127,7 @@ The worktree socket supports event streaming for real-time updates:
 ## Socket Locations
 
 | Socket   | Location                          | Purpose           |
-|----------|-----------------------------------|-------------------|
+| -------- | --------------------------------- | ----------------- |
 | Global   | `~/.valksor/kvelmo/global.sock`   | Registry, workers |
 | Worktree | `<project>/.kvelmo/worktree.sock` | Per-project state |
 
@@ -150,6 +154,7 @@ Browser ──WebSocket──► Server ──Unix Socket──► Global/Worktr
 ### "socket not found"
 
 The server isn't running:
+
 ```bash
 kvelmo serve
 ```
@@ -157,6 +162,7 @@ kvelmo serve
 ### "permission denied"
 
 Socket file has wrong permissions:
+
 ```bash
 chmod 600 ~/.valksor/kvelmo/global.sock
 ```
@@ -164,6 +170,7 @@ chmod 600 ~/.valksor/kvelmo/global.sock
 ### Stale socket file
 
 If kvelmo crashed, remove the stale socket:
+
 ```bash
 rm ~/.valksor/kvelmo/global.sock
 kvelmo serve

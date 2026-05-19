@@ -13,14 +13,14 @@ Project values override global values.
 
 ## Supported Variables
 
-| Variable             | Description           |
-|----------------------|-----------------------|
-| `GITHUB_TOKEN`       | GitHub API token      |
-| `GITLAB_TOKEN`       | GitLab API token      |
-| `LINEAR_TOKEN`       | Linear API token      |
-| `WRIKE_TOKEN`        | Wrike API token       |
-| `ANTHROPIC_API_KEY`  | Anthropic API key     |
-| `OPENAI_API_KEY`     | OpenAI API key        |
+| Variable            | Description       |
+| ------------------- | ----------------- |
+| `GITHUB_TOKEN`      | GitHub API token  |
+| `GITLAB_TOKEN`      | GitLab API token  |
+| `LINEAR_TOKEN`      | Linear API token  |
+| `WRIKE_TOKEN`       | Wrike API token   |
+| `ANTHROPIC_API_KEY` | Anthropic API key |
+| `OPENAI_API_KEY`    | OpenAI API key    |
 
 ## Setting Variables
 

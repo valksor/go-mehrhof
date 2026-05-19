@@ -21,6 +21,7 @@ export GITLAB_TOKEN=glpat-xxxxxxxxxxxxxxxxxxxx
 ```
 
 Or in settings:
+
 ```json
 {
   "providers": {
@@ -44,13 +45,14 @@ gitlab:<project>#<number>
 ```
 
 Examples:
+
 - `gitlab:group/project#123` — Issue or MR #123
 - `gitlab:namespace/subgroup/project#456` — Nested group project
 
 ## Extracted Data
 
 | Field       | Source               |
-|-------------|----------------------|
+| ----------- | -------------------- |
 | Title       | Issue/MR title       |
 | Description | Issue/MR description |
 | External ID | Issue/MR IID         |

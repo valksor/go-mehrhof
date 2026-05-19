@@ -43,6 +43,7 @@ curl -fsSL https://raw.githubusercontent.com/valksor/kvelmo/master/install.sh | 
 ```
 
 Verify:
+
 ```bash
 kvelmo version
 ```
@@ -63,7 +64,7 @@ claude --version
 Your Windows files are at `/mnt/c/`:
 
 | Windows Path            | WSL Path                    |
-|-------------------------|-----------------------------|
+| ----------------------- | --------------------------- |
 | `C:\Users\Name\Desktop` | `/mnt/c/Users/Name/Desktop` |
 | `C:\Projects`           | `/mnt/c/Projects`           |
 | `D:\Work`               | `/mnt/d/Work`               |
@@ -117,11 +118,13 @@ VS Code integrates well with WSL:
 ### Cannot Connect to Server
 
 Check if the server is running:
+
 ```bash
 kvelmo serve
 ```
 
 Check the port:
+
 ```bash
 curl http://localhost:6337
 ```
@@ -129,6 +132,7 @@ curl http://localhost:6337
 ### Permission Denied
 
 Fix socket permissions:
+
 ```bash
 chmod 600 ~/.valksor/kvelmo/global.sock
 ```
@@ -136,6 +140,7 @@ chmod 600 ~/.valksor/kvelmo/global.sock
 ### Git Errors
 
 Configure git:
+
 ```bash
 git config --global user.name "Your Name"
 git config --global user.email "your@email.com"

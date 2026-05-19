@@ -12,15 +12,15 @@ The important point is this: they are not separate products. They are separate v
 
 ## Quick Comparison
 
-| Aspect | Web UI | CLI | TUI |
-|--------|--------|-----|-----|
-| Best for | primary day-to-day orchestration | scripting, automation, system-facing control | terminal-first live steering |
-| Interaction style | dashboards, panels, visual review | commands, pipes, shell integration | full-screen terminal dashboard |
-| Browser required | yes | no | no |
-| Scriptable | limited | yes | no |
-| Visual review | strongest | lower | limited |
-| Raw control surface | medium | strongest | medium |
-| Remote/headless use | possible with browser access | strongest | strong |
+| Aspect              | Web UI                            | CLI                                          | TUI                            |
+| ------------------- | --------------------------------- | -------------------------------------------- | ------------------------------ |
+| Best for            | primary day-to-day orchestration  | scripting, automation, system-facing control | terminal-first live steering   |
+| Interaction style   | dashboards, panels, visual review | commands, pipes, shell integration           | full-screen terminal dashboard |
+| Browser required    | yes                               | no                                           | no                             |
+| Scriptable          | limited                           | yes                                          | no                             |
+| Visual review       | strongest                         | lower                                        | limited                        |
+| Raw control surface | medium                            | strongest                                    | medium                         |
+| Remote/headless use | possible with browser access      | strongest                                    | strong                         |
 
 ## When to Use the Web UI
 

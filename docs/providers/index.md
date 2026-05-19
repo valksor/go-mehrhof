@@ -6,15 +6,15 @@ They are how issues, work items, and task descriptions enter the orchestration s
 
 ## Supported Providers
 
-| Provider | Description | Reference Format |
-|----------|-------------|------------------|
-| [Azure DevOps](/providers/azuredevops.md) | Azure DevOps work items | `ado:12345` |
-| [File](/providers/file.md) | Local markdown files | `file:path/to/task.md` |
-| [GitHub](/providers/github.md) | GitHub issues and PRs | `github:owner/repo#123` |
-| [GitLab](/providers/gitlab.md) | GitLab issues and merge requests | `gitlab:group/project#123` |
-| [Jira](/providers/jira.md) | Jira issues | `jira:PROJ-123` |
-| [Linear](/providers/linear.md) | Linear issues | `linear:ENG-123` |
-| [Wrike](/providers/wrike.md) | Wrike tasks | `wrike:taskid` |
+| Provider                                  | Description                      | Reference Format           |
+| ----------------------------------------- | -------------------------------- | -------------------------- |
+| [Azure DevOps](/providers/azuredevops.md) | Azure DevOps work items          | `ado:12345`                |
+| [File](/providers/file.md)                | Local markdown files             | `file:path/to/task.md`     |
+| [GitHub](/providers/github.md)            | GitHub issues and PRs            | `github:owner/repo#123`    |
+| [GitLab](/providers/gitlab.md)            | GitLab issues and merge requests | `gitlab:group/project#123` |
+| [Jira](/providers/jira.md)                | Jira issues                      | `jira:PROJ-123`            |
+| [Linear](/providers/linear.md)            | Linear issues                    | `linear:ENG-123`           |
+| [Wrike](/providers/wrike.md)              | Wrike tasks                      | `wrike:taskid`             |
 
 ## How Providers Fit the Workflow
 
@@ -48,14 +48,14 @@ kvelmo start "Refactor the settings panel and update tests"
 
 Some providers need authentication before kvelmo can fetch task data.
 
-| Provider | Typical token variable |
-|----------|------------------------|
-| Azure DevOps | `AZURE_DEVOPS_TOKEN` |
-| GitHub | `GITHUB_TOKEN` |
-| GitLab | `GITLAB_TOKEN` |
-| Jira | `JIRA_TOKEN` |
-| Linear | `LINEAR_TOKEN` |
-| Wrike | `WRIKE_TOKEN` |
+| Provider     | Typical token variable |
+| ------------ | ---------------------- |
+| Azure DevOps | `AZURE_DEVOPS_TOKEN`   |
+| GitHub       | `GITHUB_TOKEN`         |
+| GitLab       | `GITLAB_TOKEN`         |
+| Jira         | `JIRA_TOKEN`           |
+| Linear       | `LINEAR_TOKEN`         |
+| Wrike        | `WRIKE_TOKEN`          |
 
 Recommended path:
 

@@ -17,6 +17,7 @@ export WRIKE_TOKEN=your-wrike-api-token
 ```
 
 Or in settings:
+
 ```json
 {
   "providers": {
@@ -42,12 +43,13 @@ wrike:<task-id>
 The task ID is the alphanumeric ID from Wrike (visible in the task URL).
 
 Example:
+
 - `wrike:FOO` — Task with ID FOO
 
 ## Extracted Data
 
 | Field       | Source           |
-|-------------|------------------|
+| ----------- | ---------------- |
 | Title       | Task title       |
 | Description | Task description |
 | External ID | Wrike task ID    |

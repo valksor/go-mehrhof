@@ -34,13 +34,13 @@ export AZURE_DEVOPS_TOKEN=your-pat-here
 ```yaml
 providers:
   azuredevops:
-    organization: myorg           # Required: Azure DevOps organization name
-    project: myproject            # Required: Azure DevOps project name
-    repository: myrepo            # Git repo name (defaults to project name)
-    base_url: https://dev.azure.com  # Instance URL (default)
-    allow_ticket_comment: true    # Post status comments on work items
-    status_sync: true             # Update work item state on transitions
-    status_mapping:               # Map kvelmo states to Azure DevOps states
+    organization: myorg # Required: Azure DevOps organization name
+    project: myproject # Required: Azure DevOps project name
+    repository: myrepo # Git repo name (defaults to project name)
+    base_url: https://dev.azure.com # Instance URL (default)
+    allow_ticket_comment: true # Post status comments on work items
+    status_sync: true # Update work item state on transitions
+    status_mapping: # Map kvelmo states to Azure DevOps states
       implementing: Active
       reviewing: "In Review"
       submitted: Resolved
@@ -48,14 +48,14 @@ providers:
 
 ## Features
 
-| Feature | Supported |
-|---------|-----------|
-| Fetch work items | Yes |
-| Update status | Yes (JSON Patch on System.State) |
-| Add comments | Yes |
-| Create pull requests | Yes |
-| Status sync | Yes (configurable mapping) |
-| Hierarchy (parent/child) | No |
+| Feature                  | Supported                        |
+| ------------------------ | -------------------------------- |
+| Fetch work items         | Yes                              |
+| Update status            | Yes (JSON Patch on System.State) |
+| Add comments             | Yes                              |
+| Create pull requests     | Yes                              |
+| Status sync              | Yes (configurable mapping)       |
+| Hierarchy (parent/child) | No                               |
 
 ## Supported Work Item Types
 

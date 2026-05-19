@@ -42,32 +42,33 @@ jira:<issue-key>
 ```
 
 Examples:
+
 - `jira:PROJ-123` — Issue PROJ-123
 - `jira:BACKEND-456` — Issue BACKEND-456
 
 ## Extracted Data
 
-| Field | Source |
-|-------|--------|
-| Title | Issue summary |
-| Description | Issue description |
-| External ID | Issue key |
-| URL | Jira URL |
-| Labels | Issue labels |
-| Priority | Issue priority (mapped to p0-p3) |
+| Field       | Source                           |
+| ----------- | -------------------------------- |
+| Title       | Issue summary                    |
+| Description | Issue description                |
+| External ID | Issue key                        |
+| URL         | Jira URL                         |
+| Labels      | Issue labels                     |
+| Priority    | Issue priority (mapped to p0-p3) |
 
 ## Supported Features
 
-| Feature | Supported |
-|---------|-----------|
-| Fetch tasks | Yes |
-| Update status | Yes (via transitions) |
-| Comments | Yes |
-| Labels | Yes |
-| Dependencies | Yes (linked issues) |
-| Hierarchy | Yes (parent/subtasks) |
-| Create issues | Yes |
-| Submit PRs | Yes (adds comment with PR link) |
+| Feature       | Supported                       |
+| ------------- | ------------------------------- |
+| Fetch tasks   | Yes                             |
+| Update status | Yes (via transitions)           |
+| Comments      | Yes                             |
+| Labels        | Yes                             |
+| Dependencies  | Yes (linked issues)             |
+| Hierarchy     | Yes (parent/subtasks)           |
+| Create issues | Yes                             |
+| Submit PRs    | Yes (adds comment with PR link) |
 
 ## Submitting Back
 

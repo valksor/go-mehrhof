@@ -21,6 +21,7 @@ export GITHUB_TOKEN=ghp_xxxxxxxxxxxxxxxxxxxx
 ```
 
 Or in settings:
+
 ```json
 {
   "providers": {
@@ -44,13 +45,14 @@ github:<owner>/<repo>#<number>
 ```
 
 Examples:
+
 - `github:valksor/kvelmo#123` — Issue or PR #123
 - `github:facebook/react#28000` — React issue/PR
 
 ## Extracted Data
 
 | Field       | Source          |
-|-------------|-----------------|
+| ----------- | --------------- |
 | Title       | Issue/PR title  |
 | Description | Issue/PR body   |
 | External ID | Issue/PR number |
@@ -79,6 +81,7 @@ When you run `kvelmo submit`, kvelmo:
 ```
 
 With `default_org`, you can use shorter references:
+
 ```bash
 kvelmo start --from github:kvelmo#123
 # Expands to github:valksor/kvelmo#123
@@ -113,6 +116,7 @@ Your token is invalid or expired. Generate a new one.
 ### Rate Limiting
 
 GitHub API has rate limits. If you hit them:
+
 - Wait for the reset (shown in error)
 - Use a token with higher limits
 

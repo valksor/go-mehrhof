@@ -7,7 +7,7 @@ kvelmo uses a state machine to manage the task lifecycle. Understanding states h
 The main workflow progresses through these states:
 
 | State          | Description                                      |
-|----------------|--------------------------------------------------|
+| -------------- | ------------------------------------------------ |
 | `none`         | No active task                                   |
 | `loaded`       | Task fetched from provider, branch created       |
 | `planning`     | Agent generating specification (in progress)     |
@@ -22,7 +22,7 @@ The main workflow progresses through these states:
 These states are available from `implemented`:
 
 | State         | Description                        |
-|---------------|------------------------------------|
+| ------------- | ---------------------------------- |
 | `simplifying` | Agent simplifying code for clarity |
 | `optimizing`  | Agent improving code quality       |
 
@@ -31,7 +31,7 @@ These states are available from `implemented`:
 These states handle special situations:
 
 | State     | Description                                    |
-|-----------|------------------------------------------------|
+| --------- | ---------------------------------------------- |
 | `failed`  | Error state (recoverable via `reset`)          |
 | `waiting` | Waiting for user input                         |
 | `paused`  | Execution paused (budget limits, manual pause) |
@@ -47,13 +47,14 @@ none → loaded → planning → planned → implementing → implemented → re
 ### Optional Phases
 
 From `implemented`, you can optionally run:
+
 - `simplify` → enters `simplifying` → returns to `implemented`
 - `optimize` → enters `optimizing` → returns to `implemented`
 
 ### Recovery Transitions
 
 | From      | Event    | To             | Description             |
-|-----------|----------|----------------|-------------------------|
+| --------- | -------- | -------------- | ----------------------- |
 | `failed`  | `reset`  | `loaded`       | Recover from failure    |
 | `waiting` | `answer` | Previous state | Resume after user input |
 | `paused`  | `resume` | Previous state | Resume after pause      |
@@ -77,7 +78,7 @@ kvelmo status --json
 Some transitions have guards that must pass:
 
 | Transition                 | Guard                        |
-|----------------------------|------------------------------|
+| -------------------------- | ---------------------------- |
 | `none` → `loaded`          | Must have a source reference |
 | `loaded` → `planning`      | Must have a description      |
 | `planned` → `implementing` | Must have specifications     |
@@ -88,6 +89,7 @@ Some transitions have guards that must pass:
 Events trigger state transitions:
 
 ### Phase Events
+
 - `start` — Begin working on task
 - `plan` — Enter planning phase
 - `implement` — Enter implementation phase
@@ -97,6 +99,7 @@ Events trigger state transitions:
 - `submit` — Submit to provider
 
 ### Completion Events
+
 - `plan_done` — Planning completed
 - `implement_done` — Implementation completed
 - `simplify_done` — Simplification completed
@@ -104,10 +107,12 @@ Events trigger state transitions:
 - `review_done` — Review completed
 
 ### Navigation Events
+
 - `undo` — Revert to previous checkpoint
 - `redo` — Restore next checkpoint
 
 ### Control Events
+
 - `error` — Error occurred
 - `abort` — Abort task
 - `reset` — Recover from failed state

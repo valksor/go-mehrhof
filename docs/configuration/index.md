@@ -18,12 +18,12 @@ Project-level configuration overrides global configuration.
 
 ## Main Files
 
-| Scope | Path |
-|-------|------|
-| Global settings | `~/.valksor/kvelmo/kvelmo.yaml` |
-| Project settings | `.valksor/kvelmo.yaml` |
-| Global environment | `~/.valksor/kvelmo/.env` |
-| Project environment | `.valksor/.env` |
+| Scope               | Path                            |
+| ------------------- | ------------------------------- |
+| Global settings     | `~/.valksor/kvelmo/kvelmo.yaml` |
+| Project settings    | `.valksor/kvelmo.yaml`          |
+| Global environment  | `~/.valksor/kvelmo/.env`        |
+| Project environment | `.valksor/.env`                 |
 
 Use YAML for settings files. Environment files are useful for tokens and other sensitive values.
 

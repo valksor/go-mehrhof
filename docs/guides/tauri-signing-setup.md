@@ -46,9 +46,9 @@ Commit this change.
 
 Go to **Settings → Secrets and variables → Actions** in the GitHub repo and add:
 
-| Secret | Value |
-|--------|-------|
-| `TAURI_SIGNING_PRIVATE_KEY` | Contents of `~/.tauri/kvelmo.key` |
+| Secret                               | Value                                           |
+| ------------------------------------ | ----------------------------------------------- |
+| `TAURI_SIGNING_PRIVATE_KEY`          | Contents of `~/.tauri/kvelmo.key`               |
 | `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` | The password from step 1 (empty string if none) |
 
 The release workflow (`.github/workflows/release.yml`) already passes these to `cargo tauri build` via environment variables.

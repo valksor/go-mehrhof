@@ -15,6 +15,7 @@ This means your work is always recoverable through git.
 ## Creating Checkpoints
 
 Checkpoints are created automatically after:
+
 - `kvelmo plan` completes
 - `kvelmo implement` completes
 - `kvelmo simplify` completes
@@ -30,6 +31,7 @@ kvelmo checkpoints
 ```
 
 Output shows:
+
 - Checkpoint SHA
 - Timestamp
 - Phase that created it
@@ -44,6 +46,7 @@ kvelmo undo
 ```
 
 This:
+
 1. Moves the redo stack forward (so you can redo later)
 2. Resets the working directory to the previous checkpoint
 3. Updates the task state accordingly
@@ -59,6 +62,7 @@ kvelmo redo
 ```
 
 This:
+
 1. Moves back through the redo stack
 2. Restores the working directory to that checkpoint
 3. Updates the task state accordingly

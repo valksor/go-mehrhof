@@ -17,15 +17,15 @@ kvelmo watch
 
 ## Common Recovery Commands
 
-| Situation | Command |
-|-----------|---------|
-| Implementation looks wrong | `kvelmo undo` |
-| You undid too far | `kvelmo redo` |
-| Task is stuck or confused | `kvelmo reset` |
-| A phase failed and should be retried | `kvelmo retry` |
-| Running work should stop | `kvelmo stop` |
-| Running work should fail immediately | `kvelmo abort` |
-| You want to discard the task | `kvelmo abandon` |
+| Situation                            | Command          |
+| ------------------------------------ | ---------------- |
+| Implementation looks wrong           | `kvelmo undo`    |
+| You undid too far                    | `kvelmo redo`    |
+| Task is stuck or confused            | `kvelmo reset`   |
+| A phase failed and should be retried | `kvelmo retry`   |
+| Running work should stop             | `kvelmo stop`    |
+| Running work should fail immediately | `kvelmo abort`   |
+| You want to discard the task         | `kvelmo abandon` |
 
 ## Undo a Bad Result
 
