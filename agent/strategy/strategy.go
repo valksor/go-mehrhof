@@ -49,7 +49,7 @@ type ExecFunc func(ctx context.Context, prompt string) (string, error)
 
 // Event is a lightweight event emitted during strategy execution.
 type Event struct {
-	Type    string // "pass_started", "pass_completed", "reflection"
+	Type    string // one of eventPassStarted, eventPassCompleted, eventReflection (see constants.go)
 	Message string
 	Pass    int
 }

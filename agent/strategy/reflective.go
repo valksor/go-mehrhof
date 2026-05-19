@@ -40,7 +40,7 @@ func (r *Reflective) EvaluateOutput(output string) Output {
 	return Output{
 		Content:  output,
 		Metadata: make(map[string]string),
-		Status:   "complete",
+		Status:   statusComplete,
 	}
 }
 
@@ -49,7 +49,7 @@ func (r *Reflective) RunLoop(ctx context.Context, exec ExecFunc, input Input, em
 	var allOutput strings.Builder
 
 	// Pass 1: Initial execution
-	emit(Event{Type: "pass_started", Message: "Initial execution", Pass: 1})
+	emit(Event{Type: eventPassStarted, Message: "Initial execution", Pass: 1})
 
 	prompt := r.BuildPrompt(input)
 
@@ -59,10 +59,10 @@ func (r *Reflective) RunLoop(ctx context.Context, exec ExecFunc, input Input, em
 	}
 
 	allOutput.WriteString(result1)
-	emit(Event{Type: "pass_completed", Message: "Initial pass complete", Pass: 1})
+	emit(Event{Type: eventPassCompleted, Message: "Initial pass complete", Pass: 1})
 
 	// Pass 2: Reflection
-	emit(Event{Type: "pass_started", Message: "Reflection", Pass: 2})
+	emit(Event{Type: eventPassStarted, Message: "Reflection", Pass: 2})
 
 	reflectionPrompt := fmt.Sprintf(
 		"Review the work you just completed. What did you miss? Are there any bugs, "+
@@ -73,37 +73,37 @@ func (r *Reflective) RunLoop(ctx context.Context, exec ExecFunc, input Input, em
 	result2, reflectErr := exec(ctx, reflectionPrompt)
 	if reflectErr != nil {
 		// Reflection failure is non-fatal — return initial result without error.
-		emit(Event{Type: "pass_completed", Message: "Reflection failed, using initial result", Pass: 2})
+		emit(Event{Type: eventPassCompleted, Message: "Reflection failed, using initial result", Pass: 2})
 
-		return Output{Content: allOutput.String(), Status: "complete"}, nil //nolint:nilerr // intentionally non-fatal
+		return Output{Content: allOutput.String(), Status: statusComplete}, nil //nolint:nilerr // intentionally non-fatal
 	}
 
-	emit(Event{Type: "reflection", Message: result2, Pass: 2})
-	emit(Event{Type: "pass_completed", Message: "Reflection complete", Pass: 2})
+	emit(Event{Type: eventReflection, Message: result2, Pass: 2})
+	emit(Event{Type: eventPassCompleted, Message: "Reflection complete", Pass: 2})
 
 	// Check if reflection found actionable items.
 	if !hasActionableItems(result2) {
-		return Output{Content: allOutput.String(), Status: "complete"}, nil
+		return Output{Content: allOutput.String(), Status: statusComplete}, nil
 	}
 
 	// Pass 3: Corrections
-	emit(Event{Type: "pass_started", Message: "Applying corrections", Pass: 3})
+	emit(Event{Type: eventPassStarted, Message: "Applying corrections", Pass: 3})
 
 	correctionPrompt := "Based on your review, apply the following corrections:\n\n" + result2
 
 	result3, correctErr := exec(ctx, correctionPrompt)
 	if correctErr != nil {
 		// Correction failure is non-fatal — return what we have.
-		emit(Event{Type: "pass_completed", Message: "Corrections failed, using reflection result", Pass: 3})
+		emit(Event{Type: eventPassCompleted, Message: "Corrections failed, using reflection result", Pass: 3})
 
-		return Output{Content: allOutput.String(), Status: "complete"}, nil //nolint:nilerr // intentionally non-fatal
+		return Output{Content: allOutput.String(), Status: statusComplete}, nil //nolint:nilerr // intentionally non-fatal
 	}
 
 	allOutput.WriteString("\n\n")
 	allOutput.WriteString(result3)
-	emit(Event{Type: "pass_completed", Message: "Corrections applied", Pass: 3})
+	emit(Event{Type: eventPassCompleted, Message: "Corrections applied", Pass: 3})
 
-	return Output{Content: allOutput.String(), Status: "complete"}, nil
+	return Output{Content: allOutput.String(), Status: statusComplete}, nil
 }
 
 // truncateForReflection limits output length for the reflection prompt.

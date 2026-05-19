@@ -35,6 +35,6 @@ func (d *Direct) EvaluateOutput(output string) Output {
 	return Output{
 		Content:  output,
 		Metadata: make(map[string]string),
-		Status:   "complete",
+		Status:   statusComplete,
 	}
 }
