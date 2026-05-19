@@ -10,15 +10,15 @@ The PR Preview panel appears as a tab when running `/submit` with dry-run mode o
 
 The panel displays:
 
-| Field | Description |
-|-------|-------------|
-| Title | PR title generated from the task |
-| Body | PR description with summary, specifications, and changelog |
-| Branch | Source branch for the PR |
-| Base Branch | Target branch the PR will merge into |
-| Diff Stat | Summary of files changed, insertions, and deletions |
-| Checkpoints | Number of git checkpoints created during the task |
-| Specifications | Number of specifications attached |
+| Field          | Description                                                |
+| -------------- | ---------------------------------------------------------- |
+| Title          | PR title generated from the task                           |
+| Body           | PR description with summary, specifications, and changelog |
+| Branch         | Source branch for the PR                                   |
+| Base Branch    | Target branch the PR will merge into                       |
+| Diff Stat      | Summary of files changed, insertions, and deletions        |
+| Checkpoints    | Number of git checkpoints created during the task          |
+| Specifications | Number of specifications attached                          |
 
 ## Editing
 

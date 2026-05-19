@@ -7,6 +7,7 @@ kvelmo's web UI supports two modes to match different user needs.
 A streamlined, single-column interface for users who want to load tasks and let the AI handle the details.
 
 **Visible features:**
+
 - Project list with search
 - Add Project and Settings buttons
 - Step-by-step task workflow (Start, Continue, Build, Review, Submit, Finish)
@@ -24,6 +25,7 @@ The full dashboard with tabs, panels, widgets, and all advanced tools. This is t
 ## First Visit
 
 On first visit (no persisted preference), a **ModePickerModal** appears with two cards:
+
 - **Simple**: "Load tasks and let the AI handle it"
 - **Developer**: "Full control over the workflow"
 

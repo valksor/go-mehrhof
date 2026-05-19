@@ -11,7 +11,7 @@ Click **Settings** in the sidebar to open the configuration panel.
 ### General
 
 | Setting       | Description                             |
-|---------------|-----------------------------------------|
+| ------------- | --------------------------------------- |
 | Default Agent | AI agent to use (claude, codex, custom) |
 | Web Port      | Port for the Web UI (default: 6337)     |
 
@@ -20,7 +20,7 @@ Click **Settings** in the sidebar to open the configuration panel.
 Configure AI agent settings:
 
 | Setting     | Description                  |
-|-------------|------------------------------|
+| ----------- | ---------------------------- |
 | Agent       | Agent to use for each phase  |
 | Retry Count | Number of retries on failure |
 | Retry Delay | Delay between retries        |
@@ -30,7 +30,7 @@ Configure AI agent settings:
 Worker pool configuration:
 
 | Setting     | Description                |
-|-------------|----------------------------|
+| ----------- | -------------------------- |
 | Max Workers | Maximum concurrent workers |
 | Queue Size  | Maximum jobs in queue      |
 
@@ -39,7 +39,7 @@ Worker pool configuration:
 Git integration settings:
 
 | Setting        | Description                  |
-|----------------|------------------------------|
+| -------------- | ---------------------------- |
 | Auto Commit    | Automatically commit changes |
 | Branch Pattern | Pattern for branch names     |
 | Target Branch  | Default merge target         |
@@ -49,7 +49,7 @@ Git integration settings:
 Task source configuration:
 
 | Setting      | Description           |
-|--------------|-----------------------|
+| ------------ | --------------------- |
 | GitHub Token | Personal access token |
 | GitLab Token | Personal access token |
 | Wrike Token  | API token             |
@@ -84,7 +84,7 @@ Project settings override global settings.
 Some settings can be set via environment variables:
 
 | Variable            | Setting          |
-|---------------------|------------------|
+| ------------------- | ---------------- |
 | `KVELMO_SOCKET_DIR` | Socket directory |
 | `KVELMO_WEB_ADDR`   | Web UI address   |
 | `GITHUB_TOKEN`      | GitHub API token |

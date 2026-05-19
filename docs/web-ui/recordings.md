@@ -24,12 +24,12 @@ Click a recording row to expand it. The detail view shows:
 - Header info: Job ID, Agent, Model, Work directory
 - Records table with columns:
 
-| Column | Description |
-|--------|-------------|
-| Time | Event timestamp (HH:MM:SS) |
-| Direction | `<-` for incoming, `->` for outgoing |
-| Type | Event type badge |
-| Data | Event payload (truncated to 200 characters) |
+| Column    | Description                                 |
+| --------- | ------------------------------------------- |
+| Time      | Event timestamp (HH:MM:SS)                  |
+| Direction | `<-` for incoming, `->` for outgoing        |
+| Type      | Event type badge                            |
+| Data      | Event payload (truncated to 200 characters) |
 
 Click the expanded row again to collapse it.
 

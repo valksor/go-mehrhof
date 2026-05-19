@@ -10,11 +10,11 @@ Open the Quality Gates panel from the **Tools** dropdown menu in the project too
 
 Click **Run** to execute quality gates via the `quality.respond` RPC method. The panel displays findings grouped by severity:
 
-| Severity | Description |
-|----------|-------------|
-| Error | Must-fix issues that block submission |
-| Warning | Should-fix issues flagged for review |
-| Info | Informational findings |
+| Severity | Description                           |
+| -------- | ------------------------------------- |
+| Error    | Must-fix issues that block submission |
+| Warning  | Should-fix issues flagged for review  |
+| Info     | Informational findings                |
 
 Each finding shows the rule name, file path, line number, and message.
 

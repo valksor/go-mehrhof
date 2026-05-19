@@ -10,10 +10,10 @@ Click the chart icon in the top-right of the Global View header. The panel opens
 
 Configure the report parameters:
 
-| Option | Choices |
-|--------|---------|
+| Option     | Choices                          |
+| ---------- | -------------------------------- |
 | Time range | Last 7 days, 30 days, or 90 days |
-| Format | Markdown or JSON |
+| Format     | Markdown or JSON                 |
 
 Click **Generate** to create the report. The button is disabled when not connected to the server.
 

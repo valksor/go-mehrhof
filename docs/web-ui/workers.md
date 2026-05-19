@@ -15,14 +15,14 @@ Both auto-refresh while connected (every 3-5 seconds).
 
 The stats bar shows at-a-glance pool health:
 
-| Metric | Description |
-|--------|-------------|
-| Workers | Total count and how many are available |
-| Available | Idle workers ready to accept jobs |
-| Working | Workers currently executing a job |
-| Queued | Jobs waiting for a free worker |
-| Completed | Total jobs finished successfully |
-| Failed | Total jobs that errored |
+| Metric    | Description                            |
+| --------- | -------------------------------------- |
+| Workers   | Total count and how many are available |
+| Available | Idle workers ready to accept jobs      |
+| Working   | Workers currently executing a job      |
+| Queued    | Jobs waiting for a free worker         |
+| Completed | Total jobs finished successfully       |
+| Failed    | Total jobs that errored                |
 
 ## Worker List
 

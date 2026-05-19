@@ -64,6 +64,7 @@ Before planning, you can add context:
 ## Specification Location
 
 Specifications are stored in:
+
 ```
 .kvelmo/specifications/specification.md
 ```
@@ -73,7 +74,7 @@ Multiple planning attempts add numbered versions.
 ## State Transition
 
 | Before   | After     |
-|----------|-----------|
+| -------- | --------- |
 | `loaded` | `planned` |
 
 A checkpoint is created after successful planning.

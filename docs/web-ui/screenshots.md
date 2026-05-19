@@ -14,11 +14,11 @@ Click the **camera icon** button in the header to take a new screenshot.
 
 Use the filter buttons in the header to show:
 
-| Filter | Shows |
-|--------|-------|
-| All | All screenshots |
-| Agent | Screenshots captured by AI agents during execution |
-| User | Screenshots captured manually |
+| Filter | Shows                                              |
+| ------ | -------------------------------------------------- |
+| All    | All screenshots                                    |
+| Agent  | Screenshots captured by AI agents during execution |
+| User   | Screenshots captured manually                      |
 
 ## Gallery
 

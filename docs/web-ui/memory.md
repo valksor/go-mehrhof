@@ -10,11 +10,11 @@ Click the light bulb icon in the top-right of the Global View header. The panel 
 
 Three metrics display at the top:
 
-| Metric | Description |
-|--------|-------------|
-| Total Entries | Number of stored memory entries |
-| Total Size | Storage size (formatted as B/KB/MB/GB) |
-| Index Status | **Ready** (green) or **Not ready** (orange) |
+| Metric        | Description                                 |
+| ------------- | ------------------------------------------- |
+| Total Entries | Number of stored memory entries             |
+| Total Size    | Storage size (formatted as B/KB/MB/GB)      |
+| Index Status  | **Ready** (green) or **Not ready** (orange) |
 
 ## Searching
 

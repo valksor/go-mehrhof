@@ -14,13 +14,13 @@ Click **Scan** to trigger a security scan of the project directory. The scan che
 
 After a scan completes, results appear in a table:
 
-| Column | Description |
-|--------|-------------|
-| Severity | `critical`, `high`, `medium`, or `low` — color-coded by severity |
-| File | Path to the affected file |
-| Line | Line number of the finding |
-| Rule | Rule identifier that triggered the finding |
-| Description | Explanation of the security issue |
+| Column      | Description                                                      |
+| ----------- | ---------------------------------------------------------------- |
+| Severity    | `critical`, `high`, `medium`, or `low` — color-coded by severity |
+| File        | Path to the affected file                                        |
+| Line        | Line number of the finding                                       |
+| Rule        | Rule identifier that triggered the finding                       |
+| Description | Explanation of the security issue                                |
 
 If the scan finds no issues, a success message confirms the project is clean.
 

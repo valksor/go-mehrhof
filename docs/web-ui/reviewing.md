@@ -25,12 +25,14 @@ When your task is in the `implemented` state:
 ### Test Results
 
 If tests were run:
+
 - Check the Output panel for results
 - Ensure all tests pass
 
 ### Security
 
 kvelmo can run security scans:
+
 - Look for warnings in the Output panel
 - Address any security issues before submitting
 
@@ -66,7 +68,7 @@ You can edit files manually before submitting:
 The Changes panel shows:
 
 | Column | Description            |
-|--------|------------------------|
+| ------ | ---------------------- |
 | File   | Modified file path     |
 | Status | Added/Modified/Deleted |
 | Lines  | Lines changed          |
@@ -76,6 +78,7 @@ Click a file to see the diff.
 ## Diff View
 
 The diff view shows:
+
 - Red lines = removed
 - Green lines = added
 - Context lines = unchanged
@@ -83,7 +86,7 @@ The diff view shows:
 ## State Transition
 
 | Before        | After (approve) | After (reject)           |
-|---------------|-----------------|--------------------------|
+| ------------- | --------------- | ------------------------ |
 | `implemented` | `submitted`     | `implemented` (via undo) |
 
 Prefer the command line? See [kvelmo review](/cli/review.md).

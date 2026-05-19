@@ -10,18 +10,18 @@ Open the Metrics panel from the **Tools** dropdown menu in the project toolbar. 
 
 The panel calls `metrics` and displays counters and latency data:
 
-| Metric | Description |
-|--------|-------------|
-| Jobs Submitted | Total jobs submitted to the worker pool |
-| Jobs Completed | Successfully completed jobs |
-| Jobs Failed | Jobs that encountered errors |
-| Jobs In Progress | Currently running jobs |
-| RPC Requests | Total JSON-RPC requests processed |
-| RPC Errors | Requests that returned errors |
-| Avg Latency | Average RPC request latency (ms) |
-| P99 Latency | 99th percentile latency (ms) |
-| Agent Connects | Agent WebSocket connections |
-| Tokens Consumed | Total tokens used across all agents |
+| Metric           | Description                             |
+| ---------------- | --------------------------------------- |
+| Jobs Submitted   | Total jobs submitted to the worker pool |
+| Jobs Completed   | Successfully completed jobs             |
+| Jobs Failed      | Jobs that encountered errors            |
+| Jobs In Progress | Currently running jobs                  |
+| RPC Requests     | Total JSON-RPC requests processed       |
+| RPC Errors       | Requests that returned errors           |
+| Avg Latency      | Average RPC request latency (ms)        |
+| P99 Latency      | 99th percentile latency (ms)            |
+| Agent Connects   | Agent WebSocket connections             |
+| Tokens Consumed  | Total tokens used across all agents     |
 
 When per-agent breakdowns are available, each agent's tokens, requests, errors, and latency are shown in a separate table.
 
