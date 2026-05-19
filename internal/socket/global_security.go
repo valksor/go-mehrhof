@@ -36,8 +36,8 @@ func (g *GlobalSocket) handleSecurityScan(ctx context.Context, req *Request) (*R
 	}
 
 	return NewResultResponse(req.ID, map[string]any{
-		"findings": unified,
-		"count":    len(unified),
-		"scanners": scanners,
+		keyFindings: unified,
+		keyCount:    len(unified),
+		"scanners":  scanners,
 	})
 }

@@ -158,7 +158,7 @@ func (g *GlobalSocket) handleChatSendEnhanced(ctx context.Context, req *Request,
 	}
 
 	// Require active task for chat
-	if worktreeState == "" || worktreeState == "none" {
+	if worktreeState == "" || worktreeState == string(StateNone) {
 		return NewErrorResponse(req.ID, -32600, "no active task - load a task first with 'kvelmo start'"), nil
 	}
 
@@ -241,7 +241,7 @@ func (g *GlobalSocket) streamJobEvents(jobID, taskID, workDir string, conn net.C
 		}
 
 		// Handle completion - persist assistant message
-		if event.Type == "job_completed" {
+		if event.Type == worker.EventJobCompleted {
 			chatEvent.Result = resultContent.String()
 
 			// Persist assistant message to storage
@@ -261,7 +261,7 @@ func (g *GlobalSocket) streamJobEvents(jobID, taskID, workDir string, conn net.C
 		}
 
 		// Handle failure
-		if event.Type == "job_failed" {
+		if event.Type == worker.EventJobFailed {
 			chatEvent.Error = event.Content
 		}
 
@@ -309,8 +309,8 @@ func (g *GlobalSocket) handleChatStop(ctx context.Context, req *Request) (*Respo
 	// but keep the worker available for further chat.
 
 	return NewResultResponse(req.ID, map[string]string{
-		"status":  "stopped",
-		"message": "Chat stopped (worker retained)",
+		keyStatus:  "stopped",
+		keyMessage: "Chat stopped (worker retained)",
 	})
 }
 
@@ -347,7 +347,7 @@ func (g *GlobalSocket) handleChatHistory(ctx context.Context, req *Request) (*Re
 	}
 
 	// Require active task
-	if worktreeState == "" || worktreeState == "none" {
+	if worktreeState == "" || worktreeState == string(StateNone) {
 		return NewErrorResponse(req.ID, -32600, "no active task"), nil
 	}
 
@@ -404,7 +404,7 @@ func (g *GlobalSocket) handleChatClear(ctx context.Context, req *Request) (*Resp
 	}
 
 	// Require active task
-	if worktreeState == "" || worktreeState == "none" {
+	if worktreeState == "" || worktreeState == string(StateNone) {
 		return NewErrorResponse(req.ID, -32600, "no active task"), nil
 	}
 
@@ -415,7 +415,7 @@ func (g *GlobalSocket) handleChatClear(ctx context.Context, req *Request) (*Resp
 	}
 
 	return NewResultResponse(req.ID, map[string]string{
-		"status":  "cleared",
-		"message": "Chat history cleared",
+		keyStatus:  "cleared",
+		keyMessage: "Chat history cleared",
 	})
 }

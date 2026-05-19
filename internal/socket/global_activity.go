@@ -37,7 +37,7 @@ func (g *GlobalSocket) SetActivityLog(l *activitylog.Log) {
 // handleActivityQuery returns filtered activity log entries.
 func (g *GlobalSocket) handleActivityQuery(_ context.Context, req *Request) (*Response, error) {
 	if g.server.activityLogger == nil {
-		return NewResultResponse(req.ID, map[string]any{"entries": []any{}, "enabled": false})
+		return NewResultResponse(req.ID, map[string]any{keyEntries: []any{}, keyEnabled: false})
 	}
 
 	adapter, ok := g.server.activityLogger.(*activityLogAdapter)
@@ -81,10 +81,10 @@ func (g *GlobalSocket) handleActivityQuery(_ context.Context, req *Request) (*Re
 		}
 
 		return NewResultResponse(req.ID, map[string]any{
-			"entries":  activities,
-			"count":    len(activities),
+			keyEntries: activities,
+			keyCount:   len(activities),
 			"timeline": true,
-			"enabled":  true,
+			keyEnabled: true,
 		})
 	}
 
@@ -94,8 +94,8 @@ func (g *GlobalSocket) handleActivityQuery(_ context.Context, req *Request) (*Re
 	}
 
 	return NewResultResponse(req.ID, map[string]any{
-		"entries": entries,
-		"count":   len(entries),
-		"enabled": true,
+		keyEntries: entries,
+		keyCount:   len(entries),
+		keyEnabled: true,
 	})
 }

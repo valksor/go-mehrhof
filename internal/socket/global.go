@@ -273,7 +273,7 @@ func (g *GlobalSocket) registerHandlers() {
 
 func (g *GlobalSocket) handlePing(ctx context.Context, req *Request) (*Response, error) {
 	return NewResultResponse(req.ID, map[string]string{
-		"status":  "ok",
+		keyStatus: "ok",
 		"version": meta.Version,
 		"commit":  meta.Commit,
 	})

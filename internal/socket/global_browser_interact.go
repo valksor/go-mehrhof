@@ -95,9 +95,9 @@ func (g *GlobalSocket) handleBrowserInstall(ctx context.Context, req *Request) (
 	}
 
 	return NewResultResponse(req.ID, map[string]any{
-		"ok":      true,
-		"message": "Browser runtime installed successfully",
-		"path":    browser.Paths(),
+		"ok":       true,
+		keyMessage: "Browser runtime installed successfully",
+		keyPath:    browser.Paths(),
 	})
 }
 

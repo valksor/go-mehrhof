@@ -161,13 +161,13 @@ func resolveProviderToken(providerName string) string {
 // testProviderToken makes a lightweight API call to verify a token is valid.
 func testProviderToken(ctx context.Context, providerName, token string) (bool, string) {
 	switch providerName {
-	case "github":
+	case provider.NameGitHub:
 		return testHTTPToken(ctx, "https://api.github.com/user", token, "token")
-	case "gitlab":
+	case provider.NameGitLab:
 		return testHTTPToken(ctx, "https://gitlab.com/api/v4/user", token, "PRIVATE-TOKEN")
-	case "linear":
+	case provider.NameLinear:
 		return testLinearToken(ctx, token)
-	case "wrike":
+	case provider.NameWrike:
 		return testHTTPToken(ctx, "https://www.wrike.com/api/v4/contacts?me=true", token, "bearer")
 	default:
 		return false, "Unknown provider: " + providerName

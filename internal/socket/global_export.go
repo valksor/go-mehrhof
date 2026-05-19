@@ -36,9 +36,9 @@ func (g *GlobalSocket) handleExport(ctx context.Context, req *Request) (*Respons
 	tasks := make([]map[string]any, 0, len(g.worktrees))
 	for _, wt := range g.worktrees {
 		task := map[string]any{
-			"id":    wt.ID,
-			"path":  wt.Path,
-			"state": wt.State,
+			"id":     wt.ID,
+			keyPath:  wt.Path,
+			keyState: wt.State,
 		}
 		// Query worktree socket for checkpoint data (best-effort)
 		if wt.SocketPath != "" {

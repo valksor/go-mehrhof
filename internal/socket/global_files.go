@@ -104,9 +104,9 @@ func (g *GlobalSocket) handleBrowse(ctx context.Context, req *Request) (*Respons
 	}
 
 	return NewResultResponse(req.ID, map[string]any{
-		"path":    path,
-		"parent":  filepath.Dir(path),
-		"entries": result,
+		keyPath:    path,
+		"parent":   filepath.Dir(path),
+		keyEntries: result,
 	})
 }
 
@@ -246,8 +246,8 @@ func (g *GlobalSocket) handleFilesList(ctx context.Context, req *Request) (*Resp
 	})
 
 	return NewResultResponse(req.ID, map[string]any{
-		"path":    basePath,
-		"entries": entries,
+		keyPath:    basePath,
+		keyEntries: entries,
 	})
 }
 
@@ -346,8 +346,8 @@ func (g *GlobalSocket) handleFilesSearch(ctx context.Context, req *Request) (*Re
 	}
 
 	return NewResultResponse(req.ID, map[string]any{
-		"query":   params.Query,
-		"path":    basePath,
-		"entries": entries,
+		"query":    params.Query,
+		keyPath:    basePath,
+		keyEntries: entries,
 	})
 }

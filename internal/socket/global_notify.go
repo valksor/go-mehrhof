@@ -24,8 +24,8 @@ func GetNotifier() *notify.Notifier {
 func (g *GlobalSocket) handleNotifyTest(_ context.Context, req *Request) (*Response, error) {
 	if notifier == nil {
 		return NewResultResponse(req.ID, map[string]any{
-			"sent":    0,
-			"message": "notifications not enabled (set notify.enabled: true in config)",
+			"sent":     0,
+			keyMessage: "notifications not enabled (set notify.enabled: true in config)",
 		})
 	}
 
@@ -34,13 +34,13 @@ func (g *GlobalSocket) handleNotifyTest(_ context.Context, req *Request) (*Respo
 		Timestamp:   time.Now(),
 		TaskID:      "test",
 		TaskTitle:   "Test Notification",
-		State:       "none",
+		State:       string(StateNone),
 		Message:     "This is a test notification from kvelmo",
 		ProjectPath: "test",
 	})
 
 	return NewResultResponse(req.ID, map[string]any{
-		"sent":    1,
-		"message": "test notification queued",
+		"sent":     1,
+		keyMessage: "test notification queued",
 	})
 }

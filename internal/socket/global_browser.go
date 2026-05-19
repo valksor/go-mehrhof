@@ -188,8 +188,8 @@ func (g *GlobalSocket) handleBrowserScreenshot(ctx context.Context, req *Request
 	}
 
 	return NewResultResponse(req.ID, map[string]any{
-		"id":   ss["id"],
-		"path": result.Path,
+		"id":    ss["id"],
+		keyPath: result.Path,
 	})
 }
 

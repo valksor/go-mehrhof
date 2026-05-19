@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 )
 
@@ -85,8 +86,8 @@ func resolveNonExistentPath(absPath string) (string, error) {
 				return "", err
 			}
 			// Reconstruct the path with non-existent suffix
-			for i := len(nonExistent) - 1; i >= 0; i-- {
-				realCurrent = filepath.Join(realCurrent, nonExistent[i])
+			for _, v := range slices.Backward(nonExistent) {
+				realCurrent = filepath.Join(realCurrent, v)
 			}
 
 			return realCurrent, nil

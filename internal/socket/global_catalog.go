@@ -37,7 +37,7 @@ func (g *GlobalSocket) handleCatalogList(_ context.Context, req *Request) (*Resp
 
 	return NewResultResponse(req.ID, map[string]any{
 		"templates": pg.Items,
-		"total":     pg.Total,
+		keyTotal:    pg.Total,
 		"page":      pg.PageNum,
 		"per_page":  pg.PerPage,
 		"has_next":  pg.HasNext,

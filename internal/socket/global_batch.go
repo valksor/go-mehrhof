@@ -12,7 +12,7 @@ import (
 
 // BatchParams is the request for tasks.batch.
 type BatchParams struct {
-	Action string            `json:"action"`           // "plan", "implement", "review", "submit", "abort", "reset", "stop", "pause", "resume"
+	Action string            `json:"action"`           // "plan", "implement", "review", "submit", "abort", "reset", "stop"
 	Filter map[string]string `json:"filter,omitempty"` // Optional: {"state": "reviewing"} to filter targets
 }
 
@@ -36,22 +36,18 @@ func (g *GlobalSocket) handleBatch(ctx context.Context, req *Request) (*Response
 		return NewErrorResponse(req.ID, ErrCodeInvalidParams, "action is required"), nil
 	}
 
-	// Validate action
-	validActions := map[string]string{
-		"plan":      "plan",
-		"implement": "implement",
-		"review":    "review",
-		"submit":    "submit",
-		"abort":     "abort",
-		"reset":     "reset",
-		"stop":      "stop",
-		"pause":     "pause",
-		"resume":    "resume",
+	// Validate action — the action name doubles as the RPC method name.
+	// pause/resume are state-machine events but have no batchable worktree RPC
+	// handler yet; omit them so batch requests fail loud at the dispatcher
+	// rather than fail at the worktree with method-not-found.
+	validActions := []string{
+		actionPlan, actionImplement, actionReview, actionSubmit,
+		actionAbort, actionReset, actionStop,
 	}
-	rpcMethod, ok := validActions[params.Action]
-	if !ok {
-		return NewErrorResponse(req.ID, ErrCodeInvalidParams, fmt.Sprintf("invalid action %q (valid: plan, implement, review, submit, abort, reset, stop, pause, resume)", params.Action)), nil
+	if !slices.Contains(validActions, params.Action) {
+		return NewErrorResponse(req.ID, ErrCodeInvalidParams, fmt.Sprintf("invalid action %q (valid: plan, implement, review, submit, abort, reset, stop)", params.Action)), nil
 	}
+	rpcMethod := params.Action
 
 	// Get all registered worktrees
 	g.mu.RLock()
@@ -124,7 +120,7 @@ func (g *GlobalSocket) handleBatch(ctx context.Context, req *Request) (*Response
 		}
 
 		// Skip idle worktrees
-		if status.State == "none" {
+		if status.State == string(StateNone) {
 			_ = client.Close()
 
 			continue
@@ -151,6 +147,6 @@ func (g *GlobalSocket) handleBatch(ctx context.Context, req *Request) (*Response
 	return NewResultResponse(req.ID, map[string]any{
 		"action":  params.Action,
 		"results": results,
-		"total":   len(results),
+		keyTotal:  len(results),
 	})
 }

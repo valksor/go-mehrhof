@@ -126,7 +126,7 @@ func (g *GlobalSocket) handleListJobs(ctx context.Context, req *Request) (*Respo
 		result[i] = map[string]any{
 			"id":         j.ID,
 			"type":       j.Type,
-			"status":     j.Status,
+			keyStatus:    j.Status,
 			"worktree":   j.WorktreeID,
 			"created_at": j.CreatedAt.Format(time.RFC3339),
 		}
@@ -155,7 +155,7 @@ func (g *GlobalSocket) handleGetJob(ctx context.Context, req *Request) (*Respons
 	result := map[string]any{
 		"id":         job.ID,
 		"type":       job.Type,
-		"status":     job.Status,
+		keyStatus:    job.Status,
 		"worktree":   job.WorktreeID,
 		"prompt":     job.Prompt,
 		"created_at": job.CreatedAt.Format(time.RFC3339),

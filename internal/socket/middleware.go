@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"net"
 	"runtime/debug"
+	"slices"
 	"strings"
 	"time"
 
@@ -242,8 +243,8 @@ func RateLimitMiddleware(limiter *ratelimit.Limiter, keyFn func(ctx context.Cont
 // added is the outermost wrapper (executes first).
 func buildChain(handler HandlerFunc, middleware []Middleware) HandlerFunc {
 	wrapped := handler
-	for i := len(middleware) - 1; i >= 0; i-- {
-		wrapped = middleware[i](wrapped)
+	for _, v := range slices.Backward(middleware) {
+		wrapped = v(wrapped)
 	}
 
 	return wrapped

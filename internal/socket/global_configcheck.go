@@ -36,6 +36,6 @@ func (g *GlobalSocket) handleConfigCheck(_ context.Context, req *Request) (*Resp
 
 	return NewResultResponse(req.ID, map[string]any{
 		"drifts": drifts,
-		"count":  len(drifts),
+		keyCount: len(drifts),
 	})
 }

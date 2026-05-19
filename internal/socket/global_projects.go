@@ -33,13 +33,13 @@ func (g *GlobalSocket) handleListProjects(ctx context.Context, req *Request) (*R
 	for i, info := range infos {
 		go func(i int, info *WorktreeInfo) {
 			if info.SocketPath == "" {
-				results <- liveResult{i, "offline"}
+				results <- liveResult{i, statusOffline}
 
 				return
 			}
 			client, err := NewClient(info.SocketPath, WithTimeout(liveTimeout))
 			if err != nil {
-				results <- liveResult{i, "offline"}
+				results <- liveResult{i, statusOffline}
 
 				return
 			}
@@ -48,13 +48,13 @@ func (g *GlobalSocket) handleListProjects(ctx context.Context, req *Request) (*R
 			defer cancel()
 			resp, err := client.Call(queryCtx, "status", nil)
 			if err != nil {
-				results <- liveResult{i, "offline"}
+				results <- liveResult{i, statusOffline}
 
 				return
 			}
 			var sr StatusResult
 			if err := json.Unmarshal(resp.Result, &sr); err != nil {
-				results <- liveResult{i, "offline"}
+				results <- liveResult{i, statusOffline}
 
 				return
 			}
@@ -70,7 +70,7 @@ func (g *GlobalSocket) handleListProjects(ctx context.Context, req *Request) (*R
 	// Persist updated states back to the registry (skip offline so last-known state is preserved).
 	g.mu.Lock()
 	for _, info := range infos {
-		if w, ok := g.worktrees[info.ID]; ok && info.State != "offline" {
+		if w, ok := g.worktrees[info.ID]; ok && info.State != statusOffline {
 			w.State = info.State
 			w.LastSeen = time.Now()
 		}
@@ -107,7 +107,7 @@ func (g *GlobalSocket) handleRegisterProject(ctx context.Context, req *Request) 
 		ID:         id,
 		Path:       params.Path,
 		SocketPath: socketPath,
-		State:      "none",
+		State:      string(StateNone),
 		LastSeen:   time.Now(),
 	}
 	g.mu.Unlock()

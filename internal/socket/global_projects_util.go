@@ -187,8 +187,8 @@ func (g *GlobalSocket) broadcastTaskStateChanged(projectPath string, state strin
 		"jsonrpc": JSONRPCVersion,
 		"method":  "task_state_changed",
 		"params": map[string]string{
-			"path":  projectPath,
-			"state": state,
+			keyPath:  projectPath,
+			keyState: state,
 		},
 	}
 	data, err := json.Marshal(notification)

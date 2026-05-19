@@ -137,5 +137,5 @@ func (g *GlobalSocket) handleTaskGroupRemove(_ context.Context, req *Request) (*
 		return NewErrorResponse(req.ID, ErrCodeInternal, err.Error()), nil
 	}
 
-	return NewResultResponse(req.ID, map[string]string{"status": "removed"})
+	return NewResultResponse(req.ID, map[string]string{keyStatus: "removed"})
 }

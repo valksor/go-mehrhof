@@ -19,8 +19,8 @@ func SetTimeSeriesStore(ts *metrics.TimeSeriesStore) {
 func (g *GlobalSocket) handleMetricsHistory(_ context.Context, req *Request) (*Response, error) {
 	if timeSeriesStore == nil {
 		return NewResultResponse(req.ID, map[string]any{
-			"entries": []any{},
-			"enabled": false,
+			keyEntries: []any{},
+			keyEnabled: false,
 		})
 	}
 
@@ -59,8 +59,8 @@ func (g *GlobalSocket) handleMetricsHistory(_ context.Context, req *Request) (*R
 	}
 
 	return NewResultResponse(req.ID, map[string]any{
-		"entries": entries,
-		"count":   len(entries),
-		"enabled": true,
+		keyEntries: entries,
+		keyCount:   len(entries),
+		keyEnabled: true,
 	})
 }

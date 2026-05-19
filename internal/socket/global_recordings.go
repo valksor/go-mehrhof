@@ -75,7 +75,7 @@ func (g *GlobalSocket) handleRecordingsList(_ context.Context, req *Request) (*R
 
 	return NewResultResponse(req.ID, map[string]any{
 		"recordings": pg.Items,
-		"total":      pg.Total,
+		keyTotal:     pg.Total,
 		"page":       pg.PageNum,
 		"per_page":   pg.PerPage,
 		"has_next":   pg.HasNext,
