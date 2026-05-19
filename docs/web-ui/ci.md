@@ -10,11 +10,11 @@ Open the CI Status panel from the sidebar. It loads as a modal overlay.
 
 The panel calls `ci.status` and displays a table of CI checks:
 
-| Column | Description |
-|--------|-------------|
-| Check | Name of the CI check (e.g., `build`, `lint`, `test`) |
-| Status | `Pass`, `Fail`, or `Pending` — color-coded badge |
-| View | Link to the check's detail page (when available) |
+| Column | Description                                          |
+| ------ | ---------------------------------------------------- |
+| Check  | Name of the CI check (e.g., `build`, `lint`, `test`) |
+| Status | `Pass`, `Fail`, or `Pending` — color-coded badge     |
+| View   | Link to the check's detail page (when available)     |
 
 If no CI data is available (no PR submitted, or provider does not support status checks), an empty state message is shown.
 

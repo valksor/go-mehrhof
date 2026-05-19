@@ -13,16 +13,19 @@ Learn how to create and start tasks in the Web UI.
 ## Task Title
 
 The title should be:
+
 - Concise (3-10 words)
 - Action-oriented (starts with a verb)
 - Specific enough to understand the goal
 
 **Good titles:**
+
 - "Add login page with email authentication"
 - "Fix null pointer in checkout flow"
 - "Update API documentation for v2 endpoints"
 
 **Avoid:**
+
 - "Fix bug" (too vague)
 - "Implement the new feature we discussed" (unclear)
 - "Updates" (not specific)
@@ -65,6 +68,7 @@ Instead of creating tasks manually, you can load from external sources:
 ### From a File
 
 If you have a task file:
+
 1. Click **Load from File**
 2. Select the markdown file
 3. Task details are populated automatically
@@ -79,6 +83,7 @@ If you have a task file:
 ### From Other Providers
 
 kvelmo supports multiple task sources:
+
 - **GitHub** — Issues and PRs
 - **GitLab** — Issues and MRs
 - **Wrike** — Tasks
@@ -96,6 +101,7 @@ When you click **Start**:
 ## Branch Naming
 
 kvelmo creates branches automatically. The default pattern is:
+
 ```
 feature/<task-id>--<slug>
 ```
@@ -105,6 +111,7 @@ Example: `feature/123--add-user-auth`
 ## Next Steps
 
 After creating a task:
+
 1. Review the task in the dashboard
 2. Click **Plan** to generate a specification
 3. Continue through the [workflow](/concepts/workflow.md)

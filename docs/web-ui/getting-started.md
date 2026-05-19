@@ -65,13 +65,13 @@ The Web UI is broader than a single linear task view. Features may appear as:
 
 Common areas include:
 
-| Area | Typical capabilities |
-|------|----------------------|
-| **Project dashboard** | Task state, actions, progress, quick controls |
-| **Panels and tabs** | Chat, output, files, browser, screenshots, jobs, review context |
-| **Context widgets** | Activity, logs, memory, recordings, code graph, policy, CI |
-| **Dialogs and drawers** | Settings, exports, reports, backups, access management |
-| **Global views** | Projects, workers, cross-project status |
+| Area                    | Typical capabilities                                            |
+| ----------------------- | --------------------------------------------------------------- |
+| **Project dashboard**   | Task state, actions, progress, quick controls                   |
+| **Panels and tabs**     | Chat, output, files, browser, screenshots, jobs, review context |
+| **Context widgets**     | Activity, logs, memory, recordings, code graph, policy, CI      |
+| **Dialogs and drawers** | Settings, exports, reports, backups, access management          |
+| **Global views**        | Projects, workers, cross-project status                         |
 
 ## What the Web UI Is Best At
 

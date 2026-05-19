@@ -10,14 +10,14 @@ Open a **Jobs** tab from the tab bar or the mobile "More" menu. Jobs load automa
 
 Jobs display as expandable rows showing:
 
-| Column | Description |
-|--------|-------------|
-| Status | Colored dot — green (completed), orange (running), red (failed), blue (queued) |
-| ID | First 12 characters of the job ID |
-| Status badge | Current state: completed, running, failed, queued, or pending |
-| Type | Job type (e.g., plan, implement) |
-| Worktree | Target worktree (truncated) |
-| Created | Creation timestamp |
+| Column       | Description                                                                    |
+| ------------ | ------------------------------------------------------------------------------ |
+| Status       | Colored dot — green (completed), orange (running), red (failed), blue (queued) |
+| ID           | First 12 characters of the job ID                                              |
+| Status badge | Current state: completed, running, failed, queued, or pending                  |
+| Type         | Job type (e.g., plan, implement)                                               |
+| Worktree     | Target worktree (truncated)                                                    |
+| Created      | Creation timestamp                                                             |
 
 ## Job Details
 

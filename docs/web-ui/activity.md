@@ -26,11 +26,11 @@ Compliance-focused view that adds a **User** column to the activity table and sh
 
 All filters apply to both view modes and update results automatically:
 
-| Filter | Options |
-|--------|---------|
-| Time range | Last hour, 6 hours, 24 hours, 7 days |
-| Errors only | Checkbox to show only failed calls |
-| Method filter | Free-text search on RPC method name |
+| Filter        | Options                              |
+| ------------- | ------------------------------------ |
+| Time range    | Last hour, 6 hours, 24 hours, 7 days |
+| Errors only   | Checkbox to show only failed calls   |
+| Method filter | Free-text search on RPC method name  |
 
 Click **Refresh** to reload data with current filters.
 

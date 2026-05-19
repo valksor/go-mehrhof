@@ -15,31 +15,31 @@ Quick actions at the bottom of the chat:
 
 Type `/` to open the command autocomplete. Commands drive the task lifecycle directly from chat.
 
-| Command | Description |
-|---------|-------------|
-| `/quick <source>` | Load, implement, and submit in one step |
-| `/plan` | Run planning phase |
-| `/plan!` | Force re-run planning |
-| `/implement` | Run implementation phase |
-| `/implement!` | Force re-run implementation |
-| `/simplify` | Run code simplification pass |
-| `/optimize` | Run optimization pass |
-| `/review` | Review and approve implementation |
-| `/review fix` | Review with automatic fixes |
-| `/submit` | Submit pull request (opens confirmation) |
-| `/finish` | Clean up after merge (opens confirmation) |
-| `/undo` | Undo to previous checkpoint |
-| `/redo` | Redo to next checkpoint |
-| `/stop` | Stop current operation (preserves state) |
-| `/abort` | Abort current operation |
-| `/update` | Refresh task from source |
-| `/status` | Show current task state |
-| `/explain` | Ask agent to explain its last action |
-| `/tag add <name>` | Add a tag to the task |
-| `/tag remove <name>` | Remove a tag |
-| `/tags` | List current tags |
-| `/abandon` | Abandon current task (opens confirmation) |
-| `/delete` | Delete task permanently (opens confirmation) |
+| Command              | Description                                  |
+| -------------------- | -------------------------------------------- |
+| `/quick <source>`    | Load, implement, and submit in one step      |
+| `/plan`              | Run planning phase                           |
+| `/plan!`             | Force re-run planning                        |
+| `/implement`         | Run implementation phase                     |
+| `/implement!`        | Force re-run implementation                  |
+| `/simplify`          | Run code simplification pass                 |
+| `/optimize`          | Run optimization pass                        |
+| `/review`            | Review and approve implementation            |
+| `/review fix`        | Review with automatic fixes                  |
+| `/submit`            | Submit pull request (opens confirmation)     |
+| `/finish`            | Clean up after merge (opens confirmation)    |
+| `/undo`              | Undo to previous checkpoint                  |
+| `/redo`              | Redo to next checkpoint                      |
+| `/stop`              | Stop current operation (preserves state)     |
+| `/abort`             | Abort current operation                      |
+| `/update`            | Refresh task from source                     |
+| `/status`            | Show current task state                      |
+| `/explain`           | Ask agent to explain its last action         |
+| `/tag add <name>`    | Add a tag to the task                        |
+| `/tag remove <name>` | Remove a tag                                 |
+| `/tags`              | List current tags                            |
+| `/abandon`           | Abandon current task (opens confirmation)    |
+| `/delete`            | Delete task permanently (opens confirmation) |
 
 Commands are context-aware and only appear when available for the current task state.
 

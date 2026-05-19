@@ -23,6 +23,7 @@ At the top, select which project to work on. kvelmo can manage multiple projects
 ### Task Status
 
 Shows the current task state and progress:
+
 - Task title and description
 - Current state (loaded, planning, implemented, etc.)
 - Time elapsed
@@ -31,6 +32,7 @@ Shows the current task state and progress:
 ### Actions Panel
 
 Workflow buttons for the current state:
+
 - **Plan** — Generate specification
 - **Implement** — Execute specification
 - **Simplify** — Optional code cleanup
@@ -43,6 +45,7 @@ Buttons are enabled/disabled based on the current state.
 ### Output Panel
 
 Real-time output from the agent:
+
 - Agent thoughts and reasoning
 - Tool calls and results
 - Errors and warnings
@@ -50,6 +53,7 @@ Real-time output from the agent:
 ### Sidebar
 
 Access to additional panels:
+
 - Files — Browse project files
 - Changes — View file diffs
 - Checkpoints — Navigate undo/redo history
@@ -64,7 +68,7 @@ Access to additional panels:
 The dashboard shows the current state with visual indicators:
 
 | State          | Indicator      | Description                |
-|----------------|----------------|----------------------------|
+| -------------- | -------------- | -------------------------- |
 | `none`         | Gray           | No active task             |
 | `loaded`       | Blue           | Task loaded, ready to plan |
 | `planning`     | Yellow spinner | Planning in progress       |

@@ -17,11 +17,11 @@ The panel calls `changelog.generate` and renders the resulting Markdown.
 
 ## Options
 
-| Option | Description |
-|--------|-------------|
+| Option | Description                                                |
+| ------ | ---------------------------------------------------------- |
 | Source | Starting git ref (e.g., `v1.0.0`, `main~10`, a commit SHA) |
-| Target | Ending git ref (e.g., `HEAD`, `v2.0.0`) |
-| Full | Include commit body text alongside summary lines |
+| Target | Ending git ref (e.g., `HEAD`, `v2.0.0`)                    |
+| Full   | Include commit body text alongside summary lines           |
 
 ## Copying
 

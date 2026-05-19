@@ -10,10 +10,10 @@ Open the Export panel from the sidebar. It loads as a modal overlay.
 
 Export data across all projects. Configure what to include:
 
-| Option | Choices |
-|--------|---------|
-| Time range | Last 7 days, 30 days, or 90 days |
-| Data | All data, tasks only, metrics only, or activity only |
+| Option     | Choices                                              |
+| ---------- | ---------------------------------------------------- |
+| Time range | Last 7 days, 30 days, or 90 days                     |
+| Data       | All data, tasks only, metrics only, or activity only |
 
 Click **Download JSON** to save the export file.
 

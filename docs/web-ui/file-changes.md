@@ -10,12 +10,12 @@ The File Changes panel appears as a tab in the project workspace. It is automati
 
 The panel lists all modified files with their status:
 
-| Status | Description |
-|--------|-------------|
-| Added | New file created by the agent |
-| Modified | Existing file changed |
-| Deleted | File removed |
-| Renamed | File moved or renamed |
+| Status   | Description                   |
+| -------- | ----------------------------- |
+| Added    | New file created by the agent |
+| Modified | Existing file changed         |
+| Deleted  | File removed                  |
+| Renamed  | File moved or renamed         |
 
 Click any file to open a diff view showing the exact changes made.
 

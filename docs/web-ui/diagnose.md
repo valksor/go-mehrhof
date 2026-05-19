@@ -10,12 +10,12 @@ Click the shield icon in the top-right of the Global View header. The panel open
 
 The panel runs preflight checks automatically when opened:
 
-| Check | What It Verifies |
-|-------|-----------------|
-| Git | Git is installed and accessible |
-| Claude CLI | Claude CLI binary is available |
-| Claude Auth | Claude CLI is authenticated |
-| Codex CLI | Codex CLI binary is available |
+| Check         | What It Verifies                |
+| ------------- | ------------------------------- |
+| Git           | Git is installed and accessible |
+| Claude CLI    | Claude CLI binary is available  |
+| Claude Auth   | Claude CLI is authenticated     |
+| Codex CLI     | Codex CLI binary is available   |
 | Global Socket | Global socket server is running |
 
 Each check shows a status badge (OK, Warning, or Failed) with a detail message. Failed checks include a fix suggestion.
