@@ -21,7 +21,7 @@ var ScreenshotsCmd = &cobra.Command{
 }
 
 var screenshotsListCmd = &cobra.Command{
-	Use:   "list",
+	Use:   subList,
 	Short: "List screenshots",
 	Long:  `List all screenshots for the current task.`,
 	RunE:  runScreenshotsList,
@@ -197,7 +197,7 @@ func runScreenshotsCapture(cmd *cobra.Command, _ []string) error {
 	source, _ := cmd.Flags().GetString("source")
 	step, _ := cmd.Flags().GetString("step")
 
-	params := map[string]any{"source": source}
+	params := map[string]any{paramSource: source}
 	if step != "" {
 		params["step"] = step
 	}

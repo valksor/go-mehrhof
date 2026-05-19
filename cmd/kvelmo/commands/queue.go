@@ -38,7 +38,7 @@ var queueRemoveCmd = &cobra.Command{
 }
 
 var queueListCmd = &cobra.Command{
-	Use:   "list",
+	Use:   subList,
 	Short: "List queued tasks",
 	Long:  "List all tasks currently in the queue.",
 	RunE:  runQueueList,
@@ -91,7 +91,7 @@ func runQueueAdd(cmd *cobra.Command, args []string) error {
 	defer cancel()
 
 	params := map[string]any{
-		"source": source,
+		paramSource: source,
 	}
 	if queueAddTitle != "" {
 		params["title"] = queueAddTitle

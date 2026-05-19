@@ -236,15 +236,15 @@ Get your token at: %s`, cfg.Name, meta.Name, cfg.HelpURL),
 var errValidationSkipped = errors.New("validation skipped")
 
 // testProviderToken validates a token by making a simple API call.
-func testProviderToken(provider, token string) error {
+func testProviderToken(providerName, token string) error {
 	ctx := context.Background()
 	client := &http.Client{Timeout: 10 * time.Second}
 
 	var req *http.Request
 	var err error
 
-	switch provider {
-	case "github":
+	switch providerName {
+	case provider.NameGitHub:
 		req, err = http.NewRequestWithContext(ctx, http.MethodGet, "https://api.github.com/user", nil)
 		if err != nil {
 			return err
@@ -252,14 +252,14 @@ func testProviderToken(provider, token string) error {
 		req.Header.Set("Authorization", "Bearer "+token)
 		req.Header.Set("Accept", "application/vnd.github+json")
 
-	case "gitlab":
+	case provider.NameGitLab:
 		req, err = http.NewRequestWithContext(ctx, http.MethodGet, "https://gitlab.com/api/v4/user", nil)
 		if err != nil {
 			return err
 		}
 		req.Header.Set("Private-Token", token)
 
-	case "linear":
+	case provider.NameLinear:
 		body := []byte(`{"query":"{ viewer { id } }"}`)
 		req, err = http.NewRequestWithContext(ctx, http.MethodPost, "https://api.linear.app/graphql", bytes.NewReader(body))
 		if err != nil {
@@ -268,17 +268,17 @@ func testProviderToken(provider, token string) error {
 		req.Header.Set("Authorization", token)
 		req.Header.Set("Content-Type", "application/json")
 
-	case "wrike":
+	case provider.NameWrike:
 		req, err = http.NewRequestWithContext(ctx, http.MethodGet, "https://www.wrike.com/api/v4/contacts?me=true", nil)
 		if err != nil {
 			return err
 		}
 		req.Header.Set("Authorization", "Bearer "+token)
 
-	case "jira":
+	case provider.NameJira:
 		return errValidationSkipped // Jira Cloud uses Basic auth with email:token; cannot validate token alone
 
-	case "azuredevops":
+	case provider.NameAzureDevOps:
 		return errValidationSkipped // Azure DevOps requires org/project context for validation
 
 	default:
@@ -304,7 +304,7 @@ func testProviderToken(provider, token string) error {
 	}
 
 	// For Linear, check GraphQL response for errors
-	if provider == "linear" {
+	if providerName == provider.NameLinear {
 		var result struct {
 			Errors []struct {
 				Message string `json:"message"`
@@ -320,10 +320,10 @@ func testProviderToken(provider, token string) error {
 
 // Provider commands exported for registration in main.go.
 var (
-	GitHubCmd      = createProviderCommand("github")
-	GitLabCmd      = createProviderCommand("gitlab")
-	LinearCmd      = createProviderCommand("linear")
-	WrikeCmd       = createProviderCommand("wrike")
-	JiraCmd        = createProviderCommand("jira")
-	AzureDevOpsCmd = createProviderCommand("azuredevops")
+	GitHubCmd      = createProviderCommand(provider.NameGitHub)
+	GitLabCmd      = createProviderCommand(provider.NameGitLab)
+	LinearCmd      = createProviderCommand(provider.NameLinear)
+	WrikeCmd       = createProviderCommand(provider.NameWrike)
+	JiraCmd        = createProviderCommand(provider.NameJira)
+	AzureDevOpsCmd = createProviderCommand(provider.NameAzureDevOps)
 )

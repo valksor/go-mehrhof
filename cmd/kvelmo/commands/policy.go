@@ -88,7 +88,7 @@ func runPolicyCheck(_ *cobra.Command, _ []string) error {
 	fmt.Printf("Policy violations (%d):\n\n", len(result.Violations))
 	for _, v := range result.Violations {
 		icon := "⚠"
-		if v.Severity == "error" {
+		if v.Severity == statusError {
 			icon = "✗"
 		}
 		fmt.Printf("  %s [%s] %s: %s\n", icon, v.Severity, v.Rule, v.Message)

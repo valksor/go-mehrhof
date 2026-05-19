@@ -20,7 +20,7 @@ var (
 )
 
 var ReviewCmd = &cobra.Command{
-	Use:     "review",
+	Use:     phaseReview,
 	Aliases: []string{"rev"},
 	Short:   "Review current implementation and approve for submission",
 	Long: `Moves the current task to reviewing state. This is the human approval
@@ -99,7 +99,7 @@ func runReview(cmd *cobra.Command, args []string) error {
 	}
 
 	ctx := context.Background()
-	resp, err := client.Call(ctx, "review", params)
+	resp, err := client.Call(ctx, phaseReview, params)
 	if err != nil {
 		spinner.Fail("Review submission failed")
 
@@ -134,7 +134,7 @@ func runReview(cmd *cobra.Command, args []string) error {
 
 // reviewListCmd lists all reviews for the current task.
 var reviewListCmd = &cobra.Command{
-	Use:   "list",
+	Use:   subList,
 	Short: "List all reviews for current task",
 	RunE:  runReviewList,
 }

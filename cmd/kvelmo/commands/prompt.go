@@ -51,7 +51,7 @@ func runPrompt(_ *cobra.Command, _ []string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
 
-	resp, err := client.Call(ctx, "status", nil)
+	resp, err := client.Call(ctx, subStatus, nil)
 	if err != nil {
 		return nil // Silent failure
 	}
@@ -63,7 +63,7 @@ func runPrompt(_ *cobra.Command, _ []string) error {
 		return nil
 	}
 
-	if result.State == "" || result.State == "none" {
+	if result.State == "" || result.State == stateNone {
 		return nil
 	}
 

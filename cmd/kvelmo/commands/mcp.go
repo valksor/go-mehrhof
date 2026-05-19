@@ -135,7 +135,7 @@ func emitRendezvous(socketPath string, evt mcp.RendezvousEvent) {
 	var d net.Dialer
 	conn, err := d.DialContext(dialCtx, "unix", socketPath)
 	if err != nil {
-		slog.Warn("kvelmo mcp: rendezvous dial failed", "socket", socketPath, "error", err)
+		slog.Warn("kvelmo mcp: rendezvous dial failed", "socket", socketPath, statusError, err)
 
 		return
 	}
@@ -143,12 +143,12 @@ func emitRendezvous(socketPath string, evt mcp.RendezvousEvent) {
 
 	data, err := json.Marshal(evt)
 	if err != nil {
-		slog.Warn("kvelmo mcp: rendezvous marshal failed", "error", err)
+		slog.Warn("kvelmo mcp: rendezvous marshal failed", statusError, err)
 
 		return
 	}
 	_ = conn.SetWriteDeadline(time.Now().Add(2 * time.Second))
 	if _, err := conn.Write(append(data, '\n')); err != nil {
-		slog.Warn("kvelmo mcp: rendezvous write failed", "error", err)
+		slog.Warn("kvelmo mcp: rendezvous write failed", statusError, err)
 	}
 }

@@ -29,7 +29,7 @@ kvelmo and AI agents, useful for debugging and auditing.`,
 }
 
 var recordingsListCmd = &cobra.Command{
-	Use:   "list",
+	Use:   subList,
 	Short: "List all recordings",
 	RunE:  runRecordingsList,
 }

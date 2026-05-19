@@ -89,9 +89,9 @@ func runQuick(_ *cobra.Command, args []string) error {
 	defer func() { _ = client.Close() }()
 
 	params := map[string]any{
-		"source":       quickSource,
+		paramSource:    quickSource,
 		"auto_advance": true,
-		"skip_phases":  append([]string{"plan"}, quickSkip...),
+		"skip_phases":  append([]string{phasePlan}, quickSkip...),
 	}
 
 	// Build and validate context items

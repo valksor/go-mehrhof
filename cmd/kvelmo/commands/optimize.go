@@ -20,7 +20,7 @@ var (
 )
 
 var OptimizeCmd = &cobra.Command{
-	Use:     "optimize",
+	Use:     phaseOptimize,
 	Aliases: []string{"opt"},
 	Short:   "Run optional optimization pass on implemented code",
 	Long: `Run an optional optimization pass on the implemented code.
@@ -70,10 +70,10 @@ func runOptimize(cmd *cobra.Command, args []string) error {
 	defer cancel()
 
 	params := map[string]any{
-		"dry_run": optimizeDryRun,
+		paramDryRun: optimizeDryRun,
 	}
 
-	resp, err := client.Call(ctx, "optimize", params)
+	resp, err := client.Call(ctx, phaseOptimize, params)
 	if err != nil {
 		spinner.Fail("Optimization submission failed")
 

@@ -68,7 +68,7 @@ func runRetry(cmd *cobra.Command, args []string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	resp, err := client.Call(ctx, "status", nil)
+	resp, err := client.Call(ctx, subStatus, nil)
 	if err != nil {
 		spinner.Fail("Status check failed")
 
@@ -165,10 +165,10 @@ func inferFailedPhase(lastError string) string {
 		phase   string
 		pattern string
 	}{
-		{"implement", "implement"},
-		{"simplify", "simplify"},
-		{"optimize", "optimize"},
-		{"plan", "plan"},
+		{phaseImplement, phaseImplement},
+		{phaseSimplify, phaseSimplify},
+		{phaseOptimize, phaseOptimize},
+		{phasePlan, phasePlan},
 	} {
 		if strings.Contains(strings.ToLower(lastError), keyword.pattern) {
 			return keyword.phase
@@ -176,12 +176,12 @@ func inferFailedPhase(lastError string) string {
 	}
 
 	// Default to plan for ambiguous failures
-	return "plan"
+	return phasePlan
 }
 
 func validatePhase(phase string) error {
 	switch phase {
-	case "plan", "implement", "simplify", "optimize":
+	case phasePlan, phaseImplement, phaseSimplify, phaseOptimize:
 		return nil
 	default:
 		return fmt.Errorf("invalid phase %q: must be one of plan, implement, simplify, optimize", phase)

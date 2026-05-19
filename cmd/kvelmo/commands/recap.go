@@ -98,7 +98,7 @@ func printRecap(r socket.RecapResult) {
 	// Phase metrics summary
 	if len(r.PhaseMetrics) > 0 {
 		fmt.Print("Phases completed:")
-		phases := []string{"plan", "implement", "simplify", "optimize", "review"}
+		phases := []string{phasePlan, phaseImplement, phaseSimplify, phaseOptimize, phaseReview}
 		var completed []string
 		for _, p := range phases {
 			if _, ok := r.PhaseMetrics[p]; ok {

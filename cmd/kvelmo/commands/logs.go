@@ -18,6 +18,7 @@ import (
 
 	"github.com/valksor/kvelmo/internal/conductor"
 	"github.com/valksor/kvelmo/internal/socket"
+	"github.com/valksor/kvelmo/internal/worker"
 	"github.com/valksor/kvelmo/meta"
 )
 
@@ -57,7 +58,7 @@ func runLogs(cmd *cobra.Command, args []string) error {
 	worktreeID := wtPath
 
 	params := map[string]any{
-		"worktree_id": worktreeID,
+		paramWorktreeID: worktreeID,
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
@@ -147,8 +148,8 @@ var logsStreamEventTypes = []string{
 	"assistant",
 	"job_output",
 	"job_started",
-	"job_completed",
-	"job_failed",
+	worker.EventJobCompleted,
+	worker.EventJobFailed,
 }
 
 // followLogs connects to the worktree socket's event stream and tails new

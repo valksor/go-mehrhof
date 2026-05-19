@@ -19,7 +19,7 @@ var (
 )
 
 var PlanCmd = &cobra.Command{
-	Use:     "plan",
+	Use:     phasePlan,
 	Aliases: []string{"pl"},
 	Short:   "Start planning phase for current task",
 	Long:    "Submit a planning job to the worker pool for the current task.",
@@ -54,11 +54,11 @@ func runPlan(cmd *cobra.Command, args []string) error {
 
 	var params map[string]any
 	if planDryRun {
-		params = map[string]any{"dry_run": true}
+		params = map[string]any{paramDryRun: true}
 	}
 
 	// Submit plan job
-	resp, err := client.Call(ctx, "plan", params)
+	resp, err := client.Call(ctx, phasePlan, params)
 	if err != nil {
 		spinner.Fail("Plan submission failed")
 

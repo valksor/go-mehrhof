@@ -24,7 +24,7 @@ var memorySearchCmd = &cobra.Command{
 }
 
 var memoryStatsCmd = &cobra.Command{
-	Use:   "stats",
+	Use:   subStats,
 	Short: "Show memory store statistics",
 	Long:  "Display the number of documents stored in the semantic memory store.",
 	RunE:  runMemoryStats,

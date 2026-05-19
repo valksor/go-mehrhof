@@ -16,7 +16,7 @@ import (
 )
 
 var ListCmd = &cobra.Command{
-	Use:     "list",
+	Use:     subList,
 	Aliases: []string{"ls"},
 	Short:   "List all registered projects and their current task state",
 	Long: `Queries the global socket for all registered worktrees with their state and task info.
