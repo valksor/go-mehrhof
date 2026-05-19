@@ -5,6 +5,7 @@ kvelmo includes browser automation capabilities for tasks that require web inter
 ## Overview
 
 Browser automation allows agents to:
+
 - Navigate web pages
 - Take screenshots
 - Interact with UI elements
@@ -45,6 +46,7 @@ kvelmo browser eval "document.title"
 ## Web UI Browser Panel
 
 The Browser panel in the Web UI shows:
+
 - Current URL
 - Page screenshot
 - Console output
@@ -65,7 +67,7 @@ The Browser panel in the Web UI shows:
 ```
 
 | Option            | Description     | Default |
-|-------------------|-----------------|---------|
+| ----------------- | --------------- | ------- |
 | `headless`        | Run without GUI | true    |
 | `viewport.width`  | Browser width   | 1280    |
 | `viewport.height` | Browser height  | 720     |

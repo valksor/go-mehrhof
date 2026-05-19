@@ -19,6 +19,7 @@ kvelmo config set agent.default ollama
 ```
 
 Or in `~/.valksor/kvelmo/kvelmo.yaml`:
+
 ```yaml
 agent:
   default: ollama
@@ -59,7 +60,7 @@ The Ollama provider uses Ollama's native `/api/chat` endpoint (not the OpenAI-co
 Ollama supports the same standard tools as other agents:
 
 | Tool  | Description            |
-|-------|------------------------|
+| ----- | ---------------------- |
 | Read  | Read file contents     |
 | Write | Write file contents    |
 | Edit  | Edit file with diff    |
@@ -72,6 +73,7 @@ Ollama supports the same standard tools as other agents:
 ### "server not reachable"
 
 Ensure Ollama is running:
+
 ```bash
 ollama serve
 ```
@@ -79,6 +81,7 @@ ollama serve
 ### Model not found
 
 kvelmo auto-pulls missing models, but you can pre-pull manually:
+
 ```bash
 ollama pull llama3.1
 ```

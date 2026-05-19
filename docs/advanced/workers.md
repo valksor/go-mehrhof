@@ -5,6 +5,7 @@ kvelmo uses a worker pool to manage concurrent AI agent executions.
 ## Overview
 
 The worker pool:
+
 - Manages multiple agent executions
 - Queues jobs when workers are busy
 - Provides real-time status updates
@@ -20,7 +21,7 @@ The worker pool:
 ```
 
 | Option        | Description                | Default |
-|---------------|----------------------------|---------|
+| ------------- | -------------------------- | ------- |
 | `max_workers` | Maximum concurrent workers | 4       |
 | `queue_size`  | Maximum jobs in queue      | 100     |
 
@@ -33,6 +34,7 @@ kvelmo workers
 ```
 
 Output:
+
 ```
 Workers: 2/4 active
 Jobs: 5 queued
@@ -50,6 +52,7 @@ Queued:
 ### Web UI
 
 Click **Workers** in the sidebar to see:
+
 - Active workers
 - Queued jobs
 - Job progress
@@ -73,7 +76,7 @@ kvelmo stop <job-id>
 The worker pool emits events:
 
 | Event           | Description                  |
-|-----------------|------------------------------|
+| --------------- | ---------------------------- |
 | `job_started`   | Worker began execution       |
 | `job_completed` | Worker finished successfully |
 | `job_failed`    | Worker encountered error     |
@@ -102,6 +105,7 @@ kvelmo config set queue_size 200
 ## Resource Management
 
 Workers consume:
+
 - Memory (per agent execution)
 - CPU (for agent processing)
 - Network (API calls)

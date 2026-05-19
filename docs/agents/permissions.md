@@ -11,17 +11,18 @@ When an agent invokes a tool (bash command, file write, file edit), the permissi
 
 ## Danger Levels
 
-| Level | Description | Behavior |
-|-------|-------------|----------|
-| **Safe** | No risk detected | Proceeds without intervention |
-| **Caution** | Potentially risky, context-dependent | May prompt for confirmation depending on agent configuration |
-| **Dangerous** | Almost always destructive | Blocked or requires explicit approval |
+| Level         | Description                          | Behavior                                                     |
+| ------------- | ------------------------------------ | ------------------------------------------------------------ |
+| **Safe**      | No risk detected                     | Proceeds without intervention                                |
+| **Caution**   | Potentially risky, context-dependent | May prompt for confirmation depending on agent configuration |
+| **Dangerous** | Almost always destructive            | Blocked or requires explicit approval                        |
 
 ## What Gets Detected
 
 ### Bash Commands
 
 **Dangerous** (blocked):
+
 - `rm -rf /` and variants targeting system directories
 - `dd` writing to `/dev/` devices
 - `mkfs`, `fdisk`, `parted` (disk operations)
@@ -31,6 +32,7 @@ When an agent invokes a tool (bash command, file write, file edit), the permissi
 - `chmod 777 /` or `chown` on root
 
 **Caution** (flagged):
+
 - `rm -r` (recursive delete)
 - `git push --force`, `git reset --hard`, `git clean -f`
 - `kill -9`, `killall`, `pkill`
@@ -50,14 +52,14 @@ Configure the environment in `kvelmo.yaml`:
 
 ```yaml
 agent:
-  environment: dev  # dev, staging, or prod
+  environment: dev # dev, staging, or prod
 ```
 
-| Environment | Effect |
-|-------------|--------|
-| **dev** | No additional restrictions — danger levels pass through as-is |
-| **staging** | Dangerous operations get a staging warning label |
-| **prod** | Caution operations are **elevated to Dangerous** (blocked). Dangerous operations get a production label |
+| Environment | Effect                                                                                                  |
+| ----------- | ------------------------------------------------------------------------------------------------------- |
+| **dev**     | No additional restrictions — danger levels pass through as-is                                           |
+| **staging** | Dangerous operations get a staging warning label                                                        |
+| **prod**    | Caution operations are **elevated to Dangerous** (blocked). Dangerous operations get a production label |
 
 ## Configuration
 

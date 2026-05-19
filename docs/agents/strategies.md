@@ -4,9 +4,9 @@ Strategies define how agents reason about tasks. They control prompt constructio
 
 ## Built-in Strategies
 
-| Strategy     | Description                                          |
-|-------------|------------------------------------------------------|
-| `direct`    | Default. Passes prompts through with minimal wrapping |
+| Strategy    | Description                                                 |
+| ----------- | ----------------------------------------------------------- |
+| `direct`    | Default. Passes prompts through with minimal wrapping       |
 | `iterative` | Adds self-review loop. Checks output for TODO/FIXME markers |
 
 ### Direct Strategy

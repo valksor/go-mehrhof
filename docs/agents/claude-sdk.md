@@ -27,7 +27,7 @@ For vanilla Anthropic claude, use one of:
 
 ```yaml
 agent:
-  default: claude-sdk    # only if you have a proxy that accepts --sdk-url
+  default: claude-sdk # only if you have a proxy that accepts --sdk-url
 ```
 
 Or as the base for a proxy-backed custom agent:

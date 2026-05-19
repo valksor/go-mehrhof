@@ -6,15 +6,15 @@ kvelmo does not replace them. It coordinates them through task state, permission
 
 ## Supported Agent Paths
 
-| Agent | Description |
-|-------|-------------|
-| [Claude](/agents/claude.md) | Binary use (`claude --print`). Works today; after 2026-06-15 consumes the new $200/mo Agent SDK credit pool. |
-| [Claude (MCP)](/agents/claude-mcp.md) | **Default.** Interactive TUI + MCP. Works with Max subscription. |
-| [Claude (SDK)](/agents/claude-sdk.md) | WebSocket Agent SDK (`--sdk-url`). **Broken** on the official Anthropic CLI since 2.1.121. |
-| [Codex](/agents/codex.md) | Codex-based local agent path |
-| [Custom](/agents/custom.md) | Custom integration path |
-| [Ollama](/agents/ollama.md) | Local model integration |
-| [OpenAI](/agents/openai.md) | API-backed OpenAI integration |
+| Agent                                 | Description                                                                                                  |
+| ------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| [Claude](/agents/claude.md)           | Binary use (`claude --print`). Works today; after 2026-06-15 consumes the new $200/mo Agent SDK credit pool. |
+| [Claude (MCP)](/agents/claude-mcp.md) | **Default.** Interactive TUI + MCP. Works with Max subscription.                                             |
+| [Claude (SDK)](/agents/claude-sdk.md) | WebSocket Agent SDK (`--sdk-url`). **Broken** on the official Anthropic CLI since 2.1.121.                   |
+| [Codex](/agents/codex.md)             | Codex-based local agent path                                                                                 |
+| [Custom](/agents/custom.md)           | Custom integration path                                                                                      |
+| [Ollama](/agents/ollama.md)           | Local model integration                                                                                      |
+| [OpenAI](/agents/openai.md)           | API-backed OpenAI integration                                                                                |
 
 ## How Agents Fit into kvelmo
 

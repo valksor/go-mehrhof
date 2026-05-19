@@ -5,6 +5,7 @@ kvelmo includes a semantic memory system that helps agents understand your codeb
 ## Overview
 
 The memory system:
+
 - Indexes your codebase
 - Creates embeddings for code and documentation
 - Enables semantic search
@@ -26,7 +27,7 @@ Memory is enabled by default. Configure in settings:
 ## Embedding Models
 
 | Model       | Description            | Requirements |
-|-------------|------------------------|--------------|
+| ----------- | ---------------------- | ------------ |
 | `tfidf`     | TF-IDF based (default) | None         |
 | `cybertron` | Neural embeddings      | Go-based     |
 
@@ -121,7 +122,7 @@ kvelmo memory index
 ```
 
 | Option            | Description          | Default |
-|-------------------|----------------------|---------|
+| ----------------- | -------------------- | ------- |
 | `enabled`         | Enable memory        | true    |
 | `embedding_model` | Model to use         | tfidf   |
 | `chunk_size`      | Characters per chunk | 1000    |

@@ -19,6 +19,7 @@ kvelmo config set agent.default openai
 ```
 
 Or in `~/.valksor/kvelmo/kvelmo.yaml`:
+
 ```yaml
 agent:
   default: openai
@@ -59,7 +60,7 @@ The OpenAI provider uses the `/v1/chat/completions` endpoint with SSE streaming.
 OpenAI supports the same standard tools as other agents:
 
 | Tool  | Description            |
-|-------|------------------------|
+| ----- | ---------------------- |
 | Read  | Read file contents     |
 | Write | Write file contents    |
 | Edit  | Edit file with diff    |
@@ -72,6 +73,7 @@ OpenAI supports the same standard tools as other agents:
 ### "OPENAI_API_KEY not configured"
 
 Add the key to your `.env` file:
+
 ```
 # ~/.valksor/kvelmo/.env
 OPENAI_API_KEY=sk-...

@@ -20,6 +20,7 @@ kvelmo config set default_agent codex
 ```
 
 Or in `~/.valksor/kvelmo/kvelmo.yaml`:
+
 ```json
 {
   "default_agent": "codex"
@@ -41,6 +42,7 @@ WebSocket provides real-time streaming when available.
 ### CLI (Fallback)
 
 Falls back to CLI mode:
+
 - Spawns `codex` process
 - Streams output via stdout
 
@@ -64,7 +66,7 @@ Specify Codex model variants in configuration:
 Codex supports standard tools:
 
 | Tool  | Description            |
-|-------|------------------------|
+| ----- | ---------------------- |
 | Read  | Read file contents     |
 | Write | Write file contents    |
 | Edit  | Edit file with diff    |
@@ -75,6 +77,7 @@ Codex supports standard tools:
 ## Permissions
 
 Configure auto-approval:
+
 ```json
 {
   "agent": {
@@ -88,6 +91,7 @@ Configure auto-approval:
 ### "codex: command not found"
 
 Install the Codex CLI:
+
 ```bash
 # Check if installed
 which codex
@@ -96,6 +100,7 @@ which codex
 ### API Key Issues
 
 Verify your API key is set:
+
 ```bash
 codex auth status
 ```

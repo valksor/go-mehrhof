@@ -2,21 +2,21 @@
 
 **Default adapter.** Spawns `claude` in interactive TUI mode under a PTY with `--mcp-config` pointing at a kvelmo-served MCP server. The model drives kvelmo workflows by calling the `kvelmo_*` MCP tools.
 
-| | |
-|---|---|
-| **Mechanism** | Interactive TUI under PTY + `--mcp-config` |
-| **Works today** | Yes |
-| **Billing today** | Max subscription |
+|                              |                                                                                                       |
+| ---------------------------- | ----------------------------------------------------------------------------------------------------- |
+| **Mechanism**                | Interactive TUI under PTY + `--mcp-config`                                                            |
+| **Works today**              | Yes                                                                                                   |
+| **Billing today**            | Max subscription                                                                                      |
 | **Billing after 2026-06-15** | Max subscription (TUI mode is the only path that doesn't reclassify under Anthropic's billing change) |
 
 > Anthropic has not contractually committed to keeping third-party-launched TUI sessions on the subscription. They could fingerprint and reclassify. Treat this as a best-effort path, not a guarantee.
 
 ## The other two claude variants
 
-| Adapter | What it does | Billing |
-|---|---|---|
-| [`claude`](/agents/claude.md) | Plain `claude --print` over stdin/stdout. Works today. | Sub today; **$200/mo credit pool after 2026-06-15** (Anthropic's `claude -p` reclassification) |
-| [`claude-sdk`](/agents/claude-sdk.md) | WebSocket Agent SDK (`--sdk-url`). **Broken** on the official CLI since 2.1.121. | — |
+| Adapter                               | What it does                                                                     | Billing                                                                                        |
+| ------------------------------------- | -------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| [`claude`](/agents/claude.md)         | Plain `claude --print` over stdin/stdout. Works today.                           | Sub today; **$200/mo credit pool after 2026-06-15** (Anthropic's `claude -p` reclassification) |
+| [`claude-sdk`](/agents/claude-sdk.md) | WebSocket Agent SDK (`--sdk-url`). **Broken** on the official CLI since 2.1.121. | —                                                                                              |
 
 ## Configuration
 
@@ -47,15 +47,15 @@ The adapter:
 
 ## MCP tools exposed to the model
 
-| Tool | Purpose |
-|---|---|
-| `kvelmo_get_task` | Current task metadata (id, title, state). |
-| `kvelmo_get_specifications` | List prior spec files, optionally with content (≤10 MiB per file). |
-| `kvelmo_read_file` | Read a single file from the worktree (≤10 MiB). |
-| `kvelmo_save_artifact` | Persist a spec/plan/implementation_summary. |
-| `kvelmo_create_checkpoint` | Create a git checkpoint commit. |
-| `kvelmo_signal_complete` | Acknowledge phase completion (acknowledgment only; the existing worker-pool/graph path drives the actual state advance). MUST be called before exit. |
-| `kvelmo_signal_failure` | Acknowledge phase failure (same pattern: the pump emits EventError that drives the failure path). |
+| Tool                        | Purpose                                                                                                                                              |
+| --------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `kvelmo_get_task`           | Current task metadata (id, title, state).                                                                                                            |
+| `kvelmo_get_specifications` | List prior spec files, optionally with content (≤10 MiB per file).                                                                                   |
+| `kvelmo_read_file`          | Read a single file from the worktree (≤10 MiB).                                                                                                      |
+| `kvelmo_save_artifact`      | Persist a spec/plan/implementation_summary.                                                                                                          |
+| `kvelmo_create_checkpoint`  | Create a git checkpoint commit.                                                                                                                      |
+| `kvelmo_signal_complete`    | Acknowledge phase completion (acknowledgment only; the existing worker-pool/graph path drives the actual state advance). MUST be called before exit. |
+| `kvelmo_signal_failure`     | Acknowledge phase failure (same pattern: the pump emits EventError that drives the failure path).                                                    |
 
 > **No `list_files` / `search` MCP tool today.** The model uses its own built-in file-discovery tools (Glob, Grep, Read) for code exploration inside the worktree. The kvelmo MCP surface is intentionally narrow — it covers only the kvelmo-specific orchestration primitives that claude cannot infer on its own.
 
@@ -73,8 +73,8 @@ The existing `claude` adapter remains untouched and selectable; any custom agent
 agent:
   default: claude-mcp
   claude_mcp:
-    permission_mode: acceptEdits   # acceptEdits | auto | bypassPermissions | dontAsk | default
-    model: ""                       # e.g. "sonnet", "opus", or full model ID
+    permission_mode: acceptEdits # acceptEdits | auto | bypassPermissions | dontAsk | default
+    model: "" # e.g. "sonnet", "opus", or full model ID
     mcp_server_command: ["kvelmo", "mcp", "--stdio"]
     # macOS: mcp_server_command: ["/Users/you/.local/bin/kvelmo", "mcp", "--stdio"]
     # Linux: mcp_server_command: ["/home/you/.local/bin/kvelmo", "mcp", "--stdio"]
@@ -82,9 +82,10 @@ agent:
     #   binary other than the currently-running one. The default rewrites
     #   the bare "kvelmo" to the running binary's absolute path via
     #   os.Executable(), so the spawned claude finds it regardless of PATH.
-    system_prompt_override: ""      # if set, replaces the default kvelmo orchestration prompt;
-                                    # whitespace-only values are treated as empty (default applies)
-    strict_mcp_config: true         # adds --strict-mcp-config (ignore user defaults)
+    system_prompt_override:
+      "" # if set, replaces the default kvelmo orchestration prompt;
+      # whitespace-only values are treated as empty (default applies)
+    strict_mcp_config: true # adds --strict-mcp-config (ignore user defaults)
 ```
 
 ## Authentication

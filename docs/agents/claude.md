@@ -2,19 +2,19 @@
 
 Plain binary use: spawns `claude --print` with stream-json over stdin/stdout.
 
-| | |
-|---|---|
-| **Mechanism** | `claude --print` (no `--sdk-url`, no `--mcp-config`, no PTY) |
-| **Works today** | Yes |
-| **Billing today** | Max subscription |
+|                              |                                                                                                     |
+| ---------------------------- | --------------------------------------------------------------------------------------------------- |
+| **Mechanism**                | `claude --print` (no `--sdk-url`, no `--mcp-config`, no PTY)                                        |
+| **Works today**              | Yes                                                                                                 |
+| **Billing today**            | Max subscription                                                                                    |
 | **Billing after 2026-06-15** | $200/mo Agent SDK credit pool (Anthropic reclassifies `claude -p` usage; the spawn does not change) |
 
 ## The other two claude variants
 
-| Adapter | What it does | Works today | Billing |
-|---|---|---|---|
-| [`claude-mcp`](/agents/claude-mcp.md) | Interactive TUI + MCP server. **Default.** | Yes | Sub (across the 2026-06-15 split) |
-| [`claude-sdk`](/agents/claude-sdk.md) | WebSocket Agent SDK (`--sdk-url`) | **No** (Anthropic rejected the flag in claude CLI 2.1.121) | — |
+| Adapter                               | What it does                               | Works today                                                | Billing                           |
+| ------------------------------------- | ------------------------------------------ | ---------------------------------------------------------- | --------------------------------- |
+| [`claude-mcp`](/agents/claude-mcp.md) | Interactive TUI + MCP server. **Default.** | Yes                                                        | Sub (across the 2026-06-15 split) |
+| [`claude-sdk`](/agents/claude-sdk.md) | WebSocket Agent SDK (`--sdk-url`)          | **No** (Anthropic rejected the flag in claude CLI 2.1.121) | —                                 |
 
 ## Prerequisites
 
@@ -28,7 +28,7 @@ claude --version
 ```yaml
 # ~/.valksor/kvelmo/kvelmo.yaml or .valksor/kvelmo.yaml
 agent:
-  default: claude          # if you want this adapter as default
+  default: claude # if you want this adapter as default
 ```
 
 ```bash
@@ -55,12 +55,14 @@ The adapter passes: `--print --verbose --output-format stream-json --input-forma
 ## Troubleshooting
 
 **`claude: command not found`** — install or update the CLI:
+
 ```bash
 which claude
 claude update
 ```
 
 **Authentication issues:**
+
 ```bash
 claude auth logout
 claude auth login
