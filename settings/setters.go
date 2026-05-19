@@ -112,12 +112,12 @@ var setterMap = map[string]setter{
 		set: func(cfg *Settings, v any) error { return setString(&cfg.Git.BaseBranch, v, "git.base_branch") },
 		get: func(cfg *Settings) any { return cfg.Git.BaseBranch },
 	},
-	"git.branch_pattern": {
-		set: func(cfg *Settings, v any) error { return setString(&cfg.Git.BranchPattern, v, "git.branch_pattern") },
+	KeyGitBranchPattern: {
+		set: func(cfg *Settings, v any) error { return setString(&cfg.Git.BranchPattern, v, KeyGitBranchPattern) },
 		get: func(cfg *Settings) any { return cfg.Git.BranchPattern },
 	},
-	"git.commit_prefix": {
-		set: func(cfg *Settings, v any) error { return setString(&cfg.Git.CommitPrefix, v, "git.commit_prefix") },
+	KeyGitCommitPrefix: {
+		set: func(cfg *Settings, v any) error { return setString(&cfg.Git.CommitPrefix, v, KeyGitCommitPrefix) },
 		get: func(cfg *Settings) any { return cfg.Git.CommitPrefix },
 	},
 	"git.commit_pattern": {
@@ -134,12 +134,12 @@ var setterMap = map[string]setter{
 		},
 		get: func(cfg *Settings) any { return cfg.Git.BranchValidationPattern },
 	},
-	"git.create_branch": {
-		set: func(cfg *Settings, v any) error { return setBoolPtr(&cfg.Git.CreateBranch, v, "git.create_branch") },
+	KeyGitCreateBranch: {
+		set: func(cfg *Settings, v any) error { return setBoolPtr(&cfg.Git.CreateBranch, v, KeyGitCreateBranch) },
 		get: func(cfg *Settings) any { return BoolValue(cfg.Git.CreateBranch, true) },
 	},
-	"git.auto_commit": {
-		set: func(cfg *Settings, v any) error { return setBoolPtr(&cfg.Git.AutoCommit, v, "git.auto_commit") },
+	KeyGitAutoCommit: {
+		set: func(cfg *Settings, v any) error { return setBoolPtr(&cfg.Git.AutoCommit, v, KeyGitAutoCommit) },
 		get: func(cfg *Settings) any { return BoolValue(cfg.Git.AutoCommit, true) },
 	},
 	"git.sign_commits": {
@@ -154,15 +154,15 @@ var setterMap = map[string]setter{
 	},
 
 	// ── Workers ───────────────────────────────────────────────────────────────
-	"workers.max": {
-		set: func(cfg *Settings, v any) error { return setInt(&cfg.Workers.Max, v, "workers.max") },
+	KeyWorkersMax: {
+		set: func(cfg *Settings, v any) error { return setInt(&cfg.Workers.Max, v, KeyWorkersMax) },
 		get: func(cfg *Settings) any { return cfg.Workers.Max },
 	},
 
 	// ── Storage ───────────────────────────────────────────────────────────────
-	"storage.save_in_project": {
+	KeyStorageSaveInProject: {
 		set: func(cfg *Settings, v any) error {
-			return setBoolPtr(&cfg.Storage.SaveInProject, v, "storage.save_in_project")
+			return setBoolPtr(&cfg.Storage.SaveInProject, v, KeyStorageSaveInProject)
 		},
 		get: func(cfg *Settings) any { return BoolValue(cfg.Storage.SaveInProject, false) },
 	},
@@ -192,9 +192,9 @@ var setterMap = map[string]setter{
 	},
 
 	// ── Workflow ───────────────────────────────────────────────────────────────
-	"workflow.use_worktree_isolation": {
+	KeyWorkflowUseWorktreeIsolation: {
 		set: func(cfg *Settings, v any) error {
-			return setBoolPtr(&cfg.Workflow.UseWorktreeIsolation, v, "workflow.use_worktree_isolation")
+			return setBoolPtr(&cfg.Workflow.UseWorktreeIsolation, v, KeyWorkflowUseWorktreeIsolation)
 		},
 		get: func(cfg *Settings) any { return BoolValue(cfg.Workflow.UseWorktreeIsolation, true) },
 	},

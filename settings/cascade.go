@@ -6,8 +6,33 @@ import (
 	"sync"
 )
 
-// KeyAgentDefault is the setting key for the default agent.
-const KeyAgentDefault = "agent.default"
+// Exported setting keys. Constants for keys that are referenced from
+// multiple files in the package; literal keys used in only one place
+// remain inline.
+const (
+	KeyAgentDefault                 = "agent.default"
+	KeyGitBranchPattern             = "git.branch_pattern"
+	KeyGitCommitPrefix              = "git.commit_prefix"
+	KeyGitAutoCommit                = "git.auto_commit"
+	KeyGitCreateBranch              = "git.create_branch"
+	KeyWorkersMax                   = "workers.max"
+	KeyStorageSaveInProject         = "storage.save_in_project"
+	KeyWorkflowUseWorktreeIsolation = "workflow.use_worktree_isolation"
+)
+
+// DataType values used in SettingDefinition.DataType.
+const (
+	dataTypeString = "string"
+	dataTypeBool   = "bool"
+	dataTypeInt    = "int"
+)
+
+// bothScopes is shared by every entry in DefaultDefinitions whose value
+// can be set at both global and project scope. Centralizing it avoids
+// repeating the []string{"global", "project"} literal on each row.
+// MUST NOT be mutated — the slice header is shared across all entries that
+// reference it, so any append/index-write would corrupt every other entry.
+var bothScopes = []string{string(ScopeGlobal), string(ScopeProject)}
 
 // ResolvedSetting holds a resolved value with its source.
 type ResolvedSetting struct {
@@ -29,21 +54,21 @@ type SettingDefinition struct {
 
 // DefaultDefinitions contains the known overridable settings with their metadata.
 var DefaultDefinitions = []SettingDefinition{
-	{Key: KeyAgentDefault, DisplayName: "Default Agent", Description: "Agent used when none specified", DataType: "string", DefaultValue: "claude", Scopes: []string{"global", "project"}, Category: "agent"},
-	{Key: "agent.strategy", DisplayName: "Agent Strategy", Description: "Agent reasoning strategy", DataType: "string", DefaultValue: "direct", Scopes: []string{"global", "project"}, Category: "agent"},
-	{Key: "workflow.auto_advance", DisplayName: "Auto Advance", Description: "Automatically progress through phases", DataType: "bool", DefaultValue: false, Scopes: []string{"global", "project"}, Category: "workflow"},
-	{Key: "workflow.use_worktree_isolation", DisplayName: "Worktree Isolation", Description: "Create isolated git worktree for each task", DataType: "bool", DefaultValue: true, Scopes: []string{"global", "project"}, Category: "workflow"},
-	{Key: "git.branch_pattern", DisplayName: "Branch Pattern", Description: "Pattern for branch names", DataType: "string", DefaultValue: "feature/{key}--{slug}", Scopes: []string{"global", "project"}, Category: "git"},
-	{Key: "git.commit_prefix", DisplayName: "Commit Prefix", Description: "Pattern for commit messages", DataType: "string", DefaultValue: "[{key}]", Scopes: []string{"global", "project"}, Category: "git"},
-	{Key: "git.auto_commit", DisplayName: "Auto Commit", Description: "Automatically commit after implementation", DataType: "bool", DefaultValue: true, Scopes: []string{"global", "project"}, Category: "git"},
-	{Key: "git.create_branch", DisplayName: "Create Branch", Description: "Automatically create a branch when starting a task", DataType: "bool", DefaultValue: true, Scopes: []string{"global", "project"}, Category: "git"},
-	{Key: "workers.max", DisplayName: "Max Workers", Description: "Maximum concurrent workers", DataType: "int", DefaultValue: 3, Scopes: []string{"global", "project"}, Category: "workers"},
-	{Key: "notify.enabled", DisplayName: "Notifications Enabled", Description: "Send webhook notifications on state changes", DataType: "bool", DefaultValue: false, Scopes: []string{"global", "project"}, Category: "notify"},
-	{Key: "notify.terminal", DisplayName: "Terminal Bell", Description: "Ring terminal bell on completion or failure", DataType: "bool", DefaultValue: true, Scopes: []string{"global", "project"}, Category: "notify"},
-	{Key: "storage.save_in_project", DisplayName: "Save in Project", Description: "Store specs/plans/chat in project directory", DataType: "bool", DefaultValue: false, Scopes: []string{"global", "project"}, Category: "storage"},
-	{Key: "workflow.hold_the_line", DisplayName: "Hold the Line", Description: "Only gate on findings in changed lines", DataType: "bool", DefaultValue: true, Scopes: []string{"global", "project"}, Category: "workflow"},
-	{Key: "agent.token_budget", DisplayName: "Token Budget", Description: "Max tokens per agent execution (0 = unlimited)", DataType: "int", DefaultValue: 0, Scopes: []string{"global", "project"}, Category: "agent"},
-	{Key: "agent.task_token_budget", DisplayName: "Task Token Budget", Description: "Max tokens per task across all phases (0 = unlimited)", DataType: "int", DefaultValue: 0, Scopes: []string{"global", "project"}, Category: "agent"},
+	{Key: KeyAgentDefault, DisplayName: "Default Agent", Description: "Agent used when none specified", DataType: dataTypeString, DefaultValue: "claude", Scopes: bothScopes, Category: "agent"},
+	{Key: "agent.strategy", DisplayName: "Agent Strategy", Description: "Agent reasoning strategy", DataType: dataTypeString, DefaultValue: "direct", Scopes: bothScopes, Category: "agent"},
+	{Key: "workflow.auto_advance", DisplayName: "Auto Advance", Description: "Automatically progress through phases", DataType: dataTypeBool, DefaultValue: false, Scopes: bothScopes, Category: "workflow"},
+	{Key: KeyWorkflowUseWorktreeIsolation, DisplayName: "Worktree Isolation", Description: "Create isolated git worktree for each task", DataType: dataTypeBool, DefaultValue: true, Scopes: bothScopes, Category: "workflow"},
+	{Key: KeyGitBranchPattern, DisplayName: "Branch Pattern", Description: "Pattern for branch names", DataType: dataTypeString, DefaultValue: "feature/{key}--{slug}", Scopes: bothScopes, Category: "git"},
+	{Key: KeyGitCommitPrefix, DisplayName: "Commit Prefix", Description: "Pattern for commit messages", DataType: dataTypeString, DefaultValue: "[{key}]", Scopes: bothScopes, Category: "git"},
+	{Key: KeyGitAutoCommit, DisplayName: "Auto Commit", Description: "Automatically commit after implementation", DataType: dataTypeBool, DefaultValue: true, Scopes: bothScopes, Category: "git"},
+	{Key: KeyGitCreateBranch, DisplayName: "Create Branch", Description: "Automatically create a branch when starting a task", DataType: dataTypeBool, DefaultValue: true, Scopes: bothScopes, Category: "git"},
+	{Key: KeyWorkersMax, DisplayName: "Max Workers", Description: "Maximum concurrent workers", DataType: dataTypeInt, DefaultValue: 3, Scopes: bothScopes, Category: "workers"},
+	{Key: "notify.enabled", DisplayName: "Notifications Enabled", Description: "Send webhook notifications on state changes", DataType: dataTypeBool, DefaultValue: false, Scopes: bothScopes, Category: "notify"},
+	{Key: "notify.terminal", DisplayName: "Terminal Bell", Description: "Ring terminal bell on completion or failure", DataType: dataTypeBool, DefaultValue: true, Scopes: bothScopes, Category: "notify"},
+	{Key: KeyStorageSaveInProject, DisplayName: "Save in Project", Description: "Store specs/plans/chat in project directory", DataType: dataTypeBool, DefaultValue: false, Scopes: bothScopes, Category: "storage"},
+	{Key: "workflow.hold_the_line", DisplayName: "Hold the Line", Description: "Only gate on findings in changed lines", DataType: dataTypeBool, DefaultValue: true, Scopes: bothScopes, Category: "workflow"},
+	{Key: "agent.token_budget", DisplayName: "Token Budget", Description: "Max tokens per agent execution (0 = unlimited)", DataType: dataTypeInt, DefaultValue: 0, Scopes: bothScopes, Category: "agent"},
+	{Key: "agent.task_token_budget", DisplayName: "Task Token Budget", Description: "Max tokens per task across all phases (0 = unlimited)", DataType: dataTypeInt, DefaultValue: 0, Scopes: bothScopes, Category: "agent"},
 }
 
 // CascadeResolver resolves settings with project -> global -> default cascade.
@@ -107,17 +132,20 @@ func (r *CascadeResolver) InvalidateCache() {}
 
 // resolve performs the actual cascade lookup: project -> global -> default.
 func (r *CascadeResolver) resolve(key string, def SettingDefinition, projectSettings, globalSettings *Settings) ResolvedSetting {
+	scopeProject := string(ScopeProject)
+	scopeGlobal := string(ScopeGlobal)
+
 	// Try project scope first.
-	if projectSettings != nil && slices.Contains(def.Scopes, "project") {
+	if projectSettings != nil && slices.Contains(def.Scopes, scopeProject) {
 		if val, ok := getSettingFromConfig(key, projectSettings); ok {
-			return ResolvedSetting{Key: key, Value: val, Source: "project"}
+			return ResolvedSetting{Key: key, Value: val, Source: scopeProject}
 		}
 	}
 
 	// Try global scope.
-	if globalSettings != nil && slices.Contains(def.Scopes, "global") {
+	if globalSettings != nil && slices.Contains(def.Scopes, scopeGlobal) {
 		if val, ok := getSettingFromConfig(key, globalSettings); ok {
-			return ResolvedSetting{Key: key, Value: val, Source: "global"}
+			return ResolvedSetting{Key: key, Value: val, Source: scopeGlobal}
 		}
 	}
 
@@ -141,7 +169,7 @@ func getSettingFromConfig(key string, s *Settings) (any, bool) {
 		if s.Workflow.AutoAdvance != nil {
 			return *s.Workflow.AutoAdvance, true
 		}
-	case "workflow.use_worktree_isolation":
+	case KeyWorkflowUseWorktreeIsolation:
 		if s.Workflow.UseWorktreeIsolation != nil {
 			return *s.Workflow.UseWorktreeIsolation, true
 		}
@@ -149,23 +177,23 @@ func getSettingFromConfig(key string, s *Settings) (any, bool) {
 		if s.Workflow.HoldTheLine != nil {
 			return *s.Workflow.HoldTheLine, true
 		}
-	case "git.branch_pattern":
+	case KeyGitBranchPattern:
 		if s.Git.BranchPattern != "" {
 			return s.Git.BranchPattern, true
 		}
-	case "git.commit_prefix":
+	case KeyGitCommitPrefix:
 		if s.Git.CommitPrefix != "" {
 			return s.Git.CommitPrefix, true
 		}
-	case "git.auto_commit":
+	case KeyGitAutoCommit:
 		if s.Git.AutoCommit != nil {
 			return *s.Git.AutoCommit, true
 		}
-	case "git.create_branch":
+	case KeyGitCreateBranch:
 		if s.Git.CreateBranch != nil {
 			return *s.Git.CreateBranch, true
 		}
-	case "workers.max":
+	case KeyWorkersMax:
 		if s.Workers.Max > 0 {
 			return s.Workers.Max, true
 		}
@@ -177,7 +205,7 @@ func getSettingFromConfig(key string, s *Settings) (any, bool) {
 		if s.Notify.Terminal != nil {
 			return *s.Notify.Terminal, true
 		}
-	case "storage.save_in_project":
+	case KeyStorageSaveInProject:
 		if s.Storage.SaveInProject != nil {
 			return *s.Storage.SaveInProject, true
 		}

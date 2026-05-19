@@ -220,7 +220,7 @@ func (p *Pool) SubmitCached(jobType JobType, worktreeID, prompt, cachedResult st
 
 	stream <- Event{Type: "stream", JobID: job.ID, Content: cachedResult, Timestamp: now}
 	stream <- Event{Type: "complete", JobID: job.ID, Timestamp: now}
-	stream <- Event{Type: "job_completed", JobID: job.ID, Content: "Job completed", Timestamp: now}
+	stream <- Event{Type: EventJobCompleted, JobID: job.ID, Content: "Job completed", Timestamp: now}
 	close(stream)
 	metrics.Global().RecordJobCompleted()
 

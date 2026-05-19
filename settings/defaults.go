@@ -47,7 +47,7 @@ func DefaultSettings() *Settings {
 			Allowed: []string{"claude", "claude-sdk", "claude-mcp", "codex"},
 		},
 		Providers: ProviderSettings{
-			Default: "github",
+			Default: providerDefault,
 			GitHub: GitHubConfig{
 				AllowTicketComment: false,
 			},
@@ -101,73 +101,91 @@ func DefaultSettings() *Settings {
 	}
 }
 
+// Section IDs and category names. Several literals repeat across this file
+// (and in schema.go), so they live as constants for goconst hygiene and to
+// give each call site a clear semantic name. `sectionCustomAgents` is
+// already defined in schema.go.
+const (
+	sectionAgent     = "agent"
+	sectionProviders = "providers"
+	sectionGit       = "git"
+
+	categoryCore      = "core"
+	categoryProviders = "providers"
+
+	// providerDefault is the name of the default task provider. Mirrors
+	// provider.NameGitHub but kept untyped here to avoid importing the
+	// provider package solely for a string constant.
+	providerDefault = "github"
+)
+
 // SectionRegistry maps section IDs to their metadata.
 // This metadata is used when generating the schema for UI rendering.
 var SectionRegistry = map[string]SectionMeta{
-	"agent": {
+	sectionAgent: {
 		Title:       "Agent",
 		Description: "AI agent configuration",
 		Icon:        "bot",
-		Category:    "core",
+		Category:    categoryCore,
 	},
-	"providers": {
+	sectionProviders: {
 		Title:       "Providers",
 		Description: "Task provider integrations",
 		Icon:        "plug",
-		Category:    "providers",
+		Category:    categoryProviders,
 	},
 	"providers.github": {
 		Title:       "GitHub",
 		Description: "GitHub integration settings",
 		Icon:        "github",
-		Category:    "providers",
+		Category:    categoryProviders,
 	},
 	"providers.gitlab": {
 		Title:       "GitLab",
 		Description: "GitLab integration settings",
 		Icon:        "gitlab",
-		Category:    "providers",
+		Category:    categoryProviders,
 	},
 	"providers.wrike": {
 		Title:       "Wrike",
 		Description: "Wrike integration settings",
 		Icon:        "briefcase",
-		Category:    "providers",
+		Category:    categoryProviders,
 	},
 	"providers.linear": {
 		Title:       "Linear",
 		Description: "Linear integration settings",
 		Icon:        "linear",
-		Category:    "providers",
+		Category:    categoryProviders,
 	},
-	"git": {
+	sectionGit: {
 		Title:       "Git",
 		Description: "Version control settings",
 		Icon:        "git-branch",
-		Category:    "core",
+		Category:    categoryCore,
 	},
 	"workers": {
 		Title:       "Workers",
 		Description: "Worker pool configuration",
 		Icon:        "users",
-		Category:    "core",
+		Category:    categoryCore,
 	},
 	"watchdog": {
 		Title:       "Watchdog",
 		Description: "Memory leak detection",
 		Icon:        "activity",
-		Category:    "core",
+		Category:    categoryCore,
 	},
-	"custom_agents": {
+	sectionCustomAgents: {
 		Title:       "Custom Agents",
 		Description: "User-defined agent configurations",
 		Icon:        "wand",
-		Category:    "core",
+		Category:    categoryCore,
 	},
 	"workflow": {
 		Title:       "Workflow",
 		Description: "Per-project workflow options",
 		Icon:        "git-fork",
-		Category:    "core",
+		Category:    categoryCore,
 	},
 }

@@ -192,7 +192,7 @@ func (p *Pool) executeWithAgent(ctx context.Context, job *Job, w *Worker) {
 			// Clean up agent resources allocated by WithWorkDir
 			_ = jobAgent.Close()
 			p.emitEvent(job.ID, Event{
-				Type:    "job_failed",
+				Type:    EventJobFailed,
 				JobID:   job.ID,
 				Content: fmt.Sprintf("agent connect failed: %v", err),
 			})
@@ -243,7 +243,7 @@ func (p *Pool) executeWithAgent(ctx context.Context, job *Job, w *Worker) {
 	eventCh, err := ag.SendPrompt(ctx, job.Prompt)
 	if err != nil {
 		p.emitEvent(job.ID, Event{
-			Type:    "job_failed",
+			Type:    EventJobFailed,
 			JobID:   job.ID,
 			Content: err.Error(),
 		})
@@ -344,7 +344,7 @@ func (p *Pool) executeWithAgent(ctx context.Context, job *Job, w *Worker) {
 
 			metrics.Global().RecordJobCompleted()
 			p.emitEvent(job.ID, Event{
-				Type:    "job_completed",
+				Type:    EventJobCompleted,
 				JobID:   job.ID,
 				Content: "Job completed",
 			})
@@ -369,7 +369,7 @@ func (p *Pool) executeWithAgent(ctx context.Context, job *Job, w *Worker) {
 
 			metrics.Global().RecordJobFailed()
 			p.emitEvent(job.ID, Event{
-				Type:    "job_failed",
+				Type:    EventJobFailed,
 				JobID:   job.ID,
 				Content: job.Error,
 			})
@@ -395,7 +395,7 @@ func (p *Pool) executeWithAgent(ctx context.Context, job *Job, w *Worker) {
 	p.mu.Unlock()
 
 	p.emitEvent(job.ID, Event{
-		Type:    "job_completed",
+		Type:    EventJobCompleted,
 		JobID:   job.ID,
 		Content: "Job completed",
 	})
@@ -454,7 +454,7 @@ func (p *Pool) executeSimulatedJob(ctx context.Context, job *Job, worker *Worker
 
 	metrics.Global().RecordJobCompleted()
 	p.emitEvent(job.ID, Event{
-		Type:    "job_completed",
+		Type:    EventJobCompleted,
 		JobID:   job.ID,
 		Content: "Job completed",
 	})
@@ -486,7 +486,7 @@ func (p *Pool) executeDryRunJob(job *Job) {
 	p.mu.Unlock()
 
 	p.emitEvent(job.ID, Event{
-		Type:    "job_completed",
+		Type:    EventJobCompleted,
 		JobID:   job.ID,
 		Content: result,
 	})

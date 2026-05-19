@@ -1,6 +1,9 @@
 package worker
 
-import "context"
+import (
+	"context"
+	"slices"
+)
 
 // AgentExecFunc represents the core agent execution call.
 type AgentExecFunc func(ctx context.Context, prompt string) error
@@ -12,8 +15,8 @@ type AgentMiddleware func(next AgentExecFunc) AgentExecFunc
 // Middlewares are applied in order: first middleware is the outermost wrapper.
 func Chain(middlewares ...AgentMiddleware) AgentMiddleware {
 	return func(next AgentExecFunc) AgentExecFunc {
-		for i := len(middlewares) - 1; i >= 0; i-- {
-			next = middlewares[i](next)
+		for _, v := range slices.Backward(middlewares) {
+			next = v(next)
 		}
 
 		return next

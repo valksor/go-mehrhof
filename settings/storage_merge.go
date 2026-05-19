@@ -405,28 +405,28 @@ var envOverrides = []struct {
 
 	// Git
 	{"GIT_BASE_BRANCH", "git.base_branch"},
-	{"GIT_BRANCH_PATTERN", "git.branch_pattern"},
-	{"GIT_COMMIT_PREFIX", "git.commit_prefix"},
+	{"GIT_BRANCH_PATTERN", KeyGitBranchPattern},
+	{"GIT_COMMIT_PREFIX", KeyGitCommitPrefix},
 	{"GIT_COMMIT_PATTERN", "git.commit_pattern"},
 	{"GIT_PR_TITLE_PATTERN", "git.pr_title_pattern"},
 	{"GIT_BRANCH_VALIDATION_PATTERN", "git.branch_validation_pattern"},
-	{"GIT_CREATE_BRANCH", "git.create_branch"},
-	{"GIT_AUTO_COMMIT", "git.auto_commit"},
+	{"GIT_CREATE_BRANCH", KeyGitCreateBranch},
+	{"GIT_AUTO_COMMIT", KeyGitAutoCommit},
 	{"GIT_SIGN_COMMITS", "git.sign_commits"},
 	{"GIT_ALLOW_PR_COMMENT", "git.allow_pr_comment"},
 
 	// Workers
-	{"WORKERS_MAX", "workers.max"},
+	{"WORKERS_MAX", KeyWorkersMax},
 
 	// Storage
-	{"STORAGE_SAVE_IN_PROJECT", "storage.save_in_project"},
+	{"STORAGE_SAVE_IN_PROJECT", KeyStorageSaveInProject},
 	{"STORAGE_SPEC_OUTPUT_PATH", "storage.spec_output_path"},
 	{"STORAGE_PLAN_OUTPUT_PATH", "storage.plan_output_path"},
 	{"STORAGE_COMMIT_SPECS", "storage.commit_specs"},
 	{"STORAGE_CHANGELOG_PATH", "storage.changelog_path"},
 
 	// Workflow
-	{"WORKFLOW_USE_WORKTREE_ISOLATION", "workflow.use_worktree_isolation"},
+	{"WORKFLOW_USE_WORKTREE_ISOLATION", KeyWorkflowUseWorktreeIsolation},
 	{"WORKFLOW_EXTERNAL_REVIEW_MODE", "workflow.external_review.mode"},
 	{"WORKFLOW_EXTERNAL_REVIEW_COMMAND", "workflow.external_review.command"},
 }
@@ -449,21 +449,21 @@ func applyEnvOverrides(s *Settings) {
 		// String fields
 		case KeyAgentDefault, "providers.default", "providers.github.owner",
 			"providers.gitlab.base_url", "providers.linear.team",
-			"git.base_branch", "git.branch_pattern", "git.commit_prefix",
+			"git.base_branch", KeyGitBranchPattern, KeyGitCommitPrefix,
 			"git.commit_pattern", "git.pr_title_pattern", "git.branch_validation_pattern",
 			"storage.spec_output_path", "storage.plan_output_path", "storage.changelog_path":
 			setErr = SetValue(s, ov.path, val)
 
 		// Boolean fields
-		case "git.create_branch", "git.auto_commit", "git.sign_commits",
-			"git.allow_pr_comment", "storage.save_in_project", "storage.commit_specs",
-			"workflow.use_worktree_isolation":
+		case KeyGitCreateBranch, KeyGitAutoCommit, "git.sign_commits",
+			"git.allow_pr_comment", KeyStorageSaveInProject, "storage.commit_specs",
+			KeyWorkflowUseWorktreeIsolation:
 			if b, err := strconv.ParseBool(val); err == nil {
 				setErr = SetValue(s, ov.path, b)
 			}
 
 		// Integer fields
-		case "workers.max":
+		case KeyWorkersMax:
 			if n, err := strconv.Atoi(val); err == nil {
 				setErr = SetValue(s, ov.path, n)
 			}

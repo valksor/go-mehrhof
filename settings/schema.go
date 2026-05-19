@@ -22,7 +22,7 @@ const tagValueTrue = "true"
 //	schema := settings.Generate(reflect.TypeOf(settings.Settings{}))
 func Generate(cfgType reflect.Type) *Schema {
 	// Handle pointer types by getting underlying type
-	if cfgType.Kind() == reflect.Ptr {
+	if cfgType.Kind() == reflect.Pointer {
 		cfgType = cfgType.Elem()
 	}
 
@@ -79,7 +79,7 @@ func GenerateSchemaWithCustomAgents(s *Settings) *Schema {
 		section := &schema.Sections[i]
 
 		// Add to agent.default and agent.allowed options
-		if section.ID == "agent" {
+		if section.ID == sectionAgent {
 			for j := range section.Fields {
 				field := &section.Fields[j]
 				if field.Path == KeyAgentDefault || field.Path == "agent.allowed" {
@@ -159,7 +159,7 @@ func processField(structField reflect.StructField, pathPrefix string, sections m
 
 	// Get field type, handling pointers
 	fieldType := structField.Type
-	if fieldType.Kind() == reflect.Ptr {
+	if fieldType.Kind() == reflect.Pointer {
 		fieldType = fieldType.Elem()
 	}
 
