@@ -184,9 +184,9 @@ func (w *WorktreeSocket) handleBrowse(ctx context.Context, req *Request) (*Respo
 	}
 
 	return NewResultResponse(req.ID, map[string]any{
-		"path":    path,
-		"parent":  filepath.Dir(path),
-		"entries": result,
+		keyPath:    path,
+		"parent":   filepath.Dir(path),
+		keyEntries: result,
 	})
 }
 

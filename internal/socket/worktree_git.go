@@ -121,6 +121,6 @@ func (w *WorktreeSocket) handleGitLog(ctx context.Context, req *Request) (*Respo
 	}
 
 	return NewResultResponse(req.ID, map[string]any{
-		"entries": entries,
+		keyEntries: entries,
 	})
 }

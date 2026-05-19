@@ -64,8 +64,8 @@ func (w *WorktreeSocket) handleEventlogQuery(_ context.Context, req *Request) (*
 	pg := page.NewPage(entries, paginationWithDefault(params.Page, params.PerPage))
 
 	return NewResultResponse(req.ID, map[string]any{
-		"entries":  pg.Items,
-		"total":    pg.Total,
+		keyEntries: pg.Items,
+		keyTotal:   pg.Total,
 		"page":     pg.PageNum,
 		"per_page": pg.PerPage,
 		"has_next": pg.HasNext,

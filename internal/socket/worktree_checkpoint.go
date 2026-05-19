@@ -33,9 +33,9 @@ func (w *WorktreeSocket) handleUndo(ctx context.Context, req *Request) (*Respons
 	}
 
 	return NewResultResponse(req.ID, map[string]any{
-		"status": "undone",
-		"steps":  params.Steps,
-		"state":  w.conductor.State(),
+		keyStatus: "undone",
+		"steps":   params.Steps,
+		keyState:  w.conductor.State(),
 	})
 }
 
@@ -65,9 +65,9 @@ func (w *WorktreeSocket) handleRedo(ctx context.Context, req *Request) (*Respons
 	}
 
 	return NewResultResponse(req.ID, map[string]any{
-		"status": "redone",
-		"steps":  params.Steps,
-		"state":  w.conductor.State(),
+		keyStatus: "redone",
+		"steps":   params.Steps,
+		keyState:  w.conductor.State(),
 	})
 }
 
@@ -97,9 +97,9 @@ func (w *WorktreeSocket) handleCheckpointGoto(ctx context.Context, req *Request)
 	}
 
 	return NewResultResponse(req.ID, map[string]any{
-		"status": "ok",
-		"sha":    params.SHA,
-		"state":  w.conductor.State(),
+		keyStatus: "ok",
+		"sha":     params.SHA,
+		keyState:  w.conductor.State(),
 	})
 }
 

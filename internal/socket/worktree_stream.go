@@ -95,7 +95,7 @@ func (w *WorktreeSocket) handleStreamSubscribe(ctx context.Context, req *Request
 
 	return NewResultResponse(req.ID, map[string]any{
 		"subscription_id": subID,
-		"status":          "subscribed",
+		keyStatus:         "subscribed",
 	})
 }
 

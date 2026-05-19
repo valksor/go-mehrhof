@@ -63,7 +63,7 @@ func (w *WorktreeSocket) changelogViaAgent(ctx context.Context, reqID, source, t
 	if len(commits) == 0 {
 		return NewResultResponse(reqID, map[string]any{
 			"markdown": "",
-			"job_id":   "",
+			keyJobID:   "",
 		})
 	}
 
@@ -87,8 +87,8 @@ func (w *WorktreeSocket) changelogViaAgent(ctx context.Context, reqID, source, t
 	}
 
 	return NewResultResponse(reqID, map[string]any{
-		"status": "generating",
-		"job_id": job.ID,
+		keyStatus: "generating",
+		keyJobID:  job.ID,
 	})
 }
 
@@ -142,7 +142,7 @@ func (w *WorktreeSocket) changelogFallback(ctx context.Context, reqID, source, t
 
 	md := renderChangelogMarkdown(entries, note, full)
 	resp := map[string]any{
-		"entries":  entries,
+		keyEntries: entries,
 		"markdown": md,
 	}
 	if note != "" {

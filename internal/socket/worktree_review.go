@@ -83,7 +83,7 @@ func (w *WorktreeSocket) handleQualityRespond(ctx context.Context, req *Request)
 		return NewErrorResponse(req.ID, ErrCodeInternal, err.Error()), nil
 	}
 
-	return NewResultResponse(req.ID, map[string]any{"status": "answered"})
+	return NewResultResponse(req.ID, map[string]any{keyStatus: "answered"})
 }
 
 // handleContextResolve resolves a context reference to its content.
@@ -135,7 +135,7 @@ func (w *WorktreeSocket) handleProvisionPreview(_ context.Context, req *Request)
 	}
 
 	if !settings.BoolValue(cfg.Git.Provision.Enabled, true) {
-		return NewResultResponse(req.ID, map[string]string{"status": "disabled"})
+		return NewResultResponse(req.ID, map[string]string{keyStatus: "disabled"})
 	}
 
 	defaults := provision.DefaultOptions(w.path)

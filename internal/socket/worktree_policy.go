@@ -16,7 +16,7 @@ func (w *WorktreeSocket) handlePolicyCheck(_ context.Context, req *Request) (*Re
 	if wu == nil {
 		return NewResultResponse(req.ID, map[string]any{
 			"violations": []any{},
-			"message":    "no active task",
+			keyMessage:   "no active task",
 		})
 	}
 
@@ -40,7 +40,7 @@ func (w *WorktreeSocket) handlePolicyCheck(_ context.Context, req *Request) (*Re
 
 	return NewResultResponse(req.ID, map[string]any{
 		"violations": violations,
-		"findings":   unified,
+		keyFindings:  unified,
 		"blocking":   policy.HasBlockingViolation(violations),
 	})
 }

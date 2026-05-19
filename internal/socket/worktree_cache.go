@@ -13,13 +13,13 @@ func (w *WorktreeSocket) handleCacheStats(_ context.Context, req *Request) (*Res
 	stats := w.conductor.ResponseCacheStats()
 	if stats == nil {
 		return NewResultResponse(req.ID, map[string]any{
-			"enabled": false,
+			keyEnabled: false,
 		})
 	}
 
 	return NewResultResponse(req.ID, map[string]any{
-		"enabled":      true,
-		"entries":      stats.Entries,
+		keyEnabled:     true,
+		keyEntries:     stats.Entries,
 		"hits":         stats.Hits,
 		"misses":       stats.Misses,
 		"hit_rate":     stats.HitRate,
@@ -36,6 +36,6 @@ func (w *WorktreeSocket) handleCacheClear(_ context.Context, req *Request) (*Res
 	w.conductor.ClearResponseCache()
 
 	return NewResultResponse(req.ID, map[string]string{
-		"status": "ok",
+		keyStatus: "ok",
 	})
 }

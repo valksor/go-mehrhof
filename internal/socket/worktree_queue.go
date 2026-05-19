@@ -81,7 +81,7 @@ func (w *WorktreeSocket) handleQueueList(ctx context.Context, req *Request) (*Re
 
 	return NewResultResponse(req.ID, map[string]any{
 		"queue":    pg.Items,
-		"total":    pg.Total,
+		keyTotal:   pg.Total,
 		"page":     pg.PageNum,
 		"per_page": pg.PerPage,
 		"has_next": pg.HasNext,
@@ -119,8 +119,8 @@ func (w *WorktreeSocket) handleQueueReorder(ctx context.Context, req *Request) (
 	queue := w.conductor.ListQueue()
 
 	return NewResultResponse(req.ID, map[string]any{
-		"queue": queue,
-		"count": len(queue),
+		"queue":  queue,
+		keyCount: len(queue),
 	})
 }
 
@@ -137,8 +137,8 @@ func (w *WorktreeSocket) handleTaskHistory(ctx context.Context, req *Request) (*
 	}
 
 	return NewResultResponse(req.ID, map[string]any{
-		"tasks": tasks,
-		"count": len(tasks),
+		"tasks":  tasks,
+		keyCount: len(tasks),
 	})
 }
 
@@ -196,8 +196,8 @@ func (w *WorktreeSocket) handleTaskSearch(ctx context.Context, req *Request) (*R
 	}
 
 	return NewResultResponse(req.ID, map[string]any{
-		"tasks": tasks,
-		"count": len(tasks),
+		"tasks":  tasks,
+		keyCount: len(tasks),
 	})
 }
 

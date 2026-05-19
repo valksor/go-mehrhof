@@ -85,5 +85,5 @@ func (w *WorktreeSocket) handleForkSelect(ctx context.Context, req *Request) (*R
 		return NewErrorResponse(req.ID, ErrCodeInternal, err.Error()), nil
 	}
 
-	return NewResultResponse(req.ID, map[string]string{"status": "ok"})
+	return NewResultResponse(req.ID, map[string]string{keyStatus: "ok"})
 }

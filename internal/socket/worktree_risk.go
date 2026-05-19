@@ -41,7 +41,7 @@ func (w *WorktreeSocket) handleRiskHistory(_ context.Context, req *Request) (*Re
 
 	el := w.conductor.EventLog()
 	if el == nil {
-		return NewResultResponse(req.ID, map[string]any{"entries": []any{}})
+		return NewResultResponse(req.ID, map[string]any{keyEntries: []any{}})
 	}
 
 	entries, err := el.Query(eventlog.EventRiskEvaluated, params.Limit)
@@ -49,5 +49,5 @@ func (w *WorktreeSocket) handleRiskHistory(_ context.Context, req *Request) (*Re
 		return NewErrorResponse(req.ID, ErrCodeInternal, err.Error()), nil
 	}
 
-	return NewResultResponse(req.ID, map[string]any{"entries": entries})
+	return NewResultResponse(req.ID, map[string]any{keyEntries: entries})
 }

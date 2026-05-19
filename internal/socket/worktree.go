@@ -446,7 +446,7 @@ func (w *WorktreeSocket) noConductor(id string) *Response {
 // --- Basic Handlers ---
 
 func (w *WorktreeSocket) handlePing(ctx context.Context, req *Request) (*Response, error) {
-	return NewResultResponse(req.ID, map[string]string{"status": "ok"})
+	return NewResultResponse(req.ID, map[string]string{keyStatus: "ok"})
 }
 
 func (w *WorktreeSocket) handleStrategyList(_ context.Context, req *Request) (*Response, error) {

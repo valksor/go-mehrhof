@@ -16,6 +16,6 @@ func (w *WorktreeSocket) handleDiscoveryScan(_ context.Context, req *Request) (*
 
 	return NewResultResponse(req.ID, map[string]any{
 		"commands": commands,
-		"count":    len(commands),
+		keyCount:   len(commands),
 	})
 }

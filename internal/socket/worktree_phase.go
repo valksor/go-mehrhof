@@ -61,7 +61,7 @@ func (w *WorktreeSocket) handleStart(ctx context.Context, req *Request) (*Respon
 	// Auto-advance: trigger next phase immediately after start.
 	// If "plan" is in skip_phases, jump straight to implement.
 	if params.AutoAdvance {
-		skipPlan := slices.Contains(params.SkipPhases, "plan")
+		skipPlan := slices.Contains(params.SkipPhases, conductor.PhasePlan)
 		go func() { //nolint:contextcheck // intentionally uses background context for async auto-advance
 			bgCtx := context.Background()
 			if skipPlan {
@@ -77,8 +77,8 @@ func (w *WorktreeSocket) handleStart(ctx context.Context, req *Request) (*Respon
 	}
 
 	return NewResultResponse(req.ID, map[string]any{
-		"status": "started",
-		"state":  w.conductor.State(),
+		keyStatus: "started",
+		keyState:  w.conductor.State(),
 	})
 }
 
@@ -113,9 +113,9 @@ func (w *WorktreeSocket) handlePlan(ctx context.Context, req *Request) (*Respons
 	}
 
 	return NewResultResponse(req.ID, map[string]any{
-		"status": "planning",
-		"job_id": jobID,
-		"state":  w.conductor.State(),
+		keyStatus: "planning",
+		keyJobID:  jobID,
+		keyState:  w.conductor.State(),
 	})
 }
 
@@ -150,9 +150,9 @@ func (w *WorktreeSocket) handleImplement(ctx context.Context, req *Request) (*Re
 	}
 
 	return NewResultResponse(req.ID, map[string]any{
-		"status": "implementing",
-		"job_id": jobID,
-		"state":  w.conductor.State(),
+		keyStatus: "implementing",
+		keyJobID:  jobID,
+		keyState:  w.conductor.State(),
 	})
 }
 
@@ -187,9 +187,9 @@ func (w *WorktreeSocket) handleOptimize(ctx context.Context, req *Request) (*Res
 	}
 
 	return NewResultResponse(req.ID, map[string]any{
-		"status": "optimizing",
-		"job_id": jobID,
-		"state":  w.conductor.State(),
+		keyStatus: "optimizing",
+		keyJobID:  jobID,
+		keyState:  w.conductor.State(),
 	})
 }
 
@@ -222,9 +222,9 @@ func (w *WorktreeSocket) handleSimplify(ctx context.Context, req *Request) (*Res
 	}
 
 	return NewResultResponse(req.ID, map[string]any{
-		"status": "simplifying",
-		"job_id": jobID,
-		"state":  w.conductor.State(),
+		keyStatus: "simplifying",
+		keyJobID:  jobID,
+		keyState:  w.conductor.State(),
 	})
 }
 
@@ -237,7 +237,7 @@ func (w *WorktreeSocket) handleShutdown(ctx context.Context, req *Request) (*Res
 		}
 	}()
 
-	return NewResultResponse(req.ID, map[string]string{"status": "shutting_down"})
+	return NewResultResponse(req.ID, map[string]string{keyStatus: "shutting_down"})
 }
 
 type ReviewParams struct {
@@ -270,9 +270,9 @@ func (w *WorktreeSocket) handleReview(ctx context.Context, req *Request) (*Respo
 	}
 
 	return NewResultResponse(req.ID, map[string]any{
-		"status":  "reviewing",
-		"state":   w.conductor.State(),
-		"message": params.Message,
+		keyStatus:  "reviewing",
+		keyState:   w.conductor.State(),
+		keyMessage: params.Message,
 	})
 }
 
@@ -307,7 +307,7 @@ func (w *WorktreeSocket) handleSubmit(ctx context.Context, req *Request) (*Respo
 		}
 
 		return NewResultResponse(req.ID, map[string]any{
-			"status":  "preview",
+			keyStatus: "preview",
 			"preview": preview,
 		})
 	}
@@ -317,7 +317,7 @@ func (w *WorktreeSocket) handleSubmit(ctx context.Context, req *Request) (*Respo
 	}
 
 	return NewResultResponse(req.ID, map[string]any{
-		"status": "submitted",
-		"state":  w.conductor.State(),
+		keyStatus: "submitted",
+		keyState:  w.conductor.State(),
 	})
 }

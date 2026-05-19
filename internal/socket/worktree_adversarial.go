@@ -17,8 +17,8 @@ func (w *WorktreeSocket) handleAdversarialRun(ctx context.Context, req *Request)
 	}
 
 	return NewResultResponse(req.ID, map[string]any{
-		"findings": result,
-		"count":    len(result),
+		keyFindings: result,
+		keyCount:    len(result),
 	})
 }
 
@@ -32,13 +32,13 @@ func (w *WorktreeSocket) handleAdversarialResults(_ context.Context, req *Reques
 	if result == nil {
 		// Return empty array instead of null for cleaner JSON.
 		return NewResultResponse(req.ID, map[string]any{
-			"findings": json.RawMessage("[]"),
-			"count":    0,
+			keyFindings: json.RawMessage("[]"),
+			keyCount:    0,
 		})
 	}
 
 	return NewResultResponse(req.ID, map[string]any{
-		"findings": result,
-		"count":    len(result),
+		keyFindings: result,
+		keyCount:    len(result),
 	})
 }

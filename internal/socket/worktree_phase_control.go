@@ -59,7 +59,7 @@ func (w *WorktreeSocket) handleRefresh(ctx context.Context, req *Request) (*Resp
 		"pr_url":              result.PRURL,
 		"commits_behind_base": result.CommitsBehindBase,
 		"action":              result.Action,
-		"message":             result.Message,
+		keyMessage:            result.Message,
 	})
 }
 
@@ -85,8 +85,8 @@ func (w *WorktreeSocket) handleRemoteApprove(ctx context.Context, req *Request) 
 	}
 
 	return NewResultResponse(req.ID, map[string]any{
-		"status": "approved",
-		"state":  w.conductor.State(),
+		keyStatus: "approved",
+		keyState:  w.conductor.State(),
 	})
 }
 
@@ -112,8 +112,8 @@ func (w *WorktreeSocket) handleRemoteMerge(ctx context.Context, req *Request) (*
 	}
 
 	return NewResultResponse(req.ID, map[string]any{
-		"status": "merged",
-		"state":  w.conductor.State(),
+		keyStatus: "merged",
+		keyState:  w.conductor.State(),
 	})
 }
 
@@ -127,8 +127,8 @@ func (w *WorktreeSocket) handleAbort(ctx context.Context, req *Request) (*Respon
 	}
 
 	return NewResultResponse(req.ID, map[string]any{
-		"status": "aborted",
-		"state":  w.conductor.State(),
+		keyStatus: "aborted",
+		keyState:  w.conductor.State(),
 	})
 }
 
@@ -142,8 +142,8 @@ func (w *WorktreeSocket) handleStop(ctx context.Context, req *Request) (*Respons
 	}
 
 	return NewResultResponse(req.ID, map[string]any{
-		"status": "stopped",
-		"state":  w.conductor.State(),
+		keyStatus: "stopped",
+		keyState:  w.conductor.State(),
 	})
 }
 
@@ -157,8 +157,8 @@ func (w *WorktreeSocket) handleReset(ctx context.Context, req *Request) (*Respon
 	}
 
 	return NewResultResponse(req.ID, map[string]any{
-		"status": "reset",
-		"state":  w.conductor.State(),
+		keyStatus: "reset",
+		keyState:  w.conductor.State(),
 	})
 }
 
@@ -186,7 +186,7 @@ func (w *WorktreeSocket) handleAbandon(ctx context.Context, req *Request) (*Resp
 	}
 
 	return NewResultResponse(req.ID, map[string]any{
-		"status": "abandoned",
+		keyStatus: "abandoned",
 	})
 }
 
@@ -214,7 +214,7 @@ func (w *WorktreeSocket) handleDelete(ctx context.Context, req *Request) (*Respo
 	}
 
 	return NewResultResponse(req.ID, map[string]any{
-		"status": "deleted",
+		keyStatus: "deleted",
 	})
 }
 
