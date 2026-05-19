@@ -24,7 +24,7 @@ all: build
 # Quality & Testing
 # ──────────────────────────────────────────────────────────────────────────────
 
-## Full-stack quality checks (Go fmt/vet/lint + licenses + frontend lint/typecheck + Tauri fmt/clippy/licenses)
+## Full-stack quality checks (Go fmt/vet/lint + licenses + prettier check + frontend lint/typecheck + Tauri fmt/clippy/licenses)
 quality:
 	@command -v goimports >/dev/null && find . -name '*.go' -not -path './.claude/*' -not -path './prototype/*' -not -path './vendor/*' -exec goimports -w {} + || true
 	@command -v gofumpt >/dev/null && find . -name '*.go' -not -path './.claude/*' -not -path './prototype/*' -not -path './vendor/*' -exec gofumpt -l -w {} + || true
@@ -41,6 +41,7 @@ quality:
 	else \
 		echo "go-licenses not installed; skipping Go license check (install: go install github.com/google/go-licenses@latest)"; \
 	fi
+	bun install --frozen-lockfile && bun run format
 	cd web && bun install --frozen-lockfile && bun run lint && bun run typecheck
 	cd web/src-tauri && cargo fmt --check && cargo clippy -- -D warnings
 	@if command -v cargo-deny >/dev/null; then \
@@ -68,6 +69,7 @@ ci-quality:
 		exit 1; \
 	fi
 	golangci-lint run ./... --fix
+	bun install --frozen-lockfile && bun run format:check
 	cd web && bun install --frozen-lockfile && bun run lint && bun run typecheck
 
 ## CI tests (Go + frontend only, Tauri tested in dedicated CI job)
@@ -273,7 +275,7 @@ help:
 	@echo "  make web-dev        Frontend dev server with hot reload"
 	@echo ""
 	@echo "Quality & Testing:"
-	@echo "  make quality        Full-stack: Go fmt/vet/lint/licenses + frontend lint/typecheck + Tauri fmt/clippy/licenses"
+	@echo "  make quality        Full-stack: Go fmt/vet/lint/licenses + prettier check + frontend lint/typecheck + Tauri fmt/clippy/licenses"
 	@echo "  make test           Full-stack: Go tests + frontend unit tests + Tauri tests"
 	@echo "  make test-e2e       E2E tests (SUITE=provider|workflow|cli|all)"
 	@echo "  make test-cover     Go tests with coverage report"

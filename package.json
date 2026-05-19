@@ -1,19 +1,22 @@
 {
-    "name": "kvelmo-docs",
-    "version": "1.0.0",
-    "description": "kvelmo documentation site",
-    "devDependencies": {
-        "@cloudflare/kv-asset-handler": "^0.5.0",
-        "docsify": "^4.13.1",
-        "docsify-copy-code": "^3.0.2",
-        "docsify-pagination": "^2.10.1",
-        "prismjs": "^1.30.0",
-        "wrangler": "^4.92.0"
-    },
-    "scripts": {
-        "docs:bundle": "mkdir -p docs/_media/js && cat node_modules/docsify/lib/docsify.min.js node_modules/docsify/lib/plugins/search.min.js node_modules/docsify-copy-code/dist/docsify-copy-code.min.js node_modules/docsify-pagination/dist/docsify-pagination.min.js node_modules/prismjs/components/prism-core.min.js node_modules/prismjs/components/prism-bash.min.js node_modules/prismjs/components/prism-yaml.min.js node_modules/prismjs/components/prism-json.min.js node_modules/prismjs/components/prism-go.min.js > docs/_media/js/bundle.min.js",
-        "docs:dev": "wrangler dev",
-        "docs:deploy": "wrangler deploy",
-        "workers:minify": "cd .github && bunx esbuild --minify index.js > index.min.js"
-    }
+  "name": "kvelmo-docs",
+  "version": "1.0.0",
+  "description": "kvelmo documentation site",
+  "devDependencies": {
+    "@cloudflare/kv-asset-handler": "^0.5.0",
+    "docsify": "^4.13.1",
+    "docsify-copy-code": "^3.0.2",
+    "docsify-pagination": "^2.10.1",
+    "prettier": "^3.8.3",
+    "prismjs": "^1.30.0",
+    "wrangler": "^4.93.0"
+  },
+  "scripts": {
+    "docs:bundle": "mkdir -p docs/_media/js && cat node_modules/docsify/lib/docsify.min.js node_modules/docsify/lib/plugins/search.min.js node_modules/docsify-copy-code/dist/docsify-copy-code.min.js node_modules/docsify-pagination/dist/docsify-pagination.min.js node_modules/prismjs/components/prism-core.min.js node_modules/prismjs/components/prism-bash.min.js node_modules/prismjs/components/prism-yaml.min.js node_modules/prismjs/components/prism-json.min.js node_modules/prismjs/components/prism-go.min.js > docs/_media/js/bundle.min.js",
+    "docs:dev": "wrangler dev",
+    "docs:deploy": "wrangler deploy",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "workers:minify": "cd .github && bunx esbuild --minify index.js > index.min.js"
+  }
 }

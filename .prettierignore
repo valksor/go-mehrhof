@@ -1,0 +1,44 @@
+# Build & vendored artifacts
+build/
+dist/
+node_modules/
+**/node_modules/
+web/dist/
+web/src-tauri/target/
+web/src-tauri/gen/
+coverage/
+coverage.html
+
+# Lockfiles
+bun.lock
+**/bun.lock
+**/Cargo.lock
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Read-only reference (per CLAUDE.md)
+prototype/
+
+# Vendored deps
+vendor/
+
+# Go (prettier doesn't support — explicit per user request)
+*.go
+go.mod
+go.sum
+
+# Rust (no parser without plugin)
+*.rs
+Cargo.toml
+
+# Generated / minified bundles
+docs/_media/js/bundle.min.js
+.github/index.min.js
+*.min.js
+*.min.css
+
+# Misc
+.git/
+*.tmpl
+*.txtar
