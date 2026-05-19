@@ -12,26 +12,28 @@ describe('asyncAction', () => {
   it('does not set error on success', async () => {
     const set = vi.fn()
     await asyncAction(set, async () => {})
-    const errorCalls = set.mock.calls.filter(
-      (args: unknown[]) => {
-        const arg = args[0] as Record<string, unknown>
-        return 'error' in arg && arg.error !== null
-      }
-    )
+    const errorCalls = set.mock.calls.filter((args: unknown[]) => {
+      const arg = args[0] as Record<string, unknown>
+      return 'error' in arg && arg.error !== null
+    })
     expect(errorCalls).toHaveLength(0)
   })
 
   it('sets error message and re-throws on failure', async () => {
     const set = vi.fn()
     await expect(
-      asyncAction(set, async () => { throw new Error('boom') })
+      asyncAction(set, async () => {
+        throw new Error('boom')
+      }),
     ).rejects.toThrow('boom')
     expect(set).toHaveBeenCalledWith({ error: 'boom' })
   })
 
   it('sets loading false even on failure', async () => {
     const set = vi.fn()
-    await asyncAction(set, async () => { throw new Error('fail') }).catch(() => {})
+    await asyncAction(set, async () => {
+      throw new Error('fail')
+    }).catch(() => {})
     const lastCall = set.mock.calls[set.mock.calls.length - 1][0]
     expect(lastCall).toEqual({ isLoading: false })
   })
@@ -47,7 +49,13 @@ describe('asyncAction', () => {
     const set = vi.fn()
     const spy = vi.spyOn(console, 'error').mockImplementation(() => {})
     try {
-      await asyncAction(set, async () => { throw new Error('toast me') }, { showToast: true }).catch(() => {})
+      await asyncAction(
+        set,
+        async () => {
+          throw new Error('toast me')
+        },
+        { showToast: true },
+      ).catch(() => {})
       expect(spy).toHaveBeenCalledWith(expect.stringContaining('toast me'))
     } finally {
       spy.mockRestore()
@@ -58,10 +66,16 @@ describe('asyncAction', () => {
     const set = vi.fn()
     const spy = vi.spyOn(console, 'error').mockImplementation(() => {})
     try {
-      await asyncAction(set, async () => { throw new Error('err') }, {
-        showToast: true,
-        toastMessage: 'Custom toast',
-      }).catch(() => {})
+      await asyncAction(
+        set,
+        async () => {
+          throw new Error('err')
+        },
+        {
+          showToast: true,
+          toastMessage: 'Custom toast',
+        },
+      ).catch(() => {})
       expect(spy).toHaveBeenCalledWith(expect.stringContaining('Custom toast'))
     } finally {
       spy.mockRestore()
@@ -70,8 +84,10 @@ describe('asyncAction', () => {
 
   it('converts non-Error throws to string', async () => {
     const set = vi.fn()
-    // eslint-disable-next-line @typescript-eslint/only-throw-error -- intentionally testing non-Error throw handling
-    await asyncAction(set, async () => { throw 'string error' }).catch(() => {})
+    await asyncAction(set, async () => {
+      // eslint-disable-next-line @typescript-eslint/only-throw-error -- intentionally testing non-Error throw handling
+      throw 'string error'
+    }).catch(() => {})
     expect(set).toHaveBeenCalledWith({ error: 'string error' })
   })
 })

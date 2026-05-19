@@ -110,7 +110,7 @@ export class SocketClient {
         jsonrpc: '2.0',
         id,
         method,
-        params
+        params,
       }
 
       const timeoutId = setTimeout(() => {
@@ -121,9 +121,15 @@ export class SocketClient {
       }, 30_000)
 
       this.pending.set(id, {
-        resolve: (v: unknown) => { clearTimeout(timeoutId); (resolve as (v: unknown) => void)(v) },
-        reject: (e: Error) => { clearTimeout(timeoutId); reject(e) },
-        method
+        resolve: (v: unknown) => {
+          clearTimeout(timeoutId)
+          ;(resolve as (v: unknown) => void)(v)
+        },
+        reject: (e: Error) => {
+          clearTimeout(timeoutId)
+          reject(e)
+        },
+        method,
       })
 
       const payload = JSON.stringify(req) + '\n'

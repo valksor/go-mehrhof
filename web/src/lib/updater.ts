@@ -11,10 +11,7 @@ export async function checkForUpdates() {
 
     if (update) {
       const { sendNotification } = await import('./notify')
-      await sendNotification(
-        'Update Available',
-        `kvelmo ${update.version} is available. Restart to update.`
-      )
+      await sendNotification('Update Available', `kvelmo ${update.version} is available. Restart to update.`)
 
       // Download and install (will apply on next restart)
       await update.downloadAndInstall()

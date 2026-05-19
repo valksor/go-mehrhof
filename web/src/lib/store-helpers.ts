@@ -20,7 +20,7 @@ export async function asyncAction(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Zustand set has store-specific types; we only pass plain objects
   set: (partial: any) => void,
   fn: () => Promise<void>,
-  opts: AsyncActionOptions = {}
+  opts: AsyncActionOptions = {},
 ): Promise<void> {
   const loadingKey = opts.loadingKey || 'isLoading'
   const errorKey = opts.errorKey || 'error'

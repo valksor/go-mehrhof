@@ -58,7 +58,7 @@ describe('updater', () => {
     expect(mockCheck).toHaveBeenCalled()
     expect(mockSendNotification).toHaveBeenCalledWith(
       'Update Available',
-      'kvelmo 1.2.3 is available. Restart to update.'
+      'kvelmo 1.2.3 is available. Restart to update.',
     )
     expect(mockDownloadAndInstall).toHaveBeenCalled()
   })

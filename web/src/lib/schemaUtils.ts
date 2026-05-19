@@ -22,11 +22,7 @@ export function getPath(obj: Record<string, unknown> | null | undefined, path: s
  * Set a nested value in an object using dot-notation path (immutable).
  * Returns a new object with the value set.
  */
-export function setPath(
-  obj: Record<string, unknown>,
-  path: string,
-  value: unknown
-): Record<string, unknown> {
+export function setPath(obj: Record<string, unknown>, path: string, value: unknown): Record<string, unknown> {
   const keys = path.split('.')
   const result = { ...obj }
   let current: Record<string, unknown> = result
@@ -34,9 +30,7 @@ export function setPath(
   for (let i = 0; i < keys.length - 1; i++) {
     const key = keys[i]
     const existing = current[key]
-    current[key] = existing && typeof existing === 'object'
-      ? { ...(existing as Record<string, unknown>) }
-      : {}
+    current[key] = existing && typeof existing === 'object' ? { ...(existing as Record<string, unknown>) } : {}
     current = current[key] as Record<string, unknown>
   }
 
@@ -50,10 +44,7 @@ export function setPath(
  * Evaluate a showWhen condition against current values.
  * Returns true if the field should be visible.
  */
-export function evaluateShowWhen(
-  condition: Condition | undefined,
-  values: Record<string, unknown>
-): boolean {
+export function evaluateShowWhen(condition: Condition | undefined, values: Record<string, unknown>): boolean {
   if (!condition) return true
 
   const fieldValue = getPath(values, condition.field)
@@ -134,10 +125,7 @@ export function getEffectiveValue(field: Field, value: unknown): unknown {
  * Validate all fields in a section.
  * Returns a map of path -> error message.
  */
-export function validateSection(
-  fields: Field[],
-  values: Record<string, unknown>
-): Record<string, string> {
+export function validateSection(fields: Field[], values: Record<string, unknown>): Record<string, string> {
   const errors: Record<string, string> = {}
 
   for (const field of fields) {

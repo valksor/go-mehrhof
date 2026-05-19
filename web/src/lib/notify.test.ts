@@ -104,7 +104,7 @@ describe('notify', () => {
       Object.defineProperty(MockNotification, 'permission', { value: 'default', configurable: true })
       Object.defineProperty(MockNotification, 'requestPermission', {
         value: requestPermissionMock,
-        configurable: true
+        configurable: true,
       })
       vi.stubGlobal('Notification', MockNotification)
 
@@ -119,7 +119,7 @@ describe('notify', () => {
       Object.defineProperty(MockNotification, 'permission', { value: 'default', configurable: true })
       Object.defineProperty(MockNotification, 'requestPermission', {
         value: requestPermissionMock,
-        configurable: true
+        configurable: true,
       })
       vi.stubGlobal('Notification', MockNotification)
 
@@ -134,7 +134,7 @@ describe('notify', () => {
       Object.defineProperty(MockNotification, 'permission', { value: 'granted', configurable: true })
       Object.defineProperty(MockNotification, 'requestPermission', {
         value: requestPermissionMock,
-        configurable: true
+        configurable: true,
       })
       vi.stubGlobal('Notification', MockNotification)
 
@@ -149,7 +149,7 @@ describe('notify', () => {
       Object.defineProperty(MockNotification, 'permission', { value: 'denied', configurable: true })
       Object.defineProperty(MockNotification, 'requestPermission', {
         value: requestPermissionMock,
-        configurable: true
+        configurable: true,
       })
       vi.stubGlobal('Notification', MockNotification)
 

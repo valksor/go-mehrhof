@@ -59,12 +59,14 @@ export function getSectionFieldGroups(section: Section, fields: Field[]): FieldG
     return buildProviderGroups(fields)
   }
 
-  return [{
-    id: section.id,
-    title: section.title,
-    description: section.description ?? '',
-    fields,
-  }]
+  return [
+    {
+      id: section.id,
+      title: section.title,
+      description: section.description ?? '',
+      fields,
+    },
+  ]
 }
 
 const agentGroupOrder = ['general', 'consensus', 'openai', 'anthropic', 'ollama']
@@ -75,17 +77,15 @@ function buildAgentGroups(fields: Field[]): FieldGroup[] {
   for (const field of fields) {
     const parts = field.path.split('.')
     const key = parts[1] ?? 'general'
-    const groupId = key === 'consensus' || key === 'openai' || key === 'anthropic' || key === 'ollama'
-      ? key
-      : 'general'
+    const groupId = key === 'consensus' || key === 'openai' || key === 'anthropic' || key === 'ollama' ? key : 'general'
 
     if (!groups.has(groupId)) groups.set(groupId, [])
     groups.get(groupId)!.push(field)
   }
 
   return agentGroupOrder
-    .filter(groupId => groups.has(groupId))
-    .map(groupId => {
+    .filter((groupId) => groups.has(groupId))
+    .map((groupId) => {
       const groupFields = groups.get(groupId)!
       const meta = agentGroupMeta[groupId]
 
@@ -131,8 +131,8 @@ function buildProviderGroups(fields: Field[]): FieldGroup[] {
     if (!groupFields) continue
 
     const title = providerNames[providerKey]
-    const hasCredential = groupFields.some(field => field.sensitive)
-    const hasEndpoint = groupFields.some(field => field.path.endsWith('.base_url'))
+    const hasCredential = groupFields.some((field) => field.sensitive)
+    const hasEndpoint = groupFields.some((field) => field.path.endsWith('.base_url'))
 
     let description = `${title} connection details and project/task import settings.`
     if (hasCredential && hasEndpoint) {

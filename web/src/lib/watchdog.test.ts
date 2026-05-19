@@ -28,9 +28,7 @@ describe('startBrowserLeakWatchdog', () => {
       const stop = startBrowserLeakWatchdog(onLeak)
 
       expect(typeof stop).toBe('function')
-      expect(warnSpy).toHaveBeenCalledWith(
-        expect.stringContaining('measureUserAgentSpecificMemory not available')
-      )
+      expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('measureUserAgentSpecificMemory not available'))
 
       // Calling stop should not throw
       expect(() => stop()).not.toThrow()
@@ -66,8 +64,9 @@ describe('startBrowserLeakWatchdog', () => {
         sampleIndex++
         return { bytes: mb * 1024 * 1024 }
       })
-      ;(performance as PerformanceWithMemory).measureUserAgentSpecificMemory =
-        mockMeasure as unknown as () => Promise<{ bytes: number }>
+      ;(performance as PerformanceWithMemory).measureUserAgentSpecificMemory = mockMeasure as unknown as () => Promise<{
+        bytes: number
+      }>
     }
 
     afterEach(() => {
@@ -172,8 +171,14 @@ describe('startBrowserLeakWatchdog', () => {
     it('uses rolling window — evicts oldest samples', async () => {
       // First 4 samples are stable, next 4 show leak
       const samples = [
-        100, 102, 101, 103,  // stable — no leak when full at tick 4
-        150, 180, 210, 240,  // steep growth starting tick 5
+        100,
+        102,
+        101,
+        103, // stable — no leak when full at tick 4
+        150,
+        180,
+        210,
+        240, // steep growth starting tick 5
       ]
       setupMockMeasure(samples)
       const onLeak = vi.fn()
@@ -221,8 +226,9 @@ describe('startBrowserLeakWatchdog', () => {
 
     it('handles API errors gracefully without crashing', async () => {
       mockMeasure = vi.fn().mockRejectedValue(new Error('cross-origin isolation not active'))
-      ;(performance as PerformanceWithMemory).measureUserAgentSpecificMemory =
-        mockMeasure as unknown as () => Promise<{ bytes: number }>
+      ;(performance as PerformanceWithMemory).measureUserAgentSpecificMemory = mockMeasure as unknown as () => Promise<{
+        bytes: number
+      }>
 
       const onLeak = vi.fn()
       const stop = startBrowserLeakWatchdog(onLeak, 1000, 4, 50)

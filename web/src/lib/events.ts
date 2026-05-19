@@ -150,13 +150,7 @@ export interface GraphNodeEvent extends BaseEvent {
 
 /** Phase progress/control events. */
 export interface PhaseControlEvent extends BaseEvent {
-  type:
-    | 'phase_progress'
-    | 'phase_retry'
-    | 'phase_skipped'
-    | 'iteration_retry'
-    | 'auto_advance'
-    | 'auto_advance_failed'
+  type: 'phase_progress' | 'phase_retry' | 'phase_skipped' | 'iteration_retry' | 'auto_advance' | 'auto_advance_failed'
   state?: State
   message?: string
 }
@@ -395,7 +389,7 @@ export class TypedEventEmitter {
 
   /** Emit an event to all registered handlers. */
   emit<K extends keyof EventPayloadMap>(event: K, data: EventPayloadMap[K]): void {
-    this.handlers.get(event)?.forEach(handler => handler(data))
+    this.handlers.get(event)?.forEach((handler) => handler(data))
   }
 
   /** Remove a specific handler, or all handlers for an event. */
@@ -420,7 +414,7 @@ export class TypedEventEmitter {
   dispatch(msg: unknown): void {
     const typed = msg as { type?: string }
     if (typed.type && this.handlers.has(typed.type)) {
-      this.handlers.get(typed.type)!.forEach(handler => handler(msg))
+      this.handlers.get(typed.type)!.forEach((handler) => handler(msg))
     }
   }
 }

@@ -301,9 +301,7 @@ describe('validateSection', () => {
   })
 
   it('handles nested paths', () => {
-    const fields: Field[] = [
-      { path: 'git.token', type: 'string', label: 'Token', validation: { required: true } },
-    ]
+    const fields: Field[] = [{ path: 'git.token', type: 'string', label: 'Token', validation: { required: true } }]
     const values = { git: { token: '' } }
     expect(validateSection(fields, values)).toEqual({
       'git.token': 'Token is required',
@@ -311,9 +309,7 @@ describe('validateSection', () => {
   })
 
   it('handles missing nested paths', () => {
-    const fields: Field[] = [
-      { path: 'git.token', type: 'string', label: 'Token', validation: { required: true } },
-    ]
+    const fields: Field[] = [{ path: 'git.token', type: 'string', label: 'Token', validation: { required: true } }]
     const values = {}
     expect(validateSection(fields, values)).toEqual({
       'git.token': 'Token is required',

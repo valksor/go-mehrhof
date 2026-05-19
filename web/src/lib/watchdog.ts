@@ -17,52 +17,50 @@
  */
 // Chromium-specific Memory Measurement API (behind cross-origin isolation)
 interface MemoryMeasurement {
-    bytes: number
+  bytes: number
 }
 
 interface PerformanceWithMemory extends Performance {
-    measureUserAgentSpecificMemory?: () => Promise<MemoryMeasurement>
+  measureUserAgentSpecificMemory?: () => Promise<MemoryMeasurement>
 }
 
 export function startBrowserLeakWatchdog(
-    onLeak: (growthMB: number) => void,
-    intervalMs = 15_000,
-    windowSize = 8,
-    growthThresholdMB = 100,
-    noiseToleranceMB = 2,
+  onLeak: (growthMB: number) => void,
+  intervalMs = 15_000,
+  windowSize = 8,
+  growthThresholdMB = 100,
+  noiseToleranceMB = 2,
 ): () => void {
-    const perf = performance as PerformanceWithMemory
-    if (typeof perf.measureUserAgentSpecificMemory !== 'function') {
-        console.warn(
-            'LeakWatchdog: measureUserAgentSpecificMemory not available — ' +
-            'cross-origin isolation (COOP/COEP headers) required'
-        )
-        return () => {}
-    }
+  const perf = performance as PerformanceWithMemory
+  if (typeof perf.measureUserAgentSpecificMemory !== 'function') {
+    console.warn(
+      'LeakWatchdog: measureUserAgentSpecificMemory not available — ' +
+        'cross-origin isolation (COOP/COEP headers) required',
+    )
+    return () => {}
+  }
 
-    const samples: number[] = []
+  const samples: number[] = []
 
-    const id = setInterval(async () => {
-        try {
-            const result = await perf.measureUserAgentSpecificMemory!()
-            const mb: number = result.bytes / 1024 / 1024
-            samples.push(mb)
-            if (samples.length > windowSize) samples.shift()
+  const id = setInterval(async () => {
+    try {
+      const result = await perf.measureUserAgentSpecificMemory!()
+      const mb: number = result.bytes / 1024 / 1024
+      samples.push(mb)
+      if (samples.length > windowSize) samples.shift()
 
-            if (samples.length === windowSize) {
-                const growth = samples.at(-1)! - samples[0]
-                const neverDropped = samples.every(
-                    (v, i) => i === 0 || v >= samples[i - 1] - noiseToleranceMB
-                )
+      if (samples.length === windowSize) {
+        const growth = samples.at(-1)! - samples[0]
+        const neverDropped = samples.every((v, i) => i === 0 || v >= samples[i - 1] - noiseToleranceMB)
 
-                if (growth > growthThresholdMB && neverDropped) {
-                    onLeak(growth)
-                }
-            }
-        } catch {
-            // API unavailable or cross-origin isolation not active
+        if (growth > growthThresholdMB && neverDropped) {
+          onLeak(growth)
         }
-    }, intervalMs)
+      }
+    } catch {
+      // API unavailable or cross-origin isolation not active
+    }
+  }, intervalMs)
 
-    return () => clearInterval(id)
+  return () => clearInterval(id)
 }

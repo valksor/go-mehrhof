@@ -2,14 +2,7 @@
  * Typed RPC error classification for the socket layer.
  */
 
-export type RPCErrorType =
-  | 'connection'
-  | 'timeout'
-  | 'state'
-  | 'notFound'
-  | 'rateLimited'
-  | 'shutdown'
-  | 'general'
+export type RPCErrorType = 'connection' | 'timeout' | 'state' | 'notFound' | 'rateLimited' | 'shutdown' | 'general'
 
 /**
  * An error carrying an RPC error type classification.
