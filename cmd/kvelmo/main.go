@@ -3,10 +3,13 @@ package main
 import (
 	"context"
 	"fmt"
+	"io"
 	"log/slog"
 	"os"
 	"strings"
+	"syscall"
 
+	"charm.land/fang/v2"
 	"github.com/spf13/cobra"
 	"github.com/spf13/cobra/doc"
 
@@ -17,10 +20,8 @@ import (
 )
 
 var rootCmd = &cobra.Command{
-	Use:           "kvelmo",
-	Short:         "Task lifecycle orchestrator",
-	SilenceUsage:  true,
-	SilenceErrors: true,
+	Use:   "kvelmo",
+	Short: "Task lifecycle orchestrator",
 }
 
 var versionCmd = &cobra.Command{
@@ -261,14 +262,36 @@ func init() {
 }
 
 func main() {
-	if err := rootCmd.Execute(); err != nil {
-		// Try disambiguation on "unknown command" errors
+	ctx := context.Background()
+
+	// Suppress styled output for unknown-command errors so main() can attempt
+	// disambiguation before printing anything.
+	silentOnUnknown := func(w io.Writer, styles fang.Styles, err error) {
+		if isUnknownCommandError(err) {
+			return
+		}
+		fang.DefaultErrorHandler(w, styles, err)
+	}
+
+	fangOpts := []fang.Option{
+		fang.WithVersion(meta.Version),
+		fang.WithCommit(meta.Commit),
+		fang.WithNotifySignal(syscall.SIGINT, syscall.SIGTERM),
+		fang.WithErrorHandler(silentOnUnknown),
+		fang.WithoutCompletions(),
+	}
+
+	if err := fang.Execute(ctx, rootCmd, fangOpts...); err != nil {
+		// Try disambiguation on "unknown command" errors. Use cobra's plain
+		// ExecuteContext on the retry — fang's mutations (man subcommand,
+		// Version, help func) are already applied to rootCmd from the first
+		// call, and re-running fang.Execute would re-AddCommand "man".
 		if isUnknownCommandError(err) {
 			args := os.Args[1:]
 			if len(args) > 0 {
 				if match, suggestions := cli.DisambiguateCommand(rootCmd, args[0]); match != nil {
 					rootCmd.SetArgs(append([]string{match.Name()}, args[1:]...))
-					if err2 := rootCmd.Execute(); err2 != nil {
+					if err2 := rootCmd.ExecuteContext(ctx); err2 != nil {
 						fmt.Fprintln(os.Stderr, err2)
 						os.Exit(cli.ExitCodeFromError(err2))
 					}
@@ -279,14 +302,17 @@ func main() {
 					os.Exit(cli.ExitUsage)
 				}
 			}
+
+			fmt.Fprintln(os.Stderr, err)
 		}
 
-		fmt.Fprintln(os.Stderr, err)
 		os.Exit(cli.ExitCodeFromError(err))
 	}
 }
 
 // isUnknownCommandError checks whether the error is a cobra "unknown command" error.
+// Cobra's format is `unknown command "X" for "Y"`; HasPrefix avoids false positives
+// from internal errors that happen to contain the substring.
 func isUnknownCommandError(err error) bool {
-	return strings.Contains(err.Error(), "unknown command")
+	return strings.HasPrefix(err.Error(), "unknown command")
 }

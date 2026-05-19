@@ -273,7 +273,7 @@ force an update or pre-install the runtime.`, meta.GlobalDir)
 	browserPressCmd.Flags().StringVarP(&browserPressSelector, "element", "e", "", "Element to focus before pressing key")
 
 	// Dialog flags
-	browserDialogCmd.Flags().StringVarP(&browserDialogText, "text", "t", "", "Text to enter for prompt dialogs")
+	browserDialogCmd.Flags().StringVar(&browserDialogText, "text", "", "Text to enter for prompt dialogs")
 
 	// PDF flags
 	browserPDFCmd.Flags().StringVarP(&pdfOutput, "output", "o", "", "Output file path")
