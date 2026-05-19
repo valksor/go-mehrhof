@@ -18,9 +18,10 @@ export function useDocsURL() {
   useEffect(() => {
     if (!connected || !client || data) return
 
-    client.call<DocsURLResponse>('system.docsURL', {})
+    client
+      .call<DocsURLResponse>('system.docsURL', {})
       .then(setData)
-      .catch(err => console.error('[useDocsURL] Error fetching docs URL:', err))
+      .catch((err) => console.error('[useDocsURL] Error fetching docs URL:', err))
   }, [connected, client, data])
 
   return data

@@ -53,16 +53,17 @@ export function ConfigValidation() {
     <div className="mt-6 pt-4 border-t border-base-300">
       <div className="flex items-center justify-between mb-3">
         <h3 className="text-sm font-semibold text-base-content/70">Configuration Validation</h3>
-        <button
-          onClick={handleValidate}
-          disabled={loading || !client}
-          className="btn btn-sm btn-outline btn-primary"
-        >
+        <button onClick={handleValidate} disabled={loading || !client} className="btn btn-sm btn-outline btn-primary">
           {loading ? (
             <span className="loading loading-spinner loading-xs"></span>
           ) : (
             <svg aria-hidden="true" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
             </svg>
           )}
           Validate
@@ -82,12 +83,8 @@ export function ConfigValidation() {
               <span className="flex-shrink-0 w-4 text-center">{statusIcon(check.status)}</span>
               <div className="flex-1 min-w-0">
                 <span className="font-medium">{check.name}</span>
-                {check.detail && (
-                  <span className="text-base-content/60 ml-1.5">({check.detail})</span>
-                )}
-                {check.status === 'error' && check.fix && (
-                  <p className="text-xs text-error/80 mt-0.5">{check.fix}</p>
-                )}
+                {check.detail && <span className="text-base-content/60 ml-1.5">({check.detail})</span>}
+                {check.status === 'error' && check.fix && <p className="text-xs text-error/80 mt-0.5">{check.fix}</p>}
               </div>
             </div>
           ))}

@@ -18,7 +18,7 @@ export function KeyValueField({ field, value, onChange, disabled, error }: KeyVa
     if (!newKey.trim()) return
     onChange({
       ...value,
-      [newKey.trim()]: newValue
+      [newKey.trim()]: newValue,
     })
     setNewKey('')
     setNewValue('')
@@ -33,7 +33,7 @@ export function KeyValueField({ field, value, onChange, disabled, error }: KeyVa
   const handleValueChange = (key: string, newVal: string) => {
     onChange({
       ...value,
-      [key]: newVal
+      [key]: newVal,
     })
   }
 
@@ -57,7 +57,7 @@ export function KeyValueField({ field, value, onChange, disabled, error }: KeyVa
             <input
               type="text"
               value={val}
-              onChange={e => handleValueChange(key, e.target.value)}
+              onChange={(e) => handleValueChange(key, e.target.value)}
               disabled={disabled}
               className="input input-bordered input-sm flex-1 font-mono"
               placeholder="Value"
@@ -82,21 +82,21 @@ export function KeyValueField({ field, value, onChange, disabled, error }: KeyVa
         <input
           type="text"
           value={newKey}
-          onChange={e => setNewKey(e.target.value)}
+          onChange={(e) => setNewKey(e.target.value)}
           disabled={disabled}
           className="input input-bordered input-sm flex-1 font-mono"
           placeholder="KEY"
-          onKeyDown={e => e.key === 'Enter' && handleAdd()}
+          onKeyDown={(e) => e.key === 'Enter' && handleAdd()}
         />
         <span className="text-base-content/50">=</span>
         <input
           type="text"
           value={newValue}
-          onChange={e => setNewValue(e.target.value)}
+          onChange={(e) => setNewValue(e.target.value)}
           disabled={disabled}
           className="input input-bordered input-sm flex-1 font-mono"
           placeholder="value"
-          onKeyDown={e => e.key === 'Enter' && handleAdd()}
+          onKeyDown={(e) => e.key === 'Enter' && handleAdd()}
         />
         <button
           type="button"

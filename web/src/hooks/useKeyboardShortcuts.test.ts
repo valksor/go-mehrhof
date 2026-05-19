@@ -154,7 +154,9 @@ describe('useKeyboardShortcuts chords', () => {
   it('g p chord deselects project', () => {
     renderHook(() => useKeyboardShortcuts())
     act(() => fireKey('g'))
-    act(() => { vi.advanceTimersByTime(100) })
+    act(() => {
+      vi.advanceTimersByTime(100)
+    })
     act(() => fireKey('p'))
     expect(mockSelectProject).toHaveBeenCalledWith(null)
   })
@@ -162,7 +164,9 @@ describe('useKeyboardShortcuts chords', () => {
   it('g a chord triggers abort', () => {
     renderHook(() => useKeyboardShortcuts())
     act(() => fireKey('g'))
-    act(() => { vi.advanceTimersByTime(100) })
+    act(() => {
+      vi.advanceTimersByTime(100)
+    })
     act(() => fireKey('a'))
     expect(mockAbort).toHaveBeenCalled()
   })
@@ -170,7 +174,9 @@ describe('useKeyboardShortcuts chords', () => {
   it('g l chord triggers plan in dev mode', () => {
     renderHook(() => useKeyboardShortcuts())
     act(() => fireKey('g'))
-    act(() => { vi.advanceTimersByTime(100) })
+    act(() => {
+      vi.advanceTimersByTime(100)
+    })
     act(() => fireKey('l'))
     expect(mockPlan).toHaveBeenCalled()
   })
@@ -178,7 +184,9 @@ describe('useKeyboardShortcuts chords', () => {
   it('g i chord triggers implement in dev mode', () => {
     renderHook(() => useKeyboardShortcuts())
     act(() => fireKey('g'))
-    act(() => { vi.advanceTimersByTime(100) })
+    act(() => {
+      vi.advanceTimersByTime(100)
+    })
     act(() => fireKey('i'))
     expect(mockImplement).toHaveBeenCalled()
   })
@@ -186,7 +194,9 @@ describe('useKeyboardShortcuts chords', () => {
   it('g s chord opens submit modal in dev mode', () => {
     renderHook(() => useKeyboardShortcuts())
     act(() => fireKey('g'))
-    act(() => { vi.advanceTimersByTime(100) })
+    act(() => {
+      vi.advanceTimersByTime(100)
+    })
     act(() => fireKey('s'))
     expect(mockSetModalCommand).toHaveBeenCalledWith('submit')
   })
@@ -194,7 +204,9 @@ describe('useKeyboardShortcuts chords', () => {
   it('g x chord triggers stop in dev mode', () => {
     renderHook(() => useKeyboardShortcuts())
     act(() => fireKey('g'))
-    act(() => { vi.advanceTimersByTime(100) })
+    act(() => {
+      vi.advanceTimersByTime(100)
+    })
     act(() => fireKey('x'))
     expect(mockStop).toHaveBeenCalled()
   })
@@ -202,7 +214,9 @@ describe('useKeyboardShortcuts chords', () => {
   it('chord expires after 500ms', () => {
     renderHook(() => useKeyboardShortcuts())
     act(() => fireKey('g'))
-    act(() => { vi.advanceTimersByTime(600) })
+    act(() => {
+      vi.advanceTimersByTime(600)
+    })
     act(() => fireKey('p'))
     expect(mockSelectProject).not.toHaveBeenCalled()
   })
@@ -211,9 +225,9 @@ describe('useKeyboardShortcuts chords', () => {
 describe('SHORTCUTS constant', () => {
   it('contains expected shortcut entries', () => {
     expect(SHORTCUTS.length).toBeGreaterThan(5)
-    expect(SHORTCUTS.some(s => s.keys === '?')).toBe(true)
-    expect(SHORTCUTS.some(s => s.keys === 'Escape')).toBe(true)
-    expect(SHORTCUTS.some(s => s.keys === 'Ctrl+z')).toBe(true)
+    expect(SHORTCUTS.some((s) => s.keys === '?')).toBe(true)
+    expect(SHORTCUTS.some((s) => s.keys === 'Escape')).toBe(true)
+    expect(SHORTCUTS.some((s) => s.keys === 'Ctrl+z')).toBe(true)
   })
 
   it('has sections for each shortcut', () => {

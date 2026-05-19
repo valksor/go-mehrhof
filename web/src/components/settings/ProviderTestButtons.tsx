@@ -43,10 +43,46 @@ export function ProviderTestButtons() {
     } catch {
       // Fall back to static list
       setProviders([
-        { name: 'github', label: 'GitHub', env_var: 'GITHUB_TOKEN', help_url: '', help_steps: '', scopes: '', token_prefix: '', configured: false },
-        { name: 'gitlab', label: 'GitLab', env_var: 'GITLAB_TOKEN', help_url: '', help_steps: '', scopes: '', token_prefix: '', configured: false },
-        { name: 'linear', label: 'Linear', env_var: 'LINEAR_TOKEN', help_url: '', help_steps: '', scopes: '', token_prefix: '', configured: false },
-        { name: 'wrike', label: 'Wrike', env_var: 'WRIKE_TOKEN', help_url: '', help_steps: '', scopes: '', token_prefix: '', configured: false },
+        {
+          name: 'github',
+          label: 'GitHub',
+          env_var: 'GITHUB_TOKEN',
+          help_url: '',
+          help_steps: '',
+          scopes: '',
+          token_prefix: '',
+          configured: false,
+        },
+        {
+          name: 'gitlab',
+          label: 'GitLab',
+          env_var: 'GITLAB_TOKEN',
+          help_url: '',
+          help_steps: '',
+          scopes: '',
+          token_prefix: '',
+          configured: false,
+        },
+        {
+          name: 'linear',
+          label: 'Linear',
+          env_var: 'LINEAR_TOKEN',
+          help_url: '',
+          help_steps: '',
+          scopes: '',
+          token_prefix: '',
+          configured: false,
+        },
+        {
+          name: 'wrike',
+          label: 'Wrike',
+          env_var: 'WRIKE_TOKEN',
+          help_url: '',
+          help_steps: '',
+          scopes: '',
+          token_prefix: '',
+          configured: false,
+        },
       ])
     }
   }, [client])
@@ -58,8 +94,8 @@ export function ProviderTestButtons() {
   const handleTest = async (provider: string) => {
     if (!client) return
 
-    setTesting(prev => ({ ...prev, [provider]: true }))
-    setResults(prev => {
+    setTesting((prev) => ({ ...prev, [provider]: true }))
+    setResults((prev) => {
       const next = { ...prev }
       delete next[provider]
       return next
@@ -70,14 +106,14 @@ export function ProviderTestButtons() {
         provider,
         token: '__use_configured__',
       })
-      setResults(prev => ({ ...prev, [provider]: result }))
+      setResults((prev) => ({ ...prev, [provider]: result }))
     } catch (err) {
-      setResults(prev => ({
+      setResults((prev) => ({
         ...prev,
         [provider]: { ok: false, detail: err instanceof Error ? err.message : 'Test failed' },
       }))
     } finally {
-      setTesting(prev => ({ ...prev, [provider]: false }))
+      setTesting((prev) => ({ ...prev, [provider]: false }))
     }
   }
 
@@ -110,28 +146,22 @@ export function ProviderTestButtons() {
     }
   }
 
-  const activeProvider = providers.find(p => p.name === loginProvider)
+  const activeProvider = providers.find((p) => p.name === loginProvider)
 
   return (
     <div className="mt-6 p-4 bg-base-200 rounded-lg">
       <h3 className="font-medium text-sm mb-3">Provider Connections</h3>
       <div className="space-y-2">
-        {providers.map(p => (
+        {providers.map((p) => (
           <div key={p.name} className="flex items-center gap-3">
             <span className="text-sm w-16">{p.label}</span>
-            {p.configured && (
-              <span className="badge badge-xs badge-success">configured</span>
-            )}
+            {p.configured && <span className="badge badge-xs badge-success">configured</span>}
             <button
               onClick={() => handleTest(p.name)}
               disabled={testing[p.name] || !client}
               className="btn btn-xs btn-outline"
             >
-              {testing[p.name] ? (
-                <span className="loading loading-spinner loading-xs"></span>
-              ) : (
-                'Verify'
-              )}
+              {testing[p.name] ? <span className="loading loading-spinner loading-xs"></span> : 'Verify'}
             </button>
             <button
               onClick={() => {
@@ -172,7 +202,11 @@ export function ProviderTestButtons() {
               </p>
               {activeProvider.help_steps && <p>Steps: {activeProvider.help_steps}</p>}
               {activeProvider.scopes && <p>Required scopes: {activeProvider.scopes}</p>}
-              {activeProvider.token_prefix && <p>Token format: starts with <code>{activeProvider.token_prefix}</code></p>}
+              {activeProvider.token_prefix && (
+                <p>
+                  Token format: starts with <code>{activeProvider.token_prefix}</code>
+                </p>
+              )}
             </div>
           )}
 
@@ -180,8 +214,8 @@ export function ProviderTestButtons() {
             <input
               type="password"
               value={tokenInput}
-              onChange={e => setTokenInput(e.target.value)}
-              onKeyDown={e => {
+              onChange={(e) => setTokenInput(e.target.value)}
+              onKeyDown={(e) => {
                 if (e.key === 'Enter' && tokenInput.trim()) void handleLogin(activeProvider.name)
               }}
               placeholder={`Paste your ${activeProvider.label} API token`}
@@ -194,11 +228,7 @@ export function ProviderTestButtons() {
               disabled={saving || !tokenInput.trim() || !client}
               className="btn btn-primary btn-sm"
             >
-              {saving ? (
-                <span className="loading loading-spinner loading-xs"></span>
-              ) : (
-                'Save'
-              )}
+              {saving ? <span className="loading loading-spinner loading-xs"></span> : 'Save'}
             </button>
             <button
               onClick={() => {
@@ -216,8 +246,7 @@ export function ProviderTestButtons() {
             <div className={`mt-2 text-xs ${loginResult.valid ? 'text-success' : 'text-warning'}`}>
               {loginResult.saved ? (
                 <>
-                  Token saved{loginResult.env_path ? ` to ${loginResult.env_path}` : ''}.
-                  {' '}{loginResult.detail}
+                  Token saved{loginResult.env_path ? ` to ${loginResult.env_path}` : ''}. {loginResult.detail}
                   {loginResult.masked && <span className="text-base-content/50"> ({loginResult.masked})</span>}
                 </>
               ) : (

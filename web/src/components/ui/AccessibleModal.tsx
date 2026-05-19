@@ -11,8 +11,14 @@ interface AccessibleModalProps {
 }
 
 const sizeClasses: Record<string, string> = {
-  sm: 'max-w-sm', md: 'max-w-md', lg: 'max-w-lg', xl: 'max-w-xl',
-  '2xl': 'max-w-2xl', '3xl': 'max-w-3xl', '4xl': 'max-w-4xl', '5xl': 'max-w-5xl',
+  sm: 'max-w-sm',
+  md: 'max-w-md',
+  lg: 'max-w-lg',
+  xl: 'max-w-xl',
+  '2xl': 'max-w-2xl',
+  '3xl': 'max-w-3xl',
+  '4xl': 'max-w-4xl',
+  '5xl': 'max-w-5xl',
 }
 
 export function AccessibleModal({ isOpen, onClose, title, children, actions, size = '3xl' }: AccessibleModalProps) {
@@ -32,18 +38,35 @@ export function AccessibleModal({ isOpen, onClose, title, children, actions, siz
   if (!isOpen) return null
 
   return (
-    <FocusTrap focusTrapOptions={{
-      initialFocus: () => closeRef.current ?? false,
-      allowOutsideClick: true,
-      escapeDeactivates: false, // We handle Escape via useEffect
-    }}>
+    <FocusTrap
+      focusTrapOptions={{
+        initialFocus: () => closeRef.current ?? false,
+        allowOutsideClick: true,
+        escapeDeactivates: false, // We handle Escape via useEffect
+      }}
+    >
       <div className="modal modal-open" role="dialog" aria-modal="true" aria-labelledby={titleId}>
         <div className={`modal-box ${sizeClasses[size] ?? sizeClasses['3xl']}`}>
           <div className="flex items-start justify-between mb-4">
-            <h2 id={titleId} className="text-xl font-bold">{title}</h2>
-            <button ref={closeRef} onClick={onClose} className="btn btn-ghost btn-sm btn-circle" aria-label="Close dialog">
-              <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M18 6 6 18M6 6l12 12"/>
+            <h2 id={titleId} className="text-xl font-bold">
+              {title}
+            </h2>
+            <button
+              ref={closeRef}
+              onClick={onClose}
+              className="btn btn-ghost btn-sm btn-circle"
+              aria-label="Close dialog"
+            >
+              <svg
+                aria-hidden="true"
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <path d="M18 6 6 18M6 6l12 12" />
               </svg>
             </button>
           </div>

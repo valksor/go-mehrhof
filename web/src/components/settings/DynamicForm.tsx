@@ -18,19 +18,13 @@ export function DynamicForm({
   onChange,
   category,
   disabled = false,
-  defaultOpen = 'first'
+  defaultOpen = 'first',
 }: DynamicFormProps) {
   // Filter sections by category if specified
-  const sections = category
-    ? schema.sections.filter((s: Section) => s.category === category)
-    : schema.sections
+  const sections = category ? schema.sections.filter((s: Section) => s.category === category) : schema.sections
 
   if (sections.length === 0) {
-    return (
-      <div className="text-center py-8 text-base-content/50">
-        No settings available
-      </div>
-    )
+    return <div className="text-center py-8 text-base-content/50">No settings available</div>
   }
 
   return (

@@ -13,18 +13,28 @@ describe('ScreenReaderAnnouncer', () => {
   afterEach(() => vi.useRealTimers())
 
   it('renders polite live region', () => {
-    const { getByRole } = render(<ScreenReaderAnnouncer><div /></ScreenReaderAnnouncer>)
+    const { getByRole } = render(
+      <ScreenReaderAnnouncer>
+        <div />
+      </ScreenReaderAnnouncer>,
+    )
     expect(getByRole('status')).toBeInTheDocument()
   })
 
   it('renders assertive live region', () => {
-    const { getByRole } = render(<ScreenReaderAnnouncer><div /></ScreenReaderAnnouncer>)
+    const { getByRole } = render(
+      <ScreenReaderAnnouncer>
+        <div />
+      </ScreenReaderAnnouncer>,
+    )
     expect(getByRole('alert')).toBeInTheDocument()
   })
 
   it('announces a polite message after setTimeout(fn, 0)', async () => {
     const { getByRole, getByText } = render(
-      <ScreenReaderAnnouncer><TestPolite /></ScreenReaderAnnouncer>
+      <ScreenReaderAnnouncer>
+        <TestPolite />
+      </ScreenReaderAnnouncer>,
     )
     await act(async () => {
       getByText('Go').click()
@@ -34,8 +44,6 @@ describe('ScreenReaderAnnouncer', () => {
   })
 
   it('throws when useAnnouncer used outside provider', () => {
-    expect(() => render(<TestPolite />)).toThrow(
-      'useAnnouncer must be used within ScreenReaderAnnouncer'
-    )
+    expect(() => render(<TestPolite />)).toThrow('useAnnouncer must be used within ScreenReaderAnnouncer')
   })
 })

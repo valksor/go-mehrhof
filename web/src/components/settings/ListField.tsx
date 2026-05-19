@@ -23,7 +23,7 @@ export function ListField({ field, value, onChange, disabled, error }: ListField
   const newItemInputId = useId()
 
   const toggleExpanded = (name: string) => {
-    setExpandedItems(prev => {
+    setExpandedItems((prev) => {
       const next = new Set(prev)
       if (next.has(name)) {
         next.delete(name)
@@ -40,7 +40,7 @@ export function ListField({ field, value, onChange, disabled, error }: ListField
 
     // Initialize with defaults from itemSchema
     const newItem: ListItem = {}
-    field.itemSchema?.forEach(f => {
+    field.itemSchema?.forEach((f) => {
       if (f.default !== undefined) {
         newItem[f.path] = f.default
       } else if (f.type === 'tags') {
@@ -54,18 +54,18 @@ export function ListField({ field, value, onChange, disabled, error }: ListField
 
     onChange({
       ...items,
-      [name]: newItem
+      [name]: newItem,
     })
     setNewItemName('')
     setShowAddForm(false)
-    setExpandedItems(prev => new Set(prev).add(name))
+    setExpandedItems((prev) => new Set(prev).add(name))
   }
 
   const handleRemove = (name: string) => {
     const next = { ...items }
     delete next[name]
     onChange(next)
-    setExpandedItems(prev => {
+    setExpandedItems((prev) => {
       const next = new Set(prev)
       next.delete(name)
       return next
@@ -77,8 +77,8 @@ export function ListField({ field, value, onChange, disabled, error }: ListField
       ...items,
       [itemName]: {
         ...items[itemName],
-        [fieldPath]: fieldValue
-      }
+        [fieldPath]: fieldValue,
+      },
     })
   }
 
@@ -94,7 +94,7 @@ export function ListField({ field, value, onChange, disabled, error }: ListField
             </label>
             <select
               value={(fieldValue as string) ?? ''}
-              onChange={e => handleItemFieldChange(itemName, itemField.path, e.target.value)}
+              onChange={(e) => handleItemFieldChange(itemName, itemField.path, e.target.value)}
               disabled={disabled}
               className="select select-bordered select-sm w-full"
             >
@@ -122,7 +122,7 @@ export function ListField({ field, value, onChange, disabled, error }: ListField
             <input
               type="text"
               value={(fieldValue as string) ?? ''}
-              onChange={e => handleItemFieldChange(itemName, itemField.path, e.target.value)}
+              onChange={(e) => handleItemFieldChange(itemName, itemField.path, e.target.value)}
               disabled={disabled}
               className="input input-bordered input-sm w-full"
               placeholder={itemField.placeholder}
@@ -136,7 +136,7 @@ export function ListField({ field, value, onChange, disabled, error }: ListField
         )
 
       case 'tags':
-        const tagsValue = Array.isArray(fieldValue) ? fieldValue as string[] : []
+        const tagsValue = Array.isArray(fieldValue) ? (fieldValue as string[]) : []
         return (
           <div className="form-control" key={itemField.path}>
             <label className="label py-1">
@@ -145,8 +145,11 @@ export function ListField({ field, value, onChange, disabled, error }: ListField
             <input
               type="text"
               value={tagsValue.join(', ')}
-              onChange={e => {
-                const tags = e.target.value.split(',').map(t => t.trim()).filter(Boolean)
+              onChange={(e) => {
+                const tags = e.target.value
+                  .split(',')
+                  .map((t) => t.trim())
+                  .filter(Boolean)
                 handleItemFieldChange(itemName, itemField.path, tags)
               }}
               disabled={disabled}
@@ -167,7 +170,7 @@ export function ListField({ field, value, onChange, disabled, error }: ListField
             key={itemField.path}
             field={itemField}
             value={fieldValue as Record<string, string>}
-            onChange={v => handleItemFieldChange(itemName, itemField.path, v)}
+            onChange={(v) => handleItemFieldChange(itemName, itemField.path, v)}
             disabled={disabled}
           />
         )
@@ -198,9 +201,7 @@ export function ListField({ field, value, onChange, disabled, error }: ListField
         )}
       </div>
 
-      {field.description && (
-        <p className="text-sm text-base-content/50 mb-3">{field.description}</p>
-      )}
+      {field.description && <p className="text-sm text-base-content/50 mb-3">{field.description}</p>}
 
       {/* Add new item form */}
       {showAddForm && (
@@ -214,13 +215,13 @@ export function ListField({ field, value, onChange, disabled, error }: ListField
                 id={newItemInputId}
                 type="text"
                 value={newItemName}
-                onChange={e => setNewItemName(e.target.value)}
+                onChange={(e) => setNewItemName(e.target.value)}
                 disabled={disabled}
                 className="input input-bordered input-sm w-full font-mono"
                 placeholder="my-agent"
                 // eslint-disable-next-line jsx-a11y/no-autofocus -- Intentional: focus new item input when add form appears
                 autoFocus
-                onKeyDown={e => {
+                onKeyDown={(e) => {
                   if (e.key === 'Enter') handleAdd()
                   if (e.key === 'Escape') setShowAddForm(false)
                 }}
@@ -259,7 +260,7 @@ export function ListField({ field, value, onChange, disabled, error }: ListField
           </div>
         )}
 
-        {itemNames.map(name => {
+        {itemNames.map((name) => {
           const isExpanded = expandedItems.has(name)
           const item = items[name]
           const extends_ = (item as Record<string, unknown>)?.extends as string
@@ -284,12 +285,10 @@ export function ListField({ field, value, onChange, disabled, error }: ListField
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                 </svg>
                 <span className="font-mono font-medium flex-1">{name}</span>
-                {extends_ && (
-                  <span className="badge badge-ghost badge-sm">extends {extends_}</span>
-                )}
+                {extends_ && <span className="badge badge-ghost badge-sm">extends {extends_}</span>}
                 <button
                   type="button"
-                  onClick={e => {
+                  onClick={(e) => {
                     e.stopPropagation()
                     handleRemove(name)
                   }}
@@ -298,7 +297,12 @@ export function ListField({ field, value, onChange, disabled, error }: ListField
                   aria-label={`Delete ${name} agent`}
                 >
                   <svg aria-hidden="true" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                    />
                   </svg>
                 </button>
               </button>
@@ -306,9 +310,7 @@ export function ListField({ field, value, onChange, disabled, error }: ListField
               {/* Expanded content */}
               {isExpanded && (
                 <div className="p-3 pt-0 space-y-3 border-t border-base-300">
-                  {field.itemSchema?.map(itemField =>
-                    renderItemField(name, itemField)
-                  )}
+                  {field.itemSchema?.map((itemField) => renderItemField(name, itemField))}
                 </div>
               )}
             </div>

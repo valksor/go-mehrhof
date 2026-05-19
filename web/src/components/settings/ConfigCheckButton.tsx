@@ -40,16 +40,17 @@ export function ConfigCheckButton() {
     <div className="mt-6 pt-4 border-t border-base-300">
       <div className="flex items-center justify-between mb-3">
         <h3 className="text-sm font-semibold text-base-content/70">Config Drift Detection</h3>
-        <button
-          onClick={handleCheck}
-          disabled={loading || !client}
-          className="btn btn-sm btn-outline"
-        >
+        <button onClick={handleCheck} disabled={loading || !client} className="btn btn-sm btn-outline">
           {loading ? (
             <span className="loading loading-spinner loading-xs"></span>
           ) : (
             <svg aria-hidden="true" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+              />
             </svg>
           )}
           Check Config
@@ -71,7 +72,9 @@ export function ConfigCheckButton() {
           ) : (
             <div className="space-y-2">
               <div className="alert alert-warning py-2 text-sm">
-                <span>{result.count} difference{result.count !== 1 ? 's' : ''} found between global and project settings.</span>
+                <span>
+                  {result.count} difference{result.count !== 1 ? 's' : ''} found between global and project settings.
+                </span>
               </div>
               <div className="space-y-1.5 max-h-48 overflow-y-auto">
                 {result.drifts.map((drift, i) => (
