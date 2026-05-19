@@ -10,9 +10,9 @@ kvelmo checklist [flags]
 
 ## Options
 
-| Flag | Description |
-|------|-------------|
-| `--check` | Mark a checklist item as checked |
+| Flag        | Description                        |
+| ----------- | ---------------------------------- |
+| `--check`   | Mark a checklist item as checked   |
 | `--uncheck` | Mark a checklist item as unchecked |
 
 ## Examples

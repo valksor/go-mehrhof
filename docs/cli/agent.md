@@ -10,14 +10,14 @@ kvelmo agent <subcommand>
 
 ## Subcommands
 
-| Subcommand | Description |
-|------------|-------------|
-| `status` | Check agent availability and health |
+| Subcommand | Description                         |
+| ---------- | ----------------------------------- |
+| `status`   | Check agent availability and health |
 
 ## Options
 
-| Flag | Description |
-|------|-------------|
+| Flag     | Description    |
+| -------- | -------------- |
 | `--json` | Output as JSON |
 
 ## Examples

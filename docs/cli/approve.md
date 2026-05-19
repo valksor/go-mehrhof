@@ -31,8 +31,8 @@ Enable approval gates in project settings:
 workflow:
   policy:
     approval_required:
-      submit: true       # Require approval before submitting PR
-      implement: true    # Require approval before implementation
+      submit: true # Require approval before submitting PR
+      implement: true # Require approval before implementation
 ```
 
 When a transition requires approval, the normal command will fail with a message directing you to run `kvelmo approve <event>` first.

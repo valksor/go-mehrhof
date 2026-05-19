@@ -10,14 +10,14 @@ kvelmo ci <subcommand>
 
 ## Subcommands
 
-| Subcommand | Description |
-|------------|-------------|
-| `status` | Show CI status for the current task's PR |
+| Subcommand | Description                              |
+| ---------- | ---------------------------------------- |
+| `status`   | Show CI status for the current task's PR |
 
 ## Options
 
-| Flag | Description |
-|------|-------------|
+| Flag     | Description    |
+| -------- | -------------- |
 | `--json` | Output as JSON |
 
 ## Examples

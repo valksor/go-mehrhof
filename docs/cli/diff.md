@@ -14,9 +14,9 @@ Shows the diff against the last checkpoint, highlighting what the AI agent chang
 
 ## Options
 
-| Flag     | Description             |
-|----------|-------------------------|
-| `--stat` | Show only file summary  |
+| Flag     | Description            |
+| -------- | ---------------------- |
+| `--stat` | Show only file summary |
 
 ## Examples
 

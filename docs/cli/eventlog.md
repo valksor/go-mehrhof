@@ -16,27 +16,27 @@ Unlike the activity log (which tracks RPC calls), the event log captures high-le
 
 ## Options
 
-| Flag      | Description                                      |
-|-----------|--------------------------------------------------|
-| `--type`  | Filter by event type (e.g., `phase_started`)     |
-| `--phase` | Filter by phase (e.g., `plan`, `implement`)      |
-| `--since` | Time range (e.g., `1h`, `30m`)                   |
-| `--json`  | Output as JSON                                   |
+| Flag      | Description                                  |
+| --------- | -------------------------------------------- |
+| `--type`  | Filter by event type (e.g., `phase_started`) |
+| `--phase` | Filter by phase (e.g., `plan`, `implement`)  |
+| `--since` | Time range (e.g., `1h`, `30m`)               |
+| `--json`  | Output as JSON                               |
 
 ## Event Types
 
-| Type                  | Description                          |
-|-----------------------|--------------------------------------|
-| `task_loaded`         | Task loaded from source              |
-| `phase_started`       | Phase execution began                |
-| `phase_completed`     | Phase finished successfully          |
-| `phase_failed`        | Phase failed with error              |
-| `checkpoint_created`  | Git checkpoint created               |
-| `finding_detected`    | Quality finding detected             |
-| `router_decision`     | Failure router made a decision       |
-| `spec_changed`        | Specification was modified           |
-| `guardrail_checked`   | Policy guardrail was evaluated       |
-| `task_finished`       | Task completed                       |
+| Type                 | Description                    |
+| -------------------- | ------------------------------ |
+| `task_loaded`        | Task loaded from source        |
+| `phase_started`      | Phase execution began          |
+| `phase_completed`    | Phase finished successfully    |
+| `phase_failed`       | Phase failed with error        |
+| `checkpoint_created` | Git checkpoint created         |
+| `finding_detected`   | Quality finding detected       |
+| `router_decision`    | Failure router made a decision |
+| `spec_changed`       | Specification was modified     |
+| `guardrail_checked`  | Policy guardrail was evaluated |
+| `task_finished`      | Task completed                 |
 
 ## Examples
 

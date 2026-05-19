@@ -10,20 +10,20 @@ kvelmo codegraph <subcommand>
 
 ## Subcommands
 
-| Command              | Description                          |
-|----------------------|--------------------------------------|
-| `stats`              | Show code graph statistics           |
-| `index [path]`       | Index code symbols in a directory    |
-| `search <name>`      | Find symbol definitions              |
-| `callers <function>` | Find callers of a function           |
-| `deps <package>`     | Find package dependencies            |
+| Command              | Description                       |
+| -------------------- | --------------------------------- |
+| `stats`              | Show code graph statistics        |
+| `index [path]`       | Index code symbols in a directory |
+| `search <name>`      | Find symbol definitions           |
+| `callers <function>` | Find callers of a function        |
+| `deps <package>`     | Find package dependencies         |
 
 ## Flags
 
-| Flag        | Description                                |
-|-------------|--------------------------------------------|
-| `--json`    | Output raw JSON response                   |
-| `--pattern` | Use LIKE pattern matching (search only)    |
+| Flag        | Description                             |
+| ----------- | --------------------------------------- |
+| `--json`    | Output raw JSON response                |
+| `--pattern` | Use LIKE pattern matching (search only) |
 
 ## Examples
 

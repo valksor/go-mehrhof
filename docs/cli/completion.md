@@ -11,7 +11,7 @@ kvelmo completion <shell>
 ## Supported Shells
 
 | Shell      | Command                        |
-|------------|--------------------------------|
+| ---------- | ------------------------------ |
 | bash       | `kvelmo completion bash`       |
 | zsh        | `kvelmo completion zsh`        |
 | fish       | `kvelmo completion fish`       |
@@ -52,6 +52,7 @@ Enables tab completion for kvelmo commands and flags.
 ## Examples
 
 After setup:
+
 ```bash
 kvelmo st<TAB>  # Completes to: kvelmo status
 kvelmo start --<TAB>  # Shows available flags

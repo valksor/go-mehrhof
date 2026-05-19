@@ -10,17 +10,17 @@ kvelmo config <subcommand>
 
 ## Subcommands
 
-| Command             | Description                                              |
-|---------------------|----------------------------------------------------------|
-| `show`              | Show current configuration                               |
-| `init`              | Initialize default configuration                         |
-| `get <key>`         | Get a specific configuration value                       |
-| `set <key> <value>` | Set a configuration value                                |
-| `edit`              | Open configuration file in editor                        |
-| `path`              | Show configuration file path                             |
-| `validate`          | Validate configuration against schema                    |
+| Command             | Description                                                |
+| ------------------- | ---------------------------------------------------------- |
+| `show`              | Show current configuration                                 |
+| `init`              | Initialize default configuration                           |
+| `get <key>`         | Get a specific configuration value                         |
+| `set <key> <value>` | Set a configuration value                                  |
+| `edit`              | Open configuration file in editor                          |
+| `path`              | Show configuration file path                               |
+| `validate`          | Validate configuration against schema                      |
 | `check`             | Check for config drift between global and project settings |
-| `diff`              | Show differences between global and project configuration |
+| `diff`              | Show differences between global and project configuration  |
 
 ## Examples
 
@@ -45,14 +45,14 @@ kvelmo config check --json
 ## Configuration Files
 
 | Scope   | Location                        |
-|---------|---------------------------------|
+| ------- | ------------------------------- |
 | Global  | `~/.valksor/kvelmo/kvelmo.yaml` |
 | Project | `.valksor/kvelmo.yaml`          |
 
 ## Common Settings
 
 | Key             | Description                |
-|-----------------|----------------------------|
+| --------------- | -------------------------- |
 | `agent.default` | Default AI agent           |
 | `workers.max`   | Maximum concurrent workers |
 | `web.port`      | Web UI port                |

@@ -15,7 +15,7 @@ The `diagnose` command checks that all required tools are installed and configur
 ## Checks Performed
 
 | Check           | Description                                           |
-|-----------------|-------------------------------------------------------|
+| --------------- | ----------------------------------------------------- |
 | Git             | Verifies git is installed                             |
 | Claude CLI      | Checks for Claude CLI installation and authentication |
 | Codex CLI       | Checks for Codex CLI installation (optional)          |
@@ -45,7 +45,7 @@ kvelmo diagnose
 ## Exit Codes
 
 | Code | Description                |
-|------|----------------------------|
+| ---- | -------------------------- |
 | 0    | All required checks passed |
 | 1    | One or more checks failed  |
 

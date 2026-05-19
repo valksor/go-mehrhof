@@ -11,7 +11,7 @@ kvelmo browser <subcommand>
 ## Subcommands
 
 | Command          | Description           |
-|------------------|-----------------------|
+| ---------------- | --------------------- |
 | `start`          | Start browser session |
 | `navigate <url>` | Navigate to URL       |
 | `screenshot`     | Take screenshot       |

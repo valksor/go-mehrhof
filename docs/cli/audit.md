@@ -10,10 +10,10 @@ kvelmo audit [flags]
 
 ## Flags
 
-| Flag      | Default | Description                      |
-|-----------|---------|----------------------------------|
+| Flag      | Default | Description                     |
+| --------- | ------- | ------------------------------- |
 | `--since` | `7d`    | Time range (e.g., 24h, 7d, 30d) |
-| `--json`  | `false` | Output as JSON                   |
+| `--json`  | `false` | Output as JSON                  |
 
 ## Examples
 
@@ -47,6 +47,7 @@ Activity Log (45 entries)
 ## What's Logged
 
 Each entry includes:
+
 - **Timestamp** — when the action occurred
 - **User ID** — OS username of the person who invoked the action
 - **Method** — the RPC method called

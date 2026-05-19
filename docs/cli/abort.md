@@ -23,6 +23,7 @@ kvelmo abort
 ## Recovery
 
 After abort, use reset to recover:
+
 ```bash
 kvelmo reset
 ```

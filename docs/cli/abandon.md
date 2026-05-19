@@ -10,8 +10,8 @@ kvelmo abandon
 
 ## Options
 
-| Flag | Description |
-|------|-------------|
+| Flag            | Description                          |
+| --------------- | ------------------------------------ |
 | `--keep-branch` | Keep the git branch after abandoning |
 
 ## What Happens
@@ -34,6 +34,7 @@ This is destructive. Work on this task will be lost.
 ## Recovery
 
 Work may still be in git history:
+
 ```bash
 git reflog
 git checkout <commit-sha>

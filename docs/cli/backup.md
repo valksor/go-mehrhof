@@ -10,8 +10,8 @@ kvelmo backup [output-path]
 
 ## Options
 
-| Flag | Description |
-|------|-------------|
+| Flag     | Description    |
+| -------- | -------------- |
 | `--json` | Output as JSON |
 
 ## What Gets Backed Up

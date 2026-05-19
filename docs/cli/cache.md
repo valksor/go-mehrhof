@@ -10,10 +10,10 @@ kvelmo cache <subcommand>
 
 ## Subcommands
 
-| Subcommand | Description |
-|------------|-------------|
-| `stats` | Show cache hit/miss rates and entry count |
-| `clear` | Remove all entries from the response cache |
+| Subcommand | Description                                |
+| ---------- | ------------------------------------------ |
+| `stats`    | Show cache hit/miss rates and entry count  |
+| `clear`    | Remove all entries from the response cache |
 
 ## Examples
 

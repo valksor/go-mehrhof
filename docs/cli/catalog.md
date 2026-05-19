@@ -10,19 +10,19 @@ kvelmo catalog <subcommand>
 
 ## Subcommands
 
-| Subcommand | Description |
-|------------|-------------|
-| `list` | List available templates |
-| `use <name>` | Start a task from a template |
+| Subcommand   | Description                             |
+| ------------ | --------------------------------------- |
+| `list`       | List available templates                |
+| `use <name>` | Start a task from a template            |
 | `add <path>` | Import a template file into the catalog |
 
 ## Built-in Templates
 
-| Template | Description |
-|----------|-------------|
-| `bug-fix` | Fix reported bugs |
-| `feature` | Implement features |
-| `refactor` | Code refactoring |
+| Template   | Description        |
+| ---------- | ------------------ |
+| `bug-fix`  | Fix reported bugs  |
+| `feature`  | Implement features |
+| `refactor` | Code refactoring   |
 
 ## Examples
 

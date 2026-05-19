@@ -14,8 +14,8 @@ Sends a message asking the agent to explain what it did, why it made those choic
 
 ## Options
 
-| Flag             | Description                                  |
-|------------------|----------------------------------------------|
+| Flag             | Description                                   |
+| ---------------- | --------------------------------------------- |
 | `-p`, `--prompt` | Custom prompt to override the default request |
 
 ## Examples

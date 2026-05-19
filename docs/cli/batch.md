@@ -10,20 +10,20 @@ kvelmo batch <action> [flags]
 
 ## Actions
 
-| Action | Description |
-|--------|-------------|
+| Action   | Description                             |
+| -------- | --------------------------------------- |
 | `submit` | Submit all matching tasks (creates PRs) |
-| `abort` | Abort all matching tasks |
-| `reset` | Reset all matching tasks |
-| `stop` | Stop all matching tasks |
+| `abort`  | Abort all matching tasks                |
+| `reset`  | Reset all matching tasks                |
+| `stop`   | Stop all matching tasks                 |
 
 ## Options
 
-| Flag | Description |
-|------|-------------|
+| Flag      | Description                                        |
+| --------- | -------------------------------------------------- |
 | `--state` | Filter by task state (e.g., `reviewing`, `failed`) |
-| `--tag` | Filter by task tag |
-| `--match` | Filter by project path substring |
+| `--tag`   | Filter by task tag                                 |
+| `--match` | Filter by project path substring                   |
 
 ## Examples
 

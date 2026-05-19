@@ -10,8 +10,8 @@ kvelmo delete
 
 ## Options
 
-| Flag | Description |
-|------|-------------|
+| Flag              | Description                |
+| ----------------- | -------------------------- |
 | `--delete-branch` | Also delete the git branch |
 
 ## Prerequisites

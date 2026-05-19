@@ -14,10 +14,10 @@ An optional `note` is rendered as a blockquote at the top of the output.
 
 ## Flags
 
-| Flag | Description |
-|------|-------------|
+| Flag     | Description                                           |
+| -------- | ----------------------------------------------------- |
 | `--full` | Include commit body/description text under each entry |
-| `--json` | Output raw JSON response (entries array + markdown) |
+| `--json` | Output raw JSON response (entries array + markdown)   |
 
 ## Examples
 
@@ -57,6 +57,7 @@ Commits are auto-categorized by their subject line and grouped:
 ```
 
 Categories are determined by commit message prefixes:
+
 - **Added**: `add`, or default for commits not matching other patterns
 - **Changed**: `change`, `update`, `refactor`
 - **Fixed**: `fix`, or contains `bug`
@@ -75,12 +76,14 @@ changelog.generate
 ```
 
 **Params:**
+
 - `source` (string, required): Source git ref
 - `target` (string, required): Target git ref
 - `full` (boolean): Include commit body text
 - `note` (string): Optional note rendered as blockquote at top of output
 
 **Returns:**
+
 - `entries` (array): Structured changelog entries with sha, message, author, date, category, body
 - `markdown` (string): Pre-rendered markdown output
 - `note` (string): The note if one was provided
