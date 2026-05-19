@@ -26,7 +26,7 @@ func (p *GitHubProvider) UpdateStatus(ctx context.Context, id string, status str
 	switch status {
 	case stateOpen, "pending", "in_progress":
 		state = stateOpen
-	case stateClosed, "done", "completed":
+	case stateClosed, "done", statusCompleted:
 		state = stateClosed
 	default:
 		return fmt.Errorf("unsupported status: %s", status)

@@ -28,7 +28,7 @@ func NewAzureDevOpsProvider(baseURL, org, project, token, repoName string) *Azur
 }
 
 func (p *AzureDevOpsProvider) Name() string {
-	return "azuredevops"
+	return NameAzureDevOps
 }
 
 // FetchTask fetches a work item by ID (e.g., "12345").
@@ -120,7 +120,7 @@ func (p *AzureDevOpsProvider) workItemToTask(wi *azureWorkItem) *Task {
 		Description: description,
 		URL:         p.client.workItemWebURL(wi.ID),
 		Labels:      labels,
-		Source:      "azuredevops",
+		Source:      NameAzureDevOps,
 	}
 
 	task.Priority, task.Type, task.Slug = InferAll(task.Title, labels)

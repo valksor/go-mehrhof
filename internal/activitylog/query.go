@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"slices"
 	"time"
 )
 
@@ -35,8 +36,8 @@ func (l *Log) Query(opts QueryOptions) ([]Entry, error) {
 	var results []Entry
 
 	// Iterate files in reverse (newest first) for efficiency.
-	for i := len(logFiles) - 1; i >= 0; i-- {
-		name := logFiles[i]
+	for _, v := range slices.Backward(logFiles) {
+		name := v
 
 		// Quick date-based skip: if Since is set and the file's day is entirely
 		// before the cutoff, we can stop scanning older files.
@@ -58,8 +59,8 @@ func (l *Log) Query(opts QueryOptions) ([]Entry, error) {
 			return nil, readErr
 		}
 
-		for j := len(entries) - 1; j >= 0; j-- {
-			e := entries[j]
+		for _, v := range slices.Backward(entries) {
+			e := v
 
 			if opts.Since > 0 && e.Timestamp.Before(cutoff) {
 				continue
@@ -119,15 +120,15 @@ func (l *Log) ListByMethod(method string, limit int) ([]Entry, error) {
 
 	var results []Entry
 
-	for i := len(logFiles) - 1; i >= 0; i-- {
-		entries, readErr := l.readFile(filepath.Join(l.dir, logFiles[i]))
+	for _, v := range slices.Backward(logFiles) {
+		entries, readErr := l.readFile(filepath.Join(l.dir, v))
 		if readErr != nil {
 			return nil, readErr
 		}
 
-		for j := len(entries) - 1; j >= 0; j-- {
-			if entries[j].Method == method {
-				results = append(results, entries[j])
+		for _, v := range slices.Backward(entries) {
+			if v.Method == method {
+				results = append(results, v)
 
 				if limit > 0 && len(results) >= limit {
 					return results, nil

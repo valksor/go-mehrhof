@@ -32,7 +32,7 @@ func NewWrikeProvider(token string) *WrikeProvider {
 }
 
 func (p *WrikeProvider) Name() string {
-	return "wrike"
+	return NameWrike
 }
 
 // wrikeTaskData is the raw shape returned by the Wrike v4 tasks API.
@@ -317,7 +317,7 @@ func (p *WrikeProvider) taskDataToTask(data *wrikeTaskData) *Task {
 		Description: data.Description,
 		URL:         data.Permalink,
 		Labels:      []string{data.Status},
-		Source:      "wrike",
+		Source:      NameWrike,
 	}
 
 	// Store the first parent folder ID for sibling lookup.

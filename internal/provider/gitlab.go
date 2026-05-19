@@ -44,7 +44,7 @@ func NewGitLabProviderWithHost(token, host string) (*GitLabProvider, error) {
 }
 
 func (p *GitLabProvider) Name() string {
-	return "gitlab"
+	return NameGitLab
 }
 
 // FetchTask fetches an issue or MR from GitLab by ID (project#number or project!number).
@@ -92,7 +92,7 @@ func (p *GitLabProvider) issueToTask(project string, issue *gitlab.Issue) *Task 
 		Description: issue.Description,
 		URL:         issue.WebURL,
 		Labels:      labels,
-		Source:      "gitlab",
+		Source:      NameGitLab,
 	}
 
 	// Inference
@@ -141,7 +141,7 @@ func (p *GitLabProvider) mrToTask(project string, mr *gitlab.MergeRequest) *Task
 		Description: mr.Description,
 		URL:         mr.WebURL,
 		Labels:      labels,
-		Source:      "gitlab",
+		Source:      NameGitLab,
 	}
 
 	// Inference
@@ -203,7 +203,7 @@ func (p *GitLabProvider) resolveDependencies(task *Task) []*Task {
 		}
 		deps = append(deps, &Task{
 			ID:     depID,
-			Source: "gitlab",
+			Source: NameGitLab,
 		})
 	}
 
@@ -222,7 +222,7 @@ func (p *GitLabProvider) UpdateStatus(ctx context.Context, id string, status str
 	switch status {
 	case stateOpen, "pending", "in_progress":
 		stateEvent = "reopen"
-	case stateClosed, "done", "completed":
+	case stateClosed, "done", statusCompleted:
 		stateEvent = "close"
 	default:
 		return fmt.Errorf("unsupported status: %s", status)

@@ -29,13 +29,15 @@ func TempSocketPath(t *testing.T) string {
 	return filepath.Join(TempDir(t), "test.sock")
 }
 
+const cmdGit = "git"
+
 // InitGitRepo initializes a git repository in dir with an initial commit.
 func InitGitRepo(t *testing.T, dir string) {
 	t.Helper()
 	setup := [][]string{
-		{"git", "init", dir},
-		{"git", "-C", dir, "config", "user.email", "test@test.com"},
-		{"git", "-C", dir, "config", "user.name", "Test"},
+		{cmdGit, "init", dir},
+		{cmdGit, "-C", dir, "config", "user.email", "test@test.com"},
+		{cmdGit, "-C", dir, "config", "user.name", "Test"},
 	}
 	for _, args := range setup {
 		if out, err := exec.Command(args[0], args[1:]...).CombinedOutput(); err != nil { //nolint:noctx // test helper: no context available
@@ -48,8 +50,8 @@ func InitGitRepo(t *testing.T, dir string) {
 		t.Fatalf("write README: %v", err)
 	}
 	commit := [][]string{
-		{"git", "-C", dir, "add", "README.md"},
-		{"git", "-C", dir, "commit", "-m", "initial"},
+		{cmdGit, "-C", dir, "add", "README.md"},
+		{cmdGit, "-C", dir, "commit", "-m", "initial"},
 	}
 	for _, args := range commit {
 		if out, err := exec.Command(args[0], args[1:]...).CombinedOutput(); err != nil { //nolint:noctx // test helper: no context available

@@ -44,14 +44,22 @@ func Strict() *Profile {
 	}
 }
 
+const (
+	phaseImplement = "implement"
+	phaseSimplify  = "simplify"
+	phaseOptimize  = "optimize"
+	phaseReview    = "review"
+	phaseSubmit    = "submit"
+)
+
 // ForPhase returns the appropriate profile for a lifecycle phase.
 func ForPhase(phase string) *Profile {
 	switch phase {
-	case "implement", "simplify", "optimize":
+	case phaseImplement, phaseSimplify, phaseOptimize:
 		return Quick()
-	case "review":
+	case phaseReview:
 		return Standard()
-	case "submit":
+	case phaseSubmit:
 		return Strict()
 	default:
 		return Quick()

@@ -7,8 +7,17 @@ import (
 	"github.com/valksor/kvelmo/internal/storage"
 )
 
+const (
+	phasePlan      = "plan"
+	phaseImplement = "implement"
+	phaseSimplify  = "simplify"
+	phaseOptimize  = "optimize"
+	phaseReview    = "review"
+	phaseSubmit    = "submit"
+)
+
 // allPhases is the canonical list of phases in the workflow.
-var allPhases = []string{"plan", "implement", "simplify", "optimize", "review", "submit"}
+var allPhases = []string{phasePlan, phaseImplement, phaseSimplify, phaseOptimize, phaseReview, phaseSubmit}
 
 // SkipSuggestion recommends skipping a phase based on historical patterns.
 type SkipSuggestion struct {

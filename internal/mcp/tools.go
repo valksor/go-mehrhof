@@ -28,10 +28,10 @@ func toolGetTask() Tool {
 		Name:        "kvelmo_get_task",
 		Description: "Return the current kvelmo task (id, title, description, state). Call this first to learn the current phase.",
 		InputSchema: map[string]any{
-			"type":                 "object",
-			"properties":           map[string]any{},
-			"required":             []string{},
-			"additionalProperties": false,
+			schemaKeyType:      schemaTypeObject,
+			schemaKeyProps:     map[string]any{},
+			schemaKeyRequired:  []string{},
+			schemaKeyAddlProps: false,
 		},
 	}
 }
@@ -41,15 +41,15 @@ func toolGetSpecifications() Tool {
 		Name:        "kvelmo_get_specifications",
 		Description: "Return the specification files written so far for this task. Set include_content=true to also return their contents (large output).",
 		InputSchema: map[string]any{
-			"type": "object",
-			"properties": map[string]any{
+			schemaKeyType: schemaTypeObject,
+			schemaKeyProps: map[string]any{
 				"include_content": map[string]any{
-					"type":        "boolean",
-					"description": "If true, include file contents (default: false).",
+					schemaKeyType: "boolean",
+					schemaKeyDesc: "If true, include file contents (default: false).",
 				},
 			},
-			"required":             []string{},
-			"additionalProperties": false,
+			schemaKeyRequired:  []string{},
+			schemaKeyAddlProps: false,
 		},
 	}
 }
@@ -59,15 +59,15 @@ func toolReadFile() Tool {
 		Name:        "kvelmo_read_file",
 		Description: "Read a single file from the worktree. Returns content as text. Maximum 10 MiB. Use relative paths or absolute paths within the worktree.",
 		InputSchema: map[string]any{
-			"type": "object",
-			"properties": map[string]any{
+			schemaKeyType: schemaTypeObject,
+			schemaKeyProps: map[string]any{
 				"path": map[string]any{
-					"type":        "string",
-					"description": "File path relative to the worktree root, or absolute path inside it.",
+					schemaKeyType: schemaTypeString,
+					schemaKeyDesc: "File path relative to the worktree root, or absolute path inside it.",
 				},
 			},
-			"required":             []string{"path"},
-			"additionalProperties": false,
+			schemaKeyRequired:  []string{"path"},
+			schemaKeyAddlProps: false,
 		},
 	}
 }
@@ -77,19 +77,19 @@ func toolSaveArtifact() Tool {
 		Name:        "kvelmo_save_artifact",
 		Description: "Persist an artifact produced during the current phase. kind must be one of: spec, plan, implementation_summary. Returns the saved path.",
 		InputSchema: map[string]any{
-			"type": "object",
-			"properties": map[string]any{
+			schemaKeyType: schemaTypeObject,
+			schemaKeyProps: map[string]any{
 				"kind": map[string]any{
-					"type":        "string",
-					"description": "Artifact type: spec | plan | implementation_summary.",
+					schemaKeyType: schemaTypeString,
+					schemaKeyDesc: "Artifact type: spec | plan | implementation_summary.",
 				},
 				"content": map[string]any{
-					"type":        "string",
-					"description": "Markdown content of the artifact.",
+					schemaKeyType: schemaTypeString,
+					schemaKeyDesc: "Markdown content of the artifact.",
 				},
 			},
-			"required":             []string{"kind", "content"},
-			"additionalProperties": false,
+			schemaKeyRequired:  []string{"kind", "content"},
+			schemaKeyAddlProps: false,
 		},
 	}
 }
@@ -99,15 +99,15 @@ func toolCreateCheckpoint() Tool {
 		Name:        "kvelmo_create_checkpoint",
 		Description: "Create a git checkpoint commit with the given message. Returns the new commit SHA.",
 		InputSchema: map[string]any{
-			"type": "object",
-			"properties": map[string]any{
+			schemaKeyType: schemaTypeObject,
+			schemaKeyProps: map[string]any{
 				"message": map[string]any{
-					"type":        "string",
-					"description": "Short imperative checkpoint message.",
+					schemaKeyType: schemaTypeString,
+					schemaKeyDesc: "Short imperative checkpoint message.",
 				},
 			},
-			"required":             []string{"message"},
-			"additionalProperties": false,
+			schemaKeyRequired:  []string{"message"},
+			schemaKeyAddlProps: false,
 		},
 	}
 }
@@ -117,19 +117,19 @@ func toolSignalComplete() Tool {
 		Name:        "kvelmo_signal_complete",
 		Description: "Signal that the current phase is complete. Finalises the phase (detects spec files, copies to repo, creates the completion checkpoint). MUST be called before exiting the session.",
 		InputSchema: map[string]any{
-			"type": "object",
-			"properties": map[string]any{
-				"phase": map[string]any{
-					"type":        "string",
-					"description": "Phase that just completed: plan | implement | simplify | optimize | review.",
+			schemaKeyType: schemaTypeObject,
+			schemaKeyProps: map[string]any{
+				schemaKeyPhase: map[string]any{
+					schemaKeyType: schemaTypeString,
+					schemaKeyDesc: "Phase that just completed: plan | implement | simplify | optimize | review.",
 				},
 				"summary": map[string]any{
-					"type":        "string",
-					"description": "Optional human-readable summary of what was accomplished.",
+					schemaKeyType: schemaTypeString,
+					schemaKeyDesc: "Optional human-readable summary of what was accomplished.",
 				},
 			},
-			"required":             []string{"phase"},
-			"additionalProperties": false,
+			schemaKeyRequired:  []string{"phase"},
+			schemaKeyAddlProps: false,
 		},
 	}
 }
@@ -139,23 +139,23 @@ func toolSignalFailure() Tool {
 		Name:        "kvelmo_signal_failure",
 		Description: "Signal that the current phase has hit an unrecoverable error. The conductor will record the failure and surface it to the user.",
 		InputSchema: map[string]any{
-			"type": "object",
-			"properties": map[string]any{
-				"phase": map[string]any{
-					"type":        "string",
-					"description": "Phase that failed: plan | implement | simplify | optimize | review.",
+			schemaKeyType: schemaTypeObject,
+			schemaKeyProps: map[string]any{
+				schemaKeyPhase: map[string]any{
+					schemaKeyType: schemaTypeString,
+					schemaKeyDesc: "Phase that failed: plan | implement | simplify | optimize | review.",
 				},
 				"reason": map[string]any{
-					"type":        "string",
-					"description": "Short, human-readable failure reason.",
+					schemaKeyType: schemaTypeString,
+					schemaKeyDesc: "Short, human-readable failure reason.",
 				},
 				"retryable": map[string]any{
-					"type":        "boolean",
-					"description": "Whether the failure might succeed on retry (default: false).",
+					schemaKeyType: "boolean",
+					schemaKeyDesc: "Whether the failure might succeed on retry (default: false).",
 				},
 			},
-			"required":             []string{"phase", "reason"},
-			"additionalProperties": false,
+			schemaKeyRequired:  []string{"phase", "reason"},
+			schemaKeyAddlProps: false,
 		},
 	}
 }
@@ -283,7 +283,7 @@ func execSignalComplete(c *Client) Executor {
 		if phase == "" {
 			return missing("phase")
 		}
-		params := map[string]any{"phase": phase}
+		params := map[string]any{schemaKeyPhase: phase}
 		if summary != "" {
 			params["summary"] = summary
 		}
@@ -308,7 +308,7 @@ func execSignalFailure(c *Client) Executor {
 		if reason == "" {
 			return missing("reason")
 		}
-		params := map[string]any{"phase": phase, "reason": reason, "retryable": retryable}
+		params := map[string]any{schemaKeyPhase: phase, "reason": reason, "retryable": retryable}
 		var out signalResult
 		if errResult, ok := c.CallInto(ctx, "mcp.signal.failure", params, &out); !ok {
 			return errResult, nil

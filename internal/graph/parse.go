@@ -154,17 +154,17 @@ func expandVars(s string, vars map[string]string) string {
 
 func resolveJobType(s string) worker.JobType {
 	switch strings.ToLower(s) {
-	case "plan":
+	case string(worker.JobTypePlan):
 		return worker.JobTypePlan
-	case "implement":
+	case string(worker.JobTypeImplement):
 		return worker.JobTypeImplement
-	case "review":
+	case string(worker.JobTypeReview):
 		return worker.JobTypeReview
-	case "simplify":
+	case string(worker.JobTypeSimplify):
 		return worker.JobTypeSimplify
-	case "optimize":
+	case string(worker.JobTypeOptimize):
 		return worker.JobTypeOptimize
-	case "dry_run", "dryrun":
+	case string(worker.JobTypeDryRun), "dryrun":
 		return worker.JobTypeDryRun
 	default:
 		slog.Warn("unknown job type in graph definition, using as-is", "job_type", s)

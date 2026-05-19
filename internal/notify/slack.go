@@ -4,31 +4,31 @@ package notify
 func FormatSlackPayload(p Payload) map[string]any {
 	fields := []map[string]any{
 		{
-			"type": "mrkdwn",
-			"text": "*State:* " + p.State,
+			slackKeyType: slackTypeMarkdown,
+			slackKeyText: "*State:* " + p.State,
 		},
 	}
 
 	if p.PreviousState != "" && p.PreviousState != p.State {
 		fields = append(fields, map[string]any{
-			"type": "mrkdwn",
-			"text": "*Previous State:* " + p.PreviousState,
+			slackKeyType: slackTypeMarkdown,
+			slackKeyText: "*Previous State:* " + p.PreviousState,
 		})
 	}
 
 	if p.ProjectPath != "" {
 		fields = append(fields, map[string]any{
-			"type": "mrkdwn",
-			"text": "*Project:* " + p.ProjectPath,
+			slackKeyType: slackTypeMarkdown,
+			slackKeyText: "*Project:* " + p.ProjectPath,
 		})
 	}
 
 	blocks := []map[string]any{
 		{
-			"type": "section",
-			"text": map[string]any{
-				"type": "mrkdwn",
-				"text": "*" + p.TaskTitle + "*",
+			slackKeyType: "section",
+			slackKeyText: map[string]any{
+				slackKeyType: slackTypeMarkdown,
+				slackKeyText: "*" + p.TaskTitle + "*",
 			},
 			"fields": fields,
 		},
@@ -36,11 +36,11 @@ func FormatSlackPayload(p Payload) map[string]any {
 
 	if p.Error != "" {
 		blocks = append(blocks, map[string]any{
-			"type": "context",
+			slackKeyType: "context",
 			"elements": []map[string]any{
 				{
-					"type": "mrkdwn",
-					"text": ":warning: " + p.Error,
+					slackKeyType: slackTypeMarkdown,
+					slackKeyText: ":warning: " + p.Error,
 				},
 			},
 		})

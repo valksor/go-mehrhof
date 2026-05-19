@@ -12,7 +12,7 @@ type LoginConfig struct {
 
 // LoginConfigs maps provider names to their login configuration.
 var LoginConfigs = map[string]LoginConfig{
-	"github": {
+	NameGitHub: {
 		Name:        "GitHub",
 		EnvVar:      "GITHUB_TOKEN",
 		HelpURL:     "https://github.com/settings/tokens",
@@ -20,7 +20,7 @@ var LoginConfigs = map[string]LoginConfig{
 		Scopes:      "repo, read:user (or Fine-grained with repository access)",
 		TokenPrefix: "ghp_",
 	},
-	"gitlab": {
+	NameGitLab: {
 		Name:        "GitLab",
 		EnvVar:      "GITLAB_TOKEN",
 		HelpURL:     "https://gitlab.com/-/user_settings/personal_access_tokens",
@@ -28,7 +28,7 @@ var LoginConfigs = map[string]LoginConfig{
 		Scopes:      "api, read_user, read_repository",
 		TokenPrefix: "glpat-",
 	},
-	"linear": {
+	NameLinear: {
 		Name:        "Linear",
 		EnvVar:      "LINEAR_TOKEN",
 		HelpURL:     "https://linear.app/settings/api",
@@ -36,7 +36,7 @@ var LoginConfigs = map[string]LoginConfig{
 		Scopes:      "Workspace access",
 		TokenPrefix: "lin_api_",
 	},
-	"wrike": {
+	NameWrike: {
 		Name:        "Wrike",
 		EnvVar:      "WRIKE_TOKEN",
 		HelpURL:     "https://www.wrike.com/frontend/apps/index.html#/api",
@@ -44,7 +44,7 @@ var LoginConfigs = map[string]LoginConfig{
 		Scopes:      "Default (read/write access)",
 		TokenPrefix: "",
 	},
-	"jira": {
+	NameJira: {
 		Name:        "Jira",
 		EnvVar:      "JIRA_TOKEN",
 		HelpURL:     "https://id.atlassian.com/manage-profile/security/api-tokens",
@@ -52,7 +52,7 @@ var LoginConfigs = map[string]LoginConfig{
 		Scopes:      "Read/write project access",
 		TokenPrefix: "",
 	},
-	"azuredevops": {
+	NameAzureDevOps: {
 		Name:        "Azure DevOps",
 		EnvVar:      "AZURE_DEVOPS_TOKEN",
 		HelpURL:     "https://dev.azure.com/_usersSettings/tokens",

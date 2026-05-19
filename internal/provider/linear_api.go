@@ -202,8 +202,8 @@ func (p *LinearProvider) findWorkflowState(ctx context.Context, teamID, status s
 		stateTypes = []string{"backlog", "unstarted"}
 	case "in_progress", "started", "doing":
 		stateTypes = []string{"started"}
-	case "done", "completed", "closed":
-		stateTypes = []string{"completed"}
+	case "done", statusCompleted, "closed":
+		stateTypes = []string{statusCompleted}
 	case "canceled", "cancelled":
 		stateTypes = []string{"canceled"}
 	default:

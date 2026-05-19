@@ -18,6 +18,9 @@ const (
 	NameFile        = "file"
 )
 
+// Provider-side task status values shared across multiple provider adapters.
+const statusCompleted = "completed"
+
 // Subtask represents a checklist item within a task.
 type Subtask struct {
 	ID        string // "{taskID}-task-{index}"
@@ -280,7 +283,7 @@ func Parse(source string) (provider string, id string, err error) {
 			}
 		}
 
-		if strings.Contains(host, "gitlab") {
+		if strings.Contains(host, NameGitLab) {
 			// GitLab: /owner/repo/-/issues/123 or /owner/repo/-/merge_requests/45
 			parts := strings.Split(strings.Trim(path, "/"), "/")
 			for i, p := range parts {

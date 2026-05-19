@@ -176,7 +176,7 @@ func (p *LinearProvider) issueToTask(issue *linearIssue) *Task {
 		for i, child := range issue.Children.Nodes {
 			completed := false
 			if child.State != nil {
-				completed = child.State.Type == "completed" || child.State.Type == "canceled"
+				completed = child.State.Type == statusCompleted || child.State.Type == "canceled"
 			}
 			task.Subtasks = append(task.Subtasks, &Subtask{
 				ID:        child.Identifier,
