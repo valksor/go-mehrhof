@@ -26,7 +26,7 @@ Every step creates a checkpoint. Use undo/redo if something doesn't look right.
 ## Choose Your Interface
 
 | Interface                                  | Best For                                    |
-|--------------------------------------------|--------------------------------------------|
+| ------------------------------------------ | ------------------------------------------- |
 | [Desktop App](/desktop/getting-started.md) | Most users — native app, no terminal needed |
 | [Web UI](/web-ui/getting-started.md)       | Browser-based, one command to start         |
 | [CLI](/cli/index.md)                       | Automation, scripting, shell workflows      |

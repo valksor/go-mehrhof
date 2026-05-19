@@ -2,12 +2,12 @@
 
 Configurations for running kvelmo in production, from local service supervision to containerized orchestration.
 
-| Subdirectory | Use when |
-|---|---|
-| `docker/` | Running kvelmo in a single container or with Compose |
-| `kubernetes/` | Deploying kvelmo to a Kubernetes cluster |
-| `systemd/` | Running kvelmo as a managed daemon on Linux |
-| `launchd/` | Running kvelmo as a managed agent on macOS |
+| Subdirectory  | Use when                                             |
+| ------------- | ---------------------------------------------------- |
+| `docker/`     | Running kvelmo in a single container or with Compose |
+| `kubernetes/` | Deploying kvelmo to a Kubernetes cluster             |
+| `systemd/`    | Running kvelmo as a managed daemon on Linux          |
+| `launchd/`    | Running kvelmo as a managed agent on macOS           |
 
 ## Docker
 

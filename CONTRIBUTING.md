@@ -55,6 +55,7 @@ make ci
 ```
 
 **Run checks for what you changed:**
+
 - Go code (`cmd/`, `internal/`, `*.go`): `make quality`
 - Web frontend (`web/`): `cd web && bun run build`
 - Docs only (`*.md`): No checks required
@@ -143,12 +144,14 @@ CI enforces this via `make check-alias`.
 `//nolint` is a last resort. Never disable linters globally in `.golangci.yml`.
 
 **Acceptable** (with justification):
+
 ```go
 //nolint:unparam // Required by interface
 //nolint:errcheck // String builder WriteString won't fail
 ```
 
 **Never acceptable:**
+
 - `//nolint:errcheck` without justification
 - `//nolint:gosec` (fix the security issue)
 - `//nolint:all` (never suppress all linters)
@@ -175,12 +178,14 @@ handlers_review.go    // Review handlers
 ### Testing Strategy
 
 **During development:** Run targeted tests for changed packages:
+
 ```bash
 go test ./internal/socket/...           # Test a package
 go test -run TestName ./internal/...    # Test specific function
 ```
 
 **Before committing:** Run the full test suite:
+
 ```bash
 make test  # Only after implementation is complete
 ```
@@ -258,6 +263,7 @@ Use descriptive branch names:
 5. Open a pull request with a clear description
 
 Your PR should:
+
 - Pass all CI checks
 - Include tests for new functionality
 - Reference any related issues
@@ -292,6 +298,7 @@ Before submitting a bug report, please verify the issue against different versio
 ### Feature Requests
 
 For feature requests, please:
+
 - Describe the use case clearly
 - Explain why existing functionality doesn't meet your needs
 - Consider if this would benefit most users or is specific to your workflow

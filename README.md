@@ -120,11 +120,11 @@ locally installed binaries as subprocesses through their documented interfaces â
 the same way a shell script or CI pipeline would. Users install and authenticate
 agent CLIs independently.
 
-| Tool | License | Binary invocation status |
-|------|---------|--------------------------|
-| **Claude Code** | Proprietary (Anthropic) | Designed for programmatic use. The `--print` and `--output-format stream-json` flags exist for exactly this purpose, and Anthropic's own Agent SDK uses the same subprocess pattern. Consumer ToS explicitly exempts the CLI from the prohibition on automated access. |
-| **Codex CLI** | Apache 2.0 (OpenAI) | Open source. Subprocess invocation, wrapping, and modification are all permitted by the license. |
-| **Custom agents** | Varies | Any CLI exposing a supported protocol can participate. |
+| Tool              | License                 | Binary invocation status                                                                                                                                                                                                                                               |
+| ----------------- | ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Claude Code**   | Proprietary (Anthropic) | Designed for programmatic use. The `--print` and `--output-format stream-json` flags exist for exactly this purpose, and Anthropic's own Agent SDK uses the same subprocess pattern. Consumer ToS explicitly exempts the CLI from the prohibition on automated access. |
+| **Codex CLI**     | Apache 2.0 (OpenAI)     | Open source. Subprocess invocation, wrapping, and modification are all permitted by the license.                                                                                                                                                                       |
+| **Custom agents** | Varies                  | Any CLI exposing a supported protocol can participate.                                                                                                                                                                                                                 |
 
 ### Linked dependencies (Go, frontend, Rust/Tauri)
 
@@ -148,15 +148,15 @@ the build loudly.
 
 ## Key Capabilities
 
-| Capability | What It Covers |
-|------------|----------------|
-| **Task intake** | Files plus providers such as GitHub, GitLab, Linear, Wrike, Jira, and Azure DevOps |
-| **Workflow orchestration** | Start, plan, implement, simplify, optimize, review, submit, finish |
-| **Checkpointing** | Undo, redo, reset, abandon, and resumable task history |
-| **Observability** | Status, watch, logs, activity, jobs, stats, recordings, event log |
-| **Governance** | Approvals, checklisting, policy, CI checks, security scanning, audit trail |
-| **Project intelligence** | Memory, screenshots, browser automation, code graph, discovery, recap, explain |
-| **Operations** | Backups, exports, notifications, access tokens, hooks, worker pools, task groups |
+| Capability                 | What It Covers                                                                     |
+| -------------------------- | ---------------------------------------------------------------------------------- |
+| **Task intake**            | Files plus providers such as GitHub, GitLab, Linear, Wrike, Jira, and Azure DevOps |
+| **Workflow orchestration** | Start, plan, implement, simplify, optimize, review, submit, finish                 |
+| **Checkpointing**          | Undo, redo, reset, abandon, and resumable task history                             |
+| **Observability**          | Status, watch, logs, activity, jobs, stats, recordings, event log                  |
+| **Governance**             | Approvals, checklisting, policy, CI checks, security scanning, audit trail         |
+| **Project intelligence**   | Memory, screenshots, browser automation, code graph, discovery, recap, explain     |
+| **Operations**             | Backups, exports, notifications, access tokens, hooks, worker pools, task groups   |
 
 ## Installation
 
@@ -206,15 +206,15 @@ kvelmo submit
 
 ## Documentation
 
-| Guide | Description |
-|-------|-------------|
-| [Quickstart](https://valksor.com/docs/kvelmo/nightly/#/quickstart) | Get started and learn the workflow |
-| [Desktop App](https://valksor.com/docs/kvelmo/nightly/#/desktop/index) | Native application guide |
-| [Web UI Guide](https://valksor.com/docs/kvelmo/nightly/#/web-ui/getting-started) | Browser experience |
-| [CLI Reference](https://valksor.com/docs/kvelmo/nightly/#/cli/index) | Command reference |
-| [Workflow Concepts](https://valksor.com/docs/kvelmo/nightly/#/concepts/workflow) | Steps, approvals, and recovery |
-| [Providers](https://valksor.com/docs/kvelmo/nightly/#/providers/index) | External task sources |
-| [Configuration](https://valksor.com/docs/kvelmo/nightly/#/configuration/index) | Settings, tokens, and behavior |
+| Guide                                                                            | Description                        |
+| -------------------------------------------------------------------------------- | ---------------------------------- |
+| [Quickstart](https://valksor.com/docs/kvelmo/nightly/#/quickstart)               | Get started and learn the workflow |
+| [Desktop App](https://valksor.com/docs/kvelmo/nightly/#/desktop/index)           | Native application guide           |
+| [Web UI Guide](https://valksor.com/docs/kvelmo/nightly/#/web-ui/getting-started) | Browser experience                 |
+| [CLI Reference](https://valksor.com/docs/kvelmo/nightly/#/cli/index)             | Command reference                  |
+| [Workflow Concepts](https://valksor.com/docs/kvelmo/nightly/#/concepts/workflow) | Steps, approvals, and recovery     |
+| [Providers](https://valksor.com/docs/kvelmo/nightly/#/providers/index)           | External task sources              |
+| [Configuration](https://valksor.com/docs/kvelmo/nightly/#/configuration/index)   | Settings, tokens, and behavior     |
 
 ## Development
 

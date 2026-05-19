@@ -15,10 +15,13 @@ Complete guide to install kvelmo and all prerequisites from scratch.
 A **terminal** (also called "command line", "console", or "shell") is a text-based way to control your computer. Instead of clicking buttons and icons, you type commands.
 
 It looks like a window with text, usually with a **prompt** like this:
+
 ```
 username@computer:~$
 ```
+
 or on Mac:
+
 ```
 username@MacBook ~ %
 ```
@@ -28,16 +31,19 @@ The `$` or `%` at the end means the computer is waiting for you to type somethin
 ### How to Open a Terminal
 
 **macOS:**
+
 1. Press **Cmd + Space** to open Spotlight search
 2. Type **Terminal**
 3. Press **Enter**
 
 **Windows (after WSL is installed - see [Windows section](#windows-wsl-setup)):**
+
 1. Click the **Start** button
 2. Type **Ubuntu**
 3. Click to open
 
 **Ubuntu/Linux:**
+
 1. Press the **Super** key (the Windows logo key on your keyboard)
 2. Type **Terminal**
 3. Click to open
@@ -45,11 +51,13 @@ The `$` or `%` at the end means the computer is waiting for you to type somethin
 ### Running Commands
 
 When you see a command in this guide like:
+
 ```bash
 sudo apt update
 ```
 
 Here's what to do:
+
 1. **Copy** the command (highlight it, then Ctrl+C or Cmd+C)
 2. **Paste** it into your terminal (Ctrl+Shift+V on Linux, Cmd+V on Mac, or right-click → Paste)
 3. Press **Enter** to run it
@@ -61,6 +69,7 @@ Here's what to do:
 Some commands start with `sudo` (like `sudo apt update`). This runs the command with administrator privileges.
 
 When you run a `sudo` command:
+
 - You'll be asked for your password
 - **The characters won't appear as you type** - this is a security feature, not a bug
 - Just type your password and press Enter
@@ -74,6 +83,7 @@ On Linux/WSL, this is your Linux password (the one you created during setup), no
 Some downloads depend on your computer's **architecture** (the type of processor inside). Here's how to check:
 
 **Mac:**
+
 1. Click the **Apple menu** (top-left corner)
 2. Click **About This Mac**
 3. Look for **Chip** or **Processor**:
@@ -82,9 +92,11 @@ Some downloads depend on your computer's **architecture** (the type of processor
 
 **Linux:**
 Open a terminal and run:
+
 ```bash
 uname -m
 ```
+
 - `x86_64` → You have **amd64**
 - `aarch64` → You have **arm64**
 
@@ -95,14 +107,14 @@ Don't worry about this - WSL handles it automatically.
 
 ## Key Terms Reference
 
-| Term | What It Means |
-|------|---------------|
-| **Terminal** | A text-based window where you type commands |
-| **Command** | Text you type to tell the computer what to do |
-| **Directory/Folder** | A container for files (same thing, different names) |
-| **Path** | The location of a file or folder, like `/home/user/task.md` |
-| **sudo** | "Super user do" - runs a command with admin privileges |
-| **Package manager** | Software that installs other software (like an app store) |
+| Term                 | What It Means                                               |
+| -------------------- | ----------------------------------------------------------- |
+| **Terminal**         | A text-based window where you type commands                 |
+| **Command**          | Text you type to tell the computer what to do               |
+| **Directory/Folder** | A container for files (same thing, different names)         |
+| **Path**             | The location of a file or folder, like `/home/user/task.md` |
+| **sudo**             | "Super user do" - runs a command with admin privileges      |
+| **Package manager**  | Software that installs other software (like an app store)   |
 
 ---
 
@@ -139,6 +151,7 @@ curl -fsSL https://raw.githubusercontent.com/valksor/kvelmo/master/install.sh | 
 ```
 
 The script will:
+
 - Detect your Mac type (Intel or Apple Silicon)
 - Download the correct binary
 - Install to `/usr/local/bin/kvelmo`
@@ -157,11 +170,13 @@ You should see the version number.
 kvelmo orchestrates AI agents. You need at least one agent CLI:
 
 **Claude** (recommended):
+
 1. Visit https://claude.ai/code
 2. Follow the installation instructions
 3. Verify: `claude --version`
 
 **Codex**:
+
 1. Visit the Codex documentation
 2. Follow the installation instructions
 3. Verify: `codex --version`
@@ -202,11 +217,13 @@ kvelmo runs on Windows through WSL2 (Windows Subsystem for Linux). This gives yo
 ### Step 1: Install WSL2
 
 Open **PowerShell as Administrator**:
+
 1. Right-click the Start button
 2. Click **Terminal (Admin)** or **PowerShell (Admin)**
 3. If prompted, click **Yes**
 
 Run this command:
+
 ```powershell
 wsl --install
 ```
@@ -216,6 +233,7 @@ This installs WSL2 with Ubuntu. **Restart your computer** when prompted.
 ### Step 2: Set Up Ubuntu
 
 After restart:
+
 1. Ubuntu will open automatically (or search for "Ubuntu" in Start)
 2. Wait for the installation to complete
 3. Create a username and password when prompted
@@ -240,10 +258,12 @@ kvelmo version
 ### Accessing Windows Files
 
 Your Windows files are at `/mnt/c/`:
+
 - Desktop: `/mnt/c/Users/YourName/Desktop`
 - Documents: `/mnt/c/Users/YourName/Documents`
 
 Example:
+
 ```bash
 cd /mnt/c/Users/YourName/Documents/myproject
 kvelmo serve

@@ -33,6 +33,7 @@ Please include as much detail as possible:
 - **Patch release**: Based on severity, typically within 14 days
 
 You will be notified when:
+
 - We confirm the vulnerability
 - A fix is being developed
 - A patch is released
@@ -42,7 +43,7 @@ You will be notified when:
 Security updates are provided for the **current major version** only.
 
 | Version | Support Status |
-|---------|----------------|
+| ------- | -------------- |
 | 0.x     | Supported      |
 
 When a new major version is released, security updates for the previous version may be provided for a limited transition period (typically 3 months).
@@ -59,6 +60,7 @@ When a new major version is released, security updates for the previous version 
 ### Announcements
 
 Security updates are announced via:
+
 - GitHub Security Advisories
 - Release notes
 - Commit messages (marked `[security]`)

@@ -1,7 +1,9 @@
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 # IT IS YEAR 2026 !!! Please use 2026 in web searches!!!
+
 ## No time estimates. Never say "this will take 1 day" or "a few weeks" - these are always wrong. If you must indicate complexity, use Fibonacci numbers (1, 2, 3, 5, 8, 13) for relative effort.
+
 ## PROJECT USES BUN NOT NODE OR NPM! PLEASE USE BUN OR BUNX WHEN CALLING SCRIPTS!
 
 ## Project Overview
@@ -15,12 +17,14 @@ kvelmo is a socket-first task lifecycle orchestration system for AI-assisted dev
 kvelmo is a **development orchestrator** - it doesn't write code itself, it manages the lifecycle of AI agents writing code in OTHER projects.
 
 **The flow:**
+
 1. User loads a task (from GitHub issue, file, Linear, etc.)
 2. kvelmo spawns an AI agent (Claude, Codex, custom) in a worktree
 3. Agent plans → implements → simplifies → optimizes the code
 4. kvelmo manages checkpoints, reviews, and PR submission
 
 **When working on kvelmo itself:**
+
 - You're modifying the orchestrator, not a target project
 - Changes should affect how kvelmo manages workflows
 - Don't confuse kvelmo's internal state with user project state
@@ -83,6 +87,7 @@ make prototype-unlock   # Unlock prototype directory
 ## Architecture
 
 ### Socket Paths
+
 - Global: `~/.valksor/kvelmo/global.sock` (one per machine)
 - Worktree: `<project>/.kvelmo/worktree.sock` (one per project)
 - Protocol: JSON-RPC 2.0
@@ -121,60 +126,60 @@ kvelmo splits its Go packages into a **public API surface** (hoisted to the modu
 
 **Public API (module root) — reusable adapters, config, and metadata:**
 
-| Package | Purpose |
-|---------|---------|
-| `agent/` | AI agent interface and adapters (`claude`, `claudesdk`, `claudemcp`, `codex`, `anthropic`, `apiagent`, `openai`, `ollama`, `custom`, `replay`); sub-packages: `permission` (tool approval), `recorder` (session recording), `strategy` (reasoning strategies), `agenttest` (test helpers). **Three claude variants:** `claude` = binary use (`claude --print`); works today, consumes the new $200/mo Agent SDK credit pool after 2026-06-15. `claudemcp` = **default**, interactive TUI + MCP, works with Max subscription. `claudesdk` = WebSocket Agent SDK (`--sdk-url`); **broken** on the official Anthropic CLI since 2.1.121. See `docs/agents/claude-mcp.md`. |
-| `settings/` | Configuration management + drift detection |
-| `metrics/` | Observability (counters, latency) |
-| `meta/` | Build metadata (version, commit, docs URL) |
-| `paths/` | Centralized path resolution |
+| Package     | Purpose                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| ----------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `agent/`    | AI agent interface and adapters (`claude`, `claudesdk`, `claudemcp`, `codex`, `anthropic`, `apiagent`, `openai`, `ollama`, `custom`, `replay`); sub-packages: `permission` (tool approval), `recorder` (session recording), `strategy` (reasoning strategies), `agenttest` (test helpers). **Three claude variants:** `claude` = binary use (`claude --print`); works today, consumes the new $200/mo Agent SDK credit pool after 2026-06-15. `claudemcp` = **default**, interactive TUI + MCP, works with Max subscription. `claudesdk` = WebSocket Agent SDK (`--sdk-url`); **broken** on the official Anthropic CLI since 2.1.121. See `docs/agents/claude-mcp.md`. |
+| `settings/` | Configuration management + drift detection                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| `metrics/`  | Observability (counters, latency)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| `meta/`     | Build metadata (version, commit, docs URL)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| `paths/`    | Centralized path resolution                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
 
 **Private (`internal/`) — orchestration machinery, not importable outside the module:**
 
-| Package | Purpose |
-|---------|---------|
-| `socket/` | Unix domain socket servers (global + per-worktree) |
-| `conductor/` | Task state machine and lifecycle transitions |
-| `worker/` | Concurrent job execution pool |
-| `provider/` | Task sources (github, gitlab, linear, wrike, jira, azuredevops, file) |
-| `storage/` | Persistence for tasks, plans, reviews, chat |
-| `git/` | Repository operations and checkpoint management |
-| `browser/` | Playwright automation for interactive testing |
-| `web/` | HTTP server + WebSocket proxy to sockets |
-| `memory/` | Vector store for semantic context search |
-| `security/` | Security scanning |
-| `screenshot/` | Screenshot capture and storage |
-| `activitylog/` | RPC activity logging and querying |
-| `backup/` | Backup and restore of kvelmo state |
-| `catalog/` | Task template library (built-in + custom) |
-| `changelog/` | Release changelog generation |
-| `ciwatch/` | CI pipeline status monitoring |
-| `cli/` | CLI framework utilities and output helpers |
-| `codegraph/` | Code symbol and relationship indexing (SQLite-backed) |
-| `discovery/` | Project command scanning (Makefile, package.json, Taskfile) |
-| `eventlog/` | Append-only JSONL event log for task lifecycle replay |
-| `filter/` | Generic type-safe in-memory filtering with predicates |
-| `findings/` | Unified finding model with gate rules and phase-aware quality profiles |
-| `graph/` | Dependency graph scheduling for parallel sub-tasks within phases |
-| `notify/` | Webhook notifications (Slack, generic) |
-| `page/` | Pagination primitives |
-| `policy/` | Workflow policy checking and validation |
-| `provision/` | Smart worktree provisioning (config copy, dependency symlinks) |
-| `quality/` | Code quality gate execution + failure classification |
-| `ratelimit/` | Rate limiting utilities |
-| `report/` | Compliance report generation |
-| `respcache/` | Semantic response cache for agent prompt deduplication |
-| `retry/` | Retry logic with exponential backoff |
-| `riskeval/` | Risk scoring for task-level auto-approval decisions |
-| `search/` | Hybrid fuzzy + exact text search with RRF scoring |
-| `taskgroup/` | Cross-repo task group coordination with synchronized submit |
-| `testutil/` | Test helpers and fixtures |
-| `timeline/` | Activity timeline service over activitylog |
-| `trace/` | Distributed tracing |
-| `tui/` | Terminal UI (Bubbletea-based dashboard) |
-| `update/` | Self-update: GitHub release checker, minisign-verified downloader, atomic installer |
-| `varpool/` | Variable pool for inter-node context sharing during graph execution |
-| `watchdog/` | Background process monitoring |
+| Package        | Purpose                                                                             |
+| -------------- | ----------------------------------------------------------------------------------- |
+| `socket/`      | Unix domain socket servers (global + per-worktree)                                  |
+| `conductor/`   | Task state machine and lifecycle transitions                                        |
+| `worker/`      | Concurrent job execution pool                                                       |
+| `provider/`    | Task sources (github, gitlab, linear, wrike, jira, azuredevops, file)               |
+| `storage/`     | Persistence for tasks, plans, reviews, chat                                         |
+| `git/`         | Repository operations and checkpoint management                                     |
+| `browser/`     | Playwright automation for interactive testing                                       |
+| `web/`         | HTTP server + WebSocket proxy to sockets                                            |
+| `memory/`      | Vector store for semantic context search                                            |
+| `security/`    | Security scanning                                                                   |
+| `screenshot/`  | Screenshot capture and storage                                                      |
+| `activitylog/` | RPC activity logging and querying                                                   |
+| `backup/`      | Backup and restore of kvelmo state                                                  |
+| `catalog/`     | Task template library (built-in + custom)                                           |
+| `changelog/`   | Release changelog generation                                                        |
+| `ciwatch/`     | CI pipeline status monitoring                                                       |
+| `cli/`         | CLI framework utilities and output helpers                                          |
+| `codegraph/`   | Code symbol and relationship indexing (SQLite-backed)                               |
+| `discovery/`   | Project command scanning (Makefile, package.json, Taskfile)                         |
+| `eventlog/`    | Append-only JSONL event log for task lifecycle replay                               |
+| `filter/`      | Generic type-safe in-memory filtering with predicates                               |
+| `findings/`    | Unified finding model with gate rules and phase-aware quality profiles              |
+| `graph/`       | Dependency graph scheduling for parallel sub-tasks within phases                    |
+| `notify/`      | Webhook notifications (Slack, generic)                                              |
+| `page/`        | Pagination primitives                                                               |
+| `policy/`      | Workflow policy checking and validation                                             |
+| `provision/`   | Smart worktree provisioning (config copy, dependency symlinks)                      |
+| `quality/`     | Code quality gate execution + failure classification                                |
+| `ratelimit/`   | Rate limiting utilities                                                             |
+| `report/`      | Compliance report generation                                                        |
+| `respcache/`   | Semantic response cache for agent prompt deduplication                              |
+| `retry/`       | Retry logic with exponential backoff                                                |
+| `riskeval/`    | Risk scoring for task-level auto-approval decisions                                 |
+| `search/`      | Hybrid fuzzy + exact text search with RRF scoring                                   |
+| `taskgroup/`   | Cross-repo task group coordination with synchronized submit                         |
+| `testutil/`    | Test helpers and fixtures                                                           |
+| `timeline/`    | Activity timeline service over activitylog                                          |
+| `trace/`       | Distributed tracing                                                                 |
+| `tui/`         | Terminal UI (Bubbletea-based dashboard)                                             |
+| `update/`      | Self-update: GitHub release checker, minisign-verified downloader, atomic installer |
+| `varpool/`     | Variable pool for inter-node context sharing during graph execution                 |
+| `watchdog/`    | Background process monitoring                                                       |
 
 ### Web Frontend (`web/`)
 
@@ -183,6 +188,7 @@ kvelmo splits its Go packages into a **public API surface** (hoisted to the modu
 - Views: `GlobalView` (project picker) ↔ `ProjectView` (active project dashboard)
 
 **Stores (Zustand):**
+
 - `globalStore` - Projects, workers, agent status across all worktrees
 - `projectStore` - Active worktree state, task lifecycle, file changes
 - `chatStore` - Message history, streaming, subagent status
@@ -196,14 +202,17 @@ kvelmo splits its Go packages into a **public API surface** (hoisted to the modu
 ## Key Patterns
 
 ### Error Handling
+
 Go: Return errors, wrap with context (`fmt.Errorf("action: %w", err)`)
 
 ### Configuration
+
 - Global config: `~/.valksor/kvelmo/kvelmo.yaml` (managed by `settings/`)
 - CLI: `kvelmo config show|init|set`
 - Environment: `KVELMO_HOME` (overrides `~/.valksor/kvelmo`), `GITHUB_TOKEN`, etc.
 
 ### Testing
+
 - Table-driven tests using `testing.T`
 - Benchmark tests in `internal/socket/bench_test.go`
 - Frontend: Add `?demo` URL param for UI testing without backend
@@ -212,6 +221,7 @@ Go: Return errors, wrap with context (`fmt.Errorf("action: %w", err)`)
 ### Quality Gate Rules
 
 When running `make quality`, `make test`, or `make ci`:
+
 - **Fix ALL errors and failures in the output, not just ones you introduced.** Pre-existing failures are your responsibility too.
 - Do not skip, ignore, or dismiss errors you didn't cause. The codebase must be clean after your work.
 - If `make quality` reports 10 lint errors and you caused 2, fix all 10.
@@ -231,6 +241,7 @@ Commands in `cmd/kvelmo/commands/`. Entry point: `serve` (global socket + web se
 <!-- start: complex input with file upload — handled by TaskPanel widget in web UI -->
 
 **Workflow progression:**
+
 - `start` - Load task and initialize worktree (accepts positional text arg; `--skip` for phase skipping; `--file`/`--symbol`/`--commit` for context attachment)
 - `plan` - Have agent write specification
 - `implement` - Have agent write code
@@ -242,6 +253,7 @@ Commands in `cmd/kvelmo/commands/`. Entry point: `serve` (global socket + web se
 - `quick` - Quick-fix mode: load, implement, submit in one step (accepts positional text arg; `--skip`; `--file`/`--symbol`/`--commit`)
 
 **Workflow control:**
+
 - `undo`/`redo` - Navigate checkpoints
 - `status` - Show current state (`--all` for multi-project, `--blocked`/`--failed` to filter)
 - `watch` - Stream progress
@@ -254,6 +266,7 @@ Commands in `cmd/kvelmo/commands/`. Entry point: `serve` (global socket + web se
 - `fork` - Fork task into parallel alternatives (create, list, compare, select)
 
 **Governance & quality:**
+
 - `approve` - Approve workflow transitions
 - `audit` - Audit trail inspection
 - `policy` - Check workflow policy compliance
@@ -261,6 +274,7 @@ Commands in `cmd/kvelmo/commands/`. Entry point: `serve` (global socket + web se
 - `ci` - CI pipeline status
 
 **Task organization:**
+
 - `tag` - Add/remove/list task tags
 - `queue` - Task queue management (add, remove, list, reorder)
 - `batch` - Run actions across all active projects
@@ -268,6 +282,7 @@ Commands in `cmd/kvelmo/commands/`. Entry point: `serve` (global socket + web se
 - `group` - Cross-repo task group management (create, add, list, status, submit, remove)
 
 **Context & debugging:**
+
 - `chat` - Interactive agent conversation
 - `checkpoints` - List/manage git checkpoints
 - `memory` - View/manage context store
@@ -287,6 +302,7 @@ Commands in `cmd/kvelmo/commands/`. Entry point: `serve` (global socket + web se
 - `rpc` - Raw JSON-RPC calls to sockets
 
 **Management:**
+
 - `config` - Configuration (show, get, set, init, edit, diff, path, validate, check)
 - `workers` - Worker pool (list, add, remove, stats)
 - `projects` - Project registry
@@ -300,6 +316,7 @@ Commands in `cmd/kvelmo/commands/`. Entry point: `serve` (global socket + web se
 - `config test-provider` - Test a provider connection (verify token and reachability)
 
 **Data & reporting:**
+
 - `export` - Export task history and metrics (JSON/CSV)
 - `report` - Generate compliance reports
 - `changelog` - Generate changelog between two git refs (`--full` for descriptions)
@@ -307,6 +324,7 @@ Commands in `cmd/kvelmo/commands/`. Entry point: `serve` (global socket + web se
 - `activity` - View RPC activity log
 
 **Infrastructure:**
+
 - `backup`/`restore` - State backup and restore
 - `security` - Security scanning (secrets, dependencies)
 - `notify` - Webhook notification testing
@@ -314,6 +332,7 @@ Commands in `cmd/kvelmo/commands/`. Entry point: `serve` (global socket + web se
 - `recordings` - View agent session recordings
 
 **Utilities:**
+
 - `browse` - Open URLs in browser
 - `browser` - Playwright browser automation
 - `screenshots` - Capture and manage screenshots
@@ -357,10 +376,12 @@ func NewConn(...) *Conn { return websocket.Upgrade(...) }  // Don't do this
 `//nolint` is a last resort. Always specify linter name and include justification.
 
 **Acceptable**:
+
 - `//nolint:unparam // Required by interface`
 - `//nolint:errcheck // String builder WriteString won't fail`
 
 **Never acceptable**:
+
 - `//nolint:errcheck` without justification
 - `//nolint:gosec` (fix the security issue)
 - `//nolint:all`
