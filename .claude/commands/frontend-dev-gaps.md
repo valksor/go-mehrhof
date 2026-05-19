@@ -21,6 +21,7 @@ Critically — can you use kvelmo to achieve these goals:
 ## Phase 1: Core Goals (6)
 
 For each goal, assess:
+
 - **Status**: fully / partially / not at all
 - **Surface check**: See Critical Rule 4 below for the tiered parity model (CLI ⊇ web chat ⊇ TUI ⊇ web UI)
 - **What exists**: current kvelmo features that help — **list which surfaces have coverage** (e.g., "CLI only", "CLI + web", "Go backend only")
@@ -28,21 +29,27 @@ For each goal, assess:
 - **Recommendation**: what to build (Fibonacci effort: 1, 2, 3, 5, 8, 13)
 
 ### Goal 1: Visual task management
+
 Kanban boards, timeline views, status cards. See task lifecycle visually.
 
 ### Goal 2: Real-time updates
+
 Live WebSocket updates as agents work. No refresh needed. Activity feeds.
 
 ### Goal 3: Point-and-click workflows
+
 Start tasks, run agents, review changes—all without typing commands.
 
 ### Goal 4: Visual diff viewer
+
 Side-by-side code comparisons. Syntax highlighting. Inline comments.
 
 ### Goal 5: Dashboard overview
+
 Project health, recent activity, pending tasks—one glance understanding.
 
 ### Goal 6: Intuitive onboarding
+
 Guided setup, tooltips, interactive tutorials. Learn by doing.
 
 ---
@@ -50,27 +57,35 @@ Guided setup, tooltips, interactive tutorials. Learn by doing.
 ## Phase 2: Extended Goals (8)
 
 ### Goal 7: Responsive design
+
 Works on tablets, large monitors, and everything between. Not just "mobile compatible."
 
 ### Goal 8: Dark/light themes
+
 Respect system preferences. Custom themes for accessibility.
 
 ### Goal 9: Keyboard shortcuts
+
 For power users who graduate from clicking. Vim-style optional bindings.
 
 ### Goal 10: Notification system
+
 Browser notifications, email digests, in-app alerts. Configurable verbosity.
 
 ### Goal 11: Collaborative features
+
 Share views with teammates. Comment on tasks. @mentions.
 
 ### Goal 12: Search and filter
+
 Find tasks, conversations, code changes. Faceted search, saved filters.
 
 ### Goal 13: History and audit
+
 Timeline of all actions. Who did what when. Visual git history.
 
 ### Goal 14: Accessibility
+
 Screen reader support, keyboard navigation, high contrast modes. WCAG compliance.
 
 ---
@@ -100,11 +115,13 @@ Do NOT stop at analysis. The purpose of this command is to produce an actionable
 ### Step 1: Prioritize
 
 From all gaps discovered (Phase 1 goals, Phase 2 critical audit), create a single prioritized list sorted by:
+
 1. **Impact** — how many goals does this unblock or improve?
 2. **Effort** — lower effort first within same impact tier
 3. **Dependencies** — what must be built before what?
 
 Group into tiers:
+
 - **Quick wins** (effort 1-3): Can be implemented immediately
 - **Medium** (effort 5): Meaningful work, clear scope
 - **Large** (effort 8-13): Needs design decisions, may span multiple packages
@@ -112,6 +129,7 @@ Group into tiers:
 ### Step 2: Plan Each Gap
 
 For each gap (starting from highest priority), produce a concrete implementation plan:
+
 - **What to build**: One-sentence description
 - **Files to create/modify**: Specific paths following the project's package structure
 - **Wiring**: Full-stack wiring per Critical Rule 4 (Go package → Socket RPC → {CLI, web chat, web UI, TUI, app})

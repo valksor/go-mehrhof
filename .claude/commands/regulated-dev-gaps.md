@@ -20,6 +20,7 @@ Critically — can you use kvelmo to achieve these goals:
 ## Phase 1: Core Goals (6)
 
 For each goal, assess:
+
 - **Status**: fully / partially / not at all
 - **Surface check**: See Critical Rule 4 below for the tiered parity model (CLI ⊇ web chat ⊇ TUI ⊇ web UI)
 - **What exists**: current kvelmo features that help — **list which surfaces have coverage** (e.g., "CLI only", "CLI + web", "Go backend only")
@@ -27,21 +28,27 @@ For each goal, assess:
 - **Recommendation**: what to build (Fibonacci effort: 1, 2, 3, 5, 8, 13)
 
 ### Goal 1: Enforced commit message format
+
 Configure a commit message pattern (e.g., `type(scope): message [TICKET-ID]`) and kvelmo follows it for every commit it creates. Invalid formats are rejected before they reach git hooks.
 
 ### Goal 2: Branch naming rules
+
 Auto-generate branch names from task metadata following org conventions. Loading a task from PROJ-1234 creates `feature/PROJ-1234-task-title-slug` automatically. Configurable pattern per project.
 
 ### Goal 3: In-repo specs and plans
+
 When kvelmo generates a plan or spec, write it to the repo (e.g., `docs/specs/PROJ-1234.md`) — not just internal storage. These files are version-controlled, reviewable, and survive kvelmo being uninstalled.
 
 ### Goal 4: PR template compliance
+
 Detect the repo's PR template (`.github/PULL_REQUEST_TEMPLATE.md`), parse its sections, and auto-fill them from task context. Required sections that can't be auto-filled are flagged before submission.
 
 ### Goal 5: Approval gates
+
 Configure transitions that require explicit human approval. "Plan → Implement" might be auto-approved, but "Review → Submit" requires a human to type `kvelmo approve`. Configurable per project.
 
 ### Goal 6: Audit trail
+
 Log every kvelmo action with timestamp, user identity, action taken, files affected, and AI model used. Exportable in standard formats (JSON, CSV) for compliance review.
 
 ---
@@ -49,27 +56,35 @@ Log every kvelmo action with timestamp, user identity, action taken, files affec
 ## Phase 2: Extended Goals (8)
 
 ### Goal 7: Configurable workflow steps
+
 Add, remove, or reorder lifecycle stages per project. Some teams need a "security review" step between implement and review. Others skip simplify entirely. The state machine should be configurable.
 
 ### Goal 8: Ticket system sync
+
 Sync task status back to Jira, Linear, GitHub Issues, or Azure DevOps as the task progresses through kvelmo's lifecycle. "In Progress" when implementing, "In Review" when reviewing, "Done" when merged.
 
 ### Goal 9: Pre-commit hook compatibility
+
 Kvelmo's commits must pass the project's existing pre-commit hooks (linters, formatters, secret scanners). If a hook fails, kvelmo fixes the issue and retries — not bypasses with `--no-verify`.
 
 ### Goal 10: Code review checklist enforcement
+
 Define a review checklist (security, performance, accessibility, documentation) and require each item to be explicitly checked before the review step completes.
 
 ### Goal 11: Documentation requirements
+
 Block PR submission unless documentation is updated when certain files change. Modifying an API endpoint requires updating the API docs. Configurable rules per file pattern.
 
 ### Goal 12: Changelog generation
+
 Auto-generate CHANGELOG entries from task metadata, commit messages, and PR descriptions. Follow Keep a Changelog format or a custom template.
 
 ### Goal 13: Environment-specific configs
+
 Different rules per project or repo within a monorepo. The backend team uses conventional commits, the frontend team uses a different format. Kvelmo respects per-directory configuration.
 
 ### Goal 14: Compliance reports
+
 Generate reports of all AI-assisted development activity: tasks completed, AI models used, human approval points, files modified, time spent. For quarterly compliance reviews and stakeholder updates.
 
 ---
@@ -99,11 +114,13 @@ Do NOT stop at analysis. The purpose of this command is to produce an actionable
 ### Step 1: Prioritize
 
 From all gaps discovered (Phase 1 goals, Phase 2 critical audit), create a single prioritized list sorted by:
+
 1. **Impact** — how many goals does this unblock or improve?
 2. **Effort** — lower effort first within same impact tier
 3. **Dependencies** — what must be built before what?
 
 Group into tiers:
+
 - **Quick wins** (effort 1-3): Can be implemented immediately
 - **Medium** (effort 5): Meaningful work, clear scope
 - **Large** (effort 8-13): Needs design decisions, may span multiple packages
@@ -111,6 +128,7 @@ Group into tiers:
 ### Step 2: Plan Each Gap
 
 For each gap (starting from highest priority), produce a concrete implementation plan:
+
 - **What to build**: One-sentence description
 - **Files to create/modify**: Specific paths following the project's package structure
 - **Wiring**: Full-stack wiring per Critical Rule 4 (Go package → Socket RPC → {CLI, web chat, web UI, TUI, app})

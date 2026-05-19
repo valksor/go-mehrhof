@@ -4,15 +4,16 @@ Audit kvelmo's feature surface for completeness and parity across all surfaces.
 
 kvelmo has 5 user-facing surfaces with a **tiered parity model** (not flat 1:1):
 
-| Surface | Scope | Notes |
-|---------|-------|-------|
-| **CLI** | **All** features | The superset. Some commands bypass socket (direct pkg calls). |
-| **Web UI (panels/buttons)** | **Most** common actions | Dedicated buttons/panels for key workflows; user input/output flows through chat. |
-| **Web Chat** | **Full parity** to CLI | Minus a few CLI-only commands (`completion`, `pipe`, `tui`, `serve`, `shutdown`). |
-| **TUI** | **Full 1:1 parity** to web chat | Same chat interface, same capabilities. |
-| **App (Tauri desktop)** | **Same as web** | Plus serves the kvelmo binary via Tauri sidecar. |
+| Surface                     | Scope                           | Notes                                                                             |
+| --------------------------- | ------------------------------- | --------------------------------------------------------------------------------- |
+| **CLI**                     | **All** features                | The superset. Some commands bypass socket (direct pkg calls).                     |
+| **Web UI (panels/buttons)** | **Most** common actions         | Dedicated buttons/panels for key workflows; user input/output flows through chat. |
+| **Web Chat**                | **Full parity** to CLI          | Minus a few CLI-only commands (`completion`, `pipe`, `tui`, `serve`, `shutdown`). |
+| **TUI**                     | **Full 1:1 parity** to web chat | Same chat interface, same capabilities.                                           |
+| **App (Tauri desktop)**     | **Same as web**                 | Plus serves the kvelmo binary via Tauri sidecar.                                  |
 
 **Parity rules:**
+
 - A feature in Go backend with no CLI path → **not implemented**
 - A CLI feature missing from web chat → **gap** (unless inherently CLI-only)
 - A web chat feature missing from TUI → **gap**
@@ -54,26 +55,31 @@ Report gaps per the tiered parity model above — not every surface needs every 
 Apply the tiered parity model to find gaps:
 
 ### 3a. CLI Completeness (the superset)
+
 1. List all CLI commands in `cmd/kvelmo/commands/`
 2. Verify each has a working code path (socket RPC or direct pkg call)
 3. Every user-facing feature must have a CLI path
 
 ### 3b. Web Chat ↔ CLI Parity
+
 1. For each CLI command, check if the equivalent action can be performed via web chat
 2. Known CLI-only exclusions (not gaps): `completion`, `pipe`, `tui`, `serve`, `shutdown`, `cleanup`
 3. Flag any CLI command missing from web chat that isn't in the exclusion list
 
 ### 3c. TUI ↔ Web Chat Parity
+
 1. For each web chat action, verify the TUI supports the same action
 2. TUI should be full 1:1 with web chat — flag any divergence
 
 ### 3d. Web UI Panels/Buttons Coverage
+
 1. List key workflows (task lifecycle, status, config, etc.)
 2. Verify common actions have dedicated web UI buttons/panels (not just chat)
 3. User input/output for these actions flows through chat — verify this wiring
 4. Not every CLI command needs a button; focus on high-frequency workflows
 
 ### 3e. App (Tauri) Coverage
+
 1. Verify the app wraps the full web surface
 2. Check Tauri sidecar binary serving works
 3. Flag any web features broken in the desktop app context
@@ -85,35 +91,51 @@ Apply the tiered parity model to find gaps:
 Cross-reference the 8 persona gap analyses against actual features:
 
 ### Solo Developer
+
 Should have: task loading from multiple sources, planning, implementation, review, undo/redo, PR submission
+
 - Cross-check with `/solo-developer-gaps` goals
 
 ### Team Lead
+
 Should have: multi-project visibility, worker pool monitoring, metrics, audit trail
+
 - Cross-check with `/team-lead-gaps` goals
 
 ### Open Source Maintainer
+
 Should have: GitHub provider, PR workflows, issue integration
+
 - Cross-check with `/opensource-maintainer-gaps` goals
 
 ### DevOps/SRE
+
 Should have: metrics, security scanning, configuration management, deployment configs
+
 - Cross-check with `/devops-gaps` goals
 
 ### CLI Power User
+
 Should have: composable commands, JSON output, shell completion, streaming
+
 - Cross-check with `/cli-poweruser-gaps` goals
 
 ### Frontend Developer
+
 Should have: full web UI coverage, real-time updates, visual diff, dashboard
+
 - Cross-check with `/frontend-dev-gaps` goals
 
 ### Agent Developer
+
 Should have: agent interface docs, event streaming, permission system, testing
+
 - Cross-check with `/agent-dev-gaps` goals
 
 ### Enterprise
+
 Should have: configuration management, access control, audit logging, backup
+
 - Cross-check with `/enterprise-gaps` goals
 
 ---

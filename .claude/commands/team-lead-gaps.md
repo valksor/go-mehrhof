@@ -21,6 +21,7 @@ Critically — can you use kvelmo to achieve these goals:
 ## Phase 1: Core Goals (6)
 
 For each goal, assess:
+
 - **Status**: fully / partially / not at all
 - **Surface check**: See Critical Rule 4 below for the tiered parity model (CLI ⊇ web chat ⊇ TUI ⊇ web UI)
 - **What exists**: current kvelmo features that help — **list which surfaces have coverage** (e.g., "CLI only", "CLI + web", "Go backend only")
@@ -28,21 +29,27 @@ For each goal, assess:
 - **Recommendation**: what to build (Fibonacci effort: 1, 2, 3, 5, 8, 13)
 
 ### Goal 1: Team-wide visibility
+
 See all active kvelmo tasks across the team. Know who's working on what, what state they're in, what agents are running.
 
 ### Goal 2: Consistent workflows
+
 Enforce team standards—same planning depth, same review requirements, same commit practices. Configurable guardrails.
 
 ### Goal 3: Code review integration
+
 Surface AI-generated changes with appropriate context. Help reviewers understand what the AI did and why.
 
 ### Goal 4: Progress tracking
+
 Track task completion rates, agent success rates, and common failure modes. Data for retrospectives.
 
 ### Goal 5: Knowledge sharing
+
 Share effective prompts, task templates, and patterns across the team. Collective intelligence.
 
 ### Goal 6: Risk visibility
+
 Flag high-risk AI operations before they happen. Security-sensitive code, critical paths, production systems.
 
 ---
@@ -50,27 +57,35 @@ Flag high-risk AI operations before they happen. Security-sensitive code, critic
 ## Phase 2: Extended Goals (8)
 
 ### Goal 7: Onboarding workflows
+
 Guided paths for new team members learning kvelmo. Progressive disclosure of capabilities.
 
 ### Goal 8: Workload distribution
+
 See which engineers are overloaded with active tasks. Balance AI-assisted work.
 
 ### Goal 9: Quality metrics
+
 Track code quality trends—are AI-assisted PRs getting approved faster? Creating more bugs? Better test coverage?
 
 ### Goal 10: Audit trail
+
 Complete history of who ran what agents with what prompts. Compliance and debugging.
 
 ### Goal 11: Permission management
+
 Control who can run which agents, access which providers, modify which configurations.
 
 ### Goal 12: Integration with project management
+
 Sync with Jira, Linear, Asana. Tasks flow in, status flows out.
 
 ### Goal 13: Team templates
+
 Shared task templates, prompt libraries, and workflow presets. Standardization without rigidity.
 
 ### Goal 14: Cross-project coordination
+
 When the team works on multiple repos, maintain coherent views and shared context.
 
 ---
@@ -100,11 +115,13 @@ Do NOT stop at analysis. The purpose of this command is to produce an actionable
 ### Step 1: Prioritize
 
 From all gaps discovered (Phase 1 goals, Phase 2 critical audit), create a single prioritized list sorted by:
+
 1. **Impact** — how many goals does this unblock or improve?
 2. **Effort** — lower effort first within same impact tier
 3. **Dependencies** — what must be built before what?
 
 Group into tiers:
+
 - **Quick wins** (effort 1-3): Can be implemented immediately
 - **Medium** (effort 5): Meaningful work, clear scope
 - **Large** (effort 8-13): Needs design decisions, may span multiple packages
@@ -112,6 +129,7 @@ Group into tiers:
 ### Step 2: Plan Each Gap
 
 For each gap (starting from highest priority), produce a concrete implementation plan:
+
 - **What to build**: One-sentence description
 - **Files to create/modify**: Specific paths following the project's package structure
 - **Wiring**: Full-stack wiring per Critical Rule 4 (Go package → Socket RPC → {CLI, web chat, web UI, TUI, app})

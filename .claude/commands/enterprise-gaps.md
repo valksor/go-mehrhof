@@ -21,6 +21,7 @@ Critically — can you use kvelmo to achieve these goals:
 ## Phase 1: Core Goals (6)
 
 For each goal, assess:
+
 - **Status**: fully / partially / not at all
 - **Surface check**: See Critical Rule 4 below for the tiered parity model (CLI ⊇ web chat ⊇ TUI ⊇ web UI)
 - **What exists**: current kvelmo features that help — **list which surfaces have coverage** (e.g., "CLI only", "CLI + web", "Go backend only")
@@ -28,21 +29,27 @@ For each goal, assess:
 - **Recommendation**: what to build (Fibonacci effort: 1, 2, 3, 5, 8, 13)
 
 ### Goal 1: SSO and identity
+
 SAML, OIDC, LDAP integration. Central user management. Provision/deprovision automation.
 
 ### Goal 2: Role-based access control
+
 Define roles with specific permissions. Enforce across teams and projects. Audit role changes.
 
 ### Goal 3: Compliance certifications
+
 SOC2, ISO 27001, GDPR, HIPAA readiness. Compliance documentation and evidence.
 
 ### Goal 4: Enterprise support
+
 SLAs, dedicated support channels, professional services. Escalation paths.
 
 ### Goal 5: Deployment flexibility
+
 On-premise, private cloud, air-gapped environments. Not just SaaS.
 
 ### Goal 6: Cost management
+
 Predictable pricing, department chargebacks, usage quotas. Finance-friendly billing.
 
 ---
@@ -50,27 +57,35 @@ Predictable pricing, department chargebacks, usage quotas. Finance-friendly bill
 ## Phase 2: Extended Goals (8)
 
 ### Goal 7: Multi-tenancy
+
 Isolate teams/departments. Shared infrastructure with data separation.
 
 ### Goal 8: Data residency
+
 Choose where data is stored. Regional compliance. Data sovereignty.
 
 ### Goal 9: Backup and DR
+
 Enterprise-grade backup, restore, and disaster recovery. RPO/RTO guarantees.
 
 ### Goal 10: Integration APIs
+
 Robust APIs for integrating with enterprise systems. Webhooks, event streams.
 
 ### Goal 11: Training resources
+
 Documentation, video courses, certification programs. Enable internal champions.
 
 ### Goal 12: Migration tools
+
 Import from existing tools. Export for portability. No lock-in.
 
 ### Goal 13: Governance dashboard
+
 Executive-level views of adoption, usage, compliance, and ROI.
 
 ### Goal 14: Vendor stability
+
 Financial health, roadmap visibility, community size. Confidence in longevity.
 
 ---
@@ -100,11 +115,13 @@ Do NOT stop at analysis. The purpose of this command is to produce an actionable
 ### Step 1: Prioritize
 
 From all gaps discovered (Phase 1 goals, Phase 2 critical audit), create a single prioritized list sorted by:
+
 1. **Impact** — how many goals does this unblock or improve?
 2. **Effort** — lower effort first within same impact tier
 3. **Dependencies** — what must be built before what?
 
 Group into tiers:
+
 - **Quick wins** (effort 1-3): Can be implemented immediately
 - **Medium** (effort 5): Meaningful work, clear scope
 - **Large** (effort 8-13): Needs design decisions, may span multiple packages
@@ -112,6 +129,7 @@ Group into tiers:
 ### Step 2: Plan Each Gap
 
 For each gap (starting from highest priority), produce a concrete implementation plan:
+
 - **What to build**: One-sentence description
 - **Files to create/modify**: Specific paths following the project's package structure
 - **Wiring**: Full-stack wiring per Critical Rule 4 (Go package → Socket RPC → {CLI, web chat, web UI, TUI, app})

@@ -22,6 +22,7 @@ Critically — can you use kvelmo to achieve these goals:
 ## Phase 1: Core Goals (6)
 
 For each goal, assess:
+
 - **Status**: fully / partially / not at all
 - **Surface check**: See Critical Rule 4 below for the tiered parity model (CLI ⊇ web chat ⊇ TUI ⊇ web UI)
 - **What exists**: current kvelmo features that help — **list which surfaces have coverage** (e.g., "CLI only", "CLI + web", "Go backend only")
@@ -29,21 +30,27 @@ For each goal, assess:
 - **Recommendation**: what to build (Fibonacci effort: 1, 2, 3, 5, 8, 13)
 
 ### Goal 1: Triage incoming issues
+
 Automatically categorize, prioritize, and label issues. Identify duplicates. Suggest relevant maintainers.
 
 ### Goal 2: Review PRs efficiently
+
 AI-assisted PR review that understands project conventions. Flag common issues before human review.
 
 ### Goal 3: Guide contributors
+
 Generate helpful responses for first-time contributors. Explain project patterns without repeating yourself.
 
 ### Goal 4: Track contribution patterns
+
 See who's contributing what, identify potential maintainers, recognize consistent contributors.
 
 ### Goal 5: Automate release process
+
 From changelog generation to version bumping to announcement drafting. Reduce release friction.
 
 ### Goal 6: Maintain documentation
+
 Keep docs in sync with code changes. AI-assisted updates when APIs change.
 
 ---
@@ -51,27 +58,35 @@ Keep docs in sync with code changes. AI-assisted updates when APIs change.
 ## Phase 2: Extended Goals (8)
 
 ### Goal 7: Multi-repo management
+
 Many OSS maintainers manage multiple related projects. Coordinated views and operations.
 
 ### Goal 8: Dependency monitoring
+
 Track upstream changes that affect the project. AI-assisted upgrade assessments.
 
 ### Goal 9: Security response
+
 When vulnerabilities are reported, streamlined assessment and patching workflow.
 
 ### Goal 10: Community health metrics
+
 Understand project health—response times, contributor retention, issue resolution rates.
 
 ### Goal 11: Funding and sustainability
+
 Track sponsor contributions, grant deadlines, sustainability metrics.
 
 ### Goal 12: Fork management
+
 Monitor significant forks. Identify valuable changes that should flow back upstream.
 
 ### Goal 13: Meeting preparation
+
 Generate summaries for maintainer meetings. Track decisions and action items.
 
 ### Goal 14: Succession planning
+
 Document tribal knowledge. Make it possible for new maintainers to onboard.
 
 ---
@@ -101,11 +116,13 @@ Do NOT stop at analysis. The purpose of this command is to produce an actionable
 ### Step 1: Prioritize
 
 From all gaps discovered (Phase 1 goals, Phase 2 critical audit), create a single prioritized list sorted by:
+
 1. **Impact** — how many goals does this unblock or improve?
 2. **Effort** — lower effort first within same impact tier
 3. **Dependencies** — what must be built before what?
 
 Group into tiers:
+
 - **Quick wins** (effort 1-3): Can be implemented immediately
 - **Medium** (effort 5): Meaningful work, clear scope
 - **Large** (effort 8-13): Needs design decisions, may span multiple packages
@@ -113,6 +130,7 @@ Group into tiers:
 ### Step 2: Plan Each Gap
 
 For each gap (starting from highest priority), produce a concrete implementation plan:
+
 - **What to build**: One-sentence description
 - **Files to create/modify**: Specific paths following the project's package structure
 - **Wiring**: Full-stack wiring per Critical Rule 4 (Go package → Socket RPC → {CLI, web chat, web UI, TUI, app})

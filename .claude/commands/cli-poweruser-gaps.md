@@ -21,6 +21,7 @@ Critically — can you use kvelmo to achieve these goals:
 ## Phase 1: Core Goals (6)
 
 For each goal, assess:
+
 - **Status**: fully / partially / not at all
 - **Surface check**: See Critical Rule 4 below for the tiered parity model (CLI ⊇ web chat ⊇ TUI ⊇ web UI)
 - **What exists**: current kvelmo features that help — **list which surfaces have coverage** (e.g., "CLI only", "CLI + web", "Go backend only")
@@ -28,21 +29,27 @@ For each goal, assess:
 - **Recommendation**: what to build (Fibonacci effort: 1, 2, 3, 5, 8, 13)
 
 ### Goal 1: Composable commands
+
 Commands that accept stdin, produce stdout, and compose with pipes. `kvelmo plan | review | implement`.
 
 ### Goal 2: Powerful completion
+
 Tab completion that understands context—tasks, states, providers, options. Fish/Zsh/Bash support.
 
 ### Goal 3: Scriptable automation
+
 Write shell scripts that orchestrate kvelmo. Exit codes, JSON output, machine-parseable formats.
 
 ### Goal 4: Minimal keystrokes
+
 Short command names, sensible defaults, remember my preferences. `kv p` not `kvelmo plan --verbose --with-context`.
 
 ### Goal 5: Terminal UI
+
 When needed, a TUI that doesn't require leaving the terminal. Keyboard-driven, no mouse required.
 
 ### Goal 6: Dotfile configuration
+
 Single config file, environment variable overrides, XDG compliance. No wizard setup.
 
 ---
@@ -50,27 +57,35 @@ Single config file, environment variable overrides, XDG compliance. No wizard se
 ## Phase 2: Extended Goals (8)
 
 ### Goal 7: tmux/screen integration
+
 Aware of terminal multiplexers. Session management, pane coordination.
 
 ### Goal 8: Editor integration
+
 Work with vim/neovim/emacs. Send context, receive results, navigate to changes.
 
 ### Goal 9: Streaming output
+
 Real-time agent output without buffering. `--follow` flags, live tailing.
 
 ### Goal 10: Offline help
+
 Man pages, `--help` that's actually helpful, examples in documentation.
 
 ### Goal 11: Aliases and shortcuts
+
 User-defined aliases, command abbreviations, workflow macros.
 
 ### Goal 12: Quiet and verbose modes
+
 `-q` for scripts, `-v` for debugging. Respect `$TERM` and `$NO_COLOR`.
 
 ### Goal 13: Performance
+
 Commands start fast. No 2-second startup times. Lazy loading where needed.
 
 ### Goal 14: Unix philosophy
+
 Do one thing well. Don't reinvent grep, git, or jq. Compose with existing tools.
 
 ---
@@ -100,11 +115,13 @@ Do NOT stop at analysis. The purpose of this command is to produce an actionable
 ### Step 1: Prioritize
 
 From all gaps discovered (Phase 1 goals, Phase 2 critical audit), create a single prioritized list sorted by:
+
 1. **Impact** — how many goals does this unblock or improve?
 2. **Effort** — lower effort first within same impact tier
 3. **Dependencies** — what must be built before what?
 
 Group into tiers:
+
 - **Quick wins** (effort 1-3): Can be implemented immediately
 - **Medium** (effort 5): Meaningful work, clear scope
 - **Large** (effort 8-13): Needs design decisions, may span multiple packages
@@ -112,6 +129,7 @@ Group into tiers:
 ### Step 2: Plan Each Gap
 
 For each gap (starting from highest priority), produce a concrete implementation plan:
+
 - **What to build**: One-sentence description
 - **Files to create/modify**: Specific paths following the project's package structure
 - **Wiring**: Full-stack wiring per Critical Rule 4 (Go package → Socket RPC → {CLI, web chat, web UI, TUI, app})

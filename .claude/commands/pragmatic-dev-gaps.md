@@ -20,6 +20,7 @@ Critically — can you use kvelmo to achieve these goals:
 ## Phase 1: Core Goals (6)
 
 For each goal, assess:
+
 - **Status**: fully / partially / not at all
 - **Surface check**: See Critical Rule 4 below for the tiered parity model (CLI ⊇ web chat ⊇ TUI ⊇ web UI)
 - **What exists**: current kvelmo features that help — **list which surfaces have coverage** (e.g., "CLI only", "CLI + web", "Go backend only")
@@ -27,21 +28,27 @@ For each goal, assess:
 - **Recommendation**: what to build (Fibonacci effort: 1, 2, 3, 5, 8, 13)
 
 ### Goal 1: Zero-friction task start
+
 Load a task from a GitHub issue URL, a file path, or inline text in under 5 seconds. One command, no wizards, no follow-up prompts.
 
 ### Goal 2: Switch freely between CLI and web
+
 Start a task in the terminal, check progress in the browser, intervene from either. Same state, no drift, no sync issues.
 
 ### Goal 3: Skip optional steps
+
 Jump straight to implement when planning is unnecessary. Skip simplify and optimize when the code is already clean. The workflow should be flexible, not a forced march.
 
 ### Goal 4: Instant status at a glance
+
 One command (`kvelmo status`) or one screen (web dashboard) tells you exactly where every active task stands — state, progress, blockers. No digging.
 
 ### Goal 5: Fast undo without thinking
+
 Undo the last action immediately. No "are you sure?" dialogs. No selecting from a list of checkpoints. Just undo. If you want more control, checkpoints are there, but the default is fast.
 
 ### Goal 6: Ship PR in one command
+
 `kvelmo submit` generates the PR description from task context, fills in what was planned vs. implemented, and creates the PR. Zero manual editing needed for routine PRs.
 
 ---
@@ -49,27 +56,35 @@ Undo the last action immediately. No "are you sure?" dialogs. No selecting from 
 ## Phase 2: Extended Goals (8)
 
 ### Goal 7: Batch operations
+
 Act on multiple tasks at once — submit all reviewed tasks, pause everything, reset failed tasks. Bulk actions for bulk workflows.
 
 ### Goal 8: Keyboard shortcuts in web UI
+
 Navigate the web dashboard without touching the mouse. Vim-style or customizable shortcuts for common actions — next task, approve, submit, undo.
 
 ### Goal 9: Customizable defaults
+
 Set preferred agent, default skip steps, auto-approve patterns. Per-project or global. `kvelmo config set default-agent claude` and never think about it again.
 
 ### Goal 10: Quick context dump
+
 Export the current task state — plan, changes, chat history — as a shareable artifact. Useful for debugging, handoffs, or "what did I do yesterday?"
 
 ### Goal 11: Aliases and shortcuts
+
 `kvelmo i` = `kvelmo implement`. `kvelmo s` = `kvelmo status`. Custom user-defined aliases that match your muscle memory.
 
 ### Goal 12: Notification preferences
+
 Only alert on failures and blockers, not routine progress. Configurable per-project. Silent mode for when you're in flow.
 
 ### Goal 13: Template tasks
+
 Reuse common task shapes — "bug fix", "feature", "refactor" — with pre-filled fields and default settings. Skip repetitive setup.
 
 ### Goal 14: History search
+
 Find past tasks by keyword, file touched, or date range. Not by ID. "What did I work on in the auth module last week?"
 
 ---
@@ -99,11 +114,13 @@ Do NOT stop at analysis. The purpose of this command is to produce an actionable
 ### Step 1: Prioritize
 
 From all gaps discovered (Phase 1 goals, Phase 2 critical audit), create a single prioritized list sorted by:
+
 1. **Impact** — how many goals does this unblock or improve?
 2. **Effort** — lower effort first within same impact tier
 3. **Dependencies** — what must be built before what?
 
 Group into tiers:
+
 - **Quick wins** (effort 1-3): Can be implemented immediately
 - **Medium** (effort 5): Meaningful work, clear scope
 - **Large** (effort 8-13): Needs design decisions, may span multiple packages
@@ -111,6 +128,7 @@ Group into tiers:
 ### Step 2: Plan Each Gap
 
 For each gap (starting from highest priority), produce a concrete implementation plan:
+
 - **What to build**: One-sentence description
 - **Files to create/modify**: Specific paths following the project's package structure
 - **Wiring**: Full-stack wiring per Critical Rule 4 (Go package → Socket RPC → {CLI, web chat, web UI, TUI, app})

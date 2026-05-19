@@ -20,6 +20,7 @@ Critically — can you use kvelmo to achieve these goals:
 ## Phase 1: Core Goals (6)
 
 For each goal, assess:
+
 - **Status**: fully / partially / not at all
 - **Surface check**: See Critical Rule 4 below for the tiered parity model (CLI ⊇ web chat ⊇ TUI ⊇ web UI)
 - **What exists**: current kvelmo features that help — **list which surfaces have coverage** (e.g., "CLI only", "CLI + web", "Go backend only")
@@ -27,21 +28,27 @@ For each goal, assess:
 - **Recommendation**: what to build (Fibonacci effort: 1, 2, 3, 5, 8, 13)
 
 ### Goal 1: Start tasks from anywhere
+
 Load tasks from a markdown file, GitHub issue, mental note, or voice memo transcription. One command to go from "idea" to "task loaded in kvelmo."
 
 ### Goal 2: Plan with AI guidance
+
 Generate implementation plans that consider my codebase structure, existing patterns, and technical constraints. See the plan before committing to it.
 
 ### Goal 3: Implement with agent oversight
+
 Let AI agents write code while I watch, intervene when needed, and maintain control. Real-time streaming of what's happening.
 
 ### Goal 4: Review before commit
+
 Automated review of changes against the original task spec. Catch drift, scope creep, and obvious bugs before they hit git.
 
 ### Goal 5: Undo/redo without fear
+
 Make mistakes freely knowing I can roll back. Git checkpoints that preserve AI context, not just code state.
 
 ### Goal 6: Ship PRs with full context
+
 Submit PRs where the description includes the journey—what was planned, what was implemented, what was reviewed. Future-me will thank current-me.
 
 ---
@@ -49,27 +56,35 @@ Submit PRs where the description includes the journey—what was planned, what w
 ## Phase 2: Extended Goals (8)
 
 ### Goal 7: Resume interrupted work
+
 Pick up exactly where I left off—same task state, same agent context, same mental model. Context persistence across sessions.
 
 ### Goal 8: Multi-project switching
+
 Work on 3 projects in a day without kvelmo getting confused. Clean isolation between project states.
 
 ### Goal 9: Quick prototyping mode
+
 Skip the ceremony for throwaway experiments. "Just implement this without planning" should be valid.
 
 ### Goal 10: Learning from my patterns
+
 Kvelmo should learn my coding style, preferred libraries, and common patterns. Personalization over time.
 
 ### Goal 11: Offline capability
+
 Work without internet when needed. Queue operations, sync later.
 
 ### Goal 12: Mobile-friendly status
+
 Check task status from my phone. Read-only is fine, but know what's happening.
 
 ### Goal 13: Integrate with my tools
+
 Work with my existing setup—VS Code, terminal, browser. Not replace them.
 
 ### Goal 14: Export and backup
+
 Export my task history, plans, and decisions. My data, my control.
 
 ---
@@ -99,11 +114,13 @@ Do NOT stop at analysis. The purpose of this command is to produce an actionable
 ### Step 1: Prioritize
 
 From all gaps discovered (Phase 1 goals, Phase 2 critical audit), create a single prioritized list sorted by:
+
 1. **Impact** — how many goals does this unblock or improve?
 2. **Effort** — lower effort first within same impact tier
 3. **Dependencies** — what must be built before what?
 
 Group into tiers:
+
 - **Quick wins** (effort 1-3): Can be implemented immediately
 - **Medium** (effort 5): Meaningful work, clear scope
 - **Large** (effort 8-13): Needs design decisions, may span multiple packages
@@ -111,6 +128,7 @@ Group into tiers:
 ### Step 2: Plan Each Gap
 
 For each gap (starting from highest priority), produce a concrete implementation plan:
+
 - **What to build**: One-sentence description
 - **Files to create/modify**: Specific paths following the project's package structure
 - **Wiring**: Full-stack wiring per Critical Rule 4 (Go package → Socket RPC → {CLI, web chat, web UI, TUI, app})

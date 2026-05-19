@@ -21,6 +21,7 @@ Critically — can you use kvelmo to achieve these goals:
 ## Phase 1: Core Goals (6)
 
 For each goal, assess:
+
 - **Status**: fully / partially / not at all
 - **Surface check**: See Critical Rule 4 below for the tiered parity model (CLI ⊇ web chat ⊇ TUI ⊇ web UI)
 - **What exists**: current kvelmo features that help — **list which surfaces have coverage** (e.g., "CLI only", "CLI + web", "Go backend only")
@@ -28,21 +29,27 @@ For each goal, assess:
 - **Recommendation**: what to build (Fibonacci effort: 1, 2, 3, 5, 8, 13)
 
 ### Goal 1: CI/CD integration
+
 Run kvelmo operations as part of pipelines. Automated planning, implementation, and review in CI.
 
 ### Goal 2: Audit and compliance
+
 Complete logs of all AI operations, tool calls, and changes. Meet SOC2/GDPR requirements.
 
 ### Goal 3: Access control
+
 Fine-grained permissions for who can run what agents with what access. RBAC or ABAC support.
 
 ### Goal 4: Metrics and monitoring
+
 Prometheus/OpenTelemetry metrics for agent execution, worker pool health, socket connections.
 
 ### Goal 5: Secret management
+
 Never expose credentials to AI agents unless explicitly authorized. Integration with Vault, AWS Secrets Manager.
 
 ### Goal 6: Disaster recovery
+
 Backup and restore kvelmo state. RTO/RPO for development workflows.
 
 ---
@@ -50,27 +57,35 @@ Backup and restore kvelmo state. RTO/RPO for development workflows.
 ## Phase 2: Extended Goals (8)
 
 ### Goal 7: GitOps compatibility
+
 Work with ArgoCD, Flux, and similar tools. AI changes flow through standard GitOps pipelines.
 
 ### Goal 8: Multi-environment support
+
 Safely work across dev/staging/prod. Environment-aware permissions and guardrails.
 
 ### Goal 9: Resource limits
+
 Control CPU, memory, and API rate limits for AI operations. Cost management.
 
 ### Goal 10: Incident integration
+
 When incidents occur, kvelmo can assist with investigation. Integration with PagerDuty, OpsGenie.
 
 ### Goal 11: Infrastructure as Code
+
 AI-assisted Terraform, Pulumi, CloudFormation with appropriate guardrails.
 
 ### Goal 12: Container and Kubernetes awareness
+
 Understand container contexts, pod deployments, service meshes when assisting.
 
 ### Goal 13: Log aggregation
+
 Send kvelmo logs to Datadog, Splunk, ELK. Unified observability.
 
 ### Goal 14: Chaos engineering
+
 Test kvelmo resilience. Graceful degradation when dependencies fail.
 
 ---
@@ -100,11 +115,13 @@ Do NOT stop at analysis. The purpose of this command is to produce an actionable
 ### Step 1: Prioritize
 
 From all gaps discovered (Phase 1 goals, Phase 2 critical audit), create a single prioritized list sorted by:
+
 1. **Impact** — how many goals does this unblock or improve?
 2. **Effort** — lower effort first within same impact tier
 3. **Dependencies** — what must be built before what?
 
 Group into tiers:
+
 - **Quick wins** (effort 1-3): Can be implemented immediately
 - **Medium** (effort 5): Meaningful work, clear scope
 - **Large** (effort 8-13): Needs design decisions, may span multiple packages
@@ -112,6 +129,7 @@ Group into tiers:
 ### Step 2: Plan Each Gap
 
 For each gap (starting from highest priority), produce a concrete implementation plan:
+
 - **What to build**: One-sentence description
 - **Files to create/modify**: Specific paths following the project's package structure
 - **Wiring**: Full-stack wiring per Critical Rule 4 (Go package → Socket RPC → {CLI, web chat, web UI, TUI, app})

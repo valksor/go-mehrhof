@@ -21,6 +21,7 @@ Critically — can you use kvelmo to achieve these goals:
 ## Phase 1: Core Goals (6)
 
 For each goal, assess:
+
 - **Status**: fully / partially / not at all
 - **Surface check**: See Critical Rule 4 below for the tiered parity model (CLI ⊇ web chat ⊇ TUI ⊇ web UI)
 - **What exists**: current kvelmo features that help — **list which surfaces have coverage** (e.g., "CLI only", "CLI + web", "Go backend only")
@@ -28,21 +29,27 @@ For each goal, assess:
 - **Recommendation**: what to build (Fibonacci effort: 1, 2, 3, 5, 8, 13)
 
 ### Goal 1: Clear agent interface
+
 Well-documented Agent interface. Know exactly what to implement and how.
 
 ### Goal 2: Event streaming
+
 Emit and handle events correctly. Token streaming, tool calls, permissions, completion.
 
 ### Goal 3: Permission handling
+
 Flexible permission system. Auto-approve safe operations, prompt for risky ones, custom policies.
 
 ### Goal 4: Testing harness
+
 Test agents without API calls. Mock providers, replay conversations, snapshot testing.
 
 ### Goal 5: Debugging tools
+
 Inspect agent state, trace tool calls, understand decision paths. Agent observability.
 
 ### Goal 6: Provider integration
+
 Add new providers (local LLMs, different APIs). Clear extension points.
 
 ---
@@ -50,27 +57,35 @@ Add new providers (local LLMs, different APIs). Clear extension points.
 ## Phase 2: Extended Goals (8)
 
 ### Goal 7: Agent composition
+
 Combine agents—supervisor agents, agent pipelines, agent delegation.
 
 ### Goal 8: State persistence
+
 Save and restore agent state. Resume long-running operations.
 
 ### Goal 9: Tool development
+
 Create custom tools for agents. Tool discovery, parameter validation, documentation.
 
 ### Goal 10: Prompt management
+
 Version prompts, A/B test them, track effectiveness. Prompt engineering infrastructure.
 
 ### Goal 11: Cost tracking
+
 Track API costs per agent, per task, per user. Budget limits and alerts.
 
 ### Goal 12: Performance profiling
+
 Measure agent latency, token usage, tool call frequency. Optimization guidance.
 
 ### Goal 13: Agent registry
+
 Publish and discover community agents. Versioning, dependencies, compatibility.
 
 ### Goal 14: Sandboxing
+
 Run agents with limited permissions. Containment for untrusted agents.
 
 ---
@@ -100,11 +115,13 @@ Do NOT stop at analysis. The purpose of this command is to produce an actionable
 ### Step 1: Prioritize
 
 From all gaps discovered (Phase 1 goals, Phase 2 critical audit), create a single prioritized list sorted by:
+
 1. **Impact** — how many goals does this unblock or improve?
 2. **Effort** — lower effort first within same impact tier
 3. **Dependencies** — what must be built before what?
 
 Group into tiers:
+
 - **Quick wins** (effort 1-3): Can be implemented immediately
 - **Medium** (effort 5): Meaningful work, clear scope
 - **Large** (effort 8-13): Needs design decisions, may span multiple packages
@@ -112,6 +129,7 @@ Group into tiers:
 ### Step 2: Plan Each Gap
 
 For each gap (starting from highest priority), produce a concrete implementation plan:
+
 - **What to build**: One-sentence description
 - **Files to create/modify**: Specific paths following the project's package structure
 - **Wiring**: Full-stack wiring per Critical Rule 4 (Go package → Socket RPC → {CLI, web chat, web UI, TUI, app})
