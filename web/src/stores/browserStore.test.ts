@@ -22,7 +22,7 @@ const makeClient = (overrides: Record<string, ReturnType<typeof vi.fn>> = {}) =>
 })
 
 const setClient = (client: ReturnType<typeof makeClient> | null) => {
-  (mockGlobalStore.getState as ReturnType<typeof vi.fn>).mockReturnValue({ client })
+  ;(mockGlobalStore.getState as ReturnType<typeof vi.fn>).mockReturnValue({ client })
 }
 
 const makeBrowserStatus = (overrides: Partial<BrowserStatus> = {}): BrowserStatus => ({
@@ -226,9 +226,7 @@ describe('browserStore', () => {
     it('refreshes status after setting config', async () => {
       const updatedStatus = makeBrowserStatus({ config: makeBrowserConfig({ headless: false }) })
       const client = makeClient()
-      client.call
-        .mockResolvedValueOnce({})
-        .mockResolvedValueOnce(updatedStatus)
+      client.call.mockResolvedValueOnce({}).mockResolvedValueOnce(updatedStatus)
       setClient(client)
 
       await useBrowserStore.getState().setConfig('headless', 'false')

@@ -20,13 +20,7 @@ type TaskState =
   | 'paused'
 
 // Widget configuration
-export type WidgetId =
-  | 'task'
-  | 'files'
-  | 'output'
-  | 'checkpoints'
-  | 'chat'
-  | 'agents'
+export type WidgetId = 'task' | 'files' | 'output' | 'checkpoints' | 'chat' | 'agents'
 
 export type PanelId = 'left' | 'right' | 'bottom' | 'main'
 
@@ -36,7 +30,22 @@ export interface WidgetState {
 }
 
 // Tab configuration
-export type TabType = 'file' | 'spec' | 'agent' | 'output' | 'chat' | 'diff' | 'screenshots' | 'jobs' | 'files' | 'browser' | 'task' | 'review' | 'filechanges' | 'submit-preview' | 'fork'
+export type TabType =
+  | 'file'
+  | 'spec'
+  | 'agent'
+  | 'output'
+  | 'chat'
+  | 'diff'
+  | 'screenshots'
+  | 'jobs'
+  | 'files'
+  | 'browser'
+  | 'task'
+  | 'review'
+  | 'filechanges'
+  | 'submit-preview'
+  | 'fork'
 
 export interface Tab {
   id: string
@@ -113,9 +122,7 @@ const DEFAULT_PANEL_SIZES: PanelSizes = {
   bottom: 30,
 }
 
-const DEFAULT_TABS: Tab[] = [
-  { id: 'chat-default', type: 'chat', title: 'Chat', closeable: false },
-]
+const DEFAULT_TABS: Tab[] = [{ id: 'chat-default', type: 'chat', title: 'Chat', closeable: false }]
 
 export const useLayoutStore = create<LayoutState>()(
   persist(
@@ -269,8 +276,8 @@ export const useLayoutStore = create<LayoutState>()(
     {
       name: storeName('layout'),
       version: 3, // Bumped: removed actions widget, chat-first UI
-    }
-  )
+    },
+  ),
 )
 
 // Reactive tabs: Subscribe to projectStore state changes
@@ -340,7 +347,7 @@ function openWorkflowTabsForState(
   alwaysFocus: boolean,
 ) {
   const { openTab, setActiveTab, tabs } = useLayoutStore.getState()
-  const shouldFocus = alwaysFocus || tabs.every(t => t.type === 'chat')
+  const shouldFocus = alwaysFocus || tabs.every((t) => t.type === 'chat')
 
   switch (taskState) {
     case 'loaded':
@@ -358,11 +365,23 @@ function openWorkflowTabsForState(
         const firstTabId = `diff-${fileChanges[0].path}`
         for (const fc of fileChanges) {
           const fileName = fc.path.split('/').pop() || fc.path
-          openTab({ id: `diff-${fc.path}`, type: 'diff', title: fileName, data: { path: fc.path, status: fc.status }, closeable: true })
+          openTab({
+            id: `diff-${fc.path}`,
+            type: 'diff',
+            title: fileName,
+            data: { path: fc.path, status: fc.status },
+            closeable: true,
+          })
         }
         if (shouldFocus) setActiveTab(firstTabId)
       } else if (fileChanges.length > 3) {
-        openTab({ id: 'filechanges-view', type: 'filechanges', title: `${fileChanges.length} Files Changed`, data: { fileChanges }, closeable: true })
+        openTab({
+          id: 'filechanges-view',
+          type: 'filechanges',
+          title: `${fileChanges.length} Files Changed`,
+          data: { fileChanges },
+          closeable: true,
+        })
         if (shouldFocus) setActiveTab('filechanges-view')
       }
       break
@@ -373,7 +392,7 @@ function openWorkflowTabsForState(
       }
       break
     case 'failed': {
-      const chatTab = tabs.find(t => t.type === 'chat')
+      const chatTab = tabs.find((t) => t.type === 'chat')
       if (chatTab) {
         setActiveTab(chatTab.id)
       }

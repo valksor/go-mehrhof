@@ -285,9 +285,11 @@ describe('parseScreenshotRefs', () => {
 // ---------------------------------------------------------------------------
 
 const makeMockClient = (callImpl?: (method: string, params?: unknown) => unknown) => ({
-  call: vi.fn().mockImplementation((method: string, params?: unknown) =>
-    Promise.resolve(callImpl ? callImpl(method, params) : {})
-  ),
+  call: vi
+    .fn()
+    .mockImplementation((method: string, params?: unknown) =>
+      Promise.resolve(callImpl ? callImpl(method, params) : {}),
+    ),
   subscribe: vi.fn(),
   connect: vi.fn().mockResolvedValue(undefined),
   close: vi.fn(),

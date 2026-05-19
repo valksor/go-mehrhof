@@ -84,10 +84,7 @@ describe('themeStore', () => {
 
       // Check localStorage was called with correct key
       // eslint-disable-next-line @typescript-eslint/unbound-method -- localStorage is mocked in vitest
-      expect(localStorage.setItem).toHaveBeenCalledWith(
-        'kvelmo-theme',
-        expect.any(String)
-      )
+      expect(localStorage.setItem).toHaveBeenCalledWith('kvelmo-theme', expect.any(String))
     })
 
     it('persists theme state', () => {

@@ -53,6 +53,6 @@ export const useDebugStore = create<DebugState>()(
     {
       name: storeName('debug'),
       partialize: (state) => ({ enabled: state.enabled }),
-    }
-  )
+    },
+  ),
 )

@@ -361,10 +361,7 @@ describe('layoutStore', () => {
     it('uses kvelmo-layout as storage key', () => {
       useLayoutStore.getState().toggleWidgetCollapsed('task')
       // eslint-disable-next-line @typescript-eslint/unbound-method -- localStorage is mocked in vitest
-      expect(localStorage.setItem).toHaveBeenCalledWith(
-        'kvelmo-layout',
-        expect.any(String)
-      )
+      expect(localStorage.setItem).toHaveBeenCalledWith('kvelmo-layout', expect.any(String))
     })
   })
 
@@ -426,7 +423,7 @@ describe('layoutStore', () => {
       })
 
       expect(useLayoutStore.getState().tabs).toContainEqual(
-        expect.objectContaining({ id: 'task-view', type: 'task', title: 'Ship it' })
+        expect.objectContaining({ id: 'task-view', type: 'task', title: 'Ship it' }),
       )
       expect(useLayoutStore.getState().activeTabId).toBe('task-view')
     })
@@ -462,7 +459,7 @@ describe('layoutStore', () => {
       })
 
       expect(useLayoutStore.getState().tabs).toContainEqual(
-        expect.objectContaining({ id: 'filechanges-view', type: 'filechanges', title: '4 Files Changed' })
+        expect.objectContaining({ id: 'filechanges-view', type: 'filechanges', title: '4 Files Changed' }),
       )
       expect(useLayoutStore.getState().activeTabId).toBe('filechanges-view')
     })
@@ -491,9 +488,7 @@ describe('layoutStore', () => {
         task: { id: 'task-2', title: 'Spec first', state: 'planned', source: 'file' },
       })
 
-      expect(useLayoutStore.getState().tabs).toEqual([
-        expect.objectContaining({ id: 'chat-default', type: 'chat' }),
-      ])
+      expect(useLayoutStore.getState().tabs).toEqual([expect.objectContaining({ id: 'chat-default', type: 'chat' })])
       expect(useLayoutStore.getState().activeTabId).toBe('chat-default')
     })
 
@@ -508,7 +503,7 @@ describe('layoutStore', () => {
       useViewModeStore.getState().setMode('developer')
 
       expect(useLayoutStore.getState().tabs).toContainEqual(
-        expect.objectContaining({ id: 'spec-view', type: 'spec', title: 'Specification' })
+        expect.objectContaining({ id: 'spec-view', type: 'spec', title: 'Specification' }),
       )
       expect(useLayoutStore.getState().activeTabId).toBe('spec-view')
     })
@@ -518,14 +513,16 @@ describe('layoutStore', () => {
         state: 'submitted',
         reviews: [{ number: 2, timestamp: '2026-03-25T00:00:00Z', approved: false, message: 'Needs work' }],
       })
-      expect(useLayoutStore.getState().tabs).toContainEqual(expect.objectContaining({ id: 'review-view', type: 'review' }))
+      expect(useLayoutStore.getState().tabs).toContainEqual(
+        expect.objectContaining({ id: 'review-view', type: 'review' }),
+      )
 
       setProjectWorkflowState({
         state: 'loaded',
         task: { id: 'task-4', title: 'Retry task', state: 'loaded', source: 'file' },
       })
 
-      const tabIds = useLayoutStore.getState().tabs.map(tab => tab.id)
+      const tabIds = useLayoutStore.getState().tabs.map((tab) => tab.id)
       expect(tabIds).toContain('task-view')
       expect(tabIds).not.toContain('review-view')
       expect(useLayoutStore.getState().activeTabId).toBe('task-view')

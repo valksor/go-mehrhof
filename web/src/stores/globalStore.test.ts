@@ -17,7 +17,7 @@ vi.mock('../lib/socket', () => ({
     call: vi.fn().mockResolvedValue({}),
     subscribe: vi.fn(),
     setOnDisconnect: vi.fn(),
-  }))
+  })),
 }))
 
 const createMockProject = (overrides: Partial<WorktreeInfo> = {}): WorktreeInfo => ({
@@ -174,19 +174,13 @@ describe('globalStore', () => {
 
   describe('state management via setState', () => {
     it('can set projects list', () => {
-      const projects = [
-        createMockProject({ id: 'p1' }),
-        createMockProject({ id: 'p2', path: '/workspace/other' }),
-      ]
+      const projects = [createMockProject({ id: 'p1' }), createMockProject({ id: 'p2', path: '/workspace/other' })]
       useGlobalStore.setState({ projects })
       expect(useGlobalStore.getState().projects).toEqual(projects)
     })
 
     it('can set workers list', () => {
-      const workers = [
-        createMockWorker({ id: 'w1' }),
-        createMockWorker({ id: 'w2', agent_name: 'codex' }),
-      ]
+      const workers = [createMockWorker({ id: 'w1' }), createMockWorker({ id: 'w2', agent_name: 'codex' })]
       useGlobalStore.setState({ workers })
       expect(useGlobalStore.getState().workers).toEqual(workers)
     })
@@ -217,9 +211,7 @@ describe('globalStore', () => {
     })
 
     it('can set activeTasks', () => {
-      const tasks = [
-        { id: 't1', title: 'Fix bug', state: 'implementing', worktree_id: 'w1', source: 'gh:repo#1' },
-      ]
+      const tasks = [{ id: 't1', title: 'Fix bug', state: 'implementing', worktree_id: 'w1', source: 'gh:repo#1' }]
       useGlobalStore.setState({ activeTasks: tasks as never })
       expect(useGlobalStore.getState().activeTasks).toHaveLength(1)
     })
@@ -274,19 +266,13 @@ describe('globalStore', () => {
       // Trigger a state change to exercise persist
       useGlobalStore.getState().selectProject(null)
       // eslint-disable-next-line @typescript-eslint/unbound-method -- localStorage is mocked in vitest
-      expect(localStorage.setItem).toHaveBeenCalledWith(
-        'kvelmo-global',
-        expect.any(String)
-      )
+      expect(localStorage.setItem).toHaveBeenCalledWith('kvelmo-global', expect.any(String))
     })
   })
 
   describe('selectNextProject', () => {
     it('selects first project when none selected', () => {
-      const projects = [
-        createMockProject({ id: 'p1' }),
-        createMockProject({ id: 'p2', path: '/b' }),
-      ]
+      const projects = [createMockProject({ id: 'p1' }), createMockProject({ id: 'p2', path: '/b' })]
       useGlobalStore.setState({ projects, selectedProject: null })
       useGlobalStore.getState().selectNextProject()
       expect(useGlobalStore.getState().selectedProjectId).toBe('p1')
@@ -304,10 +290,7 @@ describe('globalStore', () => {
     })
 
     it('stays at last project when already at end', () => {
-      const projects = [
-        createMockProject({ id: 'p1' }),
-        createMockProject({ id: 'p2', path: '/b' }),
-      ]
+      const projects = [createMockProject({ id: 'p1' }), createMockProject({ id: 'p2', path: '/b' })]
       useGlobalStore.setState({ projects, selectedProject: projects[1], selectedProjectId: 'p2' })
       useGlobalStore.getState().selectNextProject()
       expect(useGlobalStore.getState().selectedProjectId).toBe('p2')
@@ -321,10 +304,7 @@ describe('globalStore', () => {
 
   describe('selectPrevProject', () => {
     it('selects last project when none selected', () => {
-      const projects = [
-        createMockProject({ id: 'p1' }),
-        createMockProject({ id: 'p2', path: '/b' }),
-      ]
+      const projects = [createMockProject({ id: 'p1' }), createMockProject({ id: 'p2', path: '/b' })]
       useGlobalStore.setState({ projects, selectedProject: null })
       useGlobalStore.getState().selectPrevProject()
       // When no project is selected, currentIdx defaults to projects.length, so prevIdx = length - 1
@@ -343,10 +323,7 @@ describe('globalStore', () => {
     })
 
     it('stays at first project when already at beginning', () => {
-      const projects = [
-        createMockProject({ id: 'p1' }),
-        createMockProject({ id: 'p2', path: '/b' }),
-      ]
+      const projects = [createMockProject({ id: 'p1' }), createMockProject({ id: 'p2', path: '/b' })]
       useGlobalStore.setState({ projects, selectedProject: projects[0], selectedProjectId: 'p1' })
       useGlobalStore.getState().selectPrevProject()
       expect(useGlobalStore.getState().selectedProjectId).toBe('p1')
@@ -830,9 +807,7 @@ describe('globalStore', () => {
 
   describe('loadActiveTasks', () => {
     it('sets activeTasks on success', async () => {
-      const tasks = [
-        { id: 't1', title: 'Fix bug', state: 'implementing', worktree_id: 'w1', source: 'gh:repo#1' },
-      ]
+      const tasks = [{ id: 't1', title: 'Fix bug', state: 'implementing', worktree_id: 'w1', source: 'gh:repo#1' }]
       const client = makeMockClient(() => ({ tasks }))
       injectClient(client)
       await useGlobalStore.getState().loadActiveTasks()
@@ -989,9 +964,7 @@ describe('globalStore', () => {
 
   describe('loadJobs', () => {
     it('sets jobs on success', async () => {
-      const jobs: Job[] = [
-        { id: 'j1', type: 'chat', status: 'running', worktree_id: 'wt1', created_at: '2026-01-01' },
-      ]
+      const jobs: Job[] = [{ id: 'j1', type: 'chat', status: 'running', worktree_id: 'wt1', created_at: '2026-01-01' }]
       const client = makeMockClient(() => ({ jobs }))
       injectClient(client)
       await useGlobalStore.getState().loadJobs()
@@ -1071,8 +1044,28 @@ describe('globalStore', () => {
   describe('loadMetricsHistory', () => {
     it('sets metricsHistory when enabled is true', async () => {
       const entries: TimedSnapshot[] = [
-        { timestamp: '2026-01-01T00:00:00Z', jobs_submitted: 5, jobs_completed: 3, jobs_failed: 1, jobs_in_progress: 1, rpc_requests: 20, rpc_errors: 0, agent_connects: 2, events_dropped: 0 },
-        { timestamp: '2026-01-01T01:00:00Z', jobs_submitted: 8, jobs_completed: 6, jobs_failed: 1, jobs_in_progress: 1, rpc_requests: 35, rpc_errors: 1, agent_connects: 3, events_dropped: 0 },
+        {
+          timestamp: '2026-01-01T00:00:00Z',
+          jobs_submitted: 5,
+          jobs_completed: 3,
+          jobs_failed: 1,
+          jobs_in_progress: 1,
+          rpc_requests: 20,
+          rpc_errors: 0,
+          agent_connects: 2,
+          events_dropped: 0,
+        },
+        {
+          timestamp: '2026-01-01T01:00:00Z',
+          jobs_submitted: 8,
+          jobs_completed: 6,
+          jobs_failed: 1,
+          jobs_in_progress: 1,
+          rpc_requests: 35,
+          rpc_errors: 1,
+          agent_connects: 3,
+          events_dropped: 0,
+        },
       ]
       const client = makeMockClient(() => ({ entries, enabled: true }))
       injectClient(client)
@@ -1083,7 +1076,17 @@ describe('globalStore', () => {
 
     it('does not set metricsHistory when enabled is false', async () => {
       const entries: TimedSnapshot[] = [
-        { timestamp: '2026-01-01T00:00:00Z', jobs_submitted: 5, jobs_completed: 3, jobs_failed: 1, jobs_in_progress: 1, rpc_requests: 20, rpc_errors: 0, agent_connects: 2, events_dropped: 0 },
+        {
+          timestamp: '2026-01-01T00:00:00Z',
+          jobs_submitted: 5,
+          jobs_completed: 3,
+          jobs_failed: 1,
+          jobs_in_progress: 1,
+          rpc_requests: 20,
+          rpc_errors: 0,
+          agent_connects: 2,
+          events_dropped: 0,
+        },
       ]
       const client = makeMockClient(() => ({ entries, enabled: false }))
       injectClient(client)
@@ -1387,9 +1390,7 @@ describe('globalStore', () => {
         subscriberRef.current({ method: 'other_event', params: {} })
         await Promise.resolve()
         // call should not have been invoked for tasks.list
-        const taskCalls = (client.call as ReturnType<typeof vi.fn>).mock.calls.filter(
-          c => c[0] === 'tasks.list'
-        )
+        const taskCalls = (client.call as ReturnType<typeof vi.fn>).mock.calls.filter((c) => c[0] === 'tasks.list')
         expect(taskCalls).toHaveLength(0)
       }
     })

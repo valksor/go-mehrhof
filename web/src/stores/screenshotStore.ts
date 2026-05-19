@@ -66,22 +66,22 @@ export const useScreenshotStore = create<ScreenshotState>((set, get) => ({
     } catch (err) {
       set({
         loading: false,
-        error: err instanceof Error ? err.message : 'Failed to load screenshots'
+        error: err instanceof Error ? err.message : 'Failed to load screenshots',
       })
     }
   },
 
   add: (screenshot: Screenshot) => {
-    set(state => ({
-      screenshots: [screenshot, ...state.screenshots]
+    set((state) => ({
+      screenshots: [screenshot, ...state.screenshots],
     }))
   },
 
   remove: (id: string) => {
-    set(state => ({
-      screenshots: state.screenshots.filter(s => s.id !== id),
+    set((state) => ({
+      screenshots: state.screenshots.filter((s) => s.id !== id),
       selectedId: state.selectedId === id ? null : state.selectedId,
-      attachedIds: state.attachedIds.filter(aid => aid !== id)
+      attachedIds: state.attachedIds.filter((aid) => aid !== id),
     }))
   },
 
@@ -90,15 +90,15 @@ export const useScreenshotStore = create<ScreenshotState>((set, get) => ({
   },
 
   attach: (id: string) => {
-    set(state => {
+    set((state) => {
       if (state.attachedIds.includes(id)) return state
       return { attachedIds: [...state.attachedIds, id] }
     })
   },
 
   detach: (id: string) => {
-    set(state => ({
-      attachedIds: state.attachedIds.filter(aid => aid !== id)
+    set((state) => ({
+      attachedIds: state.attachedIds.filter((aid) => aid !== id),
     }))
   },
 
@@ -142,8 +142,8 @@ export const useScreenshotStore = create<ScreenshotState>((set, get) => ({
     try {
       const result = await client.call<{ data: string; format: string }>('screenshots.get', { screenshot_id: id })
       const dataUrl = `data:image/${result.format};base64,${result.data}`
-      set(state => ({
-        screenshotData: { ...state.screenshotData, [id]: dataUrl }
+      set((state) => ({
+        screenshotData: { ...state.screenshotData, [id]: dataUrl },
       }))
       return dataUrl
     } catch (err) {
@@ -160,12 +160,12 @@ export const useScreenshotStore = create<ScreenshotState>((set, get) => ({
 
   handleScreenshotDeleted: (id: string) => {
     get().remove(id)
-  }
+  },
 }))
 
 // Helper to get screenshot by ID
 export function getScreenshotById(id: string): Screenshot | undefined {
-  return useScreenshotStore.getState().screenshots.find(s => s.id === id)
+  return useScreenshotStore.getState().screenshots.find((s) => s.id === id)
 }
 
 // Helper to format screenshot reference for chat

@@ -117,7 +117,7 @@ export const useBrowserStore = create<BrowserState>((set, get) => ({
     } catch (err) {
       set({
         loading: false,
-        error: err instanceof Error ? err.message : 'Failed to check browser status'
+        error: err instanceof Error ? err.message : 'Failed to check browser status',
       })
     }
   },
@@ -133,7 +133,7 @@ export const useBrowserStore = create<BrowserState>((set, get) => ({
     } catch (err) {
       set({
         loading: false,
-        error: err instanceof Error ? err.message : 'Failed to install browser'
+        error: err instanceof Error ? err.message : 'Failed to install browser',
       })
     }
   },
@@ -161,7 +161,7 @@ export const useBrowserStore = create<BrowserState>((set, get) => ({
     } catch (err) {
       set({
         loading: false,
-        error: err instanceof Error ? err.message : 'Failed to set config'
+        error: err instanceof Error ? err.message : 'Failed to set config',
       })
     }
   },
@@ -177,7 +177,7 @@ export const useBrowserStore = create<BrowserState>((set, get) => ({
         loading: false,
         lastResult: result,
         currentUrl: result.url || url,
-        currentTitle: result.title || ''
+        currentTitle: result.title || '',
       })
       return result
     } catch (err) {
@@ -506,5 +506,5 @@ export const useBrowserStore = create<BrowserState>((set, get) => ({
   },
 
   clearError: () => set({ error: null }),
-  clearResult: () => set({ lastResult: null })
+  clearResult: () => set({ lastResult: null }),
 }))

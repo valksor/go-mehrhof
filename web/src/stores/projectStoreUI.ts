@@ -8,11 +8,7 @@ import { sendNotification, requestNotificationPermission } from '../lib/notify'
 import { worktreeEvents } from '../lib/events'
 import type { FailureClass } from '../lib/events'
 import type { PhaseMetrics } from '../types/conductor'
-import type {
-  ProjectState,
-  UISlice,
-  TaskState,
-} from './projectStore.types'
+import type { ProjectState, UISlice, TaskState } from './projectStore.types'
 
 const ACTIVE_PHASES = new Set(['planning', 'implementing', 'simplifying', 'optimizing'])
 
@@ -33,7 +29,7 @@ export const createUISlice: StateCreator<ProjectState, [], [], UISlice> = (set, 
   prBodyOverride: null,
 
   toggleDryRun: () => {
-    set(s => ({ dryRunMode: !s.dryRunMode }))
+    set((s) => ({ dryRunMode: !s.dryRunMode }))
   },
 
   setPrBodyOverride: (body: string | null) => {
@@ -94,7 +90,7 @@ export const createUISlice: StateCreator<ProjectState, [], [], UISlice> = (set, 
           reconnectAttempt: attempt,
           reconnectTimeoutId: timeoutId,
           client: null,
-          error: `Connection lost. Reconnecting in ${delaySec}s... (attempt ${attempt})`
+          error: `Connection lost. Reconnecting in ${delaySec}s... (attempt ${attempt})`,
         })
       })
 
@@ -106,9 +102,20 @@ export const createUISlice: StateCreator<ProjectState, [], [], UISlice> = (set, 
       progressInterval = setInterval(async () => {
         if (!ACTIVE_PHASES.has(get().state)) return
         try {
-          const progress = await client.call<{ active: boolean; percent?: number; eta_seconds?: number; calibrated?: boolean }>('progress.get', {})
+          const progress = await client.call<{
+            active: boolean
+            percent?: number
+            eta_seconds?: number
+            calibrated?: boolean
+          }>('progress.get', {})
           if (progress.active) {
-            set({ phaseProgress: { percent: progress.percent ?? 0, eta: progress.eta_seconds ?? -1, calibrated: progress.calibrated ?? false } })
+            set({
+              phaseProgress: {
+                percent: progress.percent ?? 0,
+                eta: progress.eta_seconds ?? -1,
+                calibrated: progress.calibrated ?? false,
+              },
+            })
           }
         } catch {
           // Ignore polling errors
@@ -138,7 +145,7 @@ export const createUISlice: StateCreator<ProjectState, [], [], UISlice> = (set, 
 
         // Track the highest seq seen for reconnect replay
         if (msg.seq !== undefined) {
-          set(s => ({ lastSeq: Math.max(s.lastSeq, msg.seq!) }))
+          set((s) => ({ lastSeq: Math.max(s.lastSeq, msg.seq!) }))
         }
 
         if (msg.type === 'heartbeat') {
@@ -176,7 +183,12 @@ export const createUISlice: StateCreator<ProjectState, [], [], UISlice> = (set, 
           debouncedRefresh()
           void sendNotification('Task Completed', get().task?.title || 'Job finished successfully')
         } else if (msg.type === 'phase_failure_classified') {
-          const classified = msg as { failure_class?: FailureClass; failure_message?: string; message?: string; phase?: string }
+          const classified = msg as {
+            failure_class?: FailureClass
+            failure_message?: string
+            message?: string
+            phase?: string
+          }
           if (classified.failure_class) {
             set({
               phaseError: {
@@ -206,7 +218,9 @@ export const createUISlice: StateCreator<ProjectState, [], [], UISlice> = (set, 
             set({ qualityPrompt: { id: data.prompt_id, question: data.question ?? 'Quality gate question' } })
           }
         } else if (msg.type === 'worktree_provisioned') {
-          const provData = (msg as { data?: { files_copied?: string[]; symlinks_created?: string[]; commands_run?: string[] } }).data
+          const provData = (
+            msg as { data?: { files_copied?: string[]; symlinks_created?: string[]; commands_run?: string[] } }
+          ).data
           const parts: string[] = []
           if (provData?.files_copied?.length) parts.push(`${provData.files_copied.length} files copied`)
           if (provData?.symlinks_created?.length) parts.push(`${provData.symlinks_created.length} symlinks`)
@@ -271,14 +285,16 @@ export const createUISlice: StateCreator<ProjectState, [], [], UISlice> = (set, 
           debouncedRefresh()
         } else if (msg.type === 'router_decision') {
           const rd = msg as { data?: { action?: string; reason?: string; attempt?: number; max_retries?: number } }
-          const detail = rd.data ? `Router: ${rd.data.action ?? 'advance'}${rd.data.reason ? ` — ${rd.data.reason}` : ''}` : (msg.message || 'Router decision made')
+          const detail = rd.data
+            ? `Router: ${rd.data.action ?? 'advance'}${rd.data.reason ? ` — ${rd.data.reason}` : ''}`
+            : msg.message || 'Router decision made'
           get().appendOutput(detail)
         } else if (msg.type === 'node_approval_required') {
           const nodeMsg = msg as { node_id?: string; message?: string }
           if (nodeMsg.node_id) {
-            set(s => ({
+            set((s) => ({
               pendingNodeApprovals: [
-                ...s.pendingNodeApprovals.filter(n => n.nodeId !== nodeMsg.node_id),
+                ...s.pendingNodeApprovals.filter((n) => n.nodeId !== nodeMsg.node_id),
                 { nodeId: nodeMsg.node_id!, message: nodeMsg.message || '' },
               ],
             }))
@@ -287,8 +303,8 @@ export const createUISlice: StateCreator<ProjectState, [], [], UISlice> = (set, 
         } else if (msg.type === 'node_completed' || msg.type === 'node_failed') {
           const nodeMsg = msg as { node_id?: string }
           if (nodeMsg.node_id) {
-            set(s => ({
-              pendingNodeApprovals: s.pendingNodeApprovals.filter(n => n.nodeId !== nodeMsg.node_id),
+            set((s) => ({
+              pendingNodeApprovals: s.pendingNodeApprovals.filter((n) => n.nodeId !== nodeMsg.node_id),
             }))
           }
         } else if (msg.type === 'risk_evaluated') {
@@ -331,7 +347,7 @@ export const createUISlice: StateCreator<ProjectState, [], [], UISlice> = (set, 
           if (progressInterval) clearInterval(progressInterval)
           unsubscribe()
           worktreeEvents.clear()
-        }
+        },
       })
 
       void requestNotificationPermission()
@@ -341,18 +357,14 @@ export const createUISlice: StateCreator<ProjectState, [], [], UISlice> = (set, 
       await client.call('stream.subscribe', { last_seq: get().lastSeq })
 
       // Initial data fetch (parallel — these are independent)
-      await Promise.all([
-        get().refreshStatus(),
-        get().loadQueue(),
-        useScreenshotStore.getState().load(client),
-      ])
+      await Promise.all([get().refreshStatus(), get().loadQueue(), useScreenshotStore.getState().load(client)])
     } catch (err) {
       console.error('[kvelmo] Worktree connection error:', err)
       if (progressInterval) clearInterval(progressInterval)
       set({
         connected: false,
         connecting: false,
-        error: err instanceof Error ? err.message : 'Connection failed'
+        error: err instanceof Error ? err.message : 'Connection failed',
       })
     }
   },
@@ -401,7 +413,7 @@ export const createUISlice: StateCreator<ProjectState, [], [], UISlice> = (set, 
   },
 
   appendOutput: (line: string) => {
-    set(state => {
+    set((state) => {
       const newOutput = [...state.output, `[${new Date().toLocaleTimeString()}] ${line}`]
       // Cap at 5000 lines to prevent unbounded memory growth
       if (newOutput.length > 5000) {
@@ -457,36 +469,39 @@ export const createUISlice: StateCreator<ProjectState, [], [], UISlice> = (set, 
               type: ci.type,
               ref: ci.ref,
               label: ci.label,
-            }))
-          }
+            })),
+          },
         })
       }
 
       // Fetch remaining data in parallel (independent of each other)
       await Promise.all([
         // Checkpoints
-        client.call<{
-          checkpoints: Array<{ sha: string; message: string; author: string; timestamp: string }>
-          redo_stack: Array<{ sha: string; message: string; author: string; timestamp: string }>
-        }>('checkpoints', {}).then(checkpointsResult => {
-          set({
-            checkpoints: (checkpointsResult.checkpoints || []).map(c => ({
-              sha: c.sha,
-              message: c.message,
-              timestamp: c.timestamp,
-            })),
-            redoStack: (checkpointsResult.redo_stack || []).map(c => ({
-              sha: c.sha,
-              message: c.message,
-              timestamp: c.timestamp,
-            })),
+        client
+          .call<{
+            checkpoints: Array<{ sha: string; message: string; author: string; timestamp: string }>
+            redo_stack: Array<{ sha: string; message: string; author: string; timestamp: string }>
+          }>('checkpoints', {})
+          .then((checkpointsResult) => {
+            set({
+              checkpoints: (checkpointsResult.checkpoints || []).map((c) => ({
+                sha: c.sha,
+                message: c.message,
+                timestamp: c.timestamp,
+              })),
+              redoStack: (checkpointsResult.redo_stack || []).map((c) => ({
+                sha: c.sha,
+                message: c.message,
+                timestamp: c.timestamp,
+              })),
+            })
           })
-        }).catch((err) => {
-          // Checkpoints may not be available (e.g., no git repo, no task loaded)
-          if (import.meta.env.DEV) {
-            console.debug('[kvelmo] Checkpoints not available:', err)
-          }
-        }),
+          .catch((err) => {
+            // Checkpoints may not be available (e.g., no git repo, no task loaded)
+            if (import.meta.env.DEV) {
+              console.debug('[kvelmo] Checkpoints not available:', err)
+            }
+          }),
 
         // Git status
         get().refreshGitStatus(),
@@ -498,16 +513,29 @@ export const createUISlice: StateCreator<ProjectState, [], [], UISlice> = (set, 
         get().loadTags(),
 
         // Progress estimation (only when a phase is active)
-        (['planning', 'implementing', 'simplifying', 'optimizing'].includes(result.state)
-          ? client.call<{ active: boolean; percent?: number; eta_seconds?: number; calibrated?: boolean }>('progress.get', {}).then(progress => {
-              if (progress.active) {
-                set({ phaseProgress: { percent: progress.percent ?? 0, eta: progress.eta_seconds ?? -1, calibrated: progress.calibrated ?? false } })
-              } else {
+        ['planning', 'implementing', 'simplifying', 'optimizing'].includes(result.state)
+          ? client
+              .call<{ active: boolean; percent?: number; eta_seconds?: number; calibrated?: boolean }>(
+                'progress.get',
+                {},
+              )
+              .then((progress) => {
+                if (progress.active) {
+                  set({
+                    phaseProgress: {
+                      percent: progress.percent ?? 0,
+                      eta: progress.eta_seconds ?? -1,
+                      calibrated: progress.calibrated ?? false,
+                    },
+                  })
+                } else {
+                  set({ phaseProgress: null })
+                }
+              })
+              .catch(() => {
                 set({ phaseProgress: null })
-              }
-            }).catch(() => { set({ phaseProgress: null }) })
-          : Promise.resolve(set({ phaseProgress: null }))
-        ),
+              })
+          : Promise.resolve(set({ phaseProgress: null })),
       ])
     } catch (err) {
       set({ error: err instanceof Error ? err.message : 'Status refresh failed' })

@@ -5,13 +5,7 @@ import { SocketClient } from '../lib/socket'
 import { debounce } from '../lib/debounce'
 import { reconnectDelay } from '../lib/reconnect'
 import { storeName } from '../meta'
-import type {
-  WorktreeInfo,
-  WorkerInfo,
-  WorkersStats,
-  MemoryStatsResponse,
-  TaskListSummary,
-} from '../types/socket'
+import type { WorktreeInfo, WorkerInfo, WorkersStats, MemoryStatsResponse, TaskListSummary } from '../types/socket'
 
 // Agent status from agent.status RPC
 export interface AgentCheckResult {
@@ -176,7 +170,14 @@ interface GlobalState {
 
   // Tasks
   loadActiveTasks: () => Promise<void>
-  batchAction: (action: string, filters?: { state?: string; tag?: string; match?: string }) => Promise<{ total: number; succeeded: number; results: Array<{ path: string; state: string; success: boolean; error?: string }> }>
+  batchAction: (
+    action: string,
+    filters?: { state?: string; tag?: string; match?: string },
+  ) => Promise<{
+    total: number
+    succeeded: number
+    results: Array<{ path: string; state: string; success: boolean; error?: string }>
+  }>
 
   // Memory
   searchMemory: (query: string, limit?: number) => Promise<MemoryResult[]>
@@ -271,7 +272,7 @@ export const useGlobalStore = create<GlobalState>()(
             reconnectAttempt: attempt,
             reconnectTimeoutId: timeoutId,
             client: null,
-            error: `Connection lost. Reconnecting in ${delaySec}s... (attempt ${attempt})`
+            error: `Connection lost. Reconnecting in ${delaySec}s... (attempt ${attempt})`,
           })
         })
 
@@ -306,7 +307,7 @@ export const useGlobalStore = create<GlobalState>()(
               debouncedLoadTasks.cancel()
               debouncedLoadWorkers.cancel()
               unsubscribe()
-            }
+            },
           })
 
           // Load initial data
@@ -320,7 +321,7 @@ export const useGlobalStore = create<GlobalState>()(
           set({
             connected: false,
             connecting: false,
-            error: err instanceof Error ? err.message : 'Connection failed'
+            error: err instanceof Error ? err.message : 'Connection failed',
           })
         }
       },
@@ -344,7 +345,7 @@ export const useGlobalStore = create<GlobalState>()(
           reconnectAttempt: 0,
           reconnectTimeoutId: null,
           client: null,
-          unsubscribeSocket: null
+          unsubscribeSocket: null,
         })
       },
 
@@ -364,7 +365,7 @@ export const useGlobalStore = create<GlobalState>()(
         } catch (err) {
           set({
             error: err instanceof Error ? err.message : 'Failed to load projects',
-            loading: false
+            loading: false,
           })
         }
       },
@@ -384,7 +385,7 @@ export const useGlobalStore = create<GlobalState>()(
         } catch (err) {
           set({
             error: err instanceof Error ? err.message : 'Failed to add project',
-            loading: false
+            loading: false,
           })
         }
       },
@@ -409,7 +410,7 @@ export const useGlobalStore = create<GlobalState>()(
         } catch (err) {
           set({
             error: err instanceof Error ? err.message : 'Failed to remove project',
-            loading: false
+            loading: false,
           })
         }
       },
@@ -417,7 +418,7 @@ export const useGlobalStore = create<GlobalState>()(
       selectProject: (project) => {
         set({
           selectedProject: project,
-          selectedProjectId: project?.id || null
+          selectedProjectId: project?.id || null,
         })
         // Persist to sessionStorage for page refresh survival (cleared on tab close)
         if (project) {
@@ -430,9 +431,7 @@ export const useGlobalStore = create<GlobalState>()(
       selectNextProject: () => {
         const { projects, selectedProject } = get()
         if (projects.length === 0) return
-        const currentIdx = selectedProject
-          ? projects.findIndex(p => p.id === selectedProject.id)
-          : -1
+        const currentIdx = selectedProject ? projects.findIndex((p) => p.id === selectedProject.id) : -1
         const nextIdx = Math.min(currentIdx + 1, projects.length - 1)
         get().selectProject(projects[nextIdx])
       },
@@ -440,9 +439,7 @@ export const useGlobalStore = create<GlobalState>()(
       selectPrevProject: () => {
         const { projects, selectedProject } = get()
         if (projects.length === 0) return
-        const currentIdx = selectedProject
-          ? projects.findIndex(p => p.id === selectedProject.id)
-          : projects.length
+        const currentIdx = selectedProject ? projects.findIndex((p) => p.id === selectedProject.id) : projects.length
         const prevIdx = Math.max(currentIdx - 1, 0)
         get().selectProject(projects[prevIdx])
       },
@@ -455,7 +452,7 @@ export const useGlobalStore = create<GlobalState>()(
           const result = await client.call<{ workers: WorkerInfo[]; stats: WorkersStats }>('workers.list')
           set({
             workers: result.workers || [],
-            workerStats: result.stats || null
+            workerStats: result.stats || null,
           })
         } catch (err) {
           console.warn('Failed to load workers:', err)
@@ -513,7 +510,7 @@ export const useGlobalStore = create<GlobalState>()(
         } catch (err) {
           set({
             error: err instanceof Error ? err.message : 'Failed to add worker',
-            loading: false
+            loading: false,
           })
         }
       },
@@ -533,7 +530,7 @@ export const useGlobalStore = create<GlobalState>()(
         } catch (err) {
           set({
             error: err instanceof Error ? err.message : 'Failed to remove worker',
-            loading: false
+            loading: false,
           })
         }
       },
@@ -594,7 +591,12 @@ export const useGlobalStore = create<GlobalState>()(
 
       batchAction: async (action: string, filters?: { state?: string; tag?: string; match?: string }) => {
         const client = get().client
-        if (!client) return { total: 0, succeeded: 0, results: [] as Array<{ path: string; state: string; success: boolean; error?: string }> }
+        if (!client)
+          return {
+            total: 0,
+            succeeded: 0,
+            results: [] as Array<{ path: string; state: string; success: boolean; error?: string }>,
+          }
 
         const params: Record<string, unknown> = { action }
         if (filters) {
@@ -604,8 +606,11 @@ export const useGlobalStore = create<GlobalState>()(
           }
         }
 
-        const result = await client.call<{ total: number; results: Array<{ path: string; state: string; success: boolean; error?: string }> }>('tasks.batch', params)
-        const succeeded = result.results?.filter(r => r.success).length ?? 0
+        const result = await client.call<{
+          total: number
+          results: Array<{ path: string; state: string; success: boolean; error?: string }>
+        }>('tasks.batch', params)
+        const succeeded = result.results?.filter((r) => r.success).length ?? 0
 
         // Refresh task list after batch action
         await get().loadActiveTasks()
@@ -748,13 +753,12 @@ export const useGlobalStore = create<GlobalState>()(
         } catch (err) {
           console.warn('Failed to remove task group:', err)
         }
-      }
+      },
     }),
     {
       name: storeName('global'),
       // Project selection persisted via sessionStorage in selectProject() - survives refresh but not tab close
-      partialize: () => ({})
-    }
-  )
+      partialize: () => ({}),
+    },
+  ),
 )
-

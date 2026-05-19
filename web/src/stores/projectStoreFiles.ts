@@ -96,10 +96,10 @@ export const createFilesSlice: StateCreator<ProjectState, [], [], FilesSlice> = 
           branch: result.branch,
           hasChanges: result.has_changes,
         },
-        fileChanges: (result.files || []).map(f => ({
+        fileChanges: (result.files || []).map((f) => ({
           path: f.path,
           status: f.status,
-        }))
+        })),
       })
     } catch (err) {
       // Git status may not be available
@@ -155,8 +155,8 @@ export const createFilesSlice: StateCreator<ProjectState, [], [], FilesSlice> = 
 
     try {
       const result = await client.call<ReviewDetail>('review.view', { number })
-      set(state => ({
-        reviewDetails: { ...state.reviewDetails, [number]: result }
+      set((state) => ({
+        reviewDetails: { ...state.reviewDetails, [number]: result },
       }))
       return result
     } catch (err) {
@@ -225,7 +225,7 @@ export const createFilesSlice: StateCreator<ProjectState, [], [], FilesSlice> = 
       const result = await client.call<{ files: FilesEntry[] }>('files.list', {
         path,
         extensions,
-        max_depth: maxDepth
+        max_depth: maxDepth,
       })
       return result.files || []
     } catch (err) {

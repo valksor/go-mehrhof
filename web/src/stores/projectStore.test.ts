@@ -24,7 +24,9 @@ vi.mock('../lib/socket', () => {
     this.subscribe = vi.fn().mockImplementation((cb: (data: unknown) => void) => {
       _capturedSubscribeCallback = cb
       // Return unsubscribe function
-      return () => { _capturedSubscribeCallback = null }
+      return () => {
+        _capturedSubscribeCallback = null
+      }
     })
     this.setOnDisconnect = vi.fn()
   })
@@ -44,8 +46,8 @@ vi.mock('./screenshotStore', () => ({
       handleScreenshotCaptured: vi.fn(),
       handleScreenshotDeleted: vi.fn(),
       load: vi.fn().mockResolvedValue(undefined),
-    })
-  }
+    }),
+  },
 }))
 
 const initialState = {
@@ -107,7 +109,8 @@ function makeClientWithAutoRefresh(overrides: Record<string, Record<string, unkn
   client.call.mockImplementation((method: string) => {
     if (method === 'status') return Promise.resolve({ state: 'none', path: '/proj', ...overrides.status })
     if (method === 'checkpoints') return Promise.resolve({ checkpoints: [], redo_stack: [], ...overrides.checkpoints })
-    if (method === 'git.status') return Promise.resolve({ branch: 'main', has_changes: false, files: [], ...overrides['git.status'] })
+    if (method === 'git.status')
+      return Promise.resolve({ branch: 'main', has_changes: false, files: [], ...overrides['git.status'] })
     if (method === 'review.list') return Promise.resolve({ reviews: [], ...overrides['review.list'] })
     return Promise.resolve({})
   })
@@ -273,7 +276,7 @@ describe('projectStore', () => {
 
     it('resets task to null', () => {
       useProjectStore.setState({
-        task: { id: 't1', title: 'Test', state: 'planned', source: 'github:repo#1' }
+        task: { id: 't1', title: 'Test', state: 'planned', source: 'github:repo#1' },
       })
       useProjectStore.getState().disconnect()
       expect(useProjectStore.getState().task).toBeNull()
@@ -293,7 +296,7 @@ describe('projectStore', () => {
 
     it('resets checkpoints to empty array', () => {
       useProjectStore.setState({
-        checkpoints: [{ sha: 'abc', message: 'init', timestamp: '2026-01-01' }]
+        checkpoints: [{ sha: 'abc', message: 'init', timestamp: '2026-01-01' }],
       })
       useProjectStore.getState().disconnect()
       expect(useProjectStore.getState().checkpoints).toEqual([])
@@ -301,7 +304,7 @@ describe('projectStore', () => {
 
     it('resets redoStack to empty array', () => {
       useProjectStore.setState({
-        redoStack: [{ sha: 'def', message: 'redo', timestamp: '2026-01-01' }]
+        redoStack: [{ sha: 'def', message: 'redo', timestamp: '2026-01-01' }],
       })
       useProjectStore.getState().disconnect()
       expect(useProjectStore.getState().redoStack).toEqual([])
@@ -315,7 +318,7 @@ describe('projectStore', () => {
 
     it('resets reviews to empty array', () => {
       useProjectStore.setState({
-        reviews: [{ number: 1, timestamp: '2026-01-01', approved: true, message: 'LGTM' }]
+        reviews: [{ number: 1, timestamp: '2026-01-01', approved: true, message: 'LGTM' }],
       })
       useProjectStore.getState().disconnect()
       expect(useProjectStore.getState().reviews).toEqual([])
@@ -330,9 +333,9 @@ describe('projectStore', () => {
             approved: true,
             message: 'LGTM',
             content: 'content',
-            findings: []
-          }
-        }
+            findings: [],
+          },
+        },
       })
       useProjectStore.getState().disconnect()
       expect(useProjectStore.getState().reviewDetails).toEqual({})
@@ -340,7 +343,7 @@ describe('projectStore', () => {
 
     it('resets taskQueue to empty array', () => {
       useProjectStore.setState({
-        taskQueue: [{ id: 'q1', source: 'gh:x#1', title: 'task', added_at: '2026-01-01', position: 0 }]
+        taskQueue: [{ id: 'q1', source: 'gh:x#1', title: 'task', added_at: '2026-01-01', position: 0 }],
       })
       useProjectStore.getState().disconnect()
       expect(useProjectStore.getState().taskQueue).toEqual([])
@@ -428,9 +431,7 @@ describe('projectStore', () => {
     })
 
     it('can set reviews', () => {
-      const reviews = [
-        { number: 1, timestamp: '2026-01-01', approved: false, message: 'Needs changes' },
-      ]
+      const reviews = [{ number: 1, timestamp: '2026-01-01', approved: false, message: 'Needs changes' }]
       useProjectStore.setState({ reviews })
       expect(useProjectStore.getState().reviews).toEqual(reviews)
     })
@@ -1348,8 +1349,12 @@ describe('projectStore', () => {
     it('calls client.call quality.respond and clears qualityPrompt on success', async () => {
       const client = makeMockClient()
       client.call.mockResolvedValue({})
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      useProjectStore.setState({ client: client as any, connected: true, qualityPrompt: { id: 'qp1', question: 'Continue?' } })
+      useProjectStore.setState({
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        client: client as any,
+        connected: true,
+        qualityPrompt: { id: 'qp1', question: 'Continue?' },
+      })
 
       await useProjectStore.getState().respondToPrompt('qp1', true)
 
@@ -1360,8 +1365,12 @@ describe('projectStore', () => {
     it('sets error on failure and preserves qualityPrompt', async () => {
       const client = makeMockClient()
       client.call.mockRejectedValue(new Error('Quality response failed'))
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      useProjectStore.setState({ client: client as any, connected: true, qualityPrompt: { id: 'qp1', question: 'Continue?' } })
+      useProjectStore.setState({
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        client: client as any,
+        connected: true,
+        qualityPrompt: { id: 'qp1', question: 'Continue?' },
+      })
 
       await useProjectStore.getState().respondToPrompt('qp1', false)
 
@@ -1440,8 +1449,12 @@ describe('projectStore', () => {
         if (method === 'queue.list') return Promise.resolve({ queue: [], count: 0 })
         return Promise.resolve({})
       })
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      useProjectStore.setState({ client: client as any, connected: true, taskQueue: [{ id: 'q1', source: 'x', title: 't', added_at: '2026', position: 0 }] })
+      useProjectStore.setState({
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        client: client as any,
+        connected: true,
+        taskQueue: [{ id: 'q1', source: 'x', title: 't', added_at: '2026', position: 0 }],
+      })
 
       await useProjectStore.getState().dequeueTask('q1')
 
@@ -2010,15 +2023,17 @@ describe('projectStore', () => {
     it('sets state and task from status response', async () => {
       const client = makeMockClient()
       client.call.mockImplementation((method: string) => {
-        if (method === 'status') return Promise.resolve({
-          state: 'planned',
-          path: '/proj',
-          task: { id: 't1', title: 'My Task', source: 'github:repo#1', branch: 'feature/t1', worktree_path: '/proj' },
-        })
-        if (method === 'checkpoints') return Promise.resolve({
-          checkpoints: [{ sha: 'abc', message: 'cp1', author: 'dev', timestamp: '2026-01-01' }],
-          redo_stack: [],
-        })
+        if (method === 'status')
+          return Promise.resolve({
+            state: 'planned',
+            path: '/proj',
+            task: { id: 't1', title: 'My Task', source: 'github:repo#1', branch: 'feature/t1', worktree_path: '/proj' },
+          })
+        if (method === 'checkpoints')
+          return Promise.resolve({
+            checkpoints: [{ sha: 'abc', message: 'cp1', author: 'dev', timestamp: '2026-01-01' }],
+            redo_stack: [],
+          })
         if (method === 'git.status') return Promise.resolve({ branch: 'feature/t1', has_changes: true, files: [] })
         if (method === 'review.list') return Promise.resolve({ reviews: [] })
         return Promise.resolve({})
@@ -2037,9 +2052,7 @@ describe('projectStore', () => {
         branch: 'feature/t1',
         worktreePath: '/proj',
       })
-      expect(useProjectStore.getState().checkpoints).toEqual([
-        { sha: 'abc', message: 'cp1', timestamp: '2026-01-01' },
-      ])
+      expect(useProjectStore.getState().checkpoints).toEqual([{ sha: 'abc', message: 'cp1', timestamp: '2026-01-01' }])
     })
 
     it('sets error on failure', async () => {
@@ -2105,7 +2118,7 @@ describe('projectStore', () => {
         callSequence.push(method)
         if (method === 'status') {
           // First call returns failed with implement error
-          if (callSequence.filter(m => m === 'status').length === 1) {
+          if (callSequence.filter((m) => m === 'status').length === 1) {
             return Promise.resolve({ state: 'failed', last_error: 'implement phase failed' })
           }
           // Subsequent calls (from refreshStatus) return implementing
@@ -2259,7 +2272,11 @@ describe('projectStore', () => {
 
       await useProjectStore.getState().quickStart('github:repo#1')
 
-      expect(client.call).toHaveBeenCalledWith('start', { source: 'github:repo#1', auto_advance: true, skip_phases: ['plan'] })
+      expect(client.call).toHaveBeenCalledWith('start', {
+        source: 'github:repo#1',
+        auto_advance: true,
+        skip_phases: ['plan'],
+      })
       expect(useProjectStore.getState().state).toBe('implementing')
       expect(useProjectStore.getState().loading).toBe(false)
     })
@@ -3329,7 +3346,11 @@ describe('projectStore', () => {
         data: { score: 0.65, factors: { complexity: 0.3 }, level: 'medium' },
         seq: 216,
       })
-      expect(useProjectStore.getState().riskScore).toEqual({ score: 0.65, factors: { complexity: 0.3 }, level: 'medium' })
+      expect(useProjectStore.getState().riskScore).toEqual({
+        score: 0.65,
+        factors: { complexity: 0.3 },
+        level: 'medium',
+      })
     })
 
     it('risk_evaluated sets riskScore from string data', async () => {

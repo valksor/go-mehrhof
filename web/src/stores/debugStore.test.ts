@@ -14,7 +14,10 @@ describe('debugStore', () => {
 
   it('setEnabled(true) enables and clears logs', () => {
     // Add a log first to verify clearing
-    useDebugStore.setState({ enabled: true, logs: [{ id: 1, timestamp: new Date(), direction: 'request' as const, data: '{}' }] })
+    useDebugStore.setState({
+      enabled: true,
+      logs: [{ id: 1, timestamp: new Date(), direction: 'request' as const, data: '{}' }],
+    })
     useDebugStore.getState().setEnabled(true)
     const { enabled, logs } = useDebugStore.getState()
     expect(enabled).toBe(true)
@@ -22,7 +25,10 @@ describe('debugStore', () => {
   })
 
   it('setEnabled(false) disables and clears logs', () => {
-    useDebugStore.setState({ enabled: true, logs: [{ id: 1, timestamp: new Date(), direction: 'request' as const, data: '{}' }] })
+    useDebugStore.setState({
+      enabled: true,
+      logs: [{ id: 1, timestamp: new Date(), direction: 'request' as const, data: '{}' }],
+    })
     useDebugStore.getState().setEnabled(false)
     const { enabled, logs } = useDebugStore.getState()
     expect(enabled).toBe(false)

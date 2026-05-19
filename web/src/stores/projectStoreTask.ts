@@ -85,7 +85,9 @@ export const createTaskSlice: StateCreator<ProjectState, [], [], TaskSlice> = (s
     get().appendOutput('Starting planning...')
 
     try {
-      const result = await client.call<{ status: string; state: TaskState; job_id?: string }>('plan', { dry_run: get().dryRunMode })
+      const result = await client.call<{ status: string; state: TaskState; job_id?: string }>('plan', {
+        dry_run: get().dryRunMode,
+      })
       set({ state: result.state, loading: false })
       get().appendOutput(`Planning job started: ${result.job_id || ''}`)
     } catch (err) {
@@ -101,7 +103,9 @@ export const createTaskSlice: StateCreator<ProjectState, [], [], TaskSlice> = (s
     get().appendOutput('Starting implementation...')
 
     try {
-      const result = await client.call<{ status: string; state: TaskState; job_id?: string }>('implement', { dry_run: get().dryRunMode })
+      const result = await client.call<{ status: string; state: TaskState; job_id?: string }>('implement', {
+        dry_run: get().dryRunMode,
+      })
       set({ state: result.state, loading: false })
       get().appendOutput(`Implementation job started: ${result.job_id || ''}`)
     } catch (err) {
@@ -117,7 +121,9 @@ export const createTaskSlice: StateCreator<ProjectState, [], [], TaskSlice> = (s
     get().appendOutput('Starting simplification...')
 
     try {
-      const result = await client.call<{ status: string; state: TaskState; job_id?: string }>('simplify', { dry_run: get().dryRunMode })
+      const result = await client.call<{ status: string; state: TaskState; job_id?: string }>('simplify', {
+        dry_run: get().dryRunMode,
+      })
       set({ state: result.state, loading: false })
       get().appendOutput(`Simplification job started: ${result.job_id || ''}`)
     } catch (err) {
@@ -133,7 +139,9 @@ export const createTaskSlice: StateCreator<ProjectState, [], [], TaskSlice> = (s
     get().appendOutput('Starting optimization...')
 
     try {
-      const result = await client.call<{ status: string; state: TaskState; job_id?: string }>('optimize', { dry_run: get().dryRunMode })
+      const result = await client.call<{ status: string; state: TaskState; job_id?: string }>('optimize', {
+        dry_run: get().dryRunMode,
+      })
       set({ state: result.state, loading: false })
       get().appendOutput(`Optimization job started: ${result.job_id || ''}`)
     } catch (err) {
@@ -153,7 +161,7 @@ export const createTaskSlice: StateCreator<ProjectState, [], [], TaskSlice> = (s
         approve: options?.approve ?? false,
         reject: options?.reject ?? false,
         message: options?.message,
-        fix: options?.fix ?? false
+        fix: options?.fix ?? false,
       })
       set({ state: result.state, loading: false })
       await get().loadReviews()
@@ -330,7 +338,7 @@ export const createTaskSlice: StateCreator<ProjectState, [], [], TaskSlice> = (s
       get().appendOutput(
         result.changed
           ? `Task updated from source${result.specification_generated ? ' — new specification generated' : ''}`
-          : 'Task is already up to date'
+          : 'Task is already up to date',
       )
       await get().refreshStatus()
       return result
@@ -350,7 +358,7 @@ export const createTaskSlice: StateCreator<ProjectState, [], [], TaskSlice> = (s
     try {
       const result = await client.call<FinishResult>('task.finish', {
         delete_remote: options?.delete_remote ?? false,
-        force: options?.force ?? false
+        force: options?.force ?? false,
       })
       set({ state: 'none', task: null, loading: false })
       get().appendOutput(`Finished! Switched to ${result.current_branch}`)
@@ -430,9 +438,9 @@ export const createTaskSlice: StateCreator<ProjectState, [], [], TaskSlice> = (s
     get().appendOutput(`Approving node: ${nodeId}...`)
     try {
       await client.call('approve.node', { node_id: nodeId })
-      set(s => ({
+      set((s) => ({
         loading: false,
-        pendingNodeApprovals: s.pendingNodeApprovals.filter(n => n.nodeId !== nodeId),
+        pendingNodeApprovals: s.pendingNodeApprovals.filter((n) => n.nodeId !== nodeId),
       }))
       get().appendOutput(`Node approved: ${nodeId}`)
     } catch (err) {
@@ -448,9 +456,9 @@ export const createTaskSlice: StateCreator<ProjectState, [], [], TaskSlice> = (s
     get().appendOutput(`Rejecting node: ${nodeId}...`)
     try {
       await client.call('approve.node', { node_id: nodeId, reject: true })
-      set(s => ({
+      set((s) => ({
         loading: false,
-        pendingNodeApprovals: s.pendingNodeApprovals.filter(n => n.nodeId !== nodeId),
+        pendingNodeApprovals: s.pendingNodeApprovals.filter((n) => n.nodeId !== nodeId),
       }))
       get().appendOutput(`Node rejected: ${nodeId}`)
     } catch (err) {
@@ -606,7 +614,10 @@ export const createTaskSlice: StateCreator<ProjectState, [], [], TaskSlice> = (s
     if (!client) return
 
     try {
-      const result = await client.call<{ score: number; factors: Record<string, number>; level: string }>('risk.evaluate', {})
+      const result = await client.call<{ score: number; factors: Record<string, number>; level: string }>(
+        'risk.evaluate',
+        {},
+      )
       set({ riskScore: result })
     } catch {
       // Risk evaluation may not be available

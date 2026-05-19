@@ -49,6 +49,6 @@ export const useViewModeStore = create<ViewModeState>()(
       onRehydrateStorage: () => () => {
         hydrated = true
       },
-    }
-  )
+    },
+  ),
 )

@@ -8,8 +8,8 @@ vi.mock('./globalStore', () => ({
   useGlobalStore: {
     getState: vi.fn().mockReturnValue({
       client: null,
-    })
-  }
+    }),
+  },
 }))
 
 // Mock projectStore to avoid real WebSocket connections
@@ -21,7 +21,7 @@ vi.mock('./projectStore', () => ({
       review: vi.fn(),
     }),
     subscribe: vi.fn().mockReturnValue(() => {}),
-  }
+  },
 }))
 
 // Helpers
@@ -43,11 +43,11 @@ const makeClient = (overrides: Record<string, ReturnType<typeof vi.fn>> = {}) =>
 })
 
 const setClient = (client: ReturnType<typeof makeClient> | null) => {
-  (mockGlobalStore.getState as ReturnType<typeof vi.fn>).mockReturnValue({ client })
+  ;(mockGlobalStore.getState as ReturnType<typeof vi.fn>).mockReturnValue({ client })
 }
 
 const setWorktreeId = (id: string | null) => {
-  (mockProjectStore.getState as ReturnType<typeof vi.fn>).mockReturnValue({
+  ;(mockProjectStore.getState as ReturnType<typeof vi.fn>).mockReturnValue({
     worktreeId: id,
     respondToPrompt: vi.fn(),
     review: vi.fn(),
@@ -202,7 +202,7 @@ describe('chatStore', () => {
         status: 'streaming',
       })
       useChatStore.getState().updateMessage(id, { content: 'updated content' })
-      const msg = useChatStore.getState().messages.find(m => m.id === id)
+      const msg = useChatStore.getState().messages.find((m) => m.id === id)
       expect(msg?.content).toBe('updated content')
     })
 
@@ -213,7 +213,7 @@ describe('chatStore', () => {
         status: 'streaming',
       })
       useChatStore.getState().updateMessage(id, { status: 'complete' })
-      const msg = useChatStore.getState().messages.find(m => m.id === id)
+      const msg = useChatStore.getState().messages.find((m) => m.id === id)
       expect(msg?.status).toBe('complete')
     })
 
@@ -221,7 +221,7 @@ describe('chatStore', () => {
       const id1 = useChatStore.getState().addMessage({ role: 'user', content: 'msg1', status: 'complete' })
       const id2 = useChatStore.getState().addMessage({ role: 'user', content: 'msg2', status: 'complete' })
       useChatStore.getState().updateMessage(id1, { content: 'changed' })
-      const msg2 = useChatStore.getState().messages.find(m => m.id === id2)
+      const msg2 = useChatStore.getState().messages.find((m) => m.id === id2)
       expect(msg2?.content).toBe('msg2')
     })
 
@@ -232,9 +232,9 @@ describe('chatStore', () => {
         status: 'complete',
       })
       useChatStore.getState().updateMessage(id, {
-        actions: [{ id: 'approve', label: 'Approve', type: 'approve' }]
+        actions: [{ id: 'approve', label: 'Approve', type: 'approve' }],
       })
-      const msg = useChatStore.getState().messages.find(m => m.id === id)
+      const msg = useChatStore.getState().messages.find((m) => m.id === id)
       expect(msg?.actions).toHaveLength(1)
       expect(msg?.actions?.[0].id).toBe('approve')
     })
@@ -247,7 +247,7 @@ describe('chatStore', () => {
         jobId: 'job-abc',
       })
       useChatStore.getState().updateMessage(id, { status: 'complete' })
-      const msg = useChatStore.getState().messages.find(m => m.id === id)
+      const msg = useChatStore.getState().messages.find((m) => m.id === id)
       expect(msg?.jobId).toBe('job-abc')
       expect(msg?.content).toBe('hello')
     })
@@ -261,7 +261,7 @@ describe('chatStore', () => {
         status: 'streaming',
       })
       useChatStore.getState().appendToMessage(id, ' world')
-      const msg = useChatStore.getState().messages.find(m => m.id === id)
+      const msg = useChatStore.getState().messages.find((m) => m.id === id)
       expect(msg?.content).toBe('Hello world')
     })
 
@@ -274,7 +274,7 @@ describe('chatStore', () => {
       useChatStore.getState().appendToMessage(id, 'B')
       useChatStore.getState().appendToMessage(id, 'C')
       useChatStore.getState().appendToMessage(id, 'D')
-      const msg = useChatStore.getState().messages.find(m => m.id === id)
+      const msg = useChatStore.getState().messages.find((m) => m.id === id)
       expect(msg?.content).toBe('ABCD')
     })
 
@@ -282,7 +282,7 @@ describe('chatStore', () => {
       const id1 = useChatStore.getState().addMessage({ role: 'user', content: 'msg1', status: 'complete' })
       const id2 = useChatStore.getState().addMessage({ role: 'assistant', content: 'reply', status: 'streaming' })
       useChatStore.getState().appendToMessage(id2, ' more')
-      const msg1 = useChatStore.getState().messages.find(m => m.id === id1)
+      const msg1 = useChatStore.getState().messages.find((m) => m.id === id1)
       expect(msg1?.content).toBe('msg1')
     })
   })
@@ -412,7 +412,7 @@ describe('chatStore', () => {
         ],
       })
       useChatStore.getState().handleAction(id, 'approve')
-      const msg = useChatStore.getState().messages.find(m => m.id === id)
+      const msg = useChatStore.getState().messages.find((m) => m.id === id)
       expect(msg?.actions).toBeUndefined()
     })
 
@@ -424,7 +424,7 @@ describe('chatStore', () => {
         actions: [{ id: 'approve', label: 'Approve', type: 'approve' }],
       })
       useChatStore.getState().handleAction(id, 'approve')
-      const systemMsg = useChatStore.getState().messages.find(m => m.role === 'system')
+      const systemMsg = useChatStore.getState().messages.find((m) => m.role === 'system')
       expect(systemMsg).toBeTruthy()
       expect(systemMsg?.content).toContain('Approve')
     })
@@ -601,7 +601,7 @@ describe('chatStore', () => {
       useChatStore.setState({ isDisabled: false })
 
       await useChatStore.getState().sendMessage('Hello server')
-      const userMsg = useChatStore.getState().messages.find(m => m.role === 'user')
+      const userMsg = useChatStore.getState().messages.find((m) => m.role === 'user')
       expect(userMsg?.content).toBe('Hello server')
     })
 
@@ -612,10 +612,7 @@ describe('chatStore', () => {
       useChatStore.setState({ isDisabled: false })
 
       await useChatStore.getState().sendMessage('  hello  ')
-      expect(client.call).toHaveBeenCalledWith(
-        'chat.send',
-        expect.objectContaining({ message: 'hello' })
-      )
+      expect(client.call).toHaveBeenCalledWith('chat.send', expect.objectContaining({ message: 'hello' }))
     })
 
     it('creates assistant streaming message after submit', async () => {
@@ -625,7 +622,7 @@ describe('chatStore', () => {
       useChatStore.setState({ isDisabled: false })
 
       await useChatStore.getState().sendMessage('test')
-      const assistantMsg = useChatStore.getState().messages.find(m => m.role === 'assistant')
+      const assistantMsg = useChatStore.getState().messages.find((m) => m.role === 'assistant')
       expect(assistantMsg).toBeTruthy()
       expect(assistantMsg?.status).toBe('streaming')
       expect(assistantMsg?.jobId).toBe('job-99')
@@ -684,7 +681,7 @@ describe('chatStore', () => {
       useChatStore.setState({ isDisabled: false })
 
       await useChatStore.getState().sendMessage('hi')
-      const errMsg = useChatStore.getState().messages.find(m => m.role === 'system' && m.status === 'error')
+      const errMsg = useChatStore.getState().messages.find((m) => m.role === 'system' && m.status === 'error')
       expect(errMsg?.content).toContain('boom')
     })
   })
@@ -710,7 +707,7 @@ describe('chatStore', () => {
       if (handlerRef.current) {
         handlerRef.current({ type: 'stream', job_id: 'job-stream', content: 'Hello' })
         handlerRef.current({ type: 'stream', job_id: 'job-stream', content: ' world' })
-        const assistantMsg = useChatStore.getState().messages.find(m => m.role === 'assistant')
+        const assistantMsg = useChatStore.getState().messages.find((m) => m.role === 'assistant')
         expect(assistantMsg?.content).toBe('Hello world')
       }
     })
@@ -730,7 +727,7 @@ describe('chatStore', () => {
 
       if (handlerRef.current) {
         handlerRef.current({ type: 'stream', job_id: 'job-other', content: 'should be ignored' })
-        const assistantMsg = useChatStore.getState().messages.find(m => m.role === 'assistant')
+        const assistantMsg = useChatStore.getState().messages.find((m) => m.role === 'assistant')
         expect(assistantMsg?.content).toBe('')
       }
     })
@@ -750,7 +747,7 @@ describe('chatStore', () => {
 
       if (handlerRef.current) {
         handlerRef.current({ type: 'job_completed', job_id: 'job-done', result: 'Final answer' })
-        const assistantMsg = useChatStore.getState().messages.find(m => m.role === 'assistant')
+        const assistantMsg = useChatStore.getState().messages.find((m) => m.role === 'assistant')
         expect(assistantMsg?.status).toBe('complete')
         expect(assistantMsg?.content).toBe('Final answer')
         expect(useChatStore.getState().isTyping).toBe(false)
@@ -773,10 +770,10 @@ describe('chatStore', () => {
 
       if (handlerRef.current) {
         handlerRef.current({ type: 'job_completed', job_id: 'job-done', result: 'Done' })
-        const assistantMsg = useChatStore.getState().messages.find(m => m.role === 'assistant')
+        const assistantMsg = useChatStore.getState().messages.find((m) => m.role === 'assistant')
         expect(assistantMsg?.actions).toHaveLength(2)
-        expect(assistantMsg?.actions?.map(a => a.id)).toContain('approve')
-        expect(assistantMsg?.actions?.map(a => a.id)).toContain('reject')
+        expect(assistantMsg?.actions?.map((a) => a.id)).toContain('approve')
+        expect(assistantMsg?.actions?.map((a) => a.id)).toContain('reject')
       }
     })
 
@@ -795,7 +792,7 @@ describe('chatStore', () => {
 
       if (handlerRef.current) {
         handlerRef.current({ type: 'job_failed', job_id: 'job-fail', error: 'out of memory' })
-        const assistantMsg = useChatStore.getState().messages.find(m => m.role === 'assistant')
+        const assistantMsg = useChatStore.getState().messages.find((m) => m.role === 'assistant')
         expect(assistantMsg?.status).toBe('error')
         expect(useChatStore.getState().error).toBe('out of memory')
         expect(useChatStore.getState().isTyping).toBe(false)
@@ -819,9 +816,9 @@ describe('chatStore', () => {
         handlerRef.current({
           type: 'subagent',
           job_id: 'job-sub',
-          subagent: { id: 'sa-1', type: 'search', description: 'find files', status: 'started' }
+          subagent: { id: 'sa-1', type: 'search', description: 'find files', status: 'started' },
         })
-        const subMsg = useChatStore.getState().messages.find(m => m.role === 'subagent')
+        const subMsg = useChatStore.getState().messages.find((m) => m.role === 'subagent')
         expect(subMsg).toBeTruthy()
         expect(subMsg?.subagent?.type).toBe('search')
         expect(subMsg?.subagent?.status).toBe('started')
@@ -846,9 +843,9 @@ describe('chatStore', () => {
         handlerRef.current({
           type: 'subagent',
           job_id: 'job-sub',
-          subagent: { id: 'sa-1', type: 'search', description: 'find files', status: 'completed', duration: 3000 }
+          subagent: { id: 'sa-1', type: 'search', description: 'find files', status: 'completed', duration: 3000 },
         })
-        const subMsg = useChatStore.getState().messages.find(m => m.role === 'subagent')
+        const subMsg = useChatStore.getState().messages.find((m) => m.role === 'subagent')
         expect(subMsg?.content).toContain('Completed search')
         expect(subMsg?.content).toContain('3s')
       }
@@ -871,9 +868,9 @@ describe('chatStore', () => {
         handlerRef.current({
           type: 'subagent',
           job_id: 'job-sub',
-          subagent: { id: 'sa-2', type: 'bash', description: 'run tests', status: 'failed', exit_reason: 'timeout' }
+          subagent: { id: 'sa-2', type: 'bash', description: 'run tests', status: 'failed', exit_reason: 'timeout' },
         })
-        const subMsg = useChatStore.getState().messages.find(m => m.role === 'subagent')
+        const subMsg = useChatStore.getState().messages.find((m) => m.role === 'subagent')
         expect(subMsg?.content).toContain('Failed bash')
         expect(subMsg?.content).toContain('timeout')
         expect(subMsg?.subagent?.exitReason).toBe('timeout')
@@ -897,9 +894,9 @@ describe('chatStore', () => {
         handlerRef.current({
           type: 'permission',
           job_id: 'job-perm',
-          permission_request: { id: 'req-1', tool: 'bash', danger_level: 'caution', danger_reason: 'executes shell' }
+          permission_request: { id: 'req-1', tool: 'bash', danger_level: 'caution', danger_reason: 'executes shell' },
         })
-        const permMsg = useChatStore.getState().messages.find(m => m.role === 'permission')
+        const permMsg = useChatStore.getState().messages.find((m) => m.role === 'permission')
         expect(permMsg).toBeTruthy()
         expect(permMsg?.permission?.tool).toBe('bash')
         expect(permMsg?.permission?.dangerLevel).toBe('caution')
@@ -925,9 +922,9 @@ describe('chatStore', () => {
         handlerRef.current({
           type: 'permission',
           job_id: 'job-safe',
-          permission_request: { id: 'req-2', tool: 'read_file' }
+          permission_request: { id: 'req-2', tool: 'read_file' },
         })
-        const permMsg = useChatStore.getState().messages.find(m => m.role === 'permission')
+        const permMsg = useChatStore.getState().messages.find((m) => m.role === 'permission')
         expect(permMsg?.permission?.dangerLevel).toBe('safe')
         expect(permMsg?.content).not.toContain('⚠️')
       }
@@ -948,7 +945,7 @@ describe('chatStore', () => {
 
       if (handlerRef.current) {
         handlerRef.current({ type: 'job_started', job_id: 'job-start', content: 'Processing your request' })
-        const assistantMsg = useChatStore.getState().messages.find(m => m.role === 'assistant')
+        const assistantMsg = useChatStore.getState().messages.find((m) => m.role === 'assistant')
         expect(assistantMsg?.content).toBe('Processing your request')
         expect(assistantMsg?.status).toBe('streaming')
       }

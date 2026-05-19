@@ -19,7 +19,7 @@ export interface UIChatMessage {
   timestamp: Date
   status: MessageStatus
   jobId?: string
-  mentions?: string[]  // File paths mentioned with @
+  mentions?: string[] // File paths mentioned with @
   actions?: Array<{
     id: string
     label: string
@@ -31,7 +31,7 @@ export interface UIChatMessage {
     type: string
     description: string
     status: SubagentStatus
-    duration?: number  // ms
+    duration?: number // ms
     exitReason?: string
   }
   // Permission info (when role='permission')
@@ -55,11 +55,11 @@ interface BackendMessage {
 
 // ChatEvent is a streaming event pushed by the server for chat jobs
 interface ChatEvent {
-  type: string        // job_started, stream, job_completed, job_failed, subagent, permission
-  job_id: string      // The job this event relates to
-  content?: string    // Streaming content or message
-  result?: string     // Final result on completion
-  error?: string      // Error message on failure
+  type: string // job_started, stream, job_completed, job_failed, subagent, permission
+  job_id: string // The job this event relates to
+  content?: string // Streaming content or message
+  result?: string // Final result on completion
+  error?: string // Error message on failure
   timestamp?: string
   // Subagent event fields
   subagent?: {
@@ -84,8 +84,8 @@ interface ChatState {
   isTyping: boolean
   error: string | null
   activeJobId: string | null
-  taskId: string | null      // Current task ID for chat persistence
-  isDisabled: boolean        // True when no active task
+  taskId: string | null // Current task ID for chat persistence
+  isDisabled: boolean // True when no active task
 
   // Actions
   sendMessage: (content: string, worktreeId?: string) => Promise<void>
@@ -114,7 +114,7 @@ const convertMessage = (msg: BackendMessage): UIChatMessage => ({
   timestamp: msg.timestamp ? new Date(msg.timestamp) : new Date(),
   status: 'complete',
   mentions: msg.mentions,
-  jobId: msg.job_id
+  jobId: msg.job_id,
 })
 
 export const useChatStore = create<ChatState>((set, get) => ({
@@ -123,7 +123,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
   error: null,
   activeJobId: null,
   taskId: null,
-  isDisabled: true,  // Disabled by default until task is loaded
+  isDisabled: true, // Disabled by default until task is loaded
 
   loadHistory: async (worktreeId: string) => {
     const client = useGlobalStore.getState().client
@@ -131,7 +131,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
 
     try {
       const result = await client.call<{ messages: BackendMessage[]; task_id: string }>('chat.history', {
-        worktree_id: worktreeId
+        worktree_id: worktreeId,
       })
 
       const messages = (result.messages || []).map(convertMessage)
@@ -139,7 +139,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
         messages,
         taskId: result.task_id,
         isDisabled: false,
-        error: null
+        error: null,
       })
     } catch (err) {
       // If error is "no active task", disable chat
@@ -149,7 +149,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
           messages: [],
           taskId: null,
           isDisabled: true,
-          error: null
+          error: null,
         })
       } else {
         set({ error: errorMsg })
@@ -161,7 +161,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
     set({
       taskId,
       isDisabled: !taskId,
-      messages: taskId ? get().messages : []
+      messages: taskId ? get().messages : [],
     })
   },
 
@@ -184,7 +184,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
     get().addMessage({
       role: 'user',
       content: content.trim(),
-      status: 'complete'
+      status: 'complete',
     })
 
     // Abort any previous operation before starting a new one
@@ -198,7 +198,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
       // Submit chat to backend
       const result = await client.call<{ job_id: string; status: string }>('chat.send', {
         message: content.trim(),
-        worktree_id: worktreeId
+        worktree_id: worktreeId,
       })
 
       const jobId = result.job_id
@@ -209,7 +209,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
         role: 'assistant',
         content: '',
         status: 'streaming',
-        jobId
+        jobId,
       })
 
       // Subscribe to streaming events from the server
@@ -233,7 +233,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
           case 'job_started':
             get().updateMessage(assistantMsgId, {
               content: event.content || 'Processing...',
-              status: 'streaming'
+              status: 'streaming',
             })
             break
 
@@ -245,12 +245,13 @@ export const useChatStore = create<ChatState>((set, get) => ({
 
           case 'job_completed':
             get().updateMessage(assistantMsgId, {
-              content: event.result || get().messages.find(m => m.id === assistantMsgId)?.content || 'Task completed.',
+              content:
+                event.result || get().messages.find((m) => m.id === assistantMsgId)?.content || 'Task completed.',
               status: 'complete',
               actions: [
                 { id: 'approve', label: 'Approve', type: 'approve' },
-                { id: 'reject', label: 'Reject', type: 'reject' }
-              ]
+                { id: 'reject', label: 'Reject', type: 'reject' },
+              ],
             })
             set({ isTyping: false, activeJobId: null })
             if (activeAbort === abort) activeAbort = null
@@ -260,7 +261,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
           case 'job_failed':
             get().updateMessage(assistantMsgId, {
               content: event.error || 'Job failed',
-              status: 'error'
+              status: 'error',
             })
             set({ isTyping: false, activeJobId: null, error: event.error || 'Job failed' })
             if (activeAbort === abort) activeAbort = null
@@ -271,11 +272,12 @@ export const useChatStore = create<ChatState>((set, get) => ({
             // Add a subagent status message to chat
             if (event.subagent) {
               const subagent = event.subagent
-              const statusText = subagent.status === 'started'
-                ? `Starting ${subagent.type}: "${subagent.description}"`
-                : subagent.status === 'completed'
-                ? `Completed ${subagent.type}: "${subagent.description}" (${(subagent.duration || 0) / 1000}s)`
-                : `Failed ${subagent.type}: "${subagent.description}" - ${subagent.exit_reason || 'unknown error'}`
+              const statusText =
+                subagent.status === 'started'
+                  ? `Starting ${subagent.type}: "${subagent.description}"`
+                  : subagent.status === 'completed'
+                    ? `Completed ${subagent.type}: "${subagent.description}" (${(subagent.duration || 0) / 1000}s)`
+                    : `Failed ${subagent.type}: "${subagent.description}" - ${subagent.exit_reason || 'unknown error'}`
 
               get().addMessage({
                 role: 'subagent',
@@ -288,8 +290,8 @@ export const useChatStore = create<ChatState>((set, get) => ({
                   description: subagent.description,
                   status: subagent.status,
                   duration: subagent.duration,
-                  exitReason: subagent.exit_reason
-                }
+                  exitReason: subagent.exit_reason,
+                },
               })
             }
             break
@@ -313,14 +315,13 @@ export const useChatStore = create<ChatState>((set, get) => ({
                   requestId: perm.id,
                   tool: perm.tool,
                   dangerLevel,
-                  dangerReason: perm.danger_reason
-                }
+                  dangerReason: perm.danger_reason,
+                },
               })
             }
             break
         }
       })
-
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : 'Failed to send message'
 
@@ -330,20 +331,20 @@ export const useChatStore = create<ChatState>((set, get) => ({
           isTyping: false,
           isDisabled: true,
           error: 'No active task. Start a task first.',
-          activeJobId: null
+          activeJobId: null,
         })
       } else {
         set({
           isTyping: false,
           error: errorMsg,
-          activeJobId: null
+          activeJobId: null,
         })
       }
 
       get().addMessage({
         role: 'system',
         content: `Error: ${errorMsg}`,
-        status: 'error'
+        status: 'error',
       })
     }
   },
@@ -353,27 +354,23 @@ export const useChatStore = create<ChatState>((set, get) => ({
     const newMessage: UIChatMessage = {
       ...message,
       id,
-      timestamp: new Date()
+      timestamp: new Date(),
     }
-    set(state => ({
-      messages: [...state.messages, newMessage]
+    set((state) => ({
+      messages: [...state.messages, newMessage],
     }))
     return id
   },
 
   updateMessage: (id, updates) => {
-    set(state => ({
-      messages: state.messages.map(msg =>
-        msg.id === id ? { ...msg, ...updates } : msg
-      )
+    set((state) => ({
+      messages: state.messages.map((msg) => (msg.id === id ? { ...msg, ...updates } : msg)),
     }))
   },
 
   appendToMessage: (id, content) => {
-    set(state => ({
-      messages: state.messages.map(msg =>
-        msg.id === id ? { ...msg, content: msg.content + content } : msg
-      )
+    set((state) => ({
+      messages: state.messages.map((msg) => (msg.id === id ? { ...msg, content: msg.content + content } : msg)),
     }))
   },
 
@@ -400,67 +397,67 @@ export const useChatStore = create<ChatState>((set, get) => ({
 
   handleAction: (messageId, actionId) => {
     void (async () => {
-    const message = get().messages.find(m => m.id === messageId)
-    if (!message) return
+      const message = get().messages.find((m) => m.id === messageId)
+      if (!message) return
 
-    const action = message.actions?.find(a => a.id === actionId)
-    if (!action) return
+      const action = message.actions?.find((a) => a.id === actionId)
+      if (!action) return
 
-    // Remove actions immediately so buttons disappear
-    get().updateMessage(messageId, { actions: undefined })
+      // Remove actions immediately so buttons disappear
+      get().updateMessage(messageId, { actions: undefined })
 
-    // Quality gate response: actionId is "quality:<promptId>:yes|no"
-    if (actionId.startsWith('quality:')) {
-      const parts = actionId.split(':')
-      if (parts.length === 3) {
-        const promptId = parts[1]
-        const answer = parts[2] === 'yes'
-        get().addMessage({
-          role: 'system',
-          content: `Quality gate: ${answer ? 'Yes, proceed' : 'No, skip'}`,
-          status: 'complete'
-        })
-        await useProjectStore.getState().respondToPrompt(promptId, answer)
+      // Quality gate response: actionId is "quality:<promptId>:yes|no"
+      if (actionId.startsWith('quality:')) {
+        const parts = actionId.split(':')
+        if (parts.length === 3) {
+          const promptId = parts[1]
+          const answer = parts[2] === 'yes'
+          get().addMessage({
+            role: 'system',
+            content: `Quality gate: ${answer ? 'Yes, proceed' : 'No, skip'}`,
+            status: 'complete',
+          })
+          await useProjectStore.getState().respondToPrompt(promptId, answer)
+        }
+        return
       }
-      return
-    }
 
-    // Workflow action buttons (from state-transition messages)
-    if (actionId.startsWith('workflow:')) {
-      const ps = useProjectStore.getState()
-      switch (actionId) {
-        case 'workflow:refresh':
-          await ps.refresh()
-          break
-        case 'workflow:approve':
-          await ps.approveRemote()
-          break
-        case 'workflow:merge':
-          await ps.mergeRemote('rebase')
-          break
-        case 'workflow:finish':
-          await ps.finish()
-          break
-        case 'workflow:undo':
-          await ps.undo()
-          break
+      // Workflow action buttons (from state-transition messages)
+      if (actionId.startsWith('workflow:')) {
+        const ps = useProjectStore.getState()
+        switch (actionId) {
+          case 'workflow:refresh':
+            await ps.refresh()
+            break
+          case 'workflow:approve':
+            await ps.approveRemote()
+            break
+          case 'workflow:merge':
+            await ps.mergeRemote('rebase')
+            break
+          case 'workflow:finish':
+            await ps.finish()
+            break
+          case 'workflow:undo':
+            await ps.undo()
+            break
+        }
+        return
       }
-      return
-    }
 
-    // Add system message confirming the action
-    get().addMessage({
-      role: 'system',
-      content: `Action "${action.label}" ${action.type === 'approve' ? 'approved' : action.type === 'reject' ? 'rejected' : 'executed'}.`,
-      status: 'complete'
-    })
+      // Add system message confirming the action
+      get().addMessage({
+        role: 'system',
+        content: `Action "${action.label}" ${action.type === 'approve' ? 'approved' : action.type === 'reject' ? 'rejected' : 'executed'}.`,
+        status: 'complete',
+      })
 
-    // Send approve/reject to the review socket
-    if (action.type === 'approve') {
-      await useProjectStore.getState().review({ approve: true })
-    } else if (action.type === 'reject') {
-      await useProjectStore.getState().review({ reject: true })
-    }
+      // Send approve/reject to the review socket
+      if (action.type === 'approve') {
+        await useProjectStore.getState().review({ approve: true })
+      } else if (action.type === 'reject') {
+        await useProjectStore.getState().review({ reject: true })
+      }
     })()
   },
 
@@ -478,7 +475,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
       }
     }
     set({ isTyping: false, activeJobId: null })
-  }
+  },
 }))
 
 // Subscribe to project state changes to load chat history, surface quality prompts,
@@ -497,7 +494,7 @@ useProjectStore.subscribe((state) => {
         messages: [],
         taskId: null,
         isDisabled: true,
-        error: null
+        error: null,
       })
     }
   }
@@ -513,8 +510,8 @@ useProjectStore.subscribe((state) => {
       status: 'complete',
       actions: [
         { id: `quality:${qp.id}:yes`, label: 'Yes, proceed', type: 'custom' },
-        { id: `quality:${qp.id}:no`, label: 'No, skip', type: 'custom' }
-      ]
+        { id: `quality:${qp.id}:no`, label: 'No, skip', type: 'custom' },
+      ],
     })
   }
   if (newId === null) {
@@ -536,7 +533,7 @@ useProjectStore.subscribe((state) => {
           { id: 'workflow:approve', label: 'Approve', type: 'approve' },
           { id: 'workflow:merge', label: 'Merge', type: 'custom' },
           { id: 'workflow:finish', label: 'Finish', type: 'custom' },
-        ]
+        ],
       })
       // Store msgId for action handling (handled via handleAction)
       void msgId
@@ -547,9 +544,7 @@ useProjectStore.subscribe((state) => {
         role: 'system',
         content: `Action failed: ${state.error}`,
         status: 'error',
-        actions: [
-          { id: 'workflow:undo', label: 'Undo', type: 'custom' },
-        ]
+        actions: [{ id: 'workflow:undo', label: 'Undo', type: 'custom' }],
       })
     }
 
