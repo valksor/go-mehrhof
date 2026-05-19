@@ -26,7 +26,7 @@ var showSpecCmd = &cobra.Command{
 }
 
 var showPlanCmd = &cobra.Command{
-	Use:   "plan",
+	Use:   phasePlan,
 	Short: "Show the plan for the current task",
 	Long:  "Plans are stored as specification files. This is an alias for 'show spec'.",
 	RunE:  runShowPlan,

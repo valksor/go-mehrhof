@@ -125,7 +125,7 @@ func runServe(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		// Another instance has the lock — check if it's an older version
 		if err := replaceOlderSocket(ctx, globalPath); err != nil {
-			slog.Debug("version check on running socket", "error", err)
+			slog.Debug("version check on running socket", statusError, err)
 		}
 
 		// Re-try lock after potential replacement
@@ -146,16 +146,16 @@ func runServe(cmd *cobra.Command, args []string) error {
 		// Use KvelmoPermissionHandler to allow Write/Edit/Bash for planning/implementation.
 		registry := agent.NewRegistry()
 		if err := claude.RegisterWithPermissionHandler(registry, agent.KvelmoPermissionHandler); err != nil {
-			slog.Debug("claude agent not available", "error", err)
+			slog.Debug("claude agent not available", statusError, err)
 		}
 		// claude-sdk is registered but broken on the official Anthropic CLI
 		// (--sdk-url is rejected). Retained for proxy setups that accept the
 		// flag (Claude Code Router and similar). See agent/claudesdk/.
 		if err := claudesdk.RegisterWithPermissionHandler(registry, agent.KvelmoPermissionHandler); err != nil {
-			slog.Debug("claude-sdk agent not available", "error", err)
+			slog.Debug("claude-sdk agent not available", statusError, err)
 		}
 		if err := codex.RegisterWithPermissionHandler(registry, agent.KvelmoPermissionHandler); err != nil {
-			slog.Debug("codex agent not available", "error", err)
+			slog.Debug("codex agent not available", statusError, err)
 		}
 
 		// Apply agent.default from settings
@@ -165,7 +165,7 @@ func runServe(cmd *cobra.Command, args []string) error {
 		// not just in start.go, or `agent.default: claude-mcp` fails to
 		// resolve when the worker pool is built from this entry point.
 		if err := registerClaudeMCP(registry, effective); err != nil {
-			slog.Debug("claude-mcp agent not available", "error", err)
+			slog.Debug("claude-mcp agent not available", statusError, err)
 		}
 
 		// Register API-based agents from settings
@@ -177,26 +177,26 @@ func runServe(cmd *cobra.Command, args []string) error {
 			if err := registry.Register(openai.New(
 				openai.Config{APIKey: cfg.APIKey, BaseURL: cfg.BaseURL, Model: cfg.Model}, apiCfg,
 			)); err != nil {
-				slog.Debug("openai agent registration failed", "error", err)
+				slog.Debug("openai agent registration failed", statusError, err)
 			}
 
 			acfg := effective.Agent.Anthropic
 			if err := registry.Register(anthropic.New(
 				anthropic.Config{APIKey: acfg.APIKey, BaseURL: acfg.BaseURL, Model: acfg.Model}, apiCfg,
 			)); err != nil {
-				slog.Debug("anthropic agent registration failed", "error", err)
+				slog.Debug("anthropic agent registration failed", statusError, err)
 			}
 
 			ocfg := effective.Agent.Ollama
 			if err := registry.Register(ollama.New(
 				ollama.Config{BaseURL: ocfg.BaseURL, Model: ocfg.Model}, apiCfg,
 			)); err != nil {
-				slog.Debug("ollama agent registration failed", "error", err)
+				slog.Debug("ollama agent registration failed", statusError, err)
 			}
 		}
 		if effective != nil && effective.Agent.Default != "" {
 			if setErr := registry.SetDefault(effective.Agent.Default); setErr != nil {
-				slog.Warn("agent.default setting invalid", "agent", effective.Agent.Default, "error", setErr)
+				slog.Warn("agent.default setting invalid", "agent", effective.Agent.Default, statusError, setErr)
 			}
 		}
 
@@ -251,7 +251,7 @@ func runServe(cmd *cobra.Command, args []string) error {
 			slog.Info("adding agent worker", "agent", defaultAgent, "registered", registry.List())
 			_, err := pool.AddAgentWorker(ctx, defaultAgent, true)
 			if err != nil {
-				slog.Error("failed to add agent worker", "agent", defaultAgent, "error", err)
+				slog.Error("failed to add agent worker", "agent", defaultAgent, statusError, err)
 				fmt.Printf("Warning: Failed to add agent worker: %v\n", err)
 				fmt.Println("Jobs will run in simulation mode until a worker is connected.")
 				_ = pool.AddDefaultWorker("")

@@ -13,7 +13,7 @@ import (
 )
 
 var SubmitCmd = &cobra.Command{
-	Use:     "submit",
+	Use:     phaseSubmit,
 	Aliases: []string{"sub"},
 	Short:   "Submit the current task (push changes, create PR)",
 	Long: `Pushes the current branch and creates a pull request (or equivalent)
@@ -77,7 +77,7 @@ func runSubmit(cmd *cobra.Command, args []string) error {
 		"labels":        labels,
 		"delete_branch": deleteBranch,
 		"skip_review":   skipReview,
-		"dry_run":       dryRun,
+		paramDryRun:     dryRun,
 	}
 	if len(sections) > 0 {
 		params["sections"] = sections
@@ -87,7 +87,7 @@ func runSubmit(cmd *cobra.Command, args []string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 120*time.Second)
 	defer cancel()
 
-	resp, err := client.Call(ctx, "submit", params)
+	resp, err := client.Call(ctx, phaseSubmit, params)
 	if err != nil {
 		return fmt.Errorf("submit: %w", err)
 	}

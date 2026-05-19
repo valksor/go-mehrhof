@@ -215,14 +215,14 @@ func runInBackground(cwd, wtPath string) error {
 			client, err := socket.NewClient(wtPath, socket.WithTimeout(1*time.Second))
 			if err == nil {
 				ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
-				resp, err := client.Call(ctx, "status", nil)
+				resp, err := client.Call(ctx, subStatus, nil)
 				cancel()
 				_ = client.Close()
 				if err == nil {
 					var status struct {
 						State string `json:"state"`
 					}
-					if json.Unmarshal(resp.Result, &status) == nil && status.State != "none" {
+					if json.Unmarshal(resp.Result, &status) == nil && status.State != stateNone {
 						break
 					}
 				}
@@ -236,7 +236,7 @@ func runInBackground(cwd, wtPath string) error {
 
 	if startJSON {
 		result := map[string]string{
-			"status":  "ready",
+			subStatus: "ready",
 			"socket":  wtPath,
 			"workdir": cwd,
 		}
@@ -266,7 +266,7 @@ func runInForeground(cwd, globalPath, wtPath string) error {
 		go func() {
 			slog.Info("pprof listening", "addr", addr)
 			if err := http.ListenAndServe(addr, nil); err != nil { //nolint:gosec // opt-in profiling endpoint
-				slog.Warn("pprof server exited", "error", err)
+				slog.Warn("pprof server exited", statusError, err)
 			}
 		}()
 	}
@@ -307,23 +307,23 @@ func runInForeground(cwd, globalPath, wtPath string) error {
 	// Use KvelmoPermissionHandler to allow Write/Edit/Bash for planning/implementation
 	registry := agent.NewRegistry()
 	if err := claude.RegisterWithPermissionHandler(registry, agent.KvelmoPermissionHandler); err != nil {
-		slog.Debug("claude agent not available", "error", err)
+		slog.Debug("claude agent not available", statusError, err)
 	}
 	// claude-sdk is registered but broken on the official Anthropic CLI
 	// (--sdk-url is rejected). Retained for proxy setups that accept the
 	// flag (Claude Code Router and similar). See agent/claudesdk/.
 	if err := claudesdk.RegisterWithPermissionHandler(registry, agent.KvelmoPermissionHandler); err != nil {
-		slog.Debug("claude-sdk agent not available", "error", err)
+		slog.Debug("claude-sdk agent not available", statusError, err)
 	}
 	if err := codex.RegisterWithPermissionHandler(registry, agent.KvelmoPermissionHandler); err != nil {
-		slog.Debug("codex agent not available", "error", err)
+		slog.Debug("codex agent not available", statusError, err)
 	}
 	// Load settings and register API agents
 	effective, _, _, _ := settings.LoadEffective(cwd) //nolint:dogsled // Only need effective settings
 
 	// Register the claude-mcp adapter with user settings applied.
 	if err := registerClaudeMCP(registry, effective); err != nil {
-		slog.Debug("claude-mcp agent not available", "error", err)
+		slog.Debug("claude-mcp agent not available", statusError, err)
 	}
 
 	if effective != nil {
@@ -334,26 +334,26 @@ func runInForeground(cwd, globalPath, wtPath string) error {
 		if err := registry.Register(openai.New(
 			openai.Config{APIKey: cfg.APIKey, BaseURL: cfg.BaseURL, Model: cfg.Model}, apiCfg,
 		)); err != nil {
-			slog.Debug("openai agent registration failed", "error", err)
+			slog.Debug("openai agent registration failed", statusError, err)
 		}
 
 		acfg := effective.Agent.Anthropic
 		if err := registry.Register(anthropic.New(
 			anthropic.Config{APIKey: acfg.APIKey, BaseURL: acfg.BaseURL, Model: acfg.Model}, apiCfg,
 		)); err != nil {
-			slog.Debug("anthropic agent registration failed", "error", err)
+			slog.Debug("anthropic agent registration failed", statusError, err)
 		}
 
 		ocfg := effective.Agent.Ollama
 		if err := registry.Register(ollama.New(
 			ollama.Config{BaseURL: ocfg.BaseURL, Model: ocfg.Model}, apiCfg,
 		)); err != nil {
-			slog.Debug("ollama agent registration failed", "error", err)
+			slog.Debug("ollama agent registration failed", statusError, err)
 		}
 	}
 	if effective != nil && effective.Agent.Default != "" {
 		if setErr := registry.SetDefault(effective.Agent.Default); setErr != nil {
-			slog.Warn("agent.default setting invalid", "agent", effective.Agent.Default, "error", setErr)
+			slog.Warn("agent.default setting invalid", "agent", effective.Agent.Default, statusError, setErr)
 		}
 	}
 
@@ -463,7 +463,7 @@ func loadTaskViaRPC(socketPath, source string) error {
 	defer func() { _ = client.Close() }()
 
 	params := map[string]any{
-		"source":       source,
+		paramSource:    source,
 		"auto_advance": startAuto,
 	}
 	if len(startSkip) > 0 {

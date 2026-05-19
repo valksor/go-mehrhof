@@ -14,7 +14,7 @@ import (
 )
 
 var SimplifyCmd = &cobra.Command{
-	Use:     "simplify",
+	Use:     phaseSimplify,
 	Aliases: []string{"simp"},
 	Short:   "Run optional simplification pass on implemented code",
 	Long: `Run an optional simplification pass on the implemented code.
@@ -67,10 +67,10 @@ func runSimplify(cmd *cobra.Command, args []string) error {
 
 	var params map[string]any
 	if simplifyDryRun {
-		params = map[string]any{"dry_run": true}
+		params = map[string]any{paramDryRun: true}
 	}
 
-	resp, err := client.Call(ctx, "simplify", params)
+	resp, err := client.Call(ctx, phaseSimplify, params)
 	if err != nil {
 		return fmt.Errorf("simplify call: %w", err)
 	}

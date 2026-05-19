@@ -42,7 +42,7 @@ var tagRemoveCmd = &cobra.Command{
 }
 
 var tagListCmd = &cobra.Command{
-	Use:   "list",
+	Use:   subList,
 	Short: "List tags on the current task",
 	RunE:  runTagList,
 }
@@ -59,8 +59,8 @@ func init() {
 
 func runTagAdd(_ *cobra.Command, args []string) error {
 	resp, err := callWorktree(context.Background(), "task.tag", map[string]any{
-		"action": "add",
-		"tags":   args,
+		paramAction: "add",
+		"tags":      args,
 	})
 	if err != nil {
 		return fmt.Errorf("task.tag: %w", err)
@@ -76,8 +76,8 @@ func runTagAdd(_ *cobra.Command, args []string) error {
 
 func runTagRemove(_ *cobra.Command, args []string) error {
 	resp, err := callWorktree(context.Background(), "task.tag", map[string]any{
-		"action": "remove",
-		"tags":   []string{args[0]},
+		paramAction: "remove",
+		"tags":      []string{args[0]},
 	})
 	if err != nil {
 		return fmt.Errorf("task.tag: %w", err)
@@ -93,7 +93,7 @@ func runTagRemove(_ *cobra.Command, args []string) error {
 
 func runTagList(_ *cobra.Command, _ []string) error {
 	resp, err := callWorktree(context.Background(), "task.tag", map[string]any{
-		"action": "list",
+		paramAction: subList,
 	})
 	if err != nil {
 		return fmt.Errorf("task.tag: %w", err)
@@ -137,7 +137,7 @@ func completeExistingTags() ([]string, cobra.ShellCompDirective) {
 	defer cancel()
 
 	resp, err := client.Call(ctx, "task.tag", map[string]any{
-		"action": "list",
+		paramAction: subList,
 	})
 	if err != nil || resp.Error != nil {
 		return nil, cobra.ShellCompDirectiveNoFileComp

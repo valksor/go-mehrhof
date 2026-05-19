@@ -25,7 +25,7 @@ var (
 )
 
 var StatusCmd = &cobra.Command{
-	Use:     "status",
+	Use:     subStatus,
 	Aliases: []string{"st"},
 	Short:   "Show current task state",
 	Long:    "Connect to the worktree socket and display the current task state.",
@@ -75,7 +75,7 @@ func runStatus(cmd *cobra.Command, args []string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), statusTimeout)
 	defer cancel()
 
-	resp, err := client.Call(ctx, "status", nil)
+	resp, err := client.Call(ctx, subStatus, nil)
 	if err != nil {
 		return fmt.Errorf("status call: %w", err)
 	}
@@ -193,10 +193,10 @@ func showAllStatus() error {
 	// Filter tasks based on flags
 	active := make([]socket.TaskListSummary, 0, len(result.Tasks))
 	for _, t := range result.Tasks {
-		if !statusVerbose && (t.State == "" || t.State == "none") {
+		if !statusVerbose && (t.State == "" || t.State == stateNone) {
 			continue
 		}
-		if statusFailed && t.State != "failed" {
+		if statusFailed && t.State != stateFailed {
 			continue
 		}
 		if statusBlocked && !isBlockedTask(t) {
@@ -248,7 +248,7 @@ func showAllStatus() error {
 
 // isBlockedTask returns true if the task needs user attention.
 func isBlockedTask(t socket.TaskListSummary) bool {
-	if t.State == "failed" {
+	if t.State == stateFailed {
 		return true
 	}
 	if t.PendingPromptID != "" {
@@ -263,7 +263,7 @@ func isBlockedTask(t socket.TaskListSummary) bool {
 
 // statusFlag returns a short indicator for task health.
 func statusFlag(t socket.TaskListSummary) string {
-	if t.State == "failed" {
+	if t.State == stateFailed {
 		return "FAIL"
 	}
 	if t.PendingPromptID != "" {

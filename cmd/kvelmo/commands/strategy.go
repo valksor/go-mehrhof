@@ -21,7 +21,7 @@ var StrategyCmd = &cobra.Command{
 }
 
 var strategyListCmd = &cobra.Command{
-	Use:   "list",
+	Use:   subList,
 	Short: "List available agent reasoning strategies",
 	RunE:  runStrategyList,
 }

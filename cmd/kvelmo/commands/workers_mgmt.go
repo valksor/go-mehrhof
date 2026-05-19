@@ -28,7 +28,7 @@ var workersRemoveCmd = &cobra.Command{
 }
 
 var workersStatsCmd = &cobra.Command{
-	Use:   "stats",
+	Use:   subStats,
 	Short: "Show worker pool statistics",
 	Long:  `Show detailed statistics about the worker pool.`,
 	RunE:  runWorkersStats,

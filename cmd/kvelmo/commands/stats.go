@@ -20,7 +20,7 @@ var (
 )
 
 var StatsCmd = &cobra.Command{
-	Use:   "stats",
+	Use:   subStats,
 	Short: "Show task analytics for the current project",
 	Long:  "Display completion stats, success rate, and recent task history from the archive.",
 	RunE:  runStats,
@@ -223,7 +223,7 @@ func computeStats(tasks []storage.ArchivedTask) statsOutput {
 		}
 	}
 
-	finished := out.ByState["finished"] + out.ByState["submitted"]
+	finished := out.ByState["finished"] + out.ByState[stateSubmitted]
 	if out.Total > 0 {
 		out.SuccessRate = math.Round(float64(finished)/float64(out.Total)*1000) / 10
 	}

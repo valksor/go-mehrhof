@@ -14,6 +14,7 @@ import (
 	"github.com/valksor/kvelmo/internal/cli"
 	"github.com/valksor/kvelmo/internal/conductor"
 	"github.com/valksor/kvelmo/internal/socket"
+	"github.com/valksor/kvelmo/internal/worker"
 )
 
 // waitForJob connects to the worktree socket, subscribes to the event stream,
@@ -92,16 +93,16 @@ func waitForJob(socketPath, jobID string) error {
 			fmt.Print(event.Message)
 		case "state_changed":
 			fmt.Printf("\n[State] %s\n", event.Message)
-		case "job_completed":
+		case worker.EventJobCompleted:
 			fmt.Fprint(os.Stderr, "\a") // Terminal bell on completion
 
 			return nil
-		case "job_failed":
+		case worker.EventJobFailed:
 			fmt.Fprint(os.Stderr, "\a") // Terminal bell on failure
 			_, _ = cli.Red.Fprintf(os.Stderr, "\n[Failed] %s\n", event.Error)
 
 			return fmt.Errorf("job failed: %s", event.Error)
-		case "error":
+		case statusError:
 			_, _ = cli.Red.Fprintf(os.Stderr, "\n[Error] %s\n", event.Error)
 			if event.Message != "" {
 				fmt.Fprintf(os.Stderr, "  %s\n", event.Message)

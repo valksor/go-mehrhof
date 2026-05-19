@@ -131,7 +131,7 @@ func replaceOlderSocket(ctx context.Context, globalPath string) error {
 	}
 	if resp.Result != nil {
 		if err := json.Unmarshal(resp.Result, &info); err != nil {
-			slog.Debug("failed to parse ping response, skipping replacement", "error", err)
+			slog.Debug("failed to parse ping response, skipping replacement", statusError, err)
 
 			return nil
 		}

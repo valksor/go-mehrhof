@@ -13,6 +13,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/valksor/kvelmo/internal/conductor"
 	"github.com/valksor/kvelmo/internal/socket"
+	"github.com/valksor/kvelmo/internal/worker"
 	"github.com/valksor/kvelmo/meta"
 )
 
@@ -138,11 +139,11 @@ func runWatch(cmd *cobra.Command, args []string) error {
 				if event.Message != "" {
 					fmt.Printf("\r  ▸ %s", event.Message)
 				}
-			case "job_failed":
+			case worker.EventJobFailed:
 				fmt.Fprintf(os.Stderr, "\n\033[31m[Failed] %s\033[0m\n", event.Error)
 
 				return fmt.Errorf("job failed: %s", event.Error)
-			case "error":
+			case statusError:
 				fmt.Fprintf(os.Stderr, "\n\033[31m[Error] %s\033[0m\n", event.Error)
 			case "node_approval_required":
 				fmt.Printf("\n⏸ Approval required: %s\n", event.Message)
@@ -159,11 +160,11 @@ func runWatch(cmd *cobra.Command, args []string) error {
 			fmt.Print(event.Message)
 		case "state_changed":
 			fmt.Printf("\n[State] %s\n", event.Message)
-		case "job_failed":
+		case worker.EventJobFailed:
 			fmt.Fprintf(os.Stderr, "\n\033[31m[Failed] %s\033[0m\n", event.Error)
 
 			return fmt.Errorf("job failed: %s", event.Error)
-		case "error":
+		case statusError:
 			fmt.Fprintf(os.Stderr, "\n\033[31m[Error] %s\033[0m\n", event.Error)
 			if event.Message != "" {
 				fmt.Fprintf(os.Stderr, "  %s\n", event.Message)
