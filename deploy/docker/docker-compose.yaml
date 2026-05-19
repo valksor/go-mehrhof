@@ -1,6 +1,8 @@
 services:
   kvelmo:
-    build: .
+    build:
+      context: ../..
+      dockerfile: deploy/docker/Dockerfile
     command: ["serve", "--port", "6337", "--log-format", "json"]
     ports:
       - "6337:6337"
