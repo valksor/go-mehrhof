@@ -165,7 +165,7 @@ func glBatch(ctx context.Context, client *socket.Client, args string) (string, e
 	if args == "" {
 		return "Usage: /batch <action> (plan, implement, review, submit, abort, reset, stop)", nil
 	}
-	resp, err := client.Call(ctx, "tasks.batch", json.RawMessage(mustJSON(map[string]string{"action": args})))
+	resp, err := client.Call(ctx, "tasks.batch", json.RawMessage(mustJSON(map[string]string{keyAction: args})))
 	if err != nil {
 		return "", fmt.Errorf("batch: %w", err)
 	}

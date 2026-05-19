@@ -316,7 +316,7 @@ func glCatalogUse(ctx context.Context, client *socket.Client, args string) (stri
 	if name == "" {
 		return "Usage: /catalog use <template-name>", nil
 	}
-	resp, err := client.Call(ctx, "catalog.get", map[string]any{"name": name})
+	resp, err := client.Call(ctx, "catalog.get", map[string]any{keyName: name})
 	if err != nil {
 		return "", fmt.Errorf("catalog get: %w", err)
 	}
@@ -354,7 +354,7 @@ func glWorkersRemove(ctx context.Context, client *socket.Client, args string) (s
 	if name == "" {
 		return "Usage: /workers remove <worker-name>", nil
 	}
-	_, err := client.Call(ctx, "workers.remove", json.RawMessage(mustJSON(map[string]string{"name": name})))
+	_, err := client.Call(ctx, "workers.remove", json.RawMessage(mustJSON(map[string]string{keyName: name})))
 	if err != nil {
 		return "", fmt.Errorf("workers remove: %w", err)
 	}

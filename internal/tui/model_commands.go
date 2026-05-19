@@ -54,7 +54,7 @@ func (m *Model) sendStartTask(description string) tea.Cmd {
 		}
 		defer func() { _ = client.Close() }()
 
-		params, err := json.Marshal(map[string]string{"source": description})
+		params, err := json.Marshal(map[string]string{keySource: description})
 		if err != nil {
 			return errMsg{err: fmt.Errorf("marshal params: %w", err)}
 		}
@@ -180,9 +180,9 @@ func (m *Model) fetchChangelog(input string, full bool) tea.Cmd {
 		defer func() { _ = client.Close() }()
 
 		p := map[string]any{
-			"source": source,
-			"target": target,
-			"full":   full,
+			keySource: source,
+			"target":  target,
+			"full":    full,
 		}
 		if note != "" {
 			p["note"] = note

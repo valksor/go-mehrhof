@@ -188,7 +188,7 @@ func startProgressPolling(ctx context.Context, dir string, ch chan<- tea.Msg) {
 					}
 					if json.Unmarshal(stateResp.Result, &status) == nil {
 						switch status.State {
-						case "none", "loaded", "failed", "submitted":
+						case stateNone, stateLoaded, stateFailed, stateSubmitted:
 							_ = client.Close()
 
 							continue

@@ -119,7 +119,7 @@ func wtQuick(ctx context.Context, client *socket.Client, args string, _ bool) (s
 	if args == "" {
 		return "Usage: /quick <source>", nil
 	}
-	_, err := client.Call(ctx, "start", json.RawMessage(mustJSON(map[string]any{"source": args, "auto_advance": true})))
+	_, err := client.Call(ctx, "start", json.RawMessage(mustJSON(map[string]any{keySource: args, "auto_advance": true})))
 	if err != nil {
 		return "", err
 	}
@@ -132,7 +132,7 @@ func wtPlan(ctx context.Context, client *socket.Client, _ string, dryRun bool) (
 	if dryRun {
 		params["dry_run"] = true
 	}
-	_, err := client.Call(ctx, "plan", json.RawMessage(mustJSON(params)))
+	_, err := client.Call(ctx, phasePlan, json.RawMessage(mustJSON(params)))
 	if err != nil {
 		return "", err
 	}
@@ -145,7 +145,7 @@ func wtImplement(ctx context.Context, client *socket.Client, _ string, dryRun bo
 	if dryRun {
 		params["dry_run"] = true
 	}
-	_, err := client.Call(ctx, "implement", json.RawMessage(mustJSON(params)))
+	_, err := client.Call(ctx, phaseImplement, json.RawMessage(mustJSON(params)))
 	if err != nil {
 		return "", err
 	}
@@ -154,7 +154,7 @@ func wtImplement(ctx context.Context, client *socket.Client, _ string, dryRun bo
 }
 
 func wtSimplify(ctx context.Context, client *socket.Client, _ string, dryRun bool) (string, error) {
-	_, err := client.Call(ctx, "simplify", optDryRun(dryRun))
+	_, err := client.Call(ctx, phaseSimplify, optDryRun(dryRun))
 	if err != nil {
 		return "", err
 	}
@@ -163,7 +163,7 @@ func wtSimplify(ctx context.Context, client *socket.Client, _ string, dryRun boo
 }
 
 func wtOptimize(ctx context.Context, client *socket.Client, _ string, dryRun bool) (string, error) {
-	_, err := client.Call(ctx, "optimize", optDryRun(dryRun))
+	_, err := client.Call(ctx, phaseOptimize, optDryRun(dryRun))
 	if err != nil {
 		return "", err
 	}
@@ -172,7 +172,7 @@ func wtOptimize(ctx context.Context, client *socket.Client, _ string, dryRun boo
 }
 
 func wtReview(ctx context.Context, client *socket.Client, _ string, _ bool) (string, error) {
-	_, err := client.Call(ctx, "review", json.RawMessage(mustJSON(map[string]any{"approve": true})))
+	_, err := client.Call(ctx, phaseReview, json.RawMessage(mustJSON(map[string]any{"approve": true})))
 	if err != nil {
 		return "", err
 	}
@@ -181,7 +181,7 @@ func wtReview(ctx context.Context, client *socket.Client, _ string, _ bool) (str
 }
 
 func wtReviewFix(ctx context.Context, client *socket.Client, _ string, _ bool) (string, error) {
-	_, err := client.Call(ctx, "review", json.RawMessage(mustJSON(map[string]any{"fix": true})))
+	_, err := client.Call(ctx, phaseReview, json.RawMessage(mustJSON(map[string]any{"fix": true})))
 	if err != nil {
 		return "", err
 	}
@@ -190,7 +190,7 @@ func wtReviewFix(ctx context.Context, client *socket.Client, _ string, _ bool) (
 }
 
 func wtSubmit(ctx context.Context, client *socket.Client, _ string, dryRun bool) (string, error) {
-	_, err := client.Call(ctx, "submit", optDryRun(dryRun))
+	_, err := client.Call(ctx, phaseSubmit, optDryRun(dryRun))
 	if err != nil {
 		return "", err
 	}

@@ -94,7 +94,7 @@ func (m *Model) renderStatusBar() string {
 	base := filepath.Base(wt.Dir)
 	state := wt.State
 	if state == "" {
-		state = "none"
+		state = stateNone
 	}
 
 	workerName := ""
@@ -107,7 +107,7 @@ func (m *Model) renderStatusBar() string {
 	}
 
 	text := "kvelmo · " + base + " · " + state
-	if state == "failed" && wt.LastFailureClass != "" {
+	if state == stateFailed && wt.LastFailureClass != "" {
 		text += " [" + wt.LastFailureClass + "]"
 	}
 	if wt.AutoFixAttempt > 0 {

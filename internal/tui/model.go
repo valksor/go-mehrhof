@@ -235,12 +235,12 @@ func (m *Model) handleKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 
 	case "p":
 		if !m.chatInput.Focused() {
-			return m, m.sendWorkflowCmd("plan")
+			return m, m.sendWorkflowCmd(phasePlan)
 		}
 
 	case "i":
 		if !m.chatInput.Focused() {
-			return m, m.sendWorkflowCmd("implement")
+			return m, m.sendWorkflowCmd(phaseImplement)
 		}
 
 	case "s":
@@ -277,12 +277,12 @@ func (m *Model) handleKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 
 	case "R":
 		if !m.chatInput.Focused() {
-			return m, m.sendWorkflowCmd("review")
+			return m, m.sendWorkflowCmd(phaseReview)
 		}
 
 	case "S":
 		if !m.chatInput.Focused() {
-			return m, m.sendWorkflowCmd("submit")
+			return m, m.sendWorkflowCmd(phaseSubmit)
 		}
 
 	case "d":
@@ -312,12 +312,12 @@ func (m *Model) handleKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 
 	case "f":
 		if !m.chatInput.Focused() {
-			return m, m.sendWorkflowCmd("simplify")
+			return m, m.sendWorkflowCmd(phaseSimplify)
 		}
 
 	case "o":
 		if !m.chatInput.Focused() {
-			return m, m.sendWorkflowCmd("optimize")
+			return m, m.sendWorkflowCmd(phaseOptimize)
 		}
 
 	case "F":
@@ -390,12 +390,12 @@ func (m *Model) handleSocketEvent(msg socketEventMsg) (tea.Model, tea.Cmd) {
 			}
 		case "state_changed":
 			m.worktrees[i].State = string(msg.event.State)
-			if string(msg.event.State) != "failed" {
+			if string(msg.event.State) != stateFailed {
 				m.worktrees[i].LastFailureClass = ""
 			}
 			// Clear progress when leaving active phases.
 			switch string(msg.event.State) {
-			case "planning", "implementing", "simplifying", "optimizing":
+			case statePlanning, stateImplementing, stateSimplifying, stateOptimizing:
 				// Keep progress active — polling will update it.
 			default:
 				m.worktrees[i].ProgressActive = false

@@ -131,7 +131,7 @@ func wtPolicy(ctx context.Context, client *socket.Client, _ string, _ bool) (str
 }
 
 func wtQuality(ctx context.Context, client *socket.Client, _ string, _ bool) (string, error) {
-	resp, err := client.Call(ctx, "quality.respond", json.RawMessage(mustJSON(map[string]string{"action": "run"})))
+	resp, err := client.Call(ctx, "quality.respond", json.RawMessage(mustJSON(map[string]string{keyAction: "run"})))
 	if err != nil {
 		return "", err
 	}
@@ -148,7 +148,7 @@ func wtRetry(ctx context.Context, client *socket.Client, _ string, dryRun bool) 
 	// Note: web's projectStore.retry() infers the failed phase from last_error
 	// before resetting. This simpler version maps reset-state to phase, which
 	// works for plan/implement/review but not simplify/optimize (both reset to
-	// "implemented" and would retry review instead).
+	// stateImplemented and would retry review instead).
 	resetResp, err := client.Call(ctx, "reset", nil)
 	if err != nil {
 		return "", fmt.Errorf("retry reset: %w", err)
@@ -161,12 +161,12 @@ func wtRetry(ctx context.Context, client *socket.Client, _ string, dryRun bool) 
 	// Determine which phase to re-run based on the reset state.
 	var phase string
 	switch resetResult.State {
-	case "loaded":
-		phase = "plan"
-	case "planned":
-		phase = "implement"
-	case "implemented":
-		phase = "review"
+	case stateLoaded:
+		phase = phasePlan
+	case statePlanned:
+		phase = phaseImplement
+	case stateImplemented:
+		phase = phaseReview
 	default:
 		return fmt.Sprintf("Task reset to %s — use a phase command to continue.", resetResult.State), nil
 	}
@@ -301,7 +301,7 @@ func wtCodegraphCallers(ctx context.Context, client *socket.Client, args string,
 	if args == "" {
 		return "Usage: /codegraph callers <symbol>", nil
 	}
-	resp, err := client.Call(ctx, "codegraph.callers", json.RawMessage(mustJSON(map[string]string{"name": args})))
+	resp, err := client.Call(ctx, "codegraph.callers", json.RawMessage(mustJSON(map[string]string{keyName: args})))
 	if err != nil {
 		return "", err
 	}
@@ -328,7 +328,7 @@ func wtCodegraphDeps(ctx context.Context, client *socket.Client, args string, _ 
 	if args == "" {
 		return "Usage: /codegraph deps <symbol>", nil
 	}
-	resp, err := client.Call(ctx, "codegraph.deps", json.RawMessage(mustJSON(map[string]string{"name": args})))
+	resp, err := client.Call(ctx, "codegraph.deps", json.RawMessage(mustJSON(map[string]string{keyName: args})))
 	if err != nil {
 		return "", err
 	}
@@ -377,7 +377,7 @@ func wtCodegraphSearch(ctx context.Context, client *socket.Client, args string, 
 	if args == "" {
 		return "Usage: /codegraph search <symbol>", nil
 	}
-	resp, err := client.Call(ctx, "codegraph.search", json.RawMessage(mustJSON(map[string]string{"name": args})))
+	resp, err := client.Call(ctx, "codegraph.search", json.RawMessage(mustJSON(map[string]string{keyName: args})))
 	if err != nil {
 		return "", err
 	}

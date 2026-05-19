@@ -181,7 +181,7 @@ func wtTagAdd(ctx context.Context, client *socket.Client, args string, _ bool) (
 	if args == "" {
 		return "Usage: /tag add <name>", nil
 	}
-	_, err := client.Call(ctx, "task.tag", json.RawMessage(mustJSON(map[string]string{"action": "add", "tag": args})))
+	_, err := client.Call(ctx, "task.tag", json.RawMessage(mustJSON(map[string]string{keyAction: "add", "tag": args})))
 	if err != nil {
 		return "", err
 	}
@@ -193,7 +193,7 @@ func wtTagRemove(ctx context.Context, client *socket.Client, args string, _ bool
 	if args == "" {
 		return "Usage: /tag remove <name>", nil
 	}
-	_, err := client.Call(ctx, "task.tag", json.RawMessage(mustJSON(map[string]string{"action": "remove", "tag": args})))
+	_, err := client.Call(ctx, "task.tag", json.RawMessage(mustJSON(map[string]string{keyAction: "remove", "tag": args})))
 	if err != nil {
 		return "", err
 	}
@@ -202,7 +202,7 @@ func wtTagRemove(ctx context.Context, client *socket.Client, args string, _ bool
 }
 
 func wtTags(ctx context.Context, client *socket.Client, _ string, _ bool) (string, error) {
-	resp, err := client.Call(ctx, "task.tag", json.RawMessage(mustJSON(map[string]string{"action": "list"})))
+	resp, err := client.Call(ctx, "task.tag", json.RawMessage(mustJSON(map[string]string{keyAction: "list"})))
 	if err != nil {
 		return "", err
 	}
@@ -223,7 +223,7 @@ func wtQueueAdd(ctx context.Context, client *socket.Client, args string, _ bool)
 	if args == "" {
 		return "Usage: /queue add <source>", nil
 	}
-	_, err := client.Call(ctx, "queue.add", json.RawMessage(mustJSON(map[string]string{"source": args})))
+	_, err := client.Call(ctx, "queue.add", json.RawMessage(mustJSON(map[string]string{keySource: args})))
 	if err != nil {
 		return "", err
 	}
@@ -413,7 +413,7 @@ func changelogImpl(ctx context.Context, client *socket.Client, args string, full
 	if len(parts) != 2 || parts[0] == "" || parts[1] == "" {
 		return "Usage: /changelog <source>..<target> [note]", nil
 	}
-	params := map[string]any{"source": parts[0], "target": parts[1]}
+	params := map[string]any{keySource: parts[0], "target": parts[1]}
 	if full {
 		params["full"] = true
 	}
