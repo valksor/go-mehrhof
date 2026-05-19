@@ -14,7 +14,7 @@ permissions:
     id-token: write
 
 env:
-    GO_VERSION: '1.26.1'
+    GO_VERSION: '1.26.3'
 
 jobs:
     docs:
@@ -23,15 +23,10 @@ jobs:
             -   name: Checkout
                 uses: actions/checkout@v6
 
-            # Wrangler 4.92+ requires Node.js >= 22 (older 4.x supported
-            # Node 20). cloudflare/wrangler-action@v4 probes
-            # `wrangler --version` immediately after install, so the
-            # runtime check fires before any deploy step. Pin Node 22 to
-            # meet wrangler's baseline.
             -   name: Setup Node.js
                 uses: actions/setup-node@v4
                 with:
-                    node-version: '22'
+                    node-version: '24'
 
             -   name: Setup Bun
                 uses: oven-sh/setup-bun@v2

@@ -20,8 +20,8 @@ jobs:
                 id: docs_only
                 # Opt-in marker. Authors append `[docs only]` to the commit
                 # message when they want to skip binary/desktop builds AND
-                # the CI build+test run, keeping only the docs deploy.
-                # Reads only local git state (no GitHub event context is
+                # the CI build+test run, keeping only the documentation deployment.
+                # Reads only the local git state (no GitHub event context is
                 # interpolated into shell).
                 run: |
                     msg=$(git log -1 --format=%B HEAD)
