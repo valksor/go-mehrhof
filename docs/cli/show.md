@@ -10,15 +10,15 @@ kvelmo show <subcommand>
 
 ## Subcommands
 
-| Subcommand | Description                              |
-|------------|------------------------------------------|
+| Subcommand | Description                               |
+| ---------- | ----------------------------------------- |
 | `spec`     | Show specification files for current task |
-| `plan`     | Show the plan (alias for `show spec`)    |
+| `plan`     | Show the plan (alias for `show spec`)     |
 
 ## Options
 
 | Flag     | Description              |
-|----------|--------------------------|
+| -------- | ------------------------ |
 | `--json` | Output raw JSON response |
 
 ## Examples
@@ -40,12 +40,14 @@ kvelmo show spec --json
 # .kvelmo/specifications/task-001.md
 
 ## Overview
+
 Add user authentication to the API endpoints...
 
 ## Implementation Steps
+
 1. Create JWT middleware
 2. Add login/logout endpoints
-...
+   ...
 ```
 
 ## Related

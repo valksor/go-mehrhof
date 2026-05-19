@@ -16,9 +16,9 @@ Shuts down the worktree socket server for the current directory. By default, sen
 
 ## Options
 
-| Flag              | Description                                      |
-|-------------------|--------------------------------------------------|
-| `-t`, `--timeout` | Graceful shutdown timeout (default: 2s)          |
+| Flag              | Description                                       |
+| ----------------- | ------------------------------------------------- |
+| `-t`, `--timeout` | Graceful shutdown timeout (default: 2s)           |
 | `-f`, `--force`   | Skip graceful shutdown and unregister immediately |
 
 ## Examples

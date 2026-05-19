@@ -11,7 +11,7 @@ kvelmo screenshots [subcommand]
 ## Subcommands
 
 | Command         | Description         |
-|-----------------|---------------------|
+| --------------- | ------------------- |
 | `list`          | List screenshots    |
 | `view <name>`   | View a screenshot   |
 | `delete <name>` | Delete a screenshot |

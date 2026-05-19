@@ -15,8 +15,8 @@ A power-user tool for scripting and debugging. Sends an arbitrary JSON-RPC metho
 
 ## Options
 
-| Flag       | Description                                    |
-|------------|------------------------------------------------|
+| Flag       | Description                                      |
+| ---------- | ------------------------------------------------ |
 | `--global` | Send to global socket instead of worktree socket |
 
 ## Examples

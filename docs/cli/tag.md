@@ -10,11 +10,11 @@ kvelmo tag <subcommand>
 
 ## Subcommands
 
-| Subcommand | Description |
-|------------|-------------|
-| `add <tag> [tag...]` | Add tags to the current task |
-| `remove <tag>` | Remove a tag from the current task |
-| `list` | List tags on the current task |
+| Subcommand           | Description                        |
+| -------------------- | ---------------------------------- |
+| `add <tag> [tag...]` | Add tags to the current task       |
+| `remove <tag>`       | Remove a tag from the current task |
+| `list`               | List tags on the current task      |
 
 ## Examples
 

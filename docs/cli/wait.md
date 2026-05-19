@@ -28,14 +28,14 @@ kvelmo optimize -w
 
 ## Event Types
 
-| Event           | Behavior                       |
-|-----------------|--------------------------------|
-| `job_output`    | Printed to stdout              |
-| `state_changed` | Printed as `[State] <message>` |
-| `job_completed` | Terminal bell, exits success   |
-| `job_failed`    | Terminal bell, exits with error|
-| `error`         | Printed to stderr              |
-| `heartbeat`     | Ignored (keepalive)            |
+| Event           | Behavior                        |
+| --------------- | ------------------------------- |
+| `job_output`    | Printed to stdout               |
+| `state_changed` | Printed as `[State] <message>`  |
+| `job_completed` | Terminal bell, exits success    |
+| `job_failed`    | Terminal bell, exits with error |
+| `error`         | Printed to stderr               |
+| `heartbeat`     | Ignored (keepalive)             |
 
 ## Related
 

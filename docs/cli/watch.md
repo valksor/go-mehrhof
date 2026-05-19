@@ -16,8 +16,8 @@ Press Ctrl+C to stop watching without affecting the running task.
 
 ## Options
 
-| Flag     | Description                    |
-|----------|--------------------------------|
+| Flag     | Description                     |
+| -------- | ------------------------------- |
 | `--json` | Output raw JSON events (NDJSON) |
 
 ## Examples
@@ -32,13 +32,13 @@ kvelmo watch --json
 
 ## Event Types
 
-| Event           | Description              |
-|-----------------|--------------------------|
-| `job_output`    | Agent output text        |
-| `state_changed` | Task state transition    |
-| `job_failed`    | Job failure with error   |
-| `error`         | General error            |
-| `heartbeat`     | Keepalive (ignored)      |
+| Event           | Description            |
+| --------------- | ---------------------- |
+| `job_output`    | Agent output text      |
+| `state_changed` | Task state transition  |
+| `job_failed`    | Job failure with error |
+| `error`         | General error          |
+| `heartbeat`     | Keepalive (ignored)    |
 
 ## Related
 

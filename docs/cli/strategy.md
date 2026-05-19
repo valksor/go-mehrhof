@@ -23,9 +23,9 @@ Available strategies:
 
 ## Flags
 
-| Flag     | Description        |
-|----------|--------------------|
-| `--json` | Output as JSON     |
+| Flag     | Description    |
+| -------- | -------------- |
+| `--json` | Output as JSON |
 
 ## Related
 

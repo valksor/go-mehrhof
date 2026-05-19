@@ -10,15 +10,15 @@ kvelmo start [description]
 
 ## Options
 
-| Flag | Short | Description |
-|------|-------|-------------|
-| `--foreground` | | Run in foreground (for debugging) |
-| `--verbose` | `-v` | Show socket paths |
-| `--from` | | Task source (`file:path`, `github:owner/repo#123`, or URL) |
-| `--text` | | Inline task description (creates task without external source) |
-| `--auto` | | Auto-advance through plan, implement, and review |
-| `--skip` | | Phases to skip during auto-advance (comma-separated, e.g. `--skip simplify,optimize`) |
-| `--json` | | Output result as JSON |
+| Flag           | Short | Description                                                                           |
+| -------------- | ----- | ------------------------------------------------------------------------------------- |
+| `--foreground` |       | Run in foreground (for debugging)                                                     |
+| `--verbose`    | `-v`  | Show socket paths                                                                     |
+| `--from`       |       | Task source (`file:path`, `github:owner/repo#123`, or URL)                            |
+| `--text`       |       | Inline task description (creates task without external source)                        |
+| `--auto`       |       | Auto-advance through plan, implement, and review                                      |
+| `--skip`       |       | Phases to skip during auto-advance (comma-separated, e.g. `--skip simplify,optimize`) |
+| `--json`       |       | Output result as JSON                                                                 |
 
 A description can also be passed as a positional argument instead of using `--text`.
 
@@ -27,7 +27,7 @@ A description can also be passed as a positional argument instead of using `--te
 When using `--from`:
 
 | Provider | Format                        | Example                     |
-|----------|-------------------------------|-----------------------------|
+| -------- | ----------------------------- | --------------------------- |
 | File     | `file:<path>`                 | `file:task.md`              |
 | GitHub   | `github:<owner>/<repo>#<num>` | `github:valksor/kvelmo#123` |
 | GitLab   | `gitlab:<project>#<num>`      | `gitlab:group/project#456`  |

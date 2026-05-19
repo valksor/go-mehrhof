@@ -10,21 +10,21 @@ kvelmo review
 
 ## Options
 
-| Flag | Short | Description |
-|------|-------|-------------|
-| `--approve` | | Immediately approve (skip interactive review) |
-| `--reject` | | Reject and return to planning state |
-| `--message` | `-m` | Review message/notes |
-| `--fix` | | Auto-fix issues after entering review state |
-| `--force` | | Re-run review even if already reviewed |
-| `--wait` | `-w` | Wait for job to complete, streaming output |
+| Flag        | Short | Description                                   |
+| ----------- | ----- | --------------------------------------------- |
+| `--approve` |       | Immediately approve (skip interactive review) |
+| `--reject`  |       | Reject and return to planning state           |
+| `--message` | `-m`  | Review message/notes                          |
+| `--fix`     |       | Auto-fix issues after entering review state   |
+| `--force`   |       | Re-run review even if already reviewed        |
+| `--wait`    | `-w`  | Wait for job to complete, streaming output    |
 
 ## Subcommands
 
-| Subcommand | Description |
-|------------|-------------|
-| `review list` | List all reviews for current task |
-| `review view <N>` | View review number N |
+| Subcommand        | Description                       |
+| ----------------- | --------------------------------- |
+| `review list`     | List all reviews for current task |
+| `review view <N>` | View review number N              |
 
 ## Prerequisites
 
@@ -53,6 +53,7 @@ kvelmo review
 ## Reviewing Changes
 
 View the changes:
+
 ```bash
 git diff
 ```
@@ -60,6 +61,7 @@ git diff
 ## Approving
 
 If satisfied, submit:
+
 ```bash
 kvelmo submit
 ```
@@ -67,6 +69,7 @@ kvelmo submit
 ## Rejecting
 
 If changes aren't right:
+
 ```bash
 kvelmo undo
 ```

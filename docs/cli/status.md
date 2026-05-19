@@ -10,15 +10,15 @@ kvelmo status
 
 ## Options
 
-| Flag | Short | Description |
-|------|-------|-------------|
-| `--all` | `-a` | Show status of all active projects |
-| `--blocked` | | Show only tasks needing attention (failed, waiting for prompt) |
-| `--failed` | | Show only failed tasks |
-| `--full` | | Show extended status including checkpoints |
-| `--verbose` | `-v` | Show socket paths |
-| `--json` | | Output as JSON |
-| `--timeout` | `-t` | Connection timeout (default 5s) |
+| Flag        | Short | Description                                                    |
+| ----------- | ----- | -------------------------------------------------------------- |
+| `--all`     | `-a`  | Show status of all active projects                             |
+| `--blocked` |       | Show only tasks needing attention (failed, waiting for prompt) |
+| `--failed`  |       | Show only failed tasks                                         |
+| `--full`    |       | Show extended status including checkpoints                     |
+| `--verbose` | `-v`  | Show socket paths                                              |
+| `--json`    |       | Output as JSON                                                 |
+| `--timeout` | `-t`  | Connection timeout (default 5s)                                |
 
 ## Examples
 
@@ -58,7 +58,7 @@ Checkpoints:
 ## States
 
 | State          | Description                |
-|----------------|----------------------------|
+| -------------- | -------------------------- |
 | `none`         | No active task             |
 | `loaded`       | Task loaded                |
 | `planning`     | Planning in progress       |

@@ -28,6 +28,7 @@ Active:
 ## Configuration
 
 Set max workers:
+
 ```bash
 kvelmo config set max_workers 8
 ```

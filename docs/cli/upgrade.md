@@ -10,13 +10,13 @@ kvelmo upgrade [flags]
 
 ## Options
 
-| Flag | Description |
-|------|-------------|
-| `--nightly`, `-n` | Install latest available release including pre-releases |
-| `--version`, `-v` | Install specific version tag (e.g. `v1.2.3`) |
-| `--check` | Check for updates without installing |
-| `--yes`, `-y` | Skip confirmation prompt |
-| `--skip-verify` | Allow installation when signature verification is unavailable (checksum-only) |
+| Flag              | Description                                                                   |
+| ----------------- | ----------------------------------------------------------------------------- |
+| `--nightly`, `-n` | Install latest available release including pre-releases                       |
+| `--version`, `-v` | Install specific version tag (e.g. `v1.2.3`)                                  |
+| `--check`         | Check for updates without installing                                          |
+| `--yes`, `-y`     | Skip confirmation prompt                                                      |
+| `--skip-verify`   | Allow installation when signature verification is unavailable (checksum-only) |
 
 ## Update Process
 

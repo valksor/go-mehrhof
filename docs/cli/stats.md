@@ -14,9 +14,9 @@ Displays completion statistics, success rate, and recent task history from the a
 
 ## Options
 
-| Flag     | Description                              |
-|----------|------------------------------------------|
-| `--json` | Output as JSON                           |
+| Flag     | Description                               |
+| -------- | ----------------------------------------- |
+| `--json` | Output as JSON                            |
 | `--all`  | Show stats across all registered projects |
 
 ## Examples

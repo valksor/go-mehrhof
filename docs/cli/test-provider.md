@@ -16,8 +16,8 @@ The command connects to the global socket and calls `providers.test` with the sp
 
 ## Arguments
 
-| Argument     | Description                                                  |
-|--------------|--------------------------------------------------------------|
+| Argument     | Description                                                                 |
+| ------------ | --------------------------------------------------------------------------- |
 | `<provider>` | Provider name: `github`, `gitlab`, `linear`, `wrike`, `jira`, `azuredevops` |
 
 ## Examples
@@ -29,12 +29,14 @@ kvelmo test-provider github
 ```
 
 Output on success:
+
 ```
 github: connected
   Authenticated as octocat
 ```
 
 Output on failure:
+
 ```
 github: failed
   401 Unauthorized

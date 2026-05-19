@@ -10,14 +10,14 @@ kvelmo security <subcommand>
 
 ## Subcommands
 
-| Subcommand | Description |
-|------------|-------------|
+| Subcommand   | Description                          |
+| ------------ | ------------------------------------ |
 | `scan [dir]` | Scan a directory for security issues |
 
 ## Options
 
-| Flag | Description |
-|------|-------------|
+| Flag     | Description              |
+| -------- | ------------------------ |
 | `--json` | Output raw JSON response |
 
 ## What It Scans

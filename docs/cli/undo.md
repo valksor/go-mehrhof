@@ -34,6 +34,7 @@ kvelmo undo
 ## Safe to Use
 
 Undo doesn't lose work. You can always redo:
+
 ```bash
 kvelmo redo
 ```
@@ -41,6 +42,7 @@ kvelmo redo
 ## Multiple Undo
 
 Each undo goes back one checkpoint:
+
 ```
 implemented → planned → loaded
 ```

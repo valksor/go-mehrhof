@@ -16,8 +16,8 @@ On startup it auto-detects the current project from the working directory, conne
 
 ## Options
 
-| Flag       | Default   | Description                                    |
-|------------|-----------|------------------------------------------------|
+| Flag       | Default   | Description                                   |
+| ---------- | --------- | --------------------------------------------- |
 | `--layout` | `stacked` | UI layout: `stacked` (default) or `dashboard` |
 
 ## Configuration
@@ -26,26 +26,26 @@ Set a default layout in `~/.valksor/kvelmo/kvelmo.yaml`:
 
 ```yaml
 tui:
-  layout: stacked  # or dashboard
+  layout: stacked # or dashboard
 ```
 
 The `--layout` flag overrides this setting for the current session.
 
 ## Keyboard Shortcuts
 
-| Key            | Action                        |
-|----------------|-------------------------------|
-| `Tab`          | Switch to next worktree       |
-| `Shift+Tab`    | Switch to previous worktree   |
-| `Enter`        | Send chat message             |
-| `p`            | Trigger plan                  |
-| `i`            | Trigger implement             |
-| `s`            | Stop current job              |
-| `Ctrl+A`       | Abort task                    |
-| `Ctrl+U`       | Undo checkpoint               |
-| `Ctrl+R`       | Redo checkpoint               |
-| `q` / `Ctrl+C` | Quit                          |
-| `?`            | Toggle keybinding help        |
+| Key            | Action                      |
+| -------------- | --------------------------- |
+| `Tab`          | Switch to next worktree     |
+| `Shift+Tab`    | Switch to previous worktree |
+| `Enter`        | Send chat message           |
+| `p`            | Trigger plan                |
+| `i`            | Trigger implement           |
+| `s`            | Stop current job            |
+| `Ctrl+A`       | Abort task                  |
+| `Ctrl+U`       | Undo checkpoint             |
+| `Ctrl+R`       | Redo checkpoint             |
+| `q` / `Ctrl+C` | Quit                        |
+| `?`            | Toggle keybinding help      |
 
 ## Layouts
 

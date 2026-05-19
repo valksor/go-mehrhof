@@ -11,7 +11,7 @@ kvelmo serve
 ## Options
 
 | Flag     | Description                 |
-|----------|-----------------------------|
+| -------- | --------------------------- |
 | `--open` | Open browser automatically  |
 | `--port` | Web UI port (default: 6337) |
 
@@ -53,6 +53,7 @@ nohup kvelmo serve &
 ## Stopping
 
 Press Ctrl+C in the terminal, or:
+
 ```bash
 # Find and kill
 pkill kvelmo

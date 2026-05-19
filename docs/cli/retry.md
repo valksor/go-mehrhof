@@ -20,8 +20,8 @@ The command performs three steps:
 
 ## Options
 
-| Flag      | Description                                              |
-|-----------|----------------------------------------------------------|
+| Flag      | Description                                                         |
+| --------- | ------------------------------------------------------------------- |
 | `--phase` | Override which phase to retry (plan, implement, simplify, optimize) |
 
 ## Phase Inference
@@ -29,7 +29,7 @@ The command performs three steps:
 When `--phase` is not specified, the phase is inferred from the last error message:
 
 | Error contains | Retries     |
-|----------------|-------------|
+| -------------- | ----------- |
 | "implement"    | `implement` |
 | "simplify"     | `simplify`  |
 | "optimize"     | `optimize`  |

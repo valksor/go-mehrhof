@@ -10,18 +10,18 @@ kvelmo submit
 
 ## Options
 
-| Flag | Short | Description |
-|------|-------|-------------|
-| `--title` | `-t` | PR/MR title (defaults to task title) |
-| `--body` | `-b` | PR/MR body (defaults to task description) |
-| `--draft` | | Create as draft PR |
-| `--reviewers` | | Assign reviewers (comma-separated) |
-| `--labels` | | Add labels (comma-separated) |
-| `--delete-branch` | | Delete local branch after successful submission |
-| `--skip-review` | | Skip review gate and submit directly |
-| `--dry-run` | | Preview the PR without creating it |
-| `--section` | | Add custom PR section (format: `"Header=Content"`, repeatable) |
-| `--json` | | Output result as JSON |
+| Flag              | Short | Description                                                    |
+| ----------------- | ----- | -------------------------------------------------------------- |
+| `--title`         | `-t`  | PR/MR title (defaults to task title)                           |
+| `--body`          | `-b`  | PR/MR body (defaults to task description)                      |
+| `--draft`         |       | Create as draft PR                                             |
+| `--reviewers`     |       | Assign reviewers (comma-separated)                             |
+| `--labels`        |       | Add labels (comma-separated)                                   |
+| `--delete-branch` |       | Delete local branch after successful submission                |
+| `--skip-review`   |       | Skip review gate and submit directly                           |
+| `--dry-run`       |       | Preview the PR without creating it                             |
+| `--section`       |       | Add custom PR section (format: `"Header=Content"`, repeatable) |
+| `--json`          |       | Output result as JSON                                          |
 
 ## Prerequisites
 
@@ -67,17 +67,20 @@ State: submitted
 ## Provider Integration
 
 For GitHub/GitLab tasks:
+
 - PR is linked to the original issue
 - Labels may be applied
 - Assignees may be set
 
 For file tasks:
+
 - PR is created with task title
 - Description includes task details
 
 ## After Submission
 
 From the `submitted` state, you can:
+
 - `kvelmo finish` — Clean up branch and return to ready state
 - `kvelmo plan` — Re-plan (new commits push to the existing PR)
 - `kvelmo implement` — Re-implement (new commits push to the existing PR)
