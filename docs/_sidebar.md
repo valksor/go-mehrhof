@@ -176,6 +176,7 @@
 - Guides
   - [First Task](/guides/first-task.md)
   - [Web UI vs CLI](/guides/web-ui-vs-cli.md)
+  - [Task Examples](/guides/task-examples/index.md)
   - [Recovery](/guides/recovery.md)
   - [Windows WSL](/guides/windows-wsl.md)
   - [Tauri Signing Setup](/guides/tauri-signing-setup.md)
