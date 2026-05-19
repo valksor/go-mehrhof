@@ -1,147 +1,147 @@
 version: "2"
 
 run:
-    timeout: 5m
-    exclude-dirs:
-        - .claude
-        - v1
+  timeout: 5m
+  exclude-dirs:
+    - .claude
+    - v1
 
 formatters:
-    enable:
-        - gofumpt
+  enable:
+    - gofumpt
 
 linters:
-    enable:
-        - asasalint
-        - asciicheck
-        - bidichk
-        - bodyclose        # HTTP body close
-        - canonicalheader
-        - containedctx
-        - contextcheck
-        - copyloopvar
-        - decorder
-        - dogsled
-        - dupword
-        - durationcheck
-        - embeddedstructfieldcheck
-        - errcheck         # Unchecked errors
-        - errchkjson
-        - errname
-        - errorlint
-        - exhaustive
-        - exptostd
-        - fatcontext
-        - forcetypeassert
-        - gocheckcompilerdirectives
-        - gocritic         # Advanced checks
-        - godot
-        - godox
-        - goprintffuncname
-        - gosec            # Security issues
-        - govet            # Built-in vet
-        - grouper
-        - iface
-        - inamedparam
-        - ineffassign
-        - interfacebloat
-        - intrange
-        - iotamixing
-        - loggercheck
-        - makezero
-        - mirror
-        - misspell         # Typos in comments/strings
-        - musttag
-        - nakedret
-        - nilerr
-        - nilnesserr
-        - nilnil
-        - nlreturn
-        - noctx
-        - nolintlint       # Enforce nolint comments
-        - nonamedreturns
-        - perfsprint
-        - predeclared
-        - protogetter
-        - reassign
-        - recvcheck
-        - rowserrcheck
-        - sloglint
-        - sqlclosecheck
-        - staticcheck      # Go vet++
-        - testableexamples
-        - thelper
-        - unconvert        # Unnecessary conversions
-        - unparam
-        - unused
-        - usestdlibvars
-        - usetesting
-        - wastedassign
-        - whitespace
-        - gochecksumtype
-        - goconst
-        - importas
-        - modernize
-        - nosprintfhostport
-        - prealloc
-        - tparallel
+  enable:
+    - asasalint
+    - asciicheck
+    - bidichk
+    - bodyclose # HTTP body close
+    - canonicalheader
+    - containedctx
+    - contextcheck
+    - copyloopvar
+    - decorder
+    - dogsled
+    - dupword
+    - durationcheck
+    - embeddedstructfieldcheck
+    - errcheck # Unchecked errors
+    - errchkjson
+    - errname
+    - errorlint
+    - exhaustive
+    - exptostd
+    - fatcontext
+    - forcetypeassert
+    - gocheckcompilerdirectives
+    - gocritic # Advanced checks
+    - godot
+    - godox
+    - goprintffuncname
+    - gosec # Security issues
+    - govet # Built-in vet
+    - grouper
+    - iface
+    - inamedparam
+    - ineffassign
+    - interfacebloat
+    - intrange
+    - iotamixing
+    - loggercheck
+    - makezero
+    - mirror
+    - misspell # Typos in comments/strings
+    - musttag
+    - nakedret
+    - nilerr
+    - nilnesserr
+    - nilnil
+    - nlreturn
+    - noctx
+    - nolintlint # Enforce nolint comments
+    - nonamedreturns
+    - perfsprint
+    - predeclared
+    - protogetter
+    - reassign
+    - recvcheck
+    - rowserrcheck
+    - sloglint
+    - sqlclosecheck
+    - staticcheck # Go vet++
+    - testableexamples
+    - thelper
+    - unconvert # Unnecessary conversions
+    - unparam
+    - unused
+    - usestdlibvars
+    - usetesting
+    - wastedassign
+    - whitespace
+    - gochecksumtype
+    - goconst
+    - importas
+    - modernize
+    - nosprintfhostport
+    - prealloc
+    - tparallel
 
-    settings:
-        goconst:
-            min-occurrences: 5
-            ignore-tests: true
-        errchkjson:
-            # Only report json.Marshal calls that can genuinely fail (unsafe types).
-            # Safe types like plain structs and map[string]string are ignored.
-            check-error-free-encoding: false
-        gofumpt:
-            extra-rules: true
-        gocritic:
-            disabled-checks:
-                - ifElseChain
-                - elseif
-                - appendAssign
-                - assignOp
-                - unlambda
-        gosec:
-            excludes:
-                - G101  # Hardcoded credentials - false positive on config key mappings
-                - G104
-                - G115  # Integer overflow - file descriptors are small positive integers
-                - G118  # Background context in goroutines - lifecycle contexts intentionally outlive requests
-                - G204
-                - G301
-                - G302
-                - G304
-                - G306
-                - G702  # Command injection via taint - user-controlled $EDITOR resolved through exec.LookPath
-                - G703  # Path traversal via taint - paths are validated by ValidatePathWithRoots
-                - G704  # SSRF via taint - false positives on hardcoded API URLs and Unix sockets
-                - G706  # Log injection via taint - slog properly escapes structured values
+  settings:
+    goconst:
+      min-occurrences: 5
+      ignore-tests: true
+    errchkjson:
+      # Only report json.Marshal calls that can genuinely fail (unsafe types).
+      # Safe types like plain structs and map[string]string are ignored.
+      check-error-free-encoding: false
+    gofumpt:
+      extra-rules: true
+    gocritic:
+      disabled-checks:
+        - ifElseChain
+        - elseif
+        - appendAssign
+        - assignOp
+        - unlambda
+    gosec:
+      excludes:
+        - G101 # Hardcoded credentials - false positive on config key mappings
+        - G104
+        - G115 # Integer overflow - file descriptors are small positive integers
+        - G118 # Background context in goroutines - lifecycle contexts intentionally outlive requests
+        - G204
+        - G301
+        - G302
+        - G304
+        - G306
+        - G702 # Command injection via taint - user-controlled $EDITOR resolved through exec.LookPath
+        - G703 # Path traversal via taint - paths are validated by ValidatePathWithRoots
+        - G704 # SSRF via taint - false positives on hardcoded API URLs and Unix sockets
+        - G706 # Log injection via taint - slog properly escapes structured values
 
 issues:
-    exclude-rules:
-        -   path: _test\.go
-            linters:
-                - errcheck
-                - errchkjson
-                - gosec
-        -   path: testutils/*.go
-            linters:
-                - errcheck
-                - errchkjson
-                - gosec
+  exclude-rules:
+    - path: _test\.go
+      linters:
+        - errcheck
+        - errchkjson
+        - gosec
+    - path: testutils/*.go
+      linters:
+        - errcheck
+        - errchkjson
+        - gosec
 
 output:
-    path-mode: "abs"
-    sort-results: true
-    formats:
-        text:
-            colors: true
-            path: stdout
-            print-issued-lines: true
-            print-linter-name: true
-    sort-order:
-        - linter
-        - file
-        - severity
+  path-mode: "abs"
+  sort-results: true
+  formats:
+    text:
+      colors: true
+      path: stdout
+      print-issued-lines: true
+      print-linter-name: true
+  sort-order:
+    - linter
+    - file
+    - severity

@@ -1,70 +1,70 @@
 name: Nightly Release
 
 on:
-    push:
-        branches:
-            - master
+  push:
+    branches:
+      - master
 
 permissions:
-    contents: write
-    packages: write
+  contents: write
+  packages: write
 
 jobs:
-    manage-nightly:
-        runs-on: ubuntu-slim
-        steps:
-            -   name: Checkout code
-                uses: actions/checkout@v6
+  manage-nightly:
+    runs-on: ubuntu-slim
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
 
-            -   name: Detect [docs only] marker
-                id: docs_only
-                # Opt-in marker. Authors append `[docs only]` to the commit
-                # message when they want to skip binary/desktop builds AND
-                # the CI build+test run, keeping only the documentation deployment.
-                # Reads only the local git state (no GitHub event context is
-                # interpolated into shell).
-                run: |
-                    msg=$(git log -1 --format=%B HEAD)
-                    if printf '%s' "$msg" | grep -qF '[docs only]'; then
-                        echo "Explicit [docs only] marker in commit message."
-                        echo "docs_only=true" >> "$GITHUB_OUTPUT"
-                    else
-                        echo "docs_only=false" >> "$GITHUB_OUTPUT"
-                    fi
+      - name: Detect [docs only] marker
+        id: docs_only
+        # Opt-in marker. Authors append `[docs only]` to the commit
+        # message when they want to skip binary/desktop builds AND
+        # the CI build+test run, keeping only the documentation deployment.
+        # Reads only the local git state (no GitHub event context is
+        # interpolated into shell).
+        run: |
+          msg=$(git log -1 --format=%B HEAD)
+          if printf '%s' "$msg" | grep -qF '[docs only]'; then
+              echo "Explicit [docs only] marker in commit message."
+              echo "docs_only=true" >> "$GITHUB_OUTPUT"
+          else
+              echo "docs_only=false" >> "$GITHUB_OUTPUT"
+          fi
 
-            -   name: Nightly Release
-                env:
-                    GH_TOKEN: ${{ secrets.GH_TOKEN }}
-                    DOCS_ONLY: ${{ steps.docs_only.outputs.docs_only }}
-                run: |
-                    # Delete the previous nightly release if it exists
-                    gh release delete nightly --yes || true
+      - name: Nightly Release
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          DOCS_ONLY: ${{ steps.docs_only.outputs.docs_only }}
+        run: |
+          # Delete the previous nightly release if it exists
+          gh release delete nightly --yes || true
 
-                    # Delete the previous nightly tag if it exists
-                    git tag -d nightly || true
-                    git push origin :refs/tags/nightly || true
+          # Delete the previous nightly tag if it exists
+          git tag -d nightly || true
+          git push origin :refs/tags/nightly || true
 
-                    # Wait briefly to avoid lock issues
-                    sleep 5
+          # Wait briefly to avoid lock issues
+          sleep 5
 
-                    # Fetch the latest changes and tags from the repository
-                    git fetch origin
+          # Fetch the latest changes and tags from the repository
+          git fetch origin
 
-                    # Create a new nightly tag pointing to the latest commit on master
-                    LATEST_COMMIT=$(git rev-parse origin/master)
-                    git tag nightly $LATEST_COMMIT
-                    git push origin nightly
+          # Create a new nightly tag pointing to the latest commit on master
+          LATEST_COMMIT=$(git rev-parse origin/master)
+          git tag nightly $LATEST_COMMIT
+          git push origin nightly
 
-                    # Ensure the tag is fully pushed and recognized by GitHub
-                    sleep 5
+          # Ensure the tag is fully pushed and recognized by GitHub
+          sleep 5
 
-                    # Build the release notes. Append [docs only] when the
-                    # push only changed documentation so release.yml's
-                    # binary/desktop jobs (which guard on release.body) skip.
-                    notes="latest master branch build"
-                    if [ "$DOCS_ONLY" = "true" ]; then
-                        notes="$notes [docs only]"
-                    fi
+          # Build the release notes. Append [docs only] when the
+          # push only changed documentation so release.yml's
+          # binary/desktop jobs (which guard on release.body) skip.
+          notes="latest master branch build"
+          if [ "$DOCS_ONLY" = "true" ]; then
+              notes="$notes [docs only]"
+          fi
 
-                    # Create a new nightly release, explicitly targeting the latest commit
-                    gh release create nightly --notes "$notes" --title "nightly" --target $LATEST_COMMIT --prerelease
+          # Create a new nightly release, explicitly targeting the latest commit
+          gh release create nightly --notes "$notes" --title "nightly" --target $LATEST_COMMIT --prerelease

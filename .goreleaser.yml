@@ -3,85 +3,85 @@ version: 2
 project_name: kvelmo
 
 snapshot:
-  version_template: "0.{{ .Now.Format \"06\" }}.{{ .Now.Format \"1\" }}{{ .Now.Format \"02\" }}"
+  version_template: '0.{{ .Now.Format "06" }}.{{ .Now.Format "1" }}{{ .Now.Format "02" }}'
 
 before:
-    hooks:
-        - go mod tidy
-        - go mod verify
+  hooks:
+    - go mod tidy
+    - go mod verify
 
 builds:
-    -   id: kvelmo
-        binary: kvelmo
-        main: ./cmd/kvelmo
-        env:
-            - CGO_ENABLED=0
-        goos:
-            - linux
-            - darwin
-        goarch:
-            - amd64
-            - arm64
-        flags:
-            - -trimpath
-        ldflags:
-            - -s -w
-            - -X github.com/valksor/kvelmo/meta.Version={{.Version}}
-            - -X github.com/valksor/kvelmo/meta.Commit={{.ShortCommit}}
-            - -X github.com/valksor/kvelmo/meta.BuildTime={{.Date}}
+  - id: kvelmo
+    binary: kvelmo
+    main: ./cmd/kvelmo
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+    flags:
+      - -trimpath
+    ldflags:
+      - -s -w
+      - -X github.com/valksor/kvelmo/meta.Version={{.Version}}
+      - -X github.com/valksor/kvelmo/meta.Commit={{.ShortCommit}}
+      - -X github.com/valksor/kvelmo/meta.BuildTime={{.Date}}
 
 # Binary-only releases (no tarballs)
 archives:
-    -   id: binaries
-        builds: [kvelmo]
-        format: binary
-        name_template: "{{ .ProjectName }}-{{ .Os }}-{{ .Arch }}"
+  - id: binaries
+    builds: [kvelmo]
+    format: binary
+    name_template: "{{ .ProjectName }}-{{ .Os }}-{{ .Arch }}"
 
 checksum:
-    name_template: 'checksums.txt'
-    algorithm: sha256
+  name_template: "checksums.txt"
+  algorithm: sha256
 
 # Minisign signing (signs a checksum file only - simpler)
 signs:
-    -   id: minisign
-        cmd: minisign
-        signature: "${artifact}.minisig"
-        stdin: "{{ .Env.MINISIGN_PASSWORD }}"
-        args:
-            - "-S"
-            - "-m"
-            - "${artifact}"
-            - "-s"
-            - "/tmp/minisign.key"
-            - "-x"
-            - "${signature}"
-        artifacts: checksum
+  - id: minisign
+    cmd: minisign
+    signature: "${artifact}.minisig"
+    stdin: "{{ .Env.MINISIGN_PASSWORD }}"
+    args:
+      - "-S"
+      - "-m"
+      - "${artifact}"
+      - "-s"
+      - "/tmp/minisign.key"
+      - "-x"
+      - "${signature}"
+    artifacts: checksum
 
 # SBOM generation
 sboms:
-    -   artifacts: binary
-        documents:
-            - "{{ .ProjectName }}-{{ .Os }}-{{ .Arch }}.sbom.spdx.json"
+  - artifacts: binary
+    documents:
+      - "{{ .ProjectName }}-{{ .Os }}-{{ .Arch }}.sbom.spdx.json"
 
 brews:
-    -   repository:
-            owner: valksor
-            name: homebrew-tap
-            token: "{{ .Env.GH_TOKEN }}"
-        directory: Formula
-        homepage: "https://kvelmo.dev"
-        description: "AI-assisted development task orchestration"
-        license: "BSD-3-Clause"
-        install: |
-            bin.install "kvelmo"
-        test: |
-            system "#{bin}/kvelmo", "--version"
-        # Only publish stable releases to homebrew
-        skip_upload: auto
+  - repository:
+      owner: valksor
+      name: homebrew-tap
+      token: "{{ .Env.GH_TOKEN }}"
+    directory: Formula
+    homepage: "https://kvelmo.dev"
+    description: "AI-assisted development task orchestration"
+    license: "BSD-3-Clause"
+    install: |
+      bin.install "kvelmo"
+    test: |
+      system "#{bin}/kvelmo", "--version"
+    # Only publish stable releases to homebrew
+    skip_upload: auto
 
 changelog:
-    sort: ""
+  sort: ""
 
 release:
-    # Append changelog to existing release notes (keeps "Full Changelog" link and custom text)
-    mode: append
+  # Append changelog to existing release notes (keeps "Full Changelog" link and custom text)
+  mode: append

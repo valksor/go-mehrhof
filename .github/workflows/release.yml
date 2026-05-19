@@ -1,402 +1,402 @@
 name: Release
 
 on:
-    release:
-        types: [published]
+  release:
+    types: [published]
 
 concurrency:
-    group: release-${{ github.ref }}
-    cancel-in-progress: false
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
 
 permissions:
-    contents: write
-    packages: write
-    id-token: write
+  contents: write
+  packages: write
+  id-token: write
 
 env:
-    GO_VERSION: '1.26.3'
+  GO_VERSION: "1.26.3"
 
 jobs:
-    docs:
-        runs-on: ubuntu-latest
-        steps:
-            -   name: Checkout
-                uses: actions/checkout@v6
+  docs:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
 
-            -   name: Setup Node.js
-                uses: actions/setup-node@v4
-                with:
-                    node-version: '24'
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
 
-            -   name: Setup Bun
-                uses: oven-sh/setup-bun@v2
-                with:
-                    bun-version: latest
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
 
-            -   name: Install dependencies
-                run: bun install
+      - name: Install dependencies
+        run: bun install
 
-            -   name: Deploy docs (nightly)
-                if: github.event.release.prerelease
-                uses: cloudflare/wrangler-action@v4
-                with:
-                    apiToken: ${{ secrets.CF_API_TOKEN }}
-                    wranglerVersion: '4'
-                    command: deploy --env nightly
+      - name: Deploy docs (nightly)
+        if: github.event.release.prerelease
+        uses: cloudflare/wrangler-action@v4
+        with:
+          apiToken: ${{ secrets.CF_API_TOKEN }}
+          wranglerVersion: "4"
+          command: deploy --env nightly
 
-            -   name: Deploy docs (latest)
-                if: ${{ !github.event.release.prerelease }}
-                uses: cloudflare/wrangler-action@v4
-                with:
-                    apiToken: ${{ secrets.CF_API_TOKEN }}
-                    wranglerVersion: '4'
-                    command: deploy --env latest
+      - name: Deploy docs (latest)
+        if: ${{ !github.event.release.prerelease }}
+        uses: cloudflare/wrangler-action@v4
+        with:
+          apiToken: ${{ secrets.CF_API_TOKEN }}
+          wranglerVersion: "4"
+          command: deploy --env latest
 
-    build:
-        runs-on: ubuntu-latest
-        if: >-
-            !contains(github.event.release.name, '[docs only]') &&
-            !contains(github.event.release.body, '[docs only]')
-        outputs:
-            desktop_version: ${{ steps.version.outputs.desktop_version }}
+  build:
+    runs-on: ubuntu-latest
+    if: >-
+      !contains(github.event.release.name, '[docs only]') &&
+      !contains(github.event.release.body, '[docs only]')
+    outputs:
+      desktop_version: ${{ steps.version.outputs.desktop_version }}
+    env:
+      RELEASE_TAG: ${{ github.event.release.tag_name }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: true
+
+      - name: Install Minisign
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y minisign
+          minisign -v
+
+      - name: Install Syft
+        uses: anchore/sbom-action/download-syft@v0
+
+      - name: Decode Minisign Private Key
+        run: |
+          echo "${{ secrets.MINISIGN_PRIVATE_KEY }}" | base64 -d > /tmp/minisign.key
+          chmod 600 /tmp/minisign.key
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Cache Bun dependencies
+        uses: actions/cache@v5
+        with:
+          path: ~/.bun/install/cache
+          key: ${{ runner.os }}-bun-${{ hashFiles('web/bun.lock') }}
+          restore-keys: ${{ runner.os }}-bun-
+
+      - name: Generate TypeScript types
+        run: |
+          go install github.com/gzuidhof/tygo@latest
+          make types
+
+      - name: Build Web UI
+        working-directory: web
+        run: |
+          bun install
+          bun run build
+
+      - name: Copy web assets for embedding
+        run: cp -r web/dist internal/web/static/dist
+
+      - name: Upload web dist for desktop builds
+        uses: actions/upload-artifact@v7
+        with:
+          name: web-dist
+          path: web/dist
+          retention-days: 1
+
+      - name: Save release title
+        id: release-title
         env:
-            RELEASE_TAG: ${{ github.event.release.tag_name }}
-        steps:
-            -   name: Checkout
-                uses: actions/checkout@v6
-                with:
-                    fetch-depth: 0
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+        run: |
+          TITLE=$(gh release view "$RELEASE_TAG" --json name --jq '.name')
+          echo "title=$TITLE" >> "$GITHUB_OUTPUT"
 
-            -   name: Set up Go
-                uses: actions/setup-go@v6
-                with:
-                    go-version: ${{ env.GO_VERSION }}
-                    cache: true
-
-            -   name: Install Minisign
-                run: |
-                    sudo apt-get update -qq
-                    sudo apt-get install -y minisign
-                    minisign -v
-
-            -   name: Install Syft
-                uses: anchore/sbom-action/download-syft@v0
-
-            -   name: Decode Minisign Private Key
-                run: |
-                    echo "${{ secrets.MINISIGN_PRIVATE_KEY }}" | base64 -d > /tmp/minisign.key
-                    chmod 600 /tmp/minisign.key
-
-            -   name: Setup Bun
-                uses: oven-sh/setup-bun@v2
-                with:
-                    bun-version: latest
-
-            -   name: Cache Bun dependencies
-                uses: actions/cache@v5
-                with:
-                    path: ~/.bun/install/cache
-                    key: ${{ runner.os }}-bun-${{ hashFiles('web/bun.lock') }}
-                    restore-keys: ${{ runner.os }}-bun-
-
-            -   name: Generate TypeScript types
-                run: |
-                    go install github.com/gzuidhof/tygo@latest
-                    make types
-
-            -   name: Build Web UI
-                working-directory: web
-                run: |
-                    bun install
-                    bun run build
-
-            -   name: Copy web assets for embedding
-                run: cp -r web/dist internal/web/static/dist
-
-            -   name: Upload web dist for desktop builds
-                uses: actions/upload-artifact@v7
-                with:
-                    name: web-dist
-                    path: web/dist
-                    retention-days: 1
-
-            -   name: Save release title
-                id: release-title
-                env:
-                    GH_TOKEN: ${{ secrets.GH_TOKEN }}
-                run: |
-                    TITLE=$(gh release view "$RELEASE_TAG" --json name --jq '.name')
-                    echo "title=$TITLE" >> "$GITHUB_OUTPUT"
-
-            -   name: Run GoReleaser
-                uses: goreleaser/goreleaser-action@v7
-                with:
-                    version: latest
-                    args: release --clean ${{ github.event.release.prerelease && '--snapshot' || '' }}
-                env:
-                    GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
-                    GORELEASER_CURRENT_TAG: ${{ !github.event.release.prerelease && github.event.release.tag_name || '' }}
-                    MINISIGN_PASSWORD: ${{ secrets.MINISIGN_PASSWORD }}
-
-            -   name: Extract desktop version
-                id: version
-                run: |
-                    if [ -f dist/metadata.json ]; then
-                        VERSION=$(jq -r '.version' dist/metadata.json)
-                    else
-                        VERSION="${RELEASE_TAG#v}"
-                    fi
-                    echo "desktop_version=$VERSION" >> "$GITHUB_OUTPUT"
-
-            -   name: Restore release title
-                env:
-                    GH_TOKEN: ${{ secrets.GH_TOKEN }}
-                    ORIGINAL_TITLE: ${{ steps.release-title.outputs.title }}
-                run: |
-                    # Use printf to safely handle special characters in title
-                    gh release edit "$RELEASE_TAG" --title "$(printf '%s' "$ORIGINAL_TITLE")"
-
-            -   name: Generate individual checksums
-                run: |
-                    while read -r hash name; do
-                        echo "$hash  $name" > "dist/${name}.sha256"
-                    done < dist/checksums.txt
-
-            -   name: Upload artifacts to release (prerelease)
-                if: github.event.release.prerelease
-                env:
-                    GH_TOKEN: ${{ secrets.GH_TOKEN }}
-                run: |
-                    # Copy binaries with correct names (GoReleaser snapshot uses different dir structure)
-                    cp dist/kvelmo_linux_amd64_v1/kvelmo dist/kvelmo-linux-amd64
-                    cp dist/kvelmo_linux_arm64_v8.0/kvelmo dist/kvelmo-linux-arm64
-                    cp dist/kvelmo_darwin_arm64_v8.0/kvelmo dist/kvelmo-darwin-arm64
-                    # Upload all artifacts
-                    gh release upload "$RELEASE_TAG" \
-                        dist/kvelmo-linux-amd64 \
-                        dist/kvelmo-linux-arm64 \
-                        dist/kvelmo-darwin-arm64 \
-                        dist/checksums.txt \
-                        dist/checksums.txt.minisig \
-                        dist/kvelmo-linux-amd64.sha256 \
-                        dist/kvelmo-linux-arm64.sha256 \
-                        dist/kvelmo-darwin-arm64.sha256 \
-                        dist/kvelmo-linux-amd64.sbom.spdx.json \
-                        dist/kvelmo-linux-arm64.sbom.spdx.json \
-                        dist/kvelmo-darwin-arm64.sbom.spdx.json \
-                        --clobber
-
-            -   name: Upload individual checksums (stable)
-                if: ${{ !github.event.release.prerelease }}
-                env:
-                    GH_TOKEN: ${{ secrets.GH_TOKEN }}
-                run: |
-                    gh release upload "$RELEASE_TAG" \
-                        dist/kvelmo-linux-amd64.sha256 \
-                        dist/kvelmo-linux-arm64.sha256 \
-                        dist/kvelmo-darwin-arm64.sha256 \
-                        dist/kvelmo-darwin-amd64.sha256 \
-                        --clobber
-
-    # Build Tauri desktop app on native runners
-    # macOS/Linux: kvelmo binary as sidecar; Windows: Linux binary as resource (for WSL)
-    desktop:
-        needs: [build]
-        if: >-
-            !contains(github.event.release.name, '[docs only]') &&
-            !contains(github.event.release.body, '[docs only]') &&
-            !contains(github.event.release.name, '[skip desktop]') &&
-            !contains(github.event.release.body, '[skip desktop]')
-        strategy:
-            matrix:
-                include:
-                    # macOS
-                    -   platform: macos
-                        arch: arm64
-                        runner: macos-arm
-                        target: aarch64-apple-darwin
-                        kvelmo_asset: kvelmo-darwin-arm64
-                        wsl_asset: ''
-                    -   platform: macos
-                        arch: x64
-                        runner: macos-26-intel
-                        target: x86_64-apple-darwin
-                        kvelmo_asset: kvelmo-darwin-amd64
-                        wsl_asset: ''
-                        skip_nightly: true
-                    # Linux
-                    -   platform: linux
-                        arch: x64
-                        runner: ubuntu-latest
-                        target: x86_64-unknown-linux-gnu
-                        kvelmo_asset: kvelmo-linux-amd64
-                        wsl_asset: ''
-                    -   platform: linux
-                        arch: arm64
-                        runner: ubuntu-24.04-arm
-                        target: aarch64-unknown-linux-gnu
-                        kvelmo_asset: kvelmo-linux-arm64
-                        wsl_asset: ''
-                    # Windows (uses WSL - bundle Linux binary as a resource)
-                    -   platform: windows
-                        arch: x64
-                        runner: windows-latest
-                        target: x86_64-pc-windows-msvc
-                        kvelmo_asset: ''
-                        wsl_asset: kvelmo-linux-amd64
-                    -   platform: windows
-                        arch: arm64
-                        runner: windows-11-arm
-                        target: aarch64-pc-windows-msvc
-                        kvelmo_asset: ''
-                        wsl_asset: kvelmo-linux-arm64
-                        skip_nightly: true
-
-        runs-on: ${{ matrix.runner }}
-
+      - name: Run GoReleaser
+        uses: goreleaser/goreleaser-action@v7
+        with:
+          version: latest
+          args: release --clean ${{ github.event.release.prerelease && '--snapshot' || '' }}
         env:
-            RELEASE_TAG: ${{ github.event.release.tag_name }}
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+          GORELEASER_CURRENT_TAG: ${{ !github.event.release.prerelease && github.event.release.tag_name || '' }}
+          MINISIGN_PASSWORD: ${{ secrets.MINISIGN_PASSWORD }}
 
-        steps:
-            -   name: Checkout
-                uses: actions/checkout@v6
+      - name: Extract desktop version
+        id: version
+        run: |
+          if [ -f dist/metadata.json ]; then
+              VERSION=$(jq -r '.version' dist/metadata.json)
+          else
+              VERSION="${RELEASE_TAG#v}"
+          fi
+          echo "desktop_version=$VERSION" >> "$GITHUB_OUTPUT"
 
-            -   name: Check if build should proceed
-                id: check
-                run: echo "proceed=true" >> $GITHUB_OUTPUT
-                if: ${{ !github.event.release.prerelease || !matrix.skip_nightly }}
+      - name: Restore release title
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          ORIGINAL_TITLE: ${{ steps.release-title.outputs.title }}
+        run: |
+          # Use printf to safely handle special characters in title
+          gh release edit "$RELEASE_TAG" --title "$(printf '%s' "$ORIGINAL_TITLE")"
 
-            -   name: Setup Rust
-                if: steps.check.outputs.proceed == 'true'
-                uses: dtolnay/rust-toolchain@stable
-                with:
-                    targets: ${{ matrix.target }}
+      - name: Generate individual checksums
+        run: |
+          while read -r hash name; do
+              echo "$hash  $name" > "dist/${name}.sha256"
+          done < dist/checksums.txt
 
-            -   name: Cache Rust dependencies
-                if: steps.check.outputs.proceed == 'true'
-                uses: Swatinem/rust-cache@v2
-                with:
-                    workspaces: web/src-tauri
-                    cache-targets: false
-                    cache-on-failure: true
+      - name: Upload artifacts to release (prerelease)
+        if: github.event.release.prerelease
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+        run: |
+          # Copy binaries with correct names (GoReleaser snapshot uses different dir structure)
+          cp dist/kvelmo_linux_amd64_v1/kvelmo dist/kvelmo-linux-amd64
+          cp dist/kvelmo_linux_arm64_v8.0/kvelmo dist/kvelmo-linux-arm64
+          cp dist/kvelmo_darwin_arm64_v8.0/kvelmo dist/kvelmo-darwin-arm64
+          # Upload all artifacts
+          gh release upload "$RELEASE_TAG" \
+              dist/kvelmo-linux-amd64 \
+              dist/kvelmo-linux-arm64 \
+              dist/kvelmo-darwin-arm64 \
+              dist/checksums.txt \
+              dist/checksums.txt.minisig \
+              dist/kvelmo-linux-amd64.sha256 \
+              dist/kvelmo-linux-arm64.sha256 \
+              dist/kvelmo-darwin-arm64.sha256 \
+              dist/kvelmo-linux-amd64.sbom.spdx.json \
+              dist/kvelmo-linux-arm64.sbom.spdx.json \
+              dist/kvelmo-darwin-arm64.sbom.spdx.json \
+              --clobber
 
-            -   name: Install Linux dependencies
-                if: steps.check.outputs.proceed == 'true' && matrix.platform == 'linux'
-                run: |
-                    sudo apt-get update
-                    sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf xdg-utils
+      - name: Upload individual checksums (stable)
+        if: ${{ !github.event.release.prerelease }}
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+        run: |
+          gh release upload "$RELEASE_TAG" \
+              dist/kvelmo-linux-amd64.sha256 \
+              dist/kvelmo-linux-arm64.sha256 \
+              dist/kvelmo-darwin-arm64.sha256 \
+              dist/kvelmo-darwin-amd64.sha256 \
+              --clobber
 
-            -   name: Setup Bun
-                if: steps.check.outputs.proceed == 'true'
-                uses: oven-sh/setup-bun@v2
-                with:
-                    bun-version: latest
+  # Build Tauri desktop app on native runners
+  # macOS/Linux: kvelmo binary as sidecar; Windows: Linux binary as resource (for WSL)
+  desktop:
+    needs: [build]
+    if: >-
+      !contains(github.event.release.name, '[docs only]') &&
+      !contains(github.event.release.body, '[docs only]') &&
+      !contains(github.event.release.name, '[skip desktop]') &&
+      !contains(github.event.release.body, '[skip desktop]')
+    strategy:
+      matrix:
+        include:
+          # macOS
+          - platform: macos
+            arch: arm64
+            runner: macos-arm
+            target: aarch64-apple-darwin
+            kvelmo_asset: kvelmo-darwin-arm64
+            wsl_asset: ""
+          - platform: macos
+            arch: x64
+            runner: macos-26-intel
+            target: x86_64-apple-darwin
+            kvelmo_asset: kvelmo-darwin-amd64
+            wsl_asset: ""
+            skip_nightly: true
+          # Linux
+          - platform: linux
+            arch: x64
+            runner: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            kvelmo_asset: kvelmo-linux-amd64
+            wsl_asset: ""
+          - platform: linux
+            arch: arm64
+            runner: ubuntu-24.04-arm
+            target: aarch64-unknown-linux-gnu
+            kvelmo_asset: kvelmo-linux-arm64
+            wsl_asset: ""
+          # Windows (uses WSL - bundle Linux binary as a resource)
+          - platform: windows
+            arch: x64
+            runner: windows-latest
+            target: x86_64-pc-windows-msvc
+            kvelmo_asset: ""
+            wsl_asset: kvelmo-linux-amd64
+          - platform: windows
+            arch: arm64
+            runner: windows-11-arm
+            target: aarch64-pc-windows-msvc
+            kvelmo_asset: ""
+            wsl_asset: kvelmo-linux-arm64
+            skip_nightly: true
 
-            -   name: Cache Bun dependencies
-                if: steps.check.outputs.proceed == 'true'
-                uses: actions/cache@v5
-                with:
-                    path: ~/.bun/install/cache
-                    key: ${{ runner.os }}-bun-${{ hashFiles('web/bun.lock') }}
-                    restore-keys: ${{ runner.os }}-bun-
+    runs-on: ${{ matrix.runner }}
 
-            -   name: Set up Go
-                if: steps.check.outputs.proceed == 'true'
-                uses: actions/setup-go@v6
-                with:
-                    go-version: ${{ env.GO_VERSION }}
-                    cache: true
+    env:
+      RELEASE_TAG: ${{ github.event.release.tag_name }}
 
-            -   name: Generate TypeScript types
-                if: steps.check.outputs.proceed == 'true'
-                run: |
-                    go install github.com/gzuidhof/tygo@latest
-                    make types
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
 
-            -   name: Install web dependencies
-                if: steps.check.outputs.proceed == 'true'
-                working-directory: web
-                run: bun install
+      - name: Check if build should proceed
+        id: check
+        run: echo "proceed=true" >> $GITHUB_OUTPUT
+        if: ${{ !github.event.release.prerelease || !matrix.skip_nightly }}
 
-            -   name: Install Tauri CLI
-                if: steps.check.outputs.proceed == 'true'
-                run: cargo install tauri-cli --version "^2"
+      - name: Setup Rust
+        if: steps.check.outputs.proceed == 'true'
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
 
-            -   name: Download kvelmo binary (sidecar for macOS/Linux)
-                if: steps.check.outputs.proceed == 'true' && matrix.kvelmo_asset != ''
-                env:
-                    GH_TOKEN: ${{ secrets.GH_TOKEN }}
-                run: |
-                    mkdir -p web/src-tauri/binaries
-                    gh release download "$RELEASE_TAG" \
-                        --pattern "${{ matrix.kvelmo_asset }}" \
-                        --output "web/src-tauri/binaries/kvelmo-${{ matrix.target }}"
-                    chmod +x "web/src-tauri/binaries/kvelmo-${{ matrix.target }}"
+      - name: Cache Rust dependencies
+        if: steps.check.outputs.proceed == 'true'
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: web/src-tauri
+          cache-targets: false
+          cache-on-failure: true
 
-            -   name: Download kvelmo binary (WSL resource for Windows)
-                if: steps.check.outputs.proceed == 'true' && matrix.wsl_asset != ''
-                env:
-                    GH_TOKEN: ${{ secrets.GH_TOKEN }}
-                shell: pwsh
-                run: |
-                    New-Item -ItemType Directory -Force -Path web/src-tauri/resources
-                    $wslName = if ("${{ matrix.arch }}" -eq "arm64") { "kvelmo-wsl-arm64" } else { "kvelmo-wsl-x64" }
-                    gh release download $env:RELEASE_TAG --pattern "${{ matrix.wsl_asset }}" --output "web/src-tauri/resources/$wslName"
+      - name: Install Linux dependencies
+        if: steps.check.outputs.proceed == 'true' && matrix.platform == 'linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf xdg-utils
 
-            -   name: Set version in tauri.conf.json (Unix)
-                if: steps.check.outputs.proceed == 'true' && matrix.platform != 'windows'
-                working-directory: web/src-tauri
-                env:
-                    DESKTOP_VERSION: ${{ needs.build.outputs.desktop_version }}
-                run: bun x json -I -f tauri.conf.json -e "this.version='$DESKTOP_VERSION'"
+      - name: Setup Bun
+        if: steps.check.outputs.proceed == 'true'
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
 
-            -   name: Set version in tauri.conf.json (Windows)
-                if: steps.check.outputs.proceed == 'true' && matrix.platform == 'windows'
-                working-directory: web/src-tauri
-                shell: pwsh
-                env:
-                    DESKTOP_VERSION: ${{ needs.build.outputs.desktop_version }}
-                run: bun x json -I -f tauri.conf.json -e "this.version='$env:DESKTOP_VERSION'"
+      - name: Cache Bun dependencies
+        if: steps.check.outputs.proceed == 'true'
+        uses: actions/cache@v5
+        with:
+          path: ~/.bun/install/cache
+          key: ${{ runner.os }}-bun-${{ hashFiles('web/bun.lock') }}
+          restore-keys: ${{ runner.os }}-bun-
 
-            -   name: Download pre-built web dist
-                if: steps.check.outputs.proceed == 'true'
-                uses: actions/download-artifact@v8
-                with:
-                    name: web-dist
-                    path: web/dist
+      - name: Set up Go
+        if: steps.check.outputs.proceed == 'true'
+        uses: actions/setup-go@v6
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: true
 
-            -   name: Build Tauri app
-                if: steps.check.outputs.proceed == 'true'
-                working-directory: web
-                env:
-                    TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
-                    TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
-                run: cargo tauri build --target ${{ matrix.target }} --config '{"build":{"beforeBuildCommand":""}}'
+      - name: Generate TypeScript types
+        if: steps.check.outputs.proceed == 'true'
+        run: |
+          go install github.com/gzuidhof/tygo@latest
+          make types
 
-            -   name: Upload to release (macOS)
-                if: steps.check.outputs.proceed == 'true' && matrix.platform == 'macos'
-                env:
-                    GH_TOKEN: ${{ secrets.GH_TOKEN }}
-                run: |
-                    find web/src-tauri/target/${{ matrix.target }}/release/bundle -type f -name "*.dmg" | while read f; do
-                        gh release upload "$RELEASE_TAG" "$f" --clobber
-                    done
+      - name: Install web dependencies
+        if: steps.check.outputs.proceed == 'true'
+        working-directory: web
+        run: bun install
 
-            -   name: Upload to release (Linux)
-                if: steps.check.outputs.proceed == 'true' && matrix.platform == 'linux'
-                env:
-                    GH_TOKEN: ${{ secrets.GH_TOKEN }}
-                run: |
-                    find web/src-tauri/target/${{ matrix.target }}/release/bundle -type f \( -name "*.deb" -o -name "*.AppImage" \) | while read f; do
-                        gh release upload "$RELEASE_TAG" "$f" --clobber
-                    done
+      - name: Install Tauri CLI
+        if: steps.check.outputs.proceed == 'true'
+        run: cargo install tauri-cli --version "^2"
 
-            -   name: Upload to release (Windows)
-                if: steps.check.outputs.proceed == 'true' && matrix.platform == 'windows'
-                env:
-                    GH_TOKEN: ${{ secrets.GH_TOKEN }}
-                shell: pwsh
-                run: |
-                    Get-ChildItem -Path "web/src-tauri/target/${{ matrix.target }}/release/bundle" -Recurse -Include *.msi, *.exe | ForEach-Object {
-                        gh release upload $env:RELEASE_TAG $_.FullName --clobber
-                    }
+      - name: Download kvelmo binary (sidecar for macOS/Linux)
+        if: steps.check.outputs.proceed == 'true' && matrix.kvelmo_asset != ''
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+        run: |
+          mkdir -p web/src-tauri/binaries
+          gh release download "$RELEASE_TAG" \
+              --pattern "${{ matrix.kvelmo_asset }}" \
+              --output "web/src-tauri/binaries/kvelmo-${{ matrix.target }}"
+          chmod +x "web/src-tauri/binaries/kvelmo-${{ matrix.target }}"
+
+      - name: Download kvelmo binary (WSL resource for Windows)
+        if: steps.check.outputs.proceed == 'true' && matrix.wsl_asset != ''
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path web/src-tauri/resources
+          $wslName = if ("${{ matrix.arch }}" -eq "arm64") { "kvelmo-wsl-arm64" } else { "kvelmo-wsl-x64" }
+          gh release download $env:RELEASE_TAG --pattern "${{ matrix.wsl_asset }}" --output "web/src-tauri/resources/$wslName"
+
+      - name: Set version in tauri.conf.json (Unix)
+        if: steps.check.outputs.proceed == 'true' && matrix.platform != 'windows'
+        working-directory: web/src-tauri
+        env:
+          DESKTOP_VERSION: ${{ needs.build.outputs.desktop_version }}
+        run: bun x json -I -f tauri.conf.json -e "this.version='$DESKTOP_VERSION'"
+
+      - name: Set version in tauri.conf.json (Windows)
+        if: steps.check.outputs.proceed == 'true' && matrix.platform == 'windows'
+        working-directory: web/src-tauri
+        shell: pwsh
+        env:
+          DESKTOP_VERSION: ${{ needs.build.outputs.desktop_version }}
+        run: bun x json -I -f tauri.conf.json -e "this.version='$env:DESKTOP_VERSION'"
+
+      - name: Download pre-built web dist
+        if: steps.check.outputs.proceed == 'true'
+        uses: actions/download-artifact@v8
+        with:
+          name: web-dist
+          path: web/dist
+
+      - name: Build Tauri app
+        if: steps.check.outputs.proceed == 'true'
+        working-directory: web
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        run: cargo tauri build --target ${{ matrix.target }} --config '{"build":{"beforeBuildCommand":""}}'
+
+      - name: Upload to release (macOS)
+        if: steps.check.outputs.proceed == 'true' && matrix.platform == 'macos'
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+        run: |
+          find web/src-tauri/target/${{ matrix.target }}/release/bundle -type f -name "*.dmg" | while read f; do
+              gh release upload "$RELEASE_TAG" "$f" --clobber
+          done
+
+      - name: Upload to release (Linux)
+        if: steps.check.outputs.proceed == 'true' && matrix.platform == 'linux'
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+        run: |
+          find web/src-tauri/target/${{ matrix.target }}/release/bundle -type f \( -name "*.deb" -o -name "*.AppImage" \) | while read f; do
+              gh release upload "$RELEASE_TAG" "$f" --clobber
+          done
+
+      - name: Upload to release (Windows)
+        if: steps.check.outputs.proceed == 'true' && matrix.platform == 'windows'
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+        shell: pwsh
+        run: |
+          Get-ChildItem -Path "web/src-tauri/target/${{ matrix.target }}/release/bundle" -Recurse -Include *.msi, *.exe | ForEach-Object {
+              gh release upload $env:RELEASE_TAG $_.FullName --clobber
+          }

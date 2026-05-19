@@ -1,360 +1,359 @@
 name: CI
 
 on:
-    pull_request:
-    workflow_run:
-        workflows: [Release]
-        types: [completed]
+  pull_request:
+  workflow_run:
+    workflows: [Release]
+    types: [completed]
 
 concurrency:
-    group: ci-${{ github.ref }}
-    cancel-in-progress: true
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-    changes:
-        if: github.actor == 'dependabot[bot]'
-        runs-on: ubuntu-latest
-        outputs:
-            go: ${{ steps.filter.outputs.go }}
-            web: ${{ steps.filter.outputs.web }}
-            tauri: ${{ steps.filter.outputs.tauri }}
-        steps:
-            -   uses: actions/checkout@v6
-            -   uses: dorny/paths-filter@v4
-                id: filter
-                with:
-                    filters: |
-                        go:
-                            - 'go.mod'
-                            - 'go.sum'
-                            - '**/*.go'
-                        web:
-                            - 'web/package.json'
-                            - 'web/bun.lock'
-                            - 'web/src/**'
-                            - 'web/tsconfig*.json'
-                            - 'web/vite.config.*'
-                        tauri:
-                            - 'web/src-tauri/Cargo.toml'
-                            - 'web/src-tauri/Cargo.lock'
-                            - 'web/src-tauri/src/**'
+  changes:
+    if: github.actor == 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    outputs:
+      go: ${{ steps.filter.outputs.go }}
+      web: ${{ steps.filter.outputs.web }}
+      tauri: ${{ steps.filter.outputs.tauri }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: dorny/paths-filter@v4
+        id: filter
+        with:
+          filters: |
+            go:
+                - 'go.mod'
+                - 'go.sum'
+                - '**/*.go'
+            web:
+                - 'web/package.json'
+                - 'web/bun.lock'
+                - 'web/src/**'
+                - 'web/tsconfig*.json'
+                - 'web/vite.config.*'
+            tauri:
+                - 'web/src-tauri/Cargo.toml'
+                - 'web/src-tauri/Cargo.lock'
+                - 'web/src-tauri/src/**'
 
-    test:
-        needs: [changes]
+  test:
+    needs: [changes]
+    if: >-
+      always() &&
+      !contains(github.event.head_commit.message, '[skip test]') &&
+      !contains(github.event.head_commit.message, '[docs only]') &&
+      !contains(github.event.workflow_run.head_commit.message, '[docs only]') &&
+      (github.event_name != 'workflow_run' || github.event.workflow_run.head_branch == 'nightly') &&
+      (github.actor != 'dependabot[bot]' || needs.changes.outputs.go == 'true')
+    strategy:
+      matrix:
+        include:
+          - goos: linux
+            goarch: amd64
+            runner: ubuntu-latest
+          - goos: darwin
+            goarch: arm64
+            runner: macos-arm
+
+    runs-on: ${{ matrix.runner }}
+
+    env:
+      GO_VERSION: "1.26.3"
+      GOLANGCI_LINT_VERSION: v2.12.2
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: true
+
+      - name: Install golangci-lint
+        run: curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin ${{ env.GOLANGCI_LINT_VERSION }}
+
+      - name: Install govulncheck
+        run: go install golang.org/x/vuln/cmd/govulncheck@latest
+
+      - name: Install goimports
+        run: go install golang.org/x/tools/cmd/goimports@latest
+
+      - name: Install gofumpt
+        run: go install mvdan.cc/gofumpt@latest
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Cache Bun dependencies
+        uses: actions/cache@v5
+        with:
+          path: ~/.bun/install/cache
+          key: ${{ runner.os }}-bun-${{ hashFiles('web/bun.lock') }}
+          restore-keys: ${{ runner.os }}-bun-
+
+      - name: Generate TypeScript types
+        run: |
+          go install github.com/gzuidhof/tygo@latest
+          make types
+
+      - name: Build Web UI
+        working-directory: web
+        run: |
+          bun install
+          bun run build
+
+      - name: Copy web assets for embedding
+        run: cp -r web/dist internal/web/static/dist
+
+      - name: Verify dependencies
+        run: |
+          go mod tidy
+          git diff --exit-code go.mod go.sum
+
+      - name: Lint
+        run: make ci-quality
+
+      - name: Test
+        run: make ci-test
+
+      - name: Test (Race Detector)
+        if: matrix.goos == 'linux' && matrix.goarch == 'amd64'
+        run: go test -v -race ./...
+
+      - name: Generate coverage
+        if: github.event_name != 'pull_request' && matrix.goos == 'linux' && matrix.goarch == 'amd64'
+        run: go test -coverprofile=covprofile ./...
+
+      - name: Upload Go coverage to Coveralls
+        if: github.event_name != 'pull_request' && matrix.goos == 'linux' && matrix.goarch == 'amd64'
+        uses: coverallsapp/github-action@v2
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          file: covprofile
+          format: golang
+          parallel: true
+          flag-name: go-coverage
+
+      - name: Build
+        run: make build
+
+      - name: Verify binary
+        run: ./build/kvelmo version
+
+  web:
+    needs: [changes]
+    if: >-
+      always() &&
+      !contains(github.event.head_commit.message, '[skip test]') &&
+      !contains(github.event.head_commit.message, '[docs only]') &&
+      !contains(github.event.workflow_run.head_commit.message, '[docs only]') &&
+      (github.event_name != 'workflow_run' || github.event.workflow_run.head_branch == 'nightly') &&
+      (github.actor != 'dependabot[bot]' || needs.changes.outputs.web == 'true')
+    runs-on: ubuntu-latest
+    env:
+      GO_VERSION: "1.26.1"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: true
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Cache Bun dependencies
+        uses: actions/cache@v5
+        with:
+          path: ~/.bun/install/cache
+          key: ${{ runner.os }}-bun-${{ hashFiles('web/bun.lock') }}
+          restore-keys: ${{ runner.os }}-bun-
+
+      - name: Generate TypeScript types
+        run: |
+          go install github.com/gzuidhof/tygo@latest
+          make types
+
+      - name: Install Dependencies
+        working-directory: web
+        run: bun install
+
+      - name: Lint
+        working-directory: web
+        run: bun run lint
+
+      - name: Run Tests with Coverage
+        working-directory: web
+        run: bun run test:coverage
+
+      - name: Build Production Bundle
+        working-directory: web
+        run: bun run build
+
+      - name: Verify Build Artifacts
+        run: |
+          test -d web/dist || (echo "Build failed: web/dist missing" && exit 1)
+          test -f web/dist/index.html || (echo "Build failed: index.html missing" && exit 1)
+
+      - name: Upload Web coverage to Coveralls
+        if: github.event_name != 'pull_request'
+        uses: coverallsapp/github-action@v2
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          file: web/coverage/lcov.info
+          format: lcov
+          parallel: true
+          flag-name: web-coverage
+          base-path: web
+
+  tauri:
+    needs: [changes]
+    if: >-
+      always() &&
+      !contains(github.event.head_commit.message, '[skip test]') &&
+      !contains(github.event.head_commit.message, '[docs only]') &&
+      !contains(github.event.workflow_run.head_commit.message, '[docs only]') &&
+      (github.event_name != 'workflow_run' || github.event.workflow_run.head_branch == 'nightly') &&
+      (github.actor != 'dependabot[bot]' || needs.changes.outputs.tauri == 'true')
+    strategy:
+      matrix:
+        include:
+          - runner: ubuntu-latest
+          - runner: macos-arm
+
+    runs-on: ${{ matrix.runner }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt, llvm-tools-preview
+
+      - name: Install cargo-llvm-cov
+        uses: taiki-e/install-action@cargo-llvm-cov
+
+      - name: Cache Cargo
+        uses: actions/cache@v5
+        with:
+          path: |
+            ~/.cargo/registry/
+            ~/.cargo/git/
+            web/src-tauri/target/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('web/src-tauri/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-cargo-
+
+      - name: Install Tauri deps (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
+
+      - name: Create stub sidecar binary
+        run: |
+          mkdir -p web/src-tauri/binaries web/src-tauri/resources
+          TARGET=$(rustc -vV | grep host | cut -d' ' -f2)
+          touch web/src-tauri/binaries/kvelmo-$TARGET
+          chmod +x web/src-tauri/binaries/kvelmo-$TARGET
+          touch web/src-tauri/resources/kvelmo-wsl-x64
+          touch web/src-tauri/resources/kvelmo-wsl-arm64
+
+      - name: Check formatting
+        working-directory: web/src-tauri
+        run: cargo fmt --check
+
+      - name: Clippy
+        working-directory: web/src-tauri
+        run: cargo clippy -- -D warnings
+
+      - name: Run tests
+        working-directory: web/src-tauri
+        run: cargo test --lib
+
+      - name: Generate coverage
+        if: github.event_name != 'pull_request' && runner.os == 'Linux'
+        working-directory: web/src-tauri
+        run: cargo llvm-cov --lib --lcov --remap-path-prefix --output-path lcov.info
+
+      - name: Check coverage data exists
+        id: check-tauri-coverage
+        if: github.event_name != 'pull_request' && runner.os == 'Linux'
+        working-directory: web/src-tauri
+        run: |
+          if grep -q "^DA:" lcov.info 2>/dev/null; then
+            echo "has_coverage=true" >> $GITHUB_OUTPUT
+            echo "Coverage data found"
+          else
+            echo "has_coverage=false" >> $GITHUB_OUTPUT
+            echo "No coverage data in lcov.info, skipping upload"
+          fi
+
+      - name: Upload Tauri coverage to Coveralls
         if: >-
-            always() &&
-            !contains(github.event.head_commit.message, '[skip test]') &&
-            !contains(github.event.head_commit.message, '[docs only]') &&
-            !contains(github.event.workflow_run.head_commit.message, '[docs only]') &&
-            (github.event_name != 'workflow_run' || github.event.workflow_run.head_branch == 'nightly') &&
-            (github.actor != 'dependabot[bot]' || needs.changes.outputs.go == 'true')
-        strategy:
-            matrix:
-                include:
-                    -   goos: linux
-                        goarch: amd64
-                        runner: ubuntu-latest
-                    -   goos: darwin
-                        goarch: arm64
-                        runner: macos-arm
+          github.event_name != 'pull_request' &&
+          runner.os == 'Linux' &&
+          steps.check-tauri-coverage.outputs.has_coverage == 'true'
+        uses: coverallsapp/github-action@v2
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          file: web/src-tauri/lcov.info
+          format: lcov
+          parallel: true
+          flag-name: tauri-coverage
+          base-path: web/src-tauri
 
-        runs-on: ${{ matrix.runner }}
+  coverage-finish:
+    needs: [test, web, tauri]
+    runs-on: ubuntu-latest
+    if: >-
+      github.event_name != 'pull_request' &&
+      always() &&
+      (needs.test.result == 'success' || needs.test.result == 'skipped') &&
+      (needs.web.result == 'success' || needs.web.result == 'skipped') &&
+      (needs.tauri.result == 'success' || needs.tauri.result == 'skipped') &&
+      !(needs.test.result == 'skipped' && needs.web.result == 'skipped' && needs.tauri.result == 'skipped')
+    steps:
+      - name: Finish Coveralls parallel build
+        uses: coverallsapp/github-action@v2
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          parallel-finished: true
+          carryforward: "go-coverage,web-coverage,tauri-coverage"
 
-        env:
-            GO_VERSION: '1.26.3'
-            GOLANGCI_LINT_VERSION: v2.12.2
+  cleanup:
+    needs: [test, web, tauri, coverage-finish]
+    if: always()
+    strategy:
+      matrix:
+        include:
+          - runner: ubuntu-latest
+          - runner: macos-arm
+    runs-on: ${{ matrix.runner }}
 
-        steps:
-            -   name: Checkout
-                uses: actions/checkout@v6
+    steps:
+      - name: Cleanup Go caches
+        run: |
+          go clean -cache -testcache || true
+          rm -rf .coverage covprofile
 
-            -   name: Set up Go
-                uses: actions/setup-go@v6
-                with:
-                    go-version: ${{ env.GO_VERSION }}
-                    cache: true
-
-            -   name: Install golangci-lint
-                run: curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin ${{ env.GOLANGCI_LINT_VERSION }}
-
-            -   name: Install govulncheck
-                run: go install golang.org/x/vuln/cmd/govulncheck@latest
-
-            -   name: Install goimports
-                run: go install golang.org/x/tools/cmd/goimports@latest
-
-            -   name: Install gofumpt
-                run: go install mvdan.cc/gofumpt@latest
-
-            -   name: Setup Bun
-                uses: oven-sh/setup-bun@v2
-                with:
-                    bun-version: latest
-
-            -   name: Cache Bun dependencies
-                uses: actions/cache@v5
-                with:
-                    path: ~/.bun/install/cache
-                    key: ${{ runner.os }}-bun-${{ hashFiles('web/bun.lock') }}
-                    restore-keys: ${{ runner.os }}-bun-
-
-            -   name: Generate TypeScript types
-                run: |
-                    go install github.com/gzuidhof/tygo@latest
-                    make types
-
-            -   name: Build Web UI
-                working-directory: web
-                run: |
-                    bun install
-                    bun run build
-
-            -   name: Copy web assets for embedding
-                run: cp -r web/dist internal/web/static/dist
-
-            -   name: Verify dependencies
-                run: |
-                    go mod tidy
-                    git diff --exit-code go.mod go.sum
-
-            -   name: Lint
-                run: make ci-quality
-
-            -   name: Test
-                run: make ci-test
-
-            -   name: Test (Race Detector)
-                if: matrix.goos == 'linux' && matrix.goarch == 'amd64'
-                run: go test -v -race ./...
-
-            -   name: Generate coverage
-                if: github.event_name != 'pull_request' && matrix.goos == 'linux' && matrix.goarch == 'amd64'
-                run: go test -coverprofile=covprofile ./...
-
-            -   name: Upload Go coverage to Coveralls
-                if: github.event_name != 'pull_request' && matrix.goos == 'linux' && matrix.goarch == 'amd64'
-                uses: coverallsapp/github-action@v2
-                with:
-                    github-token: ${{ secrets.GITHUB_TOKEN }}
-                    file: covprofile
-                    format: golang
-                    parallel: true
-                    flag-name: go-coverage
-
-            -   name: Build
-                run: make build
-
-            -   name: Verify binary
-                run: ./build/kvelmo version
-
-    web:
-        needs: [changes]
-        if: >-
-            always() &&
-            !contains(github.event.head_commit.message, '[skip test]') &&
-            !contains(github.event.head_commit.message, '[docs only]') &&
-            !contains(github.event.workflow_run.head_commit.message, '[docs only]') &&
-            (github.event_name != 'workflow_run' || github.event.workflow_run.head_branch == 'nightly') &&
-            (github.actor != 'dependabot[bot]' || needs.changes.outputs.web == 'true')
-        runs-on: ubuntu-latest
-
-        env:
-            GO_VERSION: '1.26.1'
-
-        steps:
-            -   name: Checkout
-                uses: actions/checkout@v6
-
-            -   name: Set up Go
-                uses: actions/setup-go@v6
-                with:
-                    go-version: ${{ env.GO_VERSION }}
-                    cache: true
-
-            -   name: Setup Bun
-                uses: oven-sh/setup-bun@v2
-                with:
-                    bun-version: latest
-
-            -   name: Cache Bun dependencies
-                uses: actions/cache@v5
-                with:
-                    path: ~/.bun/install/cache
-                    key: ${{ runner.os }}-bun-${{ hashFiles('web/bun.lock') }}
-                    restore-keys: ${{ runner.os }}-bun-
-
-            -   name: Generate TypeScript types
-                run: |
-                    go install github.com/gzuidhof/tygo@latest
-                    make types
-
-            -   name: Install Dependencies
-                working-directory: web
-                run: bun install
-
-            -   name: Lint
-                working-directory: web
-                run: bun run lint
-
-            -   name: Run Tests with Coverage
-                working-directory: web
-                run: bun run test:coverage
-
-            -   name: Build Production Bundle
-                working-directory: web
-                run: bun run build
-
-            -   name: Verify Build Artifacts
-                run: |
-                    test -d web/dist || (echo "Build failed: web/dist missing" && exit 1)
-                    test -f web/dist/index.html || (echo "Build failed: index.html missing" && exit 1)
-
-            -   name: Upload Web coverage to Coveralls
-                if: github.event_name != 'pull_request'
-                uses: coverallsapp/github-action@v2
-                with:
-                    github-token: ${{ secrets.GITHUB_TOKEN }}
-                    file: web/coverage/lcov.info
-                    format: lcov
-                    parallel: true
-                    flag-name: web-coverage
-                    base-path: web
-
-    tauri:
-        needs: [changes]
-        if: >-
-            always() &&
-            !contains(github.event.head_commit.message, '[skip test]') &&
-            !contains(github.event.head_commit.message, '[docs only]') &&
-            !contains(github.event.workflow_run.head_commit.message, '[docs only]') &&
-            (github.event_name != 'workflow_run' || github.event.workflow_run.head_branch == 'nightly') &&
-            (github.actor != 'dependabot[bot]' || needs.changes.outputs.tauri == 'true')
-        strategy:
-            matrix:
-                include:
-                    -   runner: ubuntu-latest
-                    -   runner: macos-arm
-
-        runs-on: ${{ matrix.runner }}
-
-        steps:
-            -   name: Checkout
-                uses: actions/checkout@v6
-
-            -   name: Install Rust
-                uses: dtolnay/rust-toolchain@stable
-                with:
-                    components: clippy, rustfmt, llvm-tools-preview
-
-            -   name: Install cargo-llvm-cov
-                uses: taiki-e/install-action@cargo-llvm-cov
-
-            -   name: Cache Cargo
-                uses: actions/cache@v5
-                with:
-                    path: |
-                        ~/.cargo/registry/
-                        ~/.cargo/git/
-                        web/src-tauri/target/
-                    key: ${{ runner.os }}-cargo-${{ hashFiles('web/src-tauri/Cargo.lock') }}
-                    restore-keys: ${{ runner.os }}-cargo-
-
-            -   name: Install Tauri deps (Linux)
-                if: runner.os == 'Linux'
-                run: |
-                    sudo apt-get update
-                    sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
-
-            -   name: Create stub sidecar binary
-                run: |
-                    mkdir -p web/src-tauri/binaries web/src-tauri/resources
-                    TARGET=$(rustc -vV | grep host | cut -d' ' -f2)
-                    touch web/src-tauri/binaries/kvelmo-$TARGET
-                    chmod +x web/src-tauri/binaries/kvelmo-$TARGET
-                    touch web/src-tauri/resources/kvelmo-wsl-x64
-                    touch web/src-tauri/resources/kvelmo-wsl-arm64
-
-            -   name: Check formatting
-                working-directory: web/src-tauri
-                run: cargo fmt --check
-
-            -   name: Clippy
-                working-directory: web/src-tauri
-                run: cargo clippy -- -D warnings
-
-            -   name: Run tests
-                working-directory: web/src-tauri
-                run: cargo test --lib
-
-            -   name: Generate coverage
-                if: github.event_name != 'pull_request' && runner.os == 'Linux'
-                working-directory: web/src-tauri
-                run: cargo llvm-cov --lib --lcov --remap-path-prefix --output-path lcov.info
-
-            -   name: Check coverage data exists
-                id: check-tauri-coverage
-                if: github.event_name != 'pull_request' && runner.os == 'Linux'
-                working-directory: web/src-tauri
-                run: |
-                    if grep -q "^DA:" lcov.info 2>/dev/null; then
-                      echo "has_coverage=true" >> $GITHUB_OUTPUT
-                      echo "Coverage data found"
-                    else
-                      echo "has_coverage=false" >> $GITHUB_OUTPUT
-                      echo "No coverage data in lcov.info, skipping upload"
-                    fi
-
-            -   name: Upload Tauri coverage to Coveralls
-                if: >-
-                    github.event_name != 'pull_request' &&
-                    runner.os == 'Linux' &&
-                    steps.check-tauri-coverage.outputs.has_coverage == 'true'
-                uses: coverallsapp/github-action@v2
-                with:
-                    github-token: ${{ secrets.GITHUB_TOKEN }}
-                    file: web/src-tauri/lcov.info
-                    format: lcov
-                    parallel: true
-                    flag-name: tauri-coverage
-                    base-path: web/src-tauri
-
-    coverage-finish:
-        needs: [test, web, tauri]
-        runs-on: ubuntu-latest
-        if: >-
-            github.event_name != 'pull_request' &&
-            always() &&
-            (needs.test.result == 'success' || needs.test.result == 'skipped') &&
-            (needs.web.result == 'success' || needs.web.result == 'skipped') &&
-            (needs.tauri.result == 'success' || needs.tauri.result == 'skipped') &&
-            !(needs.test.result == 'skipped' && needs.web.result == 'skipped' && needs.tauri.result == 'skipped')
-        steps:
-            -   name: Finish Coveralls parallel build
-                uses: coverallsapp/github-action@v2
-                with:
-                    github-token: ${{ secrets.GITHUB_TOKEN }}
-                    parallel-finished: true
-                    carryforward: "go-coverage,web-coverage,tauri-coverage"
-
-    cleanup:
-        needs: [test, web, tauri, coverage-finish]
-        if: always()
-        strategy:
-            matrix:
-                include:
-                    -   runner: ubuntu-latest
-                    -   runner: macos-arm
-        runs-on: ${{ matrix.runner }}
-
-        steps:
-            -   name: Cleanup Go caches
-                run: |
-                    go clean -cache -testcache || true
-                    rm -rf .coverage covprofile
-
-            -   name: Cleanup Bun caches
-                if: matrix.runner == 'ubuntu-latest'
-                run: |
-                    rm -rf ~/.bun/install/cache/
-                    rm -rf web/node_modules/ || true
-                    rm -rf web/coverage/ || true
+      - name: Cleanup Bun caches
+        if: matrix.runner == 'ubuntu-latest'
+        run: |
+          rm -rf ~/.bun/install/cache/
+          rm -rf web/node_modules/ || true
+          rm -rf web/coverage/ || true

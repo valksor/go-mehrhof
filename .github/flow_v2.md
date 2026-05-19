@@ -3,11 +3,13 @@
 ## Context
 
 **Problem:** Three codebases exist with overlapping goals:
+
 1. **mono-valksor** — Over-fragmented (38 repos) but good package-level patterns
 2. **go-mehrhof** — Working but complex, CLI/Web have separate paths to conductor
 3. **companion** — Clean WebSocket relay pattern for agent communication
 
 **Goal:** Create a new consolidated tool that:
+
 - Takes go-mehrhof's orchestration core
 - Uses companion's socket-based communication pattern
 - Applies mono-valksor's package-level granularity (not repo-level)
@@ -18,6 +20,7 @@
 ## Architecture: Socket-First Design
 
 ### Core Principle
+
 **One conductor, one entrypoint.** The socket IS the conductor. Everything else is a client.
 
 ```
@@ -67,17 +70,19 @@
 **Two socket types:**
 
 | Socket       | Purpose                                                                   | Lifecycle                                                        |
-|--------------|---------------------------------------------------------------------------|------------------------------------------------------------------|
+| ------------ | ------------------------------------------------------------------------- | ---------------------------------------------------------------- |
 | **Global**   | Management: settings, project registry, **shared worker pool**, job queue | Starts on first `kvelmo` command or app/web launch. Stays alive. |
 | **Worktree** | Task state machine, git ops for ONE worktree. Submits jobs to global.     | Starts on `init` or `start`. Stopped via `disconnect`.           |
 
 **Critical: Worker pool is GLOBAL**
+
 - LLM agents consume CPU/RAM — can't have unlimited
 - **Max 5–6 workers total** across all projects
 - Jobs from ANY project go into ONE shared queue
 - Prevents resource exhaustion when working on multiple projects
 
 **Socket-per-worktree logic:**
+
 - Non-worktree project = 1 worktree socket (root is the "worktree")
 - Git worktree = 1 socket per worktree
 - Each worktree is independent for state but shares workers via global
@@ -115,6 +120,7 @@ CLI: kvelmo disconnect
 ```
 
 **Global socket responsibilities:**
+
 - Settings (global preferences)
 - Worktree registry (list all registered projects/worktrees)
 - **Worker pool** (5–6 max workers, shared)
@@ -122,6 +128,7 @@ CLI: kvelmo disconnect
 - Status aggregation (see all worktree states at once)
 
 **Worktree socket responsibilities:**
+
 - Task state machine (Task: None → Loaded → Planning → ...)
 - Git operations (branches, checkpoints, undo/redo)
 - Submit jobs to global queue
@@ -131,7 +138,7 @@ CLI: kvelmo disconnect
 ### Protocol
 
 | Type      | Protocol           | Use Case                                     |
-|-----------|--------------------|----------------------------------------------|
+| --------- | ------------------ | -------------------------------------------- |
 | Commands  | JSON-RPC 2.0       | `start`, `plan`, `implement`, `submit`, etc. |
 | Streaming | NDJSON passthrough | Agent output streams directly, no parsing    |
 
@@ -320,6 +327,7 @@ Browser                      Web Server                    Socket Server
 ```
 
 ### States (descriptive, not ambiguous)
+
 - **Task: None** — No active task (not "Idle" — that's ambiguous)
 - **Task: Loaded** — Task fetched from provider, branch created
 - **Task: Planning** — Agent generating specification (in progress)
@@ -330,6 +338,7 @@ Browser                      Web Server                    Socket Server
 - **Task: Submitted** — Task submitted to provider (PR created, etc.)
 
 ### Key Transitions
+
 - `start` → Creates branch, loads task from provider
 - `plan` → Runs agent for planning
 - `implement` → Runs agent for implementation
@@ -384,7 +393,7 @@ Browser                      Web Server                    Socket Server
 ### Worker Types (personas)
 
 | Worker          | Model  | Purpose                 | Tools                      |
-|-----------------|--------|-------------------------|----------------------------|
+| --------------- | ------ | ----------------------- | -------------------------- |
 | **Planner**     | Opus   | Generate specifications | Read, search, analyze      |
 | **Implementer** | Sonnet | Write code, execute     | Read, write, git, terminal |
 | **Reviewer**    | Sonnet | Review, suggest fixes   | Read, analyze, comment     |
@@ -404,6 +413,7 @@ Browser                      Web Server                    Socket Server
 ```
 
 **Job routing:**
+
 - Jobs tagged with source worktree ID
 - Global routes output back to the correct worktree
 - Worktree doesn't know/care about other projects' jobs
@@ -411,11 +421,13 @@ Browser                      Web Server                    Socket Server
 ### Parallelism Examples
 
 **Sequential (old way):**
+
 ```
 [Plan component A] → wait → [Implement A] → wait → [Plan B] → wait → ...
 ```
 
 **Parallel (worker pool):**
+
 ```
 Conductor splits task: "Plan each component separately"
   └─► Job 1: Plan component A → Worker 1 picks
@@ -426,6 +438,7 @@ All three run simultaneously!
 ```
 
 **Task splitting strategy:**
+
 - By file/component: Each major file gets an own job
 - By concern: UI vs. backend vs. tests
 - By phase: Multiple planning alternatives, pick the best
@@ -476,7 +489,7 @@ claude --sdk-url ws://localhost:8765 --print \
 **Message Types We Receive (CLI → Server):**
 
 | Type              | Purpose                     | Key Fields                        |
-|-------------------|-----------------------------|-----------------------------------|
+| ----------------- | --------------------------- | --------------------------------- |
 | `system/init`     | Session start, capabilities | `session_id`, `tools[]`           |
 | `stream_event`    | Token-by-token streaming    | `content`, `delta`                |
 | `assistant`       | Full LLM response           | `message.role`, `message.content` |
@@ -487,7 +500,7 @@ claude --sdk-url ws://localhost:8765 --print \
 **Message Types We Send (Server → CLI):**
 
 | Type               | Purpose                 | Key Fields                       |
-|--------------------|-------------------------|----------------------------------|
+| ------------------ | ----------------------- | -------------------------------- |
 | `user`             | Send prompt             | `message.content`, `session_id`  |
 | `control_response` | Approve/deny permission | `control_request_id`, `approved` |
 
@@ -567,7 +580,7 @@ Error: No agent available
 ### Tech Stack
 
 | Layer          | Technology             | Why                                                      |
-|----------------|------------------------|----------------------------------------------------------|
+| -------------- | ---------------------- | -------------------------------------------------------- |
 | **Framework**  | React 19               | Stable, already used in go-mehrhof                       |
 | **Styling**    | TailwindCSS 4          | Utility-first, fast iteration                            |
 | **Components** | shadcn/ui              | Copy-paste primitives, full control, Radix accessibility |
@@ -579,12 +592,14 @@ Error: No agent available
 ### Design Elements
 
 **Layout Patterns:**
+
 - Resizable panels (like VS Code) — sidebar, main, output
 - Command palette (Cmd+K) for quick actions
 - Collapsible drawers for secondary info
 - Tabs plus split views for multiple worktrees
 
 **Visual Style:**
+
 - Dark mode first (developer tool aesthetic)
 - Monospace for code/output, sans-serif for UI
 - Minimal chrome, content-focused
@@ -592,12 +607,14 @@ Error: No agent available
 - Terminal-inspired output panels
 
 **Interactions:**
+
 - Keyboard-first (arrow keys, vim bindings optional)
 - Context menus on right-click
 - Drag-drop for file/project selection
 - Toast notifications for background completion
 
 ### Philosophy
+
 - **App feel, not website feel**
 - Widgets, drawers, unified view
 - See all active states at once
@@ -694,6 +711,7 @@ Error: No agent available
 | `Mentions` | Reference files, other tasks | `task.Search()` |
 
 **AgentChat Features:**
+
 - `@file.ts` — mention/reference a file
 - `@task-123` — reference another task
 - History of previous messages
@@ -735,12 +753,14 @@ kvelmo disconnect              # Stop current worktree socket, unregister from g
 ## Implementation Phases
 
 ### Phase 1: Core Socket Infrastructure
+
 1. internal/socket - Server, client, protocol (JSON-RPC + NDJSON)
 2. Global socket plus worktree socket lifecycle
 3. cmd/kvelmo - Binary with socket discovery
 4. Minimal CLI: `init`, `status`, `disconnect`
 
 ### Phase 2: Worker Pool + Agent Integration
+
 1. internal/worker - Pool, workers, job queue
 2. agent - WebSocket connection layer
 3. Claude agent (WebSocket-first, binary fallback)
@@ -748,27 +768,32 @@ kvelmo disconnect              # Stop current worktree socket, unregister from g
 5. Planning workflow: `plan` command
 
 ### Phase 2.5: Conductor + State Machine
+
 1. internal/conductor - State machine (Task: None → Loaded → Planning → ...)
 2. Integration with the worker pool (submit jobs, receive results)
 3. State transitions trigger git operations
 
 ### Phase 3: Git Operations
+
 1. internal/git - Branch, checkpoint, worktree
 2. Undo/redo navigation
 3. Integration with state transitions
 
 ### Phase 4: Provider Integration
+
 1. internal/provider - Interface
 2. internal/file, internal/github, internal/gitlab, internal/wrike
 3. `start --from` sources
 
 ### Phase 5: Web UI
+
 1. web/ - React dashboard
 2. Socket client (WebSocket bridge to project socket)
 3. Widget-based layout
 4. Real-time streaming
 
 ### Phase 6: Desktop + Polish
+
 1. desktop/ - Tauri wrapper
 2. Security scanning (internal/security)
 3. Quality checks (internal/quality)
@@ -794,6 +819,7 @@ github.com/valksor/kvelmo/
 ```
 
 **Reference approach:**
+
 - Old code lives in `prototype/` for reference during development
 - `git log prototype/internal/conductor/` shows full history
 - New code at root, clean separation
@@ -804,16 +830,19 @@ github.com/valksor/kvelmo/
 ## Key Files to Port/Reference
 
 From **prototype/** (go-mehrhof):
+
 - `prototype/internal/conductor/conductor.go` → Simplified into `internal/conductor/`
 - `prototype/internal/workflow/machine.go` → State machine logic
 - `prototype/internal/agent/claude/claude.go` → WebSocket implementation reference
 - `prototype/internal/vcs/git.go` → Git operations
 
 From **companion**:
+
 - WebSocket relay pattern → Apply to socket server design
 - NDJSON streaming → Protocol layer
 
 From **mono-valksor/crea-pipe**:
+
 - Protocol definitions → Reference for Claude/Codex message types
 
 ---
@@ -821,6 +850,7 @@ From **mono-valksor/crea-pipe**:
 ## Verification
 
 ### Phase 1 Test (Sockets)
+
 ```bash
 cd ~/test-project
 kvelmo init
@@ -837,6 +867,7 @@ kvelmo projects  # Should list this worktree
 ```
 
 ### Phase 2 Test (Workers)
+
 ```bash
 kvelmo workers   # Should show: 2-3 workers, all "Available"
 
@@ -848,6 +879,7 @@ kvelmo workers   # Should show: 1 worker "Working", others "Available"
 ```
 
 ### Parallelism Test
+
 ```bash
 # Task with multiple components
 kvelmo start --from file:multi-component-task.md
@@ -858,6 +890,7 @@ kvelmo workers   # Should show: multiple workers "Working"
 ```
 
 ### Phase 5 Test (Web)
+
 ```bash
 kvelmo serve  # Starts web server, connects to global socket
 
