@@ -44,6 +44,7 @@ web/src-tauri/lcov.info
 .superpowers/
 
 .env
+.mcp.json
 
 .junie/memory/
 
@@ -55,5 +56,14 @@ CLAUDE.local.md
 .claude/backups/
 .claude/hooks/__counter
 __NEEDS_ONBOARD
+
+# Claudify scaffolding (per-user, not project content)
+.claude/setup.md
+.claude/memory.md
+.claude/knowledge-base.md
+.claude/knowledge-nominations.md
+Daily Notes/
+Scratchpad.md
+Task Board.md
 
 .claude/settings.local.json
