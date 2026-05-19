@@ -77,29 +77,32 @@ export function RecordingsPanel({ isOpen, onClose }: RecordingsPanelProps) {
     }
   }, [isOpen, connected, loadRecordings])
 
-  const handleView = useCallback(async (filePath: string) => {
-    if (!client) return
+  const handleView = useCallback(
+    async (filePath: string) => {
+      if (!client) return
 
-    // Toggle: clicking the same recording closes it
-    if (selectedFile === filePath) {
-      setSelectedRecording(null)
-      setSelectedFile(null)
-      return
-    }
+      // Toggle: clicking the same recording closes it
+      if (selectedFile === filePath) {
+        setSelectedRecording(null)
+        setSelectedFile(null)
+        return
+      }
 
-    setViewLoading(true)
-    setError(null)
+      setViewLoading(true)
+      setError(null)
 
-    try {
-      const result = await client.call<RecordingViewResult>('recordings.view', { file: filePath })
-      setSelectedRecording(result)
-      setSelectedFile(filePath)
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to view recording')
-    } finally {
-      setViewLoading(false)
-    }
-  }, [client, selectedFile])
+      try {
+        const result = await client.call<RecordingViewResult>('recordings.view', { file: filePath })
+        setSelectedRecording(result)
+        setSelectedFile(filePath)
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to view recording')
+      } finally {
+        setViewLoading(false)
+      }
+    },
+    [client, selectedFile],
+  )
 
   const handleFilterKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
@@ -142,22 +145,23 @@ export function RecordingsPanel({ isOpen, onClose }: RecordingsPanelProps) {
           <input
             type="text"
             value={jobFilter}
-            onChange={e => setJobFilter(e.target.value)}
+            onChange={(e) => setJobFilter(e.target.value)}
             onKeyDown={handleFilterKeyDown}
             placeholder="Filter by job ID..."
             aria-label="Filter recordings by job ID"
             className="input input-bordered flex-1"
           />
-          <button
-            onClick={loadRecordings}
-            disabled={loading || !connected}
-            className="btn btn-primary"
-          >
+          <button onClick={loadRecordings} disabled={loading || !connected} className="btn btn-primary">
             {loading ? (
               <span className="loading loading-spinner loading-sm"></span>
             ) : (
               <svg aria-hidden="true" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                />
               </svg>
             )}
             Filter
@@ -168,7 +172,12 @@ export function RecordingsPanel({ isOpen, onClose }: RecordingsPanelProps) {
         {error && (
           <div className="alert alert-error py-2 mb-4">
             <svg aria-hidden="true" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
             </svg>
             <span className="text-sm">{error}</span>
           </div>
@@ -182,15 +191,28 @@ export function RecordingsPanel({ isOpen, onClose }: RecordingsPanelProps) {
             </div>
           ) : recordings.length === 0 ? (
             <div className="text-center py-12 text-base-content/50">
-              <svg aria-hidden="true" className="w-12 h-12 mx-auto mb-3 opacity-30" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75a1.125 1.125 0 01-1.125-1.125V7.875c0-.621.504-1.125 1.125-1.125H6.75a9.06 9.06 0 011.5.124m7.5 10.376h3.375c.621 0 1.125-.504 1.125-1.125V11.25c0-4.46-3.243-8.161-7.5-8.876a9.06 9.06 0 00-1.5-.124H9.375c-.621 0-1.125.504-1.125 1.125v3.5m7.5 10.375H9.375a1.125 1.125 0 01-1.125-1.125v-9.25m12 6.625v-1.875a3.375 3.375 0 00-3.375-3.375h-1.5a1.125 1.125 0 01-1.125-1.125v-1.5a3.375 3.375 0 00-3.375-3.375H9.75" />
+              <svg
+                aria-hidden="true"
+                className="w-12 h-12 mx-auto mb-3 opacity-30"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={1.5}
+                  d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75a1.125 1.125 0 01-1.125-1.125V7.875c0-.621.504-1.125 1.125-1.125H6.75a9.06 9.06 0 011.5.124m7.5 10.376h3.375c.621 0 1.125-.504 1.125-1.125V11.25c0-4.46-3.243-8.161-7.5-8.876a9.06 9.06 0 00-1.5-.124H9.375c-.621 0-1.125.504-1.125 1.125v3.5m7.5 10.375H9.375a1.125 1.125 0 01-1.125-1.125v-9.25m12 6.625v-1.875a3.375 3.375 0 00-3.375-3.375h-1.5a1.125 1.125 0 01-1.125-1.125v-1.5a3.375 3.375 0 00-3.375-3.375H9.75"
+                />
               </svg>
               <p>No recordings found</p>
               <p className="text-xs mt-2 text-base-content/40">Recordings are created when agents run tasks</p>
             </div>
           ) : (
             <div className="space-y-2">
-              <p className="text-xs text-base-content/50 mb-2">{recordings.length} recording{recordings.length !== 1 ? 's' : ''}</p>
+              <p className="text-xs text-base-content/50 mb-2">
+                {recordings.length} recording{recordings.length !== 1 ? 's' : ''}
+              </p>
               {recordings.map((rec) => (
                 <div key={rec.path}>
                   <button
@@ -208,9 +230,7 @@ export function RecordingsPanel({ isOpen, onClose }: RecordingsPanelProps) {
                           {rec.job_id.length > 16 ? rec.job_id.slice(0, 16) + '...' : rec.job_id}
                         </span>
                         <span className="badge badge-sm badge-ghost">{rec.agent}</span>
-                        {rec.model && (
-                          <span className="badge badge-sm badge-outline">{rec.model}</span>
-                        )}
+                        {rec.model && <span className="badge badge-sm badge-outline">{rec.model}</span>}
                       </div>
                       <div className="flex items-center gap-2 flex-shrink-0">
                         <span className="text-xs text-base-content/50">{rec.lines} lines</span>
@@ -227,7 +247,9 @@ export function RecordingsPanel({ isOpen, onClose }: RecordingsPanelProps) {
                       {selectedRecording.header && (
                         <div className="mb-3 pb-2 border-b border-base-300">
                           <div className="flex items-center gap-3 text-xs text-base-content/60">
-                            <span>Job: <span className="font-mono">{selectedRecording.header.job_id}</span></span>
+                            <span>
+                              Job: <span className="font-mono">{selectedRecording.header.job_id}</span>
+                            </span>
                             <span>Agent: {selectedRecording.header.agent}</span>
                             {selectedRecording.header.model && <span>Model: {selectedRecording.header.model}</span>}
                             {selectedRecording.header.work_dir && (
@@ -242,7 +264,9 @@ export function RecordingsPanel({ isOpen, onClose }: RecordingsPanelProps) {
                         {selectedRecording.records.map((record, idx) => (
                           <div key={idx} className="flex items-start gap-2 text-xs font-mono">
                             <span className="text-base-content/40 flex-shrink-0">{formatTime(record.timestamp)}</span>
-                            <span className={`flex-shrink-0 ${record.direction === 'in' ? 'text-info' : 'text-success'}`}>
+                            <span
+                              className={`flex-shrink-0 ${record.direction === 'in' ? 'text-info' : 'text-success'}`}
+                            >
                               {record.direction === 'in' ? '<-' : '->'}
                             </span>
                             {record.type && (

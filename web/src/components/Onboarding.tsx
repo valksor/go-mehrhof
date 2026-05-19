@@ -10,7 +10,7 @@ interface OnboardingProps {
 }
 
 export function Onboarding({ onAddProject }: OnboardingProps) {
-  const client = useGlobalStore(state => state.client)
+  const client = useGlobalStore((state) => state.client)
   const [dismissed, setDismissed] = useState<boolean | null>(null) // null = loading
   const docsData = useDocsURL()
 
@@ -18,8 +18,9 @@ export function Onboarding({ onAddProject }: OnboardingProps) {
   useEffect(() => {
     if (!client) return
 
-    client.call<SettingsResponse>('settings.get', {})
-      .then(result => {
+    client
+      .call<SettingsResponse>('settings.get', {})
+      .then((result) => {
         // Safe nested access - effective is Record<string, unknown>
         const ui = result.effective?.ui as Record<string, unknown> | undefined
         const isDismissed = ui?.onboarding_dismissed === true
@@ -39,7 +40,7 @@ export function Onboarding({ onAddProject }: OnboardingProps) {
       try {
         await client.call('settings.set', {
           scope: 'global',
-          values: { 'ui.onboarding_dismissed': true }
+          values: { 'ui.onboarding_dismissed': true },
         })
       } catch {
         // Ignore - onboarding won't show again this session anyway
@@ -56,12 +57,7 @@ export function Onboarding({ onAddProject }: OnboardingProps) {
   if (dismissed === null || dismissed) return null
 
   return (
-    <AccessibleModal
-      isOpen={true}
-      onClose={handleDismiss}
-      title={`Welcome to ${name}`}
-      size="lg"
-    >
+    <AccessibleModal isOpen={true} onClose={handleDismiss} title={`Welcome to ${name}`} size="lg">
       {/* Header */}
       <div className="text-center mb-6">
         <div className="w-16 h-16 rounded-2xl bg-primary flex items-center justify-center mx-auto mb-4 shadow-lg">
@@ -107,10 +103,7 @@ export function Onboarding({ onAddProject }: OnboardingProps) {
 
       {/* Actions */}
       <div className="flex flex-col sm:flex-row gap-3">
-        <button
-          onClick={handleAddProject}
-          className="btn btn-primary flex-1"
-        >
+        <button onClick={handleAddProject} className="btn btn-primary flex-1">
           <svg aria-hidden="true" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
           </svg>
@@ -125,7 +118,12 @@ export function Onboarding({ onAddProject }: OnboardingProps) {
             className="btn btn-outline flex-1"
           >
             <svg aria-hidden="true" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
+              />
             </svg>
             Read Docs
           </a>

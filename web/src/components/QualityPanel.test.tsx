@@ -71,76 +71,51 @@ describe('QualityPanel', () => {
   })
 
   it('does not render when closed', () => {
-    const { queryByRole } = render(
-      <QualityPanel isOpen={false} onClose={vi.fn()} />,
-    )
+    const { queryByRole } = render(<QualityPanel isOpen={false} onClose={vi.fn()} />)
     expect(queryByRole('dialog')).not.toBeInTheDocument()
   })
 
   it('renders modal with title when open', async () => {
     mockRPCByMethod()
-    const { getByText, findByText } = render(
-      <QualityPanel isOpen={true} onClose={vi.fn()} />,
-    )
+    const { getByText, findByText } = render(<QualityPanel isOpen={true} onClose={vi.fn()} />)
     expect(getByText('Quality Gates')).toBeInTheDocument()
     await findByText('No quality gate data')
   })
 
   it('shows loading spinner while fetching', () => {
     mockCall.mockReturnValue(new Promise(() => {}))
-    const { container } = render(
-      <QualityPanel isOpen={true} onClose={vi.fn()} />,
-    )
+    const { container } = render(<QualityPanel isOpen={true} onClose={vi.fn()} />)
     expect(container.querySelector('.loading-spinner')).toBeInTheDocument()
   })
 
   it('shows empty state when no data', async () => {
     mockRPCByMethod(null, null, { findings: [], status: 'idle' })
-    const { findByText } = render(
-      <QualityPanel isOpen={true} onClose={vi.fn()} />,
-    )
+    const { findByText } = render(<QualityPanel isOpen={true} onClose={vi.fn()} />)
     expect(await findByText('No quality gate data')).toBeInTheDocument()
   })
 
   it('shows autofix idle status', async () => {
-    mockRPCByMethod(
-      { active: false, attempt: 0, max_attempts: 3 },
-    )
-    const { findByText } = render(
-      <QualityPanel isOpen={true} onClose={vi.fn()} />,
-    )
+    mockRPCByMethod({ active: false, attempt: 0, max_attempts: 3 })
+    const { findByText } = render(<QualityPanel isOpen={true} onClose={vi.fn()} />)
     expect(await findByText('Idle')).toBeInTheDocument()
   })
 
   it('shows autofix running status', async () => {
-    mockRPCByMethod(
-      { active: true, attempt: 2, max_attempts: 5 },
-    )
-    const { findByText } = render(
-      <QualityPanel isOpen={true} onClose={vi.fn()} />,
-    )
+    mockRPCByMethod({ active: true, attempt: 2, max_attempts: 5 })
+    const { findByText } = render(<QualityPanel isOpen={true} onClose={vi.fn()} />)
     expect(await findByText('Running')).toBeInTheDocument()
     expect(await findByText('2/5')).toBeInTheDocument()
   })
 
   it('shows autofix last error', async () => {
-    mockRPCByMethod(
-      { active: true, attempt: 1, max_attempts: 3, last_error: 'lint failed on line 5' },
-    )
-    const { findByText } = render(
-      <QualityPanel isOpen={true} onClose={vi.fn()} />,
-    )
+    mockRPCByMethod({ active: true, attempt: 1, max_attempts: 3, last_error: 'lint failed on line 5' })
+    const { findByText } = render(<QualityPanel isOpen={true} onClose={vi.fn()} />)
     expect(await findByText('lint failed on line 5')).toBeInTheDocument()
   })
 
   it('shows failclass stats', async () => {
-    mockRPCByMethod(
-      null,
-      { total: 10, genuine: 3, flaky: 5, intermittent: 2, unclassified: 0 },
-    )
-    const { findByText } = render(
-      <QualityPanel isOpen={true} onClose={vi.fn()} />,
-    )
+    mockRPCByMethod(null, { total: 10, genuine: 3, flaky: 5, intermittent: 2, unclassified: 0 })
+    const { findByText } = render(<QualityPanel isOpen={true} onClose={vi.fn()} />)
     expect(await findByText('10')).toBeInTheDocument()
     expect(await findByText('3')).toBeInTheDocument()
     expect(await findByText('5')).toBeInTheDocument()
@@ -148,14 +123,8 @@ describe('QualityPanel', () => {
   })
 
   it('shows findings table', async () => {
-    mockRPCByMethod(
-      null,
-      null,
-      { findings: sampleFindings, status: 'done' },
-    )
-    const { findByText } = render(
-      <QualityPanel isOpen={true} onClose={vi.fn()} />,
-    )
+    mockRPCByMethod(null, null, { findings: sampleFindings, status: 'done' })
+    const { findByText } = render(<QualityPanel isOpen={true} onClose={vi.fn()} />)
     expect(await findByText('high')).toBeInTheDocument()
     expect(await findByText('medium')).toBeInTheDocument()
     expect(await findByText('no-unused-vars')).toBeInTheDocument()
@@ -167,41 +136,39 @@ describe('QualityPanel', () => {
   it('shows quality prompt warning', async () => {
     mockQualityPrompt = { question: 'Approve suppressing 3 lint errors?' }
     mockRPCByMethod()
-    const { findByText } = render(
-      <QualityPanel isOpen={true} onClose={vi.fn()} />,
-    )
+    const { findByText } = render(<QualityPanel isOpen={true} onClose={vi.fn()} />)
     expect(await findByText('Quality gate requires input')).toBeInTheDocument()
     expect(await findByText('Approve suppressing 3 lint errors?')).toBeInTheDocument()
   })
 
   it('shows error on RPC failure', async () => {
-    mockCall.mockImplementation(() => { throw new Error('Connection refused') })
-    const { findByText } = render(
-      <QualityPanel isOpen={true} onClose={vi.fn()} />,
-    )
+    mockCall.mockImplementation(() => {
+      throw new Error('Connection refused')
+    })
+    const { findByText } = render(<QualityPanel isOpen={true} onClose={vi.fn()} />)
     expect(await findByText('Connection refused')).toBeInTheDocument()
   })
 
   it('shows generic error for non-Error', async () => {
-    // eslint-disable-next-line @typescript-eslint/only-throw-error -- intentionally testing non-Error throw handling
-    mockCall.mockImplementation(() => { throw 'string error' })
-    const { findByText } = render(
-      <QualityPanel isOpen={true} onClose={vi.fn()} />,
-    )
+    mockCall.mockImplementation(() => {
+      // eslint-disable-next-line @typescript-eslint/only-throw-error -- intentionally testing non-Error throw handling
+      throw 'string error'
+    })
+    const { findByText } = render(<QualityPanel isOpen={true} onClose={vi.fn()} />)
     expect(await findByText('Failed to load quality data')).toBeInTheDocument()
   })
 
   it('refresh button triggers reload', async () => {
     mockRPCByMethod()
-    const { getByLabelText, findByText } = render(
-      <QualityPanel isOpen={true} onClose={vi.fn()} />,
-    )
+    const { getByLabelText, findByText } = render(<QualityPanel isOpen={true} onClose={vi.fn()} />)
     await findByText('No quality gate data')
 
     const callCountBefore = mockCall.mock.calls.length
 
     mockRPCByMethod()
-    await act(async () => { getByLabelText('Refresh quality data').click() })
+    await act(async () => {
+      getByLabelText('Refresh quality data').click()
+    })
 
     await waitFor(() => {
       expect(mockCall.mock.calls.length).toBeGreaterThan(callCountBefore)
@@ -211,9 +178,7 @@ describe('QualityPanel', () => {
   it('calls onClose when close button clicked', async () => {
     mockRPCByMethod()
     const onClose = vi.fn()
-    const { getByLabelText, findByText } = render(
-      <QualityPanel isOpen={true} onClose={onClose} />,
-    )
+    const { getByLabelText, findByText } = render(<QualityPanel isOpen={true} onClose={onClose} />)
     await findByText('No quality gate data')
     getByLabelText('Close dialog').click()
     expect(onClose).toHaveBeenCalledOnce()
@@ -222,9 +187,7 @@ describe('QualityPanel', () => {
   it('does not show quality prompt when null', async () => {
     mockQualityPrompt = null
     mockRPCByMethod()
-    const { findByText, queryByText } = render(
-      <QualityPanel isOpen={true} onClose={vi.fn()} />,
-    )
+    const { findByText, queryByText } = render(<QualityPanel isOpen={true} onClose={vi.fn()} />)
     await findByText('No quality gate data')
     expect(queryByText('Quality gate requires input')).not.toBeInTheDocument()
   })

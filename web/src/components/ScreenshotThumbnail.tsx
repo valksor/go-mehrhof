@@ -8,13 +8,9 @@ interface ScreenshotThumbnailProps {
   onSelect?: () => void
 }
 
-export function ScreenshotThumbnail({
-  screenshot,
-  isSelected,
-  onClick,
-}: ScreenshotThumbnailProps) {
+export function ScreenshotThumbnail({ screenshot, isSelected, onClick }: ScreenshotThumbnailProps) {
   const { attach, attachedIds, detach, deleteScreenshot, getScreenshot, screenshotData } = useScreenshotStore()
-  const client = useProjectStore(s => s.client)
+  const client = useProjectStore((s) => s.client)
 
   const isAttached = attachedIds.includes(screenshot.id)
   const timestamp = new Date(screenshot.timestamp)
@@ -60,7 +56,12 @@ export function ScreenshotThumbnail({
         ${isAttached ? 'ring-2 ring-success/50' : ''}
       `}
       onClick={handleClick}
-      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); void handleClick() } }}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault()
+          void handleClick()
+        }
+      }}
     >
       {/* Thumbnail image */}
       <div className="aspect-video bg-base-300 relative">
@@ -71,7 +72,8 @@ export function ScreenshotThumbnail({
           loading="lazy"
           onError={(e) => {
             // Fallback to placeholder on error
-            (e.target as HTMLImageElement).src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="%23666" stroke-width="1"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>'
+            ;(e.target as HTMLImageElement).src =
+              'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="%23666" stroke-width="1"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>'
           }}
         />
 
@@ -88,7 +90,12 @@ export function ScreenshotThumbnail({
               </svg>
             ) : (
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"
+                />
               </svg>
             )}
           </button>
@@ -98,7 +105,12 @@ export function ScreenshotThumbnail({
             title="Delete screenshot"
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+              />
             </svg>
           </button>
         </div>

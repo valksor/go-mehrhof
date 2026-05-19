@@ -73,7 +73,9 @@ export function QualityPanel({ isOpen, onClose }: QualityPanelProps) {
 
       // Try to get quality findings from a quality run
       try {
-        const qResult = await client.call<{ findings?: QualityFinding[]; status: string }>('quality.respond', { action: 'status' })
+        const qResult = await client.call<{ findings?: QualityFinding[]; status: string }>('quality.respond', {
+          action: 'status',
+        })
         setFindings(qResult.findings || [])
       } catch {
         // quality.respond may not have findings in status mode — that's ok
@@ -105,7 +107,12 @@ export function QualityPanel({ isOpen, onClose }: QualityPanelProps) {
               <span className="loading loading-spinner loading-xs"></span>
             ) : (
               <svg aria-hidden="true" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                />
               </svg>
             )}
             Refresh
@@ -130,8 +137,19 @@ export function QualityPanel({ isOpen, onClose }: QualityPanelProps) {
               {/* Quality Prompt (if active) */}
               {qualityPrompt && (
                 <div className="alert alert-warning">
-                  <svg aria-hidden="true" className="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  <svg
+                    aria-hidden="true"
+                    className="w-5 h-5 shrink-0"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                    />
                   </svg>
                   <div>
                     <p className="font-medium text-sm">Quality gate requires input</p>
@@ -159,7 +177,9 @@ export function QualityPanel({ isOpen, onClose }: QualityPanelProps) {
                       <>
                         <div className="stat py-3 px-4">
                           <div className="stat-title text-xs">Attempt</div>
-                          <div className="stat-value text-lg">{autofix.attempt}/{autofix.max_attempts}</div>
+                          <div className="stat-value text-lg">
+                            {autofix.attempt}/{autofix.max_attempts}
+                          </div>
                         </div>
                         {autofix.last_error && (
                           <div className="stat py-3 px-4">
@@ -223,7 +243,8 @@ export function QualityPanel({ isOpen, onClose }: QualityPanelProps) {
                             </td>
                             <td className="font-mono text-xs">{f.rule}</td>
                             <td className="font-mono text-xs truncate max-w-[200px]">
-                              {f.file}{f.line > 0 ? `:${f.line}` : ''}
+                              {f.file}
+                              {f.line > 0 ? `:${f.line}` : ''}
                             </td>
                             <td className="text-xs max-w-[300px] truncate">{f.message}</td>
                             <td>
@@ -244,8 +265,19 @@ export function QualityPanel({ isOpen, onClose }: QualityPanelProps) {
               {/* Empty state */}
               {!autofix?.active && (!failclass || failclass.total === 0) && findings.length === 0 && !qualityPrompt && (
                 <div className="text-center py-12 text-base-content/50">
-                  <svg aria-hidden="true" className="w-10 h-10 mx-auto mb-3 opacity-30" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  <svg
+                    aria-hidden="true"
+                    className="w-10 h-10 mx-auto mb-3 opacity-30"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={1.5}
+                      d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                    />
                   </svg>
                   <p>No quality gate data</p>
                   <p className="text-xs mt-1">Quality gates run during the Review phase</p>

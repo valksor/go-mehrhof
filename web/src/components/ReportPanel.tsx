@@ -33,10 +33,7 @@ export function ReportPanel({ isOpen, onClose }: ReportPanelProps) {
     setContent('')
 
     try {
-      const result = await client.call<{ markdown: string; report: object }>(
-        'report.generate',
-        { format, since }
-      )
+      const result = await client.call<{ markdown: string; report: object }>('report.generate', { format, since })
       if (format === 'json') {
         setContent(JSON.stringify(result.report, null, 2))
       } else {
@@ -56,12 +53,14 @@ export function ReportPanel({ isOpen, onClose }: ReportPanelProps) {
         <div className="flex flex-wrap items-center gap-2 mb-4">
           <select
             value={since}
-            onChange={e => setSince(e.target.value as SinceRange)}
+            onChange={(e) => setSince(e.target.value as SinceRange)}
             className="select select-bordered select-sm"
             aria-label="Time range"
           >
-            {(Object.keys(SINCE_LABELS) as SinceRange[]).map(key => (
-              <option key={key} value={key}>{SINCE_LABELS[key]}</option>
+            {(Object.keys(SINCE_LABELS) as SinceRange[]).map((key) => (
+              <option key={key} value={key}>
+                {SINCE_LABELS[key]}
+              </option>
             ))}
           </select>
 
@@ -84,16 +83,17 @@ export function ReportPanel({ isOpen, onClose }: ReportPanelProps) {
             </button>
           </div>
 
-          <button
-            className="btn btn-sm btn-primary"
-            onClick={generate}
-            disabled={loading || !connected}
-          >
+          <button className="btn btn-sm btn-primary" onClick={generate} disabled={loading || !connected}>
             {loading ? (
               <span className="loading loading-spinner loading-xs"></span>
             ) : (
               <svg aria-hidden="true" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                />
               </svg>
             )}
             Generate
@@ -114,13 +114,22 @@ export function ReportPanel({ isOpen, onClose }: ReportPanelProps) {
               <span className="loading loading-spinner loading-lg text-primary"></span>
             </div>
           ) : content ? (
-            <pre className="text-xs whitespace-pre-wrap font-mono bg-base-200 p-3 rounded-lg">
-              {content}
-            </pre>
+            <pre className="text-xs whitespace-pre-wrap font-mono bg-base-200 p-3 rounded-lg">{content}</pre>
           ) : (
             <div className="text-center py-12 text-base-content/50">
-              <svg aria-hidden="true" className="w-10 h-10 mx-auto mb-3 opacity-30" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              <svg
+                aria-hidden="true"
+                className="w-10 h-10 mx-auto mb-3 opacity-30"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={1.5}
+                  d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                />
               </svg>
               <p>Select a time range and click Generate.</p>
             </div>

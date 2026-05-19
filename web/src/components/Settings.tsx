@@ -46,7 +46,7 @@ export function Settings({ isOpen, onClose, defaultScope }: SettingsProps) {
 
     try {
       const result = await client.call<SettingsResponse>('settings.get', {
-        project_path: selectedProject?.path
+        project_path: selectedProject?.path,
       })
 
       setSchema(result.schema)
@@ -80,9 +80,9 @@ export function Settings({ isOpen, onClose, defaultScope }: SettingsProps) {
     // Skip masked tokens (user didn't actually change them)
     if (isMaskedToken(value)) return
 
-    setPendingChanges(prev => ({
+    setPendingChanges((prev) => ({
       ...prev,
-      [path]: value
+      [path]: value,
     }))
   }
 
@@ -97,7 +97,7 @@ export function Settings({ isOpen, onClose, defaultScope }: SettingsProps) {
       await client.call('settings.set', {
         scope,
         values: pendingChanges,
-        project_path: selectedProject?.path
+        project_path: selectedProject?.path,
       })
 
       // Reload settings to get updated values
@@ -117,11 +117,7 @@ export function Settings({ isOpen, onClose, defaultScope }: SettingsProps) {
       <button onClick={onClose} className="btn btn-ghost">
         Cancel
       </button>
-      <button
-        onClick={handleSave}
-        disabled={saving || storeLoading || !hasChanges}
-        className="btn btn-primary"
-      >
+      <button onClick={handleSave} disabled={saving || storeLoading || !hasChanges} className="btn btn-primary">
         {saving ? (
           <span className="loading loading-spinner loading-sm"></span>
         ) : (
@@ -148,7 +144,12 @@ export function Settings({ isOpen, onClose, defaultScope }: SettingsProps) {
           }}
         >
           <svg aria-hidden="true" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+            />
           </svg>
           Global
         </button>
@@ -165,7 +166,12 @@ export function Settings({ isOpen, onClose, defaultScope }: SettingsProps) {
           disabled={!selectedProject}
         >
           <svg aria-hidden="true" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"
+            />
           </svg>
           Project
           {!selectedProject && <span className="text-xs opacity-50">(none)</span>}
@@ -175,7 +181,12 @@ export function Settings({ isOpen, onClose, defaultScope }: SettingsProps) {
       {/* Scope Info */}
       <div className="alert alert-info mb-4 py-2">
         <svg aria-hidden="true" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+          />
         </svg>
         <span className="text-sm">
           {scope === 'global'
@@ -188,7 +199,12 @@ export function Settings({ isOpen, onClose, defaultScope }: SettingsProps) {
       {error && (
         <div className="alert alert-error mb-4 py-2" role="alert">
           <svg aria-hidden="true" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+            />
           </svg>
           <span className="text-sm">{error}</span>
         </div>
@@ -220,17 +236,13 @@ export function Settings({ isOpen, onClose, defaultScope }: SettingsProps) {
             )}
           </>
         ) : (
-          <div className="text-center py-8 text-base-content/50">
-            No settings schema available
-          </div>
+          <div className="text-center py-8 text-base-content/50">No settings schema available</div>
         )}
       </div>
 
       {/* Footer: Config path + debug toggle */}
       <div className="border-t border-base-300 pt-3 mt-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
-        <span className="text-xs text-base-content/40 font-mono select-all">
-          Config: ~/.valksor/kvelmo/kvelmo.yaml
-        </span>
+        <span className="text-xs text-base-content/40 font-mono select-all">Config: ~/.valksor/kvelmo/kvelmo.yaml</span>
         <DebugToggle />
       </div>
     </AccessibleModal>

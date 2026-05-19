@@ -21,33 +21,32 @@ export function ReviewPanel({ data }: ReviewPanelProps) {
   const lastLoadedNumber = useRef<number | undefined>(undefined)
 
   // Use data from props if available (with runtime check), otherwise from store
-  const displayReviews = Array.isArray(data?.reviews)
-    ? (data.reviews as Review[])
-    : reviews
+  const displayReviews = Array.isArray(data?.reviews) ? (data.reviews as Review[]) : reviews
 
   // Stable identifier for latest review
-  const latestNumber = displayReviews.length > 0
-    ? displayReviews[displayReviews.length - 1].number
-    : undefined
+  const latestNumber = displayReviews.length > 0 ? displayReviews[displayReviews.length - 1].number : undefined
 
   // Load review details with error handling
-  const handleLoadReview = useCallback((review: Review) => {
-    setLoading(true)
-    setError(null)
-    setSelectedSummary(review)
-    lastLoadedNumber.current = review.number
-    loadReview(review.number)
-      .then((detail) => {
-        setSelectedReview(detail)
-      })
-      .catch((err) => {
-        setError(err instanceof Error ? err.message : 'Failed to load review')
-        setSelectedReview(null)
-      })
-      .finally(() => {
-        setLoading(false)
-      })
-  }, [loadReview])
+  const handleLoadReview = useCallback(
+    (review: Review) => {
+      setLoading(true)
+      setError(null)
+      setSelectedSummary(review)
+      lastLoadedNumber.current = review.number
+      loadReview(review.number)
+        .then((detail) => {
+          setSelectedReview(detail)
+        })
+        .catch((err) => {
+          setError(err instanceof Error ? err.message : 'Failed to load review')
+          setSelectedReview(null)
+        })
+        .finally(() => {
+          setLoading(false)
+        })
+    },
+    [loadReview],
+  )
 
   // Load the latest review details when latestNumber changes
   useEffect(() => {
@@ -66,7 +65,12 @@ export function ReviewPanel({ data }: ReviewPanelProps) {
       <div className="flex items-center justify-center h-full text-base-content/50">
         <div className="text-center">
           <svg className="w-12 h-12 mx-auto mb-3 opacity-30" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={1.5}
+              d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+            />
           </svg>
           <p className="text-sm">No reviews yet</p>
         </div>
@@ -84,12 +88,8 @@ export function ReviewPanel({ data }: ReviewPanelProps) {
         <div className="flex items-center gap-3">
           <StatusBadge approved={displaySummary.approved} />
           <div className="flex-1">
-            <h2 className="text-lg font-semibold">
-              Review #{displaySummary.number}
-            </h2>
-            <p className="text-xs text-base-content/60">
-              {new Date(displaySummary.timestamp).toLocaleString()}
-            </p>
+            <h2 className="text-lg font-semibold">Review #{displaySummary.number}</h2>
+            <p className="text-xs text-base-content/60">{new Date(displaySummary.timestamp).toLocaleString()}</p>
           </div>
         </div>
 
@@ -119,7 +119,12 @@ export function ReviewPanel({ data }: ReviewPanelProps) {
         ) : !error ? (
           <div className="bg-success/10 border border-success/20 rounded-lg p-4 text-center">
             <svg className="w-8 h-8 mx-auto mb-2 text-success" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
             </svg>
             <p className="text-sm text-success">No issues found</p>
           </div>
@@ -137,9 +142,7 @@ export function ReviewPanel({ data }: ReviewPanelProps) {
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium truncate">{node.nodeId}</p>
-                      {node.message && (
-                        <p className="text-xs text-base-content/60 mt-0.5">{node.message}</p>
-                      )}
+                      {node.message && <p className="text-xs text-base-content/60 mt-0.5">{node.message}</p>}
                     </div>
                     <div className="flex gap-1.5 shrink-0">
                       <button
@@ -169,21 +172,24 @@ export function ReviewPanel({ data }: ReviewPanelProps) {
           <div className="space-y-2">
             <h3 className="text-sm font-medium text-base-content/70">History</h3>
             <div className="space-y-1">
-              {displayReviews.slice(0, -1).reverse().map((review) => (
-                <button
-                  key={review.number}
-                  className={`w-full flex items-center gap-2 p-2 rounded-lg hover:bg-base-200 transition-colors text-left ${
-                    selectedSummary?.number === review.number ? 'bg-base-200' : ''
-                  }`}
-                  onClick={() => handleLoadReview(review)}
-                >
-                  <span className={`w-2 h-2 rounded-full ${review.approved ? 'bg-success' : 'bg-error'}`} />
-                  <span className="text-sm flex-1">Review #{review.number}</span>
-                  <span className="text-xs text-base-content/50">
-                    {new Date(review.timestamp).toLocaleDateString()}
-                  </span>
-                </button>
-              ))}
+              {displayReviews
+                .slice(0, -1)
+                .reverse()
+                .map((review) => (
+                  <button
+                    key={review.number}
+                    className={`w-full flex items-center gap-2 p-2 rounded-lg hover:bg-base-200 transition-colors text-left ${
+                      selectedSummary?.number === review.number ? 'bg-base-200' : ''
+                    }`}
+                    onClick={() => handleLoadReview(review)}
+                  >
+                    <span className={`w-2 h-2 rounded-full ${review.approved ? 'bg-success' : 'bg-error'}`} />
+                    <span className="text-sm flex-1">Review #{review.number}</span>
+                    <span className="text-xs text-base-content/50">
+                      {new Date(review.timestamp).toLocaleDateString()}
+                    </span>
+                  </button>
+                ))}
             </div>
           </div>
         )}
@@ -193,9 +199,15 @@ export function ReviewPanel({ data }: ReviewPanelProps) {
 }
 
 const personaIcons: Record<string, { icon: string; label: string }> = {
-  security: { icon: 'M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z', label: 'Security' },
+  security: {
+    icon: 'M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z',
+    label: 'Security',
+  },
   performance: { icon: 'M13 10V3L4 14h7v7l9-11h-7z', label: 'Performance' },
-  maintainability: { icon: 'M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z M15 12a3 3 0 11-6 0 3 3 0 016 0z', label: 'Maintainability' },
+  maintainability: {
+    icon: 'M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z M15 12a3 3 0 11-6 0 3 3 0 016 0z',
+    label: 'Maintainability',
+  },
 }
 
 /** Groups findings by reviewer_persona and renders each group with an icon header. */
@@ -222,9 +234,7 @@ function FindingsSection({ findings }: { findings: string[] }) {
   if (personaGroups.size === 0) {
     return (
       <div className="space-y-2">
-        <h3 className="text-sm font-medium text-base-content/70">
-          Findings ({findings.length})
-        </h3>
+        <h3 className="text-sm font-medium text-base-content/70">Findings ({findings.length})</h3>
         <div className="space-y-2">
           {findings.map((finding, index) => (
             <FindingItem key={index} finding={finding} index={index} />
@@ -236,9 +246,7 @@ function FindingsSection({ findings }: { findings: string[] }) {
 
   return (
     <div className="space-y-4">
-      <h3 className="text-sm font-medium text-base-content/70">
-        Findings ({findings.length})
-      </h3>
+      <h3 className="text-sm font-medium text-base-content/70">Findings ({findings.length})</h3>
 
       {/* Persona-grouped findings */}
       {Array.from(personaGroups.entries()).map(([persona, group]) => {
@@ -313,12 +321,15 @@ interface AdversarialResults {
   count: number
 }
 
-function RiskGauge({ score, onEvaluate }: {
+function RiskGauge({
+  score,
+  onEvaluate,
+}: {
   score: { score: number; factors: Record<string, number>; level: string } | null
   onEvaluate: () => Promise<void>
 }) {
-  const client = useProjectStore(s => s.client)
-  const connected = useProjectStore(s => s.connected)
+  const client = useProjectStore((s) => s.client)
+  const connected = useProjectStore((s) => s.connected)
   const [loading, setLoading] = useState(false)
   const [showHistory, setShowHistory] = useState(false)
   const [history, setHistory] = useState<RiskHistoryEntry[] | null>(null)
@@ -381,11 +392,7 @@ function RiskGauge({ score, onEvaluate }: {
     return (
       <div className="bg-base-200 rounded-lg p-3 flex items-center justify-between">
         <span className="text-sm text-base-content/60">Risk not evaluated</span>
-        <button
-          className="btn btn-xs btn-ghost"
-          onClick={handleEvaluate}
-          disabled={loading}
-        >
+        <button className="btn btn-xs btn-ghost" onClick={handleEvaluate} disabled={loading}>
           {loading ? <span className="loading loading-spinner loading-xs" /> : 'Evaluate'}
         </button>
       </div>
@@ -411,17 +418,10 @@ function RiskGauge({ score, onEvaluate }: {
           <span className={`text-sm font-semibold ${levelColors[score.level] || ''}`}>
             {score.score.toFixed(2)} ({score.level})
           </span>
-          <button
-            className="btn btn-xs btn-ghost"
-            onClick={handleEvaluate}
-            disabled={loading}
-          >
+          <button className="btn btn-xs btn-ghost" onClick={handleEvaluate} disabled={loading}>
             {loading ? <span className="loading loading-spinner loading-xs" /> : 'Re-evaluate'}
           </button>
-          <button
-            className="btn btn-xs btn-ghost"
-            onClick={handleToggleHistory}
-          >
+          <button className="btn btn-xs btn-ghost" onClick={handleToggleHistory}>
             {showHistory ? 'Hide Details' : 'Details'}
           </button>
         </div>
@@ -435,7 +435,9 @@ function RiskGauge({ score, onEvaluate }: {
       {Object.keys(score.factors).length > 0 && (
         <div className="grid grid-cols-2 gap-1 text-xs text-base-content/50">
           {Object.entries(score.factors).map(([factor, value]) => (
-            <span key={factor}>{factor.replace(/_/g, ' ')}: {(value).toFixed(2)}</span>
+            <span key={factor}>
+              {factor.replace(/_/g, ' ')}: {value.toFixed(2)}
+            </span>
           ))}
         </div>
       )}
@@ -454,14 +456,16 @@ function RiskGauge({ score, onEvaluate }: {
               <div className="space-y-1">
                 {history.map((entry, idx) => (
                   <div key={`${entry.timestamp}-${idx}`} className="flex items-center justify-between text-xs">
-                    <span className="text-base-content/50">
-                      {new Date(entry.timestamp).toLocaleString()}
-                    </span>
-                    <span className={`font-mono ${
-                      entry.data?.level === 'high' ? 'text-error'
-                      : entry.data?.level === 'medium' ? 'text-warning'
-                      : 'text-success'
-                    }`}>
+                    <span className="text-base-content/50">{new Date(entry.timestamp).toLocaleString()}</span>
+                    <span
+                      className={`font-mono ${
+                        entry.data?.level === 'high'
+                          ? 'text-error'
+                          : entry.data?.level === 'medium'
+                            ? 'text-warning'
+                            : 'text-success'
+                      }`}
+                    >
                       {entry.data?.score?.toFixed(2) ?? '--'} ({entry.data?.level ?? '?'})
                     </span>
                   </div>
@@ -476,11 +480,7 @@ function RiskGauge({ score, onEvaluate }: {
           <div>
             <div className="flex items-center justify-between">
               <h4 className="text-xs font-medium text-base-content/60">Adversarial Review</h4>
-              <button
-                className="btn btn-ghost btn-xs"
-                onClick={loadAdversarial}
-                disabled={adversarialLoading}
-              >
+              <button className="btn btn-ghost btn-xs" onClick={loadAdversarial} disabled={adversarialLoading}>
                 {adversarialLoading ? <span className="loading loading-spinner loading-xs" /> : 'Refresh'}
               </button>
             </div>
@@ -490,9 +490,13 @@ function RiskGauge({ score, onEvaluate }: {
               <p className="text-xs text-error mt-1">Failed to load adversarial results</p>
             ) : adversarial && adversarial.count > 0 ? (
               <div className="space-y-1 mt-1">
-                <p className="text-xs text-base-content/50">{adversarial.findings.length} finding{adversarial.findings.length !== 1 ? 's' : ''}</p>
+                <p className="text-xs text-base-content/50">
+                  {adversarial.findings.length} finding{adversarial.findings.length !== 1 ? 's' : ''}
+                </p>
                 {adversarial.findings.map((f, i) => (
-                  <div key={i} className="bg-error/10 rounded p-2 text-xs">{f}</div>
+                  <div key={i} className="bg-error/10 rounded p-2 text-xs">
+                    {f}
+                  </div>
                 ))}
               </div>
             ) : (
@@ -530,9 +534,7 @@ function FindingItem({ finding, index }: { finding: string; index: number }) {
   return (
     <div className={`${bg} rounded-lg p-3`}>
       <div className="flex items-start gap-2">
-        <span className={`text-xs font-medium uppercase ${color}`}>
-          {severity}
-        </span>
+        <span className={`text-xs font-medium uppercase ${color}`}>{severity}</span>
         <span className="text-xs text-base-content/50">#{index + 1}</span>
         {classification && <ClassificationBadge classification={classification} />}
       </div>
@@ -550,9 +552,5 @@ function ClassificationBadge({ classification }: { classification: string }) {
 
   const badgeClass = config[classification] || 'badge-ghost'
 
-  return (
-    <span className={`badge badge-xs ${badgeClass}`}>
-      {classification}
-    </span>
-  )
+  return <span className={`badge badge-xs ${badgeClass}`}>{classification}</span>
 }

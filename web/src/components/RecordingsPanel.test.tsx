@@ -71,128 +71,96 @@ describe('RecordingsPanel', () => {
   })
 
   it('does not render when closed', () => {
-    const { queryByRole } = render(
-      <RecordingsPanel isOpen={false} onClose={vi.fn()} />,
-    )
+    const { queryByRole } = render(<RecordingsPanel isOpen={false} onClose={vi.fn()} />)
     expect(queryByRole('dialog')).not.toBeInTheDocument()
   })
 
   it('renders modal with title when open', async () => {
     mockCall.mockResolvedValueOnce({ recordings: [] })
-    const { getByText, findByText } = render(
-      <RecordingsPanel isOpen={true} onClose={vi.fn()} />,
-    )
+    const { getByText, findByText } = render(<RecordingsPanel isOpen={true} onClose={vi.fn()} />)
     expect(getByText('Recordings')).toBeInTheDocument()
     await findByText('No recordings found')
   })
 
   it('shows loading spinner while fetching', () => {
     mockCall.mockReturnValue(new Promise(() => {}))
-    const { container } = render(
-      <RecordingsPanel isOpen={true} onClose={vi.fn()} />,
-    )
+    const { container } = render(<RecordingsPanel isOpen={true} onClose={vi.fn()} />)
     expect(container.querySelector('.loading-spinner')).toBeInTheDocument()
   })
 
   it('shows empty state when no recordings', async () => {
     mockCall.mockResolvedValueOnce({ recordings: [] })
-    const { findByText } = render(
-      <RecordingsPanel isOpen={true} onClose={vi.fn()} />,
-    )
+    const { findByText } = render(<RecordingsPanel isOpen={true} onClose={vi.fn()} />)
     expect(await findByText('No recordings found')).toBeInTheDocument()
   })
 
   it('shows helper text in empty state', async () => {
     mockCall.mockResolvedValueOnce({ recordings: [] })
-    const { findByText } = render(
-      <RecordingsPanel isOpen={true} onClose={vi.fn()} />,
-    )
-    expect(
-      await findByText('Recordings are created when agents run tasks'),
-    ).toBeInTheDocument()
+    const { findByText } = render(<RecordingsPanel isOpen={true} onClose={vi.fn()} />)
+    expect(await findByText('Recordings are created when agents run tasks')).toBeInTheDocument()
   })
 
   it('renders recording list with count', async () => {
     mockCall.mockResolvedValueOnce({ recordings: sampleRecordings })
-    const { findByText } = render(
-      <RecordingsPanel isOpen={true} onClose={vi.fn()} />,
-    )
+    const { findByText } = render(<RecordingsPanel isOpen={true} onClose={vi.fn()} />)
     expect(await findByText('2 recordings')).toBeInTheDocument()
   })
 
   it('shows singular "recording" for one item', async () => {
     mockCall.mockResolvedValueOnce({ recordings: [sampleRecordings[0]] })
-    const { findByText } = render(
-      <RecordingsPanel isOpen={true} onClose={vi.fn()} />,
-    )
+    const { findByText } = render(<RecordingsPanel isOpen={true} onClose={vi.fn()} />)
     expect(await findByText('1 recording')).toBeInTheDocument()
   })
 
   it('shows truncated job ID for long IDs', async () => {
     mockCall.mockResolvedValueOnce({ recordings: sampleRecordings })
-    const { findByText } = render(
-      <RecordingsPanel isOpen={true} onClose={vi.fn()} />,
-    )
+    const { findByText } = render(<RecordingsPanel isOpen={true} onClose={vi.fn()} />)
     // job-abc123def4567x is 18 chars (> 16), should be truncated to first 16 + "..."
     expect(await findByText('job-abc123def456...')).toBeInTheDocument()
   })
 
   it('shows full job ID for short IDs', async () => {
     mockCall.mockResolvedValueOnce({ recordings: sampleRecordings })
-    const { findByText } = render(
-      <RecordingsPanel isOpen={true} onClose={vi.fn()} />,
-    )
+    const { findByText } = render(<RecordingsPanel isOpen={true} onClose={vi.fn()} />)
     expect(await findByText('job-xyz789')).toBeInTheDocument()
   })
 
   it('shows agent badge', async () => {
     mockCall.mockResolvedValueOnce({ recordings: sampleRecordings })
-    const { findByText } = render(
-      <RecordingsPanel isOpen={true} onClose={vi.fn()} />,
-    )
+    const { findByText } = render(<RecordingsPanel isOpen={true} onClose={vi.fn()} />)
     expect(await findByText('claude')).toBeInTheDocument()
     expect(await findByText('codex')).toBeInTheDocument()
   })
 
   it('shows model badge when present', async () => {
     mockCall.mockResolvedValueOnce({ recordings: sampleRecordings })
-    const { findByText } = render(
-      <RecordingsPanel isOpen={true} onClose={vi.fn()} />,
-    )
+    const { findByText } = render(<RecordingsPanel isOpen={true} onClose={vi.fn()} />)
     expect(await findByText('opus')).toBeInTheDocument()
   })
 
   it('shows line count', async () => {
     mockCall.mockResolvedValueOnce({ recordings: sampleRecordings })
-    const { findByText } = render(
-      <RecordingsPanel isOpen={true} onClose={vi.fn()} />,
-    )
+    const { findByText } = render(<RecordingsPanel isOpen={true} onClose={vi.fn()} />)
     expect(await findByText('42 lines')).toBeInTheDocument()
     expect(await findByText('100 lines')).toBeInTheDocument()
   })
 
   it('shows filename extracted from path', async () => {
     mockCall.mockResolvedValueOnce({ recordings: sampleRecordings })
-    const { findByText } = render(
-      <RecordingsPanel isOpen={true} onClose={vi.fn()} />,
-    )
+    const { findByText } = render(<RecordingsPanel isOpen={true} onClose={vi.fn()} />)
     expect(await findByText('rec-001.jsonl')).toBeInTheDocument()
   })
 
   it('has a filter input with placeholder', async () => {
     mockCall.mockResolvedValueOnce({ recordings: [] })
-    const { getByPlaceholderText, findByText } = render(
-      <RecordingsPanel isOpen={true} onClose={vi.fn()} />,
-    )
+    const { getByPlaceholderText, findByText } = render(<RecordingsPanel isOpen={true} onClose={vi.fn()} />)
     expect(getByPlaceholderText('Filter by job ID...')).toBeInTheDocument()
     await findByText('No recordings found')
   })
 
   it('has a Filter button', async () => {
     mockCall.mockResolvedValueOnce({ recordings: [] })
-    const { getByText, findByText } = render(
-      <RecordingsPanel isOpen={true} onClose={vi.fn()} />,
-    )
+    const { getByText, findByText } = render(<RecordingsPanel isOpen={true} onClose={vi.fn()} />)
     expect(getByText('Filter')).toBeInTheDocument()
     await findByText('No recordings found')
   })
@@ -207,14 +175,14 @@ describe('RecordingsPanel', () => {
 
   it('passes job filter to RPC call', async () => {
     mockCall.mockResolvedValueOnce({ recordings: [] })
-    const { getByPlaceholderText, getByText } = render(
-      <RecordingsPanel isOpen={true} onClose={vi.fn()} />,
-    )
+    const { getByPlaceholderText, getByText } = render(<RecordingsPanel isOpen={true} onClose={vi.fn()} />)
     const input = getByPlaceholderText('Filter by job ID...')
     fireEvent.change(input, { target: { value: 'job-abc' } })
 
     mockCall.mockResolvedValueOnce({ recordings: [] })
-    await act(async () => { getByText('Filter').click() })
+    await act(async () => {
+      getByText('Filter').click()
+    })
 
     await waitFor(() => {
       expect(mockCall).toHaveBeenCalledWith('recordings.list', { job: 'job-abc' })
@@ -223,14 +191,14 @@ describe('RecordingsPanel', () => {
 
   it('triggers filter on Enter key in input', async () => {
     mockCall.mockResolvedValueOnce({ recordings: [] })
-    const { getByPlaceholderText } = render(
-      <RecordingsPanel isOpen={true} onClose={vi.fn()} />,
-    )
+    const { getByPlaceholderText } = render(<RecordingsPanel isOpen={true} onClose={vi.fn()} />)
     const input = getByPlaceholderText('Filter by job ID...')
     fireEvent.change(input, { target: { value: 'job-xyz' } })
 
     mockCall.mockResolvedValueOnce({ recordings: [] })
-    await act(async () => { fireEvent.keyDown(input, { key: 'Enter' }) })
+    await act(async () => {
+      fireEvent.keyDown(input, { key: 'Enter' })
+    })
 
     await waitFor(() => {
       expect(mockCall).toHaveBeenCalledWith('recordings.list', { job: 'job-xyz' })
@@ -239,32 +207,28 @@ describe('RecordingsPanel', () => {
 
   it('shows error when RPC call fails', async () => {
     mockCall.mockRejectedValueOnce(new Error('Server error'))
-    const { findByText } = render(
-      <RecordingsPanel isOpen={true} onClose={vi.fn()} />,
-    )
+    const { findByText } = render(<RecordingsPanel isOpen={true} onClose={vi.fn()} />)
     expect(await findByText('Server error')).toBeInTheDocument()
   })
 
   it('shows generic error for non-Error rejects', async () => {
     mockCall.mockRejectedValueOnce('unknown')
-    const { findByText } = render(
-      <RecordingsPanel isOpen={true} onClose={vi.fn()} />,
-    )
+    const { findByText } = render(<RecordingsPanel isOpen={true} onClose={vi.fn()} />)
     expect(await findByText('Failed to load recordings')).toBeInTheDocument()
   })
 
   it('expands recording detail on click', async () => {
     mockCall.mockResolvedValueOnce({ recordings: sampleRecordings })
-    const { findByText } = render(
-      <RecordingsPanel isOpen={true} onClose={vi.fn()} />,
-    )
+    const { findByText } = render(<RecordingsPanel isOpen={true} onClose={vi.fn()} />)
 
     const recButton = await findByText('rec-001.jsonl')
 
     mockCall.mockResolvedValueOnce(sampleViewResult)
     const btn1 = recButton.closest('button')
     expect(btn1).not.toBeNull()
-    await act(async () => { btn1!.click() })
+    await act(async () => {
+      btn1!.click()
+    })
 
     await waitFor(() => {
       expect(mockCall).toHaveBeenCalledWith('recordings.view', {
@@ -275,15 +239,15 @@ describe('RecordingsPanel', () => {
 
   it('shows recording records after expanding', async () => {
     mockCall.mockResolvedValueOnce({ recordings: sampleRecordings })
-    const { findByText } = render(
-      <RecordingsPanel isOpen={true} onClose={vi.fn()} />,
-    )
+    const { findByText } = render(<RecordingsPanel isOpen={true} onClose={vi.fn()} />)
 
     const recButton = await findByText('rec-001.jsonl')
     mockCall.mockResolvedValueOnce(sampleViewResult)
     const btn2 = recButton.closest('button')
     expect(btn2).not.toBeNull()
-    await act(async () => { btn2!.click() })
+    await act(async () => {
+      btn2!.click()
+    })
 
     expect(await findByText('Hello agent')).toBeInTheDocument()
   })
@@ -291,9 +255,7 @@ describe('RecordingsPanel', () => {
   it('calls onClose when close button is clicked', async () => {
     mockCall.mockResolvedValueOnce({ recordings: [] })
     const onClose = vi.fn()
-    const { getByLabelText, findByText } = render(
-      <RecordingsPanel isOpen={true} onClose={onClose} />,
-    )
+    const { getByLabelText, findByText } = render(<RecordingsPanel isOpen={true} onClose={onClose} />)
     await findByText('No recordings found')
     getByLabelText('Close dialog').click()
     expect(onClose).toHaveBeenCalledOnce()
@@ -301,9 +263,7 @@ describe('RecordingsPanel', () => {
 
   it('handles null recordings in response gracefully', async () => {
     mockCall.mockResolvedValueOnce({ recordings: null })
-    const { findByText } = render(
-      <RecordingsPanel isOpen={true} onClose={vi.fn()} />,
-    )
+    const { findByText } = render(<RecordingsPanel isOpen={true} onClose={vi.fn()} />)
     expect(await findByText('No recordings found')).toBeInTheDocument()
   })
 })

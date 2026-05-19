@@ -21,7 +21,7 @@ export function PRPreviewPanel({ data }: PRPreviewPanelProps) {
   // Initialize from preview body. The tab is recreated with fresh data on each dry-run,
   // so we don't need to sync — the component remounts with new props.
   const [editBody, setEditBody] = useState(preview?.body ?? '')
-  const setPrBodyOverride = useProjectStore(s => s.setPrBodyOverride)
+  const setPrBodyOverride = useProjectStore((s) => s.setPrBodyOverride)
 
   if (!preview) {
     return (
@@ -61,23 +61,16 @@ export function PRPreviewPanel({ data }: PRPreviewPanelProps) {
         {/* Metadata badges */}
         <div className="flex gap-2 flex-wrap">
           {preview.specifications > 0 && (
-            <span className="badge badge-outline badge-sm">
-              {preview.specifications} spec(s)
-            </span>
+            <span className="badge badge-outline badge-sm">{preview.specifications} spec(s)</span>
           )}
           {preview.checkpoints > 0 && (
-            <span className="badge badge-outline badge-sm">
-              {preview.checkpoints} checkpoint(s)
-            </span>
+            <span className="badge badge-outline badge-sm">{preview.checkpoints} checkpoint(s)</span>
           )}
         </div>
 
         {/* Edit controls */}
         <div className="flex items-center gap-2">
-          <button
-            className={`btn btn-sm ${editing ? 'btn-primary' : 'btn-ghost'}`}
-            onClick={handleToggleEdit}
-          >
+          <button className={`btn btn-sm ${editing ? 'btn-primary' : 'btn-ghost'}`} onClick={handleToggleEdit}>
             {editing ? 'Save' : 'Edit'}
           </button>
           {editing && (
@@ -85,9 +78,7 @@ export function PRPreviewPanel({ data }: PRPreviewPanelProps) {
               Reset
             </button>
           )}
-          {!editing && editBody !== preview.body && (
-            <span className="text-xs text-warning">Modified</span>
-          )}
+          {!editing && editBody !== preview.body && <span className="text-xs text-warning">Modified</span>}
         </div>
 
         {/* PR Body — editable or rendered */}
@@ -97,7 +88,7 @@ export function PRPreviewPanel({ data }: PRPreviewPanelProps) {
             className="textarea textarea-bordered w-full font-mono text-sm"
             rows={20}
             value={editBody}
-            onChange={e => setEditBody(e.target.value)}
+            onChange={(e) => setEditBody(e.target.value)}
           />
         ) : (
           <PRBodyRenderer body={editBody} />
@@ -125,22 +116,16 @@ function PRBodyRenderer({ body }: { body: string }) {
     <div className="space-y-4">
       {sections.map((section, i) => (
         <div key={i}>
-          {section.title && (
-            <h2 className="text-base font-semibold mb-2">{section.title}</h2>
-          )}
+          {section.title && <h2 className="text-base font-semibold mb-2">{section.title}</h2>}
           {section.isCollapsible ? (
             <details className="collapse collapse-arrow bg-base-200">
-              <summary className="collapse-title text-sm font-medium">
-                {section.summaryText || 'Details'}
-              </summary>
+              <summary className="collapse-title text-sm font-medium">{section.summaryText || 'Details'}</summary>
               <div className="collapse-content">
                 <pre className="text-xs whitespace-pre-wrap">{section.content}</pre>
               </div>
             </details>
           ) : (
-            <div className="text-sm text-base-content/80 whitespace-pre-wrap">
-              {section.content}
-            </div>
+            <div className="text-sm text-base-content/80 whitespace-pre-wrap">{section.content}</div>
           )}
         </div>
       ))}
@@ -192,5 +177,5 @@ function parseSections(body: string): Section[] {
   if (current) sections.push(current)
 
   // Trim content
-  return sections.map(s => ({ ...s, content: s.content.trim() })).filter(s => s.content || s.title)
+  return sections.map((s) => ({ ...s, content: s.content.trim() })).filter((s) => s.content || s.title)
 }

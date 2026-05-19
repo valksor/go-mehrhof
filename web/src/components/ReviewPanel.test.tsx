@@ -21,7 +21,9 @@ vi.mock('../stores/projectStore', () => ({
   ),
 }))
 
-const makeReview = (overrides: Partial<{ number: number; timestamp: string; approved: boolean; message: string }> = {}) => ({
+const makeReview = (
+  overrides: Partial<{ number: number; timestamp: string; approved: boolean; message: string }> = {},
+) => ({
   number: 1,
   timestamp: '2026-04-01T12:00:00Z',
   approved: true,
@@ -35,7 +37,14 @@ describe('ReviewPanel', () => {
     mockApproveNode.mockReset()
     mockRejectNode.mockReset()
     mockEvaluateRisk.mockReset()
-    mockLoadReview.mockResolvedValue({ number: 1, timestamp: '2026-04-01T12:00:00Z', approved: true, message: 'ok', content: '', findings: [] })
+    mockLoadReview.mockResolvedValue({
+      number: 1,
+      timestamp: '2026-04-01T12:00:00Z',
+      approved: true,
+      message: 'ok',
+      content: '',
+      findings: [],
+    })
     mockState = {
       reviews: [],
       loadReview: mockLoadReview,
@@ -107,9 +116,7 @@ describe('ReviewPanel', () => {
 
   it('shows pending node approvals', () => {
     mockState.reviews = [makeReview()]
-    mockState.pendingNodeApprovals = [
-      { nodeId: 'node-1', message: 'Needs review' },
-    ]
+    mockState.pendingNodeApprovals = [{ nodeId: 'node-1', message: 'Needs review' }]
     const { getByText } = render(<ReviewPanel />)
     expect(getByText('Pending Approvals (1)')).toBeInTheDocument()
     expect(getByText('node-1')).toBeInTheDocument()
@@ -141,10 +148,7 @@ describe('ReviewPanel', () => {
   })
 
   it('shows History section when multiple reviews exist', () => {
-    mockState.reviews = [
-      makeReview({ number: 1 }),
-      makeReview({ number: 2 }),
-    ]
+    mockState.reviews = [makeReview({ number: 1 }), makeReview({ number: 2 })]
     const { getByText } = render(<ReviewPanel />)
     expect(getByText('History')).toBeInTheDocument()
   })
@@ -173,7 +177,14 @@ describe('ReviewPanel', () => {
       makeReview({ number: 1, message: 'First review' }),
       makeReview({ number: 2, message: 'Second review' }),
     ]
-    mockLoadReview.mockResolvedValue({ number: 1, timestamp: '2026-04-01T12:00:00Z', approved: true, message: 'ok', content: '', findings: [] })
+    mockLoadReview.mockResolvedValue({
+      number: 1,
+      timestamp: '2026-04-01T12:00:00Z',
+      approved: true,
+      message: 'ok',
+      content: '',
+      findings: [],
+    })
     const { getByText } = render(<ReviewPanel />)
     // Wait for initial auto-load to settle
     await vi.waitFor(() => expect(mockLoadReview).toHaveBeenCalled())

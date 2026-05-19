@@ -69,11 +69,7 @@ export function PanelLayout({ leftContent, rightContent, header }: PanelLayoutPr
   return (
     <div className="h-full flex flex-col">
       {/* Header */}
-      {header && (
-        <div className="flex-shrink-0">
-          {header}
-        </div>
-      )}
+      {header && <div className="flex-shrink-0">{header}</div>}
 
       {/* Main content area */}
       <div className="flex-1 min-h-0 flex flex-col">
@@ -125,9 +121,7 @@ export function PanelLayout({ leftContent, rightContent, header }: PanelLayoutPr
           />
 
           {/* Main content area with tabs - hidden on mobile unless active */}
-          <div className={`flex-1 min-w-0 flex-col bg-base-100 ${
-            mobilePanel === 'main' ? 'flex' : 'hidden md:flex'
-          }`}>
+          <div className={`flex-1 min-w-0 flex-col bg-base-100 ${mobilePanel === 'main' ? 'flex' : 'hidden md:flex'}`}>
             <TabBar />
             <div className="flex-1 min-h-0 overflow-hidden">
               <TabPanel />
@@ -224,7 +218,7 @@ export function PanelLayout({ leftContent, rightContent, header }: PanelLayoutPr
               { label: 'Browser', panel: 'main' as const, tab: 'browser' },
               { label: 'Jobs', panel: 'main' as const, tab: 'jobs' },
               { label: 'Reviews', panel: 'main' as const, tab: 'review' },
-            ].map(item => (
+            ].map((item) => (
               <button
                 key={item.label}
                 onClick={() => {
@@ -247,7 +241,10 @@ export function PanelLayout({ leftContent, rightContent, header }: PanelLayoutPr
         )}
         <div className="flex" role="tablist">
           <button
-            onClick={() => { setMobilePanel('left'); setMobileMenuOpen(false) }}
+            onClick={() => {
+              setMobilePanel('left')
+              setMobileMenuOpen(false)
+            }}
             role="tab"
             aria-selected={mobilePanel === 'left'}
             className={`flex-1 flex flex-col items-center gap-1 py-2 min-h-[44px] text-xs transition-colors ${
@@ -255,12 +252,20 @@ export function PanelLayout({ leftContent, rightContent, header }: PanelLayoutPr
             }`}
           >
             <svg aria-hidden="true" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+              />
             </svg>
             Task
           </button>
           <button
-            onClick={() => { setMobilePanel('main'); setMobileMenuOpen(false) }}
+            onClick={() => {
+              setMobilePanel('main')
+              setMobileMenuOpen(false)
+            }}
             role="tab"
             aria-selected={mobilePanel === 'main' && !mobileMenuOpen}
             className={`flex-1 flex flex-col items-center gap-1 py-2 min-h-[44px] text-xs transition-colors ${
@@ -268,12 +273,20 @@ export function PanelLayout({ leftContent, rightContent, header }: PanelLayoutPr
             }`}
           >
             <svg aria-hidden="true" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+              />
             </svg>
             Chat
           </button>
           <button
-            onClick={() => { setMobilePanel('right'); setMobileMenuOpen(false) }}
+            onClick={() => {
+              setMobilePanel('right')
+              setMobileMenuOpen(false)
+            }}
             role="tab"
             aria-selected={mobilePanel === 'right'}
             className={`flex-1 flex flex-col items-center gap-1 py-2 min-h-[44px] text-xs transition-colors ${
@@ -295,7 +308,12 @@ export function PanelLayout({ leftContent, rightContent, header }: PanelLayoutPr
             }`}
           >
             <svg aria-hidden="true" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h.01M12 12h.01M19 12h.01M6 12a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0z" />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M5 12h.01M12 12h.01M19 12h.01M6 12a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0z"
+              />
             </svg>
             More
           </button>
@@ -319,33 +337,40 @@ function BottomPanelContent() {
       <div className="flex items-center justify-between px-3 py-2 border-b border-base-300">
         <span className="text-sm font-medium text-base-content/70 flex items-center gap-2">
           <svg aria-hidden="true" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+            />
           </svg>
           Output
         </span>
-        <button
-          onClick={clearOutput}
-          className="btn btn-ghost btn-xs"
-        >
+        <button onClick={clearOutput} className="btn btn-ghost btn-xs">
           Clear
         </button>
       </div>
       <div className="flex-1 overflow-auto p-2">
-        <div role="log" aria-label="Task output" className="bg-neutral rounded-lg p-3 h-full overflow-auto font-mono text-sm text-neutral-content">
+        <div
+          role="log"
+          aria-label="Task output"
+          className="bg-neutral rounded-lg p-3 h-full overflow-auto font-mono text-sm text-neutral-content"
+        >
           {output.length === 0 ? (
-            <div className="text-neutral-content/50 text-center py-4">
-              No output yet
-            </div>
+            <div className="text-neutral-content/50 text-center py-4">No output yet</div>
           ) : (
             <div className="space-y-0.5">
               {output.map((line, i) => (
                 <div
                   key={i}
                   className={`leading-relaxed ${
-                    line.startsWith('ERROR') || line.startsWith('error') ? 'text-error' :
-                    line.startsWith('WARN') || line.startsWith('warn') ? 'text-warning' :
-                    line.startsWith('✓') || line.startsWith('success') ? 'text-success' :
-                    ''
+                    line.startsWith('ERROR') || line.startsWith('error')
+                      ? 'text-error'
+                      : line.startsWith('WARN') || line.startsWith('warn')
+                        ? 'text-warning'
+                        : line.startsWith('✓') || line.startsWith('success')
+                          ? 'text-success'
+                          : ''
                   }`}
                 >
                   {line}

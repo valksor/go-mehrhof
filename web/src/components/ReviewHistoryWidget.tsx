@@ -6,11 +6,11 @@ interface ReviewHistoryWidgetProps {
 }
 
 export function ReviewHistoryWidget({ embedded = false }: ReviewHistoryWidgetProps) {
-  const reviews = useProjectStore(s => s.reviews)
-  const loadReviews = useProjectStore(s => s.loadReviews)
-  const loadReview = useProjectStore(s => s.loadReview)
-  const reviewDetails = useProjectStore(s => s.reviewDetails)
-  const connected = useProjectStore(s => s.connected)
+  const reviews = useProjectStore((s) => s.reviews)
+  const loadReviews = useProjectStore((s) => s.loadReviews)
+  const loadReview = useProjectStore((s) => s.loadReview)
+  const reviewDetails = useProjectStore((s) => s.reviewDetails)
+  const connected = useProjectStore((s) => s.connected)
 
   const [expandedNumber, setExpandedNumber] = useState<number | null>(null)
   const [loadingNumber, setLoadingNumber] = useState<number | null>(null)
@@ -42,7 +42,7 @@ export function ReviewHistoryWidget({ embedded = false }: ReviewHistoryWidgetPro
         month: 'short',
         day: 'numeric',
         hour: '2-digit',
-        minute: '2-digit'
+        minute: '2-digit',
       })
     } catch {
       return ts
@@ -53,8 +53,19 @@ export function ReviewHistoryWidget({ embedded = false }: ReviewHistoryWidgetPro
     <div>
       {reviews.length === 0 ? (
         <div className="text-center py-6">
-          <svg aria-hidden="true" className="w-8 h-8 mx-auto mb-2 text-base-content/30" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+          <svg
+            aria-hidden="true"
+            className="w-8 h-8 mx-auto mb-2 text-base-content/30"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={1.5}
+              d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"
+            />
           </svg>
           <p className="text-base-content/60 text-sm">No reviews yet</p>
         </div>
@@ -66,10 +77,7 @@ export function ReviewHistoryWidget({ embedded = false }: ReviewHistoryWidgetPro
             const detail: ReviewDetail | undefined = reviewDetails[r.number]
 
             return (
-              <div
-                key={r.number}
-                className="rounded-lg bg-base-300 border border-transparent overflow-hidden"
-              >
+              <div key={r.number} className="rounded-lg bg-base-300 border border-transparent overflow-hidden">
                 {/* Row header — always visible, clickable to expand */}
                 <button
                   className="w-full p-3 text-left hover:bg-base-200/50 transition-colors"
@@ -79,16 +87,35 @@ export function ReviewHistoryWidget({ embedded = false }: ReviewHistoryWidgetPro
                 >
                   <div className="flex items-start gap-3">
                     {/* Approve/Reject icon */}
-                    <div className={`flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center mt-0.5 ${
-                      r.approved ? 'bg-success/20 text-success' : 'bg-error/20 text-error'
-                    }`}>
+                    <div
+                      className={`flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center mt-0.5 ${
+                        r.approved ? 'bg-success/20 text-success' : 'bg-error/20 text-error'
+                      }`}
+                    >
                       {r.approved ? (
-                        <svg aria-hidden="true" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <svg
+                          aria-hidden="true"
+                          className="w-3.5 h-3.5"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
                         </svg>
                       ) : (
-                        <svg aria-hidden="true" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
+                        <svg
+                          aria-hidden="true"
+                          className="w-3.5 h-3.5"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2.5}
+                            d="M6 18L18 6M6 6l12 12"
+                          />
                         </svg>
                       )}
                     </div>
@@ -99,9 +126,7 @@ export function ReviewHistoryWidget({ embedded = false }: ReviewHistoryWidgetPro
                           {r.approved ? 'Approved' : 'Rejected'} #{r.number}
                         </span>
                         <div className="flex items-center gap-1.5 flex-shrink-0">
-                          <span className="text-xs text-base-content/50">
-                            {formatTimestamp(r.timestamp)}
-                          </span>
+                          <span className="text-xs text-base-content/50">{formatTimestamp(r.timestamp)}</span>
                           <svg
                             aria-hidden="true"
                             className={`w-3.5 h-3.5 text-base-content/40 transition-transform duration-150 ${isExpanded ? 'rotate-90' : ''}`}
@@ -114,7 +139,9 @@ export function ReviewHistoryWidget({ embedded = false }: ReviewHistoryWidgetPro
                         </div>
                       </div>
                       {r.message && (
-                        <p className={`text-sm text-base-content/80 leading-relaxed ${isExpanded ? '' : 'line-clamp-2'}`}>
+                        <p
+                          className={`text-sm text-base-content/80 leading-relaxed ${isExpanded ? '' : 'line-clamp-2'}`}
+                        >
                           {r.message}
                         </p>
                       )}
@@ -181,17 +208,24 @@ export function ReviewHistoryWidget({ embedded = false }: ReviewHistoryWidgetPro
     <section className="card bg-base-200">
       <div className="card-body">
         <h2 className="card-title text-base-content flex items-center gap-2">
-          <svg aria-hidden="true" className="w-5 h-5 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+          <svg
+            aria-hidden="true"
+            className="w-5 h-5 text-primary"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"
+            />
           </svg>
           Review History
-          {reviews.length > 0 && (
-            <span className="badge badge-sm badge-ghost">{reviews.length}</span>
-          )}
+          {reviews.length > 0 && <span className="badge badge-sm badge-ghost">{reviews.length}</span>}
         </h2>
-        <div className="mt-4">
-          {content}
-        </div>
+        <div className="mt-4">{content}</div>
       </div>
     </section>
   )

@@ -27,10 +27,12 @@ function formatCost(usd: number): string {
 const PHASE_ORDER = ['plan', 'implement', 'simplify', 'optimize', 'review', 'submit']
 
 export function PhaseMetricsWidget({ embedded = false }: PhaseMetricsWidgetProps) {
-  const phaseMetrics = useProjectStore(s => s.phaseMetrics)
+  const phaseMetrics = useProjectStore((s) => s.phaseMetrics)
 
   if (!phaseMetrics || Object.keys(phaseMetrics).length === 0) {
-    const empty = <EmptyState title="No phase metrics" description="Metrics are recorded as phases complete" icon="--" />
+    const empty = (
+      <EmptyState title="No phase metrics" description="Metrics are recorded as phases complete" icon="--" />
+    )
     if (embedded) return empty
     return (
       <section className="card bg-base-200">
@@ -65,7 +67,7 @@ export function PhaseMetricsWidget({ embedded = false }: PhaseMetricsWidgetProps
           </tr>
         </thead>
         <tbody>
-          {phases.map(phase => {
+          {phases.map((phase) => {
             const m = phaseMetrics[phase]
             if (!m) return null
             return (
@@ -82,9 +84,7 @@ export function PhaseMetricsWidget({ embedded = false }: PhaseMetricsWidgetProps
                 <td className="font-mono text-xs text-right">
                   {m.total_tokens ? m.total_tokens.toLocaleString() : '--'}
                 </td>
-                <td className="font-mono text-xs text-right">
-                  {m.est_cost_usd ? formatCost(m.est_cost_usd) : '--'}
-                </td>
+                <td className="font-mono text-xs text-right">{m.est_cost_usd ? formatCost(m.est_cost_usd) : '--'}</td>
               </tr>
             )
           })}
@@ -99,8 +99,19 @@ export function PhaseMetricsWidget({ embedded = false }: PhaseMetricsWidgetProps
     <section className="card bg-base-200">
       <div className="card-body">
         <h2 className="card-title text-base-content flex items-center gap-2 text-base">
-          <svg aria-hidden="true" className="w-4 h-4 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+          <svg
+            aria-hidden="true"
+            className="w-4 h-4 text-primary"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+            />
           </svg>
           Phase Metrics
         </h2>

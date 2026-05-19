@@ -60,7 +60,15 @@ vi.mock('../hooks/useKeyboardShortcuts', () => ({
 
 // Mock all child components to avoid deep rendering
 vi.mock('./PanelLayout', () => ({
-  PanelLayout: ({ header, leftContent, rightContent }: { header?: React.ReactNode; leftContent: React.ReactNode; rightContent: React.ReactNode }) => (
+  PanelLayout: ({
+    header,
+    leftContent,
+    rightContent,
+  }: {
+    header?: React.ReactNode
+    leftContent: React.ReactNode
+    rightContent: React.ReactNode
+  }) => (
     <div data-testid="panel-layout">
       {header && <div data-testid="panel-header">{header}</div>}
       <div data-testid="panel-left">{leftContent}</div>
@@ -70,7 +78,9 @@ vi.mock('./PanelLayout', () => ({
 }))
 
 vi.mock('./Widget', () => ({
-  Widget: ({ title, children }: { title: string; children: React.ReactNode }) => <div data-testid={`widget-${title}`}>{children}</div>,
+  Widget: ({ title, children }: { title: string; children: React.ReactNode }) => (
+    <div data-testid={`widget-${title}`}>{children}</div>
+  ),
   TaskIcon: () => <span>TaskIcon</span>,
   FilesIcon: () => <span>FilesIcon</span>,
   CheckpointsIcon: () => <span>CheckpointsIcon</span>,
@@ -93,7 +103,9 @@ vi.mock('./TaskQueue', () => ({ TaskQueue: () => null }))
 vi.mock('./TaskHistory', () => ({ TaskHistory: () => null }))
 vi.mock('./ThemeToggle', () => ({ ThemeToggle: () => null }))
 vi.mock('./ViewModeToggle', () => ({ ViewModeToggle: () => null }))
-vi.mock('./StatusIndicator', () => ({ StatusBadge: ({ label }: { label: string }) => <span data-testid="status-badge">{label}</span> }))
+vi.mock('./StatusIndicator', () => ({
+  StatusBadge: ({ label }: { label: string }) => <span data-testid="status-badge">{label}</span>,
+}))
 vi.mock('./WorkflowBar', () => ({ WorkflowBar: () => <div data-testid="workflow-bar" /> }))
 
 describe('ProjectView', () => {
