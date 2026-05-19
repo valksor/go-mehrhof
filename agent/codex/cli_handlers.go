@@ -96,7 +96,7 @@ func (c *CLIConnection) handleRequest(method string, id int64, params json.RawMe
 		c.handleMcpApproval(id, params)
 	default:
 		// Unknown request - auto-approve
-		_ = c.transport.Respond(id, map[string]any{"decision": "accept"})
+		_ = c.transport.Respond(id, map[string]any{keyDecision: decisionAccept})
 	}
 }
 
@@ -107,7 +107,7 @@ func (c *CLIConnection) handleCommandApproval(id int64, params json.RawMessage) 
 	}
 	if err := json.Unmarshal(params, &req); err != nil {
 		slog.Warn("rejecting malformed command approval request", "error", err)
-		_ = c.transport.Respond(id, map[string]any{"decision": "reject"})
+		_ = c.transport.Respond(id, map[string]any{keyDecision: decisionReject})
 
 		return
 	}
@@ -153,7 +153,7 @@ func (c *CLIConnection) handleFileChangeApproval(id int64, params json.RawMessag
 	}
 	if err := json.Unmarshal(params, &req); err != nil {
 		slog.Warn("rejecting malformed file change approval request", "error", err)
-		_ = c.transport.Respond(id, map[string]any{"decision": "reject"})
+		_ = c.transport.Respond(id, map[string]any{keyDecision: decisionReject})
 
 		return
 	}
@@ -189,7 +189,7 @@ func (c *CLIConnection) handleFileChangeApproval(id int64, params json.RawMessag
 
 func (c *CLIConnection) handleMcpApproval(id int64, _ json.RawMessage) {
 	// Auto-approve MCP tool calls
-	_ = c.transport.Respond(id, map[string]any{"decision": "accept"})
+	_ = c.transport.Respond(id, map[string]any{keyDecision: decisionAccept})
 }
 
 func (c *CLIConnection) emitEvent(event agent.Event) {

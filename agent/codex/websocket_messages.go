@@ -89,9 +89,9 @@ func (w *WebSocketConnection) handleRequest(method string, id int64, params json
 	case "item/fileChange/requestApproval":
 		w.handleFileChangeApproval(id, params)
 	case "item/mcpToolCall/requestApproval":
-		_ = w.transport.Respond(context.Background(), id, map[string]any{"decision": "accept"})
+		_ = w.transport.Respond(context.Background(), id, map[string]any{keyDecision: decisionAccept})
 	default:
-		_ = w.transport.Respond(context.Background(), id, map[string]any{"decision": "accept"})
+		_ = w.transport.Respond(context.Background(), id, map[string]any{keyDecision: decisionAccept})
 	}
 }
 
@@ -102,7 +102,7 @@ func (w *WebSocketConnection) handleCommandApproval(id int64, params json.RawMes
 	}
 	if err := json.Unmarshal(params, &req); err != nil {
 		slog.Warn("rejecting malformed command approval request", "error", err)
-		_ = w.transport.Respond(context.Background(), id, map[string]any{"decision": "reject"})
+		_ = w.transport.Respond(context.Background(), id, map[string]any{keyDecision: decisionReject})
 
 		return
 	}
@@ -145,7 +145,7 @@ func (w *WebSocketConnection) handleFileChangeApproval(id int64, params json.Raw
 	}
 	if err := json.Unmarshal(params, &req); err != nil {
 		slog.Warn("rejecting malformed file change approval request", "error", err)
-		_ = w.transport.Respond(context.Background(), id, map[string]any{"decision": "reject"})
+		_ = w.transport.Respond(context.Background(), id, map[string]any{keyDecision: decisionReject})
 
 		return
 	}
@@ -257,12 +257,12 @@ func (w *WebSocketConnection) HandlePermission(requestID string, approved bool) 
 		return fmt.Errorf("no pending approval for %s", requestID)
 	}
 
-	decision := "accept"
+	decision := decisionAccept
 	if !approved {
-		decision = "reject"
+		decision = decisionReject
 	}
 
-	return w.transport.Respond(context.Background(), rpcID, map[string]any{"decision": decision})
+	return w.transport.Respond(context.Background(), rpcID, map[string]any{keyDecision: decision})
 }
 
 // Interrupt aborts the current agent turn via turn/interrupt JSON-RPC call.

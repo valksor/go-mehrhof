@@ -274,12 +274,12 @@ func (c *CLIConnection) HandlePermission(requestID string, approved bool) error 
 		return fmt.Errorf("no pending approval for %s", requestID)
 	}
 
-	decision := "accept"
+	decision := decisionAccept
 	if !approved {
-		decision = "reject"
+		decision = decisionReject
 	}
 
-	return c.transport.Respond(rpcID, map[string]any{"decision": decision})
+	return c.transport.Respond(rpcID, map[string]any{keyDecision: decision})
 }
 
 // Close stops the CLI process.

@@ -153,7 +153,7 @@ func (t *JsonRpcTransport) Call(ctx context.Context, method string, params any) 
 
 	id := t.nextID.Add(1)
 	req := rpcRequest{
-		JsonRpc: "2.0",
+		JsonRpc: jsonrpcVersion,
 		Method:  method,
 		ID:      &id,
 		Params:  params,
@@ -203,7 +203,7 @@ func (t *JsonRpcTransport) Notify(method string, params any) error {
 	}
 
 	msg := rpcRequest{
-		JsonRpc: "2.0",
+		JsonRpc: jsonrpcVersion,
 		Method:  method,
 		Params:  params,
 	}
@@ -218,7 +218,7 @@ func (t *JsonRpcTransport) Respond(id int64, result any) error {
 	}
 
 	msg := map[string]any{
-		"jsonrpc": "2.0",
+		"jsonrpc": jsonrpcVersion,
 		"id":      id,
 		"result":  result,
 	}
