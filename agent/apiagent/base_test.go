@@ -96,7 +96,8 @@ func writeSSE(w http.ResponseWriter, lines ...string) {
 func TestBaseTextOnlyResponse(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/event-stream")
-		writeSSE(w,
+		writeSSE(
+			w,
 			"data: {\"type\":\"text\",\"content\":\"Hello \"}\n\n",
 			"data: {\"type\":\"text\",\"content\":\"world!\"}\n\n",
 			"data: [DONE]\n\n",
@@ -154,14 +155,16 @@ func TestBaseToolUseLoop(t *testing.T) {
 
 		if callCount == 1 {
 			// First call: request a tool use
-			writeSSE(w,
+			writeSSE(
+				w,
 				"data: {\"type\":\"text\",\"content\":\"Let me list files.\"}\n\n",
 				"data: {\"type\":\"tool_use\",\"id\":\"call_1\",\"name\":\"list_dir\",\"input\":{}}\n\n",
 				"data: [DONE]\n\n",
 			)
 		} else {
 			// Second call: complete after seeing tool result
-			writeSSE(w,
+			writeSSE(
+				w,
 				"data: {\"type\":\"text\",\"content\":\"Done!\"}\n\n",
 				"data: [DONE]\n\n",
 			)

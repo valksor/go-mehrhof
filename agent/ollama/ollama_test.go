@@ -25,7 +25,8 @@ func TestParseStreamNativeText(t *testing.T) {
 			t.Errorf("expected /api/chat, got %s", r.URL.Path)
 		}
 		w.Header().Set("Content-Type", "application/x-ndjson")
-		writeSSE(w,
+		writeSSE(
+			w,
 			"{\"message\":{\"role\":\"assistant\",\"content\":\"Hi!\"},\"done\":false}\n",
 			"{\"message\":{\"role\":\"assistant\",\"content\":\"\"},\"done\":true,\"done_reason\":\"stop\"}\n",
 		)
@@ -69,7 +70,8 @@ func TestParseStreamNativeText(t *testing.T) {
 func TestParseStreamNativeToolCall(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/x-ndjson")
-		writeSSE(w,
+		writeSSE(
+			w,
 			"{\"message\":{\"role\":\"assistant\",\"content\":\"\",\"tool_calls\":[{\"id\":\"call_1\",\"function\":{\"name\":\"read_file\",\"arguments\":{\"path\":\"/etc/hostname\"}}}]},\"done\":false}\n",
 			"{\"message\":{\"role\":\"assistant\",\"content\":\"\"},\"done\":true,\"done_reason\":\"stop\"}\n",
 		)
@@ -176,7 +178,8 @@ func TestConnectModelPulled(t *testing.T) {
 		case "/api/pull":
 			pullCalled = true
 			w.WriteHeader(http.StatusOK)
-			writeSSE(w,
+			writeSSE(
+				w,
 				"{\"status\":\"pulling manifest\"}\n",
 				"{\"status\":\"success\"}\n",
 			)

@@ -119,7 +119,8 @@ func runJobsList(cmd *cobra.Command, args []string) error {
 	}
 
 	fmt.Printf("%-36s  %-16s  %-12s  %-36s  %s\n", "ID", "Type", "Status", "Worktree", "Created")
-	fmt.Printf("%-36s  %-16s  %-12s  %-36s  %s\n",
+	fmt.Printf(
+		"%-36s  %-16s  %-12s  %-36s  %s\n",
 		"-----------------------------------",
 		"----------------",
 		"------------",

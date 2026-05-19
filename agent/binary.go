@@ -25,7 +25,8 @@ func ResolveCommandPath(name string) (string, error) {
 
 func fallbackCommandPaths(name string) []string {
 	base := make([]string, 0, 5)
-	base = append(base,
+	base = append(
+		base,
 		filepath.Join("/opt/homebrew/bin", name),
 		filepath.Join("/usr/local/bin", name),
 		filepath.Join("/usr/bin", name),
@@ -40,7 +41,8 @@ func fallbackCommandPaths(name string) []string {
 		return base
 	}
 
-	return append(base,
+	return append(
+		base,
 		filepath.Join(home, ".local", "bin", name),
 		filepath.Join(home, ".bun", "bin", name),
 	)

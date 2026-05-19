@@ -86,7 +86,8 @@ func TestMockAgent_SendPrompt_DefaultComplete(t *testing.T) {
 }
 
 func TestMockAgent_SendPrompt_CustomEvents(t *testing.T) {
-	m := agenttest.NewMockAgent("test",
+	m := agenttest.NewMockAgent(
+		"test",
 		agent.Event{Type: agent.EventStream, Content: "token1"},
 		agent.Event{Type: agent.EventStream, Content: "token2"},
 		agent.Event{Type: agent.EventComplete},
@@ -117,7 +118,8 @@ func TestMockAgent_SendPrompt_CustomEvents(t *testing.T) {
 }
 
 func TestMockAgent_SendPrompt_ErrorTerminates(t *testing.T) {
-	m := agenttest.NewMockAgent("test",
+	m := agenttest.NewMockAgent(
+		"test",
 		agent.Event{Type: agent.EventStream, Content: "partial"},
 		agent.Event{Type: agent.EventError, Error: "boom"},
 		agent.Event{Type: agent.EventStream, Content: "should not appear"},
@@ -182,7 +184,8 @@ func TestMockAgent_WithMethods_ReturnNewAgent(t *testing.T) {
 }
 
 func TestMockAgent_Timestamps(t *testing.T) {
-	m := agenttest.NewMockAgent("test",
+	m := agenttest.NewMockAgent(
+		"test",
 		agent.Event{Type: agent.EventStream, Content: "hi"},
 	)
 
@@ -205,7 +208,8 @@ func TestMockAgent_Timestamps(t *testing.T) {
 }
 
 func TestMockAgent_ConcurrentSafe(t *testing.T) {
-	m := agenttest.NewMockAgent("test",
+	m := agenttest.NewMockAgent(
+		"test",
 		agent.Event{Type: agent.EventStream, Content: "data"},
 	)
 

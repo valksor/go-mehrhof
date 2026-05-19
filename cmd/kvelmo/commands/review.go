@@ -189,7 +189,8 @@ func runReviewList(cmd *cobra.Command, args []string) error {
 		if ts.IsZero() {
 			ts = r.UpdatedAt
 		}
-		fmt.Printf("%-4d  %-20s  %-8s  %s\n",
+		fmt.Printf(
+			"%-4d  %-20s  %-8s  %s\n",
 			r.Number,
 			ts.Format("2006-01-02 15:04:05"),
 			decision,

@@ -238,7 +238,8 @@ func (a *Agent) buildArgv(mcpConfig, systemPrompt, seedPrompt string) []string {
 	if a.config.StrictMCPConfig {
 		args = append(args, "--strict-mcp-config")
 	}
-	args = append(args,
+	args = append(
+		args,
 		"--mcp-config", mcpConfig,
 		"--append-system-prompt", systemPrompt,
 		"--permission-mode", a.config.PermissionMode,

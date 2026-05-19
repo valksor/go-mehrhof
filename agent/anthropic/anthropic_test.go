@@ -22,7 +22,8 @@ func writeSSE(w http.ResponseWriter, lines ...string) {
 func TestParseStreamText(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/event-stream")
-		writeSSE(w,
+		writeSSE(
+			w,
 			"event: message_start\ndata: {\"type\":\"message_start\"}\n\n",
 			"event: content_block_start\ndata: {\"index\":0,\"content_block\":{\"type\":\"text\",\"text\":\"\"}}\n\n",
 			"event: content_block_delta\ndata: {\"index\":0,\"delta\":{\"type\":\"text_delta\",\"text\":\"Hello \"}}\n\n",
@@ -87,7 +88,8 @@ func TestParseStreamText(t *testing.T) {
 func TestParseStreamToolUse(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/event-stream")
-		writeSSE(w,
+		writeSSE(
+			w,
 			"event: message_start\ndata: {\"type\":\"message_start\"}\n\n",
 			"event: content_block_start\ndata: {\"index\":0,\"content_block\":{\"type\":\"tool_use\",\"id\":\"toolu_1\",\"name\":\"bash\"}}\n\n",
 			"event: content_block_delta\ndata: {\"index\":0,\"delta\":{\"type\":\"input_json_delta\",\"partial_json\":\"{\\\"command\\\"\"}}\n\n",

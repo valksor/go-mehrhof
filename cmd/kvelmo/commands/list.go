@@ -136,7 +136,8 @@ func runListProjects() error {
 			taskDisplay = taskDisplay[:27] + "..."
 		}
 
-		fmt.Printf("%-16s  %-14s  %-30s  %s\n",
+		fmt.Printf(
+			"%-16s  %-14s  %-30s  %s\n",
 			t.ID,
 			t.State,
 			taskDisplay,

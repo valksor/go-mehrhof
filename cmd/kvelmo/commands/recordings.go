@@ -147,7 +147,8 @@ func runRecordingsList(_ *cobra.Command, _ []string) error {
 		if len(jobDisplay) > 12 {
 			jobDisplay = jobDisplay[:12]
 		}
-		fmt.Printf("%-12s %-8s %-8d %-20s %s\n",
+		fmt.Printf(
+			"%-12s %-8s %-8d %-20s %s\n",
 			jobDisplay,
 			info.Agent,
 			info.Lines,

@@ -156,7 +156,8 @@ func New(cfg Config) (*Recorder, error) {
 }
 
 func (r *Recorder) openFile() error {
-	filename := fmt.Sprintf("%s_%s_%d_%d.jsonl",
+	filename := fmt.Sprintf(
+		"%s_%s_%d_%d.jsonl",
 		r.jobID,
 		r.agent,
 		r.startedAt.UnixNano(),
