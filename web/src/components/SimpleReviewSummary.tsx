@@ -4,7 +4,7 @@ import { useProjectStore } from '../stores/projectStore'
 import { useThemeStore } from '../stores/themeStore'
 import { parseDiffForFile } from '../lib/diff'
 
-const ReactDiffViewer = lazy(() => import('react-diff-viewer-continued').then(m => ({ default: m.default })))
+const ReactDiffViewer = lazy(() => import('react-diff-viewer-continued').then((m) => ({ default: m.default })))
 
 const STATUS_ICONS: Record<string, { icon: string; color: string }> = {
   added: { icon: '+', color: 'text-success' },
@@ -32,19 +32,26 @@ export function SimpleReviewSummary({ onReview, onRequestChanges, loading }: Sim
   useEffect(() => {
     if (!expandedFile) return
     let cancelled = false
-    getGitDiff().then((diff) => {
-      if (!cancelled) setFullDiff(diff)
-    }).catch((err) => {
-      if (!cancelled) setDiffError(err instanceof Error ? err.message : 'Failed to load diff')
-    })
-    return () => { cancelled = true }
+    getGitDiff()
+      .then((diff) => {
+        if (!cancelled) setFullDiff(diff)
+      })
+      .catch((err) => {
+        if (!cancelled) setDiffError(err instanceof Error ? err.message : 'Failed to load diff')
+      })
+    return () => {
+      cancelled = true
+    }
   }, [expandedFile, getGitDiff])
 
-  const counts = useMemo(() => ({
-    added: fileChanges.filter((f) => f.status === 'added').length,
-    modified: fileChanges.filter((f) => f.status === 'modified').length,
-    deleted: fileChanges.filter((f) => f.status === 'deleted').length,
-  }), [fileChanges])
+  const counts = useMemo(
+    () => ({
+      added: fileChanges.filter((f) => f.status === 'added').length,
+      modified: fileChanges.filter((f) => f.status === 'modified').length,
+      deleted: fileChanges.filter((f) => f.status === 'deleted').length,
+    }),
+    [fileChanges],
+  )
 
   const fileDiff = expandedFile && fullDiff ? parseDiffForFile(fullDiff, expandedFile) : null
 
@@ -52,15 +59,9 @@ export function SimpleReviewSummary({ onReview, onRequestChanges, loading }: Sim
     <div className="space-y-4">
       {/* Summary stats */}
       <div className="flex gap-4 text-sm">
-        {counts.added > 0 && (
-          <span className="text-success font-medium">+{counts.added} added</span>
-        )}
-        {counts.modified > 0 && (
-          <span className="text-warning font-medium">~{counts.modified} modified</span>
-        )}
-        {counts.deleted > 0 && (
-          <span className="text-error font-medium">-{counts.deleted} deleted</span>
-        )}
+        {counts.added > 0 && <span className="text-success font-medium">+{counts.added} added</span>}
+        {counts.modified > 0 && <span className="text-warning font-medium">~{counts.modified} modified</span>}
+        {counts.deleted > 0 && <span className="text-error font-medium">-{counts.deleted} deleted</span>}
         {fileChanges.length === 0 && (
           <span className="text-warning">No file changes detected — use chat to ask the AI to fix the issue</span>
         )}
@@ -86,27 +87,25 @@ export function SimpleReviewSummary({ onReview, onRequestChanges, loading }: Sim
                   }}
                   className="flex items-center gap-2 text-sm py-1 px-2 w-full text-left rounded hover:bg-base-200 transition-colors cursor-pointer"
                 >
-                  <span className={`font-mono font-bold w-4 text-center ${info.color}`}>
-                    {info.icon}
-                  </span>
+                  <span className={`font-mono font-bold w-4 text-center ${info.color}`}>{info.icon}</span>
                   <span className="text-base-content/80 truncate" title={fc.path}>
                     {fileName}
                   </span>
-                  <span className="text-base-content/30 text-xs truncate hidden sm:inline flex-1">
-                    {fc.path}
-                  </span>
-                  <span className="text-base-content/30 text-xs ml-auto">
-                    {isExpanded ? '▾' : '▸'}
-                  </span>
+                  <span className="text-base-content/30 text-xs truncate hidden sm:inline flex-1">{fc.path}</span>
+                  <span className="text-base-content/30 text-xs ml-auto">{isExpanded ? '▾' : '▸'}</span>
                 </button>
                 {isExpanded && (
                   <div className="mt-1 mb-2 rounded-lg overflow-hidden border border-base-300 text-xs">
                     {diffError ? (
-                      <div className="flex items-center justify-center h-16 text-error text-sm">
-                        {diffError}
-                      </div>
+                      <div className="flex items-center justify-center h-16 text-error text-sm">{diffError}</div>
                     ) : fileDiff ? (
-                      <Suspense fallback={<div className="flex items-center justify-center h-16"><span className="loading loading-spinner loading-sm" /></div>}>
+                      <Suspense
+                        fallback={
+                          <div className="flex items-center justify-center h-16">
+                            <span className="loading loading-spinner loading-sm" />
+                          </div>
+                        }
+                      >
                         <ReactDiffViewer
                           oldValue={fileDiff.oldValue}
                           newValue={fileDiff.newValue}
@@ -165,18 +164,10 @@ export function SimpleReviewSummary({ onReview, onRequestChanges, loading }: Sim
 
       {/* Actions */}
       <div className="flex gap-2">
-        <button
-          onClick={onReview}
-          className="btn btn-primary btn-sm"
-          disabled={fileChanges.length === 0 || loading}
-        >
+        <button onClick={onReview} className="btn btn-primary btn-sm" disabled={fileChanges.length === 0 || loading}>
           {loading ? <span className="loading loading-spinner loading-xs"></span> : 'Approve & Submit'}
         </button>
-        <button
-          onClick={onRequestChanges}
-          className="btn btn-ghost btn-sm"
-          disabled={loading}
-        >
+        <button onClick={onRequestChanges} className="btn btn-ghost btn-sm" disabled={loading}>
           Request Changes
         </button>
       </div>

@@ -6,7 +6,8 @@ import { useLayoutStore } from '../stores/layoutStore'
 import { ConfirmModal } from './ui/ConfirmModal'
 import type { FailureClass } from '../lib/events'
 
-const EXPLAIN_PROMPT = 'Explain what you did in the last action, why you made those choices, and any assumptions or constraints you encountered.'
+const EXPLAIN_PROMPT =
+  'Explain what you did in the last action, why you made those choices, and any assumptions or constraints you encountered.'
 
 /** Format seconds into human-friendly ETA string. */
 function formatETA(seconds: number): string {
@@ -55,58 +56,89 @@ const HINTS: Record<string, string> = {
 function failureBadgeClass(isFailed: boolean, failureClass?: FailureClass): string {
   if (!isFailed) return 'badge-warning'
   switch (failureClass) {
-    case 'recoverable': return 'badge-warning'
-    case 'degraded': return 'badge-warning'
-    case 'skippable': return 'badge-info'
+    case 'recoverable':
+      return 'badge-warning'
+    case 'degraded':
+      return 'badge-warning'
+    case 'skippable':
+      return 'badge-info'
     case 'hard_stop':
-    default: return 'badge-error'
+    default:
+      return 'badge-error'
   }
 }
 
 function failureBadgeLabel(isFailed: boolean, failureClass?: FailureClass): string {
   if (!isFailed) return 'Paused'
   switch (failureClass) {
-    case 'recoverable': return 'Retrying...'
-    case 'degraded': return 'Degraded'
-    case 'skippable': return 'Skipped'
+    case 'recoverable':
+      return 'Retrying...'
+    case 'degraded':
+      return 'Degraded'
+    case 'skippable':
+      return 'Skipped'
     case 'hard_stop':
-    default: return 'Failed'
+    default:
+      return 'Failed'
   }
 }
 
 export function WorkflowBar() {
   const {
-    state, plan, implement, review, submit, finish,
-    stop, undo, redo, abandon, approveTransition, retry,
-    loading, checkpoints, redoStack, approveRemote, mergeRemote, refresh, error,
-    phaseError, dryRunMode, toggleDryRun, skipPhases, autoFixStatus, phaseProgress,
-  } = useProjectStore(useShallow(s => ({
-    state: s.state,
-    plan: s.plan,
-    implement: s.implement,
-    review: s.review,
-    submit: s.submit,
-    finish: s.finish,
-    stop: s.stop,
-    undo: s.undo,
-    redo: s.redo,
-    abandon: s.abandon,
-    approveTransition: s.approveTransition,
-    retry: s.retry,
-    loading: s.loading,
-    checkpoints: s.checkpoints,
-    redoStack: s.redoStack,
-    approveRemote: s.approveRemote,
-    mergeRemote: s.mergeRemote,
-    refresh: s.refresh,
-    error: s.error,
-    phaseError: s.phaseError,
-    dryRunMode: s.dryRunMode,
-    toggleDryRun: s.toggleDryRun,
-    skipPhases: s.skipPhases,
-    autoFixStatus: s.autoFixStatus,
-    phaseProgress: s.phaseProgress,
-  })))
+    state,
+    plan,
+    implement,
+    review,
+    submit,
+    finish,
+    stop,
+    undo,
+    redo,
+    abandon,
+    approveTransition,
+    retry,
+    loading,
+    checkpoints,
+    redoStack,
+    approveRemote,
+    mergeRemote,
+    refresh,
+    error,
+    phaseError,
+    dryRunMode,
+    toggleDryRun,
+    skipPhases,
+    autoFixStatus,
+    phaseProgress,
+  } = useProjectStore(
+    useShallow((s) => ({
+      state: s.state,
+      plan: s.plan,
+      implement: s.implement,
+      review: s.review,
+      submit: s.submit,
+      finish: s.finish,
+      stop: s.stop,
+      undo: s.undo,
+      redo: s.redo,
+      abandon: s.abandon,
+      approveTransition: s.approveTransition,
+      retry: s.retry,
+      loading: s.loading,
+      checkpoints: s.checkpoints,
+      redoStack: s.redoStack,
+      approveRemote: s.approveRemote,
+      mergeRemote: s.mergeRemote,
+      refresh: s.refresh,
+      error: s.error,
+      phaseError: s.phaseError,
+      dryRunMode: s.dryRunMode,
+      toggleDryRun: s.toggleDryRun,
+      skipPhases: s.skipPhases,
+      autoFixStatus: s.autoFixStatus,
+      phaseProgress: s.phaseProgress,
+    })),
+  )
 
   const [showSubmitModal, setShowSubmitModal] = useState(false)
   const [submitDeleteBranch, setSubmitDeleteBranch] = useState(false)
@@ -129,13 +161,25 @@ export function WorkflowBar() {
   const steps: WorkflowStep[] = [
     { id: 'load', label: 'Load', states: ['loaded'] },
     { id: 'plan', label: 'Plan', states: ['planning', 'planned'], triggerState: 'loaded', action: () => plan() },
-    { id: 'implement', label: 'Implement', states: ['implementing', 'implemented'], triggerState: 'planned', action: () => implement() },
-    { id: 'review', label: 'Review', states: ['reviewing'], triggerState: 'implemented', action: () => review({ approve: true }) },
+    {
+      id: 'implement',
+      label: 'Implement',
+      states: ['implementing', 'implemented'],
+      triggerState: 'planned',
+      action: () => implement(),
+    },
+    {
+      id: 'review',
+      label: 'Review',
+      states: ['reviewing'],
+      triggerState: 'implemented',
+      action: () => review({ approve: true }),
+    },
     { id: 'submit', label: 'Submit', states: ['submitted'], triggerState: 'reviewing' },
     { id: 'finish', label: 'Finish', states: [] },
   ]
 
-  const stepIndex = steps.findIndex(step => step.states.includes(state))
+  const stepIndex = steps.findIndex((step) => step.states.includes(state))
   const isFailed = state === 'failed'
   const isPaused = state === 'paused' || state === 'waiting'
   const isActive = ACTIVE_STATES.has(state)
@@ -188,9 +232,7 @@ export function WorkflowBar() {
             checked={dryRunMode}
             onChange={toggleDryRun}
           />
-          <span className={`text-xs ${dryRunMode ? 'text-warning font-semibold' : 'opacity-60'}`}>
-            Dry Run
-          </span>
+          <span className={`text-xs ${dryRunMode ? 'text-warning font-semibold' : 'opacity-60'}`}>Dry Run</span>
         </label>
 
         {/* Status indicator for failed/paused */}
@@ -209,7 +251,12 @@ export function WorkflowBar() {
             aria-label="Retry failed phase"
           >
             <svg aria-hidden="true" className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+              />
             </svg>
             Retry
           </button>
@@ -248,10 +295,17 @@ export function WorkflowBar() {
 
             const stepContent = (
               <div className="flex items-center gap-1.5">
-                <div className={isSkipped ? 'w-2.5 h-2.5 rounded-full flex-shrink-0 bg-base-300 opacity-30' : dotClass} />
-                <span className={isSkipped ? 'text-[10px] sm:text-xs text-base-content/20 line-through' : labelClass}>{step.label}</span>
+                <div
+                  className={isSkipped ? 'w-2.5 h-2.5 rounded-full flex-shrink-0 bg-base-300 opacity-30' : dotClass}
+                />
+                <span className={isSkipped ? 'text-[10px] sm:text-xs text-base-content/20 line-through' : labelClass}>
+                  {step.label}
+                </span>
                 {showAutoFix && (
-                  <span className="badge badge-xs badge-warning animate-pulse" title={`Auto-fix attempt ${autoFixStatus.attempt ?? '?'}/${autoFixStatus.maxAttempts ?? '?'}`}>
+                  <span
+                    className="badge badge-xs badge-warning animate-pulse"
+                    title={`Auto-fix attempt ${autoFixStatus.attempt ?? '?'}/${autoFixStatus.maxAttempts ?? '?'}`}
+                  >
                     fix {autoFixStatus.attempt ?? '?'}/{autoFixStatus.maxAttempts ?? '?'}
                   </span>
                 )}
@@ -273,9 +327,11 @@ export function WorkflowBar() {
                   stepContent
                 )}
                 {index < steps.length - 1 && (
-                  <div className={`flex-1 h-[1.5px] min-w-3 max-w-8 transition-colors ${
-                    isCompleted ? 'bg-success/40' : 'bg-base-content/12'
-                  }`} />
+                  <div
+                    className={`flex-1 h-[1.5px] min-w-3 max-w-8 transition-colors ${
+                      isCompleted ? 'bg-success/40' : 'bg-base-content/12'
+                    }`}
+                  />
                 )}
               </div>
             )
@@ -293,9 +349,7 @@ export function WorkflowBar() {
             </div>
             <span className="text-[10px] text-base-content/50 tabular-nums whitespace-nowrap">
               {Math.round(phaseProgress.percent)}%
-              {phaseProgress.calibrated && phaseProgress.eta >= 0 && (
-                <> ~{formatETA(phaseProgress.eta)}</>
-              )}
+              {phaseProgress.calibrated && phaseProgress.eta >= 0 && <> ~{formatETA(phaseProgress.eta)}</>}
             </span>
           </div>
         )}
@@ -314,7 +368,12 @@ export function WorkflowBar() {
             aria-label="Approve transition"
           >
             <svg aria-hidden="true" className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"
+              />
             </svg>
             Approve
           </button>
@@ -336,9 +395,7 @@ export function WorkflowBar() {
         )}
 
         {/* Hint text */}
-        <span className="text-xs text-base-content/50 ml-2 truncate hidden sm:inline">
-          {hint}
-        </span>
+        <span className="text-xs text-base-content/50 ml-2 truncate hidden sm:inline">{hint}</span>
 
         {/* Spacer */}
         <div className="flex-1" />
@@ -353,7 +410,12 @@ export function WorkflowBar() {
               aria-label="Check PR status"
             >
               <svg aria-hidden="true" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                />
               </svg>
             </button>
             <button
@@ -363,7 +425,12 @@ export function WorkflowBar() {
               aria-label="Approve PR"
             >
               <svg aria-hidden="true" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
               </svg>
             </button>
             <button
@@ -373,7 +440,12 @@ export function WorkflowBar() {
               aria-label="Merge PR"
             >
               <svg aria-hidden="true" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"
+                />
               </svg>
             </button>
             <button
@@ -399,7 +471,12 @@ export function WorkflowBar() {
               aria-label={`Undo (${checkpoints.length} checkpoints)`}
             >
               <svg aria-hidden="true" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"
+                />
               </svg>
             </button>
             <button
@@ -409,7 +486,12 @@ export function WorkflowBar() {
               aria-label={`Redo (${redoStack.length} in stack)`}
             >
               <svg aria-hidden="true" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 10h-10a8 8 0 00-8 8v2m18-10l-6 6m6-6l-6-6" />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M21 10h-10a8 8 0 00-8 8v2m18-10l-6 6m6-6l-6-6"
+                />
               </svg>
             </button>
           </div>
@@ -424,7 +506,12 @@ export function WorkflowBar() {
           title="Explain last action"
         >
           <svg aria-hidden="true" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01" />
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01"
+            />
           </svg>
         </button>
 
@@ -448,15 +535,16 @@ export function WorkflowBar() {
         )}
 
         {/* Loading spinner */}
-        {loading && (
-          <span className="loading loading-spinner loading-xs text-primary ml-1" />
-        )}
+        {loading && <span className="loading loading-spinner loading-xs text-primary ml-1" />}
       </div>
 
       {/* Modals */}
       <ConfirmModal
         isOpen={showSubmitModal}
-        onClose={() => { setShowSubmitModal(false); setSubmitDeleteBranch(false) }}
+        onClose={() => {
+          setShowSubmitModal(false)
+          setSubmitDeleteBranch(false)
+        }}
         onConfirm={handleSubmit}
         title="Submit Pull Request"
         description="This will create a pull request for the current task."
@@ -468,12 +556,15 @@ export function WorkflowBar() {
             type="checkbox"
             className="checkbox checkbox-sm"
             checked={submitDeleteBranch}
-            onChange={e => setSubmitDeleteBranch(e.target.checked)}
+            onChange={(e) => setSubmitDeleteBranch(e.target.checked)}
           />
           <span className="text-sm">Delete branch after submitting</span>
         </label>
         <button
-          onClick={() => { setShowSubmitModal(false); void submit({ dry_run: true }) }}
+          onClick={() => {
+            setShowSubmitModal(false)
+            void submit({ dry_run: true })
+          }}
           className="btn btn-sm btn-ghost btn-block mt-1"
         >
           Preview PR (dry-run)
@@ -482,7 +573,10 @@ export function WorkflowBar() {
 
       <ConfirmModal
         isOpen={showFinishModal}
-        onClose={() => { setShowFinishModal(false); setFinishDeleteRemote(false) }}
+        onClose={() => {
+          setShowFinishModal(false)
+          setFinishDeleteRemote(false)
+        }}
         onConfirm={handleFinish}
         title="Finish Task"
         description="This will switch to the base branch, pull latest changes, and delete the feature branch."
@@ -494,7 +588,7 @@ export function WorkflowBar() {
             type="checkbox"
             className="checkbox checkbox-sm"
             checked={finishDeleteRemote}
-            onChange={e => setFinishDeleteRemote(e.target.checked)}
+            onChange={(e) => setFinishDeleteRemote(e.target.checked)}
           />
           <span className="text-sm">Also delete remote branch</span>
         </label>
@@ -502,7 +596,10 @@ export function WorkflowBar() {
 
       <ConfirmModal
         isOpen={showAbandonModal}
-        onClose={() => { setShowAbandonModal(false); setAbandonKeepBranch(false) }}
+        onClose={() => {
+          setShowAbandonModal(false)
+          setAbandonKeepBranch(false)
+        }}
         onConfirm={handleAbandon}
         title="Abandon Task?"
         description="This will discard the current task and reset the worktree. This action cannot be undone."
@@ -514,7 +611,7 @@ export function WorkflowBar() {
             type="checkbox"
             className="checkbox checkbox-sm"
             checked={abandonKeepBranch}
-            onChange={e => setAbandonKeepBranch(e.target.checked)}
+            onChange={(e) => setAbandonKeepBranch(e.target.checked)}
           />
           <span className="text-sm">Keep branch after abandoning</span>
         </label>

@@ -25,32 +25,28 @@ vi.mock('zustand/react/shallow', () => ({
 }))
 
 vi.mock('../stores/projectStore', () => ({
-  useProjectStore: Object.assign(
-    (selector: (s: Record<string, unknown>) => unknown) => selector(mockProjectState),
-    {
-      getState: () => mockProjectState,
-      subscribe: () => () => {},
-    },
-  ),
+  useProjectStore: Object.assign((selector: (s: Record<string, unknown>) => unknown) => selector(mockProjectState), {
+    getState: () => mockProjectState,
+    subscribe: () => () => {},
+  }),
 }))
 
 vi.mock('../stores/chatStore', () => ({
-  useChatStore: Object.assign(
-    () => ({}),
-    { getState: () => ({ sendMessage: vi.fn() }) },
-  ),
+  useChatStore: Object.assign(() => ({}), { getState: () => ({ sendMessage: vi.fn() }) }),
 }))
 
 vi.mock('../stores/layoutStore', () => ({
-  useLayoutStore: Object.assign(
-    () => ({}),
-    { subscribe: () => () => {} },
-  ),
+  useLayoutStore: Object.assign(() => ({}), { subscribe: () => () => {} }),
 }))
 
 vi.mock('./ui/ConfirmModal', () => ({
   ConfirmModal: ({ isOpen, title, children }: { isOpen: boolean; title: string; children?: React.ReactNode }) =>
-    isOpen ? <div data-testid="confirm-modal">{title}{children}</div> : null,
+    isOpen ? (
+      <div data-testid="confirm-modal">
+        {title}
+        {children}
+      </div>
+    ) : null,
 }))
 
 function resetProjectState(overrides: Record<string, unknown> = {}) {

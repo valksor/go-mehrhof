@@ -21,7 +21,7 @@ interface SearchTask {
 
 export function TaskHistory() {
   const { connected } = useProjectStore()
-  const client = useProjectStore(s => s.client)
+  const client = useProjectStore((s) => s.client)
   const [tasks, setTasks] = useState<ArchivedTask[] | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [searchResults, setSearchResults] = useState<SearchTask[] | null>(null)
@@ -36,50 +36,60 @@ export function TaskHistory() {
   useEffect(() => {
     if (!connected || !client) return
     let cancelled = false
-    client.call<{ tasks: ArchivedTask[] | null }>('task.history', {})
-      .then(result => { if (!cancelled) setTasks(result.tasks || []) })
-      .catch(() => { if (!cancelled) setTasks([]) })
-    return () => { cancelled = true }
+    client
+      .call<{ tasks: ArchivedTask[] | null }>('task.history', {})
+      .then((result) => {
+        if (!cancelled) setTasks(result.tasks || [])
+      })
+      .catch(() => {
+        if (!cancelled) setTasks([])
+      })
+    return () => {
+      cancelled = true
+    }
   }, [connected, client])
 
-  const handleSearch = useCallback((query: string) => {
-    setSearchQuery(query)
+  const handleSearch = useCallback(
+    (query: string) => {
+      setSearchQuery(query)
 
-    if (searchTimerRef.current) {
-      clearTimeout(searchTimerRef.current)
-    }
+      if (searchTimerRef.current) {
+        clearTimeout(searchTimerRef.current)
+      }
 
-    const hasFilters = fileFilter || stateFilter || tagFilter || sinceFilter
-    if (!query.trim() && !hasFilters) {
-      setSearchResults(null)
-      setSearching(false)
-      return
-    }
-
-    setSearching(true)
-    searchTimerRef.current = setTimeout(async () => {
-      if (!client) {
+      const hasFilters = fileFilter || stateFilter || tagFilter || sinceFilter
+      if (!query.trim() && !hasFilters) {
+        setSearchResults(null)
         setSearching(false)
         return
       }
-      try {
-        const params: Record<string, unknown> = { query: query.trim(), limit: 20 }
-        if (fileFilter) params.file = fileFilter
-        if (stateFilter) params.state = stateFilter
-        if (tagFilter) params.tag = tagFilter
-        if (sinceFilter) {
-          const [y, m, d] = sinceFilter.split('-').map(Number)
-          params.since = new Date(y, m - 1, d).toISOString()
+
+      setSearching(true)
+      searchTimerRef.current = setTimeout(async () => {
+        if (!client) {
+          setSearching(false)
+          return
         }
-        const result = await client.call<{ tasks: SearchTask[] | null }>('task.search', params)
-        setSearchResults(result.tasks || [])
-      } catch {
-        setSearchResults([])
-      } finally {
-        setSearching(false)
-      }
-    }, 300)
-  }, [client, fileFilter, stateFilter, tagFilter, sinceFilter])
+        try {
+          const params: Record<string, unknown> = { query: query.trim(), limit: 20 }
+          if (fileFilter) params.file = fileFilter
+          if (stateFilter) params.state = stateFilter
+          if (tagFilter) params.tag = tagFilter
+          if (sinceFilter) {
+            const [y, m, d] = sinceFilter.split('-').map(Number)
+            params.since = new Date(y, m - 1, d).toISOString()
+          }
+          const result = await client.call<{ tasks: SearchTask[] | null }>('task.search', params)
+          setSearchResults(result.tasks || [])
+        } catch {
+          setSearchResults([])
+        } finally {
+          setSearching(false)
+        }
+      }, 300)
+    },
+    [client, fileFilter, stateFilter, tagFilter, sinceFilter],
+  )
 
   // Trigger search when filters change.
   useEffect(() => {
@@ -122,10 +132,7 @@ export function TaskHistory() {
       </div>
 
       {/* Filter toggle */}
-      <button
-        className="btn btn-ghost btn-xs text-base-content/50"
-        onClick={() => setShowFilters(f => !f)}
-      >
+      <button className="btn btn-ghost btn-xs text-base-content/50" onClick={() => setShowFilters((f) => !f)}>
         {showFilters ? '▾ Filters' : '▸ Filters'}
         {(fileFilter || stateFilter || tagFilter || sinceFilter) && (
           <span className="badge badge-xs badge-primary ml-1">active</span>
@@ -139,13 +146,13 @@ export function TaskHistory() {
             type="text"
             placeholder="File path..."
             value={fileFilter}
-            onChange={e => setFileFilter(e.target.value)}
+            onChange={(e) => setFileFilter(e.target.value)}
             className="input input-xs input-bordered"
             aria-label="Filter by file"
           />
           <select
             value={stateFilter}
-            onChange={e => setStateFilter(e.target.value)}
+            onChange={(e) => setStateFilter(e.target.value)}
             className="select select-xs select-bordered"
             aria-label="Filter by state"
           >
@@ -158,14 +165,14 @@ export function TaskHistory() {
             type="text"
             placeholder="Tag..."
             value={tagFilter}
-            onChange={e => setTagFilter(e.target.value)}
+            onChange={(e) => setTagFilter(e.target.value)}
             className="input input-xs input-bordered"
             aria-label="Filter by tag"
           />
           <input
             type="date"
             value={sinceFilter}
-            onChange={e => setSinceFilter(e.target.value)}
+            onChange={(e) => setSinceFilter(e.target.value)}
             className="input input-xs input-bordered"
             aria-label="Since date"
           />
@@ -181,17 +188,17 @@ export function TaskHistory() {
         </p>
       ) : (
         <ul className="space-y-1.5">
-          {(isSearchMode ? displayTasks : displayTasks.slice(0, 10)).map(task => {
-            const state = 'final_state' in task ? (task).final_state : (task).state
+          {(isSearchMode ? displayTasks : displayTasks.slice(0, 10)).map((task) => {
+            const state = 'final_state' in task ? task.final_state : task.state
             return (
               <li key={task.id} className="p-2 bg-base-300 rounded text-xs">
                 <div className="flex items-center justify-between gap-2">
                   <span className="font-medium truncate">{task.title || task.id}</span>
-                  <span className={`badge badge-xs ${
-                    state === 'finished' ? 'badge-success' :
-                    state === 'abandoned' ? 'badge-warning' :
-                    'badge-ghost'
-                  }`}>
+                  <span
+                    className={`badge badge-xs ${
+                      state === 'finished' ? 'badge-success' : state === 'abandoned' ? 'badge-warning' : 'badge-ghost'
+                    }`}
+                  >
                     {state}
                   </span>
                 </div>

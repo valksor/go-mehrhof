@@ -113,7 +113,7 @@ describe('TabBar interactions', () => {
         type: 'chat',
         title: 'Chat',
         closeable: true,
-      })
+      }),
     )
   })
 

@@ -42,13 +42,17 @@ export function TaskQueue() {
       <div className="card-body">
         <div className="flex items-center justify-between mb-2">
           <h2 className="card-title text-base-content text-sm flex items-center gap-2">
-            <svg aria-hidden="true" className="w-4 h-4 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg
+              aria-hidden="true"
+              className="w-4 h-4 text-primary"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h16M4 18h16" />
             </svg>
             Queue
-            {taskQueue.length > 0 && (
-              <span className="badge badge-sm badge-primary">{taskQueue.length}</span>
-            )}
+            {taskQueue.length > 0 && <span className="badge badge-sm badge-primary">{taskQueue.length}</span>}
           </h2>
           <button
             onClick={() => setShowAdd(!showAdd)}
@@ -68,7 +72,7 @@ export function TaskQueue() {
             <input
               type="text"
               value={source}
-              onChange={e => setSource(e.target.value)}
+              onChange={(e) => setSource(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder="github.com/owner/repo/issues/123"
               className="input input-bordered input-sm w-full font-mono text-xs"
@@ -77,7 +81,7 @@ export function TaskQueue() {
             <input
               type="text"
               value={title}
-              onChange={e => setTitle(e.target.value)}
+              onChange={(e) => setTitle(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder="Optional title"
               className="input input-bordered input-sm w-full text-xs"
@@ -86,11 +90,7 @@ export function TaskQueue() {
               <button onClick={() => setShowAdd(false)} className="btn btn-ghost btn-xs">
                 Cancel
               </button>
-              <button
-                onClick={handleAdd}
-                disabled={!source.trim()}
-                className="btn btn-primary btn-xs"
-              >
+              <button onClick={handleAdd} disabled={!source.trim()} className="btn btn-primary btn-xs">
                 Add
               </button>
             </div>
@@ -98,9 +98,7 @@ export function TaskQueue() {
         )}
 
         {/* Queue list */}
-        {taskQueue.length === 0 && !showAdd && (
-          <EmptyState title="No tasks in queue" icon="📋" />
-        )}
+        {taskQueue.length === 0 && !showAdd && <EmptyState title="No tasks in queue" icon="📋" />}
 
         {taskQueue.length > 0 && (
           <ul className="space-y-1">
@@ -108,12 +106,8 @@ export function TaskQueue() {
               <li key={task.id} className="flex items-center gap-2 p-1.5 bg-base-300 rounded text-xs group">
                 <span className="badge badge-xs badge-ghost font-mono">{task.position}</span>
                 <div className="flex-1 min-w-0">
-                  <p className="truncate font-medium">
-                    {task.title || task.source}
-                  </p>
-                  {task.title && (
-                    <p className="truncate text-base-content/50 font-mono text-[10px]">{task.source}</p>
-                  )}
+                  <p className="truncate font-medium">{task.title || task.source}</p>
+                  {task.title && <p className="truncate text-base-content/50 font-mono text-[10px]">{task.source}</p>}
                 </div>
                 <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
                   <button

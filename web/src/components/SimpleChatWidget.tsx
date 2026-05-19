@@ -45,20 +45,13 @@ export function SimpleChatWidget() {
       {/* Messages */}
       <div className="flex-1 overflow-y-auto space-y-3 px-1 mb-3 max-h-64">
         {messages.length === 0 && !isTyping && (
-          <p className="text-center text-base-content/40 text-sm py-4">
-            Ask the AI a question or give instructions
-          </p>
+          <p className="text-center text-base-content/40 text-sm py-4">Ask the AI a question or give instructions</p>
         )}
         {messages.map((msg) => (
-          <div
-            key={msg.id}
-            className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
-          >
+          <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
             <div
               className={`rounded-xl px-3 py-2 max-w-[85%] text-sm ${
-                msg.role === 'user'
-                  ? 'bg-primary text-primary-content'
-                  : 'bg-base-300 text-base-content'
+                msg.role === 'user' ? 'bg-primary text-primary-content' : 'bg-base-300 text-base-content'
               }`}
             >
               <ChatMessageContent content={msg.content} isUser={msg.role === 'user'} />

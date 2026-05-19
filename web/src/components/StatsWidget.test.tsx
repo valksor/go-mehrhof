@@ -19,7 +19,14 @@ let mockState = {
 
 let mockProjectState = {
   connected: false,
-  cacheStats: null as { enabled: boolean; entries: number; hits: number; misses: number; hit_rate: number; tokens_saved: number } | null,
+  cacheStats: null as {
+    enabled: boolean
+    entries: number
+    hits: number
+    misses: number
+    hit_rate: number
+    tokens_saved: number
+  } | null,
   loadCacheStats: mockLoadCacheStats,
   clearCache: mockClearCache,
 }
@@ -120,11 +127,7 @@ describe('StatsWidget', () => {
   })
 
   it('counts active tasks by state', () => {
-    mockState.activeTasks = [
-      { state: 'implementing' },
-      { state: 'implementing' },
-      { state: 'planning' },
-    ]
+    mockState.activeTasks = [{ state: 'implementing' }, { state: 'implementing' }, { state: 'planning' }]
     const { getByText } = render(<StatsWidget />)
     expect(getByText('2 implementing')).toBeInTheDocument()
     expect(getByText('1 planning')).toBeInTheDocument()
@@ -307,11 +310,7 @@ describe('StatsWidget', () => {
   })
 
   it('shows correct total active tasks count', () => {
-    mockState.activeTasks = [
-      { state: 'implementing' },
-      { state: 'planning' },
-      { state: 'loaded' },
-    ]
+    mockState.activeTasks = [{ state: 'implementing' }, { state: 'planning' }, { state: 'loaded' }]
     const { getByText } = render(<StatsWidget />)
     // Active Tasks value should show 3
     expect(getByText('3')).toBeInTheDocument()

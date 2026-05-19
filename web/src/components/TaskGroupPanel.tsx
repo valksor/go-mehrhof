@@ -37,28 +37,40 @@ export function TaskGroupPanel({ onClose }: { onClose: () => void }) {
     setCreating(false)
   }, [newLabel, createTaskGroup])
 
-  const handleAddTask = useCallback(async (groupId: string) => {
-    if (!addTaskId.trim() || !addProjectDir.trim()) return
-    await addTaskToGroup(groupId, addTaskId.trim(), addProjectDir.trim())
-    setAddTaskId('')
-    setAddProjectDir('')
-    setAddingToGroup(null)
-  }, [addTaskId, addProjectDir, addTaskToGroup])
+  const handleAddTask = useCallback(
+    async (groupId: string) => {
+      if (!addTaskId.trim() || !addProjectDir.trim()) return
+      await addTaskToGroup(groupId, addTaskId.trim(), addProjectDir.trim())
+      setAddTaskId('')
+      setAddProjectDir('')
+      setAddingToGroup(null)
+    },
+    [addTaskId, addProjectDir, addTaskToGroup],
+  )
 
-  const handleSubmit = useCallback(async (groupId: string) => {
-    setSubmitting(groupId)
-    await submitTaskGroup(groupId)
-    setSubmitting(null)
-  }, [submitTaskGroup])
+  const handleSubmit = useCallback(
+    async (groupId: string) => {
+      setSubmitting(groupId)
+      await submitTaskGroup(groupId)
+      setSubmitting(null)
+    },
+    [submitTaskGroup],
+  )
 
-  const handleRefreshStatus = useCallback(async (groupId: string) => {
-    const result = await getTaskGroupStatus(groupId)
-    setStatusDetail(result)
-  }, [getTaskGroupStatus])
+  const handleRefreshStatus = useCallback(
+    async (groupId: string) => {
+      const result = await getTaskGroupStatus(groupId)
+      setStatusDetail(result)
+    },
+    [getTaskGroupStatus],
+  )
 
-  const handleRemove = useCallback(async (id: string) => {
-    await removeTaskGroup(id)
-  }, [removeTaskGroup])
+  const handleRemove = useCallback(
+    async (id: string) => {
+      await removeTaskGroup(id)
+    },
+    [removeTaskGroup],
+  )
 
   const statusBadge = (status: string) => {
     const colors: Record<string, string> = {
@@ -72,9 +84,7 @@ export function TaskGroupPanel({ onClose }: { onClose: () => void }) {
 
   return (
     <AccessibleModal isOpen onClose={onClose} title="Task Groups" size="2xl">
-      <p className="text-sm opacity-70 mb-4">
-        Link tasks across repositories for synchronized lifecycle operations.
-      </p>
+      <p className="text-sm opacity-70 mb-4">Link tasks across repositories for synchronized lifecycle operations.</p>
 
       {/* Create form */}
       <div className="flex gap-2 mb-4">
@@ -86,11 +96,7 @@ export function TaskGroupPanel({ onClose }: { onClose: () => void }) {
           onChange={(e) => setNewLabel(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && handleCreate()}
         />
-        <button
-          className="btn btn-primary btn-sm"
-          onClick={handleCreate}
-          disabled={creating || !newLabel.trim()}
-        >
+        <button className="btn btn-primary btn-sm" onClick={handleCreate} disabled={creating || !newLabel.trim()}>
           {creating ? 'Creating...' : 'Create'}
         </button>
       </div>
@@ -173,7 +179,11 @@ export function TaskGroupPanel({ onClose }: { onClose: () => void }) {
                 ) : (
                   <button
                     className="btn btn-ghost btn-xs mt-2"
-                    onClick={() => { setAddingToGroup(g.id); setAddProjectDir(''); setAddTaskId('') }}
+                    onClick={() => {
+                      setAddingToGroup(g.id)
+                      setAddProjectDir('')
+                      setAddTaskId('')
+                    }}
                   >
                     + Add Task
                   </button>
@@ -182,17 +192,16 @@ export function TaskGroupPanel({ onClose }: { onClose: () => void }) {
                 {/* Status detail (after refresh) */}
                 {statusDetail && statusDetail.id === g.id && (
                   <div className="mt-2 p-2 bg-base-300 rounded text-xs">
-                    <div>Status: <strong>{statusDetail.status}</strong></div>
+                    <div>
+                      Status: <strong>{statusDetail.status}</strong>
+                    </div>
                     <div>Tasks: {statusDetail.tasks.length}</div>
                     <div>Updated: {statusDetail.updated_at}</div>
                   </div>
                 )}
 
                 <div className="mt-2 flex gap-2 justify-end">
-                  <button
-                    className="btn btn-ghost btn-xs"
-                    onClick={() => handleRefreshStatus(g.id)}
-                  >
+                  <button className="btn btn-ghost btn-xs" onClick={() => handleRefreshStatus(g.id)}>
                     Refresh
                   </button>
                   <button
@@ -202,10 +211,7 @@ export function TaskGroupPanel({ onClose }: { onClose: () => void }) {
                   >
                     {submitting === g.id ? 'Submitting...' : 'Submit Group'}
                   </button>
-                  <button
-                    className="btn btn-ghost btn-xs text-error"
-                    onClick={() => handleRemove(g.id)}
-                  >
+                  <button className="btn btn-ghost btn-xs text-error" onClick={() => handleRemove(g.id)}>
                     Remove
                   </button>
                 </div>

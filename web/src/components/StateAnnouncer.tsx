@@ -14,10 +14,10 @@ function getProjectName(path: string): string {
 
 export function StateAnnouncer() {
   const { announce } = useAnnouncer()
-  const connected = useGlobalStore(s => s.connected)
-  const connecting = useGlobalStore(s => s.connecting)
-  const selectedProject = useGlobalStore(s => s.selectedProject)
-  const taskState = useProjectStore(s => s.state)
+  const connected = useGlobalStore((s) => s.connected)
+  const connecting = useGlobalStore((s) => s.connecting)
+  const selectedProject = useGlobalStore((s) => s.selectedProject)
+  const taskState = useProjectStore((s) => s.state)
 
   // Initialize refs to current values so we don't announce on first render
   const prev = useRef({ connected, connecting, projectId: selectedProject?.id, taskState })
@@ -43,19 +43,19 @@ export function StateAnnouncer() {
     }
     if (taskState !== p.taskState) {
       const labels: Record<string, string> = {
-        'none': 'Idle',
-        'loaded': 'Task loaded',
-        'planning': 'Planning in progress',
-        'planned': 'Planning complete',
-        'implementing': 'Implementation in progress',
-        'implemented': 'Implementation complete',
-        'optimizing': 'Optimizing',
-        'simplifying': 'Simplifying',
-        'reviewing': 'Review in progress',
-        'submitted': 'Task submitted',
-        'waiting': 'Waiting',
-        'paused': 'Paused',
-        'failed': 'Task failed',
+        none: 'Idle',
+        loaded: 'Task loaded',
+        planning: 'Planning in progress',
+        planned: 'Planning complete',
+        implementing: 'Implementation in progress',
+        implemented: 'Implementation complete',
+        optimizing: 'Optimizing',
+        simplifying: 'Simplifying',
+        reviewing: 'Review in progress',
+        submitted: 'Task submitted',
+        waiting: 'Waiting',
+        paused: 'Paused',
+        failed: 'Task failed',
       }
       const label = labels[taskState]
       if (label) {

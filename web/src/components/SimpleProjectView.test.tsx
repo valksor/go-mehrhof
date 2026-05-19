@@ -47,7 +47,14 @@ vi.mock('./ThemeToggle', () => ({ ThemeToggle: () => null }))
 vi.mock('./SimpleTimeline', () => ({ SimpleTimeline: () => <div data-testid="simple-timeline" /> }))
 vi.mock('./SimpleChatWidget', () => ({ SimpleChatWidget: () => <div data-testid="simple-chat" /> }))
 vi.mock('./SimpleReviewSummary', () => ({
-  SimpleReviewSummary: ({ onReview, onRequestChanges }: { loading: boolean; onReview: () => void; onRequestChanges: () => void }) => (
+  SimpleReviewSummary: ({
+    onReview,
+    onRequestChanges,
+  }: {
+    loading: boolean
+    onReview: () => void
+    onRequestChanges: () => void
+  }) => (
     <div data-testid="review-summary">
       <button onClick={onReview}>Review</button>
       <button onClick={onRequestChanges}>Request Changes</button>

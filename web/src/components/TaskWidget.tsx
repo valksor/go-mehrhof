@@ -17,10 +17,14 @@ interface FileEntry {
 
 function contextIcon(type: string) {
   switch (type) {
-    case 'file': return '📄'
-    case 'symbol': return '🔗'
-    case 'commit': return '📌'
-    default: return '@'
+    case 'file':
+      return '📄'
+    case 'symbol':
+      return '🔗'
+    case 'commit':
+      return '📌'
+    default:
+      return '@'
   }
 }
 
@@ -51,11 +55,15 @@ interface TaskWidgetProps {
 function stateBadgeClass(state: string, failureClass?: FailureClass): string {
   if (state === 'failed') {
     switch (failureClass) {
-      case 'recoverable': return 'badge-warning'
-      case 'degraded': return 'badge-warning'
-      case 'skippable': return 'badge-info'
+      case 'recoverable':
+        return 'badge-warning'
+      case 'degraded':
+        return 'badge-warning'
+      case 'skippable':
+        return 'badge-info'
       case 'hard_stop':
-      default: return 'badge-error'
+      default:
+        return 'badge-error'
     }
   }
   if (state === 'implemented') return 'badge-success'
@@ -67,16 +75,39 @@ function stateBadgeClass(state: string, failureClass?: FailureClass): string {
 
 function errorBannerClass(failureClass?: FailureClass): string {
   switch (failureClass) {
-    case 'recoverable': return 'text-warning bg-warning/10 border-warning/20'
-    case 'degraded': return 'text-warning bg-warning/10 border-warning/20'
-    case 'skippable': return 'text-info bg-info/10 border-info/20'
+    case 'recoverable':
+      return 'text-warning bg-warning/10 border-warning/20'
+    case 'degraded':
+      return 'text-warning bg-warning/10 border-warning/20'
+    case 'skippable':
+      return 'text-info bg-info/10 border-info/20'
     case 'hard_stop':
-    default: return 'text-error bg-error/10 border-error/20'
+    default:
+      return 'text-error bg-error/10 border-error/20'
   }
 }
 
 export function TaskWidget({ embedded = false }: TaskWidgetProps) {
-  const { task, state, start, quickStart, queueTask, loading, error, connected, connecting, undo, reset, retry, phaseError, needsRecovery, ciFixStatus, tags, addTag, removeTag } = useProjectStore()
+  const {
+    task,
+    state,
+    start,
+    quickStart,
+    queueTask,
+    loading,
+    error,
+    connected,
+    connecting,
+    undo,
+    reset,
+    retry,
+    phaseError,
+    needsRecovery,
+    ciFixStatus,
+    tags,
+    addTag,
+    removeTag,
+  } = useProjectStore()
   const [inputMode, setInputMode] = useState<'quick' | 'file' | 'url'>('quick')
   const [taskDescription, setTaskDescription] = useState('')
   const [urlInput, setUrlInput] = useState('')
@@ -98,47 +129,68 @@ export function TaskWidget({ embedded = false }: TaskWidgetProps) {
   const [showAtMenu, setShowAtMenu] = useState(false)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
-  const searchContext = useCallback(async (mode: 'file' | 'symbol' | 'commit', query: string) => {
-    const client = useProjectStore.getState().client
-    if (!client || !connected || query.length < 1) {
-      setAtResults([])
-      return
-    }
-    try {
-      if (mode === 'file') {
-        const result = await client.call<{ entries: FileEntry[] }>('files.search', { query, max_results: 8 })
-        setAtResults((result.entries || []).map(e => ({ label: `${e.is_dir ? '📁' : '📄'} ${e.rel_path}`, value: e.rel_path })))
-      } else if (mode === 'symbol') {
-        const result = await client.call<{ content: string; label: string }>('context.resolve', { type: 'symbol', ref: query })
-        // Parse symbol results into individual lines
-        const lines = result.content.split('\n').filter(Boolean).slice(0, 8)
-        setAtResults(lines.map(line => {
-          // Extract symbol name from format "kind Name (file:line, package pkg)"
-          const match = line.replace(/^- /, '').match(/^\S+\s+(\S+)/)
-          const symbolName = match ? match[1] : query
-          return { label: `🔗 ${line.replace(/^- /, '')}`, value: symbolName }
-        }))
-      } else if (mode === 'commit') {
-        const result = await client.call<{ commits: Array<{ sha: string; message: string }> }>('git.log', { count: 10 })
-        const commits = result.commits || []
-        setAtResults(commits.filter(c => c.sha.startsWith(query) || c.message.toLowerCase().includes(query.toLowerCase()))
-          .slice(0, 8).map(c => ({ label: `📌 ${c.sha.slice(0, 8)} ${c.message}`, value: c.sha })))
+  const searchContext = useCallback(
+    async (mode: 'file' | 'symbol' | 'commit', query: string) => {
+      const client = useProjectStore.getState().client
+      if (!client || !connected || query.length < 1) {
+        setAtResults([])
+        return
       }
-      setAtIndex(0)
-    } catch {
-      if (mode === 'commit') {
-        // Fallback: try context.resolve directly for single commit
-        try {
-          const client = useProjectStore.getState().client
-          if (client && query.length >= 4) {
-            await client.call<{ content: string }>('context.resolve', { type: 'commit', ref: query })
-            setAtResults([{ label: `📌 ${query}`, value: query }])
+      try {
+        if (mode === 'file') {
+          const result = await client.call<{ entries: FileEntry[] }>('files.search', { query, max_results: 8 })
+          setAtResults(
+            (result.entries || []).map((e) => ({
+              label: `${e.is_dir ? '📁' : '📄'} ${e.rel_path}`,
+              value: e.rel_path,
+            })),
+          )
+        } else if (mode === 'symbol') {
+          const result = await client.call<{ content: string; label: string }>('context.resolve', {
+            type: 'symbol',
+            ref: query,
+          })
+          // Parse symbol results into individual lines
+          const lines = result.content.split('\n').filter(Boolean).slice(0, 8)
+          setAtResults(
+            lines.map((line) => {
+              // Extract symbol name from format "kind Name (file:line, package pkg)"
+              const match = line.replace(/^- /, '').match(/^\S+\s+(\S+)/)
+              const symbolName = match ? match[1] : query
+              return { label: `🔗 ${line.replace(/^- /, '')}`, value: symbolName }
+            }),
+          )
+        } else if (mode === 'commit') {
+          const result = await client.call<{ commits: Array<{ sha: string; message: string }> }>('git.log', {
+            count: 10,
+          })
+          const commits = result.commits || []
+          setAtResults(
+            commits
+              .filter((c) => c.sha.startsWith(query) || c.message.toLowerCase().includes(query.toLowerCase()))
+              .slice(0, 8)
+              .map((c) => ({ label: `📌 ${c.sha.slice(0, 8)} ${c.message}`, value: c.sha })),
+          )
+        }
+        setAtIndex(0)
+      } catch {
+        if (mode === 'commit') {
+          // Fallback: try context.resolve directly for single commit
+          try {
+            const client = useProjectStore.getState().client
+            if (client && query.length >= 4) {
+              await client.call<{ content: string }>('context.resolve', { type: 'commit', ref: query })
+              setAtResults([{ label: `📌 ${query}`, value: query }])
+            }
+          } catch {
+            /* no results */
           }
-        } catch { /* no results */ }
+        }
+        setAtResults([])
       }
-      setAtResults([])
-    }
-  }, [connected])
+    },
+    [connected],
+  )
 
   useEffect(() => {
     if (!showAtMenu || !atQuery || !atMode) return
@@ -188,7 +240,7 @@ export function TaskWidget({ embedded = false }: TaskWidgetProps) {
       setTaskDescription(taskDescription.slice(0, triggerPos) + textAfter)
     }
     const type = atMode || 'file'
-    setContextItems(prev => [...prev, { type, ref: item.value, label: item.value }])
+    setContextItems((prev) => [...prev, { type, ref: item.value, label: item.value }])
     setShowAtMenu(false)
     setAtMode(null)
     setAtQuery('')
@@ -196,7 +248,7 @@ export function TaskWidget({ embedded = false }: TaskWidgetProps) {
   }
 
   const removeContextItem = (index: number) => {
-    setContextItems(prev => prev.filter((_, i) => i !== index))
+    setContextItems((prev) => prev.filter((_, i) => i !== index))
   }
 
   // When a task is active, queue instead of start
@@ -295,10 +347,18 @@ export function TaskWidget({ embedded = false }: TaskWidgetProps) {
               onChange={handleDescriptionChange}
               onKeyDown={(e) => {
                 if (showAtMenu && atResults.length > 0) {
-                  if (e.key === 'ArrowDown') { e.preventDefault(); setAtIndex(i => Math.min(i + 1, atResults.length - 1)) }
-                  else if (e.key === 'ArrowUp') { e.preventDefault(); setAtIndex(i => Math.max(i - 1, 0)) }
-                  else if (e.key === 'Enter' || e.key === 'Tab') { e.preventDefault(); insertContextRef(atResults[atIndex]) }
-                  else if (e.key === 'Escape') { setShowAtMenu(false) }
+                  if (e.key === 'ArrowDown') {
+                    e.preventDefault()
+                    setAtIndex((i) => Math.min(i + 1, atResults.length - 1))
+                  } else if (e.key === 'ArrowUp') {
+                    e.preventDefault()
+                    setAtIndex((i) => Math.max(i - 1, 0))
+                  } else if (e.key === 'Enter' || e.key === 'Tab') {
+                    e.preventDefault()
+                    insertContextRef(atResults[atIndex])
+                  } else if (e.key === 'Escape') {
+                    setShowAtMenu(false)
+                  }
                   return
                 }
                 handleQuickKeyDown(e)
@@ -319,7 +379,10 @@ export function TaskWidget({ embedded = false }: TaskWidgetProps) {
                   <button
                     key={`${item.value}-${i}`}
                     className={`w-full text-left px-3 py-1.5 text-sm font-mono truncate hover:bg-base-200 ${i === atIndex ? 'bg-base-200' : ''}`}
-                    onMouseDown={(e) => { e.preventDefault(); insertContextRef(item) }}
+                    onMouseDown={(e) => {
+                      e.preventDefault()
+                      insertContextRef(item)
+                    }}
                   >
                     {item.label}
                   </button>
@@ -332,7 +395,13 @@ export function TaskWidget({ embedded = false }: TaskWidgetProps) {
               {contextItems.map((ci, i) => (
                 <span key={`${ci.type}-${ci.ref}`} className="badge badge-sm badge-outline gap-1">
                   {contextIcon(ci.type)} {ci.label || ci.ref}
-                  <button className="cursor-pointer hover:text-error" onClick={() => removeContextItem(i)} aria-label={`Remove ${ci.ref}`}>&times;</button>
+                  <button
+                    className="cursor-pointer hover:text-error"
+                    onClick={() => removeContextItem(i)}
+                    aria-label={`Remove ${ci.ref}`}
+                  >
+                    &times;
+                  </button>
                 </span>
               ))}
             </div>
@@ -344,7 +413,15 @@ export function TaskWidget({ embedded = false }: TaskWidgetProps) {
               disabled={loading || !taskDescription.trim() || !connected}
               className="btn btn-primary btn-sm"
             >
-              {loading ? <span className="loading loading-spinner loading-xs" /> : hasActiveTask ? 'Queue Task' : quickMode ? 'Quick Fix' : 'Load Task'}
+              {loading ? (
+                <span className="loading loading-spinner loading-xs" />
+              ) : hasActiveTask ? (
+                'Queue Task'
+              ) : quickMode ? (
+                'Quick Fix'
+              ) : (
+                'Load Task'
+              )}
             </button>
           </div>
         </div>
@@ -360,7 +437,12 @@ export function TaskWidget({ embedded = false }: TaskWidgetProps) {
               className="btn btn-outline btn-sm gap-2"
             >
               <svg aria-hidden="true" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"
+                />
               </svg>
               Browse
             </button>
@@ -372,12 +454,16 @@ export function TaskWidget({ embedded = false }: TaskWidgetProps) {
           </div>
           {selectedFile && (
             <div className="flex justify-end">
-              <button
-                onClick={handleFileLoad}
-                disabled={loading || !connected}
-                className="btn btn-primary btn-sm"
-              >
-                {loading ? <span className="loading loading-spinner loading-xs" /> : hasActiveTask ? 'Queue Task' : quickMode ? 'Quick Fix' : 'Load Task'}
+              <button onClick={handleFileLoad} disabled={loading || !connected} className="btn btn-primary btn-sm">
+                {loading ? (
+                  <span className="loading loading-spinner loading-xs" />
+                ) : hasActiveTask ? (
+                  'Queue Task'
+                ) : quickMode ? (
+                  'Quick Fix'
+                ) : (
+                  'Load Task'
+                )}
               </button>
             </div>
           )}
@@ -391,7 +477,7 @@ export function TaskWidget({ embedded = false }: TaskWidgetProps) {
             <input
               type="text"
               value={urlInput}
-              onChange={e => setUrlInput(e.target.value)}
+              onChange={(e) => setUrlInput(e.target.value)}
               onKeyDown={handleUrlKeyDown}
               placeholder="github.com/owner/repo/issues/123"
               className={`input input-bordered w-full font-mono text-sm input-sm ${detectedProvider ? 'pr-14' : ''}`}
@@ -405,16 +491,22 @@ export function TaskWidget({ embedded = false }: TaskWidgetProps) {
           </div>
           <div className="flex justify-between items-center">
             <span className="text-xs text-base-content/50">
-              {detectedProvider
-                ? `${detectedProvider.name} detected`
-                : 'GitHub, GitLab, Linear, or Wrike URLs'}
+              {detectedProvider ? `${detectedProvider.name} detected` : 'GitHub, GitLab, Linear, or Wrike URLs'}
             </span>
             <button
               onClick={handleUrlLoad}
               disabled={loading || !urlInput.trim() || !connected}
               className="btn btn-primary btn-sm"
             >
-              {loading ? <span className="loading loading-spinner loading-xs" /> : hasActiveTask ? 'Queue Task' : quickMode ? 'Quick Fix' : 'Load Task'}
+              {loading ? (
+                <span className="loading loading-spinner loading-xs" />
+              ) : hasActiveTask ? (
+                'Queue Task'
+              ) : quickMode ? (
+                'Quick Fix'
+              ) : (
+                'Load Task'
+              )}
             </button>
           </div>
         </div>
@@ -427,7 +519,7 @@ export function TaskWidget({ embedded = false }: TaskWidgetProps) {
             type="checkbox"
             className="toggle toggle-sm toggle-primary"
             checked={quickMode}
-            onChange={e => setQuickMode(e.target.checked)}
+            onChange={(e) => setQuickMode(e.target.checked)}
             disabled={loading}
           />
           <span className="text-sm text-base-content/70">Quick Fix</span>
@@ -436,14 +528,11 @@ export function TaskWidget({ embedded = false }: TaskWidgetProps) {
       )}
 
       {/* Connection status */}
-      <p className={`text-sm mt-3 ${
-        connecting ? 'text-warning' :
-        connected ? 'text-success' :
-        'text-base-content/50'
-      }`} data-testid="task-connection-status">
-        {connecting ? 'Connecting to worktree...' :
-         connected ? 'Connected' :
-         'Not connected'}
+      <p
+        className={`text-sm mt-3 ${connecting ? 'text-warning' : connected ? 'text-success' : 'text-base-content/50'}`}
+        data-testid="task-connection-status"
+      >
+        {connecting ? 'Connecting to worktree...' : connected ? 'Connected' : 'Not connected'}
       </p>
 
       {error && (
@@ -451,11 +540,7 @@ export function TaskWidget({ embedded = false }: TaskWidgetProps) {
       )}
 
       {/* File Picker Modal */}
-      <FilePicker
-        isOpen={showFilePicker}
-        onClose={() => setShowFilePicker(false)}
-        onSelect={handleFileSelect}
-      />
+      <FilePicker isOpen={showFilePicker} onClose={() => setShowFilePicker(false)} onSelect={handleFileSelect} />
     </>
   )
 
@@ -467,14 +552,12 @@ export function TaskWidget({ embedded = false }: TaskWidgetProps) {
           <h3 className="font-medium text-base-content truncate">{task.title}</h3>
           <p className="text-xs text-base-content/60 font-mono truncate">{task.source}</p>
         </div>
-        <span className={`flex-shrink-0 badge badge-sm ${stateBadgeClass(state, phaseError?.class)}`}>
-          {state}
-        </span>
+        <span className={`flex-shrink-0 badge badge-sm ${stateBadgeClass(state, phaseError?.class)}`}>{state}</span>
       </div>
 
       {/* Tags */}
       <div className="flex flex-wrap items-center gap-1 mt-2">
-        {tags.map(tag => (
+        {tags.map((tag) => (
           <span key={tag} className="badge badge-sm badge-outline gap-1">
             {tag}
             <button
@@ -490,8 +573,8 @@ export function TaskWidget({ embedded = false }: TaskWidgetProps) {
           <input
             type="text"
             value={newTag}
-            onChange={e => setNewTag(e.target.value)}
-            onKeyDown={e => {
+            onChange={(e) => setNewTag(e.target.value)}
+            onKeyDown={(e) => {
               if (e.key === 'Enter' && newTag.trim()) {
                 void addTag(newTag.trim())
                 setNewTag('')
@@ -528,7 +611,7 @@ export function TaskWidget({ embedded = false }: TaskWidgetProps) {
 
       {task.contextItems && task.contextItems.length > 0 && (
         <div className="flex flex-wrap gap-1 mt-2">
-          {task.contextItems.map(ci => (
+          {task.contextItems.map((ci) => (
             <span key={`${ci.type}-${ci.ref}`} className="badge badge-sm badge-info badge-outline gap-1">
               {contextIcon(ci.type)} {ci.label || ci.ref}
             </span>
@@ -540,7 +623,13 @@ export function TaskWidget({ embedded = false }: TaskWidgetProps) {
       )}
       {task.branch && (
         <div className="flex items-center gap-2 text-xs mt-3">
-          <svg aria-hidden="true" className="w-3 h-3 text-base-content/50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <svg
+            aria-hidden="true"
+            className="w-3 h-3 text-base-content/50"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
           </svg>
           <span className="text-base-content/60">Branch:</span>
@@ -548,7 +637,12 @@ export function TaskWidget({ embedded = false }: TaskWidgetProps) {
           {task.worktreePath && (
             <span className="badge badge-xs badge-info gap-1" aria-label={`Isolated worktree: ${task.worktreePath}`}>
               <svg aria-hidden="true" className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2" />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2"
+                />
               </svg>
               isolated
             </span>
@@ -563,9 +657,16 @@ export function TaskWidget({ embedded = false }: TaskWidgetProps) {
       {needsRecovery && (
         <div className="alert alert-warning text-sm mt-3">
           <svg aria-hidden="true" className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+            />
           </svg>
-          <span>Task was interrupted during <strong>{needsRecovery}</strong>.</span>
+          <span>
+            Task was interrupted during <strong>{needsRecovery}</strong>.
+          </span>
           <button className="btn btn-warning btn-xs" onClick={() => void retry()} disabled={loading}>
             Retry
           </button>
@@ -597,13 +698,14 @@ export function TaskWidget({ embedded = false }: TaskWidgetProps) {
         <div className="mt-3 p-3 bg-warning/10 border border-warning/20 rounded-lg">
           <p className="text-sm text-warning-content mb-2">Task encountered an error. You can:</p>
           <div className="flex gap-2 flex-wrap">
-            <button
-              onClick={() => undo()}
-              disabled={loading || !connected}
-              className="btn btn-sm btn-outline"
-            >
+            <button onClick={() => undo()} disabled={loading || !connected} className="btn btn-sm btn-outline">
               <svg aria-hidden="true" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"
+                />
               </svg>
               Undo
             </button>
@@ -613,7 +715,12 @@ export function TaskWidget({ embedded = false }: TaskWidgetProps) {
               className="btn btn-sm btn-outline btn-warning"
             >
               <svg aria-hidden="true" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                />
               </svg>
               Reset
             </button>
@@ -633,8 +740,19 @@ export function TaskWidget({ embedded = false }: TaskWidgetProps) {
     <section className="card bg-base-200">
       <div className="card-body">
         <h2 className="card-title text-base-content flex items-center gap-2 mb-4">
-          <svg aria-hidden="true" className="w-5 h-5 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+          <svg
+            aria-hidden="true"
+            className="w-5 h-5 text-primary"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+            />
           </svg>
           {task ? 'Current Task' : 'Load Task'}
         </h2>

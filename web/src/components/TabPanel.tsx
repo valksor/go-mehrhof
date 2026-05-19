@@ -5,7 +5,7 @@ import { useLayoutStore } from '../stores/layoutStore'
 import { DiffMethod } from 'react-diff-viewer-continued'
 
 // Lazy-load heavy diff viewer component (only needed when viewing diffs)
-const ReactDiffViewer = lazy(() => import('react-diff-viewer-continued').then(m => ({ default: m.default })))
+const ReactDiffViewer = lazy(() => import('react-diff-viewer-continued').then((m) => ({ default: m.default })))
 import { useProjectStore } from '../stores/projectStore'
 import { parseDiffForFile } from '../lib/diff'
 import { OutputWidget } from './OutputWidget'
@@ -17,12 +17,16 @@ import { FileChangesPanel } from './FileChangesPanel'
 import { PRPreviewPanel } from './PRPreviewPanel'
 
 // Lazy-loaded heavy tab panels
-const ChatWidget = lazy(() => import('./ChatWidget').then(m => ({ default: m.ChatWidget })))
-const BrowserPanel = lazy(() => import('./BrowserPanel').then(m => ({ default: m.BrowserPanel })))
-const ReviewPanel = lazy(() => import('./ReviewPanel').then(m => ({ default: m.ReviewPanel })))
-const ForkComparePanel = lazy(() => import('./ForkComparePanel').then(m => ({ default: m.ForkComparePanel })))
+const ChatWidget = lazy(() => import('./ChatWidget').then((m) => ({ default: m.ChatWidget })))
+const BrowserPanel = lazy(() => import('./BrowserPanel').then((m) => ({ default: m.BrowserPanel })))
+const ReviewPanel = lazy(() => import('./ReviewPanel').then((m) => ({ default: m.ReviewPanel })))
+const ForkComparePanel = lazy(() => import('./ForkComparePanel').then((m) => ({ default: m.ForkComparePanel })))
 
-const LazyFallback = <div className="flex items-center justify-center h-32"><span className="loading loading-spinner loading-sm" /></div>
+const LazyFallback = (
+  <div className="flex items-center justify-center h-32">
+    <span className="loading loading-spinner loading-sm" />
+  </div>
+)
 
 interface TabPanelProps {
   className?: string
@@ -37,7 +41,12 @@ export function TabPanel({ className = '' }: TabPanelProps) {
       <div className={`flex items-center justify-center h-full text-base-content/50 ${className}`}>
         <div className="text-center">
           <svg className="w-12 h-12 mx-auto mb-3 opacity-30" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={1.5}
+              d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+            />
           </svg>
           <p className="text-sm">No tab selected</p>
         </div>
@@ -85,7 +94,7 @@ function FileContent({ data }: { data?: Record<string, unknown> }) {
           <div>
             <div className="text-base-content/60 mb-2">{filePath}</div>
             <pre className="bg-neutral text-neutral-content p-4 rounded-lg overflow-auto">
-              {data?.content as string || 'Loading file content...'}
+              {(data?.content as string) || 'Loading file content...'}
             </pre>
           </div>
         ) : (
@@ -184,9 +193,7 @@ function DiffContent({ data }: { data?: Record<string, unknown> }) {
       <div className="sticky top-0 z-10 bg-base-100 border-b border-base-300 px-4 py-2 flex items-center justify-between">
         <div>
           <span className="text-sm font-medium">{filePath}</span>
-          <span className="text-xs text-base-content/50 ml-2">
-            ({data?.status as string || 'modified'})
-          </span>
+          <span className="text-xs text-base-content/50 ml-2">({(data?.status as string) || 'modified'})</span>
         </div>
         <div className="flex items-center gap-1">
           <button
@@ -208,44 +215,50 @@ function DiffContent({ data }: { data?: Record<string, unknown> }) {
         </div>
       </div>
       {diff ? (
-        <Suspense fallback={<div className="flex items-center justify-center h-32"><span className="loading loading-spinner loading-sm" /></div>}>
-        <ReactDiffViewer
-          oldValue={diff.oldValue}
-          newValue={diff.newValue}
-          splitView={splitView}
-          compareMethod={DiffMethod.WORDS}
-          useDarkTheme={isDarkTheme}
-          styles={{
-            variables: {
-              dark: {
-                diffViewerBackground: 'var(--fallback-b1,oklch(var(--b1)/1))',
-                addedBackground: 'oklch(var(--su)/0.2)',
-                removedBackground: 'oklch(var(--er)/0.2)',
-                wordAddedBackground: 'oklch(var(--su)/0.4)',
-                wordRemovedBackground: 'oklch(var(--er)/0.4)',
-                addedGutterBackground: 'oklch(var(--su)/0.3)',
-                removedGutterBackground: 'oklch(var(--er)/0.3)',
-                gutterBackground: 'var(--fallback-b2,oklch(var(--b2)/1))',
-                gutterBackgroundDark: 'var(--fallback-b3,oklch(var(--b3)/1))',
-                codeFoldGutterBackground: 'var(--fallback-b2,oklch(var(--b2)/1))',
-                codeFoldBackground: 'var(--fallback-b2,oklch(var(--b2)/1))',
+        <Suspense
+          fallback={
+            <div className="flex items-center justify-center h-32">
+              <span className="loading loading-spinner loading-sm" />
+            </div>
+          }
+        >
+          <ReactDiffViewer
+            oldValue={diff.oldValue}
+            newValue={diff.newValue}
+            splitView={splitView}
+            compareMethod={DiffMethod.WORDS}
+            useDarkTheme={isDarkTheme}
+            styles={{
+              variables: {
+                dark: {
+                  diffViewerBackground: 'var(--fallback-b1,oklch(var(--b1)/1))',
+                  addedBackground: 'oklch(var(--su)/0.2)',
+                  removedBackground: 'oklch(var(--er)/0.2)',
+                  wordAddedBackground: 'oklch(var(--su)/0.4)',
+                  wordRemovedBackground: 'oklch(var(--er)/0.4)',
+                  addedGutterBackground: 'oklch(var(--su)/0.3)',
+                  removedGutterBackground: 'oklch(var(--er)/0.3)',
+                  gutterBackground: 'var(--fallback-b2,oklch(var(--b2)/1))',
+                  gutterBackgroundDark: 'var(--fallback-b3,oklch(var(--b3)/1))',
+                  codeFoldGutterBackground: 'var(--fallback-b2,oklch(var(--b2)/1))',
+                  codeFoldBackground: 'var(--fallback-b2,oklch(var(--b2)/1))',
+                },
+                light: {
+                  diffViewerBackground: 'var(--fallback-b1,oklch(var(--b1)/1))',
+                  addedBackground: 'oklch(var(--su)/0.15)',
+                  removedBackground: 'oklch(var(--er)/0.15)',
+                  wordAddedBackground: 'oklch(var(--su)/0.3)',
+                  wordRemovedBackground: 'oklch(var(--er)/0.3)',
+                  addedGutterBackground: 'oklch(var(--su)/0.2)',
+                  removedGutterBackground: 'oklch(var(--er)/0.2)',
+                  gutterBackground: 'var(--fallback-b2,oklch(var(--b2)/1))',
+                  gutterBackgroundDark: 'var(--fallback-b3,oklch(var(--b3)/1))',
+                  codeFoldGutterBackground: 'var(--fallback-b2,oklch(var(--b2)/1))',
+                  codeFoldBackground: 'var(--fallback-b2,oklch(var(--b2)/1))',
+                },
               },
-              light: {
-                diffViewerBackground: 'var(--fallback-b1,oklch(var(--b1)/1))',
-                addedBackground: 'oklch(var(--su)/0.15)',
-                removedBackground: 'oklch(var(--er)/0.15)',
-                wordAddedBackground: 'oklch(var(--su)/0.3)',
-                wordRemovedBackground: 'oklch(var(--er)/0.3)',
-                addedGutterBackground: 'oklch(var(--su)/0.2)',
-                removedGutterBackground: 'oklch(var(--er)/0.2)',
-                gutterBackground: 'var(--fallback-b2,oklch(var(--b2)/1))',
-                gutterBackgroundDark: 'var(--fallback-b3,oklch(var(--b3)/1))',
-                codeFoldGutterBackground: 'var(--fallback-b2,oklch(var(--b2)/1))',
-                codeFoldBackground: 'var(--fallback-b2,oklch(var(--b2)/1))',
-              },
-            },
-          }}
-        />
+            }}
+          />
         </Suspense>
       ) : (
         <div className="flex items-center justify-center h-64 text-base-content/50">
@@ -259,9 +272,9 @@ function DiffContent({ data }: { data?: Record<string, unknown> }) {
 // parseDiffForFile is imported from ../lib/diff
 
 function SpecContent({ data }: { data?: Record<string, unknown> }) {
-  const loadSpec = useProjectStore(s => s.loadSpec)
-  const loadPlan = useProjectStore(s => s.loadPlan)
-  const connected = useProjectStore(s => s.connected)
+  const loadSpec = useProjectStore((s) => s.loadSpec)
+  const loadPlan = useProjectStore((s) => s.loadPlan)
+  const connected = useProjectStore((s) => s.connected)
   const mode = (data?.mode as string) || 'spec'
 
   const [specs, setSpecs] = useState<Array<{ path: string; content: string }>>([])
@@ -298,7 +311,9 @@ function SpecContent({ data }: { data?: Record<string, unknown> }) {
     }
 
     void fetchSpecs()
-    return () => { cancelled = true }
+    return () => {
+      cancelled = true
+    }
   }, [connected, mode, loadSpec, loadPlan])
 
   if (loading) {
@@ -322,7 +337,12 @@ function SpecContent({ data }: { data?: Record<string, unknown> }) {
       <div className="flex items-center justify-center h-full text-base-content/50">
         <div className="text-center">
           <svg className="w-10 h-10 mx-auto mb-3 opacity-30" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={1.5}
+              d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+            />
           </svg>
           <p className="text-sm">No {mode === 'plan' ? 'plan' : 'specification'} available</p>
         </div>
@@ -338,7 +358,7 @@ function SpecContent({ data }: { data?: Record<string, unknown> }) {
         </span>
       </div>
       <div className="p-4 space-y-3">
-        {specs.map(spec => {
+        {specs.map((spec) => {
           const fileName = spec.path.split('/').pop() || spec.path
           const isExpanded = expandedPath === spec.path || specs.length === 1
 
@@ -351,7 +371,9 @@ function SpecContent({ data }: { data?: Record<string, unknown> }) {
                 <span className="text-sm font-mono">{fileName}</span>
                 <svg
                   className={`w-4 h-4 text-base-content/40 transition-transform ${isExpanded ? 'rotate-90' : ''}`}
-                  fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
                 >
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                 </svg>
@@ -396,7 +418,7 @@ function AgentContent({ data }: { data?: Record<string, unknown> }) {
 }
 
 function ChatContent() {
-  const setModalCommand = useLayoutStore(s => s.setModalCommand)
+  const setModalCommand = useLayoutStore((s) => s.setModalCommand)
   return (
     <div className="h-full">
       <Suspense fallback={LazyFallback}>

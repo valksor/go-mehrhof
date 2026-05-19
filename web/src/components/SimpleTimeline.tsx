@@ -52,20 +52,14 @@ export function SimpleTimeline() {
   const isActive = ACTIVE_STATES.has(state)
 
   if (entries.length === 0 && !isActive) {
-    return (
-      <div className="text-center py-6 text-base-content/40 text-sm">
-        No activity yet
-      </div>
-    )
+    return <div className="text-center py-6 text-base-content/40 text-sm">No activity yet</div>
   }
 
   return (
     <div className="max-h-48 overflow-y-auto space-y-1 px-1">
       {entries.map((entry) => (
         <div key={entry.key} className="flex items-center gap-3 text-sm py-1">
-          <span className="text-base-content/40 text-xs w-16 text-right flex-shrink-0 font-mono">
-            {entry.time}
-          </span>
+          <span className="text-base-content/40 text-xs w-16 text-right flex-shrink-0 font-mono">{entry.time}</span>
           <span className="text-success flex-shrink-0" aria-hidden="true">
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
@@ -78,9 +72,7 @@ export function SimpleTimeline() {
       {/* Active state indicator */}
       {isActive && (
         <div className="flex items-center gap-3 text-sm py-1">
-          <span className="text-base-content/40 text-xs w-16 text-right flex-shrink-0 font-mono">
-            now
-          </span>
+          <span className="text-base-content/40 text-xs w-16 text-right flex-shrink-0 font-mono">now</span>
           <span className="loading loading-spinner loading-xs text-primary flex-shrink-0" aria-hidden="true"></span>
           <span className="text-base-content/80">{ACTIVE_STATE_LABELS[state] ?? 'Working...'}</span>
         </div>

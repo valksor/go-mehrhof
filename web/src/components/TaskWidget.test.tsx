@@ -22,8 +22,7 @@ vi.mock('../stores/projectStore', () => {
 })
 
 vi.mock('./FilePicker', () => ({
-  FilePicker: ({ isOpen }: { isOpen: boolean }) =>
-    isOpen ? <div data-testid="file-picker">File Picker</div> : null,
+  FilePicker: ({ isOpen }: { isOpen: boolean }) => (isOpen ? <div data-testid="file-picker">File Picker</div> : null),
 }))
 
 function resetState(overrides: Record<string, unknown> = {}) {
@@ -327,7 +326,12 @@ describe('TaskWidget', () => {
 
   it('shows context items when task has them', () => {
     resetState({
-      task: { title: 'T', source: 's', description: '', contextItems: [{ type: 'file', ref: 'main.go', label: 'main.go' }] },
+      task: {
+        title: 'T',
+        source: 's',
+        description: '',
+        contextItems: [{ type: 'file', ref: 'main.go', label: 'main.go' }],
+      },
       state: 'loaded',
     })
     const { container } = render(<TaskWidget />)
@@ -749,7 +753,9 @@ describe('TaskWidget', () => {
   it('shows multiple context items with correct icons', () => {
     resetState({
       task: {
-        title: 'T', source: 's', description: '',
+        title: 'T',
+        source: 's',
+        description: '',
         contextItems: [
           { type: 'file', ref: 'main.go', label: 'main.go' },
           { type: 'symbol', ref: 'MyFunc', label: 'MyFunc' },

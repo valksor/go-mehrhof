@@ -48,11 +48,9 @@ function computeAnalytics(tasks: HistoryTask[]): TaskAnalytics {
   const finished = (byState['finished'] || 0) + (byState['submitted'] || 0)
   const successRate = Math.round((finished / tasks.length) * 1000) / 10
 
-  const avgDuration = durationCount > 0
-    ? formatDuration(totalDuration / durationCount)
-    : null
+  const avgDuration = durationCount > 0 ? formatDuration(totalDuration / durationCount) : null
 
-  const recent = tasks.slice(0, 5).map(t => {
+  const recent = tasks.slice(0, 5).map((t) => {
     const dur = new Date(t.completed_at).getTime() - new Date(t.started_at).getTime()
     return {
       title: t.title || t.id,
@@ -66,19 +64,19 @@ function computeAnalytics(tasks: HistoryTask[]): TaskAnalytics {
 }
 
 export function StatsWidget() {
-  const connected = useGlobalStore(s => s.connected)
-  const metrics = useGlobalStore(s => s.metrics)
-  const activeTasks = useGlobalStore(s => s.activeTasks)
-  const workers = useGlobalStore(s => s.workers)
-  const workerStats = useGlobalStore(s => s.workerStats)
-  const loadMetrics = useGlobalStore(s => s.loadMetrics)
-  const loadActiveTasks = useGlobalStore(s => s.loadActiveTasks)
+  const connected = useGlobalStore((s) => s.connected)
+  const metrics = useGlobalStore((s) => s.metrics)
+  const activeTasks = useGlobalStore((s) => s.activeTasks)
+  const workers = useGlobalStore((s) => s.workers)
+  const workerStats = useGlobalStore((s) => s.workerStats)
+  const loadMetrics = useGlobalStore((s) => s.loadMetrics)
+  const loadActiveTasks = useGlobalStore((s) => s.loadActiveTasks)
 
-  const projectConnected = useProjectStore(s => s.connected)
-  const client = useProjectStore(s => s.client)
-  const cacheStats = useProjectStore(s => s.cacheStats)
-  const loadCacheStats = useProjectStore(s => s.loadCacheStats)
-  const clearCache = useProjectStore(s => s.clearCache)
+  const projectConnected = useProjectStore((s) => s.connected)
+  const client = useProjectStore((s) => s.client)
+  const cacheStats = useProjectStore((s) => s.cacheStats)
+  const loadCacheStats = useProjectStore((s) => s.loadCacheStats)
+  const clearCache = useProjectStore((s) => s.clearCache)
 
   const [historyTasks, setHistoryTasks] = useState<HistoryTask[] | null>(null)
 
@@ -96,16 +94,20 @@ export function StatsWidget() {
   useEffect(() => {
     if (!projectConnected || !client) return
     let cancelled = false
-    client.call<{ tasks: HistoryTask[] | null }>('task.history', {})
-      .then(result => { if (!cancelled) setHistoryTasks(result.tasks || []) })
-      .catch(() => { if (!cancelled) setHistoryTasks(null) })
-    return () => { cancelled = true }
+    client
+      .call<{ tasks: HistoryTask[] | null }>('task.history', {})
+      .then((result) => {
+        if (!cancelled) setHistoryTasks(result.tasks || [])
+      })
+      .catch(() => {
+        if (!cancelled) setHistoryTasks(null)
+      })
+    return () => {
+      cancelled = true
+    }
   }, [projectConnected, client])
 
-  const analytics = useMemo(
-    () => historyTasks ? computeAnalytics(historyTasks) : null,
-    [historyTasks],
-  )
+  const analytics = useMemo(() => (historyTasks ? computeAnalytics(historyTasks) : null), [historyTasks])
 
   // Compute tasks by state
   const tasksByState: Record<string, number> = {}
@@ -119,19 +121,18 @@ export function StatsWidget() {
   // Compute success rate from metrics
   const completed = metrics?.jobs_completed ?? 0
   const failed = metrics?.jobs_failed ?? 0
-  const successRate = completed + failed > 0
-    ? Math.round((completed / (completed + failed)) * 1000) / 10
-    : null
+  const successRate = completed + failed > 0 ? Math.round((completed / (completed + failed)) * 1000) / 10 : null
 
   // Worker stats
   const totalWorkers = workerStats?.total_workers ?? workers.length
   const activeWorkers = workerStats?.working_workers ?? 0
-  const idleWorkers = workerStats?.available_workers ?? (totalWorkers - activeWorkers)
+  const idleWorkers = workerStats?.available_workers ?? totalWorkers - activeWorkers
 
   const loadHistory = () => {
     if (!projectConnected || !client) return
-    client.call<{ tasks: HistoryTask[] | null }>('task.history', {})
-      .then(result => setHistoryTasks(result.tasks || []))
+    client
+      .call<{ tasks: HistoryTask[] | null }>('task.history', {})
+      .then((result) => setHistoryTasks(result.tasks || []))
       .catch(() => setHistoryTasks(null))
   }
 
@@ -147,20 +148,27 @@ export function StatsWidget() {
       <div className="flex items-center justify-between mb-3">
         <h3 className="font-semibold flex items-center gap-2">
           <svg className="w-4 h-4 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+            />
           </svg>
           Stats
         </h3>
-        <button className="btn btn-xs btn-ghost" onClick={handleRefresh}>Refresh</button>
+        <button className="btn btn-xs btn-ghost" onClick={handleRefresh}>
+          Refresh
+        </button>
       </div>
 
       <div className="grid grid-cols-2 gap-2 text-sm">
         {/* Job success rate */}
         <div>
-          <span className="opacity-60" title="Ratio of completed to failed background jobs">Phase Success</span>
-          <span className="block font-mono">
-            {successRate !== null ? `${successRate}%` : '--'}
+          <span className="opacity-60" title="Ratio of completed to failed background jobs">
+            Phase Success
           </span>
+          <span className="block font-mono">{successRate !== null ? `${successRate}%` : '--'}</span>
         </div>
 
         {/* Active tasks */}
@@ -180,18 +188,14 @@ export function StatsWidget() {
         {/* Avg latency */}
         <div>
           <span className="opacity-60">Avg Latency</span>
-          <span className="block font-mono">
-            {metrics ? `${(metrics.avg_latency_ms ?? 0).toFixed(1)}ms` : '--'}
-          </span>
+          <span className="block font-mono">{metrics ? `${(metrics.avg_latency_ms ?? 0).toFixed(1)}ms` : '--'}</span>
         </div>
 
         {/* Total tokens consumed */}
         {(metrics?.tokens_consumed ?? 0) > 0 && (
           <div>
             <span className="opacity-60">Tokens Used</span>
-            <span className="block font-mono">
-              {(metrics?.tokens_consumed ?? 0).toLocaleString()}
-            </span>
+            <span className="block font-mono">{(metrics?.tokens_consumed ?? 0).toLocaleString()}</span>
           </div>
         )}
       </div>
@@ -202,10 +206,7 @@ export function StatsWidget() {
           <div className="flex items-center justify-between">
             <span className="text-xs opacity-60">Response Cache</span>
             {cacheStats.entries > 0 && (
-              <button
-                className="btn btn-xs btn-ghost opacity-60"
-                onClick={clearCache}
-              >
+              <button className="btn btn-xs btn-ghost opacity-60" onClick={clearCache}>
                 Clear
               </button>
             )}
@@ -214,9 +215,7 @@ export function StatsWidget() {
             <div>
               <span className="opacity-60">Hit Rate</span>
               <span className="block font-mono">
-                {cacheStats.hits + cacheStats.misses > 0
-                  ? `${(cacheStats.hit_rate * 100).toFixed(1)}%`
-                  : '--'}
+                {cacheStats.hits + cacheStats.misses > 0 ? `${(cacheStats.hit_rate * 100).toFixed(1)}%` : '--'}
               </span>
             </div>
             <div>
@@ -225,7 +224,9 @@ export function StatsWidget() {
             </div>
             <div>
               <span className="opacity-60">Hits / Misses</span>
-              <span className="block font-mono">{cacheStats.hits} / {cacheStats.misses}</span>
+              <span className="block font-mono">
+                {cacheStats.hits} / {cacheStats.misses}
+              </span>
             </div>
             <div>
               <span className="opacity-60">Tokens Saved</span>
@@ -248,14 +249,23 @@ export function StatsWidget() {
                 <span
                   key={state}
                   className={`badge badge-sm ${
-                    state === 'implementing' || state === 'planning' || state === 'reviewing' || state === 'simplifying' || state === 'optimizing'
+                    state === 'implementing' ||
+                    state === 'planning' ||
+                    state === 'reviewing' ||
+                    state === 'simplifying' ||
+                    state === 'optimizing'
                       ? 'badge-warning'
-                      : state === 'implemented' ? 'badge-success'
-                      : state === 'failed' ? 'badge-error'
-                      : state === 'submitted' ? 'badge-secondary'
-                      : state === 'planned' ? 'badge-primary'
-                      : state === 'loaded' ? 'badge-info'
-                      : 'badge-ghost'
+                      : state === 'implemented'
+                        ? 'badge-success'
+                        : state === 'failed'
+                          ? 'badge-error'
+                          : state === 'submitted'
+                            ? 'badge-secondary'
+                            : state === 'planned'
+                              ? 'badge-primary'
+                              : state === 'loaded'
+                                ? 'badge-info'
+                                : 'badge-ghost'
                   }`}
                 >
                   {count} {state}
@@ -275,10 +285,10 @@ export function StatsWidget() {
               <span className="block font-mono">{analytics.total}</span>
             </div>
             <div>
-              <span className="opacity-60" title="Ratio of finished/submitted tasks to total completed tasks">Task Success</span>
-              <span className="block font-mono">
-                {`${analytics.successRate}%`}
+              <span className="opacity-60" title="Ratio of finished/submitted tasks to total completed tasks">
+                Task Success
               </span>
+              <span className="block font-mono">{`${analytics.successRate}%`}</span>
             </div>
             {analytics.avgDuration && (
               <div>
@@ -296,11 +306,15 @@ export function StatsWidget() {
                 <span
                   key={state}
                   className={`badge badge-xs ${
-                    state === 'finished' ? 'badge-success'
-                    : state === 'submitted' ? 'badge-secondary'
-                    : state === 'abandoned' ? 'badge-warning'
-                    : state === 'failed' ? 'badge-error'
-                    : 'badge-ghost'
+                    state === 'finished'
+                      ? 'badge-success'
+                      : state === 'submitted'
+                        ? 'badge-secondary'
+                        : state === 'abandoned'
+                          ? 'badge-warning'
+                          : state === 'failed'
+                            ? 'badge-error'
+                            : 'badge-ghost'
                   }`}
                 >
                   {count} {state}
@@ -317,13 +331,19 @@ export function StatsWidget() {
                   <li key={i} className="flex items-center justify-between text-xs gap-2">
                     <span className="truncate">{t.title}</span>
                     <span className="flex items-center gap-1.5 shrink-0">
-                      <span className={`badge badge-xs ${
-                        t.finalState === 'finished' ? 'badge-success'
-                        : t.finalState === 'submitted' ? 'badge-secondary'
-                        : t.finalState === 'abandoned' ? 'badge-warning'
-                        : t.finalState === 'failed' ? 'badge-error'
-                        : 'badge-ghost'
-                      }`}>
+                      <span
+                        className={`badge badge-xs ${
+                          t.finalState === 'finished'
+                            ? 'badge-success'
+                            : t.finalState === 'submitted'
+                              ? 'badge-secondary'
+                              : t.finalState === 'abandoned'
+                                ? 'badge-warning'
+                                : t.finalState === 'failed'
+                                  ? 'badge-error'
+                                  : 'badge-ghost'
+                        }`}
+                      >
                         {t.finalState}
                       </span>
                       <span className="opacity-50 font-mono">{t.duration}</span>

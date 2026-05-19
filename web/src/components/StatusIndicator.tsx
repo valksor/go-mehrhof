@@ -7,12 +7,7 @@ interface StatusIndicatorProps {
   size?: 'sm' | 'md' | 'lg'
 }
 
-export function StatusIndicator({
-  status,
-  label,
-  showLabel = true,
-  size = 'md',
-}: StatusIndicatorProps) {
+export function StatusIndicator({ status, label, showLabel = true, size = 'md' }: StatusIndicatorProps) {
   const sizeClasses = {
     sm: 'w-1.5 h-1.5',
     md: 'w-2 h-2',
@@ -24,9 +19,7 @@ export function StatusIndicator({
   return (
     <span className="inline-flex items-center gap-2">
       <span className={`status-dot status-${status} ${sizeClasses[size]}`} />
-      {showLabel && (
-        <span className="text-sm text-base-content/70">{statusLabel}</span>
-      )}
+      {showLabel && <span className="text-sm text-base-content/70">{statusLabel}</span>}
     </span>
   )
 }
