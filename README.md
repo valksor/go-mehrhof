@@ -230,6 +230,16 @@ See `CONTRIBUTING.md` for the full contributor workflow.
 
 `prototype/` contains the historical reference implementation that informed the current architecture. It is preserved as read-only reference material and is not the active development target.
 
+## Data and Legal
+
+kvelmo runs locally and does not collect usage analytics or phone home. Tasks, recordings, activity logs, and configuration stay on your machine; the only network traffic kvelmo originates is to providers, agents, and webhooks you explicitly configure.
+
+- [Data Contract](DATA_CONTRACT.md) — what kvelmo stores, where it lives, what is and is not transmitted, and what survives an upgrade
+- [Legal Disclaimer](LEGAL_DISCLAIMER.md) — AI risks, third-party compliance, acceptable and unacceptable use, financial responsibility
+- [Security Policy](SECURITY.md) — vulnerability disclosure
+- [Trademark Notice](TRADEMARK.md) — brand usage and fork naming
+- [Code of Conduct](CODE_OF_CONDUCT.md) — community conduct
+
 ## License
 
 [BSD 3-Clause License](LICENSE)
