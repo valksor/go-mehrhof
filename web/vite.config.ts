@@ -19,9 +19,9 @@ export default defineConfig({
               return 'diff'
             }
           }
-        }
-      }
-    }
+        },
+      },
+    },
   },
   server: {
     port: 5173,
@@ -51,13 +51,13 @@ export default defineConfig({
     proxy: {
       '/api': {
         target: backendUrl,
-        changeOrigin: true
+        changeOrigin: true,
       },
       '/ws': {
         target: backendUrl,
         changeOrigin: true,
-        ws: true
-      }
-    }
-  }
+        ws: true,
+      },
+    },
+  },
 })

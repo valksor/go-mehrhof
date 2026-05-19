@@ -37,7 +37,9 @@ test.describe('Accessibility in demo mode', () => {
     // Check for duplicate IDs which is a common accessibility issue
     const ids = await page.evaluate(() => {
       const elements = document.querySelectorAll('[id]')
-      const idList = Array.from(elements).map(el => el.id).filter(id => id)
+      const idList = Array.from(elements)
+        .map((el) => el.id)
+        .filter((id) => id)
       const duplicates = idList.filter((id, index) => idList.indexOf(id) !== index)
       return duplicates
     })
@@ -56,7 +58,7 @@ test.describe('Accessibility in demo mode', () => {
       const el = document.activeElement
       return {
         tagName: el?.tagName,
-        isInteractive: el !== document.body && el !== document.documentElement
+        isInteractive: el !== document.body && el !== document.documentElement,
       }
     })
     expect(focusedElement.isInteractive, 'Expected Tab to focus an interactive element').toBe(true)

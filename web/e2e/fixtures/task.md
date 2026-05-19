@@ -7,6 +7,7 @@ The API stores bookmarks in memory and serves a single-page HTML dashboard for b
 A bookmark has a URL, title, optional tags, and timestamps for when it was created and last updated.
 
 The API should support:
+
 - Listing all bookmarks as JSON
 - Adding a new bookmark (URL, title, tags)
 - Getting a single bookmark by ID

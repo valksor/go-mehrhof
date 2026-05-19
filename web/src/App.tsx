@@ -25,26 +25,58 @@ if (DEMO_MODE) {
   // State defaults to 'none'; use ?demo&state=implementing to test active-phase UI.
   const now = new Date().toISOString()
   const demoState = new URLSearchParams(window.location.search).get('state')
-  const validStates = ['none', 'loaded', 'planning', 'planned', 'implementing', 'implemented', 'simplifying', 'optimizing', 'reviewing', 'submitted', 'waiting', 'paused', 'failed'] as const
-  const validatedState = demoState && (validStates as readonly string[]).includes(demoState)
-    ? (demoState as (typeof validStates)[number])
-    : undefined
+  const validStates = [
+    'none',
+    'loaded',
+    'planning',
+    'planned',
+    'implementing',
+    'implemented',
+    'simplifying',
+    'optimizing',
+    'reviewing',
+    'submitted',
+    'waiting',
+    'paused',
+    'failed',
+  ] as const
+  const validatedState =
+    demoState && (validStates as readonly string[]).includes(demoState)
+      ? (demoState as (typeof validStates)[number])
+      : undefined
   useProjectStore.setState({
     ...(validatedState ? { state: validatedState } : {}),
     forks: [
-      { id: 'fork-1', label: 'approach-a', branch: 'fork/approach-a', worktree_dir: '/tmp/fork-a', checkpoint_sha: 'abc1234', state: 'active', created_at: now },
-      { id: 'fork-2', label: 'approach-b', branch: 'fork/approach-b', worktree_dir: '/tmp/fork-b', checkpoint_sha: 'def5678', state: 'active', created_at: now },
+      {
+        id: 'fork-1',
+        label: 'approach-a',
+        branch: 'fork/approach-a',
+        worktree_dir: '/tmp/fork-a',
+        checkpoint_sha: 'abc1234',
+        state: 'active',
+        created_at: now,
+      },
+      {
+        id: 'fork-2',
+        label: 'approach-b',
+        branch: 'fork/approach-b',
+        worktree_dir: '/tmp/fork-b',
+        checkpoint_sha: 'def5678',
+        state: 'active',
+        created_at: now,
+      },
     ],
     riskScore: { score: 0.35, factors: { diff_size: 0.2, sensitive_paths: 0.1, file_count: 0.05 }, level: 'low' },
     phaseProgress: { percent: 65, eta: 135, calibrated: true },
     autoFixStatus: { active: true, attempt: 1, maxAttempts: 3 },
     cacheStats: { enabled: true, entries: 42, hits: 28, misses: 14, hit_rate: 0.667, tokens_saved: 12500 },
-    reviews: [
-      { number: 1, timestamp: now, approved: false, message: 'Demo review with persona findings' },
-    ],
+    reviews: [{ number: 1, timestamp: now, approved: false, message: 'Demo review with persona findings' }],
     reviewDetails: {
       1: {
-        number: 1, timestamp: now, approved: false, message: 'Demo review with persona findings',
+        number: 1,
+        timestamp: now,
+        approved: false,
+        message: 'Demo review with persona findings',
         content: 'Automated review found several issues across security, performance, and maintainability.',
         findings: [
           '[security] SQL injection risk in query builder',
@@ -61,12 +93,15 @@ if (DEMO_MODE) {
   useGlobalStore.setState({
     taskGroups: [
       {
-        id: 'group-1', label: 'Auth Refactor', status: 'active',
+        id: 'group-1',
+        label: 'Auth Refactor',
+        status: 'active',
         tasks: [
           { project_dir: '/workspace/api', task_id: 'task-1', state: 'implemented' },
           { project_dir: '/workspace/web', task_id: 'task-2', state: 'planning' },
         ],
-        created_at: now, updated_at: now,
+        created_at: now,
+        updated_at: now,
       },
     ],
   })
@@ -118,7 +153,7 @@ export default function App() {
 
     const savedProjectId = sessionStorage.getItem('kvelmo-selectedProjectId')
     if (savedProjectId && projects.length > 0) {
-      const project = projects.find(p => p.id === savedProjectId)
+      const project = projects.find((p) => p.id === savedProjectId)
       if (project) {
         selectProject(project)
       } else {
@@ -151,7 +186,7 @@ export default function App() {
     selectProject({
       id: 'demo-project',
       path: '/Users/demo/workspace/my-project',
-      state: 'idle'
+      state: 'idle',
     })
   }, [selectedProject, selectProject])
 
@@ -160,7 +195,9 @@ export default function App() {
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
       onClick={() => setShowHelp(false)}
-      onKeyDown={(e) => { if (e.key === 'Escape') setShowHelp(false) }}
+      onKeyDown={(e) => {
+        if (e.key === 'Escape') setShowHelp(false)
+      }}
       role="button"
       tabIndex={0}
       aria-label="Close keyboard shortcuts dialog"
@@ -173,24 +210,21 @@ export default function App() {
       >
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-semibold">Keyboard Shortcuts</h2>
-          <button
-            className="btn btn-ghost btn-sm"
-            onClick={() => setShowHelp(false)}
-            aria-label="Close"
-          >
+          <button className="btn btn-ghost btn-sm" onClick={() => setShowHelp(false)} aria-label="Close">
             Esc
           </button>
         </div>
         {Object.entries(
-          SHORTCUTS.filter(s => !s.devOnly || mode === 'developer').reduce<Record<string, typeof SHORTCUTS>>((acc, s) => {
-            ;(acc[s.section] ??= []).push(s)
-            return acc
-          }, {})
+          SHORTCUTS.filter((s) => !s.devOnly || mode === 'developer').reduce<Record<string, typeof SHORTCUTS>>(
+            (acc, s) => {
+              ;(acc[s.section] ??= []).push(s)
+              return acc
+            },
+            {},
+          ),
         ).map(([section, items]) => (
           <div key={section} className="mb-3">
-            <h3 className="text-xs font-semibold uppercase text-base-content/50 mb-1">
-              {section}
-            </h3>
+            <h3 className="text-xs font-semibold uppercase text-base-content/50 mb-1">{section}</h3>
             {items.map((s) => (
               <div key={s.keys} className="flex justify-between py-1">
                 <span className="text-sm text-base-content/80">{s.description}</span>
@@ -208,14 +242,18 @@ export default function App() {
     return (
       <ErrorBoundary>
         <main id="main-content" tabIndex={-1} className="min-h-screen bg-base-100 transition-colors">
-          {!isViewModeHydrated() ? null : (
-            selectedProject
-              ? (isFirstVisit ? <ModePickerModal /> : (mode === 'simple' ? <SimpleProjectView /> : <ProjectView />))
-              : (
-                <div className="h-screen flex items-center justify-center">
-                  <span className="loading loading-spinner loading-lg"></span>
-                </div>
-              )
+          {!isViewModeHydrated() ? null : selectedProject ? (
+            isFirstVisit ? (
+              <ModePickerModal />
+            ) : mode === 'simple' ? (
+              <SimpleProjectView />
+            ) : (
+              <ProjectView />
+            )
+          ) : (
+            <div className="h-screen flex items-center justify-center">
+              <span className="loading loading-spinner loading-lg"></span>
+            </div>
           )}
         </main>
         {helpOverlay}
@@ -241,8 +279,12 @@ export default function App() {
       <ErrorBoundary>
         <main id="main-content" tabIndex={-1} className="min-h-screen bg-base-100 flex items-center justify-center">
           <div className="text-center">
-            <div className="text-error text-6xl mb-4" aria-hidden="true">!</div>
-            <p className="text-base-content mb-4" role="alert">Failed to connect to server</p>
+            <div className="text-error text-6xl mb-4" aria-hidden="true">
+              !
+            </div>
+            <p className="text-base-content mb-4" role="alert">
+              Failed to connect to server
+            </p>
             <button onClick={() => connect()} className="btn btn-primary">
               Retry
             </button>
@@ -256,10 +298,16 @@ export default function App() {
     <ErrorBoundary>
       <main id="main-content" tabIndex={-1} className="min-h-screen bg-base-100 transition-colors">
         <StateAnnouncer />
-        {!isViewModeHydrated() ? null : (
-          selectedProject
-            ? (isFirstVisit ? <ModePickerModal /> : (mode === 'simple' ? <SimpleProjectView /> : <ProjectView />))
-            : <GlobalView />
+        {!isViewModeHydrated() ? null : selectedProject ? (
+          isFirstVisit ? (
+            <ModePickerModal />
+          ) : mode === 'simple' ? (
+            <SimpleProjectView />
+          ) : (
+            <ProjectView />
+          )
+        ) : (
+          <GlobalView />
         )}
       </main>
       {helpOverlay}

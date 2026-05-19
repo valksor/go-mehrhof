@@ -1,8 +1,10 @@
-@import "tailwindcss";
-@import "@fontsource-variable/inter";
-@import "@fontsource-variable/jetbrains-mono";
+@import 'tailwindcss';
+@import '@fontsource-variable/inter';
+@import '@fontsource-variable/jetbrains-mono';
 @plugin "daisyui" {
-  themes: corporate --default, business;
+  themes:
+    corporate --default,
+    business;
 }
 
 /* ============================================
@@ -10,15 +12,17 @@
    ============================================ */
 
 @theme {
-  --font-sans: "Inter Variable", ui-sans-serif, system-ui, -apple-system, sans-serif;
-  --font-mono: "JetBrains Mono Variable", ui-monospace, SFMono-Regular, monospace;
+  --font-sans: 'Inter Variable', ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono Variable', ui-monospace, SFMono-Regular, monospace;
 }
 
 /* ============================================
    BASE STYLES
    ============================================ */
 
-html, body, #root {
+html,
+body,
+#root {
   height: 100%;
 }
 
@@ -27,10 +31,14 @@ body {
   font-optical-sizing: auto;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  font-feature-settings: "cv01", "cv02", "ss01";
+  font-feature-settings: 'cv01', 'cv02', 'ss01';
 }
 
-code, pre, kbd, samp, .font-mono {
+code,
+pre,
+kbd,
+samp,
+.font-mono {
   font-feature-settings: normal;
 }
 
@@ -38,9 +46,15 @@ code, pre, kbd, samp, .font-mono {
    TEXT HIERARCHY
    ============================================ */
 
-.text-1 { color: oklch(var(--bc) / 0.92); }
-.text-2 { color: oklch(var(--bc) / 0.65); }
-.text-3 { color: oklch(var(--bc) / 0.42); }
+.text-1 {
+  color: oklch(var(--bc) / 0.92);
+}
+.text-2 {
+  color: oklch(var(--bc) / 0.65);
+}
+.text-3 {
+  color: oklch(var(--bc) / 0.42);
+}
 
 /* ============================================
    CUSTOM COMPONENT STYLES
@@ -223,7 +237,8 @@ code, pre, kbd, samp, .font-mono {
 }
 
 @keyframes pulse-glow {
-  0%, 100% {
+  0%,
+  100% {
     opacity: 1;
     box-shadow: 0 0 6px oklch(var(--su) / 0.3);
   }
@@ -397,7 +412,9 @@ code, pre, kbd, samp, .font-mono {
    ============================================ */
 
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
+  *,
+  *::before,
+  *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;

@@ -34,13 +34,22 @@ let fixture: TestFixture
 
 // ─── WebSocket API helpers ────────────────────────────────────────────────────
 
-async function callWebSocketAPI(wsUrl: string, id: string, method: string, params: Record<string, unknown> = {}): Promise<unknown> {
+async function callWebSocketAPI(
+  wsUrl: string,
+  id: string,
+  method: string,
+  params: Record<string, unknown> = {},
+): Promise<unknown> {
   const WebSocket = (await import('ws')).default
   const ws = new WebSocket(wsUrl)
 
   return new Promise((resolve, reject) => {
     let settled = false
-    const timeout = setTimeout(() => { settled = true; ws.close(); reject(new Error(`Timeout calling ${method}`)) }, 30000)
+    const timeout = setTimeout(() => {
+      settled = true
+      ws.close()
+      reject(new Error(`Timeout calling ${method}`))
+    }, 30000)
     let buffer = ''
 
     ws.on('open', () => {
@@ -54,15 +63,25 @@ async function callWebSocketAPI(wsUrl: string, id: string, method: string, param
         try {
           const msg = JSON.parse(line)
           if (msg.id === id) {
-            clearTimeout(timeout); settled = true; ws.close()
+            clearTimeout(timeout)
+            settled = true
+            ws.close()
             msg.error ? reject(new Error(msg.error.message)) : resolve(msg.result)
             return
           }
-        } catch { /* ignore partial JSON */ }
+        } catch {
+          /* ignore partial JSON */
+        }
       }
     })
-    ws.on('error', (err: Error) => { clearTimeout(timeout); if (!settled) reject(err) })
-    ws.on('close', () => { clearTimeout(timeout); if (!settled) reject(new Error('WebSocket closed')) })
+    ws.on('error', (err: Error) => {
+      clearTimeout(timeout)
+      if (!settled) reject(err)
+    })
+    ws.on('close', () => {
+      clearTimeout(timeout)
+      if (!settled) reject(new Error('WebSocket closed'))
+    })
   })
 }
 
@@ -73,7 +92,10 @@ async function callWorktreeAPI(projectPath: string, method: string, params: any 
 }
 
 async function addProjectViaAPI(projectPath: string, socketPath?: string): Promise<void> {
-  await callWebSocketAPI('ws://localhost:6337/ws/global', 'add', 'projects.register', { path: projectPath, socket_path: socketPath || '' })
+  await callWebSocketAPI('ws://localhost:6337/ws/global', 'add', 'projects.register', {
+    path: projectPath,
+    socket_path: socketPath || '',
+  })
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -98,7 +120,7 @@ async function waitForState(projectPath: string, state: string, timeout = PHASE_
     const current = await getState(projectPath)
     if (current === state) return
     if (current === 'failed') throw new Error(`Task failed while waiting for ${state}`)
-    await new Promise(r => setTimeout(r, 2000))
+    await new Promise((r) => setTimeout(r, 2000))
   }
   throw new Error(`Timeout waiting for state ${state} (current: ${await getState(projectPath)})`)
 }
@@ -107,16 +129,21 @@ async function waitForState(projectPath: string, state: string, timeout = PHASE_
 
 async function skipOnboarding(page: Page) {
   await page.addInitScript(() => {
-    localStorage.setItem('kvelmo-viewMode', JSON.stringify({
-      state: { mode: 'developer', isFirstVisit: false },
-      version: 1,
-    }))
+    localStorage.setItem(
+      'kvelmo-viewMode',
+      JSON.stringify({
+        state: { mode: 'developer', isFirstVisit: false },
+        version: 1,
+      }),
+    )
   })
 
   // Dismiss onboarding via backend settings (prevents the welcome modal)
   try {
     await callGlobalAPI('settings.set', { scope: 'global', values: { 'ui.onboarding_dismissed': true } })
-  } catch { /* best effort — dismissOnboarding handles it via UI too */ }
+  } catch {
+    /* best effort — dismissOnboarding handles it via UI too */
+  }
 }
 
 async function dismissOnboarding(page: Page) {
@@ -171,7 +198,10 @@ test.describe('Full Task Lifecycle', () => {
   })
 
   test.afterAll(async () => {
-    if (fixture) { fixture.cleanup(); console.log('Fixture cleaned up') }
+    if (fixture) {
+      fixture.cleanup()
+      console.log('Fixture cleaned up')
+    }
   })
 
   test('complete workflow: load → plan → implement → simplify → optimize → review', async ({ page }) => {
@@ -186,11 +216,19 @@ test.describe('Full Task Lifecycle', () => {
     console.log('Initial state:', state)
 
     if (['planning', 'implementing', 'optimizing', 'simplifying', 'reviewing'].includes(state)) {
-      try { await callWorktreeAPI(fixture.repoPath, 'abort') } catch { /* ok */ }
+      try {
+        await callWorktreeAPI(fixture.repoPath, 'abort')
+      } catch {
+        /* ok */
+      }
       state = await getState(fixture.repoPath)
     }
     if (state === 'failed') {
-      try { await callWorktreeAPI(fixture.repoPath, 'reset') } catch { /* ok */ }
+      try {
+        await callWorktreeAPI(fixture.repoPath, 'reset')
+      } catch {
+        /* ok */
+      }
       state = await getState(fixture.repoPath)
     }
 
@@ -227,11 +265,15 @@ test.describe('Full Task Lifecycle', () => {
     try {
       execFileSync('go', ['build', './...'], { cwd: fixture.repoPath, stdio: 'pipe', timeout: 60_000 })
       console.log('Go build passed after implement')
-    } catch (err) { console.log('Go build failed after implement (may be fixed in simplify/optimize):', stderrOf(err)) }
+    } catch (err) {
+      console.log('Go build failed after implement (may be fixed in simplify/optimize):', stderrOf(err))
+    }
     try {
       execFileSync('go', ['test', './...'], { cwd: fixture.repoPath, stdio: 'pipe', timeout: 60_000 })
       console.log('Go tests passed after implement')
-    } catch (err) { console.log('Go tests failed after implement (may be fixed in simplify/optimize):', stderrOf(err)) }
+    } catch (err) {
+      console.log('Go tests failed after implement (may be fixed in simplify/optimize):', stderrOf(err))
+    }
 
     // ─── Simplify ───────────────────────────────────────────────────
     state = await getState(fixture.repoPath)
@@ -255,11 +297,15 @@ test.describe('Full Task Lifecycle', () => {
     try {
       execFileSync('go', ['build', './...'], { cwd: fixture.repoPath, stdio: 'pipe', timeout: 60_000 })
       console.log('Go build passed after optimize')
-    } catch (err) { console.log('Go build failed after optimize:', stderrOf(err)) }
+    } catch (err) {
+      console.log('Go build failed after optimize:', stderrOf(err))
+    }
     try {
       execFileSync('go', ['test', './...'], { cwd: fixture.repoPath, stdio: 'pipe', timeout: 60_000 })
       console.log('Go tests passed after optimize')
-    } catch (err) { console.log('Go tests failed after optimize:', stderrOf(err)) }
+    } catch (err) {
+      console.log('Go tests failed after optimize:', stderrOf(err))
+    }
 
     // ─── New feature API calls (best-effort) ─────────────────────────
     console.log('Testing new feature APIs...')
@@ -268,7 +314,9 @@ test.describe('Full Task Lifecycle', () => {
     try {
       const cacheResult = await callWorktreeAPI(fixture.repoPath, 'cache.stats')
       console.log('Cache stats:', JSON.stringify(cacheResult))
-    } catch (err) { console.log('cache.stats skipped:', err) }
+    } catch (err) {
+      console.log('cache.stats skipped:', err)
+    }
 
     // Risk evaluation
     try {
@@ -277,32 +325,42 @@ test.describe('Full Task Lifecycle', () => {
       if (riskResult) {
         expect(riskResult).toHaveProperty('score')
       }
-    } catch (err) { console.log('risk.evaluate skipped:', err) }
+    } catch (err) {
+      console.log('risk.evaluate skipped:', err)
+    }
 
     // Fork operations
     try {
       await callWorktreeAPI(fixture.repoPath, 'fork.create', { label: 'e2e-fork' })
       const forks = await callWorktreeAPI(fixture.repoPath, 'fork.list')
       console.log('Forks:', JSON.stringify(forks))
-    } catch (err) { console.log('fork ops skipped:', err) }
+    } catch (err) {
+      console.log('fork ops skipped:', err)
+    }
 
     // Failure classification
     try {
       const failclass = await callWorktreeAPI(fixture.repoPath, 'failclass.stats')
       console.log('Failclass stats:', JSON.stringify(failclass))
-    } catch (err) { console.log('failclass.stats skipped:', err) }
+    } catch (err) {
+      console.log('failclass.stats skipped:', err)
+    }
 
     // Autofix status
     try {
       const autofix = await callWorktreeAPI(fixture.repoPath, 'autofix.status')
       console.log('Autofix status:', JSON.stringify(autofix))
-    } catch (err) { console.log('autofix.status skipped:', err) }
+    } catch (err) {
+      console.log('autofix.status skipped:', err)
+    }
 
     // Progress (may be null if phase finished)
     try {
       const progress = await callWorktreeAPI(fixture.repoPath, 'progress.get')
       console.log('Progress:', JSON.stringify(progress))
-    } catch (err) { console.log('progress.get skipped:', err) }
+    } catch (err) {
+      console.log('progress.get skipped:', err)
+    }
 
     // ─── Undo / Redo ────────────────────────────────────────────────
     try {
@@ -326,12 +384,16 @@ test.describe('Full Task Lifecycle', () => {
     try {
       const advResults = await callWorktreeAPI(fixture.repoPath, 'adversarial.results')
       console.log('Adversarial results:', JSON.stringify(advResults))
-    } catch (err) { console.log('adversarial.results skipped:', err) }
+    } catch (err) {
+      console.log('adversarial.results skipped:', err)
+    }
 
     try {
       const riskHistory = await callWorktreeAPI(fixture.repoPath, 'risk.history')
       console.log('Risk history:', JSON.stringify(riskHistory))
-    } catch (err) { console.log('risk.history skipped:', err) }
+    } catch (err) {
+      console.log('risk.history skipped:', err)
+    }
 
     // ─── Submit (best-effort — needs GitHub token) ──────────────────
     try {
@@ -357,10 +419,22 @@ test.describe('Full Task Lifecycle', () => {
     // Reset from any previous state
     let state = await getState(fixture.repoPath)
     if (state !== 'none' && state !== 'loaded') {
-      try { await callWorktreeAPI(fixture.repoPath, 'abort') } catch { /* ok */ }
-      try { await callWorktreeAPI(fixture.repoPath, 'reset') } catch { /* ok */ }
-      try { await callWorktreeAPI(fixture.repoPath, 'abandon') } catch { /* ok */ }
-      await new Promise(r => setTimeout(r, 1000))
+      try {
+        await callWorktreeAPI(fixture.repoPath, 'abort')
+      } catch {
+        /* ok */
+      }
+      try {
+        await callWorktreeAPI(fixture.repoPath, 'reset')
+      } catch {
+        /* ok */
+      }
+      try {
+        await callWorktreeAPI(fixture.repoPath, 'abandon')
+      } catch {
+        /* ok */
+      }
+      await new Promise((r) => setTimeout(r, 1000))
     }
 
     // Load and plan
@@ -383,8 +457,13 @@ test.describe('Full Task Lifecycle', () => {
     // Verify SimpleProjectView rendered (has "Plan ready" or simple layout markers)
     const simpleIndicator = page.getByText('Plan ready', { exact: false })
     const simpleModeBtn = page.getByRole('button', { name: 'Simple' })
-    const isSimple = await simpleIndicator.isVisible().catch(() => false) ||
-                     (await simpleModeBtn.isVisible().catch(() => false) && await simpleModeBtn.getAttribute('class').then(c => c?.includes('btn-primary')).catch(() => false))
+    const isSimple =
+      (await simpleIndicator.isVisible().catch(() => false)) ||
+      ((await simpleModeBtn.isVisible().catch(() => false)) &&
+        (await simpleModeBtn
+          .getAttribute('class')
+          .then((c) => c?.includes('btn-primary'))
+          .catch(() => false)))
     if (isSimple) {
       console.log('Switched to Simple mode — UI updated')
     } else {

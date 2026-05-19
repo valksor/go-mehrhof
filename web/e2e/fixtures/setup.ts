@@ -14,7 +14,18 @@
  */
 
 import { execFileSync } from 'child_process'
-import { mkdtempSync, writeFileSync, rmSync, existsSync, mkdirSync, realpathSync, readdirSync, readFileSync, statSync, cpSync } from 'fs'
+import {
+  mkdtempSync,
+  writeFileSync,
+  rmSync,
+  existsSync,
+  mkdirSync,
+  realpathSync,
+  readdirSync,
+  readFileSync,
+  statSync,
+  cpSync,
+} from 'fs'
 import { tmpdir, homedir } from 'os'
 import { join, resolve } from 'path'
 import { createHash } from 'crypto'
@@ -85,18 +96,21 @@ export function createTestFixture(): TestFixture {
   const agentName = process.env.KVELMO_E2E_AGENT || 'ollama'
   const valksorDir = join(repoPath, '.valksor')
   mkdirSync(valksorDir, { recursive: true })
-  writeFileSync(join(valksorDir, 'kvelmo.yaml'), [
-    'agent:',
-    `  default: ${agentName}`,
-    '  ollama:',
-    '    model: llama3.1',
-    'storage:',
-    '  save_in_project: true',
-    'workflow:',
-    '  external_review:',
-    '    mode: never',
-    '',
-  ].join('\n'))
+  writeFileSync(
+    join(valksorDir, 'kvelmo.yaml'),
+    [
+      'agent:',
+      `  default: ${agentName}`,
+      '  ollama:',
+      '    model: llama3.1',
+      'storage:',
+      '  save_in_project: true',
+      'workflow:',
+      '  external_review:',
+      '    mode: never',
+      '',
+    ].join('\n'),
+  )
 
   // Commit task and config so the agent starts with a clean worktree
   execFileSync('git', ['add', '-A'], { cwd: repoPath, stdio: 'pipe' })
@@ -118,13 +132,24 @@ export function createTestFixture(): TestFixture {
     cleanup: () => {
       // Unregister project from server (sync call via curl to avoid async issues)
       try {
-        const hash = createHash('sha256').update(realpathSync(resolve(repoPath))).digest('hex').slice(0, 16)
-        execFileSync('curl', [
-          '-s', '-X', 'POST',
-          '-H', 'Content-Type: application/json',
-          '-d', JSON.stringify({ jsonrpc: '2.0', id: 'cleanup', method: 'projects.unregister', params: { id: hash } }),
-          'http://localhost:6337/api/rpc'
-        ], { stdio: 'pipe', timeout: 5000 })
+        const hash = createHash('sha256')
+          .update(realpathSync(resolve(repoPath)))
+          .digest('hex')
+          .slice(0, 16)
+        execFileSync(
+          'curl',
+          [
+            '-s',
+            '-X',
+            'POST',
+            '-H',
+            'Content-Type: application/json',
+            '-d',
+            JSON.stringify({ jsonrpc: '2.0', id: 'cleanup', method: 'projects.unregister', params: { id: hash } }),
+            'http://localhost:6337/api/rpc',
+          ],
+          { stdio: 'pipe', timeout: 5000 },
+        )
       } catch {
         // Server may not be running during cleanup - that's OK
       }
@@ -169,8 +194,10 @@ function cleanupOrphanedTaskState(): void {
         if (match) {
           let worktreePath = match[1].trim()
           // Strip surrounding quotes if present (YAML may quote paths with spaces)
-          if ((worktreePath.startsWith('"') && worktreePath.endsWith('"')) ||
-              (worktreePath.startsWith("'") && worktreePath.endsWith("'"))) {
+          if (
+            (worktreePath.startsWith('"') && worktreePath.endsWith('"')) ||
+            (worktreePath.startsWith("'") && worktreePath.endsWith("'"))
+          ) {
             worktreePath = worktreePath.slice(1, -1)
           }
           // If worktree_path doesn't exist, this is orphaned state

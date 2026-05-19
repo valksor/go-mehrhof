@@ -16,9 +16,12 @@ export default tseslint.config(
       // Async without await is often intentional
       '@typescript-eslint/require-await': 'off',
       // onClick={async () => ...} is standard React
-      '@typescript-eslint/no-misused-promises': ['error', {
-        checksVoidReturn: { attributes: false },
-      }],
+      '@typescript-eslint/no-misused-promises': [
+        'error',
+        {
+          checksVoidReturn: { attributes: false },
+        },
+      ],
     },
     languageOptions: {
       parserOptions: {
