@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"slices"
 	"time"
 )
 
@@ -189,8 +190,8 @@ func (c *Conductor) GotoCheckpoint(ctx context.Context, sha string) error {
 
 	// Only mutate in-memory state after git succeeds
 	// Newer checkpoints move to redo stack in reverse order so redo restores them in sequence
-	for i := len(newer) - 1; i >= 0; i-- {
-		c.workUnit.RedoStack = append(c.workUnit.RedoStack, newer[i])
+	for _, v := range slices.Backward(newer) {
+		c.workUnit.RedoStack = append(c.workUnit.RedoStack, v)
 	}
 	c.workUnit.Checkpoints = c.workUnit.Checkpoints[:idx+1]
 

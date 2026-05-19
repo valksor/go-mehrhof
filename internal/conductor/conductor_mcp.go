@@ -21,6 +21,13 @@ const (
 	PhaseSimplify  = "simplify"
 	PhaseOptimize  = "optimize"
 	PhaseReview    = "review"
+	PhaseSubmit    = "submit"
+)
+
+// Guard failure messages reused across state_table transitions.
+const (
+	msgNoCheckpointsToUndo = "no checkpoints to undo"
+	msgNoImplementationYet = "no implementation yet. Run implement first"
 )
 
 // Artifact kinds accepted by SaveArtifact when called via the MCP server's

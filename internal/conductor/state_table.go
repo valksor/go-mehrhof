@@ -72,7 +72,7 @@ var TransitionTable = map[TransitionKey][]Transition{
 	},
 	{StateImplementing, EventUndo}: {
 		{From: StateImplementing, Event: EventUndo, To: StateImplementing, Guards: []Guard{
-			{Check: guardCanUndo, Message: "no checkpoints to undo"},
+			{Check: guardCanUndo, Message: msgNoCheckpointsToUndo},
 		}},
 	},
 
@@ -161,17 +161,17 @@ var TransitionTable = map[TransitionKey][]Transition{
 	// === Undo/Redo from stable states ===
 	{StateLoaded, EventUndo}: {
 		{From: StateLoaded, Event: EventUndo, To: StateLoaded, Guards: []Guard{
-			{Check: guardCanUndo, Message: "no checkpoints to undo"},
+			{Check: guardCanUndo, Message: msgNoCheckpointsToUndo},
 		}},
 	},
 	{StatePlanned, EventUndo}: {
 		{From: StatePlanned, Event: EventUndo, To: StatePlanned, Guards: []Guard{
-			{Check: guardCanUndo, Message: "no checkpoints to undo"},
+			{Check: guardCanUndo, Message: msgNoCheckpointsToUndo},
 		}},
 	},
 	{StateImplemented, EventUndo}: {
 		{From: StateImplemented, Event: EventUndo, To: StateImplemented, Guards: []Guard{
-			{Check: guardCanUndo, Message: "no checkpoints to undo"},
+			{Check: guardCanUndo, Message: msgNoCheckpointsToUndo},
 		}},
 	},
 	{StateLoaded, EventRedo}: {
@@ -266,29 +266,29 @@ var TransitionTable = map[TransitionKey][]Transition{
 	// Simplify/optimize from any stable state (where code exists)
 	{StatePlanned, EventSimplify}: {
 		{From: StatePlanned, Event: EventSimplify, To: StateSimplifying, Guards: []Guard{
-			{Check: guardHasImplementation, Message: "no implementation yet. Run implement first"},
+			{Check: guardHasImplementation, Message: msgNoImplementationYet},
 		}},
 	},
 	{StatePlanned, EventOptimize}: {
 		{From: StatePlanned, Event: EventOptimize, To: StateOptimizing, Guards: []Guard{
-			{Check: guardHasImplementation, Message: "no implementation yet. Run implement first"},
+			{Check: guardHasImplementation, Message: msgNoImplementationYet},
 		}},
 	},
 	{StateSubmitted, EventSimplify}: {
 		{From: StateSubmitted, Event: EventSimplify, To: StateSimplifying, Guards: []Guard{
-			{Check: guardHasImplementation, Message: "no implementation yet. Run implement first"},
+			{Check: guardHasImplementation, Message: msgNoImplementationYet},
 		}},
 	},
 	{StateSubmitted, EventOptimize}: {
 		{From: StateSubmitted, Event: EventOptimize, To: StateOptimizing, Guards: []Guard{
-			{Check: guardHasImplementation, Message: "no implementation yet. Run implement first"},
+			{Check: guardHasImplementation, Message: msgNoImplementationYet},
 		}},
 	},
 
 	// Review from any stable state (where code exists)
 	{StatePlanned, EventReview}: {
 		{From: StatePlanned, Event: EventReview, To: StateReviewing, Guards: []Guard{
-			{Check: guardHasImplementation, Message: "no implementation yet. Run implement first"},
+			{Check: guardHasImplementation, Message: msgNoImplementationYet},
 		}},
 	},
 	{StateSubmitted, EventReview}: {
@@ -298,7 +298,7 @@ var TransitionTable = map[TransitionKey][]Transition{
 	// Undo/Redo from Submitted
 	{StateSubmitted, EventUndo}: {
 		{From: StateSubmitted, Event: EventUndo, To: StateSubmitted, Guards: []Guard{
-			{Check: guardCanUndo, Message: "no checkpoints to undo"},
+			{Check: guardCanUndo, Message: msgNoCheckpointsToUndo},
 		}},
 	},
 	{StateSubmitted, EventRedo}: {

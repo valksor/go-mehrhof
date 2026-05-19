@@ -14,6 +14,7 @@ import (
 	"github.com/valksor/kvelmo/internal/graph"
 	"github.com/valksor/kvelmo/internal/memory"
 	"github.com/valksor/kvelmo/internal/security"
+	"github.com/valksor/kvelmo/internal/worker"
 	"github.com/valksor/kvelmo/metrics"
 )
 
@@ -228,7 +229,7 @@ func (c *Conductor) watchJob(ctx context.Context, jobID string, completionEvent 
 			Message: event.Content,
 		})
 
-		if event.Type == "job_completed" {
+		if event.Type == worker.EventJobCompleted {
 			c.mu.Lock()
 			c.activeJobID = "" // Clear active job on completion
 			var (
@@ -247,7 +248,7 @@ func (c *Conductor) watchJob(ctx context.Context, jobID string, completionEvent 
 					c.detectSpecificationFiles()
 					if len(c.workUnit.Specifications) == 0 {
 						err := errors.New("plan phase produced no specification file (agent did not write required deliverable)")
-						c.emitEnrichedError(err, "plan")
+						c.emitEnrichedError(err, PhasePlan)
 						_ = c.machine.Dispatch(ctx, EventError)
 						c.persistState()
 						c.mu.Unlock()
@@ -400,7 +401,7 @@ func (c *Conductor) watchJob(ctx context.Context, jobID string, completionEvent 
 			return
 		}
 
-		if event.Type == "job_failed" {
+		if event.Type == worker.EventJobFailed {
 			c.mu.Lock()
 			c.activeJobID = "" // Clear active job on failure
 
@@ -434,7 +435,7 @@ func (c *Conductor) watchJob(ctx context.Context, jobID string, completionEvent 
 			c.mu.Unlock()
 
 			c.emit(ConductorEvent{
-				Type:    "job_failed",
+				Type:    worker.EventJobFailed,
 				JobID:   jobID,
 				Error:   event.Content,
 				Message: "Job failed",

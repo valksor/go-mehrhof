@@ -22,7 +22,7 @@ func (c *Conductor) Plan(ctx context.Context) (string, error) {
 
 	if c.workUnit == nil {
 		err := errors.New("no task loaded")
-		c.emitEnrichedError(err, "plan")
+		c.emitEnrichedError(err, PhasePlan)
 
 		return "", err
 	}
@@ -30,7 +30,7 @@ func (c *Conductor) Plan(ctx context.Context) (string, error) {
 	// Check pool BEFORE transitioning state to avoid leaving machine in bad state
 	if c.pool == nil {
 		err := errors.New("no worker pool available")
-		c.emitEnrichedError(err, "plan")
+		c.emitEnrichedError(err, PhasePlan)
 
 		return "", err
 	}
@@ -44,7 +44,7 @@ func (c *Conductor) Plan(ctx context.Context) (string, error) {
 	c.mu.Unlock()
 	if err := c.RunTransitionHooks(ctx, EventPlan); err != nil {
 		c.mu.Lock() // Re-lock so deferred Unlock is balanced
-		c.emitEnrichedError(err, "plan")
+		c.emitEnrichedError(err, PhasePlan)
 
 		return "", err
 	}
@@ -58,24 +58,24 @@ func (c *Conductor) Plan(ctx context.Context) (string, error) {
 	}
 
 	// Clear per-phase transient state to prevent leakage across re-entries.
-	c.resetPhaseState("plan")
+	c.resetPhaseState(PhasePlan)
 
 	// Dispatch plan event to transition state
 	if err := c.machine.Dispatch(ctx, EventPlan); err != nil {
 		c.machine.ClearPriorStableState()
 		wrapped := fmt.Errorf("cannot plan: %w", err)
-		c.emitEnrichedError(wrapped, "plan")
+		c.emitEnrichedError(wrapped, PhasePlan)
 
 		return "", wrapped
 	}
 
 	// Run pre-phase guardrails (release lock during execution).
 	c.mu.Unlock()
-	if err := c.runPreGuardrails(ctx, "plan"); err != nil {
+	if err := c.runPreGuardrails(ctx, PhasePlan); err != nil {
 		c.mu.Lock()
 		// Rollback state transition.
 		_ = c.machine.Dispatch(ctx, EventError)
-		c.emitEnrichedError(err, "plan")
+		c.emitEnrichedError(err, PhasePlan)
 
 		return "", err
 	}
@@ -98,7 +98,7 @@ func (c *Conductor) Plan(ctx context.Context) (string, error) {
 		false,
 	)
 	prompt := c.buildPlanPromptForComplexity(complexity, existingSpecs)
-	prompt = c.applyStrategy(ctx, "plan", prompt)
+	prompt = c.applyStrategy(ctx, PhasePlan, prompt)
 
 	c.setupCanaryHarness()
 
@@ -117,8 +117,8 @@ func (c *Conductor) Plan(ctx context.Context) (string, error) {
 	c.persistState()
 
 	c.phaseStartedAt = time.Now()
-	c.initProgressEstimator("plan")
-	c.emitEventLog(eventlog.Entry{Type: eventlog.EventPhaseStarted, Phase: "plan"})
+	c.initProgressEstimator(PhasePlan)
+	c.emitEventLog(eventlog.Entry{Type: eventlog.EventPhaseStarted, Phase: PhasePlan})
 	c.emit(ConductorEvent{
 		Type:    "planning_started",
 		State:   c.machine.State(),

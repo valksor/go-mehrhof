@@ -21,7 +21,7 @@ func (c *Conductor) Review(ctx context.Context, fix bool) error {
 	if c.workUnit == nil {
 		err := errors.New("no task loaded")
 		c.mu.Unlock()
-		c.emitEnrichedError(err, "review")
+		c.emitEnrichedError(err, PhaseReview)
 
 		return err
 	}
@@ -30,7 +30,7 @@ func (c *Conductor) Review(ctx context.Context, fix bool) error {
 	if fix && c.pool == nil {
 		err := errors.New("no worker pool available")
 		c.mu.Unlock()
-		c.emitEnrichedError(err, "review")
+		c.emitEnrichedError(err, PhaseReview)
 
 		return err
 	}
@@ -40,7 +40,7 @@ func (c *Conductor) Review(ctx context.Context, fix bool) error {
 	if err := c.RunTransitionHooks(ctx, EventReview); err != nil {
 		// Review() does NOT use defer c.mu.Unlock() — explicit lock management.
 		// No re-lock needed here.
-		c.emitEnrichedError(err, "review")
+		c.emitEnrichedError(err, PhaseReview)
 
 		return err
 	}
@@ -57,7 +57,7 @@ func (c *Conductor) Review(ctx context.Context, fix bool) error {
 		c.machine.ClearPriorStableState()
 		wrapped := fmt.Errorf("cannot review: %w", err)
 		c.mu.Unlock()
-		c.emitEnrichedError(wrapped, "review")
+		c.emitEnrichedError(wrapped, PhaseReview)
 
 		return wrapped
 	}
@@ -298,7 +298,7 @@ func (c *Conductor) watchSpecAlignmentJob(ctx context.Context, pool *worker.Pool
 			if !ok {
 				goto done
 			}
-			if event.Type == "job_completed" {
+			if event.Type == worker.EventJobCompleted {
 				result = event.Content
 			}
 		}

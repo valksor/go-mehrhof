@@ -90,7 +90,7 @@ func eventDescription(e Event) string {
 	case EventReviewDone:
 		return "complete review"
 	case EventSubmit:
-		return "submit"
+		return PhaseSubmit
 	case EventFinish:
 		return "finish task"
 	case EventUndo:

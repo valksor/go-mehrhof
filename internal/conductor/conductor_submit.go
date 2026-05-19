@@ -30,7 +30,7 @@ func (c *Conductor) Submit(ctx context.Context, deleteBranch bool) error {
 	if c.workUnit == nil {
 		err := errors.New("no task loaded")
 		c.mu.Unlock()
-		c.emitEnrichedError(err, "submit")
+		c.emitEnrichedError(err, PhaseSubmit)
 
 		return err
 	}
@@ -82,7 +82,7 @@ func (c *Conductor) Submit(ctx context.Context, deleteBranch bool) error {
 	// Run pre-transition hooks (release lock during shell execution)
 	c.mu.Unlock()
 	if err := c.RunTransitionHooks(ctx, EventSubmit); err != nil {
-		c.emitEnrichedError(err, "submit")
+		c.emitEnrichedError(err, PhaseSubmit)
 
 		return err
 	}
@@ -121,7 +121,7 @@ func (c *Conductor) Submit(ctx context.Context, deleteBranch bool) error {
 			MinSpecSections:     policyCfg.MinSpecSections,
 			RequireSecurityScan: policyCfg.RequireSecurityScan,
 			DocRequirements:     docReqs,
-		}, "submit", state, specs, changedPaths)
+		}, PhaseSubmit, state, specs, changedPaths)
 		if policy.HasBlockingViolation(violations) {
 			var msgs []string
 			for _, v := range violations {
@@ -301,7 +301,7 @@ func (c *Conductor) Submit(ctx context.Context, deleteBranch bool) error {
 		slog.Info("submit: pushing branch", "branch", branch)
 		if err := repo.Push(ctx, "origin", branch); err != nil {
 			wrapped := fmt.Errorf("push branch %s: %w", branch, err)
-			c.emitEnrichedError(wrapped, "submit")
+			c.emitEnrichedError(wrapped, PhaseSubmit)
 
 			return wrapped
 		}
@@ -384,7 +384,7 @@ func (c *Conductor) Submit(ctx context.Context, deleteBranch bool) error {
 						// PR creation failed - state remains in StateReviewing (not terminal)
 						slog.Error("failed to create PR", "error", err, "branch", branch)
 						wrapped := fmt.Errorf("create PR: %w", err)
-						c.emitEnrichedError(wrapped, "submit")
+						c.emitEnrichedError(wrapped, PhaseSubmit)
 
 						return wrapped
 					}

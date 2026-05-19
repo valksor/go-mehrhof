@@ -9,6 +9,7 @@ import (
 
 	"github.com/valksor/kvelmo/internal/graph"
 	"github.com/valksor/kvelmo/internal/memory"
+	"github.com/valksor/kvelmo/internal/worker"
 )
 
 // watchGraph monitors a graph scheduler execution and handles completion.
@@ -170,7 +171,7 @@ func (c *Conductor) handleGraphCompletion(ctx context.Context, sched *graph.Sche
 		c.mu.Unlock()
 
 		c.emit(ConductorEvent{
-			Type:    "job_failed",
+			Type:    worker.EventJobFailed,
 			Error:   errMsg,
 			Message: "Graph execution failed",
 		})

@@ -67,7 +67,7 @@ func (c *Conductor) runQualityAutoFix(ctx context.Context, qualityErr error) err
 
 		// Dispatch fix job
 		c.mu.Lock()
-		opts := c.buildJobOptionsForPhase("implement")
+		opts := c.buildJobOptionsForPhase(PhaseImplement)
 		workDir := c.getWorkDir()
 		c.mu.Unlock()
 
@@ -180,11 +180,11 @@ func (c *Conductor) waitForAutoFixJob(ctx context.Context, pool *worker.Pool, jo
 				Message: event.Content,
 			})
 
-			if event.Type == "job_completed" {
+			if event.Type == worker.EventJobCompleted {
 				return nil
 			}
 
-			if event.Type == "job_failed" {
+			if event.Type == worker.EventJobFailed {
 				return fmt.Errorf("auto-fix job failed: %s", event.Content)
 			}
 		}
@@ -195,13 +195,13 @@ func (c *Conductor) waitForAutoFixJob(ctx context.Context, pool *worker.Pool, jo
 func stateToPhase(s State) string {
 	switch s {
 	case StatePlanning:
-		return "plan"
+		return PhasePlan
 	case StateImplementing:
-		return "implement"
+		return PhaseImplement
 	case StateSimplifying:
-		return "simplify"
+		return PhaseSimplify
 	case StateOptimizing:
-		return "optimize"
+		return PhaseOptimize
 	case StateNone, StateLoaded, StatePlanned, StateImplemented,
 		StateReviewing, StateSubmitted, StateFailed, StateWaiting, StatePaused:
 		return ""
@@ -236,7 +236,7 @@ func (c *Conductor) shouldAutoFix() bool {
 	phases := cfg.Phases
 	if len(phases) == 0 {
 		// Default phases when none configured
-		phases = []string{"implement", "simplify", "optimize"}
+		phases = []string{PhaseImplement, PhaseSimplify, PhaseOptimize}
 	}
 
 	return slices.Contains(phases, phase)

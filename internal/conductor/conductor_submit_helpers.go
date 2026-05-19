@@ -27,8 +27,8 @@ func (c *Conductor) checkRequiredPhases(requiredPhases []string) error {
 	history := c.machine.History()
 	// Find the most recent EventSubmit to scope the check to the current cycle
 	sinceIdx := 0
-	for i := len(history) - 1; i >= 0; i-- {
-		if history[i].Event == EventSubmit {
+	for i, v := range slices.Backward(history) {
+		if v.Event == EventSubmit {
 			sinceIdx = i + 1
 
 			break
@@ -36,11 +36,11 @@ func (c *Conductor) checkRequiredPhases(requiredPhases []string) error {
 	}
 	recentHistory := history[sinceIdx:]
 	phaseEventMap := map[string]Event{
-		"plan":      EventPlanDone,
-		"implement": EventImplementDone,
-		"review":    EventReviewDone,
-		"simplify":  EventSimplifyDone,
-		"optimize":  EventOptimizeDone,
+		PhasePlan:      EventPlanDone,
+		PhaseImplement: EventImplementDone,
+		PhaseReview:    EventReviewDone,
+		PhaseSimplify:  EventSimplifyDone,
+		PhaseOptimize:  EventOptimizeDone,
 	}
 	for _, phase := range requiredPhases {
 		doneEvent, ok := phaseEventMap[phase]
@@ -75,8 +75,8 @@ func (c *Conductor) checkSensitivePaths(sensitivePaths []string, changedFiles []
 	// matching the required-phases check above.
 	history := c.machine.History()
 	sinceIdx := 0
-	for i := len(history) - 1; i >= 0; i-- {
-		if history[i].Event == EventSubmit {
+	for i, v := range slices.Backward(history) {
+		if v.Event == EventSubmit {
 			sinceIdx = i + 1
 
 			break

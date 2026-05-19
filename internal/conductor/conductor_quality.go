@@ -364,7 +364,7 @@ func (c *Conductor) qualityGateExternalReview(ctx context.Context, workDir strin
 	reviewCtx, cancel := context.WithTimeout(ctx, externalReviewTimeout)
 	defer cancel()
 
-	cmd := exec.CommandContext(reviewCtx, toolPath, "review")
+	cmd := exec.CommandContext(reviewCtx, toolPath, PhaseReview)
 	cmd.Dir = workDir
 	output, runErr := cmd.CombinedOutput()
 	if runErr != nil {

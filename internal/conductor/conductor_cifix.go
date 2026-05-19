@@ -192,7 +192,7 @@ func (c *Conductor) attemptCIFix(ctx context.Context, ciLogs string, attempt int
 	prompt := buildCIFixPrompt(workUnit.Title, workUnit.Description, ciLogs, attempt)
 
 	c.mu.Lock()
-	opts := c.buildJobOptionsForPhase("implement")
+	opts := c.buildJobOptionsForPhase(PhaseImplement)
 	workDir := c.getWorkDir()
 	c.mu.Unlock()
 
@@ -236,11 +236,11 @@ func (c *Conductor) attemptCIFix(ctx context.Context, ciLogs string, attempt int
 				Message: event.Content,
 			})
 
-			if event.Type == "job_completed" {
+			if event.Type == worker.EventJobCompleted {
 				goto streamDone
 			}
 
-			if event.Type == "job_failed" {
+			if event.Type == worker.EventJobFailed {
 				jobErr = fmt.Errorf("CI fix job failed: %s", event.Content)
 
 				goto streamDone

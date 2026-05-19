@@ -21,7 +21,7 @@ func (c *Conductor) Implement(ctx context.Context) (string, error) {
 
 	if c.workUnit == nil {
 		err := errors.New("no task loaded")
-		c.emitEnrichedError(err, "implement")
+		c.emitEnrichedError(err, PhaseImplement)
 
 		return "", err
 	}
@@ -29,7 +29,7 @@ func (c *Conductor) Implement(ctx context.Context) (string, error) {
 	// Check pool BEFORE transitioning state to avoid leaving machine in bad state
 	if c.pool == nil {
 		err := errors.New("no worker pool available")
-		c.emitEnrichedError(err, "implement")
+		c.emitEnrichedError(err, PhaseImplement)
 
 		return "", err
 	}
@@ -54,7 +54,7 @@ func (c *Conductor) Implement(ctx context.Context) (string, error) {
 	c.mu.Unlock()
 	if err := c.RunTransitionHooks(ctx, EventImplement); err != nil {
 		c.mu.Lock() // Re-lock so deferred Unlock is balanced
-		c.emitEnrichedError(err, "implement")
+		c.emitEnrichedError(err, PhaseImplement)
 
 		return "", err
 	}
@@ -68,7 +68,7 @@ func (c *Conductor) Implement(ctx context.Context) (string, error) {
 	}
 
 	// Clear per-phase transient state to prevent leakage across re-entries.
-	c.resetPhaseState("implement")
+	c.resetPhaseState(PhaseImplement)
 
 	// Skip-plan: when implementing from loaded state, use description as implicit spec
 	skippingPlan := currentState == StateLoaded
@@ -77,7 +77,7 @@ func (c *Conductor) Implement(ctx context.Context) (string, error) {
 	if err := c.machine.Dispatch(ctx, EventImplement); err != nil {
 		c.machine.ClearPriorStableState()
 		wrapped := fmt.Errorf("cannot implement: %w", err)
-		c.emitEnrichedError(wrapped, "implement")
+		c.emitEnrichedError(wrapped, PhaseImplement)
 
 		return "", wrapped
 	}
@@ -88,11 +88,11 @@ func (c *Conductor) Implement(ctx context.Context) (string, error) {
 
 	// Run pre-phase guardrails (release lock during execution).
 	c.mu.Unlock()
-	if err := c.runPreGuardrails(ctx, "implement"); err != nil {
+	if err := c.runPreGuardrails(ctx, PhaseImplement); err != nil {
 		c.mu.Lock()
 		// Rollback state transition.
 		_ = c.machine.Dispatch(ctx, EventError)
-		c.emitEnrichedError(err, "implement")
+		c.emitEnrichedError(err, PhaseImplement)
 
 		return "", err
 	}
@@ -102,12 +102,12 @@ func (c *Conductor) Implement(ctx context.Context) (string, error) {
 	// Start watching spec files for mid-execution edits.
 	c.specWatcher = newSpecWatcher(c.workUnit.Specifications)
 
-	prompt := c.applyStrategy(ctx, "implement", c.buildImplementPrompt())
+	prompt := c.applyStrategy(ctx, PhaseImplement, c.buildImplementPrompt())
 	implJobType := worker.JobTypeImplement
 	if c.dryRun {
 		implJobType = worker.JobTypeDryRun
 	}
-	opts := c.buildJobOptionsForPhase("implement")
+	opts := c.buildJobOptionsForPhase(PhaseImplement)
 
 	var job *worker.Job
 	var err error
@@ -121,7 +121,7 @@ func (c *Conductor) Implement(ctx context.Context) (string, error) {
 		_ = c.machine.Dispatch(ctx, EventError)
 
 		wrapped := fmt.Errorf("submit implement job: %w", err)
-		c.emitEnrichedError(wrapped, "implement")
+		c.emitEnrichedError(wrapped, PhaseImplement)
 
 		return "", wrapped
 	}
@@ -133,8 +133,8 @@ func (c *Conductor) Implement(ctx context.Context) (string, error) {
 	c.persistState()
 
 	c.phaseStartedAt = time.Now()
-	c.initProgressEstimator("implement")
-	c.emitEventLog(eventlog.Entry{Type: eventlog.EventPhaseStarted, Phase: "implement"})
+	c.initProgressEstimator(PhaseImplement)
+	c.emitEventLog(eventlog.Entry{Type: eventlog.EventPhaseStarted, Phase: PhaseImplement})
 	c.emit(ConductorEvent{
 		Type:    "implementing_started",
 		State:   c.machine.State(),
@@ -157,7 +157,7 @@ func (c *Conductor) Optimize(ctx context.Context) (string, error) {
 
 	if c.workUnit == nil {
 		err := errors.New("no task loaded")
-		c.emitEnrichedError(err, "optimize")
+		c.emitEnrichedError(err, PhaseOptimize)
 
 		return "", err
 	}
@@ -165,7 +165,7 @@ func (c *Conductor) Optimize(ctx context.Context) (string, error) {
 	// Check pool BEFORE transitioning state to avoid leaving machine in bad state
 	if c.pool == nil {
 		err := errors.New("no worker pool available")
-		c.emitEnrichedError(err, "optimize")
+		c.emitEnrichedError(err, PhaseOptimize)
 
 		return "", err
 	}
@@ -174,7 +174,7 @@ func (c *Conductor) Optimize(ctx context.Context) (string, error) {
 	c.mu.Unlock()
 	if err := c.RunTransitionHooks(ctx, EventOptimize); err != nil {
 		c.mu.Lock() // Re-lock so deferred Unlock is balanced
-		c.emitEnrichedError(err, "optimize")
+		c.emitEnrichedError(err, PhaseOptimize)
 
 		return "", err
 	}
@@ -187,13 +187,13 @@ func (c *Conductor) Optimize(ctx context.Context) (string, error) {
 	}
 
 	// Clear per-phase transient state to prevent leakage across re-entries.
-	c.resetPhaseState("optimize")
+	c.resetPhaseState(PhaseOptimize)
 
 	// Dispatch optimize event to transition state
 	if err := c.machine.Dispatch(ctx, EventOptimize); err != nil {
 		c.machine.ClearPriorStableState()
 		wrapped := fmt.Errorf("cannot optimize: %w", err)
-		c.emitEnrichedError(wrapped, "optimize")
+		c.emitEnrichedError(wrapped, PhaseOptimize)
 
 		return "", wrapped
 	}
@@ -203,8 +203,8 @@ func (c *Conductor) Optimize(ctx context.Context) (string, error) {
 	if c.dryRun {
 		optJobType = worker.JobTypeDryRun
 	}
-	prompt := c.applyStrategy(ctx, "optimize", c.buildOptimizePrompt())
-	opts := c.buildJobOptionsForPhase("optimize")
+	prompt := c.applyStrategy(ctx, PhaseOptimize, c.buildOptimizePrompt())
+	opts := c.buildJobOptionsForPhase(PhaseOptimize)
 
 	var job *worker.Job
 	var err error
@@ -218,7 +218,7 @@ func (c *Conductor) Optimize(ctx context.Context) (string, error) {
 		_ = c.machine.Dispatch(ctx, EventError)
 
 		wrapped := fmt.Errorf("submit optimize job: %w", err)
-		c.emitEnrichedError(wrapped, "optimize")
+		c.emitEnrichedError(wrapped, PhaseOptimize)
 
 		return "", wrapped
 	}
@@ -230,8 +230,8 @@ func (c *Conductor) Optimize(ctx context.Context) (string, error) {
 	c.persistState()
 
 	c.phaseStartedAt = time.Now()
-	c.initProgressEstimator("optimize")
-	c.emitEventLog(eventlog.Entry{Type: eventlog.EventPhaseStarted, Phase: "optimize"})
+	c.initProgressEstimator(PhaseOptimize)
+	c.emitEventLog(eventlog.Entry{Type: eventlog.EventPhaseStarted, Phase: PhaseOptimize})
 	c.emit(ConductorEvent{
 		Type:    "optimizing_started",
 		State:   c.machine.State(),
@@ -254,7 +254,7 @@ func (c *Conductor) Simplify(ctx context.Context) (string, error) {
 
 	if c.workUnit == nil {
 		err := errors.New("no task loaded")
-		c.emitEnrichedError(err, "simplify")
+		c.emitEnrichedError(err, PhaseSimplify)
 
 		return "", err
 	}
@@ -262,7 +262,7 @@ func (c *Conductor) Simplify(ctx context.Context) (string, error) {
 	// Check pool BEFORE transitioning state to avoid leaving machine in bad state
 	if c.pool == nil {
 		err := errors.New("no worker pool available")
-		c.emitEnrichedError(err, "simplify")
+		c.emitEnrichedError(err, PhaseSimplify)
 
 		return "", err
 	}
@@ -271,7 +271,7 @@ func (c *Conductor) Simplify(ctx context.Context) (string, error) {
 	c.mu.Unlock()
 	if err := c.RunTransitionHooks(ctx, EventSimplify); err != nil {
 		c.mu.Lock() // Re-lock so deferred Unlock is balanced
-		c.emitEnrichedError(err, "simplify")
+		c.emitEnrichedError(err, PhaseSimplify)
 
 		return "", err
 	}
@@ -284,13 +284,13 @@ func (c *Conductor) Simplify(ctx context.Context) (string, error) {
 	}
 
 	// Clear per-phase transient state to prevent leakage across re-entries.
-	c.resetPhaseState("simplify")
+	c.resetPhaseState(PhaseSimplify)
 
 	// Dispatch simplify event to transition state
 	if err := c.machine.Dispatch(ctx, EventSimplify); err != nil {
 		c.machine.ClearPriorStableState()
 		wrapped := fmt.Errorf("cannot simplify: %w", err)
-		c.emitEnrichedError(wrapped, "simplify")
+		c.emitEnrichedError(wrapped, PhaseSimplify)
 
 		return "", wrapped
 	}
@@ -300,8 +300,8 @@ func (c *Conductor) Simplify(ctx context.Context) (string, error) {
 	if c.dryRun {
 		simJobType = worker.JobTypeDryRun
 	}
-	prompt := c.applyStrategy(ctx, "simplify", c.buildSimplifyPrompt())
-	opts := c.buildJobOptionsForPhase("simplify")
+	prompt := c.applyStrategy(ctx, PhaseSimplify, c.buildSimplifyPrompt())
+	opts := c.buildJobOptionsForPhase(PhaseSimplify)
 
 	var job *worker.Job
 	var err error
@@ -315,7 +315,7 @@ func (c *Conductor) Simplify(ctx context.Context) (string, error) {
 		_ = c.machine.Dispatch(ctx, EventError)
 
 		wrapped := fmt.Errorf("submit simplify job: %w", err)
-		c.emitEnrichedError(wrapped, "simplify")
+		c.emitEnrichedError(wrapped, PhaseSimplify)
 
 		return "", wrapped
 	}
@@ -327,8 +327,8 @@ func (c *Conductor) Simplify(ctx context.Context) (string, error) {
 	c.persistState()
 
 	c.phaseStartedAt = time.Now()
-	c.initProgressEstimator("simplify")
-	c.emitEventLog(eventlog.Entry{Type: eventlog.EventPhaseStarted, Phase: "simplify"})
+	c.initProgressEstimator(PhaseSimplify)
+	c.emitEventLog(eventlog.Entry{Type: eventlog.EventPhaseStarted, Phase: PhaseSimplify})
 	c.emit(ConductorEvent{
 		Type:    "simplifying_started",
 		State:   c.machine.State(),

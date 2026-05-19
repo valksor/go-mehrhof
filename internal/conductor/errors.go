@@ -260,7 +260,7 @@ func ClassifyError(err error, phase string) FailureClass {
 	}
 
 	// Skippable: nothing to do (only for optional phases)
-	if phase == "simplify" || phase == "optimize" {
+	if phase == PhaseSimplify || phase == PhaseOptimize {
 		skippablePatterns := []string{
 			"no changes", "nothing to simplify", "nothing to optimize",
 			"empty diff", "no modifications",

@@ -150,12 +150,12 @@ type PhasePolicy struct {
 // simplify and optimize are optional and can be skipped on failure.
 func defaultPhasePolicies() map[string]PhasePolicy {
 	return map[string]PhasePolicy{
-		"plan":      {Policy: FailurePolicyRetry, MaxRetries: 1, RetryDelay: 5 * time.Second},
-		"implement": {Policy: FailurePolicyRetry, MaxRetries: 2, RetryDelay: 5 * time.Second},
-		"simplify":  {Policy: FailurePolicySkip},
-		"optimize":  {Policy: FailurePolicySkip},
-		"review":    {Policy: FailurePolicyFail},
-		"submit":    {Policy: FailurePolicyFail},
+		PhasePlan:      {Policy: FailurePolicyRetry, MaxRetries: 1, RetryDelay: 5 * time.Second},
+		PhaseImplement: {Policy: FailurePolicyRetry, MaxRetries: 2, RetryDelay: 5 * time.Second},
+		PhaseSimplify:  {Policy: FailurePolicySkip},
+		PhaseOptimize:  {Policy: FailurePolicySkip},
+		PhaseReview:    {Policy: FailurePolicyFail},
+		PhaseSubmit:    {Policy: FailurePolicyFail},
 	}
 }
 

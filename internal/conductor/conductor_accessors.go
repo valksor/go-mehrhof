@@ -310,15 +310,15 @@ func mustMarshalJSON(v any) json.RawMessage {
 // phaseToScope maps a phase name to its varpool scope constant.
 func phaseToScope(phase string) string {
 	switch phase {
-	case "plan":
+	case PhasePlan:
 		return varpool.ScopePlan
-	case "implement":
+	case PhaseImplement:
 		return varpool.ScopeImplement
-	case "simplify":
+	case PhaseSimplify:
 		return varpool.ScopeSimplify
-	case "optimize":
+	case PhaseOptimize:
 		return varpool.ScopeOptimize
-	case "review":
+	case PhaseReview:
 		return varpool.ScopeReview
 	default:
 		return phase

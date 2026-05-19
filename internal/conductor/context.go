@@ -85,31 +85,31 @@ func (c *Conductor) buildContextDeps() contextDeps {
 // DefaultContextProfiles returns the default context profile for each phase.
 func DefaultContextProfiles() map[string]PhaseContextProfile {
 	return map[string]PhaseContextProfile{
-		"plan": {
+		PhasePlan: {
 			IncludeTask:         true,
 			IncludeHierarchy:    true,
 			IncludeMemory:       true,
 			IncludeContextItems: true,
 			MaxTokenBudget:      8000,
 		},
-		"implement": {
+		PhaseImplement: {
 			IncludeTaskSummary:  true,
 			IncludeSpecs:        true,
 			IncludeMemory:       true,
 			IncludeContextItems: true,
 			MaxTokenBudget:      12000,
 		},
-		"simplify": {
+		PhaseSimplify: {
 			IncludeDiff:     true,
 			IncludeFindings: true,
 			MaxTokenBudget:  4000,
 		},
-		"optimize": {
+		PhaseOptimize: {
 			IncludeDiff:     true,
 			IncludeFindings: true,
 			MaxTokenBudget:  4000,
 		},
-		"review": {
+		PhaseReview: {
 			IncludeTaskSummary: true,
 			IncludeSpecs:       true,
 			IncludeDiff:        true,
