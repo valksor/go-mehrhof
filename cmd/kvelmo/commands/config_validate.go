@@ -32,6 +32,11 @@ func init() {
 	configValidateCmd.Flags().BoolVar(&configValidateJSON, "json", false, "Output raw JSON")
 }
 
+// Status values used by config validate, policy checks, job-stream events,
+// and as the slog attribute key for error values. Sharing the same constant
+// is intentional — every consumer happens to want the string "error" — but
+// be careful when changing it: the value is observed in CLI output, log
+// output, and policy decisions.
 const (
 	statusError   = "error"
 	statusOK      = "ok"

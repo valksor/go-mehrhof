@@ -16,7 +16,7 @@ var CICmd = &cobra.Command{
 }
 
 var ciStatusCmd = &cobra.Command{
-	Use:   "status",
+	Use:   subStatus,
 	Short: "Show CI status for the current task's PR",
 	RunE:  runCIStatus,
 }

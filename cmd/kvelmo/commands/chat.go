@@ -92,9 +92,9 @@ func runChatSend(cmd *cobra.Command, args []string) error {
 	worktreeID := wtPath
 
 	params := map[string]any{
-		"message":     message,
-		"worktree_id": worktreeID,
-		"is_answer":   isAnswer,
+		"message":       message,
+		paramWorktreeID: worktreeID,
+		"is_answer":     isAnswer,
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
@@ -143,7 +143,7 @@ func runChatStop(cmd *cobra.Command, args []string) error {
 	jobID, _ := cmd.Flags().GetString("job")
 
 	params := map[string]any{
-		"worktree_id": worktreeID,
+		paramWorktreeID: worktreeID,
 	}
 	if jobID != "" {
 		params["job_id"] = jobID
@@ -192,7 +192,7 @@ func runChatHistory(cmd *cobra.Command, args []string) error {
 	worktreeID := wtPath
 
 	params := map[string]any{
-		"worktree_id": worktreeID,
+		paramWorktreeID: worktreeID,
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
@@ -287,7 +287,7 @@ func runChatClear(cmd *cobra.Command, args []string) error {
 	worktreeID := wtPath
 
 	params := map[string]any{
-		"worktree_id": worktreeID,
+		paramWorktreeID: worktreeID,
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)

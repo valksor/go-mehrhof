@@ -23,7 +23,7 @@ var CatalogCmd = &cobra.Command{
 }
 
 var catalogListCmd = &cobra.Command{
-	Use:   "list",
+	Use:   subList,
 	Short: "List available templates",
 	RunE:  runCatalogList,
 }
@@ -165,7 +165,7 @@ func runCatalogUse(_ *cobra.Command, args []string) error {
 	wtCtx, wtCancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer wtCancel()
 
-	_, err = wtClient.Call(wtCtx, "start", map[string]any{"source": tmpl.Source})
+	_, err = wtClient.Call(wtCtx, "start", map[string]any{paramSource: tmpl.Source})
 	if err != nil {
 		return fmt.Errorf("start from template: %w", err)
 	}

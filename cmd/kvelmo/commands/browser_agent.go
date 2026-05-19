@@ -98,7 +98,7 @@ func runBrowserClick(cmd *cobra.Command, args []string) error {
 	defer func() { _ = client.Close() }()
 	defer cancel()
 
-	params := map[string]string{"selector": args[0]}
+	params := map[string]string{paramSelector: args[0]}
 	resp, err := client.Call(ctx, "browser.click", params)
 	if err != nil {
 		return fmt.Errorf("browser.click: %w", err)
@@ -118,8 +118,8 @@ func runBrowserType(cmd *cobra.Command, args []string) error {
 	defer cancel()
 
 	params := map[string]string{
-		"selector": args[0],
-		"text":     args[1],
+		paramSelector: args[0],
+		"text":        args[1],
 	}
 	resp, err := client.Call(ctx, "browser.type", params)
 	if err != nil {
@@ -140,8 +140,8 @@ func runBrowserWait(cmd *cobra.Command, args []string) error {
 	defer cancel()
 
 	params := map[string]any{
-		"selector":   args[0],
-		"timeout_ms": browserWaitTimeout,
+		paramSelector: args[0],
+		"timeout_ms":  browserWaitTimeout,
 	}
 	resp, err := client.Call(ctx, "browser.wait", params)
 	if err != nil {
@@ -242,8 +242,8 @@ func runBrowserFill(cmd *cobra.Command, args []string) error {
 	defer cancel()
 
 	params := map[string]string{
-		"selector": args[0],
-		"value":    args[1],
+		paramSelector: args[0],
+		"value":       args[1],
 	}
 	resp, err := client.Call(ctx, "browser.fill", params)
 	if err != nil {
@@ -264,8 +264,8 @@ func runBrowserSelect(cmd *cobra.Command, args []string) error {
 	defer cancel()
 
 	params := map[string]any{
-		"selector": args[0],
-		"values":   args[1:],
+		paramSelector: args[0],
+		"values":      args[1:],
 	}
 	resp, err := client.Call(ctx, "browser.select", params)
 	if err != nil {
@@ -285,7 +285,7 @@ func runBrowserHover(cmd *cobra.Command, args []string) error {
 	defer func() { _ = client.Close() }()
 	defer cancel()
 
-	params := map[string]string{"selector": args[0]}
+	params := map[string]string{paramSelector: args[0]}
 	resp, err := client.Call(ctx, "browser.hover", params)
 	if err != nil {
 		return fmt.Errorf("browser.hover: %w", err)
@@ -304,7 +304,7 @@ func runBrowserFocus(cmd *cobra.Command, args []string) error {
 	defer func() { _ = client.Close() }()
 	defer cancel()
 
-	params := map[string]string{"selector": args[0]}
+	params := map[string]string{paramSelector: args[0]}
 	resp, err := client.Call(ctx, "browser.focus", params)
 	if err != nil {
 		return fmt.Errorf("browser.focus: %w", err)
@@ -431,7 +431,7 @@ func runBrowserDialog(cmd *cobra.Command, args []string) error {
 	defer cancel()
 
 	params := map[string]any{
-		"action": args[0],
+		paramAction: args[0],
 	}
 	if browserDialogText != "" {
 		params["text"] = browserDialogText
@@ -456,8 +456,8 @@ func runBrowserUpload(cmd *cobra.Command, args []string) error {
 	defer cancel()
 
 	params := map[string]any{
-		"selector": args[0],
-		"files":    args[1:],
+		paramSelector: args[0],
+		subFiles:      args[1:],
 	}
 
 	resp, err := client.Call(ctx, "browser.upload", params)

@@ -266,7 +266,7 @@ func runDiagnoseViaRPC() (bool, error) {
 		label := "installed"
 
 		switch c.Status {
-		case "fail", "failed":
+		case "fail", stateFailed:
 			symbol = "✗"
 			label = "not found"
 		case "warning", "warn":

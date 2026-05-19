@@ -32,8 +32,6 @@ Actions:
   abort     Abort all matching tasks
   reset     Reset all matching tasks
   stop      Stop all matching tasks
-  pause     Pause all matching tasks
-  resume    Resume all matching paused tasks
 
 Filters:
   --state   Filter by task state (e.g. reviewing, failed)
@@ -60,8 +58,6 @@ Examples:
 			"abort\tAbort all matching tasks",
 			"reset\tReset all matching tasks",
 			"stop\tStop all matching tasks",
-			"pause\tPause all matching tasks",
-			"resume\tResume all matching paused tasks",
 		}, cobra.ShellCompDirectiveNoFileComp
 	},
 	RunE: runBatch,
@@ -89,7 +85,7 @@ func runBatch(_ *cobra.Command, args []string) error {
 	defer func() { _ = client.Close() }()
 
 	params := map[string]any{
-		"action": action,
+		paramAction: action,
 	}
 	filter := map[string]string{}
 	if batchStateFilter != "" {

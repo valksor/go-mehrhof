@@ -20,7 +20,7 @@ var GitCmd = &cobra.Command{
 }
 
 var gitStatusCmd = &cobra.Command{
-	Use:   "status",
+	Use:   subStatus,
 	Short: "Show git status",
 	Long:  `Show the current git status including branch and changed files.`,
 	RunE:  runGitStatus,

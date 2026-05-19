@@ -100,9 +100,9 @@ func changelogViaSocket(source, target, note string) error {
 	defer cancel()
 
 	params := map[string]any{
-		"source": source,
-		"target": target,
-		"full":   changelogFull,
+		paramSource: source,
+		"target":    target,
+		"full":      changelogFull,
 	}
 	if note != "" {
 		params["note"] = note
@@ -271,19 +271,19 @@ func resolveChangelogAgent(cwd string) (agent.Agent, error) {
 
 	reg := agent.NewRegistry()
 	if err := claude.RegisterWithPermissionHandler(reg, agent.KvelmoPermissionHandler); err != nil {
-		slog.Debug("claude agent not available", "error", err)
+		slog.Debug("claude agent not available", statusError, err)
 	}
 	// claude-sdk: WebSocket Agent SDK variant, broken on the official
 	// Anthropic CLI (--sdk-url rejected). See agent/claudesdk/.
 	if err := claudesdk.RegisterWithPermissionHandler(reg, agent.KvelmoPermissionHandler); err != nil {
-		slog.Debug("claude-sdk agent not available", "error", err)
+		slog.Debug("claude-sdk agent not available", statusError, err)
 	}
 	if err := codex.RegisterWithPermissionHandler(reg, agent.KvelmoPermissionHandler); err != nil {
-		slog.Debug("codex agent not available", "error", err)
+		slog.Debug("codex agent not available", statusError, err)
 	}
 	// claude-mcp is the default agent — must be registered here too.
 	if err := registerClaudeMCP(reg, effective); err != nil {
-		slog.Debug("claude-mcp agent not available", "error", err)
+		slog.Debug("claude-mcp agent not available", statusError, err)
 	}
 
 	apiCfg := apiagent.DefaultAPIConfig()
@@ -293,21 +293,21 @@ func resolveChangelogAgent(cwd string) (agent.Agent, error) {
 	if err := reg.Register(openai.New(
 		openai.Config{APIKey: oaiCfg.APIKey, BaseURL: oaiCfg.BaseURL, Model: oaiCfg.Model}, apiCfg,
 	)); err != nil {
-		slog.Debug("openai agent registration failed", "error", err)
+		slog.Debug("openai agent registration failed", statusError, err)
 	}
 
 	antCfg := effective.Agent.Anthropic
 	if err := reg.Register(anthropic.New(
 		anthropic.Config{APIKey: antCfg.APIKey, BaseURL: antCfg.BaseURL, Model: antCfg.Model}, apiCfg,
 	)); err != nil {
-		slog.Debug("anthropic agent registration failed", "error", err)
+		slog.Debug("anthropic agent registration failed", statusError, err)
 	}
 
 	olCfg := effective.Agent.Ollama
 	if err := reg.Register(ollama.New(
 		ollama.Config{BaseURL: olCfg.BaseURL, Model: olCfg.Model}, apiCfg,
 	)); err != nil {
-		slog.Debug("ollama agent registration failed", "error", err)
+		slog.Debug("ollama agent registration failed", statusError, err)
 	}
 
 	if customCfg, ok := effective.CustomAgents[agentName]; ok {

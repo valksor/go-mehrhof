@@ -38,7 +38,7 @@ Examples:
 }
 
 var backupListCmd = &cobra.Command{
-	Use:   "list",
+	Use:   subList,
 	Short: "List existing backup archives",
 	Long:  "Query the global socket for existing backup archives, showing timestamp, path, and size.",
 	RunE:  runBackupList,

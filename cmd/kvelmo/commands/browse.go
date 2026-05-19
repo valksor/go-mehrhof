@@ -24,7 +24,7 @@ var BrowseCmd = &cobra.Command{
 }
 
 func init() {
-	BrowseCmd.Flags().BoolVar(&browseFiles, "files", false, "Include files (not just directories)")
+	BrowseCmd.Flags().BoolVar(&browseFiles, subFiles, false, "Include files (not just directories)")
 }
 
 func runBrowse(cmd *cobra.Command, args []string) error {
@@ -34,7 +34,7 @@ func runBrowse(cmd *cobra.Command, args []string) error {
 	}
 
 	params := map[string]any{
-		"files": browseFiles,
+		subFiles: browseFiles,
 	}
 	if len(args) > 0 {
 		params["path"] = args[0]

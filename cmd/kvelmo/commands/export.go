@@ -107,7 +107,7 @@ func outputCSV(data json.RawMessage) error {
 
 	if len(result.Activity) > 0 {
 		_ = w.Write([]string{"# Activity"})
-		_ = w.Write([]string{"timestamp", "method", "duration_ms", "error", "user_id", "task_id", "agent_model"})
+		_ = w.Write([]string{"timestamp", "method", "duration_ms", statusError, "user_id", "task_id", "agent_model"})
 		for _, a := range result.Activity {
 			_ = w.Write([]string{
 				a.Timestamp,

@@ -19,7 +19,7 @@ var CodegraphCmd = &cobra.Command{
 }
 
 var codegraphStatsCmd = &cobra.Command{
-	Use:   "stats",
+	Use:   subStats,
 	Short: "Show code graph statistics",
 	RunE:  runCodegraphStats,
 }
@@ -90,7 +90,7 @@ func runCodegraphStats(_ *cobra.Command, _ []string) error {
 
 	fmt.Println("Code Graph Statistics")
 	// Show top-level stats first
-	for _, key := range []string{"files", "symbols", "edges"} {
+	for _, key := range []string{subFiles, "symbols", "edges"} {
 		if v, ok := stats[key]; ok {
 			fmt.Printf("  %-20s %d\n", key, v)
 		}
@@ -99,7 +99,7 @@ func runCodegraphStats(_ *cobra.Command, _ []string) error {
 	// Show breakdowns
 	keys := slices.Sorted(maps.Keys(stats))
 	keys = slices.DeleteFunc(keys, func(k string) bool {
-		return k == "files" || k == "symbols" || k == "edges"
+		return k == subFiles || k == "symbols" || k == "edges"
 	})
 	if len(keys) > 0 {
 		fmt.Println("  Breakdown:")

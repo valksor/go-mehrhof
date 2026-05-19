@@ -37,7 +37,7 @@ var groupAddCmd = &cobra.Command{
 }
 
 var groupListCmd = &cobra.Command{
-	Use:   "list",
+	Use:   subList,
 	Short: "List all task groups",
 	RunE:  runGroupList,
 }
@@ -78,7 +78,7 @@ func init() {
 	GroupCmd.AddCommand(groupSubmitCmd)
 	GroupCmd.AddCommand(groupRemoveCmd)
 
-	groupAddCmd.Flags().StringVar(&groupAddState, "state", "loaded", "Initial state to record for the task")
+	groupAddCmd.Flags().StringVar(&groupAddState, "state", stateLoaded, "Initial state to record for the task")
 	groupListCmd.Flags().BoolVar(&groupListJSON, "json", false, "Output as JSON")
 	groupStatusCmd.Flags().BoolVar(&groupStatusJSON, "json", false, "Output as JSON")
 }

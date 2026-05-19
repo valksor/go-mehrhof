@@ -59,9 +59,9 @@ func runExplain(cmd *cobra.Command, args []string) error {
 	worktreeID := wtPath
 
 	params := map[string]any{
-		"message":     prompt,
-		"worktree_id": worktreeID,
-		"is_answer":   false,
+		"message":       prompt,
+		paramWorktreeID: worktreeID,
+		"is_answer":     false,
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)

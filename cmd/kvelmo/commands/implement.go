@@ -19,7 +19,7 @@ var (
 )
 
 var ImplementCmd = &cobra.Command{
-	Use:     "implement",
+	Use:     phaseImplement,
 	Aliases: []string{"impl"},
 	Short:   "Start implementation phase for current task",
 	Long:    "Submit an implementation job to the worker pool for the current task.",
@@ -53,11 +53,11 @@ func runImplement(cmd *cobra.Command, args []string) error {
 	defer cancel()
 
 	params := map[string]any{
-		"dry_run": implementDryRun,
+		paramDryRun: implementDryRun,
 	}
 
 	// Submit implement job
-	resp, err := client.Call(ctx, "implement", params)
+	resp, err := client.Call(ctx, phaseImplement, params)
 	if err != nil {
 		spinner.Fail("Implementation submission failed")
 

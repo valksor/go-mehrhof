@@ -24,7 +24,7 @@ var forkCreateCmd = &cobra.Command{
 }
 
 var forkListCmd = &cobra.Command{
-	Use:   "list",
+	Use:   subList,
 	Short: "List active forks",
 	RunE:  runForkList,
 }

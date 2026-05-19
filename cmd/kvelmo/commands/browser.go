@@ -32,7 +32,7 @@ var browserInstallCmd = &cobra.Command{
 }
 
 var browserStatusCmd = &cobra.Command{
-	Use:   "status",
+	Use:   subStatus,
 	Short: "Show browser runtime status",
 	RunE:  runBrowserStatus,
 }

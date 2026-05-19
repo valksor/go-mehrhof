@@ -15,7 +15,7 @@ var CacheCmd = &cobra.Command{
 }
 
 var cacheStatsCmd = &cobra.Command{
-	Use:   "stats",
+	Use:   subStats,
 	Short: "Show cache statistics",
 	Long:  "Display hit/miss rates, entry count, and tokens saved by the response cache.",
 	RunE:  runCacheStats,

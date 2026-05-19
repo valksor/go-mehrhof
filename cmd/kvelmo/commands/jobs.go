@@ -17,7 +17,7 @@ var JobsCmd = &cobra.Command{
 }
 
 var jobsListCmd = &cobra.Command{
-	Use:   "list",
+	Use:   subList,
 	Short: "List all jobs",
 	RunE:  runJobsList,
 }

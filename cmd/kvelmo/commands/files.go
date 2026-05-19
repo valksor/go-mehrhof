@@ -13,7 +13,7 @@ import (
 )
 
 var FilesCmd = &cobra.Command{
-	Use:   "files",
+	Use:   subFiles,
 	Short: "Search and list files",
 	Long:  `Search and list files in the current project.`,
 }

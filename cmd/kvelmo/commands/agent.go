@@ -21,7 +21,7 @@ var AgentCmd = &cobra.Command{
 }
 
 var agentStatusCmd = &cobra.Command{
-	Use:   "status",
+	Use:   subStatus,
 	Short: "Check agent availability and health",
 	RunE:  runAgentStatus,
 }
