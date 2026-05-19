@@ -27,7 +27,7 @@ function setState(overrides: Record<string, unknown>) {
 }
 
 function findCmd(name: string) {
-  const cmd = infraCommands.find(c => c.name === name)
+  const cmd = infraCommands.find((c) => c.name === name)
   if (!cmd) throw new Error(`Command "${name}" not found in infraCommands`)
   return cmd
 }
@@ -58,7 +58,7 @@ describe('infraCommands structure', () => {
   })
 
   it('has no duplicate command names', () => {
-    const names = infraCommands.map(c => c.name)
+    const names = infraCommands.map((c) => c.name)
     expect(new Set(names).size).toBe(names.length)
   })
 })
@@ -187,7 +187,10 @@ describe('governance commands execution', () => {
   })
 
   it('/quality returns status with findings', async () => {
-    mockClientCall.mockResolvedValue({ status: 'failed', findings: [{ message: 'Unused import', severity: 'warning' }] })
+    mockClientCall.mockResolvedValue({
+      status: 'failed',
+      findings: [{ message: 'Unused import', severity: 'warning' }],
+    })
     setState({ state: 'loaded', client: { call: mockClientCall } })
     expect(await findCmd('/quality').execute('')).toBe('Quality: failed\n[warning] Unused import')
   })
@@ -208,7 +211,10 @@ describe('governance commands execution', () => {
     mockClientCall.mockResolvedValue({
       status: 'completed',
       url: 'https://ci.example.com/123',
-      checks: [{ name: 'lint', status: 'passed' }, { name: 'test', status: 'failed' }],
+      checks: [
+        { name: 'lint', status: 'passed' },
+        { name: 'test', status: 'failed' },
+      ],
     })
     setState({ state: 'loaded', client: { call: mockClientCall } })
     const result = await findCmd('/ci').execute('')
@@ -230,7 +236,10 @@ describe('governance commands execution', () => {
   })
 
   it('/policy returns violations when not compliant', async () => {
-    mockClientCall.mockResolvedValue({ compliant: false, violations: [{ rule: 'no-force-push', message: 'Not allowed' }] })
+    mockClientCall.mockResolvedValue({
+      compliant: false,
+      violations: [{ rule: 'no-force-push', message: 'Not allowed' }],
+    })
     setState({ state: 'loaded', client: { call: mockClientCall } })
     const result = await findCmd('/policy').execute('')
     expect(result).toContain('Policy violations:')
@@ -477,7 +486,9 @@ describe('utility commands execution', () => {
   })
 
   it('/audit returns formatted entries', async () => {
-    mockClientCall.mockResolvedValue({ entries: [{ action: 'plan', timestamp: '2026-01-01', details: 'spec written' }] })
+    mockClientCall.mockResolvedValue({
+      entries: [{ action: 'plan', timestamp: '2026-01-01', details: 'spec written' }],
+    })
     setState({ client: { call: mockClientCall } })
     expect(await findCmd('/audit').execute('')).toBe('[2026-01-01] plan — spec written')
   })
@@ -554,7 +565,11 @@ describe('utility commands execution', () => {
     mockClientCall.mockResolvedValue({ markdown: 'changes' })
     setState({ client: { call: mockClientCall } })
     await findCmd('/changelog').execute('v1.0..v2.0 only frontend')
-    expect(mockClientCall).toHaveBeenCalledWith('changelog.generate', { source: 'v1.0', target: 'v2.0', note: 'only frontend' })
+    expect(mockClientCall).toHaveBeenCalledWith('changelog.generate', {
+      source: 'v1.0',
+      target: 'v2.0',
+      note: 'only frontend',
+    })
   })
 
   it('/changelog returns fallback when no commits', async () => {
@@ -641,7 +656,12 @@ describe('utility commands execution', () => {
   })
 
   it('/diagnose returns formatted checks', async () => {
-    mockClientCall.mockResolvedValue({ checks: [{ name: 'socket', status: 'passed' }, { name: 'disk', status: 'failed', detail: 'low space' }] })
+    mockClientCall.mockResolvedValue({
+      checks: [
+        { name: 'socket', status: 'passed' },
+        { name: 'disk', status: 'failed', detail: 'low space' },
+      ],
+    })
     mockGlobalState.client = { call: mockClientCall }
     const result = await findCmd('/diagnose').execute('')
     expect(result).toContain('✓ socket')
@@ -675,7 +695,10 @@ describe('utility commands execution', () => {
   })
 
   it('/config check returns drift details', async () => {
-    mockClientCall.mockResolvedValue({ drifts: [{ path: 'agent.model', expected: 'claude-4', actual: 'claude-3' }], count: 1 })
+    mockClientCall.mockResolvedValue({
+      drifts: [{ path: 'agent.model', expected: 'claude-4', actual: 'claude-3' }],
+      count: 1,
+    })
     mockGlobalState.client = { call: mockClientCall }
     const result = await findCmd('/config check').execute('')
     expect(result).toContain('Configuration drift:')
@@ -769,7 +792,9 @@ describe('utility commands execution', () => {
   })
 
   it('/rpc-log returns formatted entries', async () => {
-    mockClientCall.mockResolvedValue({ entries: [{ timestamp: '2026-01-01', level: 'INFO', message: 'start called', method: 'start' }] })
+    mockClientCall.mockResolvedValue({
+      entries: [{ timestamp: '2026-01-01', level: 'INFO', message: 'start called', method: 'start' }],
+    })
     mockGlobalState.client = { call: mockClientCall }
     const result = await findCmd('/rpc-log').execute('')
     expect(result).toContain('[2026-01-01]')
@@ -970,10 +995,7 @@ describe('parity commands execution', () => {
 
   it('/screenshots returns formatted list', async () => {
     mockClientCall.mockResolvedValue({
-      screenshots: [
-        { id: 'shot1234', path: '/shots/a.png' },
-        { path: '/shots/b.png' },
-      ],
+      screenshots: [{ id: 'shot1234', path: '/shots/a.png' }, { path: '/shots/b.png' }],
     })
     setState({ state: 'loaded', client: { call: mockClientCall } })
     const result = await findCmd('/screenshots').execute('')

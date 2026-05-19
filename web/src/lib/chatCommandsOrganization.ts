@@ -114,7 +114,7 @@ export const organizationCommands: ChatCommand[] = [
       await getState().listForks()
       const forks = getState().forks
       if (forks.length === 0) return 'No active forks.'
-      return forks.map(f => `${f.id.slice(0, 8)} — ${f.label} [${f.state}]`).join('\n')
+      return forks.map((f) => `${f.id.slice(0, 8)} — ${f.label} [${f.state}]`).join('\n')
     },
   },
   {
@@ -125,13 +125,15 @@ export const organizationCommands: ChatCommand[] = [
       const result = await getState().compareForks()
       if (!result) return 'No comparison data.'
       if (Array.isArray(result)) {
-        return (result as Record<string, unknown>[]).map(r => {
-          const id = typeof r.id === 'string' ? r.id.slice(0, 8) : '?'
-          const label = typeof r.label === 'string' ? r.label : 'unknown'
-          const state = typeof r.state === 'string' ? r.state : '?'
-          const summary = typeof r.summary === 'string' ? r.summary : 'no summary'
-          return `${id} — ${label} [${state}]: ${summary}`
-        }).join('\n')
+        return (result as Record<string, unknown>[])
+          .map((r) => {
+            const id = typeof r.id === 'string' ? r.id.slice(0, 8) : '?'
+            const label = typeof r.label === 'string' ? r.label : 'unknown'
+            const state = typeof r.state === 'string' ? r.state : '?'
+            const summary = typeof r.summary === 'string' ? r.summary : 'no summary'
+            return `${id} — ${label} [${state}]: ${summary}`
+          })
+          .join('\n')
       }
       return JSON.stringify(result, null, 2)
     },
@@ -170,7 +172,7 @@ export const organizationCommands: ChatCommand[] = [
       const result = await client.call<{ groups: Array<{ id: string; label: string }> }>('taskgroup.list', {})
       const groups = result.groups || []
       if (groups.length === 0) return 'No groups.'
-      return groups.map(g => `${g.id.slice(0, 8)} — ${g.label}`).join('\n')
+      return groups.map((g) => `${g.id.slice(0, 8)} — ${g.label}`).join('\n')
     },
   },
   {

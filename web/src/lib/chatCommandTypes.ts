@@ -5,7 +5,7 @@ export interface ChatCommand {
   name: string
   description: string
   isAvailable: () => boolean
-  execute: (args: string) => Promise<string>  // Returns result message
+  execute: (args: string) => Promise<string> // Returns result message
 }
 
 export function getState() {

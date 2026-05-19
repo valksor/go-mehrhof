@@ -64,9 +64,12 @@ const governanceCommands: ChatCommand[] = [
     execute: async () => {
       const client = worktreeClient()
       if (!client) return 'Not connected.'
-      const result = await client.call<{ status: string; findings?: Array<{ message: string; severity: string }> }>('quality.respond', { action: 'run' })
+      const result = await client.call<{ status: string; findings?: Array<{ message: string; severity: string }> }>(
+        'quality.respond',
+        { action: 'run' },
+      )
       if (!result.findings || result.findings.length === 0) return `Quality: ${result.status}`
-      return `Quality: ${result.status}\n` + result.findings.map(f => `[${f.severity}] ${f.message}`).join('\n')
+      return `Quality: ${result.status}\n` + result.findings.map((f) => `[${f.severity}] ${f.message}`).join('\n')
     },
   },
   {
@@ -76,11 +79,15 @@ const governanceCommands: ChatCommand[] = [
     execute: async () => {
       const client = worktreeClient()
       if (!client) return 'Not connected.'
-      const result = await client.call<{ status: string; url?: string; checks?: Array<{ name: string; status: string }> }>('ci.status', {})
+      const result = await client.call<{
+        status: string
+        url?: string
+        checks?: Array<{ name: string; status: string }>
+      }>('ci.status', {})
       let out = `CI: ${result.status}`
       if (result.url) out += ` (${result.url})`
       if (result.checks && result.checks.length > 0) {
-        out += '\n' + result.checks.map(c => `${c.status === 'passed' ? '✓' : '✗'} ${c.name}`).join('\n')
+        out += '\n' + result.checks.map((c) => `${c.status === 'passed' ? '✓' : '✗'} ${c.name}`).join('\n')
       }
       return out
     },
@@ -92,10 +99,13 @@ const governanceCommands: ChatCommand[] = [
     execute: async () => {
       const client = worktreeClient()
       if (!client) return 'Not connected.'
-      const result = await client.call<{ compliant: boolean; violations?: Array<{ rule: string; message: string }> }>('policy.check', {})
+      const result = await client.call<{ compliant: boolean; violations?: Array<{ rule: string; message: string }> }>(
+        'policy.check',
+        {},
+      )
       if (result.compliant) return 'Policy: compliant.'
       const violations = result.violations || []
-      return 'Policy violations:\n' + violations.map(v => `  • ${v.rule}: ${v.message}`).join('\n')
+      return 'Policy violations:\n' + violations.map((v) => `  • ${v.rule}: ${v.message}`).join('\n')
     },
   },
 ]
@@ -156,7 +166,7 @@ const fileCommands: ChatCommand[] = [
       const result = await client.call<{ entries: Array<{ sha: string; message: string }> }>('git.log', { limit: 10 })
       const entries = result.entries || []
       if (entries.length === 0) return 'No commits.'
-      return entries.map(e => `${e.sha.slice(0, 7)} ${e.message}`).join('\n')
+      return entries.map((e) => `${e.sha.slice(0, 7)} ${e.message}`).join('\n')
     },
   },
   {
@@ -168,10 +178,13 @@ const fileCommands: ChatCommand[] = [
       if (!name) return 'Usage: /codegraph search <symbol>'
       const client = worktreeClient()
       if (!client) return 'Not connected.'
-      const result = await client.call<{ symbols: Array<{ name: string; kind: string; file: string; line: number }> }>('codegraph.search', { name })
+      const result = await client.call<{ symbols: Array<{ name: string; kind: string; file: string; line: number }> }>(
+        'codegraph.search',
+        { name },
+      )
       const symbols = result.symbols || []
       if (symbols.length === 0) return 'No symbols found.'
-      return symbols.map(s => `${s.kind} ${s.name} — ${s.file}:${s.line}`).join('\n')
+      return symbols.map((s) => `${s.kind} ${s.name} — ${s.file}:${s.line}`).join('\n')
     },
   },
   {
@@ -183,10 +196,13 @@ const fileCommands: ChatCommand[] = [
       if (!name) return 'Usage: /codegraph callers <symbol>'
       const client = worktreeClient()
       if (!client) return 'Not connected.'
-      const result = await client.call<{ callers: Array<{ name: string; file: string; line: number }> }>('codegraph.callers', { name })
+      const result = await client.call<{ callers: Array<{ name: string; file: string; line: number }> }>(
+        'codegraph.callers',
+        { name },
+      )
       const callers = result.callers || []
       if (callers.length === 0) return 'No callers found.'
-      return callers.map(c => `${c.name} — ${c.file}:${c.line}`).join('\n')
+      return callers.map((c) => `${c.name} — ${c.file}:${c.line}`).join('\n')
     },
   },
   {
@@ -198,10 +214,13 @@ const fileCommands: ChatCommand[] = [
       if (!name) return 'Usage: /codegraph deps <symbol>'
       const client = worktreeClient()
       if (!client) return 'Not connected.'
-      const result = await client.call<{ deps: Array<{ name: string; kind: string; file: string }> }>('codegraph.deps', { name })
+      const result = await client.call<{ deps: Array<{ name: string; kind: string; file: string }> }>(
+        'codegraph.deps',
+        { name },
+      )
       const deps = result.deps || []
       if (deps.length === 0) return 'No dependencies found.'
-      return deps.map(d => `${d.kind} ${d.name} — ${d.file}`).join('\n')
+      return deps.map((d) => `${d.kind} ${d.name} — ${d.file}`).join('\n')
     },
   },
   {
@@ -240,7 +259,10 @@ const memoryCommands: ChatCommand[] = [
       if (!query) return 'Usage: /memory search <query>'
       const client = globalClient()
       if (!client) return 'Not connected to global socket.'
-      const result = await client.call<{ results: Array<{ content: string; score: number }> }>('memory.search', { query, limit: 5 })
+      const result = await client.call<{ results: Array<{ content: string; score: number }> }>('memory.search', {
+        query,
+        limit: 5,
+      })
       const results = result.results || []
       if (results.length === 0) return 'No results.'
       return results.map((r, i) => `${i + 1}. (${r.score.toFixed(2)}) ${r.content}`).join('\n')
@@ -361,7 +383,7 @@ const utilityCommands: ChatCommand[] = [
       }>('projects.list', {})
       const projects = result.projects || []
       if (projects.length === 0) return 'No projects registered.'
-      return projects.map(p => `${p.id.slice(0, 8)} ${p.name || p.path || ''}`).join('\n')
+      return projects.map((p) => `${p.id.slice(0, 8)} ${p.name || p.path || ''}`).join('\n')
     },
   },
   {
@@ -376,7 +398,7 @@ const utilityCommands: ChatCommand[] = [
       }>('hooks.list', {})
       const hooks = result.hooks || []
       if (hooks.length === 0) return 'No hooks configured.'
-      return hooks.map(h => `${h.event || h.name || '?'}: ${h.command || ''}`).join('\n')
+      return hooks.map((h) => `${h.event || h.name || '?'}: ${h.command || ''}`).join('\n')
     },
   },
   {
@@ -392,7 +414,7 @@ const utilityCommands: ChatCommand[] = [
       const recordings = result.recordings || []
       if (recordings.length === 0) return 'No recordings.'
       return recordings
-        .map(r => `${r.id ? r.id.slice(0, 8) + ' ' : ''}${r.path || ''}${r.created_at ? ` (${r.created_at})` : ''}`)
+        .map((r) => `${r.id ? r.id.slice(0, 8) + ' ' : ''}${r.path || ''}${r.created_at ? ` (${r.created_at})` : ''}`)
         .join('\n')
     },
   },
@@ -408,7 +430,7 @@ const utilityCommands: ChatCommand[] = [
       }>('screenshots.list', {})
       const screenshots = result.screenshots || []
       if (screenshots.length === 0) return 'No screenshots.'
-      return screenshots.map(s => `${s.id ? s.id.slice(0, 8) + ' ' : ''}${s.path || ''}`).join('\n')
+      return screenshots.map((s) => `${s.id ? s.id.slice(0, 8) + ' ' : ''}${s.path || ''}`).join('\n')
     },
   },
   {
@@ -430,10 +452,13 @@ const utilityCommands: ChatCommand[] = [
     execute: async () => {
       const client = worktreeClient()
       if (!client) return 'Not connected.'
-      const result = await client.call<{ entries: Array<{ action: string; timestamp: string; details?: string }> }>('task.export', { format: 'audit' })
+      const result = await client.call<{ entries: Array<{ action: string; timestamp: string; details?: string }> }>(
+        'task.export',
+        { format: 'audit' },
+      )
       const entries = result.entries || []
       if (entries.length === 0) return 'No audit entries.'
-      return entries.map(e => `[${e.timestamp}] ${e.action}${e.details ? ' — ' + e.details : ''}`).join('\n')
+      return entries.map((e) => `[${e.timestamp}] ${e.action}${e.details ? ' — ' + e.details : ''}`).join('\n')
     },
   },
   {
@@ -478,10 +503,12 @@ const utilityCommands: ChatCommand[] = [
     execute: async () => {
       const client = globalClient()
       if (!client) return 'Not connected to global socket.'
-      const result = await client.call<{ entries: Array<{ timestamp: string; level: string; message: string; method: string }> }>('activity.query', { limit: 20 })
+      const result = await client.call<{
+        entries: Array<{ timestamp: string; level: string; message: string; method: string }>
+      }>('activity.query', { limit: 20 })
       const entries = result.entries || []
       if (entries.length === 0) return 'No log entries.'
-      return entries.map(e => `[${e.timestamp}] [${e.level || 'INFO'}] ${e.message || e.method}`).join('\n')
+      return entries.map((e) => `[${e.timestamp}] [${e.level || 'INFO'}] ${e.message || e.method}`).join('\n')
     },
   },
   {
@@ -554,7 +581,7 @@ const utilityCommands: ChatCommand[] = [
       const result = await client.call<{ workers: Array<{ name: string; state: string }> }>('workers.list', {})
       const workers = result.workers || []
       if (workers.length === 0) return 'No workers.'
-      return workers.map(w => `${w.name} [${w.state}]`).join('\n')
+      return workers.map((w) => `${w.name} [${w.state}]`).join('\n')
     },
   },
   {
@@ -567,7 +594,7 @@ const utilityCommands: ChatCommand[] = [
       const result = await client.call<{ commands: string[]; count: number }>('discovery.scan', {})
       const commands = result.commands || []
       if (commands.length === 0) return 'No project commands found.'
-      return `Discovered commands (${commands.length})\n\n` + commands.map(c => `  ${c}`).join('\n')
+      return `Discovered commands (${commands.length})\n\n` + commands.map((c) => `  ${c}`).join('\n')
     },
   },
   {
@@ -577,10 +604,15 @@ const utilityCommands: ChatCommand[] = [
     execute: async () => {
       const client = globalClient()
       if (!client) return 'Not connected to global socket.'
-      const result = await client.call<{ checks: Array<{ name: string; status: string; detail?: string }> }>('system.diagnose', {})
+      const result = await client.call<{ checks: Array<{ name: string; status: string; detail?: string }> }>(
+        'system.diagnose',
+        {},
+      )
       const checks = result.checks || []
       if (checks.length === 0) return 'Diagnostics: OK'
-      return checks.map(c => `${c.status === 'passed' ? '✓' : '✗'} ${c.name}${c.detail ? ': ' + c.detail : ''}`).join('\n')
+      return checks
+        .map((c) => `${c.status === 'passed' ? '✓' : '✗'} ${c.name}${c.detail ? ': ' + c.detail : ''}`)
+        .join('\n')
     },
   },
   {
@@ -593,7 +625,7 @@ const utilityCommands: ChatCommand[] = [
       const result = await client.call<{ issues: Array<{ severity: string; message: string }> }>('security.scan', {})
       const issues = result.issues || []
       if (issues.length === 0) return 'No security issues found.'
-      return issues.map(i => `[${i.severity}] ${i.message}`).join('\n')
+      return issues.map((i) => `[${i.severity}] ${i.message}`).join('\n')
     },
   },
   {
@@ -621,10 +653,16 @@ const utilityCommands: ChatCommand[] = [
     execute: async () => {
       const client = globalClient()
       if (!client) return 'Not connected to global socket.'
-      const result = await client.call<{ drifts: Array<{ path: string; expected: unknown; actual: unknown }>; count: number }>('config.check', {})
+      const result = await client.call<{
+        drifts: Array<{ path: string; expected: unknown; actual: unknown }>
+        count: number
+      }>('config.check', {})
       if (result.count === 0) return 'Configuration: no drift detected.'
       const drifts = result.drifts || []
-      return 'Configuration drift:\n' + drifts.map(d => `  ${d.path}: expected=${String(d.expected)}, actual=${String(d.actual)}`).join('\n')
+      return (
+        'Configuration drift:\n' +
+        drifts.map((d) => `  ${d.path}: expected=${String(d.expected)}, actual=${String(d.actual)}`).join('\n')
+      )
     },
   },
   {
@@ -645,8 +683,11 @@ const utilityCommands: ChatCommand[] = [
     execute: async () => {
       const client = globalClient()
       if (!client) return 'Not connected to global socket.'
-      const result = await client.call<{ valid: boolean; checks: Array<{ name: string; status: string; detail?: string; fix?: string }> }>('config.validate', {})
-      const lines = result.checks.map(c => {
+      const result = await client.call<{
+        valid: boolean
+        checks: Array<{ name: string; status: string; detail?: string; fix?: string }>
+      }>('config.validate', {})
+      const lines = result.checks.map((c) => {
         const icon = c.status === 'ok' ? 'PASS' : c.status === 'warning' ? 'WARN' : 'FAIL'
         let line = `  [${icon}] ${c.name}`
         if (c.detail) line += ` — ${c.detail}`
@@ -665,7 +706,7 @@ const utilityCommands: ChatCommand[] = [
       if (!client) return 'Not connected to global socket.'
       const names = await client.call<string[]>('strategy.list', {})
       if (!names || names.length === 0) return 'No strategies registered.'
-      return 'Available strategies:\n' + names.map(n => `  - ${n}`).join('\n')
+      return 'Available strategies:\n' + names.map((n) => `  - ${n}`).join('\n')
     },
   },
   {
@@ -691,7 +732,7 @@ const utilityCommands: ChatCommand[] = [
       const result = await client.call<{ templates: Array<{ name: string; description: string }> }>('catalog.list', {})
       const templates = result.templates || []
       if (templates.length === 0) return 'No templates in catalog.'
-      return templates.map(t => `  ${t.name} — ${t.description}`).join('\n')
+      return templates.map((t) => `  ${t.name} — ${t.description}`).join('\n')
     },
   },
   {

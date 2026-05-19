@@ -36,7 +36,7 @@ function setState(overrides: Record<string, unknown>) {
 }
 
 function findCmd(name: string) {
-  const cmd = organizationCommands.find(c => c.name === name)
+  const cmd = organizationCommands.find((c) => c.name === name)
   if (!cmd) throw new Error(`Command "${name}" not found in organizationCommands`)
   return cmd
 }
@@ -72,7 +72,7 @@ describe('organizationCommands structure', () => {
   })
 
   it('has no duplicate command names', () => {
-    const names = organizationCommands.map(c => c.name)
+    const names = organizationCommands.map((c) => c.name)
     expect(new Set(names).size).toBe(names.length)
   })
 })
@@ -268,15 +268,15 @@ describe('fork commands execution', () => {
   })
 
   it('/fork compare returns JSON when result is an object', async () => {
-    setState({ state: 'loaded' });
-    (mockProjectState.compareForks as ReturnType<typeof vi.fn>).mockResolvedValue({ winner: 'fork-a' })
+    setState({ state: 'loaded' })
+    ;(mockProjectState.compareForks as ReturnType<typeof vi.fn>).mockResolvedValue({ winner: 'fork-a' })
     const result = await findCmd('/fork compare').execute('')
     expect(JSON.parse(result)).toEqual({ winner: 'fork-a' })
   })
 
   it('/fork compare formats array results', async () => {
-    setState({ state: 'loaded' });
-    (mockProjectState.compareForks as ReturnType<typeof vi.fn>).mockResolvedValue([
+    setState({ state: 'loaded' })
+    ;(mockProjectState.compareForks as ReturnType<typeof vi.fn>).mockResolvedValue([
       { id: 'fork12345678', label: 'A', state: 'active', summary: 'Good approach' },
     ])
     const result = await findCmd('/fork compare').execute('')
@@ -285,8 +285,8 @@ describe('fork commands execution', () => {
   })
 
   it('/fork compare returns no comparison data when null', async () => {
-    setState({ state: 'loaded' });
-    (mockProjectState.compareForks as ReturnType<typeof vi.fn>).mockResolvedValue(null)
+    setState({ state: 'loaded' })
+    ;(mockProjectState.compareForks as ReturnType<typeof vi.fn>).mockResolvedValue(null)
     expect(await findCmd('/fork compare').execute('')).toBe('No comparison data.')
   })
 

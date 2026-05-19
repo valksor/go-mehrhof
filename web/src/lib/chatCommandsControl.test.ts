@@ -30,7 +30,7 @@ function setState(overrides: Record<string, unknown>) {
 }
 
 function findCmd(name: string) {
-  const cmd = controlCommands.find(c => c.name === name)
+  const cmd = controlCommands.find((c) => c.name === name)
   if (!cmd) throw new Error(`Command "${name}" not found in controlCommands`)
   return cmd
 }
@@ -65,7 +65,7 @@ describe('controlCommands structure', () => {
   })
 
   it('has no duplicate command names', () => {
-    const names = controlCommands.map(c => c.name)
+    const names = controlCommands.map((c) => c.name)
     expect(new Set(names).size).toBe(names.length)
   })
 })
@@ -184,20 +184,26 @@ describe('controlCommands execution', () => {
   })
 
   it('/update returns specification-generated message when changed and regenerated', async () => {
-    const cmd = findCmd('/update');
-    (mockProjectState.update as ReturnType<typeof vi.fn>).mockResolvedValue({ changed: true, specification_generated: true })
+    const cmd = findCmd('/update')
+    ;(mockProjectState.update as ReturnType<typeof vi.fn>).mockResolvedValue({
+      changed: true,
+      specification_generated: true,
+    })
     await expect(cmd.execute('')).resolves.toBe('Task updated from source — new specification generated.')
   })
 
   it('/update returns content-updated message when changed without new specification', async () => {
-    const cmd = findCmd('/update');
-    (mockProjectState.update as ReturnType<typeof vi.fn>).mockResolvedValue({ changed: true, specification_generated: false })
+    const cmd = findCmd('/update')
+    ;(mockProjectState.update as ReturnType<typeof vi.fn>).mockResolvedValue({
+      changed: true,
+      specification_generated: false,
+    })
     await expect(cmd.execute('')).resolves.toBe('Task content updated from source.')
   })
 
   it('/update returns already-up-to-date message when nothing changed', async () => {
-    const cmd = findCmd('/update');
-    (mockProjectState.update as ReturnType<typeof vi.fn>).mockResolvedValue({ changed: false })
+    const cmd = findCmd('/update')
+    ;(mockProjectState.update as ReturnType<typeof vi.fn>).mockResolvedValue({ changed: false })
     await expect(cmd.execute('')).resolves.toBe('Task is already up to date.')
   })
 })

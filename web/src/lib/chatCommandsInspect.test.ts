@@ -32,7 +32,7 @@ function setState(overrides: Record<string, unknown>) {
 }
 
 function findCmd(name: string) {
-  const cmd = inspectCommands.find(c => c.name === name)
+  const cmd = inspectCommands.find((c) => c.name === name)
   if (!cmd) throw new Error(`Command "${name}" not found in inspectCommands`)
   return cmd
 }
@@ -63,7 +63,7 @@ describe('inspectCommands structure', () => {
   })
 
   it('has no duplicate command names', () => {
-    const names = inspectCommands.map(c => c.name)
+    const names = inspectCommands.map((c) => c.name)
     expect(new Set(names).size).toBe(names.length)
   })
 })
@@ -169,10 +169,7 @@ describe('inspectCommands execution', () => {
   it('/explain sends a chat message with the worktree id', async () => {
     setState({ worktreeId: 'wt-123' })
     await expect(findCmd('/explain').execute('')).resolves.toBe('')
-    expect(mockSendMessage).toHaveBeenCalledWith(
-      expect.stringContaining('Explain'),
-      'wt-123'
-    )
+    expect(mockSendMessage).toHaveBeenCalledWith(expect.stringContaining('Explain'), 'wt-123')
   })
 
   it('/explain sends undefined worktree id when there is no active worktree', async () => {
@@ -339,7 +336,9 @@ describe('inspectCommands execution', () => {
   })
 
   it('/eventlog returns formatted events', async () => {
-    mockClientCall.mockResolvedValue({ events: [{ type: 'phase.start', timestamp: '2026-01-01T00:00:00Z', message: 'Planning' }] })
+    mockClientCall.mockResolvedValue({
+      events: [{ type: 'phase.start', timestamp: '2026-01-01T00:00:00Z', message: 'Planning' }],
+    })
     setState({ state: 'loaded', client: { call: mockClientCall } })
     expect(await findCmd('/eventlog').execute('')).toBe('[2026-01-01T00:00:00Z] phase.start: Planning')
   })

@@ -24,7 +24,7 @@ function setState(overrides: Record<string, unknown>) {
 }
 
 function findCmd(name: string) {
-  const cmd = workflowCommands.find(c => c.name === name)
+  const cmd = workflowCommands.find((c) => c.name === name)
   if (!cmd) throw new Error(`Command "${name}" not found in workflowCommands`)
   return cmd
 }
@@ -53,7 +53,7 @@ describe('workflowCommands structure', () => {
   })
 
   it('has no duplicate command names', () => {
-    const names = workflowCommands.map(c => c.name)
+    const names = workflowCommands.map((c) => c.name)
     expect(new Set(names).size).toBe(names.length)
   })
 })

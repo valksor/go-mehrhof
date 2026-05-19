@@ -97,7 +97,7 @@ export function parseCommand(input: string): ParsedCommand | null {
 export function getAvailableCommands(filter: string): Array<(typeof COMMANDS)[number] | ModalCommandDef> {
   const query = filter.toLowerCase()
   const all: Array<(typeof COMMANDS)[number] | ModalCommandDef> = [...COMMANDS, ...MODAL_COMMANDS]
-  return all.filter(cmd => {
+  return all.filter((cmd) => {
     if (!cmd.isAvailable()) return false
     if (!query) return true
     return cmd.name.toLowerCase().includes(query) || cmd.description.toLowerCase().includes(query)
