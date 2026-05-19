@@ -23,11 +23,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: "24"
-
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
         with:
@@ -38,19 +33,15 @@ jobs:
 
       - name: Deploy docs (nightly)
         if: github.event.release.prerelease
-        uses: cloudflare/wrangler-action@v4
-        with:
-          apiToken: ${{ secrets.CF_API_TOKEN }}
-          wranglerVersion: "4"
-          command: deploy --env nightly
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+        run: bunx wrangler deploy --env nightly
 
       - name: Deploy docs (latest)
         if: ${{ !github.event.release.prerelease }}
-        uses: cloudflare/wrangler-action@v4
-        with:
-          apiToken: ${{ secrets.CF_API_TOKEN }}
-          wranglerVersion: "4"
-          command: deploy --env latest
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+        run: bunx wrangler deploy --env latest
 
   build:
     runs-on: ubuntu-latest
