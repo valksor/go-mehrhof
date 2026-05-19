@@ -10,9 +10,9 @@ kvelmo optimize
 
 ## Options
 
-| Flag | Short | Description |
-|------|-------|-------------|
-| `--wait` | `-w` | Wait for job to complete, streaming output |
+| Flag     | Short | Description                                |
+| -------- | ----- | ------------------------------------------ |
+| `--wait` | `-w`  | Wait for job to complete, streaming output |
 
 ## Prerequisites
 

@@ -10,12 +10,12 @@ kvelmo fork <subcommand>
 
 ## Subcommands
 
-| Subcommand | Description |
-|------------|-------------|
-| `create <label>` | Create a new fork from the current checkpoint |
-| `list` | List active forks |
-| `compare` | Compare all active forks |
-| `select <fork-id>` | Select the winning fork and merge it back |
+| Subcommand         | Description                                   |
+| ------------------ | --------------------------------------------- |
+| `create <label>`   | Create a new fork from the current checkpoint |
+| `list`             | List active forks                             |
+| `compare`          | Compare all active forks                      |
+| `select <fork-id>` | Select the winning fork and merge it back     |
 
 ## Examples
 
@@ -36,8 +36,8 @@ kvelmo fork select abc123
 
 ## Flags
 
-| Flag | Subcommand | Description |
-|------|------------|-------------|
+| Flag     | Subcommand        | Description              |
+| -------- | ----------------- | ------------------------ |
 | `--json` | `list`, `compare` | Output raw JSON response |
 
 ## How It Works

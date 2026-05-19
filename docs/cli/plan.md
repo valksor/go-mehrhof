@@ -10,11 +10,11 @@ kvelmo plan
 
 ## Options
 
-| Flag | Short | Description |
-|------|-------|-------------|
-| `--force` | | Re-run planning even if already planned |
-| `--wait` | `-w` | Wait for job to complete, streaming output |
-| `--json` | | Output result as JSON |
+| Flag      | Short | Description                                |
+| --------- | ----- | ------------------------------------------ |
+| `--force` |       | Re-run planning even if already planned    |
+| `--wait`  | `-w`  | Wait for job to complete, streaming output |
+| `--json`  |       | Output result as JSON                      |
 
 ## Prerequisites
 
@@ -43,11 +43,13 @@ kvelmo plan --force
 ## Specification Output
 
 The specification is saved to:
+
 ```
 .kvelmo/specifications/specification-1.md
 ```
 
 Review it before implementing:
+
 ```bash
 cat .kvelmo/specifications/specification-1.md
 ```

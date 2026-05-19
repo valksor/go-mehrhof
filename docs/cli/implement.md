@@ -10,11 +10,11 @@ kvelmo implement
 
 ## Options
 
-| Flag | Short | Description |
-|------|-------|-------------|
-| `--dry-run` | | Simulate without executing agent |
-| `--wait` | `-w` | Wait for job to complete, streaming output |
-| `--json` | | Output result as JSON |
+| Flag        | Short | Description                                |
+| ----------- | ----- | ------------------------------------------ |
+| `--dry-run` |       | Simulate without executing agent           |
+| `--wait`    | `-w`  | Wait for job to complete, streaming output |
+| `--json`    |       | Output result as JSON                      |
 
 ## Prerequisites
 
@@ -43,6 +43,7 @@ kvelmo implement --force
 ## Watching Progress
 
 The agent's work streams in real-time:
+
 - Files being read and modified
 - Code changes being made
 - Tool calls (writes, terminal commands)
@@ -62,6 +63,7 @@ kvelmo optimize
 ## If Implementation Fails
 
 Use undo to revert:
+
 ```bash
 kvelmo undo
 ```

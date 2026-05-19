@@ -10,19 +10,19 @@ kvelmo queue <subcommand>
 
 ## Subcommands
 
-| Subcommand | Description |
-|------------|-------------|
-| `add <source>` | Add a task to the queue |
-| `remove <id>` | Remove a task from the queue |
-| `list` | List queued tasks |
+| Subcommand                | Description                   |
+| ------------------------- | ----------------------------- |
+| `add <source>`            | Add a task to the queue       |
+| `remove <id>`             | Remove a task from the queue  |
+| `list`                    | List queued tasks             |
 | `reorder <id> <position>` | Move a task to a new position |
 
 ## Options
 
-| Flag | Subcommand | Description |
-|------|------------|-------------|
-| `--title` | `add` | Optional title for the queued task |
-| `--json` | `list` | Output as JSON |
+| Flag      | Subcommand | Description                        |
+| --------- | ---------- | ---------------------------------- |
+| `--title` | `add`      | Optional title for the queued task |
+| `--json`  | `list`     | Output as JSON                     |
 
 ## Examples
 

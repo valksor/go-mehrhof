@@ -14,11 +14,11 @@ Displays timestamped agent activity for the active task. Shows the same history 
 
 ## Options
 
-| Flag             | Description                              |
-|------------------|------------------------------------------|
-| `-n`, `--limit`  | Number of messages to show (default: 50) |
-| `--full`         | Show full message content without truncation |
-| `--json`         | Output raw JSON                          |
+| Flag            | Description                                  |
+| --------------- | -------------------------------------------- |
+| `-n`, `--limit` | Number of messages to show (default: 50)     |
+| `--full`        | Show full message content without truncation |
+| `--json`        | Output raw JSON                              |
 
 ## Examples
 

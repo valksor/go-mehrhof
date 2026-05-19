@@ -10,10 +10,10 @@ kvelmo report [flags]
 
 ## Options
 
-| Flag | Description |
-|------|-------------|
-| `--format` | Output format: `md` or `json` (default: `md`) |
-| `--since` | Time range (default: `30d`, e.g., `7d`, `90d`) |
+| Flag       | Description                                    |
+| ---------- | ---------------------------------------------- |
+| `--format` | Output format: `md` or `json` (default: `md`)  |
+| `--since`  | Time range (default: `30d`, e.g., `7d`, `90d`) |
 
 ## Examples
 

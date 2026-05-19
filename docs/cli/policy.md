@@ -10,14 +10,14 @@ kvelmo policy <subcommand>
 
 ## Subcommands
 
-| Subcommand | Description |
-|------------|-------------|
-| `check` | Check current task against workflow policies |
+| Subcommand | Description                                  |
+| ---------- | -------------------------------------------- |
+| `check`    | Check current task against workflow policies |
 
 ## Options
 
-| Flag | Description |
-|------|-------------|
+| Flag     | Description    |
+| -------- | -------------- |
 | `--json` | Output as JSON |
 
 ## Examples

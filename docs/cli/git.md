@@ -11,7 +11,7 @@ kvelmo git <subcommand>
 ## Subcommands
 
 | Command  | Description         |
-|----------|---------------------|
+| -------- | ------------------- |
 | `status` | Show git status     |
 | `diff`   | Show changes        |
 | `branch` | Show current branch |

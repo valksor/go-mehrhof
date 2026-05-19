@@ -32,13 +32,13 @@ Tokens are stored in `.env` files, not in configuration files, keeping secrets s
 ## Flags
 
 | Flag        | Description                                             |
-|-------------|---------------------------------------------------------|
+| ----------- | ------------------------------------------------------- |
 | `--project` | Save token to project `.valksor/.env` instead of global |
 
 ## Token Storage
 
 | Scope                 | Location                 |
-|-----------------------|--------------------------|
+| --------------------- | ------------------------ |
 | Global (default)      | `~/.valksor/kvelmo/.env` |
 | Project (`--project`) | `.valksor/.env`          |
 
@@ -53,6 +53,7 @@ kvelmo github login
 ```
 
 Output:
+
 ```
 GitHub Token Setup
 --------------------------------------------------
@@ -117,14 +118,14 @@ Override? [y/N]:
 
 ## Required Scopes
 
-| Provider       | Scopes                                                       |
-|----------------|--------------------------------------------------------------|
-| GitHub         | `repo`, `read:user` (or Fine-grained with repository access) |
-| GitLab         | `api`, `read_user`, `read_repository`                        |
-| Linear         | Workspace access                                             |
-| Wrike          | Default (read/write access)                                  |
-| Jira           | Read/write project access                                    |
-| Azure DevOps   | Work Items (Read & Write), Code (Read & Write)              |
+| Provider     | Scopes                                                       |
+| ------------ | ------------------------------------------------------------ |
+| GitHub       | `repo`, `read:user` (or Fine-grained with repository access) |
+| GitLab       | `api`, `read_user`, `read_repository`                        |
+| Linear       | Workspace access                                             |
+| Wrike        | Default (read/write access)                                  |
+| Jira         | Read/write project access                                    |
+| Azure DevOps | Work Items (Read & Write), Code (Read & Write)               |
 
 ## Web UI
 

@@ -13,6 +13,7 @@ kvelmo recap [flags]
 Shows a concise recap of the current task: where you are in the workflow, what changed, and what to do next. Useful when returning to a task after a break.
 
 The recap includes:
+
 - Current workflow state
 - Task title, source, and branch
 - Tags (if any)
@@ -26,7 +27,7 @@ The recap includes:
 ## Options
 
 | Flag     | Description              |
-|----------|--------------------------|
+| -------- | ------------------------ |
 | `--json` | Output raw JSON response |
 
 ## Examples

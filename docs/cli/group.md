@@ -10,14 +10,14 @@ kvelmo group <subcommand>
 
 ## Subcommands
 
-| Subcommand | Description |
-|------------|-------------|
-| `create <label>` | Create a new task group |
-| `add <group-id> <task-id>` | Add a task to a group |
-| `list` | List all task groups |
-| `status <group-id>` | Show group status and member tasks |
-| `submit <group-id>` | Mark group as submitted |
-| `remove <group-id>` | Remove a task group |
+| Subcommand                 | Description                        |
+| -------------------------- | ---------------------------------- |
+| `create <label>`           | Create a new task group            |
+| `add <group-id> <task-id>` | Add a task to a group              |
+| `list`                     | List all task groups               |
+| `status <group-id>`        | Show group status and member tasks |
+| `submit <group-id>`        | Mark group as submitted            |
+| `remove <group-id>`        | Remove a task group                |
 
 ## Examples
 
@@ -42,22 +42,22 @@ kvelmo group remove grp_abc123
 
 ## Flags
 
-| Flag | Subcommand | Description |
-|------|------------|-------------|
-| `--state <state>` | `add` | Initial state to record for the task (default: `loaded`) |
+| Flag              | Subcommand | Description                                              |
+| ----------------- | ---------- | -------------------------------------------------------- |
+| `--state <state>` | `add`      | Initial state to record for the task (default: `loaded`) |
 
 ### Valid States
 
 Common states for the `--state` flag:
 
-| State | Meaning |
-|-------|---------|
-| `loaded` | Task loaded from provider (default) |
-| `planned` | Specification complete |
-| `implementing` | Agent writing code |
-| `implemented` | Implementation complete |
-| `reviewing` | Under human review |
-| `submitted` | PR created |
+| State          | Meaning                             |
+| -------------- | ----------------------------------- |
+| `loaded`       | Task loaded from provider (default) |
+| `planned`      | Specification complete              |
+| `implementing` | Agent writing code                  |
+| `implemented`  | Implementation complete             |
+| `reviewing`    | Under human review                  |
+| `submitted`    | PR created                          |
 
 See [State Machine](/concepts/state-machine.md) for the full list.
 
@@ -66,6 +66,7 @@ See [State Machine](/concepts/state-machine.md) for the full list.
 Task groups coordinate tasks that span multiple repositories. The group tracks each member task's project directory and current state.
 
 Submission workflow:
+
 1. Run `kvelmo submit` in each project worktree to create individual PRs
 2. Run `kvelmo group submit <group-id>` to mark the entire group as submitted
 

@@ -10,10 +10,10 @@ kvelmo quick [description]
 
 ## Options
 
-| Flag | Description |
-|------|-------------|
-| `--from` | Task source |
-| `--text` | Inline task description |
+| Flag     | Description                                                                  |
+| -------- | ---------------------------------------------------------------------------- |
+| `--from` | Task source                                                                  |
+| `--text` | Inline task description                                                      |
 | `--skip` | Additional phases to skip (comma-separated, e.g. `--skip simplify,optimize`) |
 
 A description can also be passed as a positional argument.

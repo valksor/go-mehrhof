@@ -22,9 +22,9 @@ Approve the pull request or merge request associated with the current task.
 kvelmo remote approve
 ```
 
-| Flag             | Description                        |
-|------------------|------------------------------------|
-| `-c`, `--comment` | Comment to include with approval  |
+| Flag              | Description                      |
+| ----------------- | -------------------------------- |
+| `-c`, `--comment` | Comment to include with approval |
 
 ### merge
 
@@ -34,8 +34,8 @@ Merge the pull request or merge request associated with the current task.
 kvelmo remote merge
 ```
 
-| Flag             | Description                                    |
-|------------------|------------------------------------------------|
+| Flag             | Description                                           |
+| ---------------- | ----------------------------------------------------- |
 | `-m`, `--method` | Merge method: merge, squash, rebase (default: rebase) |
 
 ## Examples

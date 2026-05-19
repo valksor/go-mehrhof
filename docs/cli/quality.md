@@ -22,11 +22,11 @@ Answer a pending quality gate prompt by providing a yes/no response.
 kvelmo quality respond --prompt-id <ID> --yes|--no
 ```
 
-| Flag           | Description                       |
-|----------------|-----------------------------------|
-| `--prompt-id`  | Prompt ID to respond to (required) |
-| `--yes`        | Answer yes                        |
-| `--no`         | Answer no                         |
+| Flag          | Description                        |
+| ------------- | ---------------------------------- |
+| `--prompt-id` | Prompt ID to respond to (required) |
+| `--yes`       | Answer yes                         |
+| `--no`        | Answer no                          |
 
 ## Examples
 

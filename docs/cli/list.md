@@ -10,16 +10,16 @@ kvelmo list
 
 ## Options
 
-| Flag | Description |
-|------|-------------|
-| `--history` | Search archived task history for the current project |
-| `--search` | Filter history by keyword (matches title, branch, source) |
-| `--tag` | Filter history by tag |
-| `--since` | Show tasks completed after this date (RFC3339 or YYYY-MM-DD) |
-| `--until` | Show tasks completed before this date (RFC3339 or YYYY-MM-DD) |
-| `--state` | Filter by final state (e.g., `finished`, `abandoned`) |
-| `--limit` | Maximum number of results (0 = unlimited) |
-| `--file` | Filter by file path touched (substring match) |
+| Flag        | Description                                                   |
+| ----------- | ------------------------------------------------------------- |
+| `--history` | Search archived task history for the current project          |
+| `--search`  | Filter history by keyword (matches title, branch, source)     |
+| `--tag`     | Filter history by tag                                         |
+| `--since`   | Show tasks completed after this date (RFC3339 or YYYY-MM-DD)  |
+| `--until`   | Show tasks completed before this date (RFC3339 or YYYY-MM-DD) |
+| `--state`   | Filter by final state (e.g., `finished`, `abandoned`)         |
+| `--limit`   | Maximum number of results (0 = unlimited)                     |
+| `--file`    | Filter by file path touched (substring match)                 |
 
 ## Subcommands
 
@@ -27,30 +27,30 @@ kvelmo list
 
 Show completed/archived task history for the current project.
 
-| Flag | Short | Description |
-|------|-------|-------------|
-| `--json` | | Output as JSON |
-| `--search` | `-s` | Filter by keyword (uses task.search RPC) |
-| `--tag` | | Filter by tag |
-| `--since` | | Show tasks completed after this date (RFC3339 or YYYY-MM-DD) |
-| `--until` | | Show tasks completed before this date (RFC3339 or YYYY-MM-DD) |
-| `--state` | | Filter by final state (e.g., `finished`, `abandoned`) |
-| `--limit` | | Maximum number of results (0 = unlimited) |
-| `--file` | | Filter by file path touched (substring match) |
+| Flag       | Short | Description                                                   |
+| ---------- | ----- | ------------------------------------------------------------- |
+| `--json`   |       | Output as JSON                                                |
+| `--search` | `-s`  | Filter by keyword (uses task.search RPC)                      |
+| `--tag`    |       | Filter by tag                                                 |
+| `--since`  |       | Show tasks completed after this date (RFC3339 or YYYY-MM-DD)  |
+| `--until`  |       | Show tasks completed before this date (RFC3339 or YYYY-MM-DD) |
+| `--state`  |       | Filter by final state (e.g., `finished`, `abandoned`)         |
+| `--limit`  |       | Maximum number of results (0 = unlimited)                     |
+| `--file`   |       | Filter by file path touched (substring match)                 |
 
 ### `list search <query>`
 
 Search archived tasks by keyword.
 
-| Flag | Description |
-|------|-------------|
-| `--json` | Output as JSON |
-| `--tag` | Filter by tag |
-| `--since` | Show tasks completed after this date (RFC3339 or YYYY-MM-DD) |
+| Flag      | Description                                                   |
+| --------- | ------------------------------------------------------------- |
+| `--json`  | Output as JSON                                                |
+| `--tag`   | Filter by tag                                                 |
+| `--since` | Show tasks completed after this date (RFC3339 or YYYY-MM-DD)  |
 | `--until` | Show tasks completed before this date (RFC3339 or YYYY-MM-DD) |
-| `--state` | Filter by final state (e.g., `finished`, `abandoned`) |
-| `--limit` | Maximum number of results (0 = unlimited) |
-| `--file` | Filter by file path touched (substring match) |
+| `--state` | Filter by final state (e.g., `finished`, `abandoned`)         |
+| `--limit` | Maximum number of results (0 = unlimited)                     |
+| `--file`  | Filter by file path touched (substring match)                 |
 
 ## Output
 

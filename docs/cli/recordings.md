@@ -14,8 +14,8 @@ View and manage recordings of agent interactions. Recordings are JSONL files tha
 
 ## Global Options
 
-| Flag    | Description                                              |
-|---------|----------------------------------------------------------|
+| Flag    | Description                                                  |
+| ------- | ------------------------------------------------------------ |
 | `--dir` | Recordings directory (default: ~/.valksor/kvelmo/recordings) |
 
 ## Subcommands
@@ -28,11 +28,11 @@ List all recordings.
 kvelmo recordings list
 ```
 
-| Flag      | Description                              |
-|-----------|------------------------------------------|
-| `--job`   | Filter by job ID                         |
+| Flag      | Description                                    |
+| --------- | ---------------------------------------------- |
+| `--job`   | Filter by job ID                               |
 | `--since` | Show recordings since duration (e.g., 24h, 7d) |
-| `--json`  | Output as JSON                           |
+| `--json`  | Output as JSON                                 |
 
 ### view
 
@@ -50,8 +50,8 @@ Replay a recording with filtering.
 kvelmo recordings replay <file>
 ```
 
-| Flag       | Description                           |
-|------------|---------------------------------------|
+| Flag       | Description                            |
+| ---------- | -------------------------------------- |
 | `--filter` | Filter by event type (comma-separated) |
 
 ### clean
@@ -62,8 +62,8 @@ Remove old recordings.
 kvelmo recordings clean
 ```
 
-| Flag           | Description                                  |
-|----------------|----------------------------------------------|
+| Flag           | Description                                          |
+| -------------- | ---------------------------------------------------- |
 | `--older-than` | Remove recordings older than duration (default: 30d) |
 
 ## Examples

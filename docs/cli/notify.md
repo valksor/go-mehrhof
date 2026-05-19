@@ -10,9 +10,9 @@ kvelmo notify <subcommand>
 
 ## Subcommands
 
-| Subcommand | Description |
-|------------|-------------|
-| `test` | Send a test notification to all configured webhooks |
+| Subcommand | Description                                         |
+| ---------- | --------------------------------------------------- |
+| `test`     | Send a test notification to all configured webhooks |
 
 ## Examples
 

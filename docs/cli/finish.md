@@ -21,7 +21,7 @@ After your PR has been merged, `finish` cleans up local and remote state:
 ## Flags
 
 | Flag              | Description                         |
-|-------------------|-------------------------------------|
+| ----------------- | ----------------------------------- |
 | `--delete-remote` | Delete the remote feature branch    |
 | `--force`         | Finish even if the PR is not merged |
 
@@ -34,6 +34,7 @@ kvelmo finish
 ```
 
 Output:
+
 ```
 Task finished!
   Switched to: main

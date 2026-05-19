@@ -16,10 +16,10 @@ The prompt can be provided as arguments or piped via stdin.
 
 ## Options
 
-| Flag             | Description                                    |
-|------------------|------------------------------------------------|
-| `-a`, `--agent`  | Agent to use (claude, codex, or custom name)   |
-| `--timeout`      | Maximum execution time (default: 10m)          |
+| Flag            | Description                                  |
+| --------------- | -------------------------------------------- |
+| `-a`, `--agent` | Agent to use (claude, codex, or custom name) |
+| `--timeout`     | Maximum execution time (default: 10m)        |
 
 ## Examples
 
@@ -40,6 +40,7 @@ kvelmo pipe --timeout 5m "analyze the codebase"
 ## Agent Resolution
 
 The agent is resolved in this order:
+
 1. `--agent` flag
 2. Project configuration
 3. Global configuration

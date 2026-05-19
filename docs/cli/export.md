@@ -10,10 +10,10 @@ kvelmo export [flags]
 
 ## Options
 
-| Flag | Description |
-|------|-------------|
-| `--format` | Output format: `json` or `csv` (default: `json`) |
-| `--since` | Time range (e.g., `7d`, `30d`) |
+| Flag        | Description                                                                                 |
+| ----------- | ------------------------------------------------------------------------------------------- |
+| `--format`  | Output format: `json` or `csv` (default: `json`)                                            |
+| `--since`   | Time range (e.g., `7d`, `30d`)                                                              |
 | `--include` | Data to include, comma-separated: `tasks`, `metrics`, `activity` (default: `tasks,metrics`) |
 
 ## Examples

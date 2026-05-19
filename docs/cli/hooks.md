@@ -10,8 +10,8 @@ kvelmo hooks [flags]
 
 ## Options
 
-| Flag | Description |
-|------|-------------|
+| Flag     | Description    |
+| -------- | -------------- |
 | `--json` | Output as JSON |
 
 ## What It Shows
