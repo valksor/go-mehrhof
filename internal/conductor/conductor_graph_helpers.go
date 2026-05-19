@@ -208,7 +208,8 @@ func buildPhaseGraph(jobType worker.JobType, label, prompt, workDir string) *gra
 
 		g, err := graph.ParseGraphDefFile(defPath)
 		if err == nil {
-			slog.Info("graph: loaded phase graph definition",
+			slog.Info(
+				"graph: loaded phase graph definition",
 				"phase", phase,
 				"path", defPath,
 				"nodes", g.NodeCount(),
@@ -216,7 +217,8 @@ func buildPhaseGraph(jobType worker.JobType, label, prompt, workDir string) *gra
 
 			return g
 		} else if !os.IsNotExist(err) {
-			slog.Warn("graph: failed to parse phase graph definition, using default",
+			slog.Warn(
+				"graph: failed to parse phase graph definition, using default",
 				"phase", phase,
 				"path", defPath,
 				"error", err,

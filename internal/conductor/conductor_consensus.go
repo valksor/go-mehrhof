@@ -104,7 +104,8 @@ func (c *Conductor) runConsensusReview(ctx context.Context, prompt string) ([]fi
 	merged := findings.DeduplicateFindings(groups)
 	filtered := findings.FilterByMinAgreement(merged, minAgreement)
 
-	slog.Info("consensus review complete",
+	slog.Info(
+		"consensus review complete",
 		"agents_responded", len(groups),
 		"total_findings", len(merged),
 		"after_agreement_filter", len(filtered),

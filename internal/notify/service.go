@@ -75,7 +75,8 @@ func (s *Service) Send(ctx context.Context, n Notification) error {
 
 	// Check if this notification type is enabled for the project.
 	if !s.prefs.GetPreference(n.Type, n.ProjectID) {
-		slog.Debug("notify: notification suppressed by preference",
+		slog.Debug(
+			"notify: notification suppressed by preference",
 			"type", n.Type,
 			"project_id", n.ProjectID,
 		)

@@ -141,7 +141,8 @@ func (g *Graph) IndexFile(ctx context.Context, path string) error {
 	nameToID := make(map[string]int64)
 	for i := range symbols {
 		symbols[i].File = storePath
-		res, err := tx.ExecContext(ctx,
+		res, err := tx.ExecContext(
+			ctx,
 			"INSERT INTO symbols (name, kind, file, line, package) VALUES (?, ?, ?, ?, ?)",
 			symbols[i].Name, symbols[i].Kind, symbols[i].File, symbols[i].Line, symbols[i].Package,
 		)
@@ -172,7 +173,8 @@ func (g *Graph) IndexFile(ctx context.Context, path string) error {
 			}
 		}
 
-		if _, err := tx.ExecContext(ctx,
+		if _, err := tx.ExecContext(
+			ctx,
 			"INSERT INTO edges (from_id, to_id, relation) VALUES (?, ?, ?)",
 			fromID, toID, e.Relation,
 		); err != nil {
@@ -278,7 +280,8 @@ func (g *Graph) QueryDependenciesOf(ctx context.Context, pkg string) ([]string, 
 
 // QuerySymbol finds symbols matching the given name (exact match).
 func (g *Graph) QuerySymbol(ctx context.Context, name string) ([]Symbol, error) {
-	rows, err := g.db.QueryContext(ctx,
+	rows, err := g.db.QueryContext(
+		ctx,
 		"SELECT id, name, kind, file, line, package FROM symbols WHERE name = ?",
 		name,
 	)
@@ -292,7 +295,8 @@ func (g *Graph) QuerySymbol(ctx context.Context, name string) ([]Symbol, error) 
 
 // QuerySymbolPattern finds symbols matching a LIKE pattern (use % for wildcards).
 func (g *Graph) QuerySymbolPattern(ctx context.Context, pattern string) ([]Symbol, error) {
-	rows, err := g.db.QueryContext(ctx,
+	rows, err := g.db.QueryContext(
+		ctx,
 		"SELECT id, name, kind, file, line, package FROM symbols WHERE name LIKE ?",
 		pattern,
 	)

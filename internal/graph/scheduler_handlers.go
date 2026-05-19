@@ -15,7 +15,8 @@ func (s *Scheduler) handleNodeSuccess(_ context.Context, id NodeID, node *Node, 
 	if node.MaxIterations > 0 && node.IterationCheck != nil && node.IterationCheck(result) {
 		iteration := s.state.IncrementIteration(id)
 		if iteration < node.MaxIterations {
-			slog.Info("graph: node iterating",
+			slog.Info(
+				"graph: node iterating",
 				"node", id,
 				"iteration", iteration+1,
 				"max", node.MaxIterations,
@@ -66,7 +67,8 @@ func (s *Scheduler) handleNodeFailure(ctx context.Context, id NodeID, node *Node
 
 	case ErrorDefaultValue:
 		// Use fallback output and treat as success.
-		slog.Info("graph: node failed, using default output",
+		slog.Info(
+			"graph: node failed, using default output",
 			"node", id,
 			"error", err,
 			"default", node.DefaultOutput,
@@ -91,7 +93,8 @@ func (s *Scheduler) handleNodeFailure(ctx context.Context, id NodeID, node *Node
 	case ErrorRetryThenFail:
 		retryCount := s.state.IncrementRetry(id)
 		if retryCount <= node.MaxRetries {
-			slog.Info("graph: node retrying",
+			slog.Info(
+				"graph: node retrying",
 				"node", id,
 				"retry", retryCount,
 				"max", node.MaxRetries,

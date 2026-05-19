@@ -43,7 +43,8 @@ func (c *Conductor) runPreGuardrails(ctx context.Context, phase string) error {
 	// Check for blocking findings (High or Critical).
 	var blocking []string
 	for _, f := range allFindings {
-		slog.Info("pre-guardrail finding",
+		slog.Info(
+			"pre-guardrail finding",
 			"phase", phase,
 			"rule", f.Rule,
 			"severity", f.Severity.String(),
@@ -88,7 +89,8 @@ func (c *Conductor) runPostGuardrails(ctx context.Context, phase string) []findi
 	result := executeGuardrails(ctx, cfg.Post, phase, workDir, specs)
 
 	for _, f := range result {
-		slog.Info("post-guardrail finding",
+		slog.Info(
+			"post-guardrail finding",
 			"phase", phase,
 			"rule", f.Rule,
 			"severity", f.Severity.String(),

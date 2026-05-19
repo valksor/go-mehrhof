@@ -82,7 +82,8 @@ func Start(ctx context.Context, cfg Config) <-chan struct{} {
 						}
 						_ = f.Close()
 					}
-					slog.Error("LEAK DETECTED: heap grew monotonically — shutting down",
+					slog.Error(
+						"LEAK DETECTED: heap grew monotonically — shutting down",
 						"growth_mb", samples[len(samples)-1]-samples[0],
 						"samples", cfg.WindowSize,
 						"window_seconds", cfg.Interval.Seconds()*float64(cfg.WindowSize),

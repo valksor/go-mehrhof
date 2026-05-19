@@ -450,7 +450,8 @@ func TestServerMW_Roundtrip(t *testing.T) {
 	logger := &mockActivityLogger{}
 	m := metrics.New()
 
-	srv := NewServer(sockPath,
+	srv := NewServer(
+		sockPath,
 		WithActivityLogger(logger),
 		WithMetrics(m),
 	)

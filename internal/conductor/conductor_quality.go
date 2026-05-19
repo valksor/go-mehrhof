@@ -88,7 +88,8 @@ func (c *Conductor) runUnifiedQualityGates(ctx context.Context, workDir string) 
 		return fmt.Errorf("quality gates: %w", err)
 	}
 
-	slog.Info("quality gate: unified check complete",
+	slog.Info(
+		"quality gate: unified check complete",
 		"total", result.Total,
 		"blockers", result.Blocked,
 		"passed", result.Passed,
@@ -198,7 +199,8 @@ func (c *Conductor) applyFailureClassification(_ context.Context, filtered []fin
 	classified := classifier.Classify(filtered)
 
 	stats := classifier.Stats(classified)
-	slog.Info("quality gate: failure classification",
+	slog.Info(
+		"quality gate: failure classification",
 		"total", stats.Total,
 		"flaky", stats.Flaky,
 		"genuine", stats.Genuine,

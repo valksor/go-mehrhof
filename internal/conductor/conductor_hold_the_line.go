@@ -41,7 +41,8 @@ func (c *Conductor) classifyFindings(ctx context.Context, input []findings.Findi
 	classified := findings.ClassifyByDiff(input, diffHunks)
 	introduced := findings.FilterIntroduced(classified)
 
-	slog.Info("hold-the-line: classified findings",
+	slog.Info(
+		"hold-the-line: classified findings",
 		"total", len(classified),
 		"introduced", len(introduced),
 		"pre_existing", len(classified)-len(introduced),

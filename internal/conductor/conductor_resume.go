@@ -45,7 +45,8 @@ func (c *Conductor) ResumeFromCheckpoint(ctx context.Context, sha string) error 
 		return fmt.Errorf("goto checkpoint: %w", err)
 	}
 
-	slog.Info("resuming from checkpoint",
+	slog.Info(
+		"resuming from checkpoint",
 		"sha", sha,
 		"phase", targetPhase,
 		"recording", recordingPath,

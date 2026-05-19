@@ -52,7 +52,8 @@ func (n *Notifier) Send(payload Payload) {
 	select {
 	case n.ch <- payload:
 	default:
-		slog.Warn("notify: channel full, dropping payload",
+		slog.Warn(
+			"notify: channel full, dropping payload",
 			"event", payload.Event,
 			"task_id", payload.TaskID,
 		)
@@ -91,7 +92,8 @@ func (n *Notifier) dispatch(ctx context.Context, p Payload) {
 			continue
 		}
 		if err := n.sendToEndpoint(ctx, ep, p); err != nil {
-			slog.Error("notify: failed to send webhook",
+			slog.Error(
+				"notify: failed to send webhook",
 				"url", ep.URL,
 				"event", p.Event,
 				"error", err,
@@ -144,7 +146,8 @@ func (n *Notifier) sendToEndpoint(ctx context.Context, endpoint WebhookEndpoint,
 			return nil
 		}
 
-		slog.Warn("notify: retry webhook",
+		slog.Warn(
+			"notify: retry webhook",
 			"url", endpoint.URL,
 			"attempt", attempt+1,
 			"error", lastErr,

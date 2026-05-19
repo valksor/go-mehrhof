@@ -56,7 +56,8 @@ func RecoveryMiddleware() Middleware {
 		return func(ctx context.Context, req *Request) (resp *Response) {
 			defer func() {
 				if r := recover(); r != nil {
-					slog.Error("rpc handler panic",
+					slog.Error(
+						"rpc handler panic",
 						"method", req.Method,
 						"id", req.ID,
 						"panic", r,
@@ -110,7 +111,8 @@ func MetricsMiddleware(m *metrics.Metrics) Middleware {
 			if err != nil {
 				// RPC errors (returned to client) are expected; log at debug.
 				// Only unexpected handler failures warrant error level.
-				slog.Debug("rpc request failed",
+				slog.Debug(
+					"rpc request failed",
 					"method", req.Method,
 					"id", req.ID,
 					"correlation_id", corrID,
@@ -118,7 +120,8 @@ func MetricsMiddleware(m *metrics.Metrics) Middleware {
 					"duration_ms", duration.Milliseconds(),
 				)
 			} else {
-				slog.Debug("rpc request",
+				slog.Debug(
+					"rpc request",
 					"method", req.Method,
 					"id", req.ID,
 					"correlation_id", corrID,

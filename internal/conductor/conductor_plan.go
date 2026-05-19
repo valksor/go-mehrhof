@@ -306,7 +306,8 @@ Your new specification should either refine the existing one or address gaps/fee
 				"%s"+
 				"%s"+
 				"%s",
-			fileWriteInstruction, wu.Title, wu.Description, hierarchySection, existingSpecsSection, browserToolsSection(), projectCmds, specReminder)
+			fileWriteInstruction, wu.Title, wu.Description, hierarchySection, existingSpecsSection, browserToolsSection(), projectCmds, specReminder,
+		)
 
 	default: // ComplexityMedium, ComplexityComplex
 		return fmt.Sprintf(
@@ -329,7 +330,8 @@ Your new specification should either refine the existing one or address gaps/fee
 				"%s"+
 				"%s"+
 				"%s",
-			fileWriteInstruction, wu.Title, wu.Description, hierarchySection, existingSpecsSection, browserToolsSection(), projectCmds, specReminder)
+			fileWriteInstruction, wu.Title, wu.Description, hierarchySection, existingSpecsSection, browserToolsSection(), projectCmds, specReminder,
+		)
 	}
 }
 

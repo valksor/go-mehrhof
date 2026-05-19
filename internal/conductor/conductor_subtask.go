@@ -14,7 +14,8 @@ import (
 func (c *Conductor) RunSubTask(ctx context.Context, config graph.SubTaskConfig) (string, error) {
 	// Sub-task execution is not yet implemented. When wired, this will create
 	// an isolated worktree, spawn a sub-conductor, and run the requested phases.
-	slog.Info("sub-task requested",
+	slog.Info(
+		"sub-task requested",
 		"title", config.Title,
 		"phases", config.Phases,
 		"branch", config.Branch,

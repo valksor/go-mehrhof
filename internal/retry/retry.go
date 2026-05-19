@@ -77,7 +77,8 @@ func RetryableOp(ctx context.Context, maxRetries int, baseDelay time.Duration, f
 		}
 
 		delay := backoff(baseDelay, attempt)
-		slog.Debug("retry: retrying operation",
+		slog.Debug(
+			"retry: retrying operation",
 			"attempt", attempt+1,
 			"max", maxRetries+1,
 			"delay", delay,

@@ -152,7 +152,8 @@ func (c *Conductor) runAdversarialReview(ctx context.Context) ([]findings.Findin
 
 	merged := findings.DeduplicateFindings(groups)
 
-	slog.Info("adversarial review complete",
+	slog.Info(
+		"adversarial review complete",
 		"personas_responded", len(groups),
 		"total_findings", len(merged),
 	)

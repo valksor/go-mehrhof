@@ -740,7 +740,9 @@ func (p *trackingHierarchyProvider) Name() string { return p.name }
 func (p *trackingHierarchyProvider) FetchTask(_ context.Context, _ string) (*Task, error) {
 	return p.task, nil
 }
+
 func (p *trackingHierarchyProvider) UpdateStatus(_ context.Context, _, _ string) error { return nil }
+
 func (p *trackingHierarchyProvider) FetchParent(_ context.Context, _ *Task) (*Task, error) {
 	p.parentCalled = true
 
