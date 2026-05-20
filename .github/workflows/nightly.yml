@@ -37,6 +37,14 @@ jobs:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
           DOCS_ONLY: ${{ steps.docs_only.outputs.docs_only }}
         run: |
+          # On docs-only pushes the binary/desktop builds are skipped, so save
+          # the current release assets and re-attach them after recreating the
+          # release — otherwise they would be lost.
+          if [ "$DOCS_ONLY" = "true" ]; then
+              mkdir -p /tmp/nightly-assets
+              gh release download nightly --dir /tmp/nightly-assets || true
+          fi
+
           # Delete the previous nightly release if it exists
           gh release delete nightly --yes || true
 
@@ -68,3 +76,8 @@ jobs:
 
           # Create a new nightly release, explicitly targeting the latest commit
           gh release create nightly --notes "$notes" --title "nightly" --target $LATEST_COMMIT --prerelease
+
+          # Re-attach the preserved assets on docs-only pushes
+          if [ "$DOCS_ONLY" = "true" ] && [ -n "$(ls -A /tmp/nightly-assets 2>/dev/null)" ]; then
+              gh release upload nightly /tmp/nightly-assets/* --clobber
+          fi
