@@ -1,4 +1,4 @@
-# kvelmo report
+# report
 
 Generate compliance report.
 

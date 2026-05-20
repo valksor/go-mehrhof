@@ -1,4 +1,4 @@
-# kvelmo recordings
+# recordings
 
 Manage agent interaction recordings.
 

@@ -1,4 +1,4 @@
-# kvelmo remote
+# remote
 
 Remote provider operations (approve, merge PR/MR).
 

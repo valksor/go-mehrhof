@@ -1,4 +1,4 @@
-# kvelmo projects
+# projects
 
 Project registry management.
 

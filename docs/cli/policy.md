@@ -1,4 +1,4 @@
-# kvelmo policy
+# policy
 
 Workflow policy management.
 

@@ -1,4 +1,4 @@
-# kvelmo redo
+# redo
 
 Restore a checkpoint that was undone.
 

@@ -1,4 +1,4 @@
-# kvelmo queue
+# queue
 
 Task queue management.
 

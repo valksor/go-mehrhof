@@ -1,4 +1,4 @@
-# kvelmo quality
+# quality
 
 Quality gate controls.
 

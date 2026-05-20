@@ -1,4 +1,4 @@
-# kvelmo reset
+# reset
 
 Recover from failed or stuck state.
 

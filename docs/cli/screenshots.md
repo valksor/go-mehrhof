@@ -1,4 +1,4 @@
-# kvelmo screenshots
+# screenshots
 
 Screenshot management.
 

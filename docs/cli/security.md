@@ -1,4 +1,4 @@
-# kvelmo security
+# security
 
 Security scanning.
 

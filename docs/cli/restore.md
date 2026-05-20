@@ -1,4 +1,4 @@
-# kvelmo restore
+# restore
 
 Restore kvelmo state from a backup archive.
 

@@ -1,4 +1,4 @@
-# kvelmo prompt
+# prompt
 
 Output task status for shell prompt integration.
 

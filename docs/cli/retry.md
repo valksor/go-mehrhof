@@ -1,4 +1,4 @@
-# kvelmo retry
+# retry
 
 Re-run the last failed phase.
 

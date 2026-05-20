@@ -1,4 +1,4 @@
-# kvelmo serve
+# serve
 
 Start the global socket and web server.
 

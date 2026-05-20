@@ -1,4 +1,4 @@
-# kvelmo quick
+# quick
 
 Quick-fix workflow: load, implement, and submit in one step.
 

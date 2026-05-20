@@ -1,4 +1,4 @@
-# kvelmo recap
+# recap
 
 Summarize current task state for resuming work.
 

@@ -1,4 +1,4 @@
-# kvelmo plan
+# plan
 
 Generate an implementation specification for the current task.
 

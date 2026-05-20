@@ -1,4 +1,4 @@
-# kvelmo rpc
+# rpc
 
 Send a raw JSON-RPC call to the socket.
 
