@@ -54,7 +54,7 @@
     "@types/react-dom": "^19.2.3",
     "@types/ws": "^8.18.1",
     "@vitejs/plugin-react": "^6.0.2",
-    "@vitest/coverage-v8": "^4.1.6",
+    "@vitest/coverage-v8": "^4.1.7",
     "daisyui": "^5.5.20",
     "eslint": "^10.4.0",
     "eslint-plugin-jsx-a11y": "^6.10.2",
@@ -65,7 +65,7 @@
     "typescript": "^6.0.3",
     "typescript-eslint": "^8.59.4",
     "vite": "^8.0.13",
-    "vitest": "^4.1.6",
+    "vitest": "^4.1.7",
     "ws": "^8.20.1"
   }
 }
