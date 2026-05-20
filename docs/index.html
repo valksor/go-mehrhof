@@ -113,8 +113,9 @@
       const docPath = window.location.pathname
       const isNightly = docPath.includes('/nightly')
       const isLatest = docPath.includes('/latest')
+      const siteName = isNightly ? 'kvelmo (nightly)' : isLatest ? 'kvelmo (latest)' : 'kvelmo'
       window.$docsify = {
-        name: isNightly ? 'kvelmo (nightly)' : isLatest ? 'kvelmo (latest)' : 'kvelmo',
+        name: siteName,
         nameLink: isNightly ? '/docs/kvelmo/nightly/' : isLatest ? '/docs/kvelmo/latest/' : '/docs/kvelmo/',
         repo: 'https://github.com/valksor/kvelmo',
         loadSidebar: true,
@@ -160,6 +161,10 @@
                   versionEl.appendChild(small)
                 }
               }
+
+              const heading = document.querySelector('.markdown-section h1')
+              const pageTitle = heading ? heading.textContent.trim() : ''
+              document.title = pageTitle ? pageTitle + ' | ' + siteName : siteName
             })
           },
         ],
