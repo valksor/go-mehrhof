@@ -1,4 +1,4 @@
-# Agent Permissions
+# Permissions
 
 The permission system controls which operations AI agents can perform during task execution. It detects dangerous operations and enforces environment-specific restrictions.
 

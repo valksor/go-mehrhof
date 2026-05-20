@@ -1,4 +1,4 @@
-# Replay Agent
+# Replay
 
 The replay agent replays recorded agent sessions deterministically, enabling reproducible testing and debugging of task workflows.
 

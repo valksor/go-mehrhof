@@ -1,4 +1,4 @@
-# Claude Agent
+# Claude
 
 Plain binary use: spawns `claude --print` with stream-json over stdin/stdout.
 

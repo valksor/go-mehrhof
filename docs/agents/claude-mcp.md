@@ -1,4 +1,4 @@
-# claude-mcp Agent
+# claude-mcp
 
 **Default adapter.** Spawns `claude` in interactive TUI mode under a PTY with `--mcp-config` pointing at a kvelmo-served MCP server. The model drives kvelmo workflows by calling the `kvelmo_*` MCP tools.
 

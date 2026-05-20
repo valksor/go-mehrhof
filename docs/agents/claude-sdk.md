@@ -1,4 +1,4 @@
-# claude-sdk Agent
+# claude-sdk
 
 WebSocket Agent SDK transport: spawns `claude --print --sdk-url ws://127.0.0.1:<port>`.
 

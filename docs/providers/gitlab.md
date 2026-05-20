@@ -1,4 +1,4 @@
-# GitLab Provider
+# GitLab
 
 Load tasks from GitLab issues and merge requests.
 

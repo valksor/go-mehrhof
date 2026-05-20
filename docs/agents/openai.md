@@ -1,4 +1,4 @@
-# OpenAI Agent
+# OpenAI
 
 The OpenAI agent uses OpenAI's chat completions API for AI-assisted development.
 

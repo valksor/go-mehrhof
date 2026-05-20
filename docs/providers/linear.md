@@ -1,4 +1,4 @@
-# Linear Provider
+# Linear
 
 Load tasks from [Linear](https://linear.app) issues.
 

@@ -1,4 +1,4 @@
-# File Provider
+# File
 
 Load tasks from local markdown files.
 

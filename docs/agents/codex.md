@@ -1,4 +1,4 @@
-# Codex Agent
+# Codex
 
 The Codex agent uses OpenAI's Codex CLI for AI-assisted development.
 

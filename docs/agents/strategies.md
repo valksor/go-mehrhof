@@ -1,4 +1,4 @@
-# Agent Strategies
+# Strategies
 
 Strategies define how agents reason about tasks. They control prompt construction and output evaluation, allowing different reasoning approaches per phase or task type.
 

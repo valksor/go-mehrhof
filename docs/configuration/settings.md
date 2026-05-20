@@ -1,4 +1,4 @@
-# Configuration Reference
+# Reference
 
 kvelmo uses a two-tier configuration system: **global** settings for user preferences and **project** settings for repository-specific overrides.
 

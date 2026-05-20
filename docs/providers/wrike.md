@@ -1,4 +1,4 @@
-# Wrike Provider
+# Wrike
 
 Load tasks from Wrike.
 

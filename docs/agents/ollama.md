@@ -1,4 +1,4 @@
-# Ollama Agent
+# Ollama
 
 The Ollama agent connects to a local Ollama server for AI-assisted development using open-source models.
 

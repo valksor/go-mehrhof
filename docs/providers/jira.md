@@ -1,4 +1,4 @@
-# Jira Provider
+# Jira
 
 Load tasks from Jira issues.
 

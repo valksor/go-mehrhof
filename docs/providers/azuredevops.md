@@ -1,4 +1,4 @@
-# Azure DevOps Provider
+# Azure DevOps
 
 Load tasks from Azure DevOps work items and create pull requests.
 

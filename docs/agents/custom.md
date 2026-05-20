@@ -1,4 +1,4 @@
-# Custom Agents
+# Custom
 
 Create your own agent implementation for kvelmo.
 

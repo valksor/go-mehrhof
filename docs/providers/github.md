@@ -1,4 +1,4 @@
-# GitHub Provider
+# GitHub
 
 Load tasks from GitHub issues and pull requests.
 
