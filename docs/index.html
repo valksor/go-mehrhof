@@ -146,6 +146,19 @@
         themeColor: '#10b981',
         plugins: [
           function (hook) {
+            let desiredTitle = ''
+            // Docsify's getAndActive() rewrites document.title from the active
+            // sidebar link after rendering; re-assert the heading-based title
+            // whenever it does.
+            const titleEl = document.querySelector('title')
+            if (titleEl) {
+              new MutationObserver(function () {
+                if (desiredTitle && document.title !== desiredTitle) {
+                  document.title = desiredTitle
+                }
+              }).observe(titleEl, { childList: true, characterData: true, subtree: true })
+            }
+
             hook.doneEach(function () {
               const versionEl = document.querySelector('.app-name-link')
               if (versionEl) {
@@ -164,7 +177,8 @@
 
               const heading = document.querySelector('.markdown-section h1')
               const pageTitle = heading ? heading.textContent.trim() : ''
-              document.title = pageTitle ? pageTitle + ' | ' + siteName : siteName
+              desiredTitle = pageTitle ? pageTitle + ' | ' + siteName : siteName
+              document.title = desiredTitle
             })
           },
         ],
