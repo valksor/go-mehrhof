@@ -16,15 +16,15 @@ User-generated artifacts (configuration, tasks, recordings, logs) are partitione
 
 These artifacts are yours. kvelmo creates and reads them but treats them as user-owned data. Backups, restores, and exports operate on this layer.
 
-| Path | Contents |
-| --- | --- |
-| `~/.valksor/kvelmo/kvelmo.yaml` | Global configuration (providers, agent settings, defaults) |
-| `~/.valksor/kvelmo/.env` | Local environment overrides (tokens, API keys) |
-| `~/.valksor/kvelmo/recordings/` | Agent session recordings (JSONL, rotated by line count) |
-| `~/.valksor/kvelmo/activity/` | RPC activity log (daily JSONL, SHA256-chained for tamper detection, 30-file retention by default) |
-| `~/.valksor/kvelmo/memory/` | Vector store entries used for semantic context recall |
-| `~/.valksor/kvelmo/worktrees/` | Per-worktree socket files (recreated on demand) |
-| `<project>/.kvelmo/` | Per-project state: tasks, plans, reviews, chat history, screenshots, event log (`events.jsonl`), checkpoints metadata |
+| Path                            | Contents                                                                                                              |
+| ------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| `~/.valksor/kvelmo/kvelmo.yaml` | Global configuration (providers, agent settings, defaults)                                                            |
+| `~/.valksor/kvelmo/.env`        | Local environment overrides (tokens, API keys)                                                                        |
+| `~/.valksor/kvelmo/recordings/` | Agent session recordings (JSONL, rotated by line count)                                                               |
+| `~/.valksor/kvelmo/activity/`   | RPC activity log (daily JSONL, SHA256-chained for tamper detection, 30-file retention by default)                     |
+| `~/.valksor/kvelmo/memory/`     | Vector store entries used for semantic context recall                                                                 |
+| `~/.valksor/kvelmo/worktrees/`  | Per-worktree socket files (recreated on demand)                                                                       |
+| `<project>/.kvelmo/`            | Per-project state: tasks, plans, reviews, chat history, screenshots, event log (`events.jsonl`), checkpoints metadata |
 
 The base path is `~/.valksor/kvelmo/` by default, or whatever `KVELMO_HOME` is set to.
 
