@@ -1,4 +1,4 @@
-# kvelmo group
+# group
 
 Cross-repo task group management. Link tasks across multiple repositories for synchronized lifecycle operations.
 

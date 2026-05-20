@@ -1,4 +1,4 @@
-# kvelmo diff
+# diff
 
 Show what the agent changed.
 

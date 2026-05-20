@@ -1,4 +1,4 @@
-# kvelmo list
+# list
 
 List all tasks in the workspace.
 

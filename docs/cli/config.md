@@ -1,4 +1,4 @@
-# kvelmo config
+# config
 
 Configuration management.
 

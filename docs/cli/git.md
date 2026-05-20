@@ -1,4 +1,4 @@
-# kvelmo git
+# git
 
 Git operations.
 

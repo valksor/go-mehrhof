@@ -1,4 +1,4 @@
-# kvelmo logs
+# logs
 
 Show agent activity log for the current task.
 

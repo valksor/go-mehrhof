@@ -1,4 +1,4 @@
-# kvelmo explain
+# explain
 
 Ask the agent to explain its last action.
 

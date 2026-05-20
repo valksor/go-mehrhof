@@ -1,4 +1,4 @@
-# kvelmo hooks
+# hooks
 
 List configured workflow hooks.
 

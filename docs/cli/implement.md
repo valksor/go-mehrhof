@@ -1,4 +1,4 @@
-# kvelmo implement
+# implement
 
 Execute the specification and make code changes.
 

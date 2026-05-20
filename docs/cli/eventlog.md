@@ -1,4 +1,4 @@
-# kvelmo eventlog
+# eventlog
 
 View task lifecycle event log.
 

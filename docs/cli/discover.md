@@ -1,4 +1,4 @@
-# kvelmo discover
+# discover
 
 List available project commands.
 

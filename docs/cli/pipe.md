@@ -1,4 +1,4 @@
-# kvelmo pipe
+# pipe
 
 Run a one-shot prompt through the configured AI agent.
 

@@ -1,4 +1,4 @@
-# kvelmo export
+# export
 
 Export task history and metrics.
 

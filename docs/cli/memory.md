@@ -1,4 +1,4 @@
-# kvelmo memory
+# memory
 
 Memory management commands.
 

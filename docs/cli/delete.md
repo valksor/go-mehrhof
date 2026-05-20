@@ -1,4 +1,4 @@
-# kvelmo delete
+# delete
 
 Delete a terminal task from the registry.
 

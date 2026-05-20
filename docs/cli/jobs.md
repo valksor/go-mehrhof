@@ -1,4 +1,4 @@
-# kvelmo jobs
+# jobs
 
 List worker jobs.
 

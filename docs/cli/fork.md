@@ -1,4 +1,4 @@
-# kvelmo fork
+# fork
 
 Manage conversation forks for parallel approaches. Create multiple forks from the current checkpoint to try different implementation strategies, compare them side-by-side, then select the winner.
 

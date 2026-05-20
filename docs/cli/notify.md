@@ -1,4 +1,4 @@
-# kvelmo notify
+# notify
 
 Notification management.
 
