@@ -1,4 +1,4 @@
-# kvelmo stop
+# stop
 
 Stop a running job.
 

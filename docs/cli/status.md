@@ -1,4 +1,4 @@
-# kvelmo status
+# status
 
 Show current task state and information.
 

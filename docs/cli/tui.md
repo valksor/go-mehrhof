@@ -1,4 +1,4 @@
-# kvelmo tui
+# tui
 
 Open the interactive terminal UI.
 

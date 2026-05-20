@@ -1,4 +1,4 @@
-# kvelmo workers
+# workers
 
 Worker pool status.
 

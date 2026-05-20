@@ -1,4 +1,4 @@
-# kvelmo watch
+# watch
 
 Stream live task output to the terminal.
 

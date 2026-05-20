@@ -1,4 +1,4 @@
-# kvelmo test-provider
+# test-provider
 
 Test a provider connection to verify it is configured and reachable.
 

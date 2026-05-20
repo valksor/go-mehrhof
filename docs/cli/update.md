@@ -1,4 +1,4 @@
-# kvelmo update
+# update
 
 Re-fetch task from provider.
 

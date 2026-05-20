@@ -1,4 +1,4 @@
-# kvelmo stats
+# stats
 
 Show task analytics for the current project.
 

@@ -1,4 +1,4 @@
-# kvelmo tutorial
+# tutorial
 
 Interactive kvelmo walkthrough.
 

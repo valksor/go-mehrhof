@@ -1,4 +1,4 @@
-# kvelmo undo
+# undo
 
 Revert to the previous checkpoint.
 

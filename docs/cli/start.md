@@ -1,4 +1,4 @@
-# kvelmo start
+# start
 
 Start kvelmo sockets for the current directory.
 

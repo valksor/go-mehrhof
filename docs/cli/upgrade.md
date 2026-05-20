@@ -1,4 +1,4 @@
-# kvelmo upgrade
+# upgrade
 
 Update kvelmo to the latest version from GitHub releases.
 

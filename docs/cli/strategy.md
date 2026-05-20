@@ -1,4 +1,4 @@
-# kvelmo strategy
+# strategy
 
 Manage agent reasoning strategies.
 

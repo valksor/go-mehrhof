@@ -1,4 +1,4 @@
-# kvelmo show
+# show
 
 Display task artifacts (specs, plans).
 

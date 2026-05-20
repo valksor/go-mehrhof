@@ -1,4 +1,4 @@
-# kvelmo simplify
+# simplify
 
 Optional: Simplify code for clarity after implementation.
 

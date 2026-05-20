@@ -1,4 +1,4 @@
-# kvelmo shutdown
+# shutdown
 
 Shutdown the worktree socket server.
 

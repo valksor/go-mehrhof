@@ -1,4 +1,4 @@
-# kvelmo submit
+# submit
 
 Create a PR and submit to the provider.
 
