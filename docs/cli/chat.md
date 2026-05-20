@@ -1,4 +1,4 @@
-# kvelmo chat
+# chat
 
 Interactive chat with the agent.
 

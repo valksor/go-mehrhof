@@ -1,4 +1,4 @@
-# kvelmo checklist
+# checklist
 
 Manage review checklist items configured in workflow policy.
 

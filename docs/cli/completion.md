@@ -1,4 +1,4 @@
-# kvelmo completion
+# completion
 
 Shell completion setup.
 

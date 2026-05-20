@@ -1,4 +1,4 @@
-# kvelmo cache
+# cache
 
 Manage the semantic response cache used for agent prompt deduplication.
 

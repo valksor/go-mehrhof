@@ -1,4 +1,4 @@
-# kvelmo browser
+# browser
 
 Browser automation commands.
 

@@ -1,4 +1,4 @@
-# kvelmo checkpoints
+# checkpoints
 
 List git checkpoints for the current task.
 

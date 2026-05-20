@@ -1,4 +1,4 @@
-# kvelmo ci
+# ci
 
 CI pipeline operations.
 

@@ -1,4 +1,4 @@
-# kvelmo browse
+# browse
 
 Open URLs in browser.
 

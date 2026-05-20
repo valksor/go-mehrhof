@@ -1,4 +1,4 @@
-# kvelmo autostart
+# autostart
 
 Automatically start the worktree socket when needed.
 

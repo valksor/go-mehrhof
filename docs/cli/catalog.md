@@ -1,4 +1,4 @@
-# kvelmo catalog
+# catalog
 
 Task template catalog.
 

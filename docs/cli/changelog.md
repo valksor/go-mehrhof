@@ -1,4 +1,4 @@
-# kvelmo changelog
+# changelog
 
 Generate a changelog from commits between two git refs, grouped by category.
 

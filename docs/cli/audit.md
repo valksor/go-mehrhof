@@ -1,4 +1,4 @@
-# kvelmo audit
+# audit
 
 View a compliance-focused audit trail of all kvelmo actions.
 

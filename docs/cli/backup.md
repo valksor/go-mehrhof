@@ -1,4 +1,4 @@
-# kvelmo backup
+# backup
 
 Backup kvelmo state to a tar.gz archive.
 

@@ -1,4 +1,4 @@
-# kvelmo abort
+# abort
 
 Abort the current task and transition to failed state.
 

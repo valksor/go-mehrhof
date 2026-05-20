@@ -1,4 +1,4 @@
-# kvelmo codegraph
+# codegraph
 
 Code symbol graph — index, search, and explore code symbols and their relationships.
 

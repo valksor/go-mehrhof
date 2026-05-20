@@ -1,4 +1,4 @@
-# kvelmo activity
+# activity
 
 View RPC activity log.
 

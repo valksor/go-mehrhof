@@ -1,4 +1,4 @@
-# kvelmo abandon
+# abandon
 
 Full cleanup: stop task, delete branch, clean work directory.
 

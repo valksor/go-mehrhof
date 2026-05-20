@@ -1,4 +1,4 @@
-# kvelmo approve
+# approve
 
 Explicitly approve a workflow transition that requires human approval.
 

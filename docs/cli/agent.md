@@ -1,4 +1,4 @@
-# kvelmo agent
+# agent
 
 Agent management.
 

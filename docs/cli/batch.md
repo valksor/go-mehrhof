@@ -1,4 +1,4 @@
-# kvelmo batch
+# batch
 
 Run an action across all active projects.
 
