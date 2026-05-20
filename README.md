@@ -14,8 +14,6 @@ It manages the full lifecycle of development tasks — from loading requirements
 
 kvelmo is not the agent. It is the system around the agent: workspace setup, checkpoints, approvals, governance, observability, and recovery.
 
-> **Note:** kvelmo is currently only available through [nightly builds](https://valksor.com/docs/kvelmo/nightly/) or by building from source. There is no stable release yet.
-
 ## Why Use It
 
 - **Web-first workflow** for creating tasks, watching progress, reviewing changes, and managing project state visually
@@ -160,9 +158,9 @@ the build loudly.
 
 ## Installation
 
-kvelmo is currently available through nightly builds or by building from source.
+kvelmo can be installed with the install script or built from source.
 
-**Nightly build:**
+**Install script:**
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/valksor/kvelmo/master/install.sh | bash
