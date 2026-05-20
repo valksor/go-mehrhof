@@ -4,20 +4,19 @@
   - [FAQ](/faq.md)
   - [Glossary](/glossary.md)
 
-- Desktop App
-  - [Overview](/desktop/index.md)
-  - [Getting Started](/desktop/getting-started.md)
+- [Desktop App](/desktop/index.md)
+  - [Getting Started with the Desktop App](/desktop/getting-started.md)
 
 - Web UI
-  - [Getting Started](/web-ui/getting-started.md)
-  - [Simple & Developer Modes](/web-ui/modes.md)
+  - [Getting Started with Web UI](/web-ui/getting-started.md)
+  - [Simple vs Developer Modes](/web-ui/modes.md)
   - [Dashboard](/web-ui/dashboard.md)
   - [Creating Tasks](/web-ui/creating-tasks.md)
-  - [Planning](/web-ui/planning.md)
-  - [Implementing](/web-ui/implementing.md)
-  - [Reviewing](/web-ui/reviewing.md)
+  - [Planning Phase](/web-ui/planning.md)
+  - [Implementation Phase](/web-ui/implementing.md)
+  - [Review Phase](/web-ui/reviewing.md)
   - [Chat](/web-ui/chat.md)
-  - [Browser Automation](/web-ui/browser.md)
+  - [Browser](/web-ui/browser.md)
   - [Workers](/web-ui/workers.md)
   - [Jobs](/web-ui/jobs.md)
   - [Queue](/web-ui/queue.md)
@@ -25,9 +24,9 @@
   - [Memory](/web-ui/memory.md)
   - [Catalog](/web-ui/catalog.md)
   - [Recordings](/web-ui/recordings.md)
-  - [Activity & Audit](/web-ui/activity.md)
-  - [Backup & Restore](/web-ui/backup.md)
-  - [Security Scanning](/web-ui/security.md)
+  - [Activity](/web-ui/activity.md)
+  - [Backup](/web-ui/backup.md)
+  - [Security](/web-ui/security.md)
   - [Export](/web-ui/export.md)
   - [Report](/web-ui/report.md)
   - [CI Status](/web-ui/ci.md)
@@ -46,8 +45,7 @@
   - [Quality Gates](/web-ui/quality.md)
   - [Settings](/web-ui/settings.md)
 
-- CLI Reference
-  - [Overview](/cli/index.md)
+- [CLI Reference](/cli/index.md)
   - Workflow
     - [start](/cli/start.md)
     - [plan](/cli/plan.md)
@@ -125,9 +123,9 @@
     - [codegraph](/cli/codegraph.md)
     - [discover](/cli/discover.md)
   - Shared References
-    - [Provider login subcommands](/cli/login.md)
+    - [Provider Login Subcommands](/cli/login.md)
     - [test-provider](/cli/test-provider.md)
-    - [--wait flag](/cli/wait.md)
+    - [`--wait` flag reference](/cli/wait.md)
   - Infrastructure
     - [backup](/cli/backup.md)
     - [restore](/cli/restore.md)
@@ -145,10 +143,9 @@
   - [Workflow](/concepts/workflow.md)
   - [State Machine](/concepts/state-machine.md)
   - [Checkpoints](/concepts/checkpoints.md)
-  - [Sockets](/concepts/sockets.md)
+  - [Socket Architecture](/concepts/sockets.md)
 
-- Agents
-  - [Overview](/agents/index.md)
+- [Agents](/agents/index.md)
   - [Claude](/agents/claude.md)
   - [Codex](/agents/codex.md)
   - [Custom](/agents/custom.md)
@@ -158,8 +155,7 @@
   - [Replay](/agents/replay.md)
   - [Strategies](/agents/strategies.md)
 
-- Providers
-  - [Overview](/providers/index.md)
+- [Providers](/providers/index.md)
   - [Azure DevOps](/providers/azuredevops.md)
   - [File](/providers/file.md)
   - [GitHub](/providers/github.md)
@@ -168,23 +164,22 @@
   - [Linear](/providers/linear.md)
   - [Wrike](/providers/wrike.md)
 
-- Configuration
-  - [Overview](/configuration/index.md)
-  - [Settings](/configuration/settings.md)
-  - [Environment](/configuration/environment.md)
+- [Configuration](/configuration/index.md)
+  - [Reference](/configuration/settings.md)
+  - [Environment Variables](/configuration/environment.md)
 
 - Guides
-  - [First Task](/guides/first-task.md)
-  - [Web UI vs CLI](/guides/web-ui-vs-cli.md)
+  - [Your First Task](/guides/first-task.md)
+  - [Web UI vs CLI vs TUI](/guides/web-ui-vs-cli.md)
   - [Task Examples](/guides/task-examples/index.md)
-  - [Recovery](/guides/recovery.md)
-  - [Windows WSL](/guides/windows-wsl.md)
-  - [Tauri Signing Setup](/guides/tauri-signing-setup.md)
+  - [Recovery Guide](/guides/recovery.md)
+  - [Windows WSL Setup](/guides/windows-wsl.md)
+  - [Tauri Updater Signing Setup](/guides/tauri-signing-setup.md)
 
 - Advanced
-  - [Memory](/advanced/memory.md)
+  - [Semantic Memory](/advanced/memory.md)
   - [Browser Automation](/advanced/browser.md)
-  - [Workers](/advanced/workers.md)
+  - [Worker Pool](/advanced/workers.md)
 
 - Created By
 - [**Valksor**](https://valksor.com)
