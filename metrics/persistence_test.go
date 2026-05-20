@@ -157,6 +157,70 @@ func TestPersisterLoadCorruptFile(t *testing.T) {
 	}
 }
 
+func TestNewPersisterDefaults(t *testing.T) {
+	m := New()
+
+	// Empty path → defaults to <BaseDir>/metrics.json.
+	p := NewPersister(m, "", 0)
+	if p.path == "" {
+		t.Error("default path should be non-empty when path arg is blank")
+	}
+	if p.interval != 60*time.Second {
+		t.Errorf("default interval = %v, want 60s", p.interval)
+	}
+
+	// Explicit values are preserved.
+	p2 := NewPersister(m, "/tmp/custom.json", 5*time.Second)
+	if p2.path != "/tmp/custom.json" {
+		t.Errorf("path = %q, want /tmp/custom.json", p2.path)
+	}
+	if p2.interval != 5*time.Second {
+		t.Errorf("interval = %v, want 5s", p2.interval)
+	}
+
+	// Negative interval should also fall back to default.
+	p3 := NewPersister(m, "x", -1*time.Second)
+	if p3.interval != 60*time.Second {
+		t.Errorf("negative interval should fall back, got %v", p3.interval)
+	}
+}
+
+func TestPersisterSaveMkdirCreatesParent(t *testing.T) {
+	dir := t.TempDir()
+	// Nested path that doesn't exist yet → save() must MkdirAll.
+	path := filepath.Join(dir, "nested", "sub", "metrics.json")
+
+	m := New()
+	m.JobsSubmitted.Store(42)
+	p := NewPersister(m, path, time.Minute)
+	p.save()
+
+	if _, err := os.Stat(path); err != nil {
+		t.Fatalf("save did not create nested file: %v", err)
+	}
+}
+
+func TestPersisterSaveOnUnwritablePath(t *testing.T) {
+	dir := t.TempDir()
+	// Create a regular file where save() would try to MkdirAll a parent.
+	blocker := filepath.Join(dir, "blocker")
+	if err := os.WriteFile(blocker, []byte("x"), 0o640); err != nil {
+		t.Fatalf("seed blocker: %v", err)
+	}
+
+	// save() targets <blocker>/sub/metrics.json — MkdirAll fails because blocker is a file.
+	path := filepath.Join(blocker, "sub", "metrics.json")
+
+	m := New()
+	p := NewPersister(m, path, time.Minute)
+	// Must not panic; error is logged and swallowed by design.
+	p.save()
+
+	if _, err := os.Stat(path); err == nil {
+		t.Error("expected save to fail under unwritable path")
+	}
+}
+
 func TestPersisterStartSavesOnCancel(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "metrics.json")

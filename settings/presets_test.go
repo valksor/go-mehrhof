@@ -35,3 +35,38 @@ func TestApplyPreset_Unknown(t *testing.T) {
 		t.Error("expected nil for unknown preset")
 	}
 }
+
+func TestApplyPreset_Fast(t *testing.T) {
+	s := ApplyPreset("fast")
+	if s == nil {
+		t.Fatal("expected non-nil settings for fast preset")
+	}
+	if s.Workers.Max != 5 {
+		t.Errorf("fast preset Workers.Max = %d, want 5", s.Workers.Max)
+	}
+	if s.Workflow.AutoAdvance == nil {
+		t.Fatal("fast preset should set AutoAdvance")
+	}
+	if !*s.Workflow.AutoAdvance {
+		t.Error("fast preset should enable AutoAdvance")
+	}
+}
+
+func TestApplyPreset_Solo(t *testing.T) {
+	s := ApplyPreset("solo")
+	if s == nil {
+		t.Fatal("expected non-nil settings for solo preset")
+	}
+	if s.Workers.Max != 1 {
+		t.Errorf("solo preset Workers.Max = %d, want 1", s.Workers.Max)
+	}
+}
+
+func TestPresetNamesCoversAll(t *testing.T) {
+	// Every name in PresetNames must resolve to a non-nil preset.
+	for _, name := range PresetNames {
+		if ApplyPreset(name) == nil {
+			t.Errorf("PresetNames lists %q but ApplyPreset returned nil", name)
+		}
+	}
+}

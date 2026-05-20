@@ -101,6 +101,142 @@ func TestTimeSeriesStore_Retention(t *testing.T) {
 	}
 }
 
+func TestNewTimeSeriesStoreDefaults(t *testing.T) {
+	m := New()
+
+	// Empty dir, zero interval, zero retention → all fall back to defaults.
+	store := NewTimeSeriesStore(m, "", 0, 0)
+	if store.dir == "" {
+		t.Error("default dir should be non-empty when dir arg is blank")
+	}
+	if store.interval != 5*time.Minute {
+		t.Errorf("default interval = %v, want 5m", store.interval)
+	}
+	if store.retentionDays != 90 {
+		t.Errorf("default retentionDays = %d, want 90", store.retentionDays)
+	}
+
+	// Negative inputs also fall back.
+	store2 := NewTimeSeriesStore(m, "/tmp/x", -1*time.Second, -5)
+	if store2.dir != "/tmp/x" {
+		t.Errorf("dir = %q, want /tmp/x", store2.dir)
+	}
+	if store2.interval != 5*time.Minute {
+		t.Errorf("negative interval did not fall back, got %v", store2.interval)
+	}
+	if store2.retentionDays != 90 {
+		t.Errorf("negative retention did not fall back, got %d", store2.retentionDays)
+	}
+}
+
+func TestTimeSeriesStore_CleanupSkipsUnknownFiles(t *testing.T) {
+	dir := t.TempDir()
+	m := New()
+	store := NewTimeSeriesStore(m, dir, time.Minute, 7)
+
+	// Mix valid timeseries files with junk that doesn't match the metrics-*.jsonl pattern.
+	junkFiles := []string{
+		"random.txt",
+		"metrics-not-a-date.jsonl",
+		"metrics-2026-13-99.jsonl", // invalid date
+		"metrics.jsonl",            // missing date entirely
+	}
+	for _, name := range junkFiles {
+		if err := os.WriteFile(filepath.Join(dir, name), []byte("noise\n"), 0o640); err != nil {
+			t.Fatalf("seed %s: %v", name, err)
+		}
+	}
+
+	// Sub-directory should also be skipped.
+	if err := os.MkdirAll(filepath.Join(dir, "subdir"), 0o750); err != nil {
+		t.Fatalf("seed subdir: %v", err)
+	}
+
+	store.cleanup()
+
+	// All junk files should remain — cleanup only touches files it recognises.
+	for _, name := range junkFiles {
+		if _, err := os.Stat(filepath.Join(dir, name)); err != nil {
+			t.Errorf("cleanup removed unrelated file %q: %v", name, err)
+		}
+	}
+}
+
+func TestTimeSeriesStore_CleanupMissingDir(t *testing.T) {
+	m := New()
+	// Pointing at a non-existent dir should be a silent no-op.
+	store := NewTimeSeriesStore(m, filepath.Join(t.TempDir(), "does-not-exist"), time.Minute, 7)
+
+	// Must not panic.
+	store.cleanup()
+}
+
+func TestTimeSeriesStore_QueryMissingFiles(t *testing.T) {
+	dir := t.TempDir()
+	m := New()
+	store := NewTimeSeriesStore(m, dir, time.Minute, 7)
+
+	// Query a range whose files don't exist — should return empty, no error.
+	results, err := store.Query(time.Now().AddDate(0, 0, -2), time.Now())
+	if err != nil {
+		t.Fatalf("Query with missing files should not error: %v", err)
+	}
+	if len(results) != 0 {
+		t.Errorf("expected 0 results from empty dir, got %d", len(results))
+	}
+}
+
+func TestTimeSeriesStore_ReadFileSkipsMalformed(t *testing.T) {
+	dir := t.TempDir()
+	m := New()
+	store := NewTimeSeriesStore(m, dir, time.Minute, 7)
+
+	day := time.Date(2026, 5, 19, 0, 0, 0, 0, time.UTC)
+	path := filepath.Join(dir, store.filenameForDay(day))
+
+	// File with a mix of valid + malformed + blank lines.
+	content := `{"timestamp":"2026-05-19T01:00:00Z","jobs_submitted":1}
+not valid json
+{"timestamp":"2026-05-19T02:00:00Z","jobs_submitted":2}
+
+{still invalid
+
+{"timestamp":"2026-05-19T03:00:00Z","jobs_submitted":3}
+`
+	if err := os.WriteFile(path, []byte(content), 0o640); err != nil {
+		t.Fatalf("seed: %v", err)
+	}
+
+	results, err := store.Query(day, day.Add(24*time.Hour))
+	if err != nil {
+		t.Fatalf("Query: %v", err)
+	}
+	if len(results) != 3 {
+		t.Errorf("expected 3 valid entries (malformed skipped), got %d", len(results))
+	}
+}
+
+func TestTimeSeriesStore_ParseDayFromFilename(t *testing.T) {
+	ts := &TimeSeriesStore{}
+	cases := []struct {
+		name string
+		want bool
+	}{
+		{"metrics-2026-05-19.jsonl", true},
+		{"metrics-2026-13-01.jsonl", false}, // invalid month
+		{"prefix-2026-05-19.jsonl", false},
+		{"metrics-2026-05-19.txt", false},
+		{"metrics-not-a-date.jsonl", false},
+		{"metrics-.jsonl", false},
+	}
+	for _, c := range cases {
+		_, ok := ts.parseDayFromFilename(c.name)
+		if ok != c.want {
+			t.Errorf("parseDayFromFilename(%q) ok=%v, want %v", c.name, ok, c.want)
+		}
+	}
+}
+
 func TestTimeSeriesStore_QueryTimeRange(t *testing.T) {
 	dir := t.TempDir()
 	m := New()

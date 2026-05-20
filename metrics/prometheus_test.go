@@ -116,3 +116,86 @@ func TestRenderPrometheus_TypeAnnotations(t *testing.T) {
 		}
 	}
 }
+
+func TestRenderPrometheus_PerMethodLabels(t *testing.T) {
+	snap := Snapshot{
+		Methods: map[string]MethodSnapshot{
+			"ping":   {Requests: 10, Errors: 1, AvgLatencyMs: 5.5},
+			"status": {Requests: 4, Errors: 0, AvgLatencyMs: 12},
+		},
+	}
+
+	out := RenderPrometheus(snap)
+
+	wantLines := []string{
+		`kvelmo_rpc_method_requests_total{method="ping"} 10`,
+		`kvelmo_rpc_method_requests_total{method="status"} 4`,
+		`kvelmo_rpc_method_errors_total{method="ping"} 1`,
+		`kvelmo_rpc_method_errors_total{method="status"} 0`,
+		`kvelmo_rpc_method_latency_avg_ms{method="ping"} 5.5`,
+		`kvelmo_rpc_method_latency_avg_ms{method="status"} 12`,
+		"# HELP kvelmo_rpc_method_requests_total",
+		"# TYPE kvelmo_rpc_method_requests_total counter",
+	}
+	for _, line := range wantLines {
+		if !strings.Contains(out, line) {
+			t.Errorf("output missing %q\nfull output:\n%s", line, out)
+		}
+	}
+
+	// Stable ordering: ping appears before status across all method sections.
+	if strings.Index(out, `method="ping"`) > strings.Index(out, `method="status"`) {
+		t.Error("expected ping before status (lex order)")
+	}
+}
+
+func TestRenderPrometheus_PerAgentLabels(t *testing.T) {
+	snap := Snapshot{
+		Agents: map[string]AgentSnapshot{
+			"claude": {Tokens: 1000, Requests: 5, Errors: 0, AvgLatencyMs: 100},
+			"codex":  {Tokens: 500, Requests: 2, Errors: 1, AvgLatencyMs: 60},
+		},
+	}
+
+	out := RenderPrometheus(snap)
+
+	wantLines := []string{
+		`kvelmo_agent_tokens_total{agent="claude"} 1000`,
+		`kvelmo_agent_tokens_total{agent="codex"} 500`,
+		`kvelmo_agent_requests_total{agent="claude"} 5`,
+		`kvelmo_agent_requests_total{agent="codex"} 2`,
+		`kvelmo_agent_errors_total{agent="claude"} 0`,
+		`kvelmo_agent_errors_total{agent="codex"} 1`,
+		`kvelmo_agent_execution_latency_avg_ms{agent="claude"} 100`,
+		`kvelmo_agent_execution_latency_avg_ms{agent="codex"} 60`,
+		"# HELP kvelmo_agent_tokens_total",
+		"# TYPE kvelmo_agent_execution_latency_avg_ms gauge",
+	}
+	for _, line := range wantLines {
+		if !strings.Contains(out, line) {
+			t.Errorf("output missing %q\nfull output:\n%s", line, out)
+		}
+	}
+}
+
+func TestRenderPrometheus_EmptyMapsOmitLabelSections(t *testing.T) {
+	// Methods/Agents sections must only appear when non-empty.
+	out := RenderPrometheus(Snapshot{})
+
+	if strings.Contains(out, "kvelmo_rpc_method_requests_total") {
+		t.Error("per-method section should be omitted when Methods is empty")
+	}
+	if strings.Contains(out, "kvelmo_agent_tokens_total") {
+		t.Error("per-agent section should be omitted when Agents is empty")
+	}
+}
+
+func TestRenderPrometheus_TrailingNewline(t *testing.T) {
+	out := RenderPrometheus(Snapshot{})
+	if !strings.HasSuffix(out, "\n") {
+		t.Errorf("output should end with a single trailing newline")
+	}
+	if strings.HasSuffix(out, "\n\n") {
+		t.Errorf("output should not have multiple trailing newlines")
+	}
+}
