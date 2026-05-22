@@ -108,7 +108,10 @@ func (c *Conductor) Plan(ctx context.Context) (string, error) {
 		jobType = worker.JobTypeDryRun
 	}
 	g := buildPhaseGraph(jobType, "planning", prompt, c.getWorkDir())
-	sched := graph.NewScheduler(g, c.pool)
+	// Wire the sub-task executor so a graph definition that includes sub_task
+	// nodes (e.g. .kvelmo/graphs/plan.yaml) can spawn isolated sub-task
+	// lifecycles instead of failing with "no sub-task executor configured".
+	sched := graph.NewScheduler(g, c.pool, graph.WithSubTaskExecutor(c.RunSubTask))
 
 	// Create pre-job safety checkpoint before the scheduler starts.
 	c.createSafetyCheckpoint(ctx, "pre-plan_done checkpoint")
