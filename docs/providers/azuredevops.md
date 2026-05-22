@@ -2,6 +2,13 @@
 
 Load tasks from Azure DevOps work items and create pull requests.
 
+> **Support tier: basic.** Azure DevOps covers the core lifecycle — fetch a work
+> item, sync status, comment, and open a pull request — which is enough to run a
+> task end to end. It does **not** yet implement the richer capabilities that
+> GitHub, GitLab, and Linear offer (hierarchy context, label management, task
+> listing/creation, fetching existing comments). If you need those, prefer one of
+> those providers or open an issue. See the capability matrix below.
+
 ## Usage
 
 ```bash
@@ -46,16 +53,23 @@ providers:
       submitted: Resolved
 ```
 
-## Features
+## Capability matrix
 
-| Feature                  | Supported                        |
-| ------------------------ | -------------------------------- |
-| Fetch work items         | Yes                              |
-| Update status            | Yes (JSON Patch on System.State) |
-| Add comments             | Yes                              |
-| Create pull requests     | Yes                              |
-| Status sync              | Yes (configurable mapping)       |
-| Hierarchy (parent/child) | No                               |
+| Capability                       | Azure DevOps | GitHub / GitLab / Linear |
+| -------------------------------- | ------------ | ------------------------ |
+| Fetch work item / issue          | Yes          | Yes                      |
+| Update status (configurable map) | Yes          | Yes                      |
+| Post status comment              | Yes          | Yes                      |
+| Create pull request              | Yes          | Yes                      |
+| Hierarchy context (parent/sibs)  | No           | Yes                      |
+| Label management                 | No           | Yes                      |
+| List tasks                       | No           | Yes                      |
+| Create tasks                     | No           | Yes                      |
+| Fetch existing comments          | No           | Yes                      |
+
+Capabilities are detected at runtime via optional provider interfaces, so a
+feature that depends on an unsupported capability is simply skipped for Azure
+DevOps rather than failing the workflow.
 
 ## Supported Work Item Types
 
