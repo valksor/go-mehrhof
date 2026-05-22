@@ -158,6 +158,17 @@ func runServe(cmd *cobra.Command, args []string) error {
 			slog.Debug("codex agent not available", statusError, err)
 		}
 
+		// One-time: bring an older global config file up to the current schema
+		// version, in place. No-op when already current or absent. Tokens are
+		// untouched (they live in .env, not the config YAML).
+		if gp, gpErr := settings.GlobalPath(); gpErr == nil {
+			if migrated, mErr := settings.MigrateConfigFile(gp); mErr != nil {
+				slog.Warn("global config migration failed", statusError, mErr)
+			} else if migrated {
+				slog.Info("global config migrated to current schema version", "path", gp)
+			}
+		}
+
 		// Apply agent.default from settings
 		effective, _, _, _ := settings.LoadEffective("")
 

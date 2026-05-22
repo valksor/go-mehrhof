@@ -14,6 +14,12 @@ package settings
 // Settings represents the complete configuration for kvelmo.
 // Project settings override global settings when both are present.
 type Settings struct {
+	// Version is the config schema version, used by the migration chain in
+	// version.go. It is stamped to CurrentConfigVersion on save; a missing or
+	// zero value identifies a pre-versioning config that Load migrates forward.
+	// It has no schema tag deliberately, so it is never surfaced in the UI.
+	Version int `yaml:"version,omitempty" json:"version,omitempty"`
+
 	Preset       string                 `yaml:"preset,omitempty" json:"preset,omitempty" schema:"label=Preset;desc=Configuration preset to apply defaults (e.g. compliance);options=|compliance|fast|solo;advanced"`
 	Identity     string                 `yaml:"identity,omitempty" json:"identity,omitempty" schema:"label=Identity;desc=User identity for approval records and audit trail (defaults to OS username)"`
 	Agent        AgentSettings          `yaml:"agent,omitempty" json:"agent,omitzero"`

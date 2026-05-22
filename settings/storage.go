@@ -2,6 +2,7 @@ package settings
 
 import (
 	"fmt"
+	"log/slog"
 	"os"
 	"path/filepath"
 
@@ -45,9 +46,23 @@ func Load(path string) (*Settings, error) {
 		return nil, fmt.Errorf("read settings: %w", err)
 	}
 
+	// Bring an older on-disk schema up to the current version before decoding,
+	// so a config written by an older kvelmo still unmarshals correctly. This
+	// is an in-memory migration; the file is only rewritten via MigrateConfigFile.
+	migrated, changed, err := MigrateConfigData(data)
+	if err != nil {
+		return nil, fmt.Errorf("migrate settings: %w", err)
+	}
+	if changed {
+		slog.Info("migrated config to current schema version in memory", "path", path, "version", CurrentConfigVersion)
+	}
+
 	var s Settings
-	if err := yaml.Unmarshal(data, &s); err != nil {
+	if err := yaml.Unmarshal(migrated, &s); err != nil {
 		return nil, fmt.Errorf("parse settings: %w", err)
+	}
+	if s.Version == 0 {
+		s.Version = CurrentConfigVersion
 	}
 
 	return &s, nil

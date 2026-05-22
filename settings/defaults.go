@@ -14,6 +14,7 @@ func BoolValue(p *bool, defaultVal bool) bool {
 // a field is not specified in either global or project settings.
 func DefaultSettings() *Settings {
 	return &Settings{
+		Version: CurrentConfigVersion,
 		Agent: AgentSettings{
 			// Default to claude-mcp. Background, in three parts:
 			//
