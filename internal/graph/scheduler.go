@@ -404,7 +404,36 @@ func (s *Scheduler) dispatchNode(ctx context.Context, id NodeID, node *Node, opt
 func (s *Scheduler) watchNode(ctx context.Context, id NodeID, node *Node, jobID string, opts JobOpts) {
 	stream := s.pool.Stream(jobID)
 	if stream == nil {
-		s.completeNode(ctx, id, node, "", fmt.Errorf("no stream for job %s", jobID), opts)
+		// A nil stream means the job already reached a terminal state and its
+		// stream was torn down before we subscribed. The stream is created in
+		// Submit before the job is queued and removed only at completion, so
+		// nil unambiguously implies the job finished — fast jobs (cached
+		// results, instant mock agents) hit this regularly, and it is racier
+		// on some schedulers than others. Fall back to the authoritative job
+		// record instead of treating it as an error.
+		job := s.pool.GetJob(jobID)
+		switch {
+		case job == nil:
+			s.completeNode(ctx, id, node, "", fmt.Errorf("no stream or job record for %s", jobID), opts)
+		case job.Status == worker.JobStatusFailed:
+			s.completeNode(ctx, id, node, "", fmt.Errorf("%s", job.Error), opts)
+		default:
+			// The live event stream is gone, so the per-delta output events
+			// were never delivered to us. Replay the job's accumulated result
+			// as a single output event so consumers that render incremental
+			// output (the conductor's sub-task UI, for one) still see the
+			// node's text rather than nothing.
+			if job.Result != "" {
+				s.emit(SchedulerEvent{
+					Type:      EventNodeOutput,
+					NodeID:    id,
+					NodeLabel: node.Label,
+					JobID:     jobID,
+					Content:   job.Result,
+				})
+			}
+			s.completeNode(ctx, id, node, job.Result, nil, opts)
+		}
 
 		return
 	}
