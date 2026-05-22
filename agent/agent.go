@@ -15,6 +15,15 @@ import (
 
 // Agent is the interface for AI agents (Claude, Codex, custom).
 //
+// Stability: Agent is a frozen public extension point (see
+// docs/concepts/api-stability.md). Third parties implement it to add custom
+// agents, so it does NOT gain methods within a major version — that would break
+// every external implementation. New optional capabilities are instead added as
+// separate interfaces detected by type assertion, e.g.:
+//
+//	type Resumable interface{ Resume(ctx context.Context, id string) error }
+//	if r, ok := a.(Resumable); ok { _ = r.Resume(ctx, id) }
+//
 //nolint:interfacebloat // All methods are required for agent lifecycle management
 type Agent interface {
 	// Name returns the agent's identifier (e.g., "claude", "codex")

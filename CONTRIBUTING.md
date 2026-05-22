@@ -169,6 +169,26 @@ handlers_implement.go // Implementation handlers
 handlers_review.go    // Review handlers
 ```
 
+## Stability & Compatibility
+
+From **v1.0**, kvelmo follows Semantic Versioning and makes compatibility
+promises about its public surfaces — the socket protocol, config and persisted
+state formats, the public Go API (`agent/`, `settings/`, `metrics/`, `meta/`,
+`paths/`), and CLI commands/flags. Read
+[docs/concepts/api-stability.md](docs/concepts/api-stability.md) before changing
+any of them. Two rules that catch most contributors:
+
+- **Don't grow `agent.Agent`.** It's a frozen extension point — add new
+  capabilities as separate optional interfaces detected by type assertion, not
+  as methods on `Agent`.
+- **Bump the format version when you change a persisted shape.** Renaming or
+  removing a field in `Settings`, `TaskState`, the event-log `Entry`, or a backup
+  needs a version bump and (for config) a migration in `settings/version.go`.
+  Purely additive fields don't.
+
+Nothing is deprecated pre-1.0; after 1.0, removals go through a deprecation cycle
+with a `// Deprecated:` marker and a release-notes entry.
+
 ## Testing
 
 ### Test-First Development

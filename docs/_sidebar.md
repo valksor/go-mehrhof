@@ -144,6 +144,8 @@
   - [State Machine](/concepts/state-machine.md)
   - [Checkpoints](/concepts/checkpoints.md)
   - [Socket Architecture](/concepts/sockets.md)
+  - [Sub-tasks](/concepts/sub-tasks.md)
+  - [API Stability](/concepts/api-stability.md)
 
 - [Agents](/agents/index.md)
   - [Claude](/agents/claude.md)

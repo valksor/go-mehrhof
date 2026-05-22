@@ -6,6 +6,13 @@ Use it when you want explicit control over task state, scripting and automation 
 
 The Web UI is the primary experience for most users, but the CLI is the clearest way to understand the product's full control surface.
 
+## Stability
+
+Command names, flags, and script-oriented output (`--json`, `export`) are part
+of kvelmo's compatibility contract from v1.0 onward: nothing is removed without a
+deprecation cycle. See [API Stability](/concepts/api-stability.md) for the full
+policy.
+
 ## What the CLI Is Best At
 
 - scripting and automation
