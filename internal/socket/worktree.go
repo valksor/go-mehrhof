@@ -110,13 +110,17 @@ func NewWorktreeSocket(cfg WorktreeConfig) (*WorktreeSocket, error) {
 	_ = cond.LoadState(context.Background())
 
 	// Wire memory indexer so completed tasks are indexed for memory.search.
-	// We reuse the package-level adapter from memory.go (or create a per-worktree
-	// indexer rooted at the worktree directory so that .kvelmo/specifications
-	// and .kvelmo/sessions are found correctly).
-	if adapter, adapterErr := getMemoryAdapter(context.Background()); adapterErr == nil {
-		idxr := memory.NewIndexer(adapter.Store(), cfg.WorktreePath)
-		cond.SetMemoryIndexer(idxr)
-	}
+	// Done in the background: getMemoryAdapter loads the embedding model (an
+	// 86 MB download on first run), and the socket must bind without waiting on
+	// it — otherwise startup blocks past the caller's readiness timeout. The
+	// indexer is optional; memory.search degrades gracefully until it is set.
+	// SetMemoryIndexer locks the conductor mutex, so this is safe concurrently.
+	go func() {
+		if adapter, adapterErr := getMemoryAdapter(context.Background()); adapterErr == nil {
+			idxr := memory.NewIndexer(adapter.Store(), cfg.WorktreePath)
+			cond.SetMemoryIndexer(idxr)
+		}
+	}()
 
 	// Wire agent strategy from settings.
 	if effective.Agent.Strategy != "" {

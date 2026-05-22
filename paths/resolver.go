@@ -6,12 +6,36 @@ package paths
 import (
 	"crypto/sha256"
 	"encoding/hex"
+	"fmt"
 	"os"
 	"path/filepath"
 	"sync"
 
 	"github.com/valksor/kvelmo/meta"
 )
+
+// maxUnixSocketPath is the largest usable Unix-domain-socket path. The kernel
+// limit on sun_path is 104 bytes on macOS and 108 on Linux (including the NUL
+// terminator); 103 is the safe cross-platform ceiling. A path longer than this
+// makes net.Listen/Dial fail with "invalid argument", so such paths must be
+// rewritten to a short location.
+const maxUnixSocketPath = 103
+
+// shortenSocketPath returns preferred unchanged when it fits the OS socket-path
+// limit, otherwise a short, deterministic, per-user fallback under the temp dir.
+// Both the server (bind) and clients (dial) call this with the same preferred
+// path, so they agree on the location even after the fallback. The fallback is
+// keyed by a hash of the preferred path, so distinct sockets never collide.
+func shortenSocketPath(preferred string) string {
+	if len(preferred) <= maxUnixSocketPath {
+		return preferred
+	}
+
+	sum := sha256.Sum256([]byte(preferred))
+	name := hex.EncodeToString(sum[:8]) + ".sock"
+
+	return filepath.Join(os.TempDir(), fmt.Sprintf("kvelmo-%d", os.Getuid()), name)
+}
 
 // PathResolver encapsulates all kvelmo path computations.
 // Create with NewPathResolver for explicit injection or use DefaultPathResolver
@@ -47,9 +71,10 @@ func (p *PathResolver) BaseDir() string {
 	return p.baseDir
 }
 
-// GlobalSocketPath returns the path to the global socket.
+// GlobalSocketPath returns the path to the global socket, shortened to a
+// temp-dir fallback if the base-dir path would exceed the OS socket-path limit.
 func (p *PathResolver) GlobalSocketPath() string {
-	return filepath.Join(p.baseDir, "global.sock")
+	return shortenSocketPath(filepath.Join(p.baseDir, "global.sock"))
 }
 
 // GlobalLockPath returns the path to the global lock file.
@@ -57,18 +82,34 @@ func (p *PathResolver) GlobalLockPath() string {
 	return filepath.Join(p.baseDir, "global.lock")
 }
 
-// WorktreeSocketPath returns the socket path for a worktree directory.
-// The path is based on a hash of the absolute worktree path.
-func (p *PathResolver) WorktreeSocketPath(worktreeDir string) string {
-	absPath, err := filepath.Abs(worktreeDir)
+// canonicalWorktreePath returns a stable absolute path for hashing a worktree
+// directory. It resolves symlinks so the same directory always hashes to the
+// same ID regardless of how it is referenced — notably macOS, where /var is a
+// symlink to /private/var and os.Getwd resolves it while a raw path (e.g. a
+// temp dir or a CLI argument) does not. Without this, a process and a client
+// referring to the same directory by different spellings would compute
+// different socket paths and fail to find each other.
+func canonicalWorktreePath(worktreeDir string) string {
+	abs, err := filepath.Abs(worktreeDir)
 	if err != nil {
-		absPath = worktreeDir
+		abs = worktreeDir
+	}
+	if resolved, err := filepath.EvalSymlinks(abs); err == nil {
+		return resolved
 	}
 
-	hash := sha256.Sum256([]byte(absPath))
+	return abs
+}
+
+// WorktreeSocketPath returns the socket path for a worktree directory. The path
+// is based on a hash of the canonical (symlink-resolved) worktree path, and is
+// shortened to a temp-dir fallback if the base-dir path would exceed the OS
+// socket-path limit (e.g. a deep KVELMO_HOME).
+func (p *PathResolver) WorktreeSocketPath(worktreeDir string) string {
+	hash := sha256.Sum256([]byte(canonicalWorktreePath(worktreeDir)))
 	hashStr := hex.EncodeToString(hash[:8])
 
-	return filepath.Join(p.baseDir, "worktrees", hashStr+".sock")
+	return shortenSocketPath(filepath.Join(p.baseDir, "worktrees", hashStr+".sock"))
 }
 
 // MemoryDir returns the directory for memory storage.
@@ -190,13 +231,10 @@ func EnsureDir() error {
 
 // WorktreeIDFromPath returns a hash-based ID for a worktree directory.
 // This is a pure computation that doesn't depend on the base directory.
+// The path is canonicalized (symlinks resolved) so the same directory always
+// produces the same ID regardless of how it is referenced.
 func WorktreeIDFromPath(worktreeDir string) string {
-	absPath, err := filepath.Abs(worktreeDir)
-	if err != nil {
-		absPath = worktreeDir
-	}
-
-	hash := sha256.Sum256([]byte(absPath))
+	hash := sha256.Sum256([]byte(canonicalWorktreePath(worktreeDir)))
 
 	return hex.EncodeToString(hash[:8])
 }

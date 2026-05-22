@@ -52,7 +52,17 @@ func NewAdapterAuto(ctx context.Context, storeDir string) (*Adapter, *Indexer, e
 // selectEmbedder returns the best available embedder:
 //  1. CybertronEmbedder if available (neural, pure Go).
 //  2. TFIDFEmbedder as fallback.
+//
+// KVELMO_EMBEDDER overrides the choice: "tfidf" forces the lightweight TF-IDF
+// embedder and skips the neural model entirely (no ~86 MB download/serialize, so
+// startup is instant). "cybertron"/"neural" or unset keeps the default chain.
 func selectEmbedder() Embedder {
+	if strings.EqualFold(os.Getenv("KVELMO_EMBEDDER"), "tfidf") {
+		slog.Info("memory: using TF-IDF embedder (forced by KVELMO_EMBEDDER=tfidf)")
+
+		return NewTFIDFEmbedder()
+	}
+
 	modelsDir := defaultModelsDir()
 	if modelsDir != "" {
 		e, err := NewCybertronEmbedder(modelsDir)

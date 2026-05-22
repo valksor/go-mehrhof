@@ -204,7 +204,7 @@ func runInBackground(cwd, wtPath string) error {
 	fmt.Printf("Starting kvelmo in background (PID %d)...\n", bgCmd.Process.Pid)
 
 	// Wait for socket to be ready
-	if !waitForSocket(wtPath, 10*time.Second) {
+	if !waitForSocket(wtPath, socketReadyTimeout) {
 		return errors.New("socket failed to start (check logs)")
 	}
 
@@ -381,9 +381,19 @@ func runInForeground(cwd, globalPath, wtPath string) error {
 		errCh <- wt.Start(ctx)
 	}()
 
-	// Wait for socket to be ready before loading task
-	if !waitForSocket(wtPath, 5*time.Second) {
-		return errors.New("worktree socket failed to start")
+	// Wait for socket to be ready before loading task. If it never appears,
+	// surface the actual bind error (e.g. a too-long socket path) instead of a
+	// generic message — wt.Start delivers it on errCh.
+	if !waitForSocket(wtPath, socketReadyTimeout) {
+		select {
+		case startErr := <-errCh:
+			if startErr != nil {
+				return fmt.Errorf("worktree socket failed to start: %w", startErr)
+			}
+		default:
+		}
+
+		return fmt.Errorf("worktree socket failed to start (socket %s did not appear)", wtPath)
 	}
 
 	// Add agent worker in background
@@ -440,6 +450,13 @@ func isGitRepository(path string) bool {
 
 	return cmd.Run() == nil
 }
+
+// socketReadyTimeout bounds how long start waits for a socket to bind. It is
+// generous because a worktree socket's first start on a machine loads the
+// semantic-memory embedding model (an ~86 MB download + serialize) concurrently,
+// which can push the bind several seconds past a tight deadline. The warm path
+// binds in well under a second, so the larger ceiling only matters on cold start.
+const socketReadyTimeout = 30 * time.Second
 
 // waitForSocket waits for a socket to become available.
 func waitForSocket(socketPath string, timeout time.Duration) bool {
