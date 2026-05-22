@@ -4,6 +4,11 @@
 [install]
 # Skip optional peer dependencies for faster installs
 peer = false
+# Use a hoisted (flat) node_modules so a single copy of native-addon packages
+# like rolldown is shared. The isolated/.pnpm layout pins vitest's `vite` peer
+# to a separate copy, and loading two copies of rolldown's native binding
+# crashes bun's module loader (vitest startup SIGSEGV). Hoisting dedupes it.
+nodeLinker = "hoisted"
 
 [install.cache]
 # Keep cache enabled for faster subsequent installs

@@ -1,6 +1,6 @@
 {
   "name": "kvelmo-web",
-  "version": "0.1.0",
+  "version": "0.10.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -11,14 +11,17 @@
     "tauri": "tauri",
     "tauri:dev": "tauri dev",
     "tauri:build": "tauri build",
-    "test": "vitest",
-    "test:run": "vitest run --passWithNoTests",
-    "test:coverage": "vitest run --coverage --passWithNoTests",
+    "test": "bun --bun vitest",
+    "test:run": "bun --bun vitest run --passWithNoTests",
+    "test:coverage": "bun --bun vitest run --coverage --passWithNoTests",
     "test:e2e": "playwright test --project=demo",
     "test:e2e:ui": "playwright test --project=demo --ui",
     "test:e2e:integration": "playwright test --project=integration",
     "lint": "eslint \"src/**/*.{ts,tsx}\"",
     "lint:a11y": "eslint -c eslint.a11y.config.js \"src/**/*.{ts,tsx}\""
+  },
+  "overrides": {
+    "vite": "8.0.14"
   },
   "dependencies": {
     "@fontsource-variable/inter": "^5.2.8",

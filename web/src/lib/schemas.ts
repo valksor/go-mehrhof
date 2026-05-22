@@ -1,4 +1,4 @@
-import { z } from 'zod/v4'
+import { z } from 'zod'
 
 export const configSettingSchema = z.object({
   key: z.string().min(1, 'Setting key is required'),
