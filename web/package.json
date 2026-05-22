@@ -23,9 +23,9 @@
   "dependencies": {
     "@fontsource-variable/inter": "^5.2.8",
     "@fontsource-variable/jetbrains-mono": "^5.2.8",
-    "@hookform/resolvers": "^5.2.2",
+    "@hookform/resolvers": "^5.4.0",
     "@tailwindcss/vite": "^4.3.0",
-    "@tanstack/react-virtual": "^3.13.24",
+    "@tanstack/react-virtual": "^3.13.25",
     "@tauri-apps/plugin-notification": "^2.3.3",
     "@tauri-apps/plugin-updater": "^2.10.1",
     "clsx": "^2.1.1",
@@ -64,7 +64,7 @@
     "tailwindcss": "^4.3.0",
     "typescript": "^6.0.3",
     "typescript-eslint": "^8.59.4",
-    "vite": "^8.0.13",
+    "vite": "^8.0.14",
     "vitest": "^4.1.7",
     "ws": "^8.20.1"
   }
