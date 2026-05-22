@@ -14,6 +14,13 @@ import (
 	"time"
 )
 
+// CurrentEventLogVersion is the schema version stamped on each event entry.
+// Bump it when the Entry shape changes incompatibly. Because a log file may
+// hold entries written by several kvelmo versions across a task's life, the
+// version is per-entry rather than per-file, and readers tolerate older
+// entries (JSON ignores fields they predate).
+const CurrentEventLogVersion = 1
+
 // EventType identifies the kind of orchestration event.
 type EventType string
 
@@ -33,6 +40,9 @@ const (
 
 // Entry is a single event in the log.
 type Entry struct {
+	// Version is the event-log schema version (CurrentEventLogVersion). Stamped
+	// on Append; a missing or zero value identifies a pre-versioning entry.
+	Version   int            `json:"v,omitempty"`
 	Timestamp time.Time      `json:"timestamp"`
 	Type      EventType      `json:"type"`
 	Phase     string         `json:"phase,omitempty"`
@@ -67,6 +77,9 @@ func New(dir string) (*Log, error) {
 func (l *Log) Append(entry Entry) error {
 	if entry.Timestamp.IsZero() {
 		entry.Timestamp = time.Now()
+	}
+	if entry.Version == 0 {
+		entry.Version = CurrentEventLogVersion
 	}
 
 	data, err := json.Marshal(entry)

@@ -4,6 +4,8 @@ package backup
 import (
 	"archive/tar"
 	"compress/gzip"
+	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"io/fs"
@@ -11,13 +13,32 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
+
+	"github.com/valksor/kvelmo/meta"
 )
+
+// CurrentBackupVersion is the format version embedded in backup archives. Bump
+// it when the archive layout changes incompatibly with older restores.
+const CurrentBackupVersion = 1
+
+// manifestName is the archive entry holding backup metadata. It is written as
+// the first tar entry so Restore can validate compatibility before extracting
+// any user data.
+const manifestName = ".kvelmo-backup-manifest.json"
+
+// Manifest is the metadata embedded at the head of a backup archive.
+type Manifest struct {
+	FormatVersion int    `json:"format_version"`
+	CreatedAt     string `json:"created_at"`
+	KvelmoVersion string `json:"kvelmo_version,omitempty"`
+}
 
 // Result contains information about a completed backup.
 type Result struct {
-	Path  string `json:"path"`
-	Size  int64  `json:"size"`
-	Files int    `json:"files"`
+	Path          string `json:"path"`
+	Size          int64  `json:"size"`
+	Files         int    `json:"files"`
+	FormatVersion int    `json:"format_version"`
 }
 
 // BackupInfo describes an existing backup archive.
@@ -55,9 +76,10 @@ func Create(baseDir, outputPath string) (*Result, error) {
 	}
 
 	return &Result{
-		Path:  absOutput,
-		Size:  stat.Size(),
-		Files: fileCount,
+		Path:          absOutput,
+		Size:          stat.Size(),
+		Files:         fileCount,
+		FormatVersion: CurrentBackupVersion,
 	}, nil
 }
 
@@ -110,6 +132,16 @@ func writeArchive(absOutput, baseDir string) (int, error) {
 	tarWriter := tar.NewWriter(gzWriter)
 
 	fileCount := 0
+
+	// Write the manifest as the first tar entry so Restore can validate
+	// compatibility before extracting any user data. It is not counted as a
+	// user file.
+	if err := writeManifest(tarWriter); err != nil {
+		closeWriters(tarWriter, gzWriter, outFile)
+		_ = os.Remove(absOutput)
+
+		return 0, err
+	}
 
 	root, err := os.OpenRoot(baseDir)
 	if err != nil {
@@ -197,6 +229,64 @@ func writeArchive(absOutput, baseDir string) (int, error) {
 	return fileCount, nil
 }
 
+// writeManifest writes the backup manifest as a tar entry.
+func writeManifest(tw *tar.Writer) error {
+	m := Manifest{
+		FormatVersion: CurrentBackupVersion,
+		CreatedAt:     time.Now().UTC().Format(time.RFC3339),
+		KvelmoVersion: meta.Version,
+	}
+
+	data, err := json.Marshal(m)
+	if err != nil {
+		return fmt.Errorf("marshal backup manifest: %w", err)
+	}
+
+	header := &tar.Header{
+		Name:     manifestName,
+		Mode:     0o600,
+		Size:     int64(len(data)),
+		ModTime:  time.Now(),
+		Typeflag: tar.TypeReg,
+	}
+	if err := tw.WriteHeader(header); err != nil {
+		return fmt.Errorf("write manifest header: %w", err)
+	}
+	if _, err := tw.Write(data); err != nil {
+		return fmt.Errorf("write manifest: %w", err)
+	}
+
+	return nil
+}
+
+// maxManifestSize bounds the manifest read so a crafted archive declaring a
+// huge manifest entry cannot exhaust memory before the JSON is parsed.
+const maxManifestSize = 1 << 20 // 1 MiB
+
+// readManifestEntry reads and validates the manifest from the tar stream. It
+// returns an error when the archive was produced by a newer kvelmo.
+func readManifestEntry(r *tar.Reader, size int64) error {
+	if size > maxManifestSize {
+		return fmt.Errorf("backup manifest too large: %d bytes", size)
+	}
+
+	data, err := io.ReadAll(io.LimitReader(r, size))
+	if err != nil {
+		return fmt.Errorf("read backup manifest: %w", err)
+	}
+
+	var m Manifest
+	if err := json.Unmarshal(data, &m); err != nil {
+		return fmt.Errorf("parse backup manifest: %w", err)
+	}
+
+	if m.FormatVersion > CurrentBackupVersion {
+		return fmt.Errorf("backup format version %d is newer than supported version %d: upgrade kvelmo", m.FormatVersion, CurrentBackupVersion)
+	}
+
+	return nil
+}
+
 // closeWriters closes tar, gzip, and file writers, ignoring errors (used for cleanup on failure).
 func closeWriters(tw *tar.Writer, gz *gzip.Writer, f *os.File) {
 	_ = tw.Close()
@@ -253,6 +343,22 @@ func Restore(archivePath, targetDir string) (*RestoreResult, error) {
 		}
 
 		cleanName := filepath.Clean(header.Name)
+
+		// The manifest is written as the first entry so compatibility is
+		// validated before anything is extracted. Enforce that: if user data
+		// was already extracted when we reach the manifest, the archive is
+		// malformed (or crafted to bypass the version check). Archives without a
+		// manifest are legacy (pre-versioning) and restore normally.
+		if cleanName == manifestName {
+			if result.Files > 0 || result.Dirs > 0 {
+				return nil, errors.New("backup manifest must be the first archive entry")
+			}
+			if err := readManifestEntry(tarReader, header.Size); err != nil {
+				return nil, err
+			}
+
+			continue
+		}
 
 		if IsTransientFile(cleanName) {
 			result.Skipped++

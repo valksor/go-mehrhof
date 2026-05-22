@@ -1,10 +1,16 @@
 package storage
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"time"
 )
+
+// CurrentTaskStateVersion is the on-disk schema version for task.yaml. Bump it
+// when a change requires transforming existing task state. Additive fields do
+// not need a bump — YAML decoding fills new fields with their zero values.
+const CurrentTaskStateVersion = 1
 
 // TaskHistoryEntry records a single state machine transition for audit persistence.
 type TaskHistoryEntry struct {
@@ -18,6 +24,10 @@ type TaskHistoryEntry struct {
 // Written as pure YAML to <workdir>/<task-id>/task.yaml on every mutation.
 // This is the single source of truth for task state across socket restarts.
 type TaskState struct {
+	// FormatVersion is the task-state schema version. Stamped on save; a missing
+	// or zero value identifies pre-versioning state, which is read as-is.
+	FormatVersion int `yaml:"format_version,omitempty"`
+
 	State             string                        `yaml:"state"`
 	ID                string                        `yaml:"id"`
 	ExternalID        string                        `yaml:"external_id,omitempty"`
@@ -93,6 +103,8 @@ func (s *Store) SaveTaskState(ts *TaskState) error {
 		return err
 	}
 
+	ts.FormatVersion = CurrentTaskStateVersion
+
 	return SaveYAML(s.TaskStateFile(ts.ID), ts)
 }
 
@@ -102,6 +114,16 @@ func (s *Store) LoadTaskState(taskID string) (*TaskState, error) {
 	var ts TaskState
 	if err := LoadYAML(s.TaskStateFile(taskID), &ts); err != nil {
 		return nil, err
+	}
+
+	// Forward-read policy: a current binary reads its own and older state, but
+	// refuses state written by a newer kvelmo rather than silently dropping
+	// fields it does not understand.
+	if ts.FormatVersion > CurrentTaskStateVersion {
+		return nil, fmt.Errorf("task %s: state format version %d is newer than supported version %d: upgrade kvelmo", taskID, ts.FormatVersion, CurrentTaskStateVersion)
+	}
+	if ts.FormatVersion == 0 {
+		ts.FormatVersion = CurrentTaskStateVersion
 	}
 
 	return &ts, nil
