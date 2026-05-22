@@ -19,7 +19,11 @@ export default defineConfig({
       },
     },
     coverage: {
-      provider: 'v8',
+      // istanbul (source instrumentation), not v8: the v8 provider relies on
+      // the V8 inspector coverage API (node:inspector), which the bun runtime
+      // does not implement, so `bun --bun vitest --coverage` fails with
+      // "Coverage APIs are not supported". istanbul works under both runtimes.
+      provider: 'istanbul',
       reporter: ['text', 'lcov'],
       reportsDirectory: './coverage',
       thresholds: {
