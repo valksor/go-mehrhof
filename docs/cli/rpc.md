@@ -33,7 +33,19 @@ kvelmo rpc --global workers.list
 
 # Get metrics from global socket
 kvelmo rpc --global metrics
+
+# Handshake: discover the server's protocol version and method set
+kvelmo rpc --global system.capabilities
 ```
+
+## Protocol Version
+
+Every request carries a `protocol_version` (currently `"1"`); the CLI stamps it
+automatically. A server rejects methods from an incompatible major version with
+error `-32600`. The handshake (`system.capabilities`), `ping`, and `shutdown`
+are always reachable regardless of version. See
+[Sockets: Protocol Versioning & Compatibility](/concepts/sockets.md) for the
+full contract.
 
 ## Timeout
 

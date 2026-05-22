@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"github.com/valksor/kvelmo/internal/ratelimit"
+	"github.com/valksor/kvelmo/meta"
 	"github.com/valksor/kvelmo/metrics"
 )
 
@@ -132,6 +133,17 @@ func NewServer(path string, opts ...ServerOption) *Server {
 		go s.initiateShutdown()
 
 		return NewResultResponse(req.ID, map[string]bool{"ok": true})
+	}
+
+	// Register the protocol handshake. Reachable on every socket, it lets a
+	// client discover the server's protocol version and method set before
+	// issuing version-gated methods.
+	s.handlers[MethodCapabilities] = func(_ context.Context, req *Request) (*Response, error) {
+		return NewResultResponse(req.ID, Capabilities{
+			ProtocolVersion: ProtocolVersion,
+			KvelmoVersion:   meta.Version,
+			Methods:         s.methodNames(),
+		})
 	}
 
 	// Register default middleware in order: Recovery (outermost), Trace,
@@ -380,7 +392,38 @@ func (s *Server) handleConn(ctx context.Context, conn net.Conn) {
 	}
 }
 
+// methodNames returns the sorted set of registered RPC method names across both
+// the standard and connection handler maps.
+func (s *Server) methodNames() []string {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	names := make([]string, 0, len(s.handlers)+len(s.connHandlers))
+	for m := range s.handlers {
+		names = append(names, m)
+	}
+	for m := range s.connHandlers {
+		if _, dup := s.handlers[m]; dup {
+			continue
+		}
+		names = append(names, m)
+	}
+	slices.Sort(names)
+
+	return names
+}
+
 func (s *Server) dispatch(ctx context.Context, req *Request, _ net.Conn) *Response {
+	// Enforce protocol compatibility before doing any work. The handshake,
+	// ping, and shutdown stay reachable across versions so a mismatched client
+	// can still discover the version and an upgrade can hand off.
+	if !crossVersionMethods[req.Method] && !protocolCompatible(req.ProtocolVersion) {
+		slog.Warn("rpc protocol version mismatch", "method", req.Method, "client", req.ProtocolVersion, "server", ProtocolVersion)
+
+		return NewErrorResponse(req.ID, ErrCodeInvalidRequest,
+			fmt.Sprintf("protocol version mismatch: client %q, server %q; run 'kvelmo rpc [--global] %s' to negotiate, or upgrade kvelmo", req.ProtocolVersion, ProtocolVersion, MethodCapabilities))
+	}
+
 	// Look up the registered handler.
 	s.mu.RLock()
 	connHandler, hasConn := s.connHandlers[req.Method]

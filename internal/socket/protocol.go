@@ -8,7 +8,36 @@ import (
 const (
 	JSONRPCVersion  = "2.0"
 	ProtocolVersion = "1"
+
+	// MethodCapabilities is the handshake method. It is always reachable —
+	// even across an incompatible protocol bump — so a client can discover the
+	// server's protocol version before issuing version-gated methods.
+	MethodCapabilities = "system.capabilities"
 )
+
+// crossVersionMethods are reachable regardless of the client's protocol version.
+// They form the minimal cross-version control surface: discover the server
+// version (system.capabilities), check liveness (ping), and hand off during an
+// upgrade (shutdown). Every other method requires a compatible protocol version.
+var crossVersionMethods = map[string]bool{
+	MethodCapabilities: true,
+	"ping":             true,
+	"shutdown":         true,
+}
+
+// Capabilities is returned by the system.capabilities handshake.
+type Capabilities struct {
+	ProtocolVersion string   `json:"protocol_version"`
+	KvelmoVersion   string   `json:"kvelmo_version"`
+	Methods         []string `json:"methods"`
+}
+
+// protocolCompatible reports whether a request's protocol version is compatible
+// with this server. An absent version identifies a legacy client that predates
+// negotiation and is allowed; otherwise the (major) version must match exactly.
+func protocolCompatible(v string) bool {
+	return v == "" || v == ProtocolVersion
+}
 
 type Request struct {
 	JSONRPC         string          `json:"jsonrpc"`
