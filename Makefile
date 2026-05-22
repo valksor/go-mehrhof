@@ -1,6 +1,6 @@
 .PHONY: build build-go test test-cover test-race test-e2e quality ci-quality ci-test types \
         web-build web-dev web-test web-e2e web-e2e-ui \
-        run run-dev install release man-pages \
+        run run-dev install release man-pages sync-version \
         desktop-dev desktop-build desktop-sidecar desktop-sidecar-all desktop-clean tauri-install \
         prototype-lock prototype-unlock \
         clean tidy deps ci dev version help all
@@ -115,7 +115,7 @@ build-go:
 	@echo "Built $(BUILD_DIR)/$(BINARY_NAME)"
 
 ## Build for release (all platforms)
-release: web-build
+release: sync-version web-build
 	@mkdir -p $(BUILD_DIR)
 	GOOS=darwin GOARCH=amd64 go build -trimpath $(LDFLAGS) -o $(BUILD_DIR)/$(BINARY_NAME)-darwin-amd64 $(CMD_DIR)
 	GOOS=darwin GOARCH=arm64 go build -trimpath $(LDFLAGS) -o $(BUILD_DIR)/$(BINARY_NAME)-darwin-arm64 $(CMD_DIR)
@@ -145,6 +145,15 @@ run-dev:
 ## Show version info
 version: build-go
 	$(BUILD_DIR)/$(BINARY_NAME) version
+
+# Latest semver tag (ignores moving tags like "nightly"), used to align the
+# frontend/desktop manifests with the Go binary's version.
+RELEASE_VERSION := $(shell git tag --list 'v[0-9]*' --sort=-v:refname 2>/dev/null | head -n1 | sed 's/^v//')
+
+## Stamp the latest release version into web/desktop manifests (single source of truth)
+sync-version:
+	@test -n "$(RELEASE_VERSION)" || { echo "sync-version: no v* tag found — create one (e.g. 'git tag v0.1.0') or fetch tags with 'git fetch --tags'"; exit 1; }
+	bun scripts/sync-version.mjs $(RELEASE_VERSION)
 
 # ──────────────────────────────────────────────────────────────────────────────
 # Web Frontend
@@ -200,7 +209,7 @@ desktop-dev: build-go desktop-sidecar
 	./.github/desktop-dev.sh
 
 ## Desktop app production build
-desktop-build: desktop-sidecar
+desktop-build: sync-version desktop-sidecar
 	cd web && bun tauri build
 
 ## Prepare sidecar binary for current platform

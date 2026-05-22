@@ -2,7 +2,7 @@
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "kvelmo",
   "identifier": "com.valksor.kvelmo",
-  "version": "0.1.0",
+  "version": "0.10.0",
   "build": {
     "devUrl": "http://localhost:5173",
     "frontendDist": "../dist",

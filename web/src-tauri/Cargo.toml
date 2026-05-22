@@ -1,9 +1,9 @@
 [package]
 name = "kvelmo-desktop"
-version = "0.1.0"
+version = "0.10.0"
 description = "kvelmo Desktop Application"
 authors = ["valksor"]
-license = "MIT"
+license = "BSD-3-Clause"
 repository = "https://github.com/valksor/kvelmo"
 edition = "2021"
 
