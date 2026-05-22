@@ -189,6 +189,46 @@ jobs:
               dist/kvelmo-darwin-amd64.sha256 \
               --clobber
 
+  # Commit the released version back to the default branch so the repo's
+  # frontend/desktop manifests track the tag without a manual bump. The commit
+  # message carries [skip ci] so the push does not trigger CI. Stable only --
+  # nightlies use a date-based snapshot version that should not land on the branch.
+  bump-version:
+    needs: [build]
+    runs-on: ubuntu-latest
+    if: >-
+      !github.event.release.prerelease &&
+      !contains(github.event.release.name, '[docs only]') &&
+      !contains(github.event.release.body, '[docs only]')
+    env:
+      RELEASE_TAG: ${{ github.event.release.tag_name }}
+    steps:
+      - name: Checkout default branch
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          token: ${{ secrets.GH_TOKEN }}
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Stamp release version into manifests
+        run: bun scripts/sync-version.mjs "$RELEASE_TAG"
+
+      - name: Commit and push if changed
+        run: |
+          if git diff --quiet; then
+            echo "Manifests already at $RELEASE_TAG; nothing to commit."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add web/package.json web/src-tauri/tauri.conf.json web/src-tauri/Cargo.toml web/src-tauri/Cargo.lock
+          git commit -m "Stamp release version ${RELEASE_TAG#v} into frontend and desktop manifests [skip ci]"
+          git push origin "HEAD:${{ github.event.repository.default_branch }}"
+
   # Build Tauri desktop app on native runners
   # macOS/Linux: kvelmo binary as sidecar; Windows: Linux binary as resource (for WSL)
   desktop:

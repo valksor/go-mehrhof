@@ -35,3 +35,6 @@ replaceFirst('web/src-tauri/tauri.conf.json', /("version"\s*:\s*)"[^"]*"/, `$1"$
 // In Cargo.toml, anchor on [package] and stop at the next section header so the
 // match can never cross into [dependencies] and clobber a dep's version.
 replaceFirst('web/src-tauri/Cargo.toml', /(\[package\][^[]*?\nversion\s*=\s*)"[^"]*"/, `$1"${version}"`)
+// In Cargo.lock, update the kvelmo-desktop package entry (version follows name)
+// so the lockfile stays consistent with Cargo.toml without running cargo.
+replaceFirst('web/src-tauri/Cargo.lock', /(name = "kvelmo-desktop"\nversion = )"[^"]*"/, `$1"${version}"`)
