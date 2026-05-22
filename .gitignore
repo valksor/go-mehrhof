@@ -38,7 +38,11 @@ web/coverage/
 web/node_modules/
 web/src/types/socket.ts
 web/src/types/conductor.ts
-~/.valksor/
+# kvelmo runtime state and local project config (created when running kvelmo
+# on a project — including this repo). Tokens live in .valksor/.env, covered
+# by the .env rule below.
+.kvelmo/
+.valksor/
 internal/web/static/dist/
 web/src-tauri/lcov.info
 .superpowers/
