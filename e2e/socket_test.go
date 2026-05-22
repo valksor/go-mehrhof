@@ -13,17 +13,20 @@ import (
 	"github.com/valksor/kvelmo/internal/socket"
 )
 
-// waitForSocketPath polls until the socket file exists or timeout is reached.
-func waitForSocketPath(t *testing.T, path string, timeout time.Duration) {
+// socketWaitTimeout bounds how long waitForSocketPath polls for a socket file.
+const socketWaitTimeout = 2 * time.Second
+
+// waitForSocketPath polls until the socket file exists or the timeout is reached.
+func waitForSocketPath(t *testing.T, path string) {
 	t.Helper()
-	deadline := time.Now().Add(timeout)
+	deadline := time.Now().Add(socketWaitTimeout)
 	for time.Now().Before(deadline) {
 		if _, err := os.Stat(path); err == nil {
 			return
 		}
 		time.Sleep(5 * time.Millisecond)
 	}
-	t.Fatalf("socket %s not ready after %v", path, timeout)
+	t.Fatalf("socket %s not ready after %v", path, socketWaitTimeout)
 }
 
 func TestGlobalSocketE2E(t *testing.T) {
@@ -43,7 +46,7 @@ func TestGlobalSocketE2E(t *testing.T) {
 	}()
 
 	// Wait for socket to be ready
-	waitForSocketPath(t, sockPath, 2*time.Second)
+	waitForSocketPath(t, sockPath)
 
 	// Connect client
 	client, err := socket.NewClient(sockPath, socket.WithTimeout(5*time.Second))
@@ -146,7 +149,7 @@ func TestWorktreeSocketE2E(t *testing.T) {
 	}()
 
 	// Wait for socket to be ready
-	waitForSocketPath(t, sockPath, 2*time.Second)
+	waitForSocketPath(t, sockPath)
 
 	// Connect client
 	client, err := socket.NewClient(sockPath, socket.WithTimeout(5*time.Second))
@@ -225,7 +228,7 @@ func TestConcurrentClients(t *testing.T) {
 	ctx := t.Context()
 
 	go func() { _ = gs.Start(ctx) }()
-	waitForSocketPath(t, sockPath, 2*time.Second)
+	waitForSocketPath(t, sockPath)
 
 	// Connect multiple clients concurrently
 	const numClients = 5
@@ -263,7 +266,7 @@ func TestProtocolErrors(t *testing.T) {
 	ctx := t.Context()
 
 	go func() { _ = gs.Start(ctx) }()
-	waitForSocketPath(t, sockPath, 2*time.Second)
+	waitForSocketPath(t, sockPath)
 
 	client, err := socket.NewClient(sockPath, socket.WithTimeout(5*time.Second))
 	if err != nil {

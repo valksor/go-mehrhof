@@ -6,13 +6,13 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
-	"sync"
 	"syscall"
 	"testing"
 	"time"
@@ -53,6 +53,7 @@ func TestCLIFullCycle(t *testing.T) {
 	t.Cleanup(func() {
 		if os.Getenv("E2E_SKIP_CLEANUP") != "" {
 			t.Log("Skipping cleanup (E2E_SKIP_CLEANUP set)")
+
 			return
 		}
 
@@ -69,20 +70,12 @@ func TestCLIFullCycle(t *testing.T) {
 		t.Logf("Closed issue #%d", issueNum)
 	})
 
-	// 4. Setup isolated HOME with agent config + work directory
-	// Always use isolated HOME to avoid conflicting with real kvelmo sockets.
-	// For Claude/Codex, copy auth config from real HOME so CLI agents can authenticate.
+	// 4. Isolate kvelmo via KVELMO_HOME (not HOME). This keeps kvelmo's config,
+	// sockets, and state separate from any real install, while leaving the real
+	// HOME intact so the CLI agent (claude/codex) keeps its own credentials —
+	// which live in the OS keychain / real HOME and can't be faithfully copied.
 	testHome := setupTestHome(t)
-	realHome, _ := os.UserHomeDir()
-	// Copy Claude auth config if it exists (needed for Claude CLI agent)
-	claudeDir := filepath.Join(realHome, ".claude")
-	if _, err := os.Stat(claudeDir); err == nil {
-		destClaude := filepath.Join(testHome, ".claude")
-		if cpErr := copyDir(claudeDir, destClaude); cpErr != nil {
-			t.Logf("Warning: could not copy .claude config: %v", cpErr)
-		}
-	}
-	t.Setenv("HOME", testHome)
+	t.Setenv("KVELMO_HOME", testHome)
 	parts := strings.SplitN(repo, "/", 2)
 	workDir := setupWorkDir(t, token, parts[0], parts[1])
 
@@ -344,20 +337,19 @@ func checkOllamaAvailable(t *testing.T) {
 }
 
 // getE2EConfig gets configuration from environment.
-func getE2EConfig(t *testing.T) (token, repo string) {
+func getE2EConfig(t *testing.T) (string, string) {
 	t.Helper()
 
-	repo = os.Getenv("E2E_GITHUB_REPO")
+	repo := os.Getenv("E2E_GITHUB_REPO")
 	if repo == "" {
 		repo = "ozo2003/e2e-test" // Default test repo; override with E2E_GITHUB_REPO
 	}
 
-	parts := strings.SplitN(repo, "/", 2)
-	if len(parts) != 2 {
+	if parts := strings.SplitN(repo, "/", 2); len(parts) != 2 {
 		t.Fatalf("E2E_GITHUB_REPO must be in owner/repo format, got: %s", repo)
 	}
 
-	token = os.Getenv("E2E_KVELMO_TOKEN")
+	token := os.Getenv("E2E_KVELMO_TOKEN")
 	if token == "" {
 		t.Skip("E2E_KVELMO_TOKEN not set (set a GitHub PAT with repo scope)")
 	}
@@ -374,22 +366,13 @@ func newE2EProvider(token string) *provider.GitHubProvider {
 func buildKvelmo(t *testing.T) string {
 	t.Helper()
 
-	// Build to temp directory
-	tmpDir, err := os.MkdirTemp("", "kvelmo-e2e-bin-*")
-	if err != nil {
-		t.Fatalf("MkdirTemp: %v", err)
-	}
-
-	binaryPath := filepath.Join(tmpDir, "kvelmo")
-	cmd := exec.Command("go", "build", "-o", binaryPath, "./cmd/kvelmo")
+	// Build to a temp directory (auto-cleaned by the test framework).
+	binaryPath := filepath.Join(t.TempDir(), "kvelmo")
+	cmd := exec.CommandContext(context.Background(), "go", "build", "-o", binaryPath, "./cmd/kvelmo")
 	cmd.Dir = findProjectRoot(t)
 	if output, err := cmd.CombinedOutput(); err != nil {
 		t.Fatalf("Build kvelmo: %v\n%s", err, output)
 	}
-
-	t.Cleanup(func() {
-		os.RemoveAll(tmpDir)
-	})
 
 	return binaryPath
 }
@@ -467,32 +450,30 @@ The HTML dashboard should be embedded in the binary using Go embed. It should sh
 		t.Fatalf("unexpected task ID format: %s", task.ID)
 	}
 	var num int
-	fmt.Sscanf(parts[1], "%d", &num)
+	if _, err := fmt.Sscanf(parts[1], "%d", &num); err != nil {
+		t.Fatalf("parse issue number from %q: %v", parts[1], err)
+	}
+
 	return num
 }
 
-// setupTestHome creates an isolated HOME directory with global kvelmo config for Ollama.
-// Returns the path. kvelmo's serve.go reads global config from ~/.valksor/kvelmo/kvelmo.yaml,
-// so we need the agent config at the global level (not just project level).
+// setupTestHome creates an isolated KVELMO_HOME directory with a global kvelmo
+// config. When KVELMO_HOME is set, kvelmo reads its global config from
+// <KVELMO_HOME>/kvelmo.yaml, so the agent config is written at that root.
 func setupTestHome(t *testing.T) string {
 	t.Helper()
 
-	homeDir, err := os.MkdirTemp("", "kvelmo-e2e-home-*")
+	// Not t.TempDir: E2E_SKIP_CLEANUP must be able to keep this dir for debugging.
+	homeDir, err := os.MkdirTemp("", "kvelmo-e2e-home-*") //nolint:usetesting // see comment
 	if err != nil {
 		t.Fatalf("MkdirTemp home: %v", err)
 	}
 
 	t.Cleanup(func() {
 		if os.Getenv("E2E_SKIP_CLEANUP") == "" {
-			os.RemoveAll(homeDir)
+			_ = os.RemoveAll(homeDir)
 		}
 	})
-
-	// Create global kvelmo config directory
-	configDir := filepath.Join(homeDir, ".valksor", "kvelmo")
-	if err := os.MkdirAll(configDir, 0o755); err != nil {
-		t.Fatalf("Create global config dir: %v", err)
-	}
 
 	// Agent is configurable via KVELMO_E2E_AGENT (default: ollama)
 	agentName := os.Getenv("KVELMO_E2E_AGENT")
@@ -506,7 +487,7 @@ func setupTestHome(t *testing.T) string {
   ollama:
     model: llama3.1
 `, agentName)
-	if err := os.WriteFile(filepath.Join(configDir, "kvelmo.yaml"), []byte(globalConfig), 0o644); err != nil {
+	if err := os.WriteFile(filepath.Join(homeDir, "kvelmo.yaml"), []byte(globalConfig), 0o644); err != nil {
 		t.Fatalf("Write global kvelmo.yaml: %v", err)
 	}
 
@@ -517,14 +498,15 @@ func setupTestHome(t *testing.T) string {
 func setupWorkDir(t *testing.T, token, owner, repo string) string {
 	t.Helper()
 
-	tmpDir, err := os.MkdirTemp("", "kvelmo-e2e-work-*")
+	// Not t.TempDir: E2E_SKIP_CLEANUP must be able to keep this dir for debugging.
+	tmpDir, err := os.MkdirTemp("", "kvelmo-e2e-work-*") //nolint:usetesting // see comment
 	if err != nil {
 		t.Fatalf("MkdirTemp: %v", err)
 	}
 
 	t.Cleanup(func() {
 		if os.Getenv("E2E_SKIP_CLEANUP") == "" {
-			os.RemoveAll(tmpDir)
+			_ = os.RemoveAll(tmpDir)
 		} else {
 			t.Logf("Keeping temp dir: %s", tmpDir)
 		}
@@ -532,7 +514,7 @@ func setupWorkDir(t *testing.T, token, owner, repo string) string {
 
 	// Clone the repo
 	repoURL := fmt.Sprintf("https://x-access-token:%s@github.com/%s/%s.git", token, owner, repo)
-	cmd := exec.Command("git", "clone", repoURL, tmpDir)
+	cmd := exec.CommandContext(context.Background(), "git", "clone", repoURL, tmpDir)
 	if output, err := cmd.CombinedOutput(); err != nil {
 		t.Fatalf("git clone failed: %v (check repo access and token permissions)", err)
 	} else {
@@ -583,75 +565,32 @@ func startKvelmoBackground(t *testing.T, kvelmoPath, workDir, token, repo string
 	t.Helper()
 
 	// Start kvelmo with the --from flag to load the task
-	cmd := exec.Command(kvelmoPath, "start", "--foreground", "--from", fmt.Sprintf("github:%s#%d", repo, issueNum))
+	cmd := exec.CommandContext(context.Background(), kvelmoPath, "start", "--foreground", "--from", fmt.Sprintf("github:%s#%d", repo, issueNum))
 	cmd.Dir = workDir
 	cmd.Env = append(os.Environ(), "GITHUB_TOKEN="+token)
 
-	// Create a pipe to capture output
-	stdout, err := cmd.StdoutPipe()
+	// Capture output to a file rather than os pipes. A goroutine reader that
+	// calls t.Logf per chunk can fall behind, fill the 64 KB pipe buffer, and
+	// block the child on its next write — before it binds the socket. A file
+	// sink is kernel-buffered and never backpressures, so startup never stalls.
+	logPath := filepath.Join(t.TempDir(), "kvelmo-e2e.log")
+	logFile, err := os.Create(logPath)
 	if err != nil {
-		t.Fatalf("StdoutPipe: %v", err)
+		t.Fatalf("create kvelmo log file: %v", err)
 	}
-	stderr, err := cmd.StderrPipe()
-	if err != nil {
-		t.Fatalf("StderrPipe: %v", err)
-	}
+	cmd.Stdout = logFile
+	cmd.Stderr = logFile
 
 	// Start the command
 	if err := cmd.Start(); err != nil {
+		_ = logFile.Close()
 		t.Fatalf("Start kvelmo: %v", err)
 	}
-	t.Logf("Started kvelmo (PID: %d)", cmd.Process.Pid)
-
-	// Channel to signal goroutines to stop logging
-	stopLogging := make(chan struct{})
-	var logWg sync.WaitGroup
-
-	// Read output in background for debugging
-	logWg.Add(2)
-	go func() {
-		defer logWg.Done()
-		buf := make([]byte, 1024)
-		for {
-			n, err := stdout.Read(buf)
-			if n > 0 {
-				select {
-				case <-stopLogging:
-					return
-				default:
-					t.Logf("kvelmo stdout: %s", buf[:n])
-				}
-			}
-			if err != nil {
-				return
-			}
-		}
-	}()
-	go func() {
-		defer logWg.Done()
-		buf := make([]byte, 1024)
-		for {
-			n, err := stderr.Read(buf)
-			if n > 0 {
-				select {
-				case <-stopLogging:
-					return
-				default:
-					t.Logf("kvelmo stderr: %s", buf[:n])
-				}
-			}
-			if err != nil {
-				return
-			}
-		}
-	}()
+	t.Logf("Started kvelmo (PID: %d, log: %s)", cmd.Process.Pid, logPath)
 
 	// Return stop function
 	return func() {
 		t.Log("Stopping kvelmo...")
-
-		// Signal logging goroutines to stop
-		close(stopLogging)
 
 		if cmd.Process != nil {
 			// Send SIGTERM for graceful shutdown
@@ -672,8 +611,10 @@ func startKvelmoBackground(t *testing.T, kvelmoPath, workDir, token, repo string
 			}
 		}
 
-		// Wait for logging goroutines to finish
-		logWg.Wait()
+		_ = logFile.Close()
+		if data, rerr := os.ReadFile(logPath); rerr == nil && len(data) > 0 {
+			t.Logf("kvelmo output:\n%s", data)
+		}
 	}
 }
 
@@ -687,24 +628,32 @@ func waitForSocket(t *testing.T, workDir string) {
 	for time.Now().Before(deadline) {
 		if socket.SocketExists(socketPath) {
 			t.Logf("Socket ready: %s", socketPath)
+
 			return
 		}
 		time.Sleep(500 * time.Millisecond)
 	}
 
-	t.Fatalf("Timeout waiting for socket: %s", socketPath)
+	// Diagnostic: show what actually landed in the worktrees dir so we can tell
+	// "socket bound at a different hash" (path mismatch) from "never bound".
+	wtDir := filepath.Dir(socketPath)
+	var found []string
+	if entries, derr := os.ReadDir(wtDir); derr == nil {
+		for _, e := range entries {
+			found = append(found, e.Name())
+		}
+	}
+	t.Fatalf("Timeout waiting for socket: %s (dir %s contains: %v)", socketPath, wtDir, found)
 }
 
-// runGitCmd runs a git command.
-func runGitCmd(t *testing.T, dir string, args ...string) string {
+// runGitCmd runs a git command, failing the test on error.
+func runGitCmd(t *testing.T, dir string, args ...string) {
 	t.Helper()
-	cmd := exec.Command("git", args...)
+	cmd := exec.CommandContext(context.Background(), "git", args...)
 	cmd.Dir = dir
-	out, err := cmd.CombinedOutput()
-	if err != nil {
+	if out, err := cmd.CombinedOutput(); err != nil {
 		t.Fatalf("git %v: %v\n%s", args, err, out)
 	}
-	return strings.TrimSpace(string(out))
 }
 
 // tryRunKvelmo runs kvelmo but only logs on failure (for commands that may legitimately fail
@@ -712,7 +661,7 @@ func runGitCmd(t *testing.T, dir string, args ...string) string {
 func tryRunKvelmo(t *testing.T, kvelmoPath, workDir string, args ...string) {
 	t.Helper()
 
-	cmd := exec.Command(kvelmoPath, args...)
+	cmd := exec.CommandContext(context.Background(), kvelmoPath, args...)
 	cmd.Dir = workDir
 
 	var stdout, stderr bytes.Buffer
@@ -736,7 +685,7 @@ func tryRunKvelmo(t *testing.T, kvelmoPath, workDir string, args ...string) {
 func runKvelmo(t *testing.T, kvelmoPath, workDir string, args ...string) {
 	t.Helper()
 
-	cmd := exec.Command(kvelmoPath, args...)
+	cmd := exec.CommandContext(context.Background(), kvelmoPath, args...)
 	cmd.Dir = workDir
 
 	var stdout, stderr bytes.Buffer
@@ -759,12 +708,13 @@ func runKvelmo(t *testing.T, kvelmoPath, workDir string, args ...string) {
 func runKvelmoCapture(t *testing.T, kvelmoPath, workDir string, args ...string) string {
 	t.Helper()
 
-	cmd := exec.Command(kvelmoPath, args...)
+	cmd := exec.CommandContext(context.Background(), kvelmoPath, args...)
 	cmd.Dir = workDir
 
 	output, err := cmd.Output()
 	if err != nil {
-		if exitErr, ok := err.(*exec.ExitError); ok {
+		exitErr := &exec.ExitError{}
+		if errors.As(err, &exitErr) {
 			t.Fatalf("kvelmo %v: %v\nstderr: %s", args, err, exitErr.Stderr)
 		}
 		t.Fatalf("kvelmo %v: %v", args, err)
@@ -794,7 +744,7 @@ func getKvelmoState(t *testing.T, kvelmoPath, workDir string) string {
 
 // tryGetKvelmoState tries to get the state, returning empty string on error.
 func tryGetKvelmoState(kvelmoPath, workDir string) string {
-	cmd := exec.Command(kvelmoPath, "status", "--json", "--timeout", "10s")
+	cmd := exec.CommandContext(context.Background(), kvelmoPath, "status", "--json", "--timeout", "10s")
 	cmd.Dir = workDir
 
 	output, err := cmd.Output()
@@ -808,6 +758,7 @@ func tryGetKvelmoState(kvelmoPath, workDir string) string {
 	}
 
 	state, _ := result["state"].(string)
+
 	return state
 }
 
@@ -835,35 +786,4 @@ func waitForState(t *testing.T, kvelmoPath, workDir string, expected string, tim
 	}
 
 	t.Fatalf("Timeout waiting for state %s (current: %s)", expected, getKvelmoState(t, kvelmoPath, workDir))
-}
-
-// copyDir recursively copies a directory, preserving file permissions.
-func copyDir(src, dst string) error {
-	return filepath.WalkDir(src, func(path string, d os.DirEntry, err error) error {
-		if err != nil {
-			return err
-		}
-
-		rel, err := filepath.Rel(src, path)
-		if err != nil {
-			return err
-		}
-		target := filepath.Join(dst, rel)
-
-		info, err := d.Info()
-		if err != nil {
-			return err
-		}
-
-		if d.IsDir() {
-			return os.MkdirAll(target, info.Mode().Perm())
-		}
-
-		data, err := os.ReadFile(path)
-		if err != nil {
-			return err
-		}
-
-		return os.WriteFile(target, data, info.Mode().Perm())
-	})
 }
