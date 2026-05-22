@@ -35,8 +35,8 @@ type UpdateStatus struct {
 
 // MinisignPublicKey is the public key used to verify release signatures.
 // Matches the key used in install.sh.
-// Key ID: 1428C8FA1B9E89C5.
-const MinisignPublicKey = "RWTFiZ4b+sgoFLiIMuMrTZr1mmropNlDsnwKl5RfoUtyUWUk4zyVpPw2"
+// Key ID: 7527FDFF95C1D7BB.
+const MinisignPublicKey = "RWS718GV//0ndQGx85bxSWMv+70MdX0OUELW1QJ3j6KC44Zj2R8pRbTx"
 
 // CheckOptions configures the update check behavior.
 type CheckOptions struct {

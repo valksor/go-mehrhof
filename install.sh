@@ -16,9 +16,9 @@ VERSION=""
 NIGHTLY=false
 
 # Minisign public key for binary verification
-# Generated: 2025-01-26
-# Key ID: 1428C8FA1B9E89C5
-MINISIGN_PUBLIC_KEY="RWTFiZ4b+sgoFLiIMuMrTZr1mmropNlDsnwKl5RfoUtyUWUk4zyVpPw2"
+# Generated: 2026-05-22
+# Key ID: 7527FDFF95C1D7BB
+MINISIGN_PUBLIC_KEY="RWS718GV//0ndQGx85bxSWMv+70MdX0OUELW1QJ3j6KC44Zj2R8pRbTx"
 
 # Colors for output
 RED='\033[0;31m'
