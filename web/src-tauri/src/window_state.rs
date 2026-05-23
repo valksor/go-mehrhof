@@ -5,7 +5,7 @@
 
 use serde::{Deserialize, Serialize};
 use std::fs;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use tauri::{PhysicalPosition, PhysicalSize, WebviewWindow, Window};
 
 /// Persisted window state
@@ -24,23 +24,38 @@ impl WindowState {
         dirs::home_dir().map(|h| h.join(".valksor").join("kvelmo").join("window-state.json"))
     }
 
-    /// Load window state from disk
-    pub fn load() -> Option<Self> {
-        let path = Self::state_path()?;
+    /// Load window state from an explicit path.
+    ///
+    /// Returns `None` when the file is missing, unreadable, or not valid JSON. Split out
+    /// from [`load`](Self::load) so the read-and-parse logic is unit-testable against a
+    /// temp path instead of the real home directory.
+    fn load_from(path: &Path) -> Option<Self> {
         let content = fs::read_to_string(path).ok()?;
         serde_json::from_str(&content).ok()
     }
 
-    /// Save window state to disk
-    pub fn save(&self) -> Result<(), String> {
-        let path = Self::state_path().ok_or("Could not determine state path")?;
+    /// Load window state from disk.
+    pub fn load() -> Option<Self> {
+        Self::load_from(&Self::state_path()?)
+    }
 
+    /// Save window state to an explicit path, creating parent directories as needed.
+    ///
+    /// Split out from [`save`](Self::save) so the write logic is unit-testable against a
+    /// temp path instead of the real home directory.
+    fn save_to(&self, path: &Path) -> Result<(), String> {
         if let Some(parent) = path.parent() {
             fs::create_dir_all(parent).map_err(|e| e.to_string())?;
         }
 
         let content = serde_json::to_string_pretty(self).map_err(|e| e.to_string())?;
         fs::write(path, content).map_err(|e| e.to_string())
+    }
+
+    /// Save window state to disk.
+    pub fn save(&self) -> Result<(), String> {
+        let path = Self::state_path().ok_or("Could not determine state path")?;
+        self.save_to(&path)
     }
 }
 
@@ -242,5 +257,97 @@ mod tests {
         let json = r#"{"x":null,"y":0,"width":800,"height":600,"is_maximized":false}"#;
         let result: Result<WindowState, _> = serde_json::from_str(json);
         assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_save_to_then_load_from_roundtrip() {
+        let temp_dir = TempDir::new().unwrap();
+        let path = temp_dir.path().join("window-state.json");
+
+        let state = WindowState {
+            x: 50,
+            y: 75,
+            width: 1024,
+            height: 768,
+            is_maximized: true,
+        };
+        state.save_to(&path).expect("save_to should succeed");
+
+        let loaded = WindowState::load_from(&path).expect("load_from should find the file");
+        assert_eq!(loaded.x, 50);
+        assert_eq!(loaded.y, 75);
+        assert_eq!(loaded.width, 1024);
+        assert_eq!(loaded.height, 768);
+        assert!(loaded.is_maximized);
+    }
+
+    #[test]
+    fn test_save_to_creates_missing_parent_directories() {
+        let temp_dir = TempDir::new().unwrap();
+        // Two levels that do not exist yet — save_to must create them.
+        let path = temp_dir
+            .path()
+            .join("nested")
+            .join("deeper")
+            .join("state.json");
+        assert!(!path.parent().unwrap().exists());
+
+        let state = WindowState {
+            x: 1,
+            y: 2,
+            width: 3,
+            height: 4,
+            is_maximized: false,
+        };
+        state
+            .save_to(&path)
+            .expect("save_to should create parents and write");
+
+        assert!(path.exists());
+        assert!(WindowState::load_from(&path).is_some());
+    }
+
+    #[test]
+    fn test_save_to_fails_when_parent_is_a_file() {
+        let temp_dir = TempDir::new().unwrap();
+        // Make a regular file, then try to treat it as a directory in the save path.
+        let blocker = temp_dir.path().join("blocker");
+        fs::write(&blocker, "x").unwrap();
+        let path = blocker.join("state.json");
+
+        let state = WindowState {
+            x: 0,
+            y: 0,
+            width: 1,
+            height: 1,
+            is_maximized: false,
+        };
+        let err = state
+            .save_to(&path)
+            .expect_err("save under a file path must fail");
+        assert!(!err.is_empty());
+    }
+
+    #[test]
+    fn test_load_from_missing_file_returns_none() {
+        let temp_dir = TempDir::new().unwrap();
+        let path = temp_dir.path().join("does-not-exist.json");
+        assert!(WindowState::load_from(&path).is_none());
+    }
+
+    #[test]
+    fn test_load_from_corrupt_file_returns_none() {
+        let temp_dir = TempDir::new().unwrap();
+        let path = temp_dir.path().join("corrupt.json");
+        fs::write(&path, "{ not valid json ").unwrap();
+        assert!(WindowState::load_from(&path).is_none());
+    }
+
+    #[test]
+    fn test_load_from_empty_file_returns_none() {
+        let temp_dir = TempDir::new().unwrap();
+        let path = temp_dir.path().join("empty.json");
+        fs::write(&path, "").unwrap();
+        assert!(WindowState::load_from(&path).is_none());
     }
 }

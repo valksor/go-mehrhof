@@ -288,7 +288,11 @@ jobs:
       - name: Generate coverage
         if: github.event_name != 'pull_request' && runner.os == 'Linux'
         working-directory: web/src-tauri
-        run: cargo llvm-cov --lib --lcov --remap-path-prefix --output-path lcov.info
+        # lib.rs is excluded: it is the Tauri GUI bootstrap (run()/setup_tray builder
+        # chain + event loop) with no unit-testable logic. It can only be exercised by
+        # launching the real desktop app, which `--lib` coverage cannot capture. The
+        # actual logic (server_manager, window_state) is unit-tested and counted.
+        run: cargo llvm-cov --lib --ignore-filename-regex 'src/lib\.rs' --lcov --remap-path-prefix --output-path lcov.info
 
       - name: Check coverage data exists
         id: check-tauri-coverage

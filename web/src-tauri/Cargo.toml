@@ -43,6 +43,10 @@ panic = "abort"
 
 [dev-dependencies]
 tempfile = "3"
+tokio = { version = "1", features = ["macros", "rt"] }
+# Enables tauri::test (MockRuntime) so AppHandle-bound code paths can be unit-tested
+# without a real window/event loop. Merged into the build only for tests.
+tauri = { version = "2", features = ["test"] }
 
 [profile.dev]
 incremental = true

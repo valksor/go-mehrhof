@@ -17,6 +17,13 @@ use tauri_plugin_shell::ShellExt;
 use tokio::sync::Mutex;
 use tokio::time::timeout;
 
+/// How long to wait for the server to announce its port before giving up.
+/// Shortened under test so the spawn-failure path doesn't block the suite for 30s.
+#[cfg(not(test))]
+const PORT_TIMEOUT: Duration = Duration::from_secs(30);
+#[cfg(test)]
+const PORT_TIMEOUT: Duration = Duration::from_millis(200);
+
 /// Global server state
 static SERVER_PROCESS: std::sync::OnceLock<Arc<Mutex<Option<ServerProcess>>>> =
     std::sync::OnceLock::new();
@@ -30,7 +37,7 @@ struct ServerProcess {
 }
 
 /// Start the kvelmo server and navigate to it (production only)
-pub async fn start_server(app: &AppHandle) -> Result<(), String> {
+pub async fn start_server<R: tauri::Runtime>(app: &AppHandle<R>) -> Result<(), String> {
     // Get or create the server process holder
     let server = SERVER_PROCESS.get_or_init(|| Arc::new(Mutex::new(None)));
     let mut guard = server.lock().await;
@@ -63,7 +70,7 @@ pub async fn start_server(app: &AppHandle) -> Result<(), String> {
 }
 
 /// Spawn the server process and return the detected port
-async fn spawn_server(app: &AppHandle) -> Result<u16, String> {
+async fn spawn_server<R: tauri::Runtime>(app: &AppHandle<R>) -> Result<u16, String> {
     #[cfg(target_os = "windows")]
     {
         spawn_server_wsl(app).await
@@ -77,7 +84,7 @@ async fn spawn_server(app: &AppHandle) -> Result<u16, String> {
 
 /// Spawn server using Tauri sidecar (macOS/Linux)
 #[cfg(not(target_os = "windows"))]
-async fn spawn_server_sidecar(app: &AppHandle) -> Result<u16, String> {
+async fn spawn_server_sidecar<R: tauri::Runtime>(app: &AppHandle<R>) -> Result<u16, String> {
     let shell = app.shell();
 
     // In dev mode, use fixed port 6337 for Vite proxy compatibility
@@ -112,7 +119,7 @@ async fn spawn_server_sidecar(app: &AppHandle) -> Result<u16, String> {
 
 /// Spawn server via WSL (Windows)
 #[cfg(target_os = "windows")]
-async fn spawn_server_wsl(app: &AppHandle) -> Result<u16, String> {
+async fn spawn_server_wsl<R: tauri::Runtime>(app: &AppHandle<R>) -> Result<u16, String> {
     use crate::wsl;
 
     // Check WSL is available
@@ -149,48 +156,107 @@ pub(crate) fn extract_port(line: &str) -> Option<u16> {
         .and_then(|m| m.as_str().parse().ok())
 }
 
-/// Wait for the server to output its port
+/// A decoded server-process output event.
+///
+/// `tauri_plugin_shell::process::CommandEvent` is `#[non_exhaustive]`, so it cannot be
+/// constructed in unit tests. Decoding it into this local type lets the port-detection
+/// decision logic (`scan_server_event`) be exercised directly without spawning a process.
+#[derive(Debug)]
+enum ServerEvent {
+    Stdout(String),
+    Stderr(String),
+    Error(String),
+    Terminated(String),
+}
+
+impl ServerEvent {
+    /// Decode a shell `CommandEvent`, returning `None` for variants we ignore.
+    fn from_command_event(event: CommandEvent) -> Option<Self> {
+        match event {
+            CommandEvent::Stdout(bytes) => {
+                Some(Self::Stdout(String::from_utf8_lossy(&bytes).into_owned()))
+            }
+            CommandEvent::Stderr(bytes) => {
+                Some(Self::Stderr(String::from_utf8_lossy(&bytes).into_owned()))
+            }
+            CommandEvent::Error(e) => Some(Self::Error(e)),
+            CommandEvent::Terminated(status) => Some(Self::Terminated(format!("{:?}", status))),
+            _ => None,
+        }
+    }
+}
+
+/// The result of inspecting a single server event while waiting for the port.
+#[derive(Debug, PartialEq, Eq)]
+enum PortScan {
+    /// The server announced this port; stop waiting.
+    Found(u16),
+    /// Nothing actionable; keep reading events.
+    Continue,
+    /// The server failed before announcing a port; stop with this error.
+    Fail(String),
+}
+
+/// Decide what a single decoded event means for port detection.
+///
+/// Pure and side-effect-light (only logging), so every branch is unit-testable.
+fn scan_server_event(event: &ServerEvent) -> PortScan {
+    match event {
+        ServerEvent::Stdout(line) => {
+            println!("[kvelmo-desktop] stdout: {}", line);
+            match extract_port(line) {
+                Some(port) => {
+                    println!("[kvelmo-desktop] Detected port: {}", port);
+                    PortScan::Found(port)
+                }
+                None => PortScan::Continue,
+            }
+        }
+        ServerEvent::Stderr(line) => {
+            println!("[kvelmo-desktop] stderr: {}", line);
+            PortScan::Continue
+        }
+        ServerEvent::Error(e) => {
+            let msg = format!("Server process error: {}", e);
+            println!("[kvelmo-desktop] {}", msg);
+            PortScan::Fail(msg)
+        }
+        ServerEvent::Terminated(status) => {
+            let msg = format!("Server process terminated unexpectedly: {}", status);
+            println!("[kvelmo-desktop] {}", msg);
+            PortScan::Fail(msg)
+        }
+    }
+}
+
+/// Wait for the server to output its port.
+///
+/// Thin adapter over the shell `CommandEvent` stream: it decodes each event and defers the
+/// decision to [`scan_server_event`]. The detection logic lives there so it can be tested
+/// without a real subprocess.
 async fn wait_for_port(rx: &mut tokio::sync::mpsc::Receiver<CommandEvent>) -> Result<u16, String> {
     let port_future = async {
         while let Some(event) = rx.recv().await {
-            match event {
-                CommandEvent::Stdout(line_bytes) => {
-                    let line = String::from_utf8_lossy(&line_bytes);
-                    println!("[kvelmo-desktop] stdout: {}", line);
-
-                    if let Some(port) = extract_port(&line) {
-                        println!("[kvelmo-desktop] Detected port: {}", port);
-                        return Ok(port);
-                    }
-                }
-                CommandEvent::Stderr(line_bytes) => {
-                    let line = String::from_utf8_lossy(&line_bytes);
-                    println!("[kvelmo-desktop] stderr: {}", line);
-                }
-                CommandEvent::Error(e) => {
-                    let msg = format!("Server process error: {}", e);
-                    println!("[kvelmo-desktop] {}", msg);
-                    return Err(msg);
-                }
-                CommandEvent::Terminated(status) => {
-                    let msg = format!("Server process terminated unexpectedly: {:?}", status);
-                    println!("[kvelmo-desktop] {}", msg);
-                    return Err(msg);
-                }
-                _ => {}
+            let Some(decoded) = ServerEvent::from_command_event(event) else {
+                continue;
+            };
+            match scan_server_event(&decoded) {
+                PortScan::Found(port) => return Ok(port),
+                PortScan::Continue => {}
+                PortScan::Fail(msg) => return Err(msg),
             }
         }
         Err("Server process closed before port was detected".to_string())
     };
 
-    timeout(Duration::from_secs(30), port_future)
+    timeout(PORT_TIMEOUT, port_future)
         .await
-        .map_err(|_| "Server startup timed out after 30 seconds".to_string())?
+        .map_err(|_| format!("Server startup timed out after {:?}", PORT_TIMEOUT))?
 }
 
 /// Navigate the main window to the server URL
 #[cfg(not(dev))]
-fn navigate_to_server(app: &AppHandle, port: u16) -> Result<(), String> {
+fn navigate_to_server<R: tauri::Runtime>(app: &AppHandle<R>, port: u16) -> Result<(), String> {
     let window = app
         .get_webview_window("main")
         .ok_or("Main window not found")?;
@@ -305,5 +371,79 @@ mod tests {
     #[test]
     fn test_extract_port_port_one() {
         assert_eq!(extract_port("localhost:1"), Some(1));
+    }
+
+    #[test]
+    fn test_scan_stdout_with_port_is_found() {
+        let event = ServerEvent::Stdout("Listening on localhost:8080".to_string());
+        assert_eq!(scan_server_event(&event), PortScan::Found(8080));
+    }
+
+    #[test]
+    fn test_scan_stdout_without_port_continues() {
+        let event = ServerEvent::Stdout("Loading configuration...".to_string());
+        assert_eq!(scan_server_event(&event), PortScan::Continue);
+    }
+
+    #[test]
+    fn test_scan_stderr_is_ignored() {
+        // Stderr is noise during startup and must never abort port detection.
+        let event = ServerEvent::Stderr("warning: deprecated flag".to_string());
+        assert_eq!(scan_server_event(&event), PortScan::Continue);
+    }
+
+    #[test]
+    fn test_scan_stderr_with_port_text_still_continues() {
+        // A port-shaped string on stderr must not be mistaken for the announcement.
+        let event = ServerEvent::Stderr("localhost:9999".to_string());
+        assert_eq!(scan_server_event(&event), PortScan::Continue);
+    }
+
+    #[test]
+    fn test_scan_error_fails_with_message() {
+        let event = ServerEvent::Error("permission denied".to_string());
+        assert_eq!(
+            scan_server_event(&event),
+            PortScan::Fail("Server process error: permission denied".to_string())
+        );
+    }
+
+    #[test]
+    fn test_scan_terminated_fails_with_message() {
+        let event = ServerEvent::Terminated("ExitStatus(1)".to_string());
+        assert_eq!(
+            scan_server_event(&event),
+            PortScan::Fail("Server process terminated unexpectedly: ExitStatus(1)".to_string())
+        );
+    }
+
+    #[tokio::test]
+    async fn test_stop_server_without_running_process_is_noop() {
+        // No server was ever started in this test, so stop_server must complete cleanly.
+        stop_server().await;
+    }
+
+    /// Build a headless mock Tauri app (MockRuntime) with the shell plugin registered,
+    /// so AppHandle-bound spawn paths can be exercised without a real window/event loop.
+    fn mock_app() -> tauri::App<tauri::test::MockRuntime> {
+        tauri::test::mock_builder()
+            .plugin(tauri_plugin_shell::init())
+            .build(tauri::test::mock_context(tauri::test::noop_assets()))
+            .expect("failed to build mock app")
+    }
+
+    #[test]
+    fn test_start_server_errors_when_sidecar_unavailable() {
+        // The mock context has no bundled sidecar binary, so spawning must fail with a
+        // descriptive error rather than panicking. This drives start_server ->
+        // spawn_server -> spawn_server_sidecar end to end.
+        let app = mock_app();
+        let result = tauri::async_runtime::block_on(start_server(app.handle()));
+        assert!(
+            result.is_err(),
+            "expected sidecar spawn to fail in mock context, got {result:?}"
+        );
+        let err = result.unwrap_err();
+        assert!(!err.is_empty(), "error message should not be empty");
     }
 }
