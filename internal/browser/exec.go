@@ -8,6 +8,8 @@ import (
 	"log/slog"
 	"os"
 	"os/exec"
+
+	"github.com/valksor/kvelmo/settings"
 )
 
 // ExecOptions configures browser command execution.
@@ -39,7 +41,7 @@ func Exec(ctx context.Context, opts *ExecOptions, args ...string) ([]byte, error
 
 	slog.Debug("browser: executing command", "args", args)
 	cmd := exec.CommandContext(ctx, BinaryPath(), cmdArgs...)
-	cmd.Env = append(os.Environ(), env...)
+	cmd.Env = env
 
 	var stdout, stderr bytes.Buffer
 	cmd.Stdout = &stdout
@@ -70,7 +72,7 @@ func ExecStream(ctx context.Context, opts *ExecOptions, args ...string) (io.Read
 	}
 
 	cmd := exec.CommandContext(ctx, BinaryPath(), cmdArgs...)
-	cmd.Env = append(os.Environ(), env...)
+	cmd.Env = env
 
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
@@ -121,7 +123,7 @@ func ExecInteractive(ctx context.Context, opts *ExecOptions, args ...string) err
 	defer cleanup()
 
 	cmd := exec.CommandContext(ctx, BinaryPath(), cmdArgs...)
-	cmd.Env = append(os.Environ(), env...)
+	cmd.Env = env
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
@@ -181,8 +183,14 @@ func buildCommand(opts *ExecOptions, args []string) (cmdArgs []string, env []str
 	// Add user command arguments
 	cmdArgs = append(cmdArgs, args...)
 
-	// Build environment
-	env = make([]string, 0)
+	// Build environment via settings.ProcessEnv: kvelmo's config-dir .env for the
+	// worktree, over a minimal host base (HOME/PATH/...). Host secrets are not
+	// inherited.
+	worktreePath := ""
+	if opts != nil {
+		worktreePath = opts.WorktreePath
+	}
+	env = settings.ProcessEnv(worktreePath, nil)
 
 	// Set state file via environment if specified
 	if stateFile != "" {

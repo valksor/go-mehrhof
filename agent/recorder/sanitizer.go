@@ -1,7 +1,6 @@
 package recorder
 
 import (
-	"os"
 	"regexp"
 	"strings"
 
@@ -129,17 +128,19 @@ func CollectSensitiveValues(s *settings.Settings) []string {
 	add(s.Agent.OpenAI.APIKey)
 	add(s.Agent.Anthropic.APIKey)
 
-	// Tokens from environment variables (may differ from settings).
-	envVars := []string{
-		"GITHUB_TOKEN",
-		"GITLAB_TOKEN",
-		"WRIKE_TOKEN",
-		"LINEAR_TOKEN",
-		"OPENAI_API_KEY",
-		"ANTHROPIC_API_KEY",
-	}
-	for _, env := range envVars {
-		add(os.Getenv(env))
+	// Token values from kvelmo's config-dir .env (may differ from settings).
+	// The host os.Environ() is never consulted.
+	if envMap, err := settings.LoadEnvMap(""); err == nil {
+		for _, key := range []string{
+			"GITHUB_TOKEN",
+			"GITLAB_TOKEN",
+			"WRIKE_TOKEN",
+			"LINEAR_TOKEN",
+			"OPENAI_API_KEY",
+			"ANTHROPIC_API_KEY",
+		} {
+			add(envMap.Get(key))
+		}
 	}
 
 	return values

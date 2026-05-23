@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
-	"os"
 	"os/exec"
 	"strings"
 	"sync"
@@ -17,6 +16,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/valksor/kvelmo/agent"
+	"github.com/valksor/kvelmo/settings"
 )
 
 // CLIConnection manages Claude via CLI subprocess.
@@ -100,19 +100,10 @@ func (c *CLIConnection) Connect(ctx context.Context) error {
 		c.cmd.Dir = c.config.WorkDir
 	}
 
-	// Build environment: start with parent env, exclude CLAUDECODE to allow nested sessions
-	env := make([]string, 0, len(os.Environ())+len(c.config.Environment))
-	for _, e := range os.Environ() {
-		// Skip CLAUDECODE to allow running Claude CLI from within Claude Code
-		if !strings.HasPrefix(e, "CLAUDECODE=") {
-			env = append(env, e)
-		}
-	}
-	// Add custom config environment variables
-	for k, v := range c.config.Environment {
-		env = append(env, fmt.Sprintf("%s=%s", k, v))
-	}
-	c.cmd.Env = env
+	// Build the child env via settings.ProcessEnv: kvelmo's config-dir .env plus
+	// config.Environment, over a minimal host base (HOME/PATH/TERM/...). The host
+	// os.Environ() is not inherited wholesale, so host secrets never leak in.
+	c.cmd.Env = settings.ProcessEnv(c.config.WorkDir, c.config.Environment)
 
 	// Get stdin for sending prompts
 	stdin, err := c.cmd.StdinPipe()

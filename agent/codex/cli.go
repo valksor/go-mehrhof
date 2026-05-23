@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/valksor/kvelmo/agent"
+	"github.com/valksor/kvelmo/settings"
 )
 
 // CLIConnection manages Codex via app-server subprocess with JSON-RPC.
@@ -74,10 +75,10 @@ func (c *CLIConnection) Connect(ctx context.Context) error {
 		c.cmd.Dir = c.config.WorkDir
 	}
 
-	// Set environment
-	for k, v := range c.config.Environment {
-		c.cmd.Env = append(c.cmd.Env, fmt.Sprintf("%s=%s", k, v))
-	}
+	// Build the child env via settings.ProcessEnv: kvelmo's config-dir .env plus
+	// config.Environment, over a minimal host base (HOME/PATH/...). Host secrets
+	// are not inherited.
+	c.cmd.Env = settings.ProcessEnv(c.config.WorkDir, c.config.Environment)
 
 	// Get stdin for JSON-RPC
 	stdin, err := c.cmd.StdinPipe()

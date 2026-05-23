@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"github.com/valksor/kvelmo/agent"
+	"github.com/valksor/kvelmo/settings"
 )
 
 // Agent wraps a custom CLI command as an agent.
@@ -160,10 +161,10 @@ func (a *Agent) Connect(ctx context.Context) error {
 		a.cmd.Dir = a.config.WorkDir
 	}
 
-	// Set environment
-	for k, v := range a.config.Environment {
-		a.cmd.Env = append(a.cmd.Env, fmt.Sprintf("%s=%s", k, v))
-	}
+	// Build the child env via settings.ProcessEnv: kvelmo's config-dir .env plus
+	// config.Environment, over a minimal host base (HOME/PATH/...). Host secrets
+	// are not inherited.
+	a.cmd.Env = settings.ProcessEnv(a.config.WorkDir, a.config.Environment)
 
 	// Get stdin for sending prompts
 	stdin, err := a.cmd.StdinPipe()

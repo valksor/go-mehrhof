@@ -5,12 +5,12 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
-	"os"
 	"os/exec"
 	"strings"
 	"time"
 
 	"github.com/valksor/kvelmo/agent"
+	"github.com/valksor/kvelmo/settings"
 )
 
 // launchClaude starts the Claude CLI process with --sdk-url.
@@ -25,19 +25,10 @@ func (w *WebSocketConnection) launchClaude(ctx context.Context) error {
 		w.cmd.Dir = w.config.WorkDir
 	}
 
-	// Build environment: start with parent env, exclude CLAUDECODE to allow nested sessions
-	env := make([]string, 0, len(os.Environ())+len(w.config.Environment))
-	for _, e := range os.Environ() {
-		// Skip CLAUDECODE to allow running Claude CLI from within Claude Code
-		if !strings.HasPrefix(e, "CLAUDECODE=") {
-			env = append(env, e)
-		}
-	}
-	// Add custom config environment variables
-	for k, v := range w.config.Environment {
-		env = append(env, fmt.Sprintf("%s=%s", k, v))
-	}
-	w.cmd.Env = env
+	// Build the child env via settings.ProcessEnv: kvelmo's config-dir .env plus
+	// config.Environment, over a minimal host base (HOME/PATH/...). Host secrets
+	// are not inherited.
+	w.cmd.Env = settings.ProcessEnv(w.config.WorkDir, w.config.Environment)
 
 	// Capture stdout for debugging
 	stdout, err := w.cmd.StdoutPipe()

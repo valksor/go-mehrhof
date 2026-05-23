@@ -1,6 +1,8 @@
 package recorder
 
 import (
+	"os"
+	"path/filepath"
 	"slices"
 	"testing"
 
@@ -178,13 +180,25 @@ func TestCollectSensitiveValues(t *testing.T) {
 }
 
 func TestCollectSensitiveValues_EnvVars(t *testing.T) {
-	t.Setenv("GITHUB_TOKEN", "env-gh-tok")
+	// The sanitizer reads token values from kvelmo's config-dir .env, never the
+	// host environment. Write a global .env under a temp KVELMO_HOME.
+	t.Setenv("KVELMO_HOME", t.TempDir())
+	envPath, err := settings.GlobalEnvPath()
+	if err != nil {
+		t.Fatalf("GlobalEnvPath: %v", err)
+	}
+	if err := os.MkdirAll(filepath.Dir(envPath), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(envPath, []byte("GITHUB_TOKEN=env-gh-tok\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
 
 	s := &settings.Settings{}
 	vals := CollectSensitiveValues(s)
 
 	if !slices.Contains(vals, "env-gh-tok") {
-		t.Error("expected GITHUB_TOKEN env var in collected values")
+		t.Error("expected GITHUB_TOKEN from config .env in collected values")
 	}
 }
 

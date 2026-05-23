@@ -2,7 +2,9 @@ package settings
 
 import (
 	"bufio"
+	"maps"
 	"os"
+	"sort"
 	"strings"
 )
 
@@ -17,6 +19,51 @@ func (m EnvMap) Get(key string) string {
 	}
 
 	return m[key]
+}
+
+// passthroughEnvKeys is the minimal set of host environment variables a spawned
+// subprocess genuinely needs in order to run: HOME (the agent's login/config
+// lookup, e.g. ~/.claude), PATH (locating the binary's runtime dependencies),
+// TERM (PTY/TUI rendering), plus a few locale/identity/temp vars. Every other
+// host variable is dropped, so secrets (provider tokens, cloud credentials, CI
+// variables) never leak into agents.
+var passthroughEnvKeys = []string{
+	"HOME", "PATH", "TERM",
+	"LANG", "LC_ALL", "LC_CTYPE",
+	"TMPDIR", "TZ",
+	"USER", "LOGNAME", "SHELL",
+}
+
+// ProcessEnv builds the environment for a spawned subprocess. It combines, in
+// increasing precedence: a minimal allowlisted host base (see passthroughEnvKeys),
+// kvelmo's config-dir .env (global + project, via LoadEnvMap), and the supplied
+// per-process overrides — formatted as a sorted "KEY=VALUE" slice for
+// exec.Cmd.Env. The host os.Environ() is NOT inherited wholesale: only the
+// allowlisted keys are read, so host secrets never reach agents while HOME/PATH
+// and friends stay available for the binary to run. A config-dir or override
+// value wins over the host passthrough, so HOME/PATH can be pinned in config.
+func ProcessEnv(projectRoot string, overrides map[string]string) []string {
+	merged := make(EnvMap)
+	// Minimal host base (lowest precedence): read only the allowlisted keys.
+	for _, k := range passthroughEnvKeys {
+		if v, ok := os.LookupEnv(k); ok {
+			merged[k] = v
+		}
+	}
+	// Config-dir .env overrides the host base.
+	if env, err := LoadEnvMap(projectRoot); err == nil {
+		maps.Copy(merged, env)
+	}
+	// Per-process overrides win over everything.
+	maps.Copy(merged, overrides)
+
+	out := make([]string, 0, len(merged))
+	for k, v := range merged {
+		out = append(out, k+"="+v)
+	}
+	sort.Strings(out)
+
+	return out
 }
 
 // LoadEnvMap loads environment variables from global and project .env files.

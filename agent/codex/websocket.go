@@ -15,6 +15,7 @@ import (
 
 	"github.com/coder/websocket"
 	"github.com/valksor/kvelmo/agent"
+	"github.com/valksor/kvelmo/settings"
 )
 
 // WebSocketConnection manages Codex via app-server with WebSocket transport.
@@ -204,10 +205,10 @@ func (w *WebSocketConnection) launchCodex(ctx context.Context) error {
 		w.cmd.Dir = w.config.WorkDir
 	}
 
-	// Set environment
-	for k, v := range w.config.Environment {
-		w.cmd.Env = append(w.cmd.Env, fmt.Sprintf("%s=%s", k, v))
-	}
+	// Build the child env via settings.ProcessEnv: kvelmo's config-dir .env plus
+	// config.Environment, over a minimal host base (HOME/PATH/...). Host secrets
+	// are not inherited.
+	w.cmd.Env = settings.ProcessEnv(w.config.WorkDir, w.config.Environment)
 
 	// Capture stderr
 	stderr, err := w.cmd.StderrPipe()
