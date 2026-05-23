@@ -1,6 +1,8 @@
 package commands
 
 import (
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"strings"
@@ -105,7 +107,17 @@ func TestRunStart_MutualExclusion(t *testing.T) {
 // with an obviously-bad token. The call returns an error (likely network or
 // HTTP 401) but still executes the function body.
 func TestTestProviderToken_InvalidToken(t *testing.T) {
-	_ = testProviderToken("github", "fake-token-that-will-fail")
+	// Point the GitHub validation endpoint at a stub returning 401 so this
+	// exercises the invalid-token path without a real network call.
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusUnauthorized)
+	}))
+	t.Cleanup(srv.Close)
+	withProviderURL(t, "github", srv.URL)
+
+	if err := testProviderToken("github", "fake-token-that-will-fail"); err == nil {
+		t.Error("expected an error for an invalid token")
+	}
 }
 
 func TestTestProviderToken_UnknownProvider(t *testing.T) {

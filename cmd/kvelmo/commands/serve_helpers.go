@@ -9,6 +9,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/spf13/cobra"
@@ -72,29 +73,42 @@ func findStaticDir(explicit string) string {
 	return ""
 }
 
-// openBrowser opens the specified URL in the default browser.
+// browserOpenCommand builds (but does not start) the OS command that opens url
+// in the user's default browser, returning nil if no opener is available. It is
+// split out from openBrowser so the opener-selection logic can be unit-tested
+// without actually launching a browser — starting it would pop a real window or
+// tab in whatever the user's default browser happens to be.
 //
 //nolint:noctx // exec.Command is intentional: the browser process must outlive the caller; CommandContext would kill it on cancel
-func openBrowser(url string) {
-	var cmd *exec.Cmd
-
+func browserOpenCommand(url string) *exec.Cmd {
+	// Only hand http(s) URLs to the OS opener; other schemes (file://, custom URI
+	// handlers) are a needless risk and are never used by callers — serve passes
+	// the local http server URL.
+	if !strings.HasPrefix(url, "http://") && !strings.HasPrefix(url, "https://") {
+		return nil
+	}
 	switch {
 	case fileExists("/usr/bin/open"): // macOS
-		cmd = exec.Command("/usr/bin/open", url)
+		return exec.Command("/usr/bin/open", url)
 	case fileExists("/usr/bin/xdg-open"): // Linux
-		cmd = exec.Command("/usr/bin/xdg-open", url)
+		return exec.Command("/usr/bin/xdg-open", url)
 	default:
 		// Fallback: try "open" from PATH (macOS) or "xdg-open" (Linux)
 		if path, err := exec.LookPath("open"); err == nil {
-			cmd = exec.Command(path, url)
+			return exec.Command(path, url)
 		} else if path, err := exec.LookPath("xdg-open"); err == nil {
-			cmd = exec.Command(path, url)
-		} else {
-			return
+			return exec.Command(path, url)
 		}
-	}
 
-	_ = cmd.Start()
+		return nil
+	}
+}
+
+// openBrowser opens the specified URL in the default browser.
+func openBrowser(url string) {
+	if cmd := browserOpenCommand(url); cmd != nil {
+		_ = cmd.Start()
+	}
 }
 
 func fileExists(path string) bool {

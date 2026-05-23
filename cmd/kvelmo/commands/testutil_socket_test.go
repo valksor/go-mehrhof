@@ -184,6 +184,7 @@ func defaultStubResponses() stubResponses {
 		"autofix.status": map[string]any{"attempts": 0},
 		"hooks.list":     map[string]any{"hooks": []any{}},
 		"policy.check":   map[string]any{"ok": true},
+		"config.check":   map[string]any{"ok": true, "issues": []any{}},
 
 		// Codegraph
 		"codegraph.stats":   map[string]any{"symbols": 0},

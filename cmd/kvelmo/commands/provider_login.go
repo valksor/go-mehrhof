@@ -235,6 +235,19 @@ Get your token at: %s`, cfg.Name, meta.Name, cfg.HelpURL),
 
 var errValidationSkipped = errors.New("validation skipped")
 
+// providerValidateURLs holds the token-validation endpoint for each provider.
+// It is a package var (rather than inline literals) so tests can point the
+// validation calls at a local httptest server without making real network
+// requests. Production values are the real provider APIs. Because it is shared
+// mutable state, tests that override entries (via withProviderURL, with
+// t.Cleanup restoration) must not run in parallel.
+var providerValidateURLs = map[string]string{
+	provider.NameGitHub: "https://api.github.com/user",
+	provider.NameGitLab: "https://gitlab.com/api/v4/user",
+	provider.NameLinear: "https://api.linear.app/graphql",
+	provider.NameWrike:  "https://www.wrike.com/api/v4/contacts?me=true",
+}
+
 // testProviderToken validates a token by making a simple API call.
 func testProviderToken(providerName, token string) error {
 	ctx := context.Background()
@@ -245,7 +258,7 @@ func testProviderToken(providerName, token string) error {
 
 	switch providerName {
 	case provider.NameGitHub:
-		req, err = http.NewRequestWithContext(ctx, http.MethodGet, "https://api.github.com/user", nil)
+		req, err = http.NewRequestWithContext(ctx, http.MethodGet, providerValidateURLs[provider.NameGitHub], nil)
 		if err != nil {
 			return err
 		}
@@ -253,7 +266,7 @@ func testProviderToken(providerName, token string) error {
 		req.Header.Set("Accept", "application/vnd.github+json")
 
 	case provider.NameGitLab:
-		req, err = http.NewRequestWithContext(ctx, http.MethodGet, "https://gitlab.com/api/v4/user", nil)
+		req, err = http.NewRequestWithContext(ctx, http.MethodGet, providerValidateURLs[provider.NameGitLab], nil)
 		if err != nil {
 			return err
 		}
@@ -261,7 +274,7 @@ func testProviderToken(providerName, token string) error {
 
 	case provider.NameLinear:
 		body := []byte(`{"query":"{ viewer { id } }"}`)
-		req, err = http.NewRequestWithContext(ctx, http.MethodPost, "https://api.linear.app/graphql", bytes.NewReader(body))
+		req, err = http.NewRequestWithContext(ctx, http.MethodPost, providerValidateURLs[provider.NameLinear], bytes.NewReader(body))
 		if err != nil {
 			return err
 		}
@@ -269,7 +282,7 @@ func testProviderToken(providerName, token string) error {
 		req.Header.Set("Content-Type", "application/json")
 
 	case provider.NameWrike:
-		req, err = http.NewRequestWithContext(ctx, http.MethodGet, "https://www.wrike.com/api/v4/contacts?me=true", nil)
+		req, err = http.NewRequestWithContext(ctx, http.MethodGet, providerValidateURLs[provider.NameWrike], nil)
 		if err != nil {
 			return err
 		}
