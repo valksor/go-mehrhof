@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net"
+	"net/http"
 	"os/exec"
 	"sync"
 	"sync/atomic"
@@ -110,7 +111,13 @@ func (w *WebSocketConnection) Connect(ctx context.Context) error {
 		}
 
 		var dialErr error
-		conn, _, dialErr = websocket.Dial(ctx, wsURL, nil)
+		var dialResp *http.Response
+		conn, dialResp, dialErr = websocket.Dial(ctx, wsURL, nil)
+		// The dial response body is unused on both success and failure paths;
+		// close it to avoid leaking the underlying connection's reader.
+		if dialResp != nil && dialResp.Body != nil {
+			_ = dialResp.Body.Close()
+		}
 		if dialErr == nil {
 			break // Success
 		}

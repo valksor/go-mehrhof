@@ -48,6 +48,7 @@ type ptyProcess struct {
 	pty       *os.File
 	lines     chan string
 	done      chan struct{}
+	readDone  chan struct{} // closed by readLoop when it stops sending to lines
 	closeOnce sync.Once
 }
 
@@ -105,10 +106,11 @@ func startPTY(ctx context.Context, argv []string, workDir string, extraEnv map[s
 	}
 
 	p := &ptyProcess{
-		cmd:   cmd,
-		pty:   master,
-		lines: make(chan string, 1024),
-		done:  make(chan struct{}),
+		cmd:      cmd,
+		pty:      master,
+		lines:    make(chan string, 1024),
+		done:     make(chan struct{}),
+		readDone: make(chan struct{}),
 	}
 
 	go p.readLoop()
@@ -120,10 +122,11 @@ func startPTY(ctx context.Context, argv []string, workDir string, extraEnv map[s
 // readLoop pumps PTY output line-by-line into p.lines. When the buffer is
 // full, oldest lines are dropped to keep memory bounded.
 func (p *ptyProcess) readLoop() {
-	defer func() {
-		// Avoid closing p.lines here — waitLoop may still want to emit a
-		// final marker. waitLoop owns the close.
-	}()
+	// Signal that no further sends to p.lines will happen. waitLoop waits on
+	// this before closing p.lines, so the channel close cannot race a send
+	// here (which previously panicked with "send on closed channel" when the
+	// child exited with output still buffered).
+	defer close(p.readDone)
 	reader := bufio.NewReaderSize(p.pty, 32*1024)
 	for {
 		line, err := reader.ReadString('\n')
@@ -155,7 +158,11 @@ func (p *ptyProcess) readLoop() {
 
 func (p *ptyProcess) waitLoop() {
 	_ = p.cmd.Wait()
+	// Closing the PTY master unblocks readLoop's ReadString, which then exits
+	// and closes p.readDone. Wait for that before closing p.lines so the close
+	// can never race an in-flight send in readLoop.
 	_ = p.pty.Close()
+	<-p.readDone
 	close(p.lines)
 	close(p.done)
 }

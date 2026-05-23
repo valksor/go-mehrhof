@@ -192,6 +192,30 @@ func TestRegister(t *testing.T) {
 	}
 }
 
+func TestRegisterWithPermissionHandler(t *testing.T) {
+	r := agent.NewRegistry()
+	called := false
+	handler := agent.PermissionHandler(func(_ agent.PermissionRequest) bool {
+		called = true
+
+		return true
+	})
+	if err := codex.RegisterWithPermissionHandler(r, handler); err != nil {
+		t.Fatalf("RegisterWithPermissionHandler() error = %v", err)
+	}
+	a, err := r.Get(codex.AgentName)
+	if err != nil {
+		t.Fatalf("Get(%q) error = %v", codex.AgentName, err)
+	}
+	if a == nil {
+		t.Fatal("registered agent is nil")
+	}
+	if a.Name() != codex.AgentName {
+		t.Errorf("registered agent Name() = %q, want %q", a.Name(), codex.AgentName)
+	}
+	_ = called
+}
+
 func TestDefaultConfig_PermissionHandlerNonNil(t *testing.T) {
 	cfg := codex.DefaultConfig()
 	if cfg.PermissionHandler == nil {
