@@ -31,8 +31,8 @@ func TestNewDefaults(t *testing.T) {
 	if !a.config.StrictMCPConfig {
 		t.Error("New() StrictMCPConfig = false, want true (from DefaultConfig)")
 	}
-	if a.config.PermissionMode != PermissionModeAcceptEdits {
-		t.Errorf("PermissionMode = %q, want %q", a.config.PermissionMode, PermissionModeAcceptEdits)
+	if a.config.PermissionMode != PermissionModeBypassPermission {
+		t.Errorf("PermissionMode = %q, want %q", a.config.PermissionMode, PermissionModeBypassPermission)
 	}
 	want := []string{"kvelmo", "mcp", "--stdio"}
 	if !slices.Equal(a.config.MCPServerCommand, want) {
@@ -50,7 +50,7 @@ func TestNewWithConfigBackfill(t *testing.T) {
 	if a.config.Timeout != 60*time.Minute {
 		t.Errorf("Timeout default = %v", a.config.Timeout)
 	}
-	if a.config.PermissionMode != PermissionModeAcceptEdits {
+	if a.config.PermissionMode != PermissionModeBypassPermission {
 		t.Errorf("PermissionMode default = %q", a.config.PermissionMode)
 	}
 	if !slices.Equal(a.config.MCPServerCommand, []string{"kvelmo", "mcp", "--stdio"}) {
@@ -150,7 +150,7 @@ func TestBuildArgv(t *testing.T) {
 		}
 		assertFlagValue(t, argv, "--mcp-config", "/tmp/mcp.json")
 		assertFlagValue(t, argv, "--append-system-prompt", "/tmp/sys.md")
-		assertFlagValue(t, argv, "--permission-mode", PermissionModeAcceptEdits)
+		assertFlagValue(t, argv, "--permission-mode", PermissionModeBypassPermission)
 		// Seed prompt is the trailing positional arg.
 		if argv[len(argv)-1] != "do it" {
 			t.Errorf("seed prompt should be last arg, got %v", argv)

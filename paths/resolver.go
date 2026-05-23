@@ -21,12 +21,12 @@ import (
 // rewritten to a short location.
 const maxUnixSocketPath = 103
 
-// shortenSocketPath returns preferred unchanged when it fits the OS socket-path
+// ShortenSocketPath returns preferred unchanged when it fits the OS socket-path
 // limit, otherwise a short, deterministic, per-user fallback under the temp dir.
 // Both the server (bind) and clients (dial) call this with the same preferred
 // path, so they agree on the location even after the fallback. The fallback is
 // keyed by a hash of the preferred path, so distinct sockets never collide.
-func shortenSocketPath(preferred string) string {
+func ShortenSocketPath(preferred string) string {
 	if len(preferred) <= maxUnixSocketPath {
 		return preferred
 	}
@@ -74,7 +74,7 @@ func (p *PathResolver) BaseDir() string {
 // GlobalSocketPath returns the path to the global socket, shortened to a
 // temp-dir fallback if the base-dir path would exceed the OS socket-path limit.
 func (p *PathResolver) GlobalSocketPath() string {
-	return shortenSocketPath(filepath.Join(p.baseDir, "global.sock"))
+	return ShortenSocketPath(filepath.Join(p.baseDir, "global.sock"))
 }
 
 // GlobalLockPath returns the path to the global lock file.
@@ -109,7 +109,7 @@ func (p *PathResolver) WorktreeSocketPath(worktreeDir string) string {
 	hash := sha256.Sum256([]byte(canonicalWorktreePath(worktreeDir)))
 	hashStr := hex.EncodeToString(hash[:8])
 
-	return shortenSocketPath(filepath.Join(p.baseDir, "worktrees", hashStr+".sock"))
+	return ShortenSocketPath(filepath.Join(p.baseDir, "worktrees", hashStr+".sock"))
 }
 
 // MemoryDir returns the directory for memory storage.

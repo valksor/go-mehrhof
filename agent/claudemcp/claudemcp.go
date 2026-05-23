@@ -47,6 +47,14 @@ type Agent struct {
 // point no kvelmo_signal_complete is coming and the session must end itself.
 const standaloneIdleGrace = 6 * time.Second
 
+// conductorIdleGrace is the equivalent for conductor-driven phases. It is
+// longer than standaloneIdleGrace because agentic phases (plan, implement,
+// quality) involve longer model turns and tool runs; the extra margin avoids
+// ending a phase while claude is still composing between tool calls. claude's
+// TUI animates throughout active work, so this only fires once claude is truly
+// idle at its prompt.
+const conductorIdleGrace = 30 * time.Second
+
 // New creates a claude-mcp agent with default configuration.
 func New() *Agent { return NewWithConfig(DefaultConfig()) }
 
@@ -59,7 +67,7 @@ func NewWithConfig(cfg Config) *Agent {
 		cfg.Timeout = 60 * time.Minute
 	}
 	if cfg.PermissionMode == "" {
-		cfg.PermissionMode = PermissionModeAcceptEdits
+		cfg.PermissionMode = PermissionModeBypassPermission
 	}
 	if len(cfg.MCPServerCommand) == 0 {
 		cfg.MCPServerCommand = []string{"kvelmo", "mcp", "--stdio"}
@@ -166,7 +174,16 @@ func (a *Agent) SendPrompt(ctx context.Context, prompt string) (<-chan agent.Eve
 
 	mcpConfigPath := filepath.Join(workDir, "mcp-config.json")
 	systemPromptPath := filepath.Join(workDir, "system-prompt.md")
-	rendezvousPath := filepath.Join(workDir, "adapter.sock")
+	// The rendezvous socket lives under the per-session work dir by default, but
+	// that dir is under WorkRoot (KVELMO_HOME/work/...), which can blow past the
+	// ~104-byte Unix socket-path limit when KVELMO_HOME is a long temp path (the
+	// failure mode that left conductor sessions unable to bind the socket, so
+	// claude never spawned and the phase stalled). ShortenSocketPath keeps it as
+	// is when it fits and otherwise rewrites to a short, deterministic per-user
+	// fallback. The MCP server dials the same shortened path (it is written into
+	// the mcp-config below), so both ends agree. The mcp-config.json and
+	// system-prompt.md are ordinary files and stay under the work dir.
+	rendezvousPath := paths.ShortenSocketPath(filepath.Join(workDir, "adapter.sock"))
 
 	if err := writeSystemPrompt(systemPromptPath, a.config.SystemPromptOverride, taskID, phase, worktree, standalone); err != nil {
 		cleanupOnError()
@@ -212,7 +229,17 @@ func (a *Agent) SendPrompt(ctx context.Context, prompt string) (<-chan agent.Eve
 		}
 	}
 
-	extraEnv := map[string]string{}
+	extraEnv := map[string]string{
+		// Load every tool schema upfront instead of deferring MCP/built-in tools
+		// behind claude's tool-search. Tool-search only surfaces tools it judges
+		// relevant to the literal prompt, so the kvelmo_* orchestration tools
+		// (notably kvelmo_save_artifact and kvelmo_signal_complete) were never
+		// loaded into the model's context and could not be called — the
+		// conductor then stalled waiting for a completion signal that claude had
+		// no way to send. --strict-mcp-config keeps this to just the kvelmo
+		// server, so the upfront cost is small. See agent/claudemcp docs.
+		"ENABLE_TOOL_SEARCH": "false",
+	}
 	// Do NOT inject ANTHROPIC_API_KEY — interactive claude uses its saved
 	// login, which is what keeps the session on the Max subscription.
 	// pty_process.go::startPTY actively strips ANTHROPIC_* vars inherited
@@ -300,34 +327,36 @@ func (a *Agent) prepareWorkDir(taskID string) (string, error) {
 
 // pump fans PTY lines and rendezvous events into a.events until the session
 // ends. Completion arrives via one of: a rendezvous signal_complete/failure,
-// the PTY exiting, ctx cancellation, or — for standalone sessions only — the
-// PTY going idle (see standaloneIdleGrace).
+// the PTY exiting, ctx cancellation, or the PTY going idle.
 func (a *Agent) pump(ctx context.Context, pty *ptyProcess, rdz <-chan mcp.RendezvousEvent, standalone bool) {
 	defer close(a.events)
 	defer a.cleanupAfterSession()
 
-	// Standalone (serverless, e.g. `kvelmo pipe`) sessions have no conductor:
-	// the interactive claude TUI answers the one-shot prompt then idles at its
-	// input box without calling kvelmo_signal_complete. Treat a sustained PTY
-	// silence (after some output) as the turn finishing. Conductor sessions do
-	// NOT arm this — there a long quiet pause (a build, a test run) is normal
-	// and completion must be an explicit signal.
+	// The interactive claude TUI does not exit when a turn is done — it finishes
+	// the work (answering a prompt, or doing a phase's job and writing its
+	// deliverable) and returns to an idle input box, frequently without calling
+	// kvelmo_signal_complete. The conductor and pipe both expect the agent's
+	// event stream to terminate when the work is done (the binary `claude
+	// --print` adapter exits then). So a sustained PTY silence after some output
+	// is treated as the turn finishing. claude repaints its TUI continuously
+	// while it is thinking, streaming, or running a tool (an animated spinner /
+	// elapsed-time ticker), so the PTY only truly goes quiet once claude is idle
+	// at its prompt — not mid-work. Conductor sessions use a longer grace than
+	// the one-shot pipe path for extra safety margin during agentic phases. A
+	// rendezvous signal still wins if claude does call it (faster completion).
 	grace := a.idleGrace
 	if grace <= 0 {
-		grace = standaloneIdleGrace
+		if standalone {
+			grace = standaloneIdleGrace
+		} else {
+			grace = conductorIdleGrace
+		}
 	}
-	var idle *time.Timer
-	var idleC <-chan time.Time
-	if standalone {
-		idle = time.NewTimer(grace)
-		defer idle.Stop()
-		idleC = idle.C
-	}
+	idle := time.NewTimer(grace)
+	defer idle.Stop()
+	idleC := idle.C
 	sawOutput := false
 	resetIdle := func() {
-		if idle == nil {
-			return
-		}
 		if !idle.Stop() {
 			select {
 			case <-idle.C:
@@ -357,9 +386,15 @@ func (a *Agent) pump(ctx context.Context, pty *ptyProcess, rdz <-chan mcp.Rendez
 
 				continue
 			}
+			idlePhase := "pipe"
+			if !standalone {
+				if p := a.config.Environment["KVELMO_PHASE"]; p != "" {
+					idlePhase = p
+				}
+			}
 			a.events <- agent.Event{
 				Type:      agent.EventComplete,
-				Data:      map[string]any{"phase": "pipe", "reason": "idle"},
+				Data:      map[string]any{"phase": idlePhase, "reason": "idle"},
 				Timestamp: time.Now(),
 			}
 			_ = pty.Interrupt()

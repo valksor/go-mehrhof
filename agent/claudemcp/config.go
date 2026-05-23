@@ -59,8 +59,15 @@ type Config struct {
 // DefaultConfig returns sensible defaults for the claude-mcp adapter.
 func DefaultConfig() Config {
 	cfg := Config{
-		Config:          agent.DefaultConfig(),
-		PermissionMode:  PermissionModeAcceptEdits,
+		Config: agent.DefaultConfig(),
+		// bypassPermissions, not acceptEdits: claude-mcp runs claude headlessly
+		// with no human present, and acceptEdits still raises an interactive
+		// approval prompt for Bash and MCP tool calls. Those prompts block
+		// forever in a headless session — in the conductor, claude's call to
+		// kvelmo_save_artifact / kvelmo_signal_complete would stall waiting for
+		// an approval nobody can give. bypassPermissions auto-approves so the
+		// orchestration tools and the agent's own work run unattended.
+		PermissionMode:  PermissionModeBypassPermission,
 		StrictMCPConfig: true,
 	}
 	cfg.Command = []string{"claude"}

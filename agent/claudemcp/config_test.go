@@ -10,8 +10,8 @@ import (
 func TestDefaultConfig(t *testing.T) {
 	cfg := DefaultConfig()
 
-	if cfg.PermissionMode != PermissionModeAcceptEdits {
-		t.Errorf("PermissionMode = %q, want %q", cfg.PermissionMode, PermissionModeAcceptEdits)
+	if cfg.PermissionMode != PermissionModeBypassPermission {
+		t.Errorf("PermissionMode = %q, want %q", cfg.PermissionMode, PermissionModeBypassPermission)
 	}
 	if !cfg.StrictMCPConfig {
 		t.Error("StrictMCPConfig = false, want true (default isolates MCP servers)")
