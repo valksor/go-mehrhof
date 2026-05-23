@@ -27,7 +27,7 @@ func TestWorktreeHandleQueueList_NilConductor(t *testing.T) {
 
 func TestWorktreeHandleQueueList_EmptyQueue(t *testing.T) {
 	ctx := context.Background()
-	w := newTestWorktreeSocket(t)
+	w := newTestWorktreeSocket(ctx, t)
 
 	resp, err := w.handleQueueList(ctx, &Request{ID: "1"})
 	if err != nil {
@@ -78,7 +78,7 @@ func TestWorktreeHandleQueueAdd_NilConductor(t *testing.T) {
 
 func TestWorktreeHandleQueueAdd_EmptySource(t *testing.T) {
 	ctx := context.Background()
-	w := newTestWorktreeSocket(t)
+	w := newTestWorktreeSocket(ctx, t)
 
 	params, _ := json.Marshal(queueAddParams{Source: ""}) //nolint:errchkjson // test data
 	resp, err := w.handleQueueAdd(ctx, &Request{ID: "1", Params: params})
@@ -92,7 +92,7 @@ func TestWorktreeHandleQueueAdd_EmptySource(t *testing.T) {
 
 func TestWorktreeHandleQueueAdd_InvalidJSON(t *testing.T) {
 	ctx := context.Background()
-	w := newTestWorktreeSocket(t)
+	w := newTestWorktreeSocket(ctx, t)
 
 	resp, err := w.handleQueueAdd(ctx, &Request{ID: "1", Params: json.RawMessage(`invalid`)})
 	if err != nil {
@@ -105,7 +105,7 @@ func TestWorktreeHandleQueueAdd_InvalidJSON(t *testing.T) {
 
 func TestWorktreeHandleQueueAdd_ValidSource(t *testing.T) {
 	ctx := context.Background()
-	w := newTestWorktreeSocket(t)
+	w := newTestWorktreeSocket(ctx, t)
 
 	params, _ := json.Marshal(queueAddParams{Source: "empty:fix the button", Title: "Fix button"}) //nolint:errchkjson // test data
 	resp, err := w.handleQueueAdd(ctx, &Request{ID: "1", Params: params})
@@ -138,7 +138,7 @@ func TestWorktreeHandleQueueRemove_NilConductor(t *testing.T) {
 
 func TestWorktreeHandleQueueRemove_EmptyID(t *testing.T) {
 	ctx := context.Background()
-	w := newTestWorktreeSocket(t)
+	w := newTestWorktreeSocket(ctx, t)
 
 	params, _ := json.Marshal(queueRemoveParams{ID: ""}) //nolint:errchkjson // test data
 	resp, err := w.handleQueueRemove(ctx, &Request{ID: "1", Params: params})
@@ -152,7 +152,7 @@ func TestWorktreeHandleQueueRemove_EmptyID(t *testing.T) {
 
 func TestWorktreeHandleQueueRemove_InvalidJSON(t *testing.T) {
 	ctx := context.Background()
-	w := newTestWorktreeSocket(t)
+	w := newTestWorktreeSocket(ctx, t)
 
 	resp, err := w.handleQueueRemove(ctx, &Request{ID: "1", Params: json.RawMessage(`invalid`)})
 	if err != nil {
@@ -165,7 +165,7 @@ func TestWorktreeHandleQueueRemove_InvalidJSON(t *testing.T) {
 
 func TestWorktreeHandleQueueRemove_NonexistentID(t *testing.T) {
 	ctx := context.Background()
-	w := newTestWorktreeSocket(t)
+	w := newTestWorktreeSocket(ctx, t)
 
 	params, _ := json.Marshal(queueRemoveParams{ID: "nonexistent-task-id"}) //nolint:errchkjson // test data
 	resp, err := w.handleQueueRemove(ctx, &Request{ID: "1", Params: params})
@@ -198,7 +198,7 @@ func TestWorktreeHandleQueueReorder_NilConductor(t *testing.T) {
 
 func TestWorktreeHandleQueueReorder_EmptyID(t *testing.T) {
 	ctx := context.Background()
-	w := newTestWorktreeSocket(t)
+	w := newTestWorktreeSocket(ctx, t)
 
 	params, _ := json.Marshal(queueReorderParams{ID: "", Position: 1}) //nolint:errchkjson // test data
 	resp, err := w.handleQueueReorder(ctx, &Request{ID: "1", Params: params})
@@ -212,7 +212,7 @@ func TestWorktreeHandleQueueReorder_EmptyID(t *testing.T) {
 
 func TestWorktreeHandleQueueReorder_ZeroPosition(t *testing.T) {
 	ctx := context.Background()
-	w := newTestWorktreeSocket(t)
+	w := newTestWorktreeSocket(ctx, t)
 
 	params, _ := json.Marshal(queueReorderParams{ID: "task-1", Position: 0}) //nolint:errchkjson // test data
 	resp, err := w.handleQueueReorder(ctx, &Request{ID: "1", Params: params})
@@ -226,7 +226,7 @@ func TestWorktreeHandleQueueReorder_ZeroPosition(t *testing.T) {
 
 func TestWorktreeHandleQueueReorder_NegativePosition(t *testing.T) {
 	ctx := context.Background()
-	w := newTestWorktreeSocket(t)
+	w := newTestWorktreeSocket(ctx, t)
 
 	params, _ := json.Marshal(queueReorderParams{ID: "task-1", Position: -5}) //nolint:errchkjson // test data
 	resp, err := w.handleQueueReorder(ctx, &Request{ID: "1", Params: params})
@@ -240,7 +240,7 @@ func TestWorktreeHandleQueueReorder_NegativePosition(t *testing.T) {
 
 func TestWorktreeHandleQueueReorder_InvalidJSON(t *testing.T) {
 	ctx := context.Background()
-	w := newTestWorktreeSocket(t)
+	w := newTestWorktreeSocket(ctx, t)
 
 	resp, err := w.handleQueueReorder(ctx, &Request{ID: "1", Params: json.RawMessage(`invalid`)})
 	if err != nil {
@@ -257,7 +257,7 @@ func TestWorktreeHandleQueueReorder_InvalidJSON(t *testing.T) {
 
 func TestWorktreeHandleTaskHistory_EmptyHistory(t *testing.T) {
 	ctx := context.Background()
-	w := newTestWorktreeSocket(t)
+	w := newTestWorktreeSocket(ctx, t)
 
 	resp, err := w.handleTaskHistory(ctx, &Request{ID: "1"})
 	if err != nil {
@@ -286,7 +286,7 @@ func TestWorktreeHandleTaskHistory_EmptyHistory(t *testing.T) {
 
 func TestWorktreeHandleTaskHistory_WithTask(t *testing.T) {
 	ctx := context.Background()
-	w := newTestWorktreeSocket(t)
+	w := newTestWorktreeSocket(ctx, t)
 	setWorkUnitInState(t, w, conductor.StateLoaded)
 
 	resp, err := w.handleTaskHistory(ctx, &Request{ID: "1"})

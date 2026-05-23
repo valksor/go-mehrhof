@@ -10,7 +10,7 @@ import (
 
 func TestHandleApprove_NoEvent(t *testing.T) {
 	ctx := context.Background()
-	w := newTestWorktreeSocket(t)
+	w := newTestWorktreeSocket(ctx, t)
 	setWorkUnitInState(t, w, conductor.StateLoaded)
 
 	req := &Request{ID: "1", Method: "approve", Params: json.RawMessage(`{}`)}
@@ -28,7 +28,7 @@ func TestHandleApprove_NoEvent(t *testing.T) {
 
 func TestHandleApprove_NoWorkUnit(t *testing.T) {
 	ctx := context.Background()
-	w := newTestWorktreeSocket(t)
+	w := newTestWorktreeSocket(ctx, t)
 	// Conductor exists but no work unit → Approve returns "no task loaded".
 
 	req := &Request{ID: "2", Method: "approve", Params: json.RawMessage(`{"event":"submit"}`)}
@@ -43,7 +43,7 @@ func TestHandleApprove_NoWorkUnit(t *testing.T) {
 
 func TestHandleApproveNode_NoNodeID(t *testing.T) {
 	ctx := context.Background()
-	w := newTestWorktreeSocket(t)
+	w := newTestWorktreeSocket(ctx, t)
 
 	req := &Request{ID: "3", Method: "approve.node", Params: json.RawMessage(`{}`)}
 	resp, err := w.handleApproveNode(ctx, req)
@@ -60,7 +60,7 @@ func TestHandleApproveNode_NoNodeID(t *testing.T) {
 
 func TestHandleReviewChecklistGet(t *testing.T) {
 	ctx := context.Background()
-	w := newTestWorktreeSocket(t)
+	w := newTestWorktreeSocket(ctx, t)
 	setWorkUnitInState(t, w, conductor.StateLoaded)
 
 	req := &Request{ID: "4", Method: "review.checklist.get"}
@@ -86,7 +86,7 @@ func TestHandleReviewChecklistGet(t *testing.T) {
 
 func TestHandleReviewChecklistCheck_MissingItem(t *testing.T) {
 	ctx := context.Background()
-	w := newTestWorktreeSocket(t)
+	w := newTestWorktreeSocket(ctx, t)
 	setWorkUnitInState(t, w, conductor.StateLoaded)
 
 	req := &Request{ID: "5", Method: "review.checklist.check", Params: json.RawMessage(`{}`)}
@@ -104,7 +104,7 @@ func TestHandleReviewChecklistCheck_MissingItem(t *testing.T) {
 
 func TestHandleReviewChecklistUncheck_MissingItem(t *testing.T) {
 	ctx := context.Background()
-	w := newTestWorktreeSocket(t)
+	w := newTestWorktreeSocket(ctx, t)
 	setWorkUnitInState(t, w, conductor.StateLoaded)
 
 	req := &Request{ID: "6", Method: "review.checklist.uncheck", Params: json.RawMessage(`{}`)}

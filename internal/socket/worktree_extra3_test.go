@@ -39,7 +39,7 @@ func TestHandleCheckpoints_NoConductor(t *testing.T) {
 
 func TestHandleCheckpoints_NoWorkUnit(t *testing.T) {
 	ctx := context.Background()
-	w := newTestWorktreeSocket(t)
+	w := newTestWorktreeSocket(ctx, t)
 
 	resp, err := w.handleCheckpoints(ctx, &Request{ID: "1"})
 	if err != nil {
@@ -52,7 +52,7 @@ func TestHandleCheckpoints_NoWorkUnit(t *testing.T) {
 
 func TestHandleCheckpoints_WithWorkUnit(t *testing.T) {
 	ctx := context.Background()
-	w := newTestWorktreeSocket(t)
+	w := newTestWorktreeSocket(ctx, t)
 	setWorkUnitInState(t, w, conductor.StateLoaded)
 
 	resp, err := w.handleCheckpoints(ctx, &Request{ID: "1"})
@@ -68,7 +68,7 @@ func TestHandleCheckpoints_WithWorkUnit(t *testing.T) {
 
 func TestHandleDiscoveryScan(t *testing.T) {
 	ctx := context.Background()
-	w := newTestWorktreeSocket(t)
+	w := newTestWorktreeSocket(ctx, t)
 
 	resp, err := w.handleDiscoveryScan(ctx, &Request{ID: "1"})
 	if err != nil {
@@ -94,7 +94,7 @@ func TestHandleDiscoveryScan(t *testing.T) {
 
 func TestHandleEventlogQuery_NoParams(t *testing.T) {
 	ctx := context.Background()
-	w := newTestWorktreeSocket(t)
+	w := newTestWorktreeSocket(ctx, t)
 	w.path = t.TempDir() // ensure .kvelmo dir doesn't exist yet
 
 	resp, err := w.handleEventlogQuery(ctx, &Request{ID: "1"})
@@ -107,7 +107,7 @@ func TestHandleEventlogQuery_NoParams(t *testing.T) {
 
 func TestHandleEventlogQuery_InvalidSince(t *testing.T) {
 	ctx := context.Background()
-	w := newTestWorktreeSocket(t)
+	w := newTestWorktreeSocket(ctx, t)
 
 	params := json.RawMessage(`{"since": "not-a-duration"}`)
 	resp, err := w.handleEventlogQuery(ctx, &Request{ID: "1", Params: params})
@@ -121,7 +121,7 @@ func TestHandleEventlogQuery_InvalidSince(t *testing.T) {
 
 func TestHandleEventlogQuery_InvalidUntil(t *testing.T) {
 	ctx := context.Background()
-	w := newTestWorktreeSocket(t)
+	w := newTestWorktreeSocket(ctx, t)
 
 	params := json.RawMessage(`{"until": "not-a-time"}`)
 	resp, err := w.handleEventlogQuery(ctx, &Request{ID: "1", Params: params})

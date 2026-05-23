@@ -13,9 +13,16 @@ import (
 // newTestWorktreeSocket creates a WorktreeSocket with a conductor configured
 // for testing. No git repository or pool is needed because the handler tests
 // exercise conductor logic that does not perform git operations.
-func newTestWorktreeSocket(t *testing.T) *WorktreeSocket {
+func newTestWorktreeSocket(ctx context.Context, t *testing.T) *WorktreeSocket {
 	t.Helper()
+	// ctx is threaded in from the calling test so request-scoped operations on the
+	// returned socket use it. The provider/conductor constructors below are
+	// synchronous and do no request-scoped I/O (test tokens are empty, so no HTTP
+	// client is ever created), hence they take no context.
+	_ = ctx
+	//nolint:contextcheck // NewRegistry is a context-free constructor; no request-scoped I/O occurs
 	providers := provider.NewRegistry(settings.DefaultSettings())
+	//nolint:contextcheck // NewConductor is a context-free constructor; no request-scoped I/O occurs
 	cond := conductor.NewConductor(conductor.ConductorConfig{
 		Providers: providers,
 	})
@@ -54,7 +61,7 @@ func setWorkUnitInState(t *testing.T, w *WorktreeSocket, state conductor.State) 
 
 func TestHandleAbandonFromLoadedState(t *testing.T) {
 	ctx := context.Background()
-	w := newTestWorktreeSocket(t)
+	w := newTestWorktreeSocket(ctx, t)
 	setWorkUnitInState(t, w, conductor.StateLoaded)
 
 	if w.conductor.State() != conductor.StateLoaded {
@@ -85,7 +92,7 @@ func TestHandleAbandonFromLoadedState(t *testing.T) {
 
 func TestHandleAbandonFromNoneState(t *testing.T) {
 	ctx := context.Background()
-	w := newTestWorktreeSocket(t)
+	w := newTestWorktreeSocket(ctx, t)
 
 	// State is already none, abandon should still succeed (it resets to none).
 	req := &Request{ID: "1", Method: "abandon"}
@@ -106,7 +113,7 @@ func TestHandleAbandonFromNoneState(t *testing.T) {
 
 func TestHandleDeleteFromSubmittedState(t *testing.T) {
 	ctx := context.Background()
-	w := newTestWorktreeSocket(t)
+	w := newTestWorktreeSocket(ctx, t)
 	setWorkUnitInState(t, w, conductor.StateSubmitted)
 
 	req := &Request{ID: "2", Method: "delete"}
@@ -129,7 +136,7 @@ func TestHandleDeleteFromSubmittedState(t *testing.T) {
 
 func TestHandleDeleteFromPlanningStateReturnsError(t *testing.T) {
 	ctx := context.Background()
-	w := newTestWorktreeSocket(t)
+	w := newTestWorktreeSocket(ctx, t)
 	setWorkUnitInState(t, w, conductor.StatePlanning)
 
 	req := &Request{ID: "3", Method: "delete"}
@@ -144,7 +151,7 @@ func TestHandleDeleteFromPlanningStateReturnsError(t *testing.T) {
 
 func TestHandleDeleteFromNoneState(t *testing.T) {
 	ctx := context.Background()
-	w := newTestWorktreeSocket(t)
+	w := newTestWorktreeSocket(ctx, t)
 
 	// None is a valid state for delete.
 	req := &Request{ID: "4", Method: "delete"}
@@ -161,7 +168,7 @@ func TestHandleDeleteFromNoneState(t *testing.T) {
 
 func TestHandleUpdateNoChange(t *testing.T) {
 	ctx := context.Background()
-	w := newTestWorktreeSocket(t)
+	w := newTestWorktreeSocket(ctx, t)
 
 	// Set up a work unit whose Description matches what the empty provider returns.
 	// The empty provider's FetchTask returns Description = id (the reference).

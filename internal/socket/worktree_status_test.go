@@ -10,7 +10,7 @@ import (
 
 func TestHandleStatus_NoWorkUnit(t *testing.T) {
 	ctx := context.Background()
-	w := newTestWorktreeSocket(t)
+	w := newTestWorktreeSocket(ctx, t)
 
 	resp, err := w.handleStatus(ctx, &Request{ID: "1"})
 	if err != nil {
@@ -34,7 +34,7 @@ func TestHandleStatus_NoWorkUnit(t *testing.T) {
 
 func TestHandleStatus_WithWorkUnit(t *testing.T) {
 	ctx := context.Background()
-	w := newTestWorktreeSocket(t)
+	w := newTestWorktreeSocket(ctx, t)
 	setWorkUnitInState(t, w, conductor.StateLoaded)
 
 	resp, err := w.handleStatus(ctx, &Request{ID: "1"})
@@ -62,7 +62,7 @@ func TestHandleStatus_WithWorkUnit(t *testing.T) {
 
 func TestHandleStatus_ImplementingState(t *testing.T) {
 	ctx := context.Background()
-	w := newTestWorktreeSocket(t)
+	w := newTestWorktreeSocket(ctx, t)
 	setWorkUnitInState(t, w, conductor.StateImplementing)
 
 	resp, err := w.handleStatus(ctx, &Request{ID: "1"})
@@ -81,7 +81,7 @@ func TestHandleStatus_ImplementingState(t *testing.T) {
 
 func TestHandleRecap_NoWorkUnit(t *testing.T) {
 	ctx := context.Background()
-	w := newTestWorktreeSocket(t)
+	w := newTestWorktreeSocket(ctx, t)
 
 	resp, err := w.handleRecap(ctx, &Request{ID: "1"})
 	if err != nil {
@@ -102,7 +102,7 @@ func TestHandleRecap_NoWorkUnit(t *testing.T) {
 
 func TestHandleRecap_WithWorkUnit(t *testing.T) {
 	ctx := context.Background()
-	w := newTestWorktreeSocket(t)
+	w := newTestWorktreeSocket(ctx, t)
 	setWorkUnitInState(t, w, conductor.StatePlanned)
 
 	resp, err := w.handleRecap(ctx, &Request{ID: "1"})
@@ -121,7 +121,7 @@ func TestHandleRecap_WithWorkUnit(t *testing.T) {
 
 func TestHandleShowSpec_NoWorkUnit(t *testing.T) {
 	ctx := context.Background()
-	w := newTestWorktreeSocket(t)
+	w := newTestWorktreeSocket(ctx, t)
 
 	resp, err := w.handleShowSpec(ctx, &Request{ID: "1"})
 	if err != nil {
@@ -142,7 +142,7 @@ func TestHandleShowSpec_NoWorkUnit(t *testing.T) {
 
 func TestHandleShowSpec_WithWorkUnit(t *testing.T) {
 	ctx := context.Background()
-	w := newTestWorktreeSocket(t)
+	w := newTestWorktreeSocket(ctx, t)
 	setWorkUnitInState(t, w, conductor.StateLoaded)
 
 	resp, err := w.handleShowSpec(ctx, &Request{ID: "1"})
@@ -172,7 +172,7 @@ func TestHandleStop_NoConductor(t *testing.T) {
 
 func TestHandleStop_FromNoneState(t *testing.T) {
 	ctx := context.Background()
-	w := newTestWorktreeSocket(t)
+	w := newTestWorktreeSocket(ctx, t)
 	// State is "none" by default
 
 	resp, err := w.handleStop(ctx, &Request{ID: "1"})

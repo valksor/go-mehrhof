@@ -29,7 +29,7 @@ func newTestGlobalSocket(t *testing.T) *GlobalSocket {
 
 func TestWorktreeHandlePing(t *testing.T) {
 	ctx := context.Background()
-	w := newTestWorktreeSocket(t)
+	w := newTestWorktreeSocket(ctx, t)
 
 	resp, err := w.handlePing(ctx, &Request{ID: "1"})
 	if err != nil {
@@ -114,7 +114,7 @@ func TestWorktreeHandleCheckpoints_NilConductor(t *testing.T) {
 
 func TestWorktreeHandleCheckpoints_NoWorkUnit(t *testing.T) {
 	ctx := context.Background()
-	w := newTestWorktreeSocket(t)
+	w := newTestWorktreeSocket(ctx, t)
 	// Conductor has no work unit set
 
 	resp, err := w.handleCheckpoints(ctx, &Request{ID: "1"})
@@ -156,7 +156,7 @@ func TestWorktreeHandleCheckpointGoto_NilConductor(t *testing.T) {
 
 func TestWorktreeHandleCheckpointGoto_MissingSHA(t *testing.T) {
 	ctx := context.Background()
-	w := newTestWorktreeSocket(t)
+	w := newTestWorktreeSocket(ctx, t)
 
 	// Empty SHA should return invalid params error
 	params, err := json.Marshal(map[string]string{"sha": ""})
@@ -194,7 +194,7 @@ func TestWorktreeHandleReviewList_NilConductor(t *testing.T) {
 
 func TestWorktreeHandleReviewList_EmptyResult(t *testing.T) {
 	ctx := context.Background()
-	w := newTestWorktreeSocket(t)
+	w := newTestWorktreeSocket(ctx, t)
 	// Conductor exists but no task loaded — ListReviews should return empty list
 
 	resp, err := w.handleReviewList(ctx, &Request{ID: "1"})
@@ -221,7 +221,7 @@ func TestWorktreeHandleReviewView_NilConductor(t *testing.T) {
 
 func TestWorktreeHandleReviewView_NotFound(t *testing.T) {
 	ctx := context.Background()
-	w := newTestWorktreeSocket(t)
+	w := newTestWorktreeSocket(ctx, t)
 	setWorkUnitInState(t, w, conductor.StateLoaded)
 
 	params, err := json.Marshal(ReviewViewParams{Number: 999})
@@ -242,7 +242,7 @@ func TestWorktreeHandleReviewView_NotFound(t *testing.T) {
 
 func TestWorktreeHandleGitStatus_NilRepo(t *testing.T) {
 	ctx := context.Background()
-	w := newTestWorktreeSocket(t) // no repo configured
+	w := newTestWorktreeSocket(ctx, t) // no repo configured
 
 	resp, err := w.handleGitStatus(ctx, &Request{ID: "1"})
 	if err != nil {
@@ -255,7 +255,7 @@ func TestWorktreeHandleGitStatus_NilRepo(t *testing.T) {
 
 func TestWorktreeHandleGitDiff_NilRepo(t *testing.T) {
 	ctx := context.Background()
-	w := newTestWorktreeSocket(t)
+	w := newTestWorktreeSocket(ctx, t)
 
 	resp, err := w.handleGitDiff(ctx, &Request{ID: "1"})
 	if err != nil {
@@ -268,7 +268,7 @@ func TestWorktreeHandleGitDiff_NilRepo(t *testing.T) {
 
 func TestWorktreeHandleGitLog_NilRepo(t *testing.T) {
 	ctx := context.Background()
-	w := newTestWorktreeSocket(t)
+	w := newTestWorktreeSocket(ctx, t)
 
 	resp, err := w.handleGitLog(ctx, &Request{ID: "1"})
 	if err != nil {
@@ -594,7 +594,7 @@ func TestWorktreeHandleStart_NilConductor(t *testing.T) {
 
 func TestWorktreeHandleStart_EmptySource(t *testing.T) {
 	ctx := context.Background()
-	w := newTestWorktreeSocket(t)
+	w := newTestWorktreeSocket(ctx, t)
 
 	params, err := json.Marshal(StartParams{Source: ""})
 	if err != nil {
@@ -614,7 +614,7 @@ func TestWorktreeHandleStart_EmptySource(t *testing.T) {
 
 func TestWorktreeHandleStart_InvalidParams(t *testing.T) {
 	ctx := context.Background()
-	w := newTestWorktreeSocket(t)
+	w := newTestWorktreeSocket(ctx, t)
 
 	resp, err := w.handleStart(ctx, &Request{ID: "1", Params: json.RawMessage(`invalid`)})
 	if err != nil {
@@ -705,7 +705,7 @@ func TestWorktreeHandleSubmit_NilConductor(t *testing.T) {
 
 func TestWorktreeHandleShutdown(t *testing.T) {
 	ctx := context.Background()
-	w := newTestWorktreeSocket(t)
+	w := newTestWorktreeSocket(ctx, t)
 
 	resp, err := w.handleShutdown(ctx, &Request{ID: "1"})
 	if err != nil {
@@ -727,7 +727,7 @@ func TestWorktreeHandleShutdown(t *testing.T) {
 
 func TestWorktreeHandlePlan_WrongState(t *testing.T) {
 	ctx := context.Background()
-	w := newTestWorktreeSocket(t)
+	w := newTestWorktreeSocket(ctx, t)
 	// No work unit loaded - Plan should fail (wrong state)
 
 	resp, err := w.handlePlan(ctx, &Request{ID: "1"})
@@ -741,7 +741,7 @@ func TestWorktreeHandlePlan_WrongState(t *testing.T) {
 
 func TestWorktreeHandleImplement_WrongState(t *testing.T) {
 	ctx := context.Background()
-	w := newTestWorktreeSocket(t)
+	w := newTestWorktreeSocket(ctx, t)
 
 	resp, err := w.handleImplement(ctx, &Request{ID: "1"})
 	if err != nil {
@@ -754,7 +754,7 @@ func TestWorktreeHandleImplement_WrongState(t *testing.T) {
 
 func TestWorktreeHandleUndo_NothingToUndo(t *testing.T) {
 	ctx := context.Background()
-	w := newTestWorktreeSocket(t)
+	w := newTestWorktreeSocket(ctx, t)
 
 	resp, err := w.handleUndo(ctx, &Request{ID: "1"})
 	if err != nil {
@@ -767,7 +767,7 @@ func TestWorktreeHandleUndo_NothingToUndo(t *testing.T) {
 
 func TestWorktreeHandleRedo_NothingToRedo(t *testing.T) {
 	ctx := context.Background()
-	w := newTestWorktreeSocket(t)
+	w := newTestWorktreeSocket(ctx, t)
 
 	resp, err := w.handleRedo(ctx, &Request{ID: "1"})
 	if err != nil {
@@ -781,7 +781,7 @@ func TestWorktreeHandleRedo_NothingToRedo(t *testing.T) {
 // Additional conductor test: handleAbort from loaded state should succeed.
 func TestWorktreeHandleAbort_LoadedState(t *testing.T) {
 	ctx := context.Background()
-	w := newTestWorktreeSocket(t)
+	w := newTestWorktreeSocket(ctx, t)
 	setWorkUnitInState(t, w, conductor.StateLoaded)
 
 	resp, err := w.handleAbort(ctx, &Request{ID: "1"})
@@ -816,7 +816,7 @@ func TestWorktreeHandleAbandon_NilConductor(t *testing.T) {
 
 func TestWorktreeHandleAbandon_Success(t *testing.T) {
 	ctx := context.Background()
-	w := newTestWorktreeSocket(t)
+	w := newTestWorktreeSocket(ctx, t)
 	// No work unit — Abandon() with no task is a no-op (success)
 
 	resp, err := w.handleAbandon(ctx, &Request{ID: "1"})
@@ -843,7 +843,7 @@ func TestWorktreeHandleDelete_NilConductor(t *testing.T) {
 
 func TestWorktreeHandleDelete_StateNone(t *testing.T) {
 	ctx := context.Background()
-	w := newTestWorktreeSocket(t)
+	w := newTestWorktreeSocket(ctx, t)
 	// StateNone is a valid terminal-ish state for Delete
 
 	resp, err := w.handleDelete(ctx, &Request{ID: "1"})
@@ -857,7 +857,7 @@ func TestWorktreeHandleDelete_StateNone(t *testing.T) {
 
 func TestWorktreeHandleDelete_WrongState(t *testing.T) {
 	ctx := context.Background()
-	w := newTestWorktreeSocket(t)
+	w := newTestWorktreeSocket(ctx, t)
 	setWorkUnitInState(t, w, conductor.StateLoaded)
 
 	resp, err := w.handleDelete(ctx, &Request{ID: "1"})
@@ -884,7 +884,7 @@ func TestWorktreeHandleUpdate_NilConductor(t *testing.T) {
 
 func TestWorktreeHandleUpdate_NoTask(t *testing.T) {
 	ctx := context.Background()
-	w := newTestWorktreeSocket(t)
+	w := newTestWorktreeSocket(ctx, t)
 	// No work unit → UpdateTask returns error
 
 	resp, err := w.handleUpdate(ctx, &Request{ID: "1"})
@@ -902,7 +902,7 @@ func TestWorktreeHandleUpdate_NoTask(t *testing.T) {
 
 func newTestWorktreeSocketWithScreenshots(t *testing.T) *WorktreeSocket {
 	t.Helper()
-	w := newTestWorktreeSocket(t)
+	w := newTestWorktreeSocket(t.Context(), t)
 	w.screenshots = screenshot.NewStore(t.TempDir())
 
 	return w
@@ -910,7 +910,7 @@ func newTestWorktreeSocketWithScreenshots(t *testing.T) *WorktreeSocket {
 
 func TestWorktreeHandleScreenshotsList_EmptyTaskID(t *testing.T) {
 	ctx := context.Background()
-	w := newTestWorktreeSocket(t)
+	w := newTestWorktreeSocket(ctx, t)
 	// No conductor work unit and no params → taskID is empty → returns empty list
 
 	resp, err := w.handleScreenshotsList(ctx, &Request{ID: "1"})
@@ -2131,26 +2131,26 @@ func TestGlobalHandleBrowserPDF(t *testing.T) {
 // ============================================================
 
 func TestWorktreeSocket_Stop(t *testing.T) {
-	w := newTestWorktreeSocket(t)
+	w := newTestWorktreeSocket(t.Context(), t)
 	// Stop before Start — just verify no panic and server.Stop() is called
 	_ = w.Stop()
 }
 
 func TestWorktreeSocket_Path(t *testing.T) {
-	w := newTestWorktreeSocket(t)
+	w := newTestWorktreeSocket(t.Context(), t)
 	// newTestWorktreeSocket uses NewServer("") so path is ""
 	_ = w.Path() // just cover the one-liner
 }
 
 func TestWorktreeSocket_Server(t *testing.T) {
-	w := newTestWorktreeSocket(t)
+	w := newTestWorktreeSocket(t.Context(), t)
 	if w.Server() == nil {
 		t.Error("Server() returned nil")
 	}
 }
 
 func TestWorktreeSocket_Conductor(t *testing.T) {
-	w := newTestWorktreeSocket(t)
+	w := newTestWorktreeSocket(t.Context(), t)
 	if w.Conductor() == nil {
 		t.Error("Conductor() returned nil")
 	}
@@ -2162,7 +2162,7 @@ func TestWorktreeSocket_Conductor(t *testing.T) {
 
 func TestWorktreeHandleStreamSubscribe(t *testing.T) {
 	ctx := t.Context()
-	w := newTestWorktreeSocket(t)
+	w := newTestWorktreeSocket(t.Context(), t)
 
 	c1, c2 := net.Pipe()
 	defer func() { _ = c1.Close() }()
@@ -2190,7 +2190,7 @@ func TestWorktreeHandleStreamSubscribe(t *testing.T) {
 
 func TestWorktreeHandleBrowse_PathNotFound(t *testing.T) {
 	ctx := context.Background()
-	w := newTestWorktreeSocket(t)
+	w := newTestWorktreeSocket(ctx, t)
 
 	params, err := json.Marshal(WorktreeBrowseParams{Path: "/nonexistent/path/xyz"})
 	if err != nil {
@@ -2207,7 +2207,7 @@ func TestWorktreeHandleBrowse_PathNotFound(t *testing.T) {
 
 func TestWorktreeHandleBrowse_WithDir(t *testing.T) {
 	ctx := context.Background()
-	w := newTestWorktreeSocket(t)
+	w := newTestWorktreeSocket(ctx, t)
 	tmpDir := t.TempDir()
 	w.path = tmpDir // Set worktree path so browse validates correctly
 
@@ -2230,7 +2230,7 @@ func TestWorktreeHandleBrowse_WithDir(t *testing.T) {
 
 func TestWorktreeHandleReview_NoTask(t *testing.T) {
 	ctx := context.Background()
-	w := newTestWorktreeSocket(t)
+	w := newTestWorktreeSocket(ctx, t)
 
 	resp, err := w.handleReview(ctx, &Request{ID: "1"})
 	if err != nil {
@@ -2247,7 +2247,7 @@ func TestWorktreeHandleReview_NoTask(t *testing.T) {
 
 func TestWorktreeHandleReset_NoTask(t *testing.T) {
 	ctx := context.Background()
-	w := newTestWorktreeSocket(t)
+	w := newTestWorktreeSocket(ctx, t)
 
 	resp, err := w.handleReset(ctx, &Request{ID: "1"})
 	if err != nil {

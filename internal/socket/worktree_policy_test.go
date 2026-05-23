@@ -10,7 +10,7 @@ import (
 
 func TestHandlePolicyCheck_NoWorkUnit(t *testing.T) {
 	ctx := context.Background()
-	w := newTestWorktreeSocket(t)
+	w := newTestWorktreeSocket(ctx, t)
 	// No work unit set → should return empty violations with "no active task" message.
 
 	req := &Request{ID: "1", Method: "policy.check"}
@@ -40,7 +40,7 @@ func TestHandlePolicyCheck_NoWorkUnit(t *testing.T) {
 
 func TestHandlePolicyCheck_WithWorkUnit(t *testing.T) {
 	ctx := context.Background()
-	w := newTestWorktreeSocket(t)
+	w := newTestWorktreeSocket(ctx, t)
 	setWorkUnitInState(t, w, conductor.StateLoaded)
 
 	req := &Request{ID: "2", Method: "policy.check"}

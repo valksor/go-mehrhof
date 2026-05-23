@@ -10,7 +10,7 @@ import (
 // ============================================================
 
 func TestInjectSeqAndBuffer_ValidObject(t *testing.T) {
-	w := newTestWorktreeSocket(t)
+	w := newTestWorktreeSocket(t.Context(), t)
 
 	data := []byte(`{"type":"state_changed","state":"loaded"}`)
 	result := w.injectSeqAndBuffer(data)
@@ -34,7 +34,7 @@ func TestInjectSeqAndBuffer_ValidObject(t *testing.T) {
 }
 
 func TestInjectSeqAndBuffer_EmptyObject(t *testing.T) {
-	w := newTestWorktreeSocket(t)
+	w := newTestWorktreeSocket(t.Context(), t)
 
 	data := []byte(`{}`)
 	result := w.injectSeqAndBuffer(data)
@@ -53,7 +53,7 @@ func TestInjectSeqAndBuffer_EmptyObject(t *testing.T) {
 }
 
 func TestInjectSeqAndBuffer_InvalidInput_NotObject(t *testing.T) {
-	w := newTestWorktreeSocket(t)
+	w := newTestWorktreeSocket(t.Context(), t)
 
 	// Non-object JSON (array) — should return safe fallback
 	data := []byte(`[1,2,3]`)
@@ -76,7 +76,7 @@ func TestInjectSeqAndBuffer_InvalidInput_NotObject(t *testing.T) {
 }
 
 func TestInjectSeqAndBuffer_EmptySlice(t *testing.T) {
-	w := newTestWorktreeSocket(t)
+	w := newTestWorktreeSocket(t.Context(), t)
 
 	data := []byte{}
 	result := w.injectSeqAndBuffer(data)
@@ -93,7 +93,7 @@ func TestInjectSeqAndBuffer_EmptySlice(t *testing.T) {
 }
 
 func TestInjectSeqAndBuffer_SingleByte(t *testing.T) {
-	w := newTestWorktreeSocket(t)
+	w := newTestWorktreeSocket(t.Context(), t)
 
 	data := []byte(`{`)
 	result := w.injectSeqAndBuffer(data)
@@ -104,7 +104,7 @@ func TestInjectSeqAndBuffer_SingleByte(t *testing.T) {
 }
 
 func TestInjectSeqAndBuffer_SequenceMonotonicallyIncreases(t *testing.T) {
-	w := newTestWorktreeSocket(t)
+	w := newTestWorktreeSocket(t.Context(), t)
 
 	data := []byte(`{"type":"event"}`)
 
@@ -140,7 +140,7 @@ func TestInjectSeqAndBuffer_SequenceMonotonicallyIncreases(t *testing.T) {
 }
 
 func TestInjectSeqAndBuffer_EndsWithNewline(t *testing.T) {
-	w := newTestWorktreeSocket(t)
+	w := newTestWorktreeSocket(t.Context(), t)
 
 	data := []byte(`{"x":1}`)
 	result := w.injectSeqAndBuffer(data)
@@ -154,7 +154,7 @@ func TestInjectSeqAndBuffer_EndsWithNewline(t *testing.T) {
 }
 
 func TestInjectSeqAndBuffer_BuffersLastNEvents(t *testing.T) {
-	w := newTestWorktreeSocket(t)
+	w := newTestWorktreeSocket(t.Context(), t)
 
 	// Fill the replay buffer beyond its capacity
 	data := []byte(`{"type":"test"}`)

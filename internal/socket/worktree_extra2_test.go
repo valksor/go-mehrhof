@@ -28,7 +28,7 @@ func TestWorktreeHandleQualityRespond_NilConductor(t *testing.T) {
 
 func TestWorktreeHandleQualityRespond_MissingPromptID(t *testing.T) {
 	ctx := context.Background()
-	w := newTestWorktreeSocket(t)
+	w := newTestWorktreeSocket(ctx, t)
 
 	params, _ := json.Marshal(qualityRespondParams{PromptID: "", Answer: true}) //nolint:errchkjson // test data
 	resp, err := w.handleQualityRespond(ctx, &Request{ID: "1", Params: params})
@@ -42,7 +42,7 @@ func TestWorktreeHandleQualityRespond_MissingPromptID(t *testing.T) {
 
 func TestWorktreeHandleQualityRespond_InvalidJSON(t *testing.T) {
 	ctx := context.Background()
-	w := newTestWorktreeSocket(t)
+	w := newTestWorktreeSocket(ctx, t)
 
 	resp, err := w.handleQualityRespond(ctx, &Request{ID: "1", Params: json.RawMessage(`invalid`)})
 	if err != nil {
@@ -55,7 +55,7 @@ func TestWorktreeHandleQualityRespond_InvalidJSON(t *testing.T) {
 
 func TestWorktreeHandleQualityRespond_NonexistentPrompt(t *testing.T) {
 	ctx := context.Background()
-	w := newTestWorktreeSocket(t)
+	w := newTestWorktreeSocket(ctx, t)
 	setWorkUnitInState(t, w, conductor.StateLoaded)
 
 	params, _ := json.Marshal(qualityRespondParams{PromptID: "nonexistent-prompt-id", Answer: true}) //nolint:errchkjson // test data
@@ -75,7 +75,7 @@ func TestWorktreeHandleQualityRespond_NonexistentPrompt(t *testing.T) {
 
 func TestWorktreeHandleGitDiffAgainst_NilRepo(t *testing.T) {
 	ctx := context.Background()
-	w := newTestWorktreeSocket(t) // no repo configured
+	w := newTestWorktreeSocket(ctx, t) // no repo configured
 
 	params, _ := json.Marshal(map[string]string{"ref": "main"}) //nolint:errchkjson // test data
 	resp, err := w.handleGitDiffAgainst(ctx, &Request{ID: "1", Params: params})
@@ -89,7 +89,7 @@ func TestWorktreeHandleGitDiffAgainst_NilRepo(t *testing.T) {
 
 func TestWorktreeHandleGitDiffAgainst_MissingRef(t *testing.T) {
 	ctx := context.Background()
-	w := newTestWorktreeSocket(t)
+	w := newTestWorktreeSocket(ctx, t)
 
 	params, _ := json.Marshal(map[string]string{"ref": ""}) //nolint:errchkjson // test data
 	resp, err := w.handleGitDiffAgainst(ctx, &Request{ID: "1", Params: params})
@@ -104,7 +104,7 @@ func TestWorktreeHandleGitDiffAgainst_MissingRef(t *testing.T) {
 
 func TestWorktreeHandleGitDiffAgainst_InvalidParams(t *testing.T) {
 	ctx := context.Background()
-	w := newTestWorktreeSocket(t)
+	w := newTestWorktreeSocket(ctx, t)
 
 	resp, err := w.handleGitDiffAgainst(ctx, &Request{ID: "1", Params: json.RawMessage(`invalid`)})
 	if err != nil {
@@ -122,7 +122,7 @@ func TestWorktreeHandleGitDiffAgainst_InvalidParams(t *testing.T) {
 
 func TestWorktreeHandleUndo_MultipleSteps(t *testing.T) {
 	ctx := context.Background()
-	w := newTestWorktreeSocket(t)
+	w := newTestWorktreeSocket(ctx, t)
 
 	// No checkpoints → undo should fail with an error response
 	params, _ := json.Marshal(UndoParams{Steps: 3}) //nolint:errchkjson // test data
@@ -137,7 +137,7 @@ func TestWorktreeHandleUndo_MultipleSteps(t *testing.T) {
 
 func TestWorktreeHandleUndo_ZeroStepsDefaultsToOne(t *testing.T) {
 	ctx := context.Background()
-	w := newTestWorktreeSocket(t)
+	w := newTestWorktreeSocket(ctx, t)
 
 	// Steps=0 should default to 1 and then fail (no checkpoints)
 	params, _ := json.Marshal(UndoParams{Steps: 0}) //nolint:errchkjson // test data
@@ -153,7 +153,7 @@ func TestWorktreeHandleUndo_ZeroStepsDefaultsToOne(t *testing.T) {
 
 func TestWorktreeHandleRedo_MultipleSteps(t *testing.T) {
 	ctx := context.Background()
-	w := newTestWorktreeSocket(t)
+	w := newTestWorktreeSocket(ctx, t)
 
 	params, _ := json.Marshal(RedoParams{Steps: 2}) //nolint:errchkjson // test data
 	resp, err := w.handleRedo(ctx, &Request{ID: "1", Params: params})
@@ -167,7 +167,7 @@ func TestWorktreeHandleRedo_MultipleSteps(t *testing.T) {
 
 func TestWorktreeHandleRedo_ZeroStepsDefaultsToOne(t *testing.T) {
 	ctx := context.Background()
-	w := newTestWorktreeSocket(t)
+	w := newTestWorktreeSocket(ctx, t)
 
 	params, _ := json.Marshal(RedoParams{Steps: 0}) //nolint:errchkjson // test data
 	resp, err := w.handleRedo(ctx, &Request{ID: "1", Params: params})
@@ -220,7 +220,7 @@ func TestWorktreeHandleScreenshotsDelete_NonexistentScreenshot(t *testing.T) {
 
 func TestWorktreeHandleReset_ImplementingState(t *testing.T) {
 	ctx := context.Background()
-	w := newTestWorktreeSocket(t)
+	w := newTestWorktreeSocket(ctx, t)
 	setWorkUnitInState(t, w, conductor.StateImplementing)
 
 	resp, err := w.handleReset(ctx, &Request{ID: "1"})
@@ -240,7 +240,7 @@ func TestWorktreeHandleReset_ImplementingState(t *testing.T) {
 
 func TestWorktreeHandleBrowse_NilParams(t *testing.T) {
 	ctx := context.Background()
-	w := newTestWorktreeSocket(t)
+	w := newTestWorktreeSocket(ctx, t)
 	w.path = t.TempDir() // Set a valid path
 
 	// No params = use worktree root
@@ -256,7 +256,7 @@ func TestWorktreeHandleBrowse_NilParams(t *testing.T) {
 
 func TestWorktreeHandleBrowse_InvalidParams(t *testing.T) {
 	ctx := context.Background()
-	w := newTestWorktreeSocket(t)
+	w := newTestWorktreeSocket(ctx, t)
 
 	resp, err := w.handleBrowse(ctx, &Request{ID: "1", Params: json.RawMessage(`invalid`)})
 	if err != nil {

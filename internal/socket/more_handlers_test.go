@@ -41,7 +41,7 @@ func TestWorktreeHandleStatus_NilConductor(t *testing.T) {
 
 func TestWorktreeHandleStatus_NoTask(t *testing.T) {
 	ctx := context.Background()
-	w := newTestWorktreeSocket(t)
+	w := newTestWorktreeSocket(ctx, t)
 
 	resp, err := w.handleStatus(ctx, &Request{ID: "1"})
 	if err != nil {
@@ -65,7 +65,7 @@ func TestWorktreeHandleStatus_NoTask(t *testing.T) {
 
 func TestWorktreeHandleStatus_WithTask(t *testing.T) {
 	ctx := context.Background()
-	w := newTestWorktreeSocket(t)
+	w := newTestWorktreeSocket(ctx, t)
 	setWorkUnitInState(t, w, conductor.StateLoaded)
 
 	resp, err := w.handleStatus(ctx, &Request{ID: "1"})
@@ -96,7 +96,7 @@ func TestWorktreeHandleStatus_WithTask(t *testing.T) {
 
 func TestWorktreeHandleStatus_WithActiveJob(t *testing.T) {
 	ctx := context.Background()
-	w := newTestWorktreeSocket(t)
+	w := newTestWorktreeSocket(ctx, t)
 	setWorkUnitInState(t, w, conductor.StateImplementing)
 
 	wu := w.conductor.WorkUnit()
@@ -121,7 +121,7 @@ func TestWorktreeHandleStatus_WithActiveJob(t *testing.T) {
 
 func TestWorktreeHandleStatus_NoActiveJobInTerminalState(t *testing.T) {
 	ctx := context.Background()
-	w := newTestWorktreeSocket(t)
+	w := newTestWorktreeSocket(ctx, t)
 	setWorkUnitInState(t, w, conductor.StateLoaded)
 
 	wu := w.conductor.WorkUnit()
@@ -163,7 +163,7 @@ func TestWorktreeHandleShowSpec_NilConductor(t *testing.T) {
 
 func TestWorktreeHandleShowSpec_NoTask(t *testing.T) {
 	ctx := context.Background()
-	w := newTestWorktreeSocket(t)
+	w := newTestWorktreeSocket(ctx, t)
 
 	resp, err := w.handleShowSpec(ctx, &Request{ID: "1"})
 	if err != nil {
@@ -184,7 +184,7 @@ func TestWorktreeHandleShowSpec_NoTask(t *testing.T) {
 
 func TestWorktreeHandleShowSpec_WithSpecs(t *testing.T) {
 	ctx := context.Background()
-	w := newTestWorktreeSocket(t)
+	w := newTestWorktreeSocket(ctx, t)
 
 	// Create a temp spec file.
 	dir := t.TempDir()
@@ -223,7 +223,7 @@ func TestWorktreeHandleShowSpec_WithSpecs(t *testing.T) {
 
 func TestWorktreeHandleShowSpec_MissingFile(t *testing.T) {
 	ctx := context.Background()
-	w := newTestWorktreeSocket(t)
+	w := newTestWorktreeSocket(ctx, t)
 	setWorkUnitInState(t, w, conductor.StateLoaded)
 
 	wu := w.conductor.WorkUnit()
@@ -269,7 +269,7 @@ func TestWorktreeHandleFinish_NilConductor(t *testing.T) {
 
 func TestWorktreeHandleFinish_NoTask(t *testing.T) {
 	ctx := context.Background()
-	w := newTestWorktreeSocket(t)
+	w := newTestWorktreeSocket(ctx, t)
 
 	resp, err := w.handleFinish(ctx, &Request{ID: "1"})
 	if err != nil {
@@ -302,7 +302,7 @@ func TestWorktreeHandleRefresh_NilConductor(t *testing.T) {
 
 func TestWorktreeHandleRefresh_NoTask(t *testing.T) {
 	ctx := context.Background()
-	w := newTestWorktreeSocket(t)
+	w := newTestWorktreeSocket(ctx, t)
 
 	resp, err := w.handleRefresh(ctx, &Request{ID: "1"})
 	if err != nil {
@@ -335,7 +335,7 @@ func TestWorktreeHandleRemoteApprove_NilConductor(t *testing.T) {
 
 func TestWorktreeHandleRemoteApprove_NoTask(t *testing.T) {
 	ctx := context.Background()
-	w := newTestWorktreeSocket(t)
+	w := newTestWorktreeSocket(ctx, t)
 
 	resp, err := w.handleRemoteApprove(ctx, &Request{ID: "1"})
 	if err != nil {
@@ -368,7 +368,7 @@ func TestWorktreeHandleRemoteMerge_NilConductor(t *testing.T) {
 
 func TestWorktreeHandleRemoteMerge_NoTask(t *testing.T) {
 	ctx := context.Background()
-	w := newTestWorktreeSocket(t)
+	w := newTestWorktreeSocket(ctx, t)
 
 	resp, err := w.handleRemoteMerge(ctx, &Request{ID: "1"})
 	if err != nil {
@@ -385,7 +385,7 @@ func TestWorktreeHandleRemoteMerge_NoTask(t *testing.T) {
 
 func TestWorktreeHandleSubmit_WrongState(t *testing.T) {
 	ctx := context.Background()
-	w := newTestWorktreeSocket(t)
+	w := newTestWorktreeSocket(ctx, t)
 	setWorkUnitInState(t, w, conductor.StateLoaded)
 
 	// Pre-set quality gate so Submit doesn't run external review synchronously.
@@ -408,7 +408,7 @@ func TestWorktreeHandleSubmit_WrongState(t *testing.T) {
 
 func TestWorktreeHandleOptimize_NoTask(t *testing.T) {
 	ctx := context.Background()
-	w := newTestWorktreeSocket(t)
+	w := newTestWorktreeSocket(ctx, t)
 
 	resp, err := w.handleOptimize(ctx, &Request{ID: "1"})
 	if err != nil {
@@ -421,7 +421,7 @@ func TestWorktreeHandleOptimize_NoTask(t *testing.T) {
 
 func TestWorktreeHandleOptimize_WrongState(t *testing.T) {
 	ctx := context.Background()
-	w := newTestWorktreeSocket(t)
+	w := newTestWorktreeSocket(ctx, t)
 	setWorkUnitInState(t, w, conductor.StateLoaded)
 
 	resp, err := w.handleOptimize(ctx, &Request{ID: "1"})
@@ -435,7 +435,7 @@ func TestWorktreeHandleOptimize_WrongState(t *testing.T) {
 
 func TestWorktreeHandleSimplify_NoTask(t *testing.T) {
 	ctx := context.Background()
-	w := newTestWorktreeSocket(t)
+	w := newTestWorktreeSocket(ctx, t)
 
 	resp, err := w.handleSimplify(ctx, &Request{ID: "1"})
 	if err != nil {
@@ -448,7 +448,7 @@ func TestWorktreeHandleSimplify_NoTask(t *testing.T) {
 
 func TestWorktreeHandleSimplify_WrongState(t *testing.T) {
 	ctx := context.Background()
-	w := newTestWorktreeSocket(t)
+	w := newTestWorktreeSocket(ctx, t)
 	setWorkUnitInState(t, w, conductor.StateLoaded)
 
 	resp, err := w.handleSimplify(ctx, &Request{ID: "1"})
@@ -466,7 +466,7 @@ func TestWorktreeHandleSimplify_WrongState(t *testing.T) {
 
 func TestWorktreeHandleCheckpoints_WithCheckpoints(t *testing.T) {
 	ctx := context.Background()
-	w := newTestWorktreeSocket(t)
+	w := newTestWorktreeSocket(ctx, t)
 	setWorkUnitInState(t, w, conductor.StateImplemented)
 
 	wu := w.conductor.WorkUnit()
@@ -534,7 +534,7 @@ func TestWorktreeHandleTaskHistory_NilConductor(t *testing.T) {
 
 func TestWorktreeHandleTaskHistory_NoStore(t *testing.T) {
 	ctx := context.Background()
-	w := newTestWorktreeSocket(t)
+	w := newTestWorktreeSocket(ctx, t)
 
 	resp, err := w.handleTaskHistory(ctx, &Request{ID: "1"})
 	if err != nil {

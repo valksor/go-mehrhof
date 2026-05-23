@@ -13,7 +13,7 @@ import (
 
 func newTestWorktreeSocketWithRepo(t *testing.T) *WorktreeSocket {
 	t.Helper()
-	w := newTestWorktreeSocket(t)
+	w := newTestWorktreeSocket(t.Context(), t)
 
 	// Create a temp git repo with commits.
 	ctx := context.Background()
@@ -154,7 +154,7 @@ func TestHandleChangelogGenerate_Full(t *testing.T) {
 
 func TestHandleChangelogGenerate_NoRepo(t *testing.T) {
 	ctx := context.Background()
-	w := newTestWorktreeSocket(t)
+	w := newTestWorktreeSocket(ctx, t)
 
 	params := mustMarshal(t, map[string]any{
 		"source": "v0.1.0",

@@ -9,7 +9,7 @@ import (
 
 func TestHandleHooksList(t *testing.T) {
 	ctx := context.Background()
-	w := newTestWorktreeSocket(t)
+	w := newTestWorktreeSocket(ctx, t)
 	setWorkUnitInState(t, w, conductor.StateLoaded)
 
 	req := &Request{ID: "1", Method: "hooks.list"}
