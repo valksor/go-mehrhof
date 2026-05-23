@@ -215,6 +215,9 @@ func TestBrowserState_Save_JSONFormat(t *testing.T) {
 }
 
 func TestLoadState_PermissionDenied(t *testing.T) {
+	if os.Geteuid() == 0 {
+		t.Skip("running as root bypasses file permission checks")
+	}
 	dir := t.TempDir()
 	path := filepath.Join(dir, "noperm.json")
 	if err := os.WriteFile(path, []byte(`{}`), 0o644); err != nil {
@@ -679,6 +682,9 @@ func TestLoadConfig_InvalidJSONFile(t *testing.T) {
 }
 
 func TestLoadConfig_PermissionDenied(t *testing.T) {
+	if os.Geteuid() == 0 {
+		t.Skip("running as root bypasses file permission checks")
+	}
 	tmpDir := t.TempDir()
 	t.Setenv("HOME", tmpDir)
 
@@ -1125,6 +1131,9 @@ func TestUpdate_InTempHome(t *testing.T) {
 }
 
 func TestMergeState_TempDirCreationError(t *testing.T) {
+	if os.Geteuid() == 0 {
+		t.Skip("running as root bypasses directory permission checks")
+	}
 	tmpDir := t.TempDir()
 	t.Setenv("HOME", tmpDir)
 
@@ -1148,6 +1157,9 @@ func TestMergeState_TempDirCreationError(t *testing.T) {
 }
 
 func TestBuildCommand_MergeStateError(t *testing.T) {
+	if os.Geteuid() == 0 {
+		t.Skip("running as root bypasses directory permission checks")
+	}
 	tmpDir := t.TempDir()
 	t.Setenv("HOME", tmpDir)
 
