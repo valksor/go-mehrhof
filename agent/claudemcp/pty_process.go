@@ -1,11 +1,9 @@
 package claudemcp
 
 import (
-	"bufio"
 	"context"
 	"errors"
 	"fmt"
-	"io"
 	"log/slog"
 	"os"
 	"os/exec"
@@ -15,6 +13,7 @@ import (
 	"time"
 
 	"github.com/creack/pty"
+	"github.com/valksor/kvelmo/settings"
 )
 
 // anthropicCredEnvPrefixes lists env var names that, if present, cause the
@@ -26,9 +25,8 @@ var anthropicCredEnvPrefixes = []string{
 	"ANTHROPIC_BEARER_TOKEN=",
 }
 
-// isAnthropicCredEnv reports whether kv (a "KEY=VALUE" entry from os.Environ)
-// is one of the Anthropic credential vars that must not leak into the
-// spawned claude session.
+// isAnthropicCredEnv reports whether kv (a "KEY=VALUE" entry) is one of the
+// Anthropic credential vars that must not leak into the spawned claude session.
 func isAnthropicCredEnv(kv string) bool {
 	for _, p := range anthropicCredEnvPrefixes {
 		if strings.HasPrefix(kv, p) {
@@ -72,9 +70,13 @@ func startPTY(ctx context.Context, argv []string, workDir string, extraEnv map[s
 	// has ANTHROPIC_API_KEY set for other tools, leaving it in the child env
 	// would silently route the session onto API billing and defeat the
 	// entire purpose of this adapter.
-	env := make([]string, 0, len(os.Environ())+len(extraEnv))
+	// Build the child env via settings.ProcessEnv: kvelmo's config-dir .env plus
+	// extraEnv, over a minimal host base (HOME/PATH/...). Host secrets are not
+	// inherited; ANTHROPIC_* is then stripped below.
+	merged := settings.ProcessEnv(workDir, extraEnv)
+	env := make([]string, 0, len(merged))
 	stripped := false
-	for _, kv := range os.Environ() {
+	for _, kv := range merged {
 		if isAnthropicCredEnv(kv) {
 			stripped = true
 
@@ -90,9 +92,6 @@ func startPTY(ctx context.Context, argv []string, workDir string, extraEnv map[s
 		slog.Warn(msg)
 		// Also surface on stderr so CLI users see it without enabling debug logs.
 		fmt.Fprintln(os.Stderr, msg)
-	}
-	for k, v := range extraEnv {
-		env = append(env, fmt.Sprintf("%s=%s", k, v))
 	}
 	cmd.Env = env
 	if workDir != "" {
@@ -119,21 +118,25 @@ func startPTY(ctx context.Context, argv []string, workDir string, extraEnv map[s
 	return p, nil
 }
 
-// readLoop pumps PTY output line-by-line into p.lines. When the buffer is
-// full, oldest lines are dropped to keep memory bounded.
+// readLoop pumps PTY output into p.lines in byte chunks. claude runs a
+// full-screen TUI that paints with cursor-positioning ANSI and few newlines,
+// so line-based reading (ReadString('\n')) would block indefinitely without
+// surfacing the screen content. Reading raw chunks captures the transcript as
+// it is written and lets the pump observe PTY activity (for idle detection).
+// When the buffer is full, oldest chunks are dropped to keep memory bounded.
 func (p *ptyProcess) readLoop() {
 	// Signal that no further sends to p.lines will happen. waitLoop waits on
 	// this before closing p.lines, so the channel close cannot race a send
 	// here (which previously panicked with "send on closed channel" when the
 	// child exited with output still buffered).
 	defer close(p.readDone)
-	reader := bufio.NewReaderSize(p.pty, 32*1024)
+	buf := make([]byte, 8*1024)
 	for {
-		line, err := reader.ReadString('\n')
-		if line != "" {
-			trimmed := strings.TrimRight(line, "\r\n")
+		n, err := p.pty.Read(buf)
+		if n > 0 {
+			chunk := string(buf[:n])
 			select {
-			case p.lines <- trimmed:
+			case p.lines <- chunk:
 			default:
 				// Drop oldest to make room — bounded buffer policy.
 				select {
@@ -141,16 +144,12 @@ func (p *ptyProcess) readLoop() {
 				default:
 				}
 				select {
-				case p.lines <- trimmed:
+				case p.lines <- chunk:
 				default:
 				}
 			}
 		}
 		if err != nil {
-			if errors.Is(err, io.EOF) {
-				return
-			}
-
 			return
 		}
 	}

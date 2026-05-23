@@ -45,16 +45,37 @@ signal — you are not done until you have called either:
   rest of kvelmo.
 `
 
-// writeSystemPrompt writes the orchestration system prompt to dest and
-// returns the absolute path. If override is non-empty, the override is used
-// verbatim; otherwise the default template is rendered with the given fields.
-func writeSystemPrompt(dest, override, taskID, phase, worktree string) error {
+// standaloneSystemPromptTemplate is used for serverless, one-shot sessions
+// (e.g. `kvelmo pipe`) where there is no conductor/worktree socket. The
+// workspace kvelmo_* tools are unavailable, so claude is told to answer
+// directly and only signal completion so the session ends cleanly.
+const standaloneSystemPromptTemplate = `# kvelmo one-shot session
+
+You are answering a single prompt through kvelmo. This is a serverless session:
+there is no orchestration phase and no conductor backend, so the workspace
+kvelmo_* tools (kvelmo_get_task, kvelmo_get_specifications, kvelmo_save_artifact,
+kvelmo_create_checkpoint) are NOT available — do not call them.
+
+Answer the user's prompt directly and concisely. When your response is complete
+you MUST call kvelmo_signal_complete (phase = "pipe", with a one-line summary)
+so the session ends. Do not ask for input or wait for further instructions.
+`
+
+// writeSystemPrompt writes the orchestration system prompt to dest and returns
+// the absolute path. If override is non-empty it is used verbatim; otherwise
+// the standalone template (serverless one-shot) or the default orchestration
+// template is rendered, depending on standalone.
+func writeSystemPrompt(dest, override, taskID, phase, worktree string, standalone bool) error {
 	if err := os.MkdirAll(filepath.Dir(dest), 0o700); err != nil {
 		return fmt.Errorf("create system prompt dir: %w", err)
 	}
 	content := override
 	if strings.TrimSpace(content) == "" {
-		content = fmt.Sprintf(defaultSystemPromptTemplate, taskID, phase, worktree)
+		if standalone {
+			content = standaloneSystemPromptTemplate
+		} else {
+			content = fmt.Sprintf(defaultSystemPromptTemplate, taskID, phase, worktree)
+		}
 	}
 	if err := os.WriteFile(dest, []byte(content), 0o600); err != nil {
 		return fmt.Errorf("write system prompt: %w", err)

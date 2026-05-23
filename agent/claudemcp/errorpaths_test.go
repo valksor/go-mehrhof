@@ -82,7 +82,7 @@ func TestWriteSystemPromptMkdirFails(t *testing.T) {
 		t.Fatal(err)
 	}
 	dest := filepath.Join(fileAsParent, "sub", "system-prompt.md")
-	if err := writeSystemPrompt(dest, "", "t", "p", "/wt"); err == nil {
+	if err := writeSystemPrompt(dest, "", "t", "p", "/wt", false); err == nil {
 		t.Fatal("writeSystemPrompt with file-as-parent = nil, want error")
 	}
 }
@@ -95,7 +95,7 @@ func TestWriteSystemPromptWriteFails(t *testing.T) {
 	if err := os.MkdirAll(dest, 0o700); err != nil {
 		t.Fatal(err)
 	}
-	if err := writeSystemPrompt(dest, "body", "t", "p", "/wt"); err == nil {
+	if err := writeSystemPrompt(dest, "body", "t", "p", "/wt", false); err == nil {
 		t.Fatal("writeSystemPrompt with dir dest = nil, want error")
 	}
 }

@@ -11,7 +11,7 @@ func TestWriteSystemPromptDefault(t *testing.T) {
 	dir := t.TempDir()
 	dest := filepath.Join(dir, "system-prompt.md")
 
-	if err := writeSystemPrompt(dest, "", "task-xyz", "plan", "/repo"); err != nil {
+	if err := writeSystemPrompt(dest, "", "task-xyz", "plan", "/repo", false); err != nil {
 		t.Fatalf("writeSystemPrompt: %v", err)
 	}
 
@@ -34,11 +34,33 @@ func TestWriteSystemPromptDefault(t *testing.T) {
 	}
 }
 
+func TestWriteSystemPromptStandalone(t *testing.T) {
+	dir := t.TempDir()
+	dest := filepath.Join(dir, "system-prompt.md")
+
+	if err := writeSystemPrompt(dest, "", "task-xyz", "plan", "/repo", true); err != nil {
+		t.Fatalf("writeSystemPrompt: %v", err)
+	}
+
+	content, err := os.ReadFile(dest)
+	if err != nil {
+		t.Fatalf("read: %v", err)
+	}
+	s := string(content)
+	if !strings.Contains(s, "one-shot session") || !strings.Contains(s, "kvelmo_signal_complete") {
+		t.Errorf("standalone prompt missing expected text\n---\n%s", s)
+	}
+	// Standalone must NOT instruct the orchestration workflow tools.
+	if strings.Contains(s, "kvelmo orchestration session") {
+		t.Errorf("standalone prompt should not be the orchestration template\n---\n%s", s)
+	}
+}
+
 func TestWriteSystemPromptOverride(t *testing.T) {
 	dir := t.TempDir()
 	dest := filepath.Join(dir, "system-prompt.md")
 	custom := "custom prompt body"
-	if err := writeSystemPrompt(dest, custom, "x", "y", "z"); err != nil {
+	if err := writeSystemPrompt(dest, custom, "x", "y", "z", false); err != nil {
 		t.Fatalf("writeSystemPrompt: %v", err)
 	}
 	got, _ := os.ReadFile(dest)

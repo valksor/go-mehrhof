@@ -42,6 +42,16 @@ var MCPCmd = &cobra.Command{
 
 const mcpUsageHint = "this subcommand is spawned by the claude-mcp adapter (agent/claudemcp) via claude's --mcp-config; do not run it directly"
 
+func init() {
+	// The claude-mcp adapter spawns this as `kvelmo mcp --stdio` (see
+	// agent/claudemcp Config.MCPServerCommand). stdio is the only transport, so
+	// the flag is accepted (defaults on) and does not change behaviour — but it
+	// MUST be defined, otherwise cobra rejects the invocation with "Unknown
+	// flag: --stdio" and the MCP server dies on startup, leaving the claude
+	// session with no kvelmo tools (it then hangs, unable to signal completion).
+	MCPCmd.Flags().Bool("stdio", true, "Serve the MCP protocol over stdio (the transport the claude-mcp adapter uses)")
+}
+
 func runMCP(cmd *cobra.Command, _ []string) error {
 	taskID := os.Getenv("KVELMO_TASK_ID")
 	worktree := os.Getenv("KVELMO_WORKTREE")
@@ -52,18 +62,25 @@ func runMCP(cmd *cobra.Command, _ []string) error {
 	if taskID == "" {
 		return fmt.Errorf("KVELMO_TASK_ID is not set — %s", mcpUsageHint)
 	}
-	if socketPath == "" {
-		return fmt.Errorf("KVELMO_WORKTREE_SOCKET is not set — %s", mcpUsageHint)
-	}
 
 	ctx, cancel := signal.NotifyContext(cmd.Context(), syscall.SIGINT, syscall.SIGTERM)
 	defer cancel()
 
-	rpc, err := socket.NewClient(socketPath, socket.WithTimeout(60*time.Second))
-	if err != nil {
-		return fmt.Errorf("connect to worktree socket %s: %w", socketPath, err)
+	// Connect to the worktree (conductor) socket when one is configured. In a
+	// serverless session (e.g. `kvelmo pipe`) there is no conductor: leave rpc
+	// nil and run standalone — the worktree-backed tools return a soft "not
+	// connected" result while signal_complete/_failure still reach the adapter
+	// socket below. (rpc is the interface type so a true nil is passed, not a
+	// typed-nil *socket.Client.)
+	var rpc mcp.WorktreeRPC
+	if socketPath != "" {
+		c, err := socket.NewClient(socketPath, socket.WithTimeout(60*time.Second))
+		if err != nil {
+			return fmt.Errorf("connect to worktree socket %s: %w", socketPath, err)
+		}
+		defer func() { _ = c.Close() }()
+		rpc = c
 	}
-	defer func() { _ = rpc.Close() }()
 
 	client := mcp.NewClient(rpc, taskID, worktree, socketPath)
 	reg := mcp.NewToolRegistry()

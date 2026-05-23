@@ -31,8 +31,21 @@ type Agent struct {
 	workDir     string // per-session work dir (mcp-config.json, system-prompt.md, adapter.sock)
 	cancelSpawn context.CancelFunc
 
+	// idleGrace overrides standaloneIdleGrace for the PTY-quiescence completion
+	// heuristic in standalone (serverless) sessions. Zero uses the default.
+	// Settable by tests for fast idle detection.
+	idleGrace time.Duration
+
 	connected bool
 }
+
+// standaloneIdleGrace is how long the PTY may stay quiet, after claude has
+// produced output, before a standalone (serverless, e.g. `kvelmo pipe`) session
+// is considered complete. The interactive claude TUI repaints continuously
+// while it is working or streaming a reply, so a sustained silence reliably
+// means the turn finished and claude is idle at its input prompt — at which
+// point no kvelmo_signal_complete is coming and the session must end itself.
+const standaloneIdleGrace = 6 * time.Second
 
 // New creates a claude-mcp agent with default configuration.
 func New() *Agent { return NewWithConfig(DefaultConfig()) }
@@ -115,10 +128,18 @@ func (a *Agent) SendPrompt(ctx context.Context, prompt string) (<-chan agent.Eve
 
 	// Worktree socket is derivable from the worktree path via the same hash
 	// kvelmo uses everywhere. Override via KVELMO_WORKTREE_SOCKET if explicitly set.
+	// Only use the derived worktree (conductor) socket if a conductor is
+	// actually listening there. Otherwise this is a serverless session
+	// (e.g. `kvelmo pipe`) and claude-mcp runs standalone: no worktree-backed
+	// MCP tools, but completion is still signalled via the adapter socket.
 	workSocket := a.config.Environment["KVELMO_WORKTREE_SOCKET"]
 	if workSocket == "" {
-		workSocket = paths.WorktreeSocketPath(worktree)
+		derived := paths.WorktreeSocketPath(worktree)
+		if _, statErr := os.Stat(derived); statErr == nil {
+			workSocket = derived
+		}
 	}
+	standalone := workSocket == ""
 
 	// Task identification is per-worktree (one active task at a time); use a
 	// short random tag for the work-dir suffix when no explicit task id is set.
@@ -147,7 +168,7 @@ func (a *Agent) SendPrompt(ctx context.Context, prompt string) (<-chan agent.Eve
 	systemPromptPath := filepath.Join(workDir, "system-prompt.md")
 	rendezvousPath := filepath.Join(workDir, "adapter.sock")
 
-	if err := writeSystemPrompt(systemPromptPath, a.config.SystemPromptOverride, taskID, phase, worktree); err != nil {
+	if err := writeSystemPrompt(systemPromptPath, a.config.SystemPromptOverride, taskID, phase, worktree, standalone); err != nil {
 		cleanupOnError()
 
 		return nil, fmt.Errorf("write system prompt: %w", err)
@@ -197,6 +218,11 @@ func (a *Agent) SendPrompt(ctx context.Context, prompt string) (<-chan agent.Eve
 	// pty_process.go::startPTY actively strips ANTHROPIC_* vars inherited
 	// from the parent env for the same reason.
 
+	// Pre-trust the worktree so claude's interactive TUI does not block on the
+	// workspace "trust this folder?" dialog — kvelmo created the worktree and
+	// there is no human in the session to confirm it.
+	ensureFolderTrusted(worktree)
+
 	pty, err := startPTY(spawnCtx, argv, a.config.WorkDir, extraEnv)
 	if err != nil {
 		_ = rdz.Close()
@@ -208,7 +234,7 @@ func (a *Agent) SendPrompt(ctx context.Context, prompt string) (<-chan agent.Eve
 	a.pty = pty
 
 	a.events = make(chan agent.Event, 64)
-	go a.pump(spawnCtx, pty, rdzEvents)
+	go a.pump(spawnCtx, pty, rdzEvents, standalone)
 
 	return a.events, nil
 }
@@ -273,10 +299,43 @@ func (a *Agent) prepareWorkDir(taskID string) (string, error) {
 }
 
 // pump fans PTY lines and rendezvous events into a.events until the session
-// ends (either signal_complete arrives, the PTY exits, or ctx is cancelled).
-func (a *Agent) pump(ctx context.Context, pty *ptyProcess, rdz <-chan mcp.RendezvousEvent) {
+// ends. Completion arrives via one of: a rendezvous signal_complete/failure,
+// the PTY exiting, ctx cancellation, or — for standalone sessions only — the
+// PTY going idle (see standaloneIdleGrace).
+func (a *Agent) pump(ctx context.Context, pty *ptyProcess, rdz <-chan mcp.RendezvousEvent, standalone bool) {
 	defer close(a.events)
 	defer a.cleanupAfterSession()
+
+	// Standalone (serverless, e.g. `kvelmo pipe`) sessions have no conductor:
+	// the interactive claude TUI answers the one-shot prompt then idles at its
+	// input box without calling kvelmo_signal_complete. Treat a sustained PTY
+	// silence (after some output) as the turn finishing. Conductor sessions do
+	// NOT arm this — there a long quiet pause (a build, a test run) is normal
+	// and completion must be an explicit signal.
+	grace := a.idleGrace
+	if grace <= 0 {
+		grace = standaloneIdleGrace
+	}
+	var idle *time.Timer
+	var idleC <-chan time.Time
+	if standalone {
+		idle = time.NewTimer(grace)
+		defer idle.Stop()
+		idleC = idle.C
+	}
+	sawOutput := false
+	resetIdle := func() {
+		if idle == nil {
+			return
+		}
+		if !idle.Stop() {
+			select {
+			case <-idle.C:
+			default:
+			}
+		}
+		idle.Reset(grace)
+	}
 
 	finished := false
 	for !finished {
@@ -285,6 +344,22 @@ func (a *Agent) pump(ctx context.Context, pty *ptyProcess, rdz <-chan mcp.Rendez
 			a.events <- agent.Event{
 				Type:      agent.EventError,
 				Error:     "claudemcp: context cancelled",
+				Timestamp: time.Now(),
+			}
+			_ = pty.Interrupt()
+			finished = true
+		case <-idleC:
+			// An early lull before claude has produced anything is not a
+			// finished turn — keep waiting. Once output has been seen, a full
+			// grace period of silence means claude is idle and done.
+			if !sawOutput {
+				resetIdle()
+
+				continue
+			}
+			a.events <- agent.Event{
+				Type:      agent.EventComplete,
+				Data:      map[string]any{"phase": "pipe", "reason": "idle"},
 				Timestamp: time.Now(),
 			}
 			_ = pty.Interrupt()
@@ -301,6 +376,8 @@ func (a *Agent) pump(ctx context.Context, pty *ptyProcess, rdz <-chan mcp.Rendez
 
 				continue
 			}
+			sawOutput = true
+			resetIdle()
 			a.events <- agent.Event{
 				Type:      agent.EventStream,
 				Content:   line,

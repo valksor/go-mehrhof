@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strings"
 	"testing"
 	"time"
 
@@ -173,7 +174,10 @@ streamLoop:
 				t.Fatal("channel closed before any stream event")
 			}
 			if e.Type == agent.EventStream {
-				if e.Content == "fake claude TUI line one" {
+				// readLoop emits raw PTY chunks (not trimmed lines), so the
+				// fake transcript may arrive with trailing newlines or several
+				// lines coalesced into one chunk — match by substring.
+				if strings.Contains(e.Content, "fake claude TUI line one") {
 					sawStream = true
 				}
 				if raw, _ := e.Data["raw_ansi"].(bool); !raw {
@@ -347,6 +351,53 @@ func TestSendPromptInterrupt(t *testing.T) {
 	}
 	if !sawExitErr {
 		t.Errorf("expected an EventError after interrupt, got %+v", events)
+	}
+	_ = a.Close()
+}
+
+// TestSendPromptStandaloneIdleCompletes verifies the serverless completion path:
+// a standalone session (no conductor/worktree socket — what `kvelmo pipe` uses)
+// has no rendezvous signal_complete coming, because the interactive claude TUI
+// answers a one-shot prompt then idles. The fake claude emits a couple of lines
+// then goes quiet; pump must surface an EventComplete (phase "pipe", reason
+// "idle") once the idle grace elapses instead of hanging until ctx deadline.
+func TestSendPromptStandaloneIdleCompletes(t *testing.T) {
+	a := newLifecycleAgent(t)
+	a.idleGrace = 400 * time.Millisecond // fire promptly once the fake goes quiet
+
+	ch, err := a.SendPrompt(context.Background(), "list the files")
+	if err != nil {
+		t.Fatalf("SendPrompt: %v", err)
+	}
+
+	events := collectUntilClosed(t, ch)
+
+	var sawStream, sawComplete bool
+	var phase, reason string
+	for _, e := range events {
+		if e.Type == agent.EventStream && strings.Contains(e.Content, "fake claude TUI line one") {
+			sawStream = true
+		}
+		if e.Type == agent.EventComplete {
+			sawComplete = true
+			phase, _ = e.Data["phase"].(string)
+			reason, _ = e.Data["reason"].(string)
+		}
+		if e.Type == agent.EventError {
+			t.Fatalf("unexpected error event in idle path: %s", e.Error)
+		}
+	}
+	if !sawStream {
+		t.Error("expected an EventStream with the fake transcript before idle completion")
+	}
+	if !sawComplete {
+		t.Fatalf("expected an idle EventComplete, got %+v", events)
+	}
+	if phase != "pipe" || reason != "idle" {
+		t.Errorf("idle complete: phase=%q reason=%q, want phase=pipe reason=idle", phase, reason)
+	}
+	if a.pty != nil {
+		t.Error("pty should be nil after idle completion")
 	}
 	_ = a.Close()
 }
