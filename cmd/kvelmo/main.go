@@ -282,32 +282,50 @@ func main() {
 	}
 
 	if err := fang.Execute(ctx, rootCmd, fangOpts...); err != nil {
-		// Try disambiguation on "unknown command" errors. Use cobra's plain
-		// ExecuteContext on the retry — fang's mutations (man subcommand,
-		// Version, help func) are already applied to rootCmd from the first
-		// call, and re-running fang.Execute would re-AddCommand "man".
-		if isUnknownCommandError(err) {
-			args := os.Args[1:]
-			if len(args) > 0 {
-				if match, suggestions := cli.DisambiguateCommand(rootCmd, args[0]); match != nil {
-					rootCmd.SetArgs(append([]string{match.Name()}, args[1:]...))
-					if err2 := rootCmd.ExecuteContext(ctx); err2 != nil {
-						fmt.Fprintln(os.Stderr, err2)
-						os.Exit(cli.ExitCodeFromError(err2))
-					}
+		if code, exit := resolveExecuteError(ctx, os.Args[1:], err); exit {
+			os.Exit(code)
+		}
+	}
+}
 
-					return
-				} else if len(suggestions) > 0 {
-					_, _ = os.Stderr.WriteString(cli.FormatAmbiguousError(args[0], suggestions))
-					os.Exit(cli.ExitUsage)
-				}
+// resolveExecuteError handles a failed fang.Execute. It attempts command
+// disambiguation on "unknown command" errors and returns the process exit code
+// to use along with a flag indicating whether the process should exit.
+//
+// On a successful disambiguation retry it returns (0, false): the resolved
+// command already ran, so main() should simply return. Otherwise it returns the
+// exit code derived from the error and (code, true).
+//
+// Disambiguation uses cobra's plain ExecuteContext on the retry — fang's
+// mutations (man subcommand, Version, help func) are already applied to rootCmd
+// from the first call, and re-running fang.Execute would re-AddCommand "man".
+func resolveExecuteError(ctx context.Context, args []string, err error) (int, bool) {
+	if !isUnknownCommandError(err) {
+		return cli.ExitCodeFromError(err), true
+	}
+
+	if len(args) > 0 {
+		match, suggestions := cli.DisambiguateCommand(rootCmd, args[0])
+		switch {
+		case match != nil:
+			rootCmd.SetArgs(append([]string{match.Name()}, args[1:]...))
+			if err2 := rootCmd.ExecuteContext(ctx); err2 != nil {
+				fmt.Fprintln(os.Stderr, err2)
+
+				return cli.ExitCodeFromError(err2), true
 			}
 
-			fmt.Fprintln(os.Stderr, err)
-		}
+			return 0, false
+		case len(suggestions) > 0:
+			_, _ = os.Stderr.WriteString(cli.FormatAmbiguousError(args[0], suggestions))
 
-		os.Exit(cli.ExitCodeFromError(err))
+			return cli.ExitUsage, true
+		}
 	}
+
+	fmt.Fprintln(os.Stderr, err)
+
+	return cli.ExitCodeFromError(err), true
 }
 
 // isUnknownCommandError checks whether the error is a cobra "unknown command" error.
