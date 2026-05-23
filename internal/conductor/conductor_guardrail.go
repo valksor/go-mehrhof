@@ -66,8 +66,6 @@ func (c *Conductor) runPreGuardrails(ctx context.Context, phase string) error {
 // runPostGuardrails executes post-phase guardrails configured for the given phase.
 // Returns findings for informational purposes; post-guardrails are non-blocking by default.
 // Caller must hold c.mu.
-//
-//nolint:unused // wired once the phase router is implemented (#22)
 func (c *Conductor) runPostGuardrails(ctx context.Context, phase string) []findings.Finding {
 	s := c.getEffectiveSettings()
 	if s == nil {
