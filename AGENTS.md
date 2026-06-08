@@ -1,9 +1,5 @@
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-# IT IS YEAR 2026 !!! Please use 2026 in web searches!!!
-
-## No time estimates. Never say "this will take 1 day" or "a few weeks" - these are always wrong. If you must indicate complexity, use Fibonacci numbers (1, 2, 3, 5, 8, 13) for relative effort.
-
 ## PROJECT USES BUN NOT NODE OR NPM! PLEASE USE BUN OR BUNX WHEN CALLING SCRIPTS!
 
 ## Project Overview
@@ -222,7 +218,6 @@ Go: Return errors, wrap with context (`fmt.Errorf("action: %w", err)`)
 
 When running `make quality`, `make test`, or `make ci`:
 
-- **Fix ALL errors and failures in the output, not just ones you introduced.** Pre-existing failures are your responsibility too.
 - Do not skip, ignore, or dismiss errors you didn't cause. The codebase must be clean after your work.
 - If `make quality` reports 10 lint errors and you caused 2, fix all 10.
 - If `make test` has 3 failing tests and you wrote 1, fix all 3.
