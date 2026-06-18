@@ -7,7 +7,7 @@ require (
 	charm.land/bubbletea/v2 v2.0.7
 	charm.land/fang/v2 v2.0.1
 	charm.land/lipgloss/v2 v2.0.3
-	github.com/coder/websocket v1.8.14
+	github.com/coder/websocket v1.8.15
 	github.com/creack/pty v1.1.24
 	github.com/fatih/color v1.19.0
 	github.com/google/go-github/v67 v67.0.0
