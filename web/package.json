@@ -44,7 +44,7 @@
   },
   "devDependencies": {
     "@playwright/test": "^1.60.0",
-    "@tauri-apps/api": "^2.11.0",
+    "@tauri-apps/api": "^2.11.1",
     "@tauri-apps/cli": "^2.11.2",
     "@tauri-apps/plugin-dialog": "^2.7.1",
     "@tauri-apps/plugin-process": "^2.3.1",
